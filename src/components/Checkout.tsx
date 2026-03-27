@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc, increment, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
@@ -18,6 +18,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
+  const [createdOrderId, setCreatedOrderId] = useState<string>('');
   
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.displayName || '',
@@ -123,59 +125,165 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
     setIsSubmitting(true);
     try {
-      const orderData = {
-        userId: user.uid,
-        items: cartItems.map(item => ({
-          productId: item.product.id,
-          name: item.product.name,
-          price: item.price,
-          quantity: item.quantity,
-          selectedBox: item.selectedBox || null,
-          selectedLang: item.selectedLang || null,
-          selectedVariants: item.selectedVariants || null,
-          addSleeves: item.addSleeves || false,
-          quickAddAccessoryNames: item.quickAddAccessoryNames || null,
-          quickAddAccessoryName: (item as any).quickAddAccessoryName || null,
-          image: item.product.image
-        })),
-        totalAmount,
-        discountCode: appliedDiscount?.code || null,
-        discountAmount: discountAmount || 0,
-        finalAmount,
-        status: 'pending',
-        shippingInfo,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      // Remove null values
-      Object.keys(orderData).forEach(key => {
-        if ((orderData as any)[key] === null) {
-          delete (orderData as any)[key];
-        }
-      });
-
-      await addDoc(collection(db, 'orders'), orderData);
-      
-      // Increment used count for discount code
-      if (appliedDiscount) {
-        await updateDoc(doc(db, 'discountCodes', appliedDiscount.id), {
-          usedCount: increment(1)
+      await runTransaction(db, async (transaction) => {
+        // 1. Read all products to check stock
+        const productRefs = cartItems.map(item => doc(db, 'products', item.product.id));
+        const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+        
+        // 2. Map current stock
+        const stockMap = new Map<string, number>();
+        const existingProducts = new Set<string>();
+        const inactiveProducts = new Set<string>();
+        productDocs.forEach(docSnap => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.isActive === false) {
+              inactiveProducts.add(docSnap.id);
+            } else {
+              existingProducts.add(docSnap.id);
+              if (data.stock !== undefined) {
+                stockMap.set(docSnap.id, data.stock);
+              }
+            }
+          }
         });
-      }
+
+        // 3. Calculate total quantity needed per product
+        const quantityNeeded = new Map<string, number>();
+        cartItems.forEach(item => {
+          const current = quantityNeeded.get(item.product.id) || 0;
+          quantityNeeded.set(item.product.id, current + item.quantity);
+        });
+
+        // 4. Check if stock is sufficient and product exists/active
+        for (const [productId, needed] of quantityNeeded.entries()) {
+          if (inactiveProducts.has(productId)) {
+            const product = cartItems.find(i => i.product.id === productId)?.product;
+            throw new Error(`Sản phẩm "${product?.name}" hiện đang ngừng kinh doanh.`);
+          }
+          if (!existingProducts.has(productId)) {
+            const product = cartItems.find(i => i.product.id === productId)?.product;
+            throw new Error(`Sản phẩm "${product?.name}" không còn tồn tại.`);
+          }
+          const available = stockMap.get(productId);
+          if (available !== undefined && available < needed) {
+            const product = cartItems.find(i => i.product.id === productId)?.product;
+            throw new Error(`Sản phẩm "${product?.name}" chỉ còn ${available} sản phẩm trong kho.`);
+          }
+        }
+
+        // 5. Deduct stock
+        for (const [productId, needed] of quantityNeeded.entries()) {
+          const available = stockMap.get(productId);
+          if (available !== undefined) {
+            transaction.update(doc(db, 'products', productId), {
+              stock: available - needed
+            });
+          }
+        }
+
+        // 6. Create order
+        const orderRef = doc(collection(db, 'orders'));
+        const orderData: any = {
+          userId: user.uid,
+          items: cartItems.map(item => {
+            const itemData: any = {
+              productId: item.product.id,
+              name: item.product.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.product.image
+            };
+            if (item.selectedBox) itemData.selectedBox = item.selectedBox;
+            if (item.selectedLang) itemData.selectedLang = item.selectedLang;
+            if (item.selectedVariants) itemData.selectedVariants = item.selectedVariants;
+            if (item.addSleeves) itemData.addSleeves = item.addSleeves;
+            if (item.quickAddAccessoryNames) itemData.quickAddAccessoryNames = item.quickAddAccessoryNames;
+            if ((item as any).quickAddAccessoryName) itemData.quickAddAccessoryName = (item as any).quickAddAccessoryName;
+            return itemData;
+          }),
+          totalAmount,
+          status: 'pending',
+          paymentMethod: paymentMethod,
+          paymentStatus: paymentMethod === 'vietqr' ? 'pending' : 'paid',
+          shippingInfo,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        
+        if (appliedDiscount) {
+          orderData.discountCode = appliedDiscount.code;
+          orderData.discountAmount = discountAmount;
+        }
+        orderData.finalAmount = finalAmount;
+
+        transaction.set(orderRef, orderData);
+
+        // 7. Update discount code usage
+        if (appliedDiscount) {
+          transaction.update(doc(db, 'discountCodes', appliedDiscount.id), {
+            usedCount: increment(1)
+          });
+        }
+        
+        setCreatedOrderId(orderRef.id);
+      });
 
       clearCart();
       setIsSuccess(true);
       toast.success('Đặt hàng thành công!');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'orders');
-      toast.error('Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại sau.');
+    } catch (error: any) {
+      if (error.message && (error.message.includes('chỉ còn') || error.message.includes('ngừng kinh doanh') || error.message.includes('không còn tồn tại'))) {
+        toast.error(error.message);
+      } else {
+        handleFirestoreError(error, OperationType.CREATE, 'orders');
+        toast.error('Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại sau.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (isSuccess) {
+    if (paymentMethod === 'vietqr') {
+      return (
+        <div className="max-w-3xl mx-auto px-4 py-16 sm:px-6 sm:py-24 lg:px-8 text-center">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 border border-gray-200 dark:border-zinc-800 shadow-sm max-w-md mx-auto">
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Thanh toán đơn hàng</h1>
+            <p className="text-gray-500 dark:text-zinc-400 mb-6 text-sm">
+              Vui lòng quét mã QR bên dưới bằng ứng dụng ngân hàng của bạn để thanh toán.
+            </p>
+            
+            <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 mb-6 flex justify-center">
+              <img 
+                src={`https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=${finalAmount || totalAmount}&addInfo=${createdOrderId}&accountName=TQS_STORE`} 
+                alt="VietQR" 
+                className="w-64 h-64 object-contain rounded-lg"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  toast.success('Đang chờ xác nhận thanh toán');
+                  navigate('/profile');
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-xl font-bold transition-colors shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 className="w-5 h-5" /> Tôi đã chuyển khoản
+              </button>
+              <button
+                onClick={() => navigate('/profile')}
+                className="w-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-8 py-3.5 rounded-xl font-bold transition-colors"
+              >
+                Thanh toán sau
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 sm:px-6 sm:py-24 lg:px-8 text-center">
         <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -277,6 +385,41 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                   className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all resize-y" 
                   placeholder="Ghi chú thêm về đơn hàng, thời gian giao hàng..." 
                 />
+              </div>
+
+              <div className="pt-4 border-t border-gray-200 dark:border-zinc-800">
+                <label className="block text-sm font-bold text-gray-900 dark:text-white mb-4">Phương thức thanh toán</label>
+                <div className="space-y-3">
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
+                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                    />
+                    <div className="ml-3">
+                      <span className="block text-sm font-medium text-gray-900 dark:text-white">Thanh toán khi nhận hàng (COD)</span>
+                      <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Thanh toán bằng tiền mặt khi giao hàng</span>
+                    </div>
+                  </label>
+                  
+                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'vietqr' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="vietqr"
+                      checked={paymentMethod === 'vietqr'}
+                      onChange={() => setPaymentMethod('vietqr')}
+                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                    />
+                    <div className="ml-3">
+                      <span className="block text-sm font-medium text-gray-900 dark:text-white">Chuyển khoản qua VietQR</span>
+                      <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Quét mã QR bằng ứng dụng ngân hàng</span>
+                    </div>
+                  </label>
+                </div>
               </div>
             </form>
           </div>

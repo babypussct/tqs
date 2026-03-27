@@ -62,7 +62,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
     );
   }
   
-  const quickAdds = product.quickAddAccessories || (product.quickAddAccessory ? [product.quickAddAccessory] : []);
+  const quickAdds = product.quickAddAccessories || ((product as any).quickAddAccessory ? [(product as any).quickAddAccessory] : []);
   if (quickAdds.length === 0 && product.size) {
     quickAdds.push({
       name: 'Mua kèm 200 Bọc bài (Sleeves)',
@@ -230,7 +230,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
 
           <div className="flex items-end gap-3 mb-8 pb-8 border-b border-gray-200 dark:border-zinc-800">
             <span className="text-4xl font-bold text-red-600 dark:text-red-500">{formatPrice(totalPrice)}</span>
-            {product.originalPrice && !addSleeves && !BOX_UPGRADE_PRICE && (
+            {product.originalPrice && selectedQuickAdds.length === 0 && !BOX_UPGRADE_PRICE && (
               <span className="text-xl text-gray-400 dark:text-zinc-500 line-through mb-1">
                 {formatPrice(product.originalPrice)}
               </span>

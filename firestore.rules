@@ -206,7 +206,9 @@ service cloud.firestore {
       allow read: if (resource.data.isActive == true) || isAdmin();
       
       allow create: if isAdmin() && isValidProduct();
-      allow update: if isAdmin() && isValidProduct() && areImmutableFieldsUnchanged(['createdAt']);
+      allow update: if (isAdmin() && isValidProduct() && areImmutableFieldsUnchanged(['createdAt'])) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) &&
+                     request.resource.data.stock >= 0 && request.resource.data.stock < resource.data.stock);
       allow delete: if isAdmin();
     }
 
@@ -236,7 +238,9 @@ service cloud.firestore {
     match /discountCodes/{codeId} {
       allow read: if true;
       allow create: if isAdmin() && isValidDiscountCode();
-      allow update: if isAdmin() && isValidDiscountCode() && areImmutableFieldsUnchanged(['createdAt', 'code']);
+      allow update: if (isAdmin() && isValidDiscountCode() && areImmutableFieldsUnchanged(['createdAt', 'code'])) ||
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount']) &&
+                     request.resource.data.usedCount == resource.data.usedCount + 1);
       allow delete: if isAdmin();
     }
 

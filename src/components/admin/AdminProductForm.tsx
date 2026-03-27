@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp, updateDoc } f
 import { db } from '../../firebase';
 import { Product } from '../../types';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
-import { ArrowLeft, Save, Tag, Box, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Tag, Box, Image as ImageIcon, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProducts } from '../../hooks/useProducts';
 import { useProductConfig } from '../../hooks/useProductConfig';
@@ -79,7 +79,7 @@ export default function AdminProductForm() {
           options: v.options.map(opt => typeof opt === 'string' ? { name: opt, priceAdjustment: 0 } : opt)
         }));
       }
-      if (editingProduct.quickAddAccessory) productData.quickAddAccessory = editingProduct.quickAddAccessory;
+      if ((editingProduct as any).quickAddAccessory) (productData as any).quickAddAccessory = (editingProduct as any).quickAddAccessory;
       if (editingProduct.quickAddAccessories) productData.quickAddAccessories = editingProduct.quickAddAccessories;
 
       if (id) {
@@ -113,26 +113,58 @@ export default function AdminProductForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/admin')}
-          className="p-2 text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-          {id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm mới'}
-        </h1>
-      </div>
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] bg-gray-50 dark:bg-zinc-950">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 shrink-0 hidden md:block">
+        <div className="sticky top-[73px] p-6">
+          <button 
+            onClick={() => navigate('/admin')}
+            className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Quay lại
+          </button>
+          <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">
+            {id ? 'Chỉnh sửa' : 'Thêm mới'}
+          </h2>
+          <nav className="space-y-1.5">
+            <a href="#basic-info" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white">
+              <Tag className="w-5 h-5" /> Thông tin cơ bản
+            </a>
+            <a href="#pricing" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white">
+              <Box className="w-5 h-5" /> Giá & Kho hàng
+            </a>
+            <a href="#media" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white">
+              <ImageIcon className="w-5 h-5" /> Hình ảnh & Thuộc tính
+            </a>
+            <a href="#variants" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white">
+              <Plus className="w-5 h-5" /> Biến thể (Tùy chọn)
+            </a>
+          </nav>
+        </div>
+      </aside>
 
-      <form id="product-form" onSubmit={handleSave} className="space-y-8">
-        
-        {/* Section: Basic Info */}
-        <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-            <Tag className="w-4 h-4" /> Thông tin cơ bản
-          </h3>
+      {/* Main Content */}
+      <main className="flex-1 p-6 md:p-10 overflow-x-hidden">
+        <div className="max-w-4xl mx-auto">
+          <div className="md:hidden mb-6 flex items-center gap-4">
+            <button 
+              onClick={() => navigate('/admin')}
+              className="p-2 text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              {id ? 'Chỉnh sửa Sản phẩm' : 'Thêm Sản phẩm mới'}
+            </h1>
+          </div>
+
+          <form id="product-form" onSubmit={handleSave} className="space-y-8 pb-24">
+            
+            {/* Section: Basic Info */}
+            <div id="basic-info" className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm scroll-mt-24">
+              <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Tag className="w-4 h-4" /> Thông tin cơ bản
+              </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Tên sản phẩm *</label>
@@ -167,7 +199,7 @@ export default function AdminProductForm() {
         </div>
 
         {/* Section: Pricing & Inventory */}
-        <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+        <div id="pricing" className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm scroll-mt-24">
           <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-6 flex items-center gap-2">
             <Box className="w-4 h-4" /> Giá & Kho hàng
           </h3>
@@ -182,17 +214,17 @@ export default function AdminProductForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Tồn kho</label>
-              <input type="number" min="0" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({...editingProduct, stock: Number(e.target.value)})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="100" />
+              <input type="number" min="0" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({...editingProduct, stock: e.target.value === '' ? undefined : Number(e.target.value)})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="100" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Đã bán</label>
-              <input type="number" min="0" value={editingProduct.soldCount ?? ''} onChange={e => setEditingProduct({...editingProduct, soldCount: Number(e.target.value)})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="0" />
+              <input type="number" min="0" value={editingProduct.soldCount ?? ''} onChange={e => setEditingProduct({...editingProduct, soldCount: e.target.value === '' ? undefined : Number(e.target.value)})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="0" />
             </div>
           </div>
         </div>
 
         {/* Section: Media & Specs */}
-        <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+        <div id="media" className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm scroll-mt-24">
           <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-6 flex items-center gap-2">
             <ImageIcon className="w-4 h-4" /> Hình ảnh & Thuộc tính
           </h3>
@@ -266,25 +298,85 @@ export default function AdminProductForm() {
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Kích thước (Size sleeves)</label>
               <input type="text" placeholder="VD: 62x89mm" value={editingProduct.size || ''} onChange={e => setEditingProduct({...editingProduct, size: e.target.value})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" />
             </div>
-            
-            {/* Custom Variants */}
+
+            {/* Dynamic Specifications */}
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Biến thể sản phẩm (Tùy chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Thông số kỹ thuật</label>
                 <button 
                   type="button"
                   onClick={() => {
-                    const currentVariants = editingProduct.customVariants || [];
-                    setEditingProduct({...editingProduct, customVariants: [...currentVariants, { name: '', options: [] }]});
+                    const currentSpecs = editingProduct.specifications || [];
+                    setEditingProduct({...editingProduct, specifications: [...currentSpecs, { name: '', value: '' }]});
                   }}
                   className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-4 h-4" /> Thêm biến thể
+                  <Plus className="w-4 h-4" /> Thêm thông số
                 </button>
               </div>
-              <div className="space-y-4">
-                {(editingProduct.customVariants || []).map((variant, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-4">
+              <div className="space-y-3">
+                {(editingProduct.specifications || []).map((spec, idx) => (
+                  <div key={idx} className="flex gap-3">
+                    <input 
+                      type="text" 
+                      value={spec.name} 
+                      onChange={e => {
+                        const newSpecs = [...(editingProduct.specifications || [])];
+                        newSpecs[idx].name = e.target.value;
+                        setEditingProduct({...editingProduct, specifications: newSpecs});
+                      }} 
+                      className="w-1/3 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                      placeholder="Tên (VD: Thương hiệu)" 
+                    />
+                    <input 
+                      type="text" 
+                      value={spec.value} 
+                      onChange={e => {
+                        const newSpecs = [...(editingProduct.specifications || [])];
+                        newSpecs[idx].value = e.target.value;
+                        setEditingProduct({...editingProduct, specifications: newSpecs});
+                      }} 
+                      className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                      placeholder="Giá trị (VD: Yoka Games)" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const newSpecs = [...(editingProduct.specifications || [])];
+                        newSpecs.splice(idx, 1);
+                        setEditingProduct({...editingProduct, specifications: newSpecs});
+                      }}
+                      className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+            
+        {/* Custom Variants */}
+        <div id="variants" className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm scroll-mt-24">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Biến thể sản phẩm (Tùy chọn)
+            </h3>
+            <button 
+              type="button"
+              onClick={() => {
+                const currentVariants = editingProduct.customVariants || [];
+                setEditingProduct({...editingProduct, customVariants: [...currentVariants, { name: '', options: [] }]});
+              }}
+              className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" /> Thêm biến thể
+            </button>
+          </div>
+          <div className="space-y-4">
+            {(editingProduct.customVariants || []).map((variant, idx) => (
+              <div key={idx} className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-4">
                     <div className="flex gap-3 mb-4">
                       <input 
                         type="text" 
@@ -378,228 +470,178 @@ export default function AdminProductForm() {
               </div>
             </div>
 
-            {/* Dynamic Specifications */}
-            <div className="sm:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Thông số kỹ thuật</label>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    const currentSpecs = editingProduct.specifications || [];
-                    setEditingProduct({...editingProduct, specifications: [...currentSpecs, { name: '', value: '' }]});
-                  }}
-                  className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" /> Thêm thông số
-                </button>
-              </div>
-              <div className="space-y-3">
-                {(editingProduct.specifications || []).map((spec, idx) => (
-                  <div key={idx} className="flex gap-3">
-                    <input 
-                      type="text" 
-                      value={spec.name} 
-                      onChange={e => {
-                        const newSpecs = [...(editingProduct.specifications || [])];
-                        newSpecs[idx].name = e.target.value;
-                        setEditingProduct({...editingProduct, specifications: newSpecs});
-                      }} 
-                      className="w-1/3 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                      placeholder="Tên (VD: Thương hiệu)" 
-                    />
-                    <input 
-                      type="text" 
-                      value={spec.value} 
-                      onChange={e => {
-                        const newSpecs = [...(editingProduct.specifications || [])];
-                        newSpecs[idx].value = e.target.value;
-                        setEditingProduct({...editingProduct, specifications: newSpecs});
-                      }} 
-                      className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                      placeholder="Giá trị (VD: Yoka Games)" 
-                    />
+            {/* Section: Related & Accessories */}
+            <div id="related" className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm scroll-mt-24">
+              <h3 className="text-sm font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Box className="w-4 h-4" /> Sản phẩm liên quan & Phụ kiện
+              </h3>
+              <div className="grid grid-cols-1 gap-8">
+                {/* Add-ons / Combos */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Sản phẩm mua kèm (Add-ons)</label>
+                  <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-4 max-h-60 overflow-y-auto custom-scrollbar">
+                    {products.filter(p => p.id !== editingProduct.id).map(p => (
+                      <label key={p.id} className="flex items-center gap-4 p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={(editingProduct.addonIds || []).includes(p.id)}
+                          onChange={(e) => {
+                            const currentAddons = editingProduct.addonIds || [];
+                            if (e.target.checked) {
+                              setEditingProduct({...editingProduct, addonIds: [...currentAddons, p.id]});
+                            } else {
+                              setEditingProduct({...editingProduct, addonIds: currentAddons.filter(id => id !== p.id)});
+                            }
+                          }}
+                          className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                        />
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                        <span className="text-sm text-gray-900 dark:text-white flex-1 truncate font-medium">{p.name}</span>
+                        <span className="text-sm font-bold text-red-600 dark:text-red-500">{p.price.toLocaleString('vi-VN')}đ</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Add Accessories */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Phụ kiện mua nhanh (Quick Add)</label>
                     <button 
                       type="button"
                       onClick={() => {
-                        const newSpecs = [...(editingProduct.specifications || [])];
-                        newSpecs.splice(idx, 1);
-                        setEditingProduct({...editingProduct, specifications: newSpecs});
+                        const currentAccessories = editingProduct.quickAddAccessories || [];
+                        // Handle migration from single quickAddAccessory
+                        if ((editingProduct as any).quickAddAccessory && currentAccessories.length === 0) {
+                          currentAccessories.push((editingProduct as any).quickAddAccessory);
+                        }
+                        setEditingProduct({...editingProduct, quickAddAccessories: [...currentAccessories, { name: '', price: 0, description: '' }]});
                       }}
-                      className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Plus className="w-4 h-4" /> Thêm phụ kiện
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Add-ons / Combos */}
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Sản phẩm mua kèm (Add-ons)</label>
-              <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-4 max-h-60 overflow-y-auto custom-scrollbar">
-                {products.filter(p => p.id !== editingProduct.id).map(p => (
-                  <label key={p.id} className="flex items-center gap-4 p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl cursor-pointer transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={(editingProduct.addonIds || []).includes(p.id)}
-                      onChange={(e) => {
-                        const currentAddons = editingProduct.addonIds || [];
-                        if (e.target.checked) {
-                          setEditingProduct({...editingProduct, addonIds: [...currentAddons, p.id]});
-                        } else {
-                          setEditingProduct({...editingProduct, addonIds: currentAddons.filter(id => id !== p.id)});
-                        }
-                      }}
-                      className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500"
-                    />
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5 text-gray-400" />
+                  
+                  <div className="space-y-4">
+                    {/* Migrate old single accessory if it exists and array is empty */}
+                    {(editingProduct as any).quickAddAccessory && (!editingProduct.quickAddAccessories || editingProduct.quickAddAccessories.length === 0) && (
+                      <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-5 space-y-4 relative">
+                        <button 
+                          type="button"
+                          onClick={() => setEditingProduct({...editingProduct, quickAddAccessory: undefined} as any)}
+                          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-10">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Tên phụ kiện</label>
+                            <input 
+                              type="text" 
+                              value={(editingProduct as any).quickAddAccessory.name} 
+                              onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...(editingProduct as any).quickAddAccessory!, name: e.target.value }} as any)} 
+                              className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                              placeholder="VD: Mua kèm 200 Bọc bài (Sleeves)" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Giá cộng thêm (VNĐ)</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              value={(editingProduct as any).quickAddAccessory.price || ''} 
+                              onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...(editingProduct as any).quickAddAccessory!, price: Number(e.target.value) }} as any)} 
+                              className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                              placeholder="VD: 50000" 
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Mô tả ngắn (Tùy chọn)</label>
+                          <input 
+                            type="text" 
+                            value={(editingProduct as any).quickAddAccessory.description || ''} 
+                            onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...(editingProduct as any).quickAddAccessory!, description: e.target.value }} as any)} 
+                            className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                            placeholder="VD: Bảo vệ bài không trầy xước, chống nước." 
+                          />
+                        </div>
                       </div>
                     )}
-                    <span className="text-sm text-gray-900 dark:text-white flex-1 truncate font-medium">{p.name}</span>
-                    <span className="text-sm font-bold text-red-600 dark:text-red-500">{p.price.toLocaleString('vi-VN')}đ</span>
-                  </label>
-                ))}
+
+                    {(editingProduct.quickAddAccessories || []).map((accessory, idx) => (
+                      <div key={idx} className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-5 space-y-4 relative">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newAccessories = [...(editingProduct.quickAddAccessories || [])];
+                            newAccessories.splice(idx, 1);
+                            setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
+                          }}
+                          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-10">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Tên phụ kiện</label>
+                            <input 
+                              type="text" 
+                              value={accessory.name} 
+                              onChange={e => {
+                                const newAccessories = [...(editingProduct.quickAddAccessories || [])];
+                                newAccessories[idx].name = e.target.value;
+                                setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
+                              }} 
+                              className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                              placeholder="VD: Mua kèm 200 Bọc bài (Sleeves)" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Giá cộng thêm (VNĐ)</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              value={accessory.price || ''} 
+                              onChange={e => {
+                                const newAccessories = [...(editingProduct.quickAddAccessories || [])];
+                                newAccessories[idx].price = Number(e.target.value);
+                                setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
+                              }} 
+                              className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                              placeholder="VD: 50000" 
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Mô tả ngắn (Tùy chọn)</label>
+                          <input 
+                            type="text" 
+                            value={accessory.description || ''} 
+                            onChange={e => {
+                              const newAccessories = [...(editingProduct.quickAddAccessories || [])];
+                              newAccessories[idx].description = e.target.value;
+                              setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
+                            }} 
+                            className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
+                            placeholder="VD: Bảo vệ bài không trầy xước, chống nước." 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Quick Add Accessories */}
-            <div className="sm:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300">Phụ kiện mua nhanh (Quick Add)</label>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    const currentAccessories = editingProduct.quickAddAccessories || [];
-                    // Handle migration from single quickAddAccessory
-                    if (editingProduct.quickAddAccessory && currentAccessories.length === 0) {
-                      currentAccessories.push(editingProduct.quickAddAccessory);
-                    }
-                    setEditingProduct({...editingProduct, quickAddAccessories: [...currentAccessories, { name: '', price: 0, description: '' }]});
-                  }}
-                  className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" /> Thêm phụ kiện
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {/* Migrate old single accessory if it exists and array is empty */}
-                {editingProduct.quickAddAccessory && (!editingProduct.quickAddAccessories || editingProduct.quickAddAccessories.length === 0) && (
-                  <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-5 space-y-4 relative">
-                    <button 
-                      type="button"
-                      onClick={() => setEditingProduct({...editingProduct, quickAddAccessory: undefined})}
-                      className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-10">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Tên phụ kiện</label>
-                        <input 
-                          type="text" 
-                          value={editingProduct.quickAddAccessory.name} 
-                          onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...editingProduct.quickAddAccessory!, name: e.target.value }})} 
-                          className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                          placeholder="VD: Mua kèm 200 Bọc bài (Sleeves)" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Giá cộng thêm (VNĐ)</label>
-                        <input 
-                          type="number" 
-                          min="0"
-                          value={editingProduct.quickAddAccessory.price || ''} 
-                          onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...editingProduct.quickAddAccessory!, price: Number(e.target.value) }})} 
-                          className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                          placeholder="VD: 50000" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Mô tả ngắn (Tùy chọn)</label>
-                      <input 
-                        type="text" 
-                        value={editingProduct.quickAddAccessory.description || ''} 
-                        onChange={e => setEditingProduct({...editingProduct, quickAddAccessory: { ...editingProduct.quickAddAccessory!, description: e.target.value }})} 
-                        className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                        placeholder="VD: Bảo vệ bài không trầy xước, chống nước." 
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {(editingProduct.quickAddAccessories || []).map((accessory, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-300 dark:border-zinc-700 rounded-xl p-5 space-y-4 relative">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const newAccessories = [...(editingProduct.quickAddAccessories || [])];
-                        newAccessories.splice(idx, 1);
-                        setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
-                      }}
-                      className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-10">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Tên phụ kiện</label>
-                        <input 
-                          type="text" 
-                          value={accessory.name} 
-                          onChange={e => {
-                            const newAccessories = [...(editingProduct.quickAddAccessories || [])];
-                            newAccessories[idx].name = e.target.value;
-                            setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
-                          }} 
-                          className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                          placeholder="VD: Mua kèm 200 Bọc bài (Sleeves)" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Giá cộng thêm (VNĐ)</label>
-                        <input 
-                          type="number" 
-                          min="0"
-                          value={accessory.price || ''} 
-                          onChange={e => {
-                            const newAccessories = [...(editingProduct.quickAddAccessories || [])];
-                            newAccessories[idx].price = Number(e.target.value);
-                            setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
-                          }} 
-                          className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                          placeholder="VD: 50000" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-2">Mô tả ngắn (Tùy chọn)</label>
-                      <input 
-                        type="text" 
-                        value={accessory.description || ''} 
-                        onChange={e => {
-                          const newAccessories = [...(editingProduct.quickAddAccessories || [])];
-                          newAccessories[idx].description = e.target.value;
-                          setEditingProduct({...editingProduct, quickAddAccessories: newAccessories});
-                        }} 
-                        className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                        placeholder="VD: Bảo vệ bài không trầy xước, chống nước." 
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Visibility Toggle */}
+            {/* Visibility Toggle */}
         <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 flex items-center justify-between shadow-sm">
           <div>
             <h4 className="text-gray-900 dark:text-white font-bold text-lg">Trạng thái hiển thị</h4>
@@ -630,6 +672,8 @@ export default function AdminProductForm() {
         </div>
 
       </form>
+        </div>
+      </main>
     </div>
   );
 }

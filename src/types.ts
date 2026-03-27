@@ -141,6 +141,9 @@ export interface Order {
   discountAmount?: number;
   finalAmount?: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentMethod?: 'cod' | 'vietqr';
+  paymentStatus?: 'pending' | 'paid';
+  trackingCode?: string;
   shippingInfo: {
     fullName: string;
     phone: string;

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -123,6 +124,34 @@ export default function Profile() {
                   </div>
                   
                   <div className="p-4 sm:p-6">
+                    {order.trackingCode && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-blue-100 dark:border-blue-800/30">
+                        <div>
+                          <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-1">Mã vận đơn SPX:</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-lg font-bold text-blue-900 dark:text-blue-100">{order.trackingCode}</span>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.trackingCode!);
+                                toast.success('Đã copy mã vận đơn');
+                              }}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                        <a 
+                          href={`https://spx.vn/track?${order.trackingCode}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors text-center shadow-sm shadow-blue-600/20"
+                        >
+                          Tra cứu hành trình
+                        </a>
+                      </div>
+                    )}
+                    
                     <div className="space-y-4 mb-6">
                       {order.items.map((item, index) => (
                         <div key={index} className="flex gap-4">
@@ -157,6 +186,21 @@ export default function Profile() {
                       <div className="text-sm text-gray-500 dark:text-zinc-400">
                         <p><span className="font-medium text-gray-900 dark:text-white">Giao đến:</span> {order.shippingInfo.fullName} - {order.shippingInfo.phone}</p>
                         <p className="mt-0.5">{order.shippingInfo.address}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="font-medium text-gray-900 dark:text-white">Thanh toán:</span>
+                          {order.paymentMethod === 'vietqr' ? (
+                            <span className="flex items-center gap-1">
+                              Chuyển khoản VietQR
+                              {order.paymentStatus === 'pending' ? (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-500 text-[10px] rounded-full font-medium">Chờ xác nhận</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-500 text-[10px] rounded-full font-medium">Đã thanh toán</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span>Thanh toán khi nhận hàng (COD)</span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-right w-full sm:w-auto">
                         <div className="space-y-1 mb-2">

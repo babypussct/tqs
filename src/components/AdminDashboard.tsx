@@ -7,7 +7,7 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
@@ -22,8 +22,35 @@ export default function AdminDashboard() {
   
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings'>('products');
   const [searchTerm, setSearchTerm] = useState('');
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
+  const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
   
   const [homeConfig, setHomeConfig] = useState<HomepageConfig>(initialConfig);
+
+  const handleTrackingSave = async (orderId: string) => {
+    const code = trackingInputs[orderId]?.trim();
+    if (!code) return;
+    try {
+      await updateDoc(doc(db, 'orders', orderId), { trackingCode: code });
+      setEditingTracking(prev => ({ ...prev, [orderId]: false }));
+      toast.success('Đã lưu mã vận đơn');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+      toast.error('Có lỗi xảy ra khi lưu mã vận đơn');
+    }
+  };
+
+  const handleTrackingDelete = async (orderId: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa mã vận đơn này?')) {
+      try {
+        await updateDoc(doc(db, 'orders', orderId), { trackingCode: null });
+        toast.success('Đã xóa mã vận đơn');
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
+        toast.error('Có lỗi xảy ra khi xóa mã vận đơn');
+      }
+    }
+  };
 
   useEffect(() => {
     setHomeConfig(initialConfig);
@@ -65,57 +92,44 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header & Navigation */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Quản trị Cửa hàng</h1>
-        <div className="flex gap-8 border-b border-gray-200 dark:border-zinc-800">
-          <button 
-            onClick={() => setActiveTab('overview')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'overview' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Tổng quan
-            {activeTab === 'overview' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('products')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'products' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Sản phẩm
-            {activeTab === 'products' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('orders')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'orders' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Đơn hàng
-            {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('homepage')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'homepage' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Giao diện
-            {activeTab === 'homepage' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('discounts')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'discounts' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Mã giảm giá
-            {activeTab === 'discounts' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('settings')}
-            className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === 'settings' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'}`}
-          >
-            Cấu hình
-            {activeTab === 'settings' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-t-full" />}
-          </button>
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] bg-gray-50 dark:bg-zinc-950">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 shrink-0">
+        <div className="sticky top-[73px] p-6">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Quản trị</h2>
+          <nav className="space-y-1.5">
+            {[
+              { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
+              { id: 'products', label: 'Sản phẩm', icon: Package },
+              { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+              { id: 'homepage', label: 'Giao diện', icon: Palette },
+              { id: 'discounts', label: 'Mã giảm giá', icon: Ticket },
+              { id: 'settings', label: 'Cấu hình', icon: Settings },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-500'
+                      : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" /> {tab.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      </div>
+      </aside>
 
-      {/* Tab Content: Overview */}
+      {/* Main Content */}
+      <main className="flex-1 p-6 md:p-10 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto">
+          {/* Tab Content: Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -302,6 +316,41 @@ export default function AdminDashboard() {
                           Mã: {order.discountCode}
                         </div>
                       )}
+                      {order.paymentMethod === 'vietqr' ? (
+                        <div className="mt-2">
+                          {order.paymentStatus === 'pending' ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-block px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-500 text-[10px] font-bold rounded-full w-fit">
+                                Chờ chuyển khoản
+                              </span>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
+                                    toast.success('Đã xác nhận thanh toán');
+                                  } catch (error) {
+                                    handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
+                                    toast.error('Lỗi khi xác nhận thanh toán');
+                                  }
+                                }}
+                                className="text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded transition-colors w-fit"
+                              >
+                                Xác nhận đã nhận
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="inline-block px-2 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-500 text-[10px] font-bold rounded-full w-fit">
+                              Đã thanh toán
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mt-2">
+                          <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-bold rounded-full w-fit">
+                            Thanh toán COD
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <select
@@ -348,10 +397,65 @@ export default function AdminDashboard() {
                           }).join('\n');
                           alert(`Chi tiết đơn hàng:\nKhách: ${order.shippingInfo.fullName}\nSĐT: ${order.shippingInfo.phone}\nĐịa chỉ: ${order.shippingInfo.address}\nGhi chú: ${order.shippingInfo.notes || 'Không có'}\n\nSản phẩm:\n${itemsList}\n\nTạm tính: ${order.totalAmount.toLocaleString('vi-VN')}đ${discountInfo}\nTổng cộng: ${finalTotal.toLocaleString('vi-VN')}đ`);
                         }}
-                        className="text-sm text-blue-600 dark:text-blue-500 hover:underline"
+                        className="text-sm text-blue-600 dark:text-blue-500 hover:underline block ml-auto mb-2"
                       >
                         Chi tiết
                       </button>
+
+                      <div className="flex flex-col items-end gap-1 mt-2">
+                        {order.trackingCode && !editingTracking[order.id] ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                              {order.trackingCode}
+                            </span>
+                            <button
+                              onClick={() => {
+                                handleTrackingDelete(order.id);
+                              }}
+                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              title="Xóa mã"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! }));
+                                setEditingTracking(prev => ({ ...prev, [order.id]: true }));
+                              }}
+                              className="text-gray-400 hover:text-blue-500 transition-colors"
+                              title="Sửa mã"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              placeholder="Mã SPXVN..."
+                              value={trackingInputs[order.id] || ''}
+                              onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                              className="border border-gray-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-24 bg-transparent text-gray-900 dark:text-white focus:border-blue-500 outline-none"
+                            />
+                            <button
+                              onClick={() => handleTrackingSave(order.id)}
+                              disabled={!trackingInputs[order.id]?.trim()}
+                              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:dark:bg-zinc-700 text-white px-2 py-1 rounded text-xs transition-colors"
+                            >
+                              Lưu
+                            </button>
+                            {editingTracking[order.id] && (
+                              <button
+                                onClick={() => setEditingTracking(prev => ({ ...prev, [order.id]: false }))}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-1"
+                                title="Hủy"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -618,7 +722,8 @@ export default function AdminDashboard() {
       {activeTab === 'settings' && (
         <AdminSettings />
       )}
-
+        </div>
+      </main>
     </div>
   );
 }
