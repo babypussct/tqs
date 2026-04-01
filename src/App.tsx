@@ -146,7 +146,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 flex flex-col transition-colors duration-200">
+          <div className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 transition-colors duration-200">
             <Header 
               cartCount={cartCount}
               onOpenCart={() => setIsCartOpen(true)}

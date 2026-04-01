@@ -22,7 +22,11 @@ export default function Home({ onAddToCart }: HomeProps) {
   return (
     <div className="bg-gray-50 dark:bg-zinc-950 pb-12 transition-colors duration-200">
       {!configLoading && <Hero data={config.hero} />}
-      {!configLoading && <TrustBadges badges={config.trustBadges} />}
+      {!configLoading && (
+        <div className="mt-0">
+          <TrustBadges badges={config.trustBadges} />
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         {loading ? (
