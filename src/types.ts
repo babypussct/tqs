@@ -23,11 +23,36 @@ export interface HomeSection {
   typeFilter: string;
 }
 
+export interface HeroEffects {
+  particleEnabled: boolean;
+  particleCount: number;           // 20–200
+  particleColor: 'gold' | 'red' | 'white' | 'mixed';
+  particleIntensity: number;       // 0.1–1.0 (opacity multiplier)
+  particleDirection: 'up' | 'down' | 'random' | 'float'; // movement direction
+  particleSizeMin: number;         // 0.5–5
+  particleSizeMax: number;         // 1–8
+  particleSpread: number;          // 0.1–2.0 horizontal drift
+  // Animation layer: choose between particles, video, or none
+  animationLayer: 'particles' | 'video' | 'none';
+  videoUrl?: string;               // MP4/WebM URL for video overlay
+  videoBlend: 'screen' | 'lighten' | 'overlay' | 'multiply' | 'normal';
+  videoOpacity: number;            // 0.1–1.0
+  videoLoop: boolean;
+  overlayStrength: number;         // 0–100 (%)
+  overlayStyle: 'dark' | 'gold' | 'red' | 'custom';
+  overlayCustomColor?: string;     // hex color
+  glowEnabled: boolean;
+  glowColor: 'gold' | 'red' | 'white';
+  animationPreset: 'cinematic' | 'epic' | 'subtle' | 'off';
+  objectPosition: 'center' | 'top' | 'bottom' | 'left' | 'right';
+}
+
 export interface HomepageConfig {
   hero: {
     main: Banner;
     side1: Banner;
     side2: Banner;
+    effects?: HeroEffects;
   };
   trustBadges: TrustBadge[];
   sections: HomeSection[];

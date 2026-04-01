@@ -11,6 +11,7 @@ import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, 
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
+import AdminHeroEditor from './admin/AdminHeroEditor';
 import { useProductConfig } from '../hooks/useProductConfig';
 
 export default function AdminDashboard() {
@@ -475,241 +476,152 @@ export default function AdminDashboard() {
 
       {/* Tab Content: Homepage */}
       {activeTab === 'homepage' && (
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
+        <div className="space-y-6">
+          {/* Header */}
+          <div
+            className="rounded-2xl p-6 flex items-center justify-between"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,200,50,0.08) 0%, rgba(200,30,30,0.06) 100%)',
+              border: '1px solid rgba(255,200,50,0.12)',
+            }}
+          >
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tùy chỉnh Trang chủ</h2>
-              <p className="text-gray-500 dark:text-zinc-400 text-sm mt-1">Thay đổi banner, danh mục và các thông tin nổi bật trên trang chủ.</p>
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Palette className="w-5 h-5 text-amber-400" />
+                Thiết kế Trang Chủ
+              </h2>
+              <p className="text-zinc-400 text-sm mt-1">Tuỳ chỉnh hình ảnh nền, hiệu ứng động và nội dung hero section.</p>
             </div>
-            <button 
+            <button
               onClick={async () => {
                 try {
                   await setDoc(doc(db, 'settings', 'homepage'), homeConfig);
-                  alert('Đã lưu cấu hình trang chủ thành công!');
+                  toast.success('Đã lưu cấu hình trang chủ!');
                 } catch (error) {
                   console.error(error);
-                  alert('Lỗi khi lưu cấu hình.');
+                  toast.error('Lỗi khi lưu cấu hình.');
                 }
               }}
-              className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-medium transition-colors shadow-lg shadow-red-600/20"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg, #CC0000 0%, #FF3333 100%)',
+                boxShadow: '0 4px 20px rgba(200,30,30,0.4)',
+                color: '#fff',
+              }}
             >
-              <Save className="w-5 h-5" /> Lưu Thay Đổi
+              <Save className="w-4 h-4" /> Lưu Thay Đổi
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Hero Main Banner */}
-            <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                <LayoutTemplate className="w-5 h-5 text-blue-500" /> Banner Chính
+          {/* Two-column: Editor (left) + Sections/Badges (right) */}
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            {/* Hero Editor — dark themed */}
+            <div
+              className="xl:col-span-3 rounded-2xl p-6"
+              style={{
+                background: 'rgba(10,5,0,0.6)',
+                border: '1px solid rgba(255,200,50,0.1)',
+              }}
+            >
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> Hero Section
               </h3>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">URL Hình ảnh</label>
-                <input type="text" value={homeConfig.hero.main.image} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, main: {...homeConfig.hero.main, image: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Nhãn (Badge)</label>
-                  <input type="text" value={homeConfig.hero.main.badge || ''} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, main: {...homeConfig.hero.main, badge: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Tiêu đề</label>
-                  <input type="text" value={homeConfig.hero.main.title} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, main: {...homeConfig.hero.main, title: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Phụ đề (Màu đỏ)</label>
-                <input type="text" value={homeConfig.hero.main.subtitle} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, main: {...homeConfig.hero.main, subtitle: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Mô tả</label>
-                <textarea rows={2} value={homeConfig.hero.main.description || ''} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, main: {...homeConfig.hero.main, description: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-              </div>
+              <AdminHeroEditor homeConfig={homeConfig} setHomeConfig={setHomeConfig} />
             </div>
 
-            {/* Hero Side Banners */}
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                  <ImageIcon className="w-5 h-5 text-emerald-500" /> Banner Phụ 1
-                </h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">URL Hình ảnh</label>
-                  <input type="text" value={homeConfig.hero.side1.image} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side1: {...homeConfig.hero.side1, image: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Tiêu đề</label>
-                    <input type="text" value={homeConfig.hero.side1.title} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side1: {...homeConfig.hero.side1, title: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Phụ đề</label>
-                    <input type="text" value={homeConfig.hero.side1.subtitle} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side1: {...homeConfig.hero.side1, subtitle: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                </div>
-              </div>
+            {/* Right column: Sections + Trust Badges */}
+            <div className="xl:col-span-2 space-y-5">
 
-              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                  <ImageIcon className="w-5 h-5 text-amber-500" /> Banner Phụ 2
-                </h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">URL Hình ảnh</label>
-                  <input type="text" value={homeConfig.hero.side2.image} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side2: {...homeConfig.hero.side2, image: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Tiêu đề</label>
-                    <input type="text" value={homeConfig.hero.side2.title} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side2: {...homeConfig.hero.side2, title: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Phụ đề</label>
-                    <input type="text" value={homeConfig.hero.side2.subtitle} onChange={e => setHomeConfig({...homeConfig, hero: {...homeConfig.hero, side2: {...homeConfig.hero.side2, subtitle: e.target.value}}})} className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Sections */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Box className="w-5 h-5 text-purple-500" /> Các Khối Sản Phẩm
-              </h3>
-              <button 
-                onClick={() => {
-                  setHomeConfig({
-                    ...homeConfig, 
-                    sections: [...homeConfig.sections, { id: `section-${Date.now()}`, title: 'Khối mới', typeFilter: 'all', icon: 'Box', iconColorClass: 'text-gray-500 dark:text-zinc-500' }]
-                  });
-                }}
-                className="text-sm bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Thêm khối
-              </button>
-            </div>
-            <div className="space-y-4">
-              {homeConfig.sections.map((section, index) => (
-                <div key={section.id} className="relative grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-10">
+
+              {/* Sections */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Box className="w-4 h-4 text-purple-500" /> Khối Sản Phẩm
+                  </h3>
                   <button 
                     onClick={() => {
-                      const newSections = [...homeConfig.sections];
-                      newSections.splice(index, 1);
-                      setHomeConfig({...homeConfig, sections: newSections});
+                      setHomeConfig({
+                        ...homeConfig, 
+                        sections: [...homeConfig.sections, { id: `section-${Date.now()}`, title: 'Khối mới', typeFilter: 'all', icon: 'Box', iconColorClass: 'text-gray-500 dark:text-zinc-500' }]
+                      });
                     }}
-                    className="absolute top-2 right-2 p-1.5 text-gray-500 dark:text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                    className="text-xs bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" /> Thêm
                   </button>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Tiêu đề khối</label>
-                    <input type="text" value={section.title} onChange={e => {
-                      const newSections = [...homeConfig.sections];
-                      newSections[index].title = e.target.value;
-                      setHomeConfig({...homeConfig, sections: newSections});
-                    }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Icon (Lucide)</label>
-                    <input type="text" value={section.icon} onChange={e => {
-                      const newSections = [...homeConfig.sections];
-                      newSections[index].icon = e.target.value;
-                      setHomeConfig({...homeConfig, sections: newSections});
-                    }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Màu Icon (Tailwind)</label>
-                    <input type="text" value={section.iconColorClass} onChange={e => {
-                      const newSections = [...homeConfig.sections];
-                      newSections[index].iconColorClass = e.target.value;
-                      setHomeConfig({...homeConfig, sections: newSections});
-                    }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Lọc theo loại</label>
-                    <select value={section.typeFilter} onChange={e => {
-                      const newSections = [...homeConfig.sections];
-                      newSections[index].typeFilter = e.target.value;
-                      setHomeConfig({...homeConfig, sections: newSections});
-                    }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500 appearance-none">
-                      <option value="all">Tất cả</option>
-                      <option value="base">Bản Cơ Bản</option>
-                      <option value="expansion">Bản Mở Rộng</option>
-                      <option value="accessory">Phụ Kiện</option>
-                      <option value="combo">Combo</option>
-                      {productConfig.types?.map(type => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="space-y-3">
+                  {homeConfig.sections.map((section, index) => (
+                    <div key={section.id} className="relative grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9">
+                      <button 
+                        onClick={() => {
+                          const newSections = [...homeConfig.sections];
+                          newSections.splice(index, 1);
+                          setHomeConfig({...homeConfig, sections: newSections});
+                        }}
+                        className="absolute top-2 right-2 p-1 text-gray-400 dark:text-zinc-600 hover:text-red-500 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="col-span-2">
+                        <input type="text" placeholder="Tiêu đề khối" value={section.title} onChange={e => {
+                          const ns = [...homeConfig.sections]; ns[index].title = e.target.value; setHomeConfig({...homeConfig, sections: ns});
+                        }} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
+                      </div>
+                      <input type="text" placeholder="Icon (e.g. Flame)" value={section.icon} onChange={e => {
+                        const ns = [...homeConfig.sections]; ns[index].icon = e.target.value; setHomeConfig({...homeConfig, sections: ns});
+                      }} className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500" />
+                      <select value={section.typeFilter} onChange={e => {
+                        const ns = [...homeConfig.sections]; ns[index].typeFilter = e.target.value; setHomeConfig({...homeConfig, sections: ns});
+                      }} className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500 appearance-none">
+                        <option value="all">Tất cả</option>
+                        <option value="base">Bản Cơ Bản</option>
+                        <option value="expansion">Bản Mở Rộng</option>
+                        <option value="accessory">Phụ Kiện</option>
+                        <option value="combo">Combo</option>
+                        {productConfig.types?.map(type => <option key={type} value={type}>{type}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Trust Badges */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-pink-500" /> Cam Kết (Trust Badges)
-              </h3>
-              <button 
-                onClick={() => {
-                  setHomeConfig({
-                    ...homeConfig, 
-                    trustBadges: [...homeConfig.trustBadges, { icon: 'Shield', title: 'Cam kết mới', desc: 'Mô tả cam kết', colorClass: 'text-emerald-500' }]
-                  });
-                }}
-                className="text-sm bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Thêm cam kết
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {homeConfig.trustBadges.map((badge, index) => (
-                <div key={index} className="relative space-y-3 p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-10">
+              {/* Trust Badges */}
+              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-pink-500" /> Cam Kết
+                  </h3>
                   <button 
-                    onClick={() => {
-                      const newBadges = [...homeConfig.trustBadges];
-                      newBadges.splice(index, 1);
-                      setHomeConfig({...homeConfig, trustBadges: newBadges});
-                    }}
-                    className="absolute top-2 right-2 p-1.5 text-gray-500 dark:text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                    onClick={() => setHomeConfig({ ...homeConfig, trustBadges: [...homeConfig.trustBadges, { icon: 'Shield', title: 'Cam kết mới', desc: 'Mô tả cam kết', colorClass: 'text-emerald-500' }] })}
+                    className="text-xs bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" /> Thêm
                   </button>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Tiêu đề</label>
-                      <input type="text" value={badge.title} onChange={e => {
-                        const newBadges = [...homeConfig.trustBadges];
-                        newBadges[index].title = e.target.value;
-                        setHomeConfig({...homeConfig, trustBadges: newBadges});
-                      }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Icon (Lucide)</label>
-                      <input type="text" value={badge.icon} onChange={e => {
-                        const newBadges = [...homeConfig.trustBadges];
-                        newBadges[index].icon = e.target.value;
-                        setHomeConfig({...homeConfig, trustBadges: newBadges});
-                      }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-zinc-400 mb-1.5">Mô tả</label>
-                    <input type="text" value={badge.desc} onChange={e => {
-                      const newBadges = [...homeConfig.trustBadges];
-                      newBadges[index].desc = e.target.value;
-                      setHomeConfig({...homeConfig, trustBadges: newBadges});
-                    }} className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
+                <div className="space-y-3">
+                  {homeConfig.trustBadges.map((badge, index) => (
+                    <div key={index} className="relative p-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9">
+                      <button 
+                        onClick={() => { const nb = [...homeConfig.trustBadges]; nb.splice(index, 1); setHomeConfig({...homeConfig, trustBadges: nb}); }}
+                        className="absolute top-2 right-2 p-1 text-gray-400 dark:text-zinc-600 hover:text-red-500 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <input type="text" placeholder="Tiêu đề" value={badge.title} onChange={e => {
+                        const nb = [...homeConfig.trustBadges]; nb[index].title = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb});
+                      }} className="w-full mb-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
+                      <input type="text" placeholder="Mô tả" value={badge.desc} onChange={e => {
+                        const nb = [...homeConfig.trustBadges]; nb[index].desc = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb});
+                      }} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div> {/* end right col */}
+          </div> {/* end 2-col grid */}
         </div>
       )}
 
