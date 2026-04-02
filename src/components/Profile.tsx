@@ -4,13 +4,16 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag, QrCode, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePaymentConfig } from '../hooks/usePaymentConfig';
 
 export default function Profile() {
   const { user } = useAuth();
+  const { paymentConfig } = usePaymentConfig();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedPaymentOrderId, setExpandedPaymentOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -223,6 +226,76 @@ export default function Profile() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Render Retry QR Payment Section */}
+                    {order.paymentMethod === 'vietqr' && order.paymentStatus === 'pending' && paymentConfig && paymentConfig.isActive && (
+                      <div className="mt-6 border border-emerald-100 dark:border-emerald-500/20 rounded-xl overflow-hidden">
+                        <button 
+                          onClick={() => setExpandedPaymentOrderId(expandedPaymentOrderId === order.id ? null : order.id)}
+                          className="w-full bg-emerald-50 hover:bg-emerald-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 p-4 transition-colors flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 rounded-lg">
+                              <QrCode className="w-5 h-5" />
+                            </div>
+                            <div className="text-left">
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white">Thanh toán bổ sung</h4>
+                              <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">Xác nhận thanh toán để hoàn tất đơn hàng</p>
+                            </div>
+                          </div>
+                          {expandedPaymentOrderId === order.id ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        </button>
+                        
+                        {expandedPaymentOrderId === order.id && (
+                          <div className="p-4 sm:p-6 bg-white dark:bg-zinc-900 border-t border-emerald-100 dark:border-emerald-500/20 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                            <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shrink-0">
+                              <img 
+                                src={`https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.template}.png?amount=${order.finalAmount || order.totalAmount}&addInfo=${order.id}&accountName=${encodeURIComponent(paymentConfig.accountName)}`} 
+                                alt="VietQR" 
+                                className="w-48 h-48 object-contain rounded-lg"
+                              />
+                            </div>
+                            
+                            <div className="flex-1 w-full space-y-3">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500 dark:text-zinc-400">Ngân hàng:</span>
+                                <span className="font-bold text-gray-900 dark:text-white">{paymentConfig.bankId}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm group">
+                                <span className="text-gray-500 dark:text-zinc-400">Số tài khoản:</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-gray-900 dark:text-white">{paymentConfig.accountNumber}</span>
+                                  <button onClick={() => { navigator.clipboard.writeText(paymentConfig.accountNumber); toast.success('Đã copy số tài khoản'); }} className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between text-sm group">
+                                <span className="text-gray-500 dark:text-zinc-400">Mã đơn (Nội dung):</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{order.id}</span>
+                                  <button onClick={() => { navigator.clipboard.writeText(order.id); toast.success('Đã copy nội dung'); }} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between text-sm group">
+                                <span className="text-gray-500 dark:text-zinc-400">Số tiền:</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-red-600 dark:text-red-500">{(order.finalAmount || order.totalAmount).toLocaleString('vi-VN')}</span>
+                                  <button onClick={() => { navigator.clipboard.writeText((order.finalAmount || order.totalAmount).toString()); toast.success('Đã copy số tiền'); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800 leading-relaxed font-medium">
+                                {paymentConfig.paymentNote}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

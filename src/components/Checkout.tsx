@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 
@@ -268,10 +268,46 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                 alt="VietQR" 
                 className="w-64 h-64 object-contain rounded-lg"
               />
+              
+              <div className="w-full mt-6 space-y-3 bg-white dark:bg-zinc-900 p-4 rounded-lg border border-gray-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 dark:text-zinc-400">Ngân hàng:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{paymentConfig.bankId}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm group">
+                  <span className="text-gray-500 dark:text-zinc-400">Mã đơn (Nội dung):</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{createdOrderId}</span>
+                    <button onClick={() => { navigator.clipboard.writeText(createdOrderId); toast.success('Đã copy nội dung'); }} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm group">
+                  <span className="text-gray-500 dark:text-zinc-400">Số tài khoản:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-gray-900 dark:text-white">{paymentConfig.accountNumber}</span>
+                    <button onClick={() => { navigator.clipboard.writeText(paymentConfig.accountNumber); toast.success('Đã copy số tài khoản'); }} className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm group">
+                  <span className="text-gray-500 dark:text-zinc-400">Số tiền:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-red-600 dark:text-red-500">{(finalAmount || totalAmount).toLocaleString('vi-VN')}</span>
+                    <button onClick={() => { navigator.clipboard.writeText((finalAmount || totalAmount).toString()); toast.success('Đã copy số tiền'); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-xs text-center text-gray-500 dark:text-zinc-400 mt-4 leading-relaxed font-medium">
                 {paymentConfig.paymentNote}
               </p>
             </div>
+
             
             <div className="space-y-3">
               <button
