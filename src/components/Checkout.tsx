@@ -7,6 +7,7 @@ import { CartItem, DiscountCode } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePaymentConfig } from '../hooks/usePaymentConfig';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -16,10 +17,17 @@ interface CheckoutProps {
 export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { paymentConfig, loading: paymentLoading } = usePaymentConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
+
+  useEffect(() => {
+    if (paymentConfig && !paymentConfig.isActive && paymentMethod === 'vietqr') {
+      setPaymentMethod('cod');
+    }
+  }, [paymentConfig, paymentMethod]);
   
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.displayName || '',
@@ -254,12 +262,15 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
               Vui lòng quét mã QR bên dưới bằng ứng dụng ngân hàng của bạn để thanh toán.
             </p>
             
-            <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 mb-6 flex justify-center">
+            <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 mb-6 flex flex-col items-center justify-center">
               <img 
-                src={`https://img.vietqr.io/image/MB-0123456789-compact2.png?amount=${finalAmount || totalAmount}&addInfo=${createdOrderId}&accountName=TQS_STORE`} 
+                src={`https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.template}.png?amount=${finalAmount || totalAmount}&addInfo=${createdOrderId}&accountName=${encodeURIComponent(paymentConfig.accountName)}`} 
                 alt="VietQR" 
                 className="w-64 h-64 object-contain rounded-lg"
               />
+              <p className="text-xs text-center text-gray-500 dark:text-zinc-400 mt-4 leading-relaxed font-medium">
+                {paymentConfig.paymentNote}
+              </p>
             </div>
             
             <div className="space-y-3">
@@ -405,20 +416,22 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                     </div>
                   </label>
                   
-                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'vietqr' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="vietqr"
-                      checked={paymentMethod === 'vietqr'}
-                      onChange={() => setPaymentMethod('vietqr')}
-                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
-                    />
-                    <div className="ml-3">
-                      <span className="block text-sm font-medium text-gray-900 dark:text-white">Chuyển khoản qua VietQR</span>
-                      <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Quét mã QR bằng ứng dụng ngân hàng</span>
-                    </div>
-                  </label>
+                  {paymentConfig.isActive && (
+                    <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'vietqr' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value="vietqr"
+                        checked={paymentMethod === 'vietqr'}
+                        onChange={() => setPaymentMethod('vietqr')}
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <div className="ml-3">
+                        <span className="block text-sm font-medium text-gray-900 dark:text-white">Chuyển khoản qua VietQR</span>
+                        <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Quét mã QR bằng ứng dụng ngân hàng</span>
+                      </div>
+                    </label>
+                  )}
                 </div>
               </div>
             </form>
