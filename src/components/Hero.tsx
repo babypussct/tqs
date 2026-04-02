@@ -166,11 +166,16 @@ export default function Hero({ data }: HeroProps) {
   ]);
 
   const animationStyle: React.CSSProperties = {
-    left: `${effects.animPositionX ?? 0}%`,
     top: `${effects.animPositionY ?? 0}%`,
     width: `${effects.animWidth ?? 100}%`,
     height: `${effects.animHeight ?? 100}%`,
   };
+
+  if (effects.animAnchorX === 'right') {
+    animationStyle.right = `${effects.animPositionX ?? 0}%`;
+  } else {
+    animationStyle.left = `${effects.animPositionX ?? 0}%`;
+  }
 
   const animVisibilityClass = effects.hideAnimationOnMobile ? 'hidden md:block' : '';
 
@@ -344,7 +349,7 @@ export default function Hero({ data }: HeroProps) {
       </div>
 
       {/* Floating Side Cards (góc phải) */}
-      <div className="absolute right-6 lg:right-12 top-1/2 -translate-y-1/2 z-20 hidden lg:flex flex-col gap-4">
+      <div className="absolute right-6 lg:right-12 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-4 pointer-events-auto">
         {[data.side1, data.side2].map((side, i) => (
           <div
             key={i}

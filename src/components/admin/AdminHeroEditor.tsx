@@ -434,9 +434,14 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             
             {/* Vị trí và kích thước */}
             <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mr-2">Căn lề (Neo toạ độ 0)</p>
+                <button onClick={() => updateEffects({ animAnchorX: 'left' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX !== 'right' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-transparent text-zinc-500 border border-zinc-700/50 hover:bg-white/5'}`}>Lề Trái</button>
+                <button onClick={() => updateEffects({ animAnchorX: 'right' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX === 'right' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-transparent text-zinc-500 border border-zinc-700/50 hover:bg-white/5'}`}>Lề Phải</button>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <Slider label="Toạ độ X (Trái)" value={effects.animPositionX ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionX: v })} color="#10B981" />
-                <Slider label="Toạ độ Y (Trên)" value={effects.animPositionY ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionY: v })} color="#10B981" />
+                <Slider label={effects.animAnchorX === 'right' ? 'Toạ độ X (Từ phải)' : 'Toạ độ X (Từ trái)'} value={effects.animPositionX ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionX: v })} color="#10B981" />
+                <Slider label="Toạ độ Y (Từ trên)" value={effects.animPositionY ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionY: v })} color="#10B981" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Slider label="Độ rộng phủ" value={effects.animWidth ?? 100} min={10} max={100} unit="%" onChange={v => updateEffects({ animWidth: v })} color="#3B82F6" />
@@ -696,17 +701,17 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             <div key={side}>
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Card {i + 1}</p>
               <div className="space-y-3">
-                <ImageField label="URL ảnh" value={homeConfig.hero[side].image} onChange={v => updateSide(side, { image: v })} onClear={() => updateSide(side, { image: '' })} />
+                <ImageField label="URL ảnh" value={currentConcept[side].image} onChange={v => updateSide(side, { image: v })} onClear={() => updateSide(side, { image: '' })} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Input label="Tiêu đề" value={homeConfig.hero[side].title} onChange={v => updateSide(side, { title: v })} />
-                  <Input label="Phụ đề" value={homeConfig.hero[side].subtitle} onChange={v => updateSide(side, { subtitle: v })} />
+                  <Input label="Tiêu đề" value={currentConcept[side].title} onChange={v => updateSide(side, { title: v })} />
+                  <Input label="Phụ đề" value={currentConcept[side].subtitle} onChange={v => updateSide(side, { subtitle: v })} />
                 </div>
                 {/* mini preview */}
                 <div className="h-16 rounded-xl overflow-hidden relative border border-white/5">
-                  {homeConfig.hero[side].image && <img src={homeConfig.hero[side].image} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />}
+                  {currentConcept[side].image && <img src={currentConcept[side].image} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-2.5">
-                    <p className="text-white text-xs font-bold">{homeConfig.hero[side].title}</p>
-                    <p className="text-amber-400 text-[10px]">{homeConfig.hero[side].subtitle}</p>
+                    <p className="text-white text-xs font-bold">{currentConcept[side].title}</p>
+                    <p className="text-amber-400 text-[10px]">{currentConcept[side].subtitle}</p>
                   </div>
                 </div>
               </div>

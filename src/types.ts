@@ -49,6 +49,7 @@ export interface HeroEffects {
   animPositionY?: number;          // 0-100 (%)
   animWidth?: number;              // 0-100 (%)
   animHeight?: number;             // 0-100 (%)
+  animAnchorX?: 'left' | 'right';  // default is left
   hideAnimationOnMobile?: boolean;
 }
 

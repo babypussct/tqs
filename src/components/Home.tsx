@@ -19,9 +19,14 @@ export default function Home({ onAddToCart }: HomeProps) {
 
   const loading = productsLoading || configLoading;
 
+  const activeConcepts = config.heroConcepts?.filter(c => c.isActive) || [];
+  const activeHeroData = activeConcepts.length > 0
+    ? activeConcepts[Math.floor(Math.random() * activeConcepts.length)] // Randomly pick one active concept
+    : config.hero; // Fallback to regular hero if none active
+
   return (
     <div className="bg-gray-50 dark:bg-zinc-950 pb-12 transition-colors duration-200">
-      {!configLoading && <Hero data={config.hero} />}
+      {!configLoading && <Hero data={activeHeroData as typeof config.hero} />}
       {!configLoading && (
         <div className="mt-0">
           <TrustBadges badges={config.trustBadges} />
