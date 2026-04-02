@@ -109,6 +109,16 @@ export default function Profile() {
               const statusConfig = getStatusConfig(order.status);
               const StatusIcon = statusConfig.icon;
               
+              const displayTrackingCode = order.trackingCode?.includes('spx.vn/track?') 
+                ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] 
+                : order.trackingCode?.startsWith('http') 
+                  ? (order.trackingCode.match(/(SPX[A-Z0-9]+)/i)?.[1] || 'Link Vận Đơn') 
+                  : order.trackingCode;
+
+              const trackingUrl = order.trackingCode?.startsWith('http') 
+                ? order.trackingCode 
+                : `https://spx.vn/track?${order.trackingCode}`;
+              
               return (
                 <div key={order.id} className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
                   <div className="bg-gray-50 dark:bg-zinc-900/80 p-4 sm:px-6 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -132,20 +142,29 @@ export default function Profile() {
                         <div>
                           <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-1">Mã vận đơn SPX:</p>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-lg font-bold text-blue-900 dark:text-blue-100">{order.trackingCode}</span>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(order.trackingCode!);
-                                toast.success('Đã copy mã vận đơn');
-                              }}
-                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
+                            <span 
+                              className="font-mono text-lg font-bold text-blue-900 dark:text-blue-100 truncate max-w-[200px] sm:max-w-none" 
+                              title={displayTrackingCode}
                             >
-                              Copy
-                            </button>
+                              {displayTrackingCode}
+                            </span>
+                            {displayTrackingCode && displayTrackingCode !== 'Link Vận Đơn' && (
+                              <button 
+                                onClick={() => {
+                                  if (displayTrackingCode) {
+                                    navigator.clipboard.writeText(displayTrackingCode);
+                                    toast.success('Đã copy mã vận đơn');
+                                  }
+                                }}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
+                              >
+                                Copy
+                              </button>
+                            )}
                           </div>
                         </div>
                         <a 
-                          href={`https://spx.vn/track?${order.trackingCode}`}
+                          href={trackingUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors text-center shadow-sm shadow-blue-600/20"

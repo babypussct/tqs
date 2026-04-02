@@ -29,8 +29,18 @@ export default function AdminDashboard() {
   const [homeConfig, setHomeConfig] = useState<HomepageConfig>(initialConfig);
 
   const handleTrackingSave = async (orderId: string) => {
-    const code = trackingInputs[orderId]?.trim();
+    let code = trackingInputs[orderId]?.trim();
     if (!code) return;
+
+    // Extract SPX tracking code if user pasted the full tracking URL
+    if (code.includes('spx.vn/track?')) {
+      code = code.split('spx.vn/track?')[1].split('&')[0];
+    } else if (code.startsWith('http')) {
+      // Fallback matching logic for other ways code might be in a URL
+      const match = code.match(/(SPX[A-Z0-9]+)/i);
+      if (match) code = match[1];
+    }
+
     try {
       await updateDoc(doc(db, 'orders', orderId), { trackingCode: code });
       setEditingTracking(prev => ({ ...prev, [orderId]: false }));
@@ -406,8 +416,11 @@ export default function AdminDashboard() {
                       <div className="flex flex-col items-end gap-1 mt-2">
                         {order.trackingCode && !editingTracking[order.id] ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded">
-                              {order.trackingCode}
+                            <span 
+                              className="text-xs font-mono bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded max-w-[150px] truncate"
+                              title={order.trackingCode}
+                            >
+                              {order.trackingCode.includes('spx.vn/track?') ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] : order.trackingCode}
                             </span>
                             <button
                               onClick={() => {
@@ -433,7 +446,7 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-1">
                             <input
                               type="text"
-                              placeholder="Mã SPXVN..."
+                              placeholder="Mã SPX hoặc Link..."
                               value={trackingInputs[order.id] || ''}
                               onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
                               className="border border-gray-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-24 bg-transparent text-gray-900 dark:text-white focus:border-blue-500 outline-none"
