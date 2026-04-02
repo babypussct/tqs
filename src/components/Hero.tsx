@@ -176,20 +176,42 @@ export default function Hero({ data }: HeroProps) {
 
   return (
     <div className="relative w-full h-screen min-h-[600px] overflow-hidden">
-      {/* Background Image */}
-      {data.main.image && (
-        <img
-          src={data.main.image}
-          alt={data.main.title}
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-          style={{ objectPosition: effects.objectPosition }}
-          referrerPolicy="no-referrer"
-        />
-      )}
+      {/* ── Background Media Container ── */}
+      <div className="absolute inset-0 z-0">
+        {/* Layer 1: Video (Bottom, hidden on mobile) */}
+        {effects.animationLayer === 'video' && effects.videoUrl && (
+          <div className="absolute pointer-events-none hidden md:block" style={animationStyle}>
+            <video
+              ref={videoRef}
+              src={effects.videoUrl}
+              autoPlay
+              muted
+              loop={effects.videoLoop !== false}
+              playsInline
+              className="w-full h-full object-cover"
+              style={{
+                mixBlendMode: (effects.videoBlend || 'normal') as React.CSSProperties['mixBlendMode'],
+                opacity: effects.videoOpacity ?? 0.8,
+              }}
+            />
+          </div>
+        )}
+
+        {/* Layer 2: Image (Top - pre-cut PNG lets video show through) */}
+        {data.main.image && (
+          <img
+            src={data.main.image}
+            alt={data.main.title}
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-700 z-10"
+            style={{ objectPosition: effects.objectPosition }}
+            referrerPolicy="no-referrer"
+          />
+        )}
+      </div>
 
       {/* Gradient Overlays — driven by effects config */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-10"
         style={{
           background: (() => {
             const s = effects.overlayStrength / 100;
@@ -202,33 +224,15 @@ export default function Hero({ data }: HeroProps) {
           })()
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/10 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/10 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-10" />
 
-      {/* ── Animation Layer: Particle Canvas or Video ── */}
+      {/* ── Animation Layer: Particle Canvas ── */}
       {effects.animationLayer === 'particles' && (
         <div className={`absolute pointer-events-none z-10 ${animVisibilityClass}`} style={animationStyle}>
           <canvas
             ref={canvasRef}
             className="w-full h-full"
-          />
-        </div>
-      )}
-
-      {effects.animationLayer === 'video' && effects.videoUrl && (
-        <div className={`absolute pointer-events-none z-10 ${animVisibilityClass}`} style={animationStyle}>
-          <video
-            ref={videoRef}
-            src={effects.videoUrl}
-            autoPlay
-            muted
-            loop={effects.videoLoop !== false}
-            playsInline
-            className="w-full h-full object-cover"
-            style={{
-              mixBlendMode: (effects.videoBlend || 'screen') as React.CSSProperties['mixBlendMode'],
-              opacity: effects.videoOpacity ?? 0.8,
-            }}
           />
         </div>
       )}
