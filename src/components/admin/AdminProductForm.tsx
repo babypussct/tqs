@@ -9,8 +9,58 @@ import { toast } from 'sonner';
 import { useProducts } from '../../hooks/useProducts';
 import { useProductConfig } from '../../hooks/useProductConfig';
 import { ImageUploader } from '../ui/ImageUploader';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
+const QuillEditor = ({ value, onChange, placeholder }: { value: string, onChange: (val: string) => void, placeholder?: string }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const quillRef = React.useRef<Quill | null>(null);
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const editorNode = document.createElement('div');
+    containerRef.current.appendChild(editorNode);
+    
+    const quill = new Quill(editorNode, {
+      theme: 'snow',
+      placeholder: placeholder || '',
+      modules: {
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'clean']
+        ]
+      }
+    });
+
+    quillRef.current = quill;
+    
+    if (value) {
+      quill.root.innerHTML = value;
+    }
+
+    quill.on('text-change', () => {
+      onChangeRef.current(quill.root.innerHTML);
+    });
+
+    return () => {
+      quillRef.current = null;
+      if (containerRef.current) containerRef.current.innerHTML = '';
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useEffect(() => {
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      quillRef.current.root.innerHTML = value || '';
+    }
+  }, [value]);
+
+  return <div ref={containerRef} className="quill-container w-full text-gray-900 dark:text-white" />;
+};
 
 export default function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -197,49 +247,47 @@ export default function AdminProductForm() {
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Mô tả chi tiết</label>
               <div className="bg-white dark:bg-zinc-900 rounded-xl overflow-hidden border border-gray-300 dark:border-zinc-700">
-                <ReactQuill 
-                  theme="snow"
+                <QuillEditor 
                   value={editingProduct.description || ''} 
                   onChange={content => setEditingProduct({...editingProduct, description: content})} 
-                  className="w-full text-gray-900 dark:text-white"
                   placeholder="Mô tả chi tiết về sản phẩm, luật chơi cơ bản..."
                 />
                 <style>{`
-                  .quill .ql-container {
+                  .quill-container .ql-container {
                     min-height: 200px;
                     font-size: 1rem;
                     font-family: inherit;
                     background-color: transparent;
                     border: none;
                   }
-                  .quill .ql-toolbar {
+                  .quill-container .ql-toolbar {
                     background-color: #f9fafb;
                     border: none;
                     border-bottom: 1px solid #e5e7eb;
                   }
-                  .dark .quill .ql-toolbar {
+                  .dark .quill-container .ql-toolbar {
                     background-color: #18181b;
                     border-bottom-color: #27272a;
                   }
-                  .dark .quill .ql-toolbar button {
+                  .dark .quill-container .ql-toolbar button {
                     color: #d4d4d8;
                   }
-                  .dark .quill .ql-toolbar .ql-stroke {
+                  .dark .quill-container .ql-toolbar .ql-stroke {
                     stroke: #d4d4d8;
                   }
-                  .dark .quill .ql-toolbar .ql-fill {
+                  .dark .quill-container .ql-toolbar .ql-fill {
                     fill: #d4d4d8;
                   }
-                  .dark .quill .ql-toolbar .ql-picker {
+                  .dark .quill-container .ql-toolbar .ql-picker {
                     color: #d4d4d8;
                   }
-                  .dark .quill .ql-container.ql-snow {
+                  .dark .quill-container .ql-container.ql-snow {
                     border: none;
                   }
-                  .quill .ql-editor {
+                  .quill-container .ql-editor {
                     min-height: 200px;
                   }
-                  .dark .quill .ql-editor.ql-blank::before {
+                  .dark .quill-container .ql-editor.ql-blank::before {
                     color: #71717a;
                   }
                 `}</style>
