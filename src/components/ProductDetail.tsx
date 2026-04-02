@@ -395,69 +395,75 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             {product.stock !== undefined && product.stock <= 0 ? 'Hết hàng' : `Thêm Vào Giỏ Hàng - ${formatPrice(finalTotalPrice)}`}
           </button>
 
-          {/* SEO Description & Specs */}
-          <div className="prose prose-red dark:prose-invert max-w-none">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-zinc-800 pb-2">Thông tin sản phẩm</h3>
-            {product.description ? (
-              <div 
-                className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6 ck-content"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-              />
-            ) : (
-              <p className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6">
-                Sản phẩm boardgame Tam Quốc Sát chính hãng.
-              </p>
-            )}
+        </div>
+      </div>
 
-            {product.specifications && product.specifications.length > 0 ? (
-              <div className="bg-gray-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 mb-6">
-                <h4 className="text-gray-900 dark:text-white font-bold mb-4">Thông số kỹ thuật:</h4>
-                <ul className="space-y-3 text-gray-700 dark:text-zinc-300 text-sm">
-                  {product.specifications.map((spec, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">{spec.name}:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{spec.value}</span>
-                    </li>
-                  ))}
-                  {product.size && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">Kích thước:</span>
-                      <span className="font-medium text-amber-600 dark:text-amber-400">{product.size} (Cần mua sleeves đúng size này)</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            ) : product.specs ? (
-              <div className="bg-gray-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 mb-6">
-                <h4 className="text-gray-900 dark:text-white font-bold mb-4">Thông số kỹ thuật:</h4>
-                <ul className="space-y-3 text-gray-700 dark:text-zinc-300 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">Số lượng thẻ:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{product.specs.cardCount} lá</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">Kích thước:</span>
-                    <span className="font-medium text-amber-600 dark:text-amber-400">{product.size} (Cần mua sleeves đúng size này)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">Chất liệu:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{product.specs.material}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0">Phe phái:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{product.specs.factions?.join(', ')}</span>
-                  </li>
-                </ul>
-              </div>
-            ) : null}
+      {/* SEO Description & Specs (Full Width Section) */}
+      <div className="mt-16 bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 lg:p-10 shadow-sm max-w-5xl mx-auto">
+        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-8 border-b-2 border-red-500 inline-block pb-2">
+          Thông tin sản phẩm
+        </h2>
+        
+        <div className="prose prose-lg prose-red dark:prose-invert max-w-none">
+          {product.description ? (
+            <div 
+              className="text-gray-800 dark:text-gray-200 leading-relaxed ck-content"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          ) : (
+            <p className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6">
+              Sản phẩm boardgame Tam Quốc Sát chính hãng.
+            </p>
+          )}
+        </div>
 
-            <div className="mt-8 p-6 bg-emerald-50 dark:bg-zinc-900 rounded-xl border-l-4 border-emerald-500">
-              <h4 className="text-emerald-700 dark:text-emerald-500 font-bold mb-2">Cam kết đóng gói chuẩn Sưu Tầm</h4>
-              <p className="text-emerald-800/80 dark:text-zinc-400 text-sm leading-relaxed">
-                Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!
-              </p>
-            </div>
+        {product.specifications && product.specifications.length > 0 ? (
+          <div className="mt-10 bg-gray-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-800">
+            <h4 className="text-gray-900 dark:text-white font-bold mb-4 text-lg">Thông số kỹ thuật:</h4>
+            <ul className="space-y-3 text-gray-700 dark:text-zinc-300">
+              {product.specifications.map((spec, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">{spec.name}:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{spec.value}</span>
+                </li>
+              ))}
+              {product.size && (
+                <li className="flex items-start gap-3">
+                  <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">Kích thước:</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">{product.size} (Cần mua sleeves đúng size này)</span>
+                </li>
+              )}
+            </ul>
           </div>
+        ) : product.specs ? (
+          <div className="mt-10 bg-gray-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-800">
+            <h4 className="text-gray-900 dark:text-white font-bold mb-4 text-lg">Thông số kỹ thuật:</h4>
+            <ul className="space-y-3 text-gray-700 dark:text-zinc-300">
+              <li className="flex items-start gap-3">
+                <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">Số lượng thẻ:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{product.specs.cardCount} lá</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">Kích thước:</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">{product.size} (Cần mua sleeves đúng size này)</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">Chất liệu:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{product.specs.material}</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-gray-500 dark:text-zinc-500 w-32 shrink-0 font-medium">Phe phái:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{product.specs.factions?.join(', ')}</span>
+              </li>
+            </ul>
+          </div>
+        ) : null}
+
+        <div className="mt-8 p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border-l-4 border-emerald-500">
+          <h4 className="text-emerald-700 dark:text-emerald-400 font-bold mb-2">Cam kết đóng gói chuẩn Sưu Tầm</h4>
+          <p className="text-emerald-800/80 dark:text-emerald-200/70 text-sm leading-relaxed">
+            Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!
+          </p>
         </div>
       </div>
 
