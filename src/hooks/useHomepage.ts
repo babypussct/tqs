@@ -45,7 +45,24 @@ export function useHomepage() {
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'settings', 'homepage'), (docSnap) => {
       if (docSnap.exists()) {
-        setConfig(docSnap.data() as HomepageConfig);
+        const data = docSnap.data() as HomepageConfig;
+        
+        // Randomize Hero Concept if available
+        if (data.heroConcepts && data.heroConcepts.length > 0) {
+          const activeConcepts = data.heroConcepts.filter(c => c.isActive !== false); // default to true if undefined
+          const conceptPool = activeConcepts.length > 0 ? activeConcepts : data.heroConcepts;
+          // Only pick randomly once per session/mount to avoid flicker
+          const randomIndex = Math.floor(Math.random() * conceptPool.length);
+          const chosenConcept = conceptPool[randomIndex];
+          data.hero = {
+            main: chosenConcept.main,
+            side1: chosenConcept.side1,
+            side2: chosenConcept.side2,
+            effects: chosenConcept.effects
+          };
+        }
+        
+        setConfig(data);
       } else {
         setConfig(DEFAULT_HOMEPAGE_CONFIG);
       }

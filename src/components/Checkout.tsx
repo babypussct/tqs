@@ -48,14 +48,32 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
   // Calculate discount
   let discountAmount = 0;
-  if (appliedDiscount) {
+  if (appliedDiscount && appliedDiscount.discountType !== 'freeship_only') {
+    let baseAmountForDiscount = totalAmount;
+
+    // Filter by products / categories if specified
+    if (
+      (appliedDiscount.applicableProducts && appliedDiscount.applicableProducts.length > 0) ||
+      (appliedDiscount.applicableCategories && appliedDiscount.applicableCategories.length > 0)
+    ) {
+      baseAmountForDiscount = cartItems.reduce((acc, item) => {
+        const matchesProduct = appliedDiscount.applicableProducts?.includes(item.product.id);
+        const matchesCategory = appliedDiscount.applicableCategories?.includes(item.product.type);
+        if (matchesProduct || matchesCategory) {
+          return acc + (item.price * item.quantity);
+        }
+        return acc;
+      }, 0);
+    }
+
     if (appliedDiscount.discountType === 'percentage') {
-      discountAmount = (totalAmount * appliedDiscount.discountValue) / 100;
+      discountAmount = (baseAmountForDiscount * appliedDiscount.discountValue) / 100;
       if (appliedDiscount.maxDiscount && discountAmount > appliedDiscount.maxDiscount) {
         discountAmount = appliedDiscount.maxDiscount;
       }
-    } else {
-      discountAmount = appliedDiscount.discountValue;
+    } else if (appliedDiscount.discountType === 'fixed') {
+      // Fixed discount cannot exceed the eligible amount
+      discountAmount = Math.min(appliedDiscount.discountValue, baseAmountForDiscount);
     }
   }
 
@@ -65,7 +83,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   // Calculate shipping
   let shippingFee = 0;
   const hasFreeshipProduct = cartItems.some(item => shippingConfig.freeshipProductIds.includes(item.product.id));
-  const isCodeFreeship = appliedDiscount?.isFreeship;
+  const isCodeFreeship = appliedDiscount?.isFreeship || appliedDiscount?.discountType === 'freeship_only';
   const threshold = shippingConfig.freeshipThreshold ?? 0;
   const meetsThreshold = threshold > 0 && totalAmount >= threshold;
   
@@ -122,6 +140,35 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
       if (discountData.minOrderValue && totalAmount < discountData.minOrderValue) {
         toast.error(`Đơn hàng phải từ ${discountData.minOrderValue.toLocaleString('vi-VN')}đ để sử dụng mã này`);
         return;
+      }
+
+      // Check customer type
+      if (discountData.customerType === 'new') {
+        if (!user) {
+          toast.error('Vui lòng đăng nhập để kiểm tra điều kiện mã giảm giá');
+          return;
+        }
+        const ordersQ = query(collection(db, 'orders'), where('userId', '==', user.uid), where('status', '!=', 'cancelled'));
+        const ordersSnap = await getDocs(ordersQ);
+        if (!ordersSnap.empty) {
+          toast.error('Mã giảm giá này chỉ dành cho khách hàng mới (chưa có đơn hàng)');
+          return;
+        }
+      }
+
+      // Check applicable products
+      if (
+        (discountData.applicableProducts && discountData.applicableProducts.length > 0) ||
+        (discountData.applicableCategories && discountData.applicableCategories.length > 0)
+      ) {
+        const hasApplicable = cartItems.some(item => 
+          discountData.applicableProducts?.includes(item.product.id) ||
+          discountData.applicableCategories?.includes(item.product.type)
+        );
+        if (!hasApplicable) {
+          toast.error('Mã giảm giá này không áp dụng cho các sản phẩm trong giỏ hàng');
+          return;
+        }
       }
 
       setAppliedDiscount(discountData);

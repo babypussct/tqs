@@ -45,9 +45,25 @@ export interface HeroEffects {
   glowColor: 'gold' | 'red' | 'white';
   animationPreset: 'cinematic' | 'epic' | 'subtle' | 'off';
   objectPosition: 'center' | 'top' | 'bottom' | 'left' | 'right';
+  animPositionX?: number;          // 0-100 (%)
+  animPositionY?: number;          // 0-100 (%)
+  animWidth?: number;              // 0-100 (%)
+  animHeight?: number;             // 0-100 (%)
+  hideAnimationOnMobile?: boolean;
+}
+
+export interface HeroConfig {
+  id: string;
+  name: string;
+  isActive: boolean;
+  main: Banner;
+  side1: Banner;
+  side2: Banner;
+  effects?: HeroEffects;
 }
 
 export interface HomepageConfig {
+  heroConcepts?: HeroConfig[]; // Multiple concepts for randomization
   hero: {
     main: Banner;
     side1: Banner;
@@ -134,7 +150,7 @@ export interface CartItem {
 export interface DiscountCode {
   id: string;
   code: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: 'percentage' | 'fixed' | 'freeship_only';
   discountValue: number;
   minOrderValue?: number;
   maxDiscount?: number;
@@ -143,7 +159,10 @@ export interface DiscountCode {
   usageLimit?: number;
   usedCount: number;
   isActive: boolean;
-  isFreeship?: boolean; // New field to allow discount codes to grant free shipping
+  isFreeship?: boolean; // Toggles whether it ALSO grants freeship (for percentage/fixed)
+  applicableProducts?: string[];
+  applicableCategories?: string[];
+  customerType?: 'all' | 'new';
   createdAt: any;
 }
 

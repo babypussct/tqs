@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Image as ImageIcon, Sparkles, Layers, Monitor,
   ChevronDown, ChevronUp, RefreshCw, Zap, ArrowUp, ArrowDown,
-  Shuffle, Wind, Pause, Maximize2, Film, Loader, MoveHorizontal
+  Shuffle, Wind, Pause, Maximize2, Film, Loader, MoveHorizontal, X, Plus, Smartphone
 } from 'lucide-react';
 import { HomepageConfig, HeroEffects } from '../../types';
 import { ImageUploader } from '../ui/ImageUploader';
@@ -240,28 +240,95 @@ function ImageMiniPreview({ src, title, subtitle, effects }: { src: string; titl
 
 // ═══════════════════════════════════════════════════════════════
 export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
-  const effects: HeroEffects = { ...DEFAULT_EFFECTS, ...homeConfig.hero.effects };
+  const [activeConceptId, setActiveConceptId] = useState<string>('default');
+
+  // Fallback to legacy hero if heroConcepts is undefined
+  const concepts = (homeConfig.heroConcepts && homeConfig.heroConcepts.length > 0)
+    ? homeConfig.heroConcepts
+    : [{
+        id: 'default',
+        name: 'Concept Mặc định',
+        isActive: true,
+        main: homeConfig.hero.main,
+        side1: homeConfig.hero.side1,
+        side2: homeConfig.hero.side2,
+        effects: homeConfig.hero.effects
+      }];
+
+  const currentConcept = concepts.find(c => c.id === activeConceptId) || concepts[0];
+  const effects: HeroEffects = { ...DEFAULT_EFFECTS, ...currentConcept.effects };
+
+  const updateConcept = (patch: Partial<import('../../types').HeroConfig>) => {
+    const updated = concepts.map(c => c.id === currentConcept.id ? { ...c, ...patch } : c);
+    setHomeConfig({ ...homeConfig, heroConcepts: updated });
+  };
+
+  const addConcept = () => {
+    const newId = Date.now().toString();
+    const newConcept = { ...currentConcept, id: newId, name: 'Concept mới', isActive: false };
+    setHomeConfig({ ...homeConfig, heroConcepts: [...concepts, newConcept] });
+    setActiveConceptId(newId);
+  };
+
+  const removeConcept = (id: string) => {
+    if (concepts.length <= 1) return;
+    const updated = concepts.filter(c => c.id !== id);
+    setHomeConfig({ ...homeConfig, heroConcepts: updated });
+    if (activeConceptId === id) setActiveConceptId(updated[0].id);
+  };
 
   const updateEffects = (patch: Partial<HeroEffects>) =>
-    setHomeConfig({ ...homeConfig, hero: { ...homeConfig.hero, effects: { ...effects, ...patch } } });
+    updateConcept({ effects: { ...effects, ...patch } });
 
-  const updateMain = (patch: Partial<typeof homeConfig.hero.main>) =>
-    setHomeConfig({ ...homeConfig, hero: { ...homeConfig.hero, main: { ...homeConfig.hero.main, ...patch } } });
+  const updateMain = (patch: Partial<typeof currentConcept.main>) =>
+    updateConcept({ main: { ...currentConcept.main, ...patch } });
 
-  const updateSide = (side: 'side1' | 'side2', patch: Partial<typeof homeConfig.hero.side1>) =>
-    setHomeConfig({ ...homeConfig, hero: { ...homeConfig.hero, [side]: { ...homeConfig.hero[side], ...patch } } });
+  const updateSide = (side: 'side1' | 'side2', patch: Partial<typeof currentConcept.side1>) =>
+    updateConcept({ [side]: { ...currentConcept[side], ...patch } });
 
   const resetEffects = () =>
-    setHomeConfig({ ...homeConfig, hero: { ...homeConfig.hero, effects: DEFAULT_EFFECTS } });
+    updateConcept({ effects: DEFAULT_EFFECTS });
 
   return (
     <div className="space-y-4">
 
+      {/* Tabs */}
+      <div className="bg-zinc-800/40 border border-zinc-700/50 p-2 rounded-xl flex items-center gap-2 overflow-x-auto">
+        {concepts.map(c => (
+          <div key={c.id} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all ${c.id === currentConcept.id ? 'bg-amber-500/20 border-amber-500/50' : 'bg-zinc-800/60 border-transparent'}`}>
+            <button onClick={() => setActiveConceptId(c.id)} className={`text-sm font-bold truncate max-w-[150px] ${c.id === currentConcept.id ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'}`}>
+              {c.name}
+            </button>
+            <div className="flex items-center gap-1.5 border-l border-zinc-700/50 pl-2">
+              <button 
+                title="Bật/Tắt hiển thị"
+                onClick={() => {
+                  const updated = concepts.map(xc => xc.id === c.id ? { ...xc, isActive: !xc.isActive } : xc);
+                  setHomeConfig({ ...homeConfig, heroConcepts: updated });
+                }}
+              >
+                <div className={`w-2.5 h-2.5 rounded-full ${c.isActive ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`} />
+              </button>
+              {concepts.length > 1 && (
+                <button onClick={() => removeConcept(c.id)} className="text-zinc-500 hover:text-red-400 ml-1">✕</button>
+              )}
+            </div>
+          </div>
+        ))}
+        <button onClick={addConcept} className="px-3 py-1.5 rounded-lg border border-dashed border-zinc-600 text-zinc-400 hover:text-zinc-200 text-sm flex items-center gap-1 shrink-0 ml-1">
+          + Thêm Concept
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <Input label="Tên Concept" value={currentConcept.name} onChange={v => updateConcept({ name: v })} />
+      </div>
+
       {/* ── Live Preview ── */}
       <ImageMiniPreview
-        src={homeConfig.hero.main.image}
-        title={homeConfig.hero.main.title}
-        subtitle={homeConfig.hero.main.subtitle}
+        src={currentConcept.main.image}
+        title={currentConcept.main.title}
+        subtitle={currentConcept.main.subtitle}
         effects={effects}
       />
 
@@ -270,7 +337,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
         <div className="pt-3 space-y-4">
           <ImageField
             label="URL ảnh nền chính"
-            value={homeConfig.hero.main.image}
+            value={currentConcept.main.image}
             onChange={v => updateMain({ image: v })}
             onClear={() => updateMain({ image: '' })}
             hint="Tỷ lệ 16:9 hoặc rộng hơn trông đẹp nhất. Nhấn Test để kiểm tra URL."
@@ -353,6 +420,31 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             ))}
           </div>
         </div>
+
+        {effects.animationLayer !== 'none' && (
+          <div className="space-y-4 mt-4 pt-4 border-t border-white/5">
+            {/* Mobile visibility */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">Hiển thị trên Mobile</p>
+                <p className="text-[10px] text-zinc-500">Tắt để giảm mượt nếu web nặng trên điện thoại</p>
+              </div>
+              <Toggle value={!effects.hideAnimationOnMobile} onChange={v => updateEffects({ hideAnimationOnMobile: !v })} />
+            </div>
+            
+            {/* Vị trí và kích thước */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Slider label="Toạ độ X (Trái)" value={effects.animPositionX ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionX: v })} color="#10B981" />
+                <Slider label="Toạ độ Y (Trên)" value={effects.animPositionY ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionY: v })} color="#10B981" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Slider label="Độ rộng phủ" value={effects.animWidth ?? 100} min={10} max={100} unit="%" onChange={v => updateEffects({ animWidth: v })} color="#3B82F6" />
+                <Slider label="Độ cao phủ" value={effects.animHeight ?? 100} min={10} max={100} unit="%" onChange={v => updateEffects({ animHeight: v })} color="#3B82F6" />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─ VIDEO settings ─ */}
         {effects.animationLayer === 'video' && (
@@ -584,17 +676,17 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
       {/* ── 5. Nội dung văn bản ── */}
       <Section title="Nội Dung Văn Bản" icon={<Monitor className="w-4 h-4 text-green-400" />} accent="rgba(34,197,94,0.12)" defaultOpen={false}>
         <div className="pt-3 grid grid-cols-2 gap-3">
-          <Input label="Badge" value={homeConfig.hero.main.badge || ''} onChange={v => updateMain({ badge: v })} placeholder="Hàng Mới Về" />
-          <Input label="Tiêu đề" value={homeConfig.hero.main.title} onChange={v => updateMain({ title: v })} placeholder="Tam Quốc Sát" />
+          <Input label="Badge" value={currentConcept.main.badge || ''} onChange={v => updateMain({ badge: v })} placeholder="Hàng Mới Về" />
+          <Input label="Tiêu đề" value={currentConcept.main.title} onChange={v => updateMain({ title: v })} placeholder="Tam Quốc Sát" />
         </div>
-        <Input label="Phụ đề (gradient)" value={homeConfig.hero.main.subtitle} onChange={v => updateMain({ subtitle: v })} placeholder="Tiêu Chuẩn 2024" />
+        <Input label="Phụ đề (gradient)" value={currentConcept.main.subtitle} onChange={v => updateMain({ subtitle: v })} placeholder="Tiêu Chuẩn 2024" />
         <div>
           <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Mô tả</label>
-          <textarea rows={2} value={homeConfig.hero.main.description || ''} onChange={e => updateMain({ description: e.target.value })}
+          <textarea rows={2} value={currentConcept.main.description || ''} onChange={e => updateMain({ description: e.target.value })}
             className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-500/70 transition-all resize-none placeholder-zinc-600"
             placeholder="Mô tả ngắn..." />
         </div>
-        <Input label="Nút CTA" value={homeConfig.hero.main.buttonText || ''} onChange={v => updateMain({ buttonText: v })} placeholder="Mua Ngay" />
+        <Input label="Nút CTA" value={currentConcept.main.buttonText || ''} onChange={v => updateMain({ buttonText: v })} placeholder="Mua Ngay" />
       </Section>
 
       {/* ── 6. Banner phụ ── */}

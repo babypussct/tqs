@@ -165,6 +165,15 @@ export default function Hero({ data }: HeroProps) {
     effects.animationLayer,
   ]);
 
+  const animationStyle: React.CSSProperties = {
+    left: `${effects.animPositionX ?? 0}%`,
+    top: `${effects.animPositionY ?? 0}%`,
+    width: `${effects.animWidth ?? 100}%`,
+    height: `${effects.animHeight ?? 100}%`,
+  };
+
+  const animVisibilityClass = effects.hideAnimationOnMobile ? 'hidden md:block' : '';
+
   return (
     <div className="relative w-full h-screen min-h-[600px] overflow-hidden">
       {/* Background Image */}
@@ -198,26 +207,30 @@ export default function Hero({ data }: HeroProps) {
 
       {/* ── Animation Layer: Particle Canvas or Video ── */}
       {effects.animationLayer === 'particles' && (
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none z-10"
-        />
+        <div className={`absolute pointer-events-none z-10 ${animVisibilityClass}`} style={animationStyle}>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full"
+          />
+        </div>
       )}
 
       {effects.animationLayer === 'video' && effects.videoUrl && (
-        <video
-          ref={videoRef}
-          src={effects.videoUrl}
-          autoPlay
-          muted
-          loop={effects.videoLoop !== false}
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none z-10"
-          style={{
-            mixBlendMode: (effects.videoBlend || 'screen') as React.CSSProperties['mixBlendMode'],
-            opacity: effects.videoOpacity ?? 0.8,
-          }}
-        />
+        <div className={`absolute pointer-events-none z-10 ${animVisibilityClass}`} style={animationStyle}>
+          <video
+            ref={videoRef}
+            src={effects.videoUrl}
+            autoPlay
+            muted
+            loop={effects.videoLoop !== false}
+            playsInline
+            className="w-full h-full object-cover"
+            style={{
+              mixBlendMode: (effects.videoBlend || 'screen') as React.CSSProperties['mixBlendMode'],
+              opacity: effects.videoOpacity ?? 0.8,
+            }}
+          />
+        </div>
       )}
 
       {/* Main Content */}

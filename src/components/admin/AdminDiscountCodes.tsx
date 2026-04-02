@@ -14,7 +14,11 @@ export default function AdminDiscountCodes() {
 
   // Form state
   const [code, setCode] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | 'freeship_only'>('percentage');
+  const [isFreeship, setIsFreeship] = useState(false);
+  const [applicableProducts, setApplicableProducts] = useState('');
+  const [applicableCategories, setApplicableCategories] = useState('');
+  const [customerType, setCustomerType] = useState<'all' | 'new'>('all');
   const [discountValue, setDiscountValue] = useState('');
   const [minOrderValue, setMinOrderValue] = useState('');
   const [maxDiscount, setMaxDiscount] = useState('');
@@ -43,6 +47,10 @@ export default function AdminDiscountCodes() {
   const resetForm = () => {
     setCode('');
     setDiscountType('percentage');
+    setIsFreeship(false);
+    setApplicableProducts('');
+    setApplicableCategories('');
+    setCustomerType('all');
     setDiscountValue('');
     setMinOrderValue('');
     setMaxDiscount('');
@@ -58,7 +66,11 @@ export default function AdminDiscountCodes() {
   const handleEdit = (codeToEdit: DiscountCode) => {
     setEditingCode(codeToEdit);
     setCode(codeToEdit.code);
-    setDiscountType(codeToEdit.discountType);
+    setDiscountType(codeToEdit.discountType || 'percentage');
+    setIsFreeship(codeToEdit.isFreeship || false);
+    setApplicableProducts(codeToEdit.applicableProducts?.join(', ') || '');
+    setApplicableCategories(codeToEdit.applicableCategories?.join(', ') || '');
+    setCustomerType(codeToEdit.customerType || 'all');
     setDiscountValue(codeToEdit.discountValue.toString());
     setMinOrderValue(codeToEdit.minOrderValue?.toString() || '');
     setMaxDiscount(codeToEdit.maxDiscount?.toString() || '');
@@ -84,7 +96,7 @@ export default function AdminDiscountCodes() {
     setError(null);
 
     try {
-      if (!code || !discountValue || !startDate || !endDate) {
+      if (!code || (!discountValue && discountType !== 'freeship_only') || !startDate || !endDate) {
         throw new Error('Vui lòng điền đầy đủ các trường bắt buộc');
       }
 
@@ -98,7 +110,11 @@ export default function AdminDiscountCodes() {
       const codeData = {
         code: code.toUpperCase(),
         discountType,
-        discountValue: Number(discountValue),
+        isFreeship: isFreeship || discountType === 'freeship_only',
+        applicableProducts: applicableProducts.trim() ? applicableProducts.split(',').map(s=>s.trim()).filter(Boolean) : null,
+        applicableCategories: applicableCategories.trim() ? applicableCategories.split(',').map(s=>s.trim()).filter(Boolean) : null,
+        customerType,
+        discountValue: Number(discountValue) || 0,
         minOrderValue: minOrderValue ? Number(minOrderValue) : null,
         maxDiscount: maxDiscount ? Number(maxDiscount) : null,
         startDate: start,
@@ -213,21 +229,58 @@ export default function AdminDiscountCodes() {
                 >
                   <option value="percentage">Phần trăm (%)</option>
                   <option value="fixed">Số tiền cố định (VNĐ)</option>
+                  <option value="freeship_only">Chỉ Miễn phí vận chuyển</option>
                 </select>
               </div>
 
+              {discountType !== 'freeship_only' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    Giá trị giảm * {discountType === 'percentage' ? '(%)' : '(VNĐ)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                    required
+                    min="1"
+                    max={discountType === 'percentage' ? "100" : undefined}
+                  />
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
-                  Giá trị giảm * {discountType === 'percentage' ? '(%)' : '(VNĐ)'}
-                </label>
-                <input
-                  type="number"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Đối tượng khách hàng</label>
+                <select
+                  value={customerType}
+                  onChange={(e) => setCustomerType(e.target.value as 'all' | 'new')}
                   className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
-                  required
-                  min="1"
-                  max={discountType === 'percentage' ? "100" : undefined}
+                >
+                  <option value="all">Tất cả khách hàng</option>
+                  <option value="new">Chỉ khách hàng mới (chưa có đơn)</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
+                <input
+                  type="text"
+                  value={applicableCategories}
+                  onChange={(e) => setApplicableCategories(e.target.value)}
+                  placeholder="Ví dụ: base, expansion, accessory... (Bỏ trống để áp dụng toàn shop)"
+                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Sản phẩm - cách nhau bằng dấu phẩy</label>
+                <input
+                  type="text"
+                  value={applicableProducts}
+                  onChange={(e) => setApplicableProducts(e.target.value)}
+                  placeholder="Ví dụ: SP001, SP002... (Bỏ trống để áp dụng toàn shop)"
+                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -288,6 +341,21 @@ export default function AdminDiscountCodes() {
                 />
               </div>
             </div>
+
+            {discountType !== 'freeship_only' && (
+              <div className="flex items-center mt-4">
+                <input
+                  type="checkbox"
+                  id="isFreeship"
+                  checked={isFreeship}
+                  onChange={(e) => setIsFreeship(e.target.checked)}
+                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                />
+                <label htmlFor="isFreeship" className="ml-2 text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  Mã này cũng bao gồm Miễn phí vận chuyển (Freeship)
+                </label>
+              </div>
+            )}
 
             <div className="flex items-center mt-4">
               <input
@@ -356,9 +424,16 @@ export default function AdminDiscountCodes() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-700 dark:text-zinc-300">
-                        {code.discountType === 'percentage' 
-                          ? `${code.discountValue}%` 
-                          : formatCurrency(code.discountValue)}
+                        {code.discountType === 'freeship_only'
+                          ? 'Freeship'
+                          : code.discountType === 'percentage' 
+                            ? `${code.discountValue}%` 
+                            : formatCurrency(code.discountValue)}
+                        {code.isFreeship && code.discountType !== 'freeship_only' && (
+                          <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            + Freeship
+                          </div>
+                        )}
                         {code.maxDiscount && (
                           <div className="text-xs text-gray-500 mt-1">
                             Tối đa: {formatCurrency(code.maxDiscount)}
@@ -366,7 +441,13 @@ export default function AdminDiscountCodes() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-gray-700 dark:text-zinc-300">
-                        {code.minOrderValue ? `Đơn từ ${formatCurrency(code.minOrderValue)}` : 'Mọi đơn hàng'}
+                        <div className="space-y-1">
+                          {code.minOrderValue ? <div>Đơn từ ${formatCurrency(code.minOrderValue)}</div> : null}
+                          {code.customerType === 'new' && <div className="text-blue-600 text-xs font-bold px-1.5 py-0.5 bg-blue-100 rounded inline-block">Khách mới</div>}
+                          {code.applicableCategories && code.applicableCategories.length > 0 && <div className="text-xs text-gray-500">Giới hạn loại: {code.applicableCategories.join(', ')}</div>}
+                          {code.applicableProducts && code.applicableProducts.length > 0 && <div className="text-xs text-gray-500">Giới hạn SP: {code.applicableProducts.join(', ')}</div>}
+                          {(!code.minOrderValue && code.customerType !== 'new' && (!code.applicableCategories || code.applicableCategories.length === 0) && (!code.applicableProducts || code.applicableProducts.length === 0)) ? 'Mọi đơn hàng' : null}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-700 dark:text-zinc-300 text-xs">
                         <div>Từ: {code.startDate?.toDate ? new Date(code.startDate.toDate()).toLocaleString('vi-VN') : ''}</div>
