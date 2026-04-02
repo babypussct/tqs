@@ -4,10 +4,11 @@ import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp, updateDoc } f
 import { db } from '../../firebase';
 import { Product } from '../../types';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
-import { ArrowLeft, Save, Tag, Box, Image as ImageIcon, Plus, Trash2, X, Upload } from 'lucide-react';
+import { ArrowLeft, Save, Tag, Box, Image as ImageIcon, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProducts } from '../../hooks/useProducts';
 import { useProductConfig } from '../../hooks/useProductConfig';
+import { ImageUploader } from '../ui/ImageUploader';
 
 export default function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -25,49 +26,6 @@ export default function AdminProductForm() {
     addonIds: []
   });
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
-
-  const handleImageUpload = async (file: File, type: 'main' | number) => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      toast.error('Cấu hình Cloudinary chưa được khởi tạo! (Thiếu biến môi trường)');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-
-    setUploadingImage(type === 'main' ? 'main' : `extra-${type}`);
-    
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!res.ok) throw new Error('Lỗi upload ảnh API');
-      
-      const data = await res.json();
-      const imageUrl = data.secure_url;
-      
-      if (type === 'main') {
-        setEditingProduct(prev => ({...prev, image: imageUrl}));
-      } else {
-        const newImages = [...(editingProduct.images || [])];
-        newImages[type] = imageUrl;
-        setEditingProduct(prev => ({...prev, images: newImages}));
-      }
-      toast.success('Thiết lập ảnh thành công!');
-    } catch (error) {
-      console.error('Lỗi khi tải ảnh lên Cloudinary:', error);
-      toast.error('Tải ảnh thất bại, vui lòng thử lại.');
-    } finally {
-      setUploadingImage(null);
-    }
-  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -273,29 +231,12 @@ export default function AdminProductForm() {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">URL Hình ảnh chính *</label>
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <input required type="url" value={editingProduct.image || ''} onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 pr-24 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="https://..." />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                    <input type="file" id="upload-main" className="hidden" accept="image/*" onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], 'main');
-                    }} />
-                    <label 
-                      htmlFor="upload-main" 
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 cursor-pointer transition-colors ${uploadingImage === 'main' ? 'bg-gray-200 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500 pointer-events-none' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20'}`}
-                    >
-                      {uploadingImage === 'main' ? <div className="w-4 h-4 border-2 border-blue-600/50 dark:border-blue-400/50 border-t-transparent rounded-full animate-spin"></div> : <Upload className="w-4 h-4" />}
-                      Tải lên
-                    </label>
-                  </div>
-                </div>
-                {editingProduct.image && (
-                  <div className="w-12 h-12 rounded-xl border border-gray-300 dark:border-zinc-700 overflow-hidden shrink-0 bg-gray-100 dark:bg-zinc-800">
-                    <img src={editingProduct.image} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                  </div>
-                )}
-              </div>
+              <ImageUploader 
+                label="URL Hình ảnh chính"
+                required={true}
+                value={editingProduct.image || ''} 
+                onChange={(url) => setEditingProduct({...editingProduct, image: url})} 
+              />
             </div>
             
             {/* Additional Images */}
@@ -316,47 +257,19 @@ export default function AdminProductForm() {
               <div className="space-y-3">
                 {(editingProduct.images || []).map((img, idx) => (
                   <div key={idx} className="flex gap-4">
-                    <div className="flex-1 relative">
-                      <input 
-                        type="url" 
-                        value={img} 
-                        onChange={e => {
-                          const newImages = [...(editingProduct.images || [])];
-                          newImages[idx] = e.target.value;
-                          setEditingProduct({...editingProduct, images: newImages});
-                        }} 
-                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 pr-24 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                        placeholder="https://..." 
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                        <input type="file" id={`upload-extra-${idx}`} className="hidden" accept="image/*" onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) handleImageUpload(e.target.files[0], idx);
-                        }} />
-                        <label 
-                          htmlFor={`upload-extra-${idx}`} 
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 cursor-pointer transition-colors ${uploadingImage === ('extra-' + idx) ? 'bg-gray-200 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500 pointer-events-none' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20'}`}
-                        >
-                          {uploadingImage === ('extra-' + idx) ? <div className="w-4 h-4 border-2 border-blue-600/50 dark:border-blue-400/50 border-t-transparent rounded-full animate-spin"></div> : <Upload className="w-4 h-4" />}
-                          Tải lên
-                        </label>
-                      </div>
-                    </div>
-                    {img && (
-                      <div className="w-12 h-12 rounded-xl border border-gray-300 dark:border-zinc-700 overflow-hidden shrink-0 bg-gray-100 dark:bg-zinc-800">
-                        <img src={img} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                      </div>
-                    )}
-                    <button 
-                      type="button"
-                      onClick={() => {
+                    <ImageUploader 
+                      value={img} 
+                      onChange={(url) => {
+                        const newImages = [...(editingProduct.images || [])];
+                        newImages[idx] = url;
+                        setEditingProduct({...editingProduct, images: newImages});
+                      }} 
+                      onClear={() => {
                         const newImages = [...(editingProduct.images || [])];
                         newImages.splice(idx, 1);
                         setEditingProduct({...editingProduct, images: newImages});
                       }}
-                      className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    />
                   </div>
                 ))}
                 {(!editingProduct.images || editingProduct.images.length === 0) && (

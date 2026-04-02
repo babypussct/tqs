@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Image as ImageIcon, Sparkles, Layers, Monitor,
   ChevronDown, ChevronUp, RefreshCw, Zap, ArrowUp, ArrowDown,
-  Shuffle, Wind, CheckCircle, XCircle, Loader, AlertTriangle,
-  MoveHorizontal, Maximize2, Film, Play, Pause
+  Shuffle, Wind, Pause, Maximize2, Film, Loader, MoveHorizontal
 } from 'lucide-react';
 import { HomepageConfig, HeroEffects } from '../../types';
+import { ImageUploader } from '../ui/ImageUploader';
 
 const DEFAULT_EFFECTS: HeroEffects = {
   particleEnabled: true,
@@ -136,74 +136,17 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   </button>
 );
 
-// ─── Image URL tester ─────────────────────────────────────────
-type ImgStatus = 'idle' | 'loading' | 'ok' | 'error';
-
 function ImageField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
-  const [status, setStatus] = useState<ImgStatus>('idle');
-  const testRef = useRef<HTMLImageElement | null>(null);
-
-  const testUrl = (url: string) => {
-    if (!url.trim()) return;
-    setStatus('loading');
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    // Try without referrer first
-    img.referrerPolicy = 'no-referrer';
-    img.onload = () => setStatus('ok');
-    img.onerror = () => {
-      // Try again without crossOrigin (some CDNs reject CORS headers)
-      const img2 = new Image();
-      img2.onload = () => setStatus('ok');
-      img2.onerror = () => setStatus('error');
-      img2.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    };
-    img.src = url;
-    testRef.current = img;
-  };
-
-  const StatusIcon = () => {
-    if (status === 'loading') return <Loader className="w-4 h-4 text-amber-400 animate-spin" />;
-    if (status === 'ok') return <CheckCircle className="w-4 h-4 text-emerald-400" />;
-    if (status === 'error') return <XCircle className="w-4 h-4 text-red-400" />;
-    return null;
-  };
-
   return (
     <div>
-      <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={value}
-          onChange={e => { onChange(e.target.value); setStatus('idle'); }}
-          placeholder="https://example.com/image.jpg"
-          className="flex-1 bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-500/70 focus:bg-zinc-800 transition-all placeholder-zinc-600"
-        />
-        <button
-          onClick={() => testUrl(value)}
-          disabled={!value.trim() || status === 'loading'}
-          className="shrink-0 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-40"
-          style={{ background: 'rgba(255,200,50,0.1)', borderColor: 'rgba(255,200,50,0.2)', color: '#FFD700' }}
-          title="Kiểm tra URL ảnh"
-        >
-          {status === 'loading' ? <Loader className="w-3.5 h-3.5 animate-spin" /> : 'Test'}
-        </button>
-        <StatusIcon />
+      <div className="mb-1.5">
+        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</label>
       </div>
-      {status === 'ok' && <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> URL hợp lệ, ảnh tải được</p>}
-      {status === 'error' && (
-        <div className="mt-1.5 p-2.5 rounded-xl text-xs" style={{ background: 'rgba(255,60,60,0.08)', border: '1px solid rgba(255,60,60,0.2)' }}>
-          <p className="text-red-400 flex items-center gap-1 font-medium mb-1"><AlertTriangle className="w-3 h-3" /> Không tải được ảnh từ URL này</p>
-          <p className="text-zinc-500">Lý do thường gặp: website chặn hotlink từ bên ngoài. Hãy thử:</p>
-          <ul className="text-zinc-500 mt-1 space-y-0.5 list-disc list-inside">
-            <li>Upload ảnh lên <span className="text-amber-400">imgur.com</span> hoặc <span className="text-amber-400">cloudinary.com</span></li>
-            <li>Dùng Google Drive (share công khai)</li>
-            <li>Dùng Firebase Storage của dự án</li>
-          </ul>
-        </div>
-      )}
-      {hint && <p className="text-xs text-zinc-600 mt-1">{hint}</p>}
+      <ImageUploader 
+        value={value}
+        onChange={onChange}
+      />
+      {hint && <p className="text-xs text-zinc-600 mt-2">{hint}</p>}
     </div>
   );
 }
@@ -249,17 +192,7 @@ function ImageMiniPreview({ src, title, subtitle, effects }: { src: string; titl
               <Loader className="w-6 h-6 text-amber-400/60 animate-spin" />
               <p className="text-xs text-zinc-600">Đang tải ảnh...</p>
             </div>
-          ) : imgStatus === 'error' ? (
-            <div className="flex flex-col items-center gap-2">
-              <XCircle className="w-6 h-6 text-red-500/60" />
-              <p className="text-xs text-red-400/70">Không tải được ảnh</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <ImageIcon className="w-6 h-6 text-zinc-700" />
-              <p className="text-xs text-zinc-700">Nhập URL ảnh bên dưới</p>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
 
