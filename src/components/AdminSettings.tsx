@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, QrCode, Truck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, Save, QrCode, Truck, Check, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { usePaymentConfig, PaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
+import { useProducts } from '../hooks/useProducts';
 
 export default function AdminSettings() {
   const { config, loading: configLoading, updateConfig } = useProductConfig();
@@ -20,6 +21,21 @@ export default function AdminSettings() {
   const [localShippingConfig, setLocalShippingConfig] = useState<any>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const { products } = useProducts(false);
+  const [freeshipSearchTerm, setFreeshipSearchTerm] = useState('');
+  const [showFreeshipDropdown, setShowFreeshipDropdown] = useState(false);
+  const freeshipSearchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (freeshipSearchRef.current && !freeshipSearchRef.current.contains(event.target as Node)) {
+        setShowFreeshipDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!configLoading) {
@@ -157,19 +173,101 @@ export default function AdminSettings() {
             />
             <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Đơn hàng đạt mức giá này sẽ được miễn phí vận chuyển. Xóa trống nếu không áp dụng.</p>
           </div>
-          <div className="md:col-span-2">
+          <div className="md:col-span-2" ref={freeshipSearchRef}>
             <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Sản phẩm đặc quyền Freeship</label>
-            <input
-              type="text"
-              value={localShippingConfig.freeshipProductIds?.join(', ') || ''}
-              onChange={e => setLocalShippingConfig({
-                ...localShippingConfig, 
-                freeshipProductIds: e.target.value.split(',').map(id => id.trim()).filter(id => id)
-              })}
-              placeholder="Nhập các Product ID cách nhau bởi dấu phẩy..."
-              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500 font-mono"
-            />
-            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Nếu khách hàng mua ít nhất 1 sản phẩm có ID nằm trong danh sách này, toàn bộ đơn hàng sẽ được Freeship.</p>
+            
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={freeshipSearchTerm}
+                onChange={e => {
+                  setFreeshipSearchTerm(e.target.value);
+                  setShowFreeshipDropdown(true);
+                }}
+                onFocus={() => setShowFreeshipDropdown(true)}
+                placeholder="Tìm kiếm và chọn sản phẩm..."
+                className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500"
+              />
+              
+              {showFreeshipDropdown && (
+                <div className="absolute z-10 w-full mt-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
+                  {products
+                    .filter(p => p.name.toLowerCase().includes(freeshipSearchTerm.toLowerCase()) || p.id.includes(freeshipSearchTerm))
+                    .map(product => {
+                      const isSelected = localShippingConfig.freeshipProductIds?.includes(product.id);
+                      return (
+                        <div 
+                          key={product.id}
+                          onClick={() => {
+                            let newIds = [...(localShippingConfig.freeshipProductIds || [])];
+                            if (isSelected) {
+                              newIds = newIds.filter(id => id !== product.id);
+                            } else {
+                              newIds.push(product.id);
+                            }
+                            setLocalShippingConfig({
+                              ...localShippingConfig,
+                              freeshipProductIds: newIds
+                            });
+                          }}
+                          className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors border-b border-gray-100 dark:border-zinc-800/50 last:border-0 ${isSelected ? 'bg-red-50 dark:bg-red-500/10' : ''}`}
+                        >
+                          <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
+                            {product.image ? (
+                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">Ảnh</div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">{product.name}</h4>
+                            <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono truncate">{product.id}</p>
+                          </div>
+                          <div className="shrink-0 w-5 h-5 flex flex-col justify-center">
+                            {isSelected && <Check className="w-5 h-5 text-red-600" />}
+                          </div>
+                        </div>
+                      );
+                  })}
+                  {products.filter(p => p.name.toLowerCase().includes(freeshipSearchTerm.toLowerCase()) || p.id.includes(freeshipSearchTerm)).length === 0 && (
+                    <div className="p-4 text-center text-sm text-gray-500">Không tìm thấy sản phẩm nào</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Products Badges */}
+            {localShippingConfig.freeshipProductIds?.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {localShippingConfig.freeshipProductIds.map((id: string) => {
+                  const product = products.find(p => p.id === id);
+                  return (
+                    <div key={id} className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-1.5 group">
+                      {product?.image && <img src={product.image} className="w-5 h-5 rounded object-cover" alt="" />}
+                      <span className="text-sm font-medium text-red-700 dark:text-red-400 max-w-[200px] truncate">
+                        {product ? product.name : id}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setLocalShippingConfig({
+                            ...localShippingConfig,
+                            freeshipProductIds: localShippingConfig.freeshipProductIds.filter((pid: string) => pid !== id)
+                          });
+                        }}
+                        className="text-red-400 hover:text-red-600 ml-1 p-0.5 rounded-full hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-3">Nếu khách hàng mua ít nhất 1 sản phẩm nằm trong danh sách này, toàn bộ đơn hàng sẽ được Freeship.</p>
           </div>
         </div>
       </div>

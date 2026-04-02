@@ -24,6 +24,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
+  const [orderFinalAmount, setOrderFinalAmount] = useState<number>(0);
+  const [orderTotalAmount, setOrderTotalAmount] = useState<number>(0);
 
   useEffect(() => {
     if (paymentConfig && !paymentConfig.isActive && paymentMethod === 'vietqr') {
@@ -250,6 +252,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
         }
         
         setCreatedOrderId(orderRef.id);
+        setOrderFinalAmount(finalAmount);
+        setOrderTotalAmount(totalAmount);
       });
 
       clearCart();
@@ -276,13 +280,14 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
             <p className="text-gray-500 dark:text-zinc-400 mb-6 text-sm">
               Vui lòng quét mã QR bên dưới bằng ứng dụng ngân hàng của bạn để thanh toán.
             </p>
-            
             <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 mb-6 flex flex-col items-center justify-center">
-              <img 
-                src={`https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.template}.png?amount=${finalAmount || totalAmount}&addInfo=${createdOrderId}&accountName=${encodeURIComponent(paymentConfig.accountName)}`} 
-                alt="VietQR" 
-                className="w-64 h-64 object-contain rounded-lg"
-              />
+              <div className="bg-white dark:bg-white p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 flex items-center justify-center w-full max-w-[320px] mx-auto">
+                <img 
+                  src={`https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.template}.png?amount=${orderFinalAmount || orderTotalAmount}&addInfo=${createdOrderId}&accountName=${encodeURIComponent(paymentConfig.accountName)}`} 
+                  alt="VietQR" 
+                  className="w-full h-auto aspect-square object-contain rounded-xl"
+                />
+              </div>
               
               <div className="w-full mt-6 space-y-3 bg-white dark:bg-zinc-900 p-4 rounded-lg border border-gray-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between text-sm">
@@ -310,8 +315,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                 <div className="flex items-center justify-between text-sm group">
                   <span className="text-gray-500 dark:text-zinc-400">Số tiền:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-red-600 dark:text-red-500">{(finalAmount || totalAmount).toLocaleString('vi-VN')}</span>
-                    <button onClick={() => { navigator.clipboard.writeText((finalAmount || totalAmount).toString()); toast.success('Đã copy số tiền'); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                    <span className="font-bold text-red-600 dark:text-red-500">{(orderFinalAmount || orderTotalAmount).toLocaleString('vi-VN')}</span>
+                    <button onClick={() => { navigator.clipboard.writeText((orderFinalAmount || orderTotalAmount).toString()); toast.success('Đã copy số tiền'); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                   </div>
