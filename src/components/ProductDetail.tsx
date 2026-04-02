@@ -398,9 +398,16 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           {/* SEO Description & Specs */}
           <div className="prose prose-red dark:prose-invert max-w-none">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-zinc-800 pb-2">Thông tin sản phẩm</h3>
-            <p className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6">
-              {product.description || 'Sản phẩm boardgame Tam Quốc Sát chính hãng.'}
-            </p>
+            {product.description ? (
+              <div 
+                className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6 ck-content"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            ) : (
+              <p className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6">
+                Sản phẩm boardgame Tam Quốc Sát chính hãng.
+              </p>
+            )}
 
             {product.specifications && product.specifications.length > 0 ? (
               <div className="bg-gray-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 mb-6">
