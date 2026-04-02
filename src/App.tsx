@@ -33,7 +33,19 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 export default function App() {
   // Cart State
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = localStorage.getItem('tqs_cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) {
+      console.error('Failed to parse cart from localStorage:', e);
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tqs_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   // Test Firebase Connection
   useEffect(() => {
@@ -103,32 +115,36 @@ export default function App() {
     setIsCartOpen(true);
   };
 
-  const handleUpdateQuantity = (id: string, delta: number) => {
+  const handleUpdateQuantity = (id: string, deltaOrQuantity: number, isAbsolute: boolean = false) => {
     const itemToUpdate = cartItems.find(i => i.id === id);
     if (!itemToUpdate) return;
 
-    const newQuantity = Math.max(1, itemToUpdate.quantity + delta);
+    let newQuantity = isAbsolute ? deltaOrQuantity : itemToUpdate.quantity + deltaOrQuantity;
+    newQuantity = Math.max(1, newQuantity);
     
-    if (delta > 0 && itemToUpdate.product.stock !== undefined) {
+    // Only check stock if we are increasing quantity
+    if (newQuantity > itemToUpdate.quantity && itemToUpdate.product.stock !== undefined) {
       const totalProductQuantity = cartItems
         .filter(item => item.product.id === itemToUpdate.product.id)
         .reduce((sum, item) => sum + (item.id === id ? newQuantity : item.quantity), 0);
         
       if (totalProductQuantity > itemToUpdate.product.stock) {
         toast.error(`Chỉ còn ${itemToUpdate.product.stock} sản phẩm trong kho`);
-        return;
+        if (isAbsolute) {
+          // Fallback to maximum available for absolute input
+          const currentTotalExceptThis = cartItems
+            .filter(item => item.product.id === itemToUpdate.product.id && item.id !== id)
+            .reduce((sum, item) => sum + item.quantity, 0);
+          const maxAllowed = itemToUpdate.product.stock - currentTotalExceptThis;
+          if (maxAllowed >= 1) newQuantity = maxAllowed;
+          else return;
+        } else {
+          return;
+        }
       }
     }
 
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        if (newQuantity !== item.quantity) {
-          toast.success(`Đã cập nhật số lượng`);
-        }
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
+    setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity } : item));
   };
 
   const handleRemoveItem = (id: string) => {
@@ -186,6 +202,7 @@ export default function App() {
               items={cartItems}
               onUpdateQuantity={handleUpdateQuantity}
               onRemove={handleRemoveItem}
+              clearCart={clearCart}
             />
           </div>
         </Router>

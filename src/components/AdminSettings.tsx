@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, QrCode } from 'lucide-react';
+import { Plus, Trash2, Save, QrCode, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { usePaymentConfig, PaymentConfig } from '../hooks/usePaymentConfig';
+import { useShippingConfig } from '../hooks/useShippingConfig';
 
 export default function AdminSettings() {
   const { config, loading: configLoading, updateConfig } = useProductConfig();
@@ -13,7 +14,10 @@ export default function AdminSettings() {
   const [newBadge, setNewBadge] = useState('');
   const [newType, setNewType] = useState('');
   
+  const { shippingConfig, loading: shippingLoading, updateShippingConfig } = useShippingConfig();
+
   const [localPaymentConfig, setLocalPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [localShippingConfig, setLocalShippingConfig] = useState<any>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -30,12 +34,21 @@ export default function AdminSettings() {
     }
   }, [paymentConfig, paymentLoading]);
 
+  useEffect(() => {
+    if (!shippingLoading && shippingConfig) {
+      setLocalShippingConfig(shippingConfig);
+    }
+  }, [shippingConfig, shippingLoading]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
       await updateConfig({ badges, types });
       if (localPaymentConfig) {
         await updatePaymentConfig(localPaymentConfig);
+      }
+      if (localShippingConfig) {
+        await updateShippingConfig(localShippingConfig);
       }
       toast.success('Đã lưu cấu hình thành công');
     } catch (error) {
@@ -73,7 +86,7 @@ export default function AdminSettings() {
     setTypes(types.filter((_, i) => i !== index));
   };
 
-  if (configLoading || paymentLoading || !localPaymentConfig) return <div className="p-8 text-center text-gray-500">Đang tải cấu hình...</div>;
+  if (configLoading || paymentLoading || shippingLoading || !localPaymentConfig || !localShippingConfig) return <div className="p-8 text-center text-gray-500">Đang tải cấu hình...</div>;
 
   return (
     <div className="space-y-8 pb-12">
@@ -90,6 +103,75 @@ export default function AdminSettings() {
           <Save className="w-4 h-4" />
           {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
+      </div>
+
+      {/* Shipping Configuration */}
+      <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-zinc-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-500 rounded-lg">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Vận chuyển & Freeship</h3>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Cấu hình phí giao hàng mặc định và chính sách miễn phí</p>
+            </div>
+          </div>
+          <label className="flex items-center cursor-pointer">
+            <div className="relative">
+              <input 
+                type="checkbox" 
+                className="sr-only" 
+                checked={localShippingConfig.isActive}
+                onChange={e => setLocalShippingConfig({...localShippingConfig, isActive: e.target.checked})}
+              />
+              <div className={`block w-14 h-8 rounded-full transition-colors ${localShippingConfig.isActive ? 'bg-blue-500' : 'bg-gray-300 dark:bg-zinc-700'}`}></div>
+              <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${localShippingConfig.isActive ? 'translate-x-6' : ''}`}></div>
+            </div>
+            <span className="ml-3 text-sm font-medium text-gray-700 dark:text-zinc-300">
+              {localShippingConfig.isActive ? 'Đang bật' : 'Đã tắt'}
+            </span>
+          </label>
+        </div>
+
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity ${localShippingConfig.isActive ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Phí vận chuyển mặc định (VNĐ)</label>
+            <input
+              type="number"
+              value={localShippingConfig.defaultFee}
+              onChange={e => setLocalShippingConfig({...localShippingConfig, defaultFee: parseInt(e.target.value) || 0})}
+              placeholder="Ví dụ: 30000"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500 font-mono"
+            />
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Áp dụng cho các đơn hàng không đạt điều kiện Freeship.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Hạn mức Freeship (VNĐ)</label>
+            <input
+              type="number"
+              value={localShippingConfig.freeshipThreshold ?? ''}
+              onChange={e => setLocalShippingConfig({...localShippingConfig, freeshipThreshold: e.target.value ? parseInt(e.target.value) : null})}
+              placeholder="Ví dụ: 500000"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500 font-mono"
+            />
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Đơn hàng đạt mức giá này sẽ được miễn phí vận chuyển. Xóa trống nếu không áp dụng.</p>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Sản phẩm đặc quyền Freeship</label>
+            <input
+              type="text"
+              value={localShippingConfig.freeshipProductIds?.join(', ') || ''}
+              onChange={e => setLocalShippingConfig({
+                ...localShippingConfig, 
+                freeshipProductIds: e.target.value.split(',').map(id => id.trim()).filter(id => id)
+              })}
+              placeholder="Nhập các Product ID cách nhau bởi dấu phẩy..."
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500 font-mono"
+            />
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Nếu khách hàng mua ít nhất 1 sản phẩm có ID nằm trong danh sách này, toàn bộ đơn hàng sẽ được Freeship.</p>
+          </div>
+        </div>
       </div>
 
       {/* Payment Configuration */}

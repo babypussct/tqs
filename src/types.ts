@@ -143,7 +143,15 @@ export interface DiscountCode {
   usageLimit?: number;
   usedCount: number;
   isActive: boolean;
+  isFreeship?: boolean; // New field to allow discount codes to grant free shipping
   createdAt: any;
+}
+
+export interface ShippingConfig {
+  isActive: boolean;
+  defaultFee: number;
+  freeshipThreshold: number | null;
+  freeshipProductIds: string[];
 }
 
 export interface Order {
@@ -162,6 +170,7 @@ export interface Order {
     image: string;
   }[];
   totalAmount: number;
+  shippingFee?: number;
   discountCode?: string;
   discountAmount?: number;
   finalAmount?: number;

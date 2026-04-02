@@ -8,6 +8,7 @@ import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
+import { useShippingConfig } from '../hooks/useShippingConfig';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -18,6 +19,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { paymentConfig, loading: paymentLoading } = usePaymentConfig();
+  const { shippingConfig, loading: shippingLoading } = useShippingConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
@@ -57,7 +59,19 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
   // Ensure discount doesn't exceed total
   discountAmount = Math.min(discountAmount, totalAmount);
-  const finalAmount = totalAmount - discountAmount;
+  
+  // Calculate shipping
+  let shippingFee = 0;
+  const hasFreeshipProduct = cartItems.some(item => shippingConfig.freeshipProductIds.includes(item.product.id));
+  const isCodeFreeship = appliedDiscount?.isFreeship;
+  const threshold = shippingConfig.freeshipThreshold ?? 0;
+  const meetsThreshold = threshold > 0 && totalAmount >= threshold;
+  
+  if (shippingConfig.isActive && !hasFreeshipProduct && !isCodeFreeship && !meetsThreshold) {
+    shippingFee = shippingConfig.defaultFee;
+  }
+
+  const finalAmount = totalAmount + shippingFee - discountAmount;
 
   const handleApplyDiscount = async () => {
     if (!discountCodeInput.trim()) return;
@@ -223,6 +237,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           orderData.discountCode = appliedDiscount.code;
           orderData.discountAmount = discountAmount;
         }
+        orderData.shippingFee = shippingFee;
         orderData.finalAmount = finalAmount;
 
         transaction.set(orderRef, orderData);
@@ -565,8 +580,13 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
               </div>
               <div className="flex justify-between text-gray-500 dark:text-zinc-400">
                 <span>Phí vận chuyển</span>
-                <span>Miễn phí</span>
+                <span>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}đ`}</span>
               </div>
+              {shippingFee > 0 && shippingConfig.isActive && threshold > 0 && (
+                <div className="text-xs text-blue-600 dark:text-blue-500 text-right mt-1">
+                  Mua thêm {(threshold - totalAmount).toLocaleString('vi-VN')}đ để được Freeship
+                </div>
+              )}
               {appliedDiscount && (
                 <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                   <span>Giảm giá ({appliedDiscount.code})</span>
