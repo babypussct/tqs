@@ -20,6 +20,7 @@ import Profile from './components/Profile';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import { Product, CartItem } from './types';
+import { useSiteConfig } from './hooks/useSiteConfig';
 
 import AdminProductForm from './components/admin/AdminProductForm';
 
@@ -43,6 +44,8 @@ export default function App() {
     }
   });
 
+  const { config: siteConfig } = useSiteConfig();
+
   useEffect(() => {
     localStorage.setItem('tqs_cart', JSON.stringify(cartItems));
   }, [cartItems]);
@@ -61,6 +64,24 @@ export default function App() {
     }
     testConnection();
   }, []);
+
+  // Update Site Title and Favicon
+  useEffect(() => {
+    if (siteConfig) {
+      if (siteConfig.siteTitle) {
+        document.title = siteConfig.siteTitle;
+      }
+      if (siteConfig.siteFavicon) {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = siteConfig.siteFavicon;
+      }
+    }
+  }, [siteConfig]);
 
   const handleAddToCart = (
     product: Product, 

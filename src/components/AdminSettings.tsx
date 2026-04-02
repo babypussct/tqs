@@ -5,10 +5,13 @@ import { useProductConfig } from '../hooks/useProductConfig';
 import { usePaymentConfig, PaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useProducts } from '../hooks/useProducts';
+import { useSiteConfig, SiteConfig } from '../hooks/useSiteConfig';
+import { ImageUploader } from './ui/ImageUploader';
 
 export default function AdminSettings() {
   const { config, loading: configLoading, updateConfig } = useProductConfig();
   const { paymentConfig, loading: paymentLoading, updatePaymentConfig } = usePaymentConfig();
+  const { config: siteConfig, loading: siteLoading, updateConfig: updateSiteConfig } = useSiteConfig();
   
   const [badges, setBadges] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
@@ -19,6 +22,7 @@ export default function AdminSettings() {
 
   const [localPaymentConfig, setLocalPaymentConfig] = useState<PaymentConfig | null>(null);
   const [localShippingConfig, setLocalShippingConfig] = useState<any>(null);
+  const [localSiteConfig, setLocalSiteConfig] = useState<SiteConfig | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -56,6 +60,12 @@ export default function AdminSettings() {
     }
   }, [shippingConfig, shippingLoading]);
 
+  useEffect(() => {
+    if (!siteLoading && siteConfig) {
+      setLocalSiteConfig(siteConfig);
+    }
+  }, [siteConfig, siteLoading]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -65,6 +75,9 @@ export default function AdminSettings() {
       }
       if (localShippingConfig) {
         await updateShippingConfig(localShippingConfig);
+      }
+      if (localSiteConfig) {
+        await updateSiteConfig(localSiteConfig);
       }
       toast.success('Đã lưu cấu hình thành công');
     } catch (error) {
@@ -102,7 +115,7 @@ export default function AdminSettings() {
     setTypes(types.filter((_, i) => i !== index));
   };
 
-  if (configLoading || paymentLoading || shippingLoading || !localPaymentConfig || !localShippingConfig) return <div className="p-8 text-center text-gray-500">Đang tải cấu hình...</div>;
+  if (configLoading || paymentLoading || shippingLoading || siteLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig) return <div className="p-8 text-center text-gray-500">Đang tải cấu hình...</div>;
 
   return (
     <div className="space-y-8 pb-12">
@@ -119,6 +132,35 @@ export default function AdminSettings() {
           <Save className="w-4 h-4" />
           {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
+      </div>
+
+      {/* Site Configuration */}
+      <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Thông tin Hiển thị (Thẻ & Mạng xã hội)</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Tiêu đề Trang web (Web Title)</label>
+            <input
+              type="text"
+              value={localSiteConfig.siteTitle}
+              onChange={e => setLocalSiteConfig({...localSiteConfig, siteTitle: e.target.value})}
+              placeholder="VD: My Shop App"
+              className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500"
+            />
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Hiển thị trên tab trình duyệt và kết quả tìm kiếm.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Favicon / Icon đại diện</label>
+            <ImageUploader
+              value={localSiteConfig.siteFavicon}
+              onChange={url => setLocalSiteConfig({...localSiteConfig, siteFavicon: url})}
+              onClear={() => setLocalSiteConfig({...localSiteConfig, siteFavicon: ''})}
+              label="Chọn hình cho Favicon"
+            />
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Nên là hình vuông, kích thước nhỏ gọn. Hiển thị ở góc tab trình duyệt.</p>
+          </div>
+        </div>
       </div>
 
       {/* Shipping Configuration */}
