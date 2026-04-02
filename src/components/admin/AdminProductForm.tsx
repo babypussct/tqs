@@ -236,6 +236,7 @@ export default function AdminProductForm() {
                 required={true}
                 value={editingProduct.image || ''} 
                 onChange={(url) => setEditingProduct({...editingProduct, image: url})} 
+                onClear={() => setEditingProduct({...editingProduct, image: ''})}
               />
             </div>
             

@@ -136,7 +136,7 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   </button>
 );
 
-function ImageField({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
+function ImageField({ label, value, onChange, onClear, hint }: { label: string; value: string; onChange: (v: string) => void; onClear?: () => void; hint?: string }) {
   return (
     <div>
       <div className="mb-1.5">
@@ -145,6 +145,7 @@ function ImageField({ label, value, onChange, hint }: { label: string; value: st
       <ImageUploader 
         value={value}
         onChange={onChange}
+        onClear={onClear}
       />
       {hint && <p className="text-xs text-zinc-600 mt-2">{hint}</p>}
     </div>
@@ -271,6 +272,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             label="URL ảnh nền chính"
             value={homeConfig.hero.main.image}
             onChange={v => updateMain({ image: v })}
+            onClear={() => updateMain({ image: '' })}
             hint="Tỷ lệ 16:9 hoặc rộng hơn trông đẹp nhất. Nhấn Test để kiểm tra URL."
           />
 
@@ -360,6 +362,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
               label="URL Video (MP4 / WebM)"
               value={effects.videoUrl || ''}
               onChange={v => updateEffects({ videoUrl: v })}
+              onClear={() => updateEffects({ videoUrl: '' })}
               hint="Dùng video có nền tối với hiệu ứng sáng để blend đẹp nhất."
             />
 
@@ -601,7 +604,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             <div key={side}>
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Card {i + 1}</p>
               <div className="space-y-3">
-                <ImageField label="URL ảnh" value={homeConfig.hero[side].image} onChange={v => updateSide(side, { image: v })} />
+                <ImageField label="URL ảnh" value={homeConfig.hero[side].image} onChange={v => updateSide(side, { image: v })} onClear={() => updateSide(side, { image: '' })} />
                 <div className="grid grid-cols-2 gap-2">
                   <Input label="Tiêu đề" value={homeConfig.hero[side].title} onChange={v => updateSide(side, { title: v })} />
                   <Input label="Phụ đề" value={homeConfig.hero[side].subtitle} onChange={v => updateSide(side, { subtitle: v })} />
