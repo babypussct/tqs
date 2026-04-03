@@ -186,6 +186,47 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
     setDiscountCodeInput('');
   };
 
+  const validateShippingInfo = () => {
+    const nameWords = shippingInfo.fullName.trim().split(/\s+/);
+    if (nameWords.length < 2) {
+      toast.error('Vui lòng nhập đầy đủ họ và tên người nhận (ít nhất 2 từ).');
+      return false;
+    }
+    
+    const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
+    if (!phoneRegex.test(shippingInfo.phone.replace(/\s+/g, ''))) {
+      toast.error('Số điện thoại không hợp lệ. Vui lòng nhập đúng số điện thoại Việt Nam (10 số).');
+      return false;
+    }
+
+    if (shippingInfo.address.trim().length < 15) {
+      toast.error('Địa chỉ giao hàng quá ngắn. Vui lòng nhập chi tiết: Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố.');
+      return false;
+    }
+
+    const repetitiveRegex = /(.)\1{4,}/; 
+    if (repetitiveRegex.test(shippingInfo.address.replace(/\s+/g, ''))) {
+      toast.error('Địa chỉ giao hàng không hợp lệ (nghi ngờ spam/đơn ảo).');
+      return false;
+    }
+
+    if (shippingInfo.notes && repetitiveRegex.test(shippingInfo.notes.replace(/\s+/g, ''))) {
+      toast.error('Ghi chú chứa ký tự lặp lại không hợp lệ.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const generateOrderCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
@@ -193,6 +234,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
       toast.error('Vui lòng đăng nhập để đặt hàng!');
       return;
     }
+    if (!validateShippingInfo()) return;
 
     setIsSubmitting(true);
     try {
@@ -254,7 +296,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
         }
 
         // 6. Create order
-        const orderRef = doc(collection(db, 'orders'));
+        const orderId = generateOrderCode();
+        const orderRef = doc(db, 'orders', orderId);
         const orderData: any = {
           userId: user.uid,
           items: cartItems.map(item => {

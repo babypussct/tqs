@@ -530,7 +530,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
             {/* Hero Editor — dark themed */}
             <div
-              className="xl:col-span-3 rounded-2xl p-6"
+              className="xl:col-span-3 rounded-2xl p-6 min-w-0"
               style={{
                 background: 'rgba(10,5,0,0.6)',
                 border: '1px solid rgba(255,200,50,0.1)',
