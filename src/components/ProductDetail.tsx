@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check } from 'lucide-react';
 import { Product } from '../types';
 import { useProducts } from '../hooks/useProducts';
+import { useSiteConfig } from '../hooks/useSiteConfig';
 import ProductReviews from './ProductReviews';
 import ProductCard from './ProductCard';
 
@@ -14,6 +15,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { products, loading } = useProducts(true);
+  const { config: siteConfig } = useSiteConfig();
   const product = products.find(p => p.id === id);
 
   const [selectedBox, setSelectedBox] = useState('');
@@ -461,9 +463,10 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
 
         <div className="mt-8 p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border-l-4 border-emerald-500">
           <h4 className="text-emerald-700 dark:text-emerald-400 font-bold mb-2">Cam kết đóng gói chuẩn Sưu Tầm</h4>
-          <p className="text-emerald-800/80 dark:text-emerald-200/70 text-sm leading-relaxed">
-            Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!
-          </p>
+          <p 
+            className="text-emerald-800/80 dark:text-emerald-200/70 text-sm leading-relaxed ck-content"
+            dangerouslySetInnerHTML={{ __html: siteConfig?.packagingCommitment || 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!' }}
+          />
         </div>
       </div>
 

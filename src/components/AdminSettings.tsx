@@ -161,6 +161,19 @@ export default function AdminSettings() {
             <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Nên là hình vuông, kích thước nhỏ gọn. Hiển thị ở góc tab trình duyệt.</p>
           </div>
         </div>
+        
+        <div className="mt-8 border-t border-gray-100 dark:border-zinc-800 pt-6">
+          <h4 className="text-base font-bold text-gray-900 dark:text-white mb-4">Nội dung hiển thị mặc định</h4>
+          <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Cam kết đóng gói (Trang chi tiết sản phẩm)</label>
+          <textarea
+            value={localSiteConfig.packagingCommitment || ''}
+            onChange={e => setLocalSiteConfig({...localSiteConfig, packagingCommitment: e.target.value})}
+            placeholder="Cập nhật nội dung cam kết đóng gói chuẩn cho sản phẩm..."
+            rows={4}
+            className="w-full bg-gray-50 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white outline-none focus:border-red-500 resize-y"
+          />
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-2">Nội dung này hiển thị phía dưới phần thông tin tại tất cả các trang chi tiết sản phẩm. Có thể sử dụng thẻ HTML cơ bản như &lt;strong&gt;Nội dung in đậm&lt;/strong&gt;.</p>
+        </div>
       </div>
 
       {/* Shipping Configuration */}

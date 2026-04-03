@@ -6,11 +6,13 @@ import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 export interface SiteConfig {
   siteTitle: string;
   siteFavicon: string;
+  packagingCommitment?: string;
 }
 
 const DEFAULT_CONFIG: SiteConfig = {
   siteTitle: 'My Google AI Studio App',
-  siteFavicon: '/favicon.ico' // Or whatever default they have
+  siteFavicon: '/favicon.ico', // Or whatever default they have
+  packagingCommitment: 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!'
 };
 
 export function useSiteConfig() {
