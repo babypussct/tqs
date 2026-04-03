@@ -24,11 +24,18 @@ import { useSiteConfig } from './hooks/useSiteConfig';
 
 import AdminProductForm from './components/admin/AdminProductForm';
 
-// Protected Route Component
+// Protected Route Component - Admin only
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAdmin, loading } = useAuth();
   if (loading) return <div>Đang tải...</div>;
   return isAdmin ? <>{children}</> : <Navigate to="/" />;
+};
+
+// Protected Route Component - Requires login
+const AuthRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div>Đang tải...</div>;
+  return user ? <>{children}</> : <Navigate to="/" state={{ requireAuth: true }} />;
 };
 
 export default function App() {
@@ -194,7 +201,11 @@ export default function App() {
                 <Route path="/" element={<Home onAddToCart={handleAddToCart} />} />
                 <Route path="/shop" element={<Shop onAddToCart={handleAddToCart} />} />
                 <Route path="/product/:id" element={<ProductDetail onAddToCart={handleAddToCart} />} />
-                <Route path="/checkout" element={<Checkout cartItems={cartItems} clearCart={clearCart} />} />
+                <Route path="/checkout" element={
+                  <AuthRoute>
+                    <Checkout cartItems={cartItems} clearCart={clearCart} />
+                  </AuthRoute>
+                } />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={
                   <AdminRoute>

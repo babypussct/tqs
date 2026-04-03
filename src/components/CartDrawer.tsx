@@ -1,7 +1,9 @@
-import { X, Plus, Minus, Trash2, ShoppingBag, Truck } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Truck, LogIn } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CartItem } from '../types';
 import { useShippingConfig } from '../hooks/useShippingConfig';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, onRemove, clearCart }: CartDrawerProps) {
   const navigate = useNavigate();
   const { shippingConfig } = useShippingConfig();
+  const { user, login } = useAuth();
   
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
@@ -206,13 +209,29 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
               <span className="text-2xl font-black text-red-600 dark:text-red-500">{formatPrice(totalPrice)}</span>
             </div>
             <button 
-              onClick={() => {
+              onClick={async () => {
+                if (!user) {
+                  try {
+                    await login();
+                    toast.success('Đăng nhập thành công! Bạn có thể tiếp tục thanh toán.');
+                  } catch {
+                    toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
+                  }
+                  return;
+                }
                 onClose();
                 navigate('/checkout');
               }}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 rounded-xl transition-all shadow-sm"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
             >
-              Thanh Toán Ngay
+              {!user ? (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Đăng Nhập để Thanh Toán
+                </>
+              ) : (
+                'Thanh Toán Ngay'
+              )}
             </button>
           </div>
         )}
