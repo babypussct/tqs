@@ -36,9 +36,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!user) return;
     
-    const isSuperAdmin = user.email === 'oneloveonepeopleforever@gmail.com';
+    // Make sure case-insensitive comparison
+    const isSuperAdmin = user.email?.toLowerCase() === 'oneloveonepeopleforever@gmail.com';
 
-    const unsubscribe = onSnapshot(doc(db, 'adminUsers', user.email || user.uid), (docSnap) => {
+    const defaultSuperAdmin: AdminUser = {
+      id: user.uid,
+      email: user.email || 'oneloveonepeopleforever@gmail.com',
+      name: user.displayName || 'Super Admin',
+      permissions: {
+        manageProducts: true,
+        manageOrders: true,
+        manageHomepage: true,
+        manageDiscounts: true,
+        manageSettings: true,
+        manageRoles: true
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isSuperAdmin: true
+    };
+
+    const docId = user.email ? user.email.toLowerCase() : user.uid;
+
+    const unsubscribe = onSnapshot(doc(db, 'adminUsers', docId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as AdminUser;
         setAdminUser({
@@ -46,29 +66,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isSuperAdmin: isSuperAdmin
         });
       } else if (isSuperAdmin) {
-        setAdminUser({
-          id: user.uid,
-          email: user.email!,
-          name: user.displayName || 'Super Admin',
-          permissions: {
-            manageProducts: true,
-            manageOrders: true,
-            manageHomepage: true,
-            manageDiscounts: true,
-            manageSettings: true,
-            manageRoles: true
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isSuperAdmin: true
-        });
+        setAdminUser(defaultSuperAdmin);
       } else {
         setAdminUser(null);
       }
       setLoading(false);
     }, (error) => {
       console.error("Error fetching admin status:", error);
-      setAdminUser(null);
+      // Fallback: If network/rules block the read, give superadmin its rights anyway
+      if (isSuperAdmin) {
+        setAdminUser(defaultSuperAdmin);
+      } else {
+        setAdminUser(null);
+      }
       setLoading(false);
     });
 
