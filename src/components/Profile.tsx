@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Order } from '../types';
+import { Order, AppUser } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag, QrCode, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag, QrCode, Copy, ChevronDown, ChevronUp, Trophy, Star, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
+import { useRewardsConfig } from '../utils/useRewardsConfig';
 
 export default function Profile() {
   const { user } = useAuth();
   const { paymentConfig } = usePaymentConfig();
+  const { config: rewardsConfig } = useRewardsConfig();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedPaymentOrderId, setExpandedPaymentOrderId] = useState<string | null>(null);
 
@@ -27,7 +30,7 @@ export default function Profile() {
       orderBy('createdAt', 'desc')
     );
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeOrders = onSnapshot(q, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -40,7 +43,16 @@ export default function Profile() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubscribeUser = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+      if (doc.exists()) {
+        setAppUser(doc.data() as AppUser);
+      }
+    });
+
+    return () => {
+      unsubscribeOrders();
+      unsubscribeUser();
+    };
   }, [user]);
 
   const getStatusConfig = (status: Order['status']) => {
@@ -92,6 +104,29 @@ export default function Profile() {
           <p className="text-gray-500 dark:text-zinc-400">{user.email}</p>
         </div>
       </div>
+
+      {appUser && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+             <Trophy className="w-24 h-24 absolute -right-6 -bottom-6 text-gray-100 dark:text-zinc-800/30" />
+             <p className="text-gray-500 dark:text-gray-400 font-medium mb-1 relative z-10 text-sm">Hạng Thành Viên</p>
+             <h2 className="text-xl font-black uppercase flex items-center gap-2 relative z-10 text-gray-900 dark:text-white">
+               {rewardsConfig && rewardsConfig.tiers ? rewardsConfig.tiers[appUser.tier]?.name : appUser.tier} <Star className="w-4 h-4 text-yellow-500" />
+             </h2>
+             <p className="text-xs text-gray-500 mt-2 relative z-10">Đã chi tiêu: {(appUser.totalSpent || 0).toLocaleString('vi-VN')}đ</p>
+          </div>
+          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 shadow-sm">
+             <p className="text-gray-500 dark:text-gray-400 font-medium mb-1 text-sm">Điểm Thưởng</p>
+             <h2 className="text-2xl font-black text-amber-500">{appUser.points?.toLocaleString() || 0}</h2>
+             <p className="text-xs text-gray-500 mt-2">Dùng để thanh toán giảm giá đơn hàng.</p>
+          </div>
+          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 shadow-sm">
+             <p className="text-gray-500 dark:text-gray-400 font-medium mb-1 text-sm">Hoạt Động</p>
+             <h2 className="text-2xl font-black text-blue-500">{appUser.totalOrders || 0} Đơn</h2>
+             <p className="text-xs text-gray-500 mt-2">Đơn hàng hoàn thành: {(appUser.totalOrders || 0)}</p>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6 md:p-8">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">

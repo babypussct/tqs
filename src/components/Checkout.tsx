@@ -9,7 +9,10 @@ import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy } from 'lucide-re
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
+import { useRewardsConfig } from '../utils/useRewardsConfig';
 import VietnamAddressSelector from './ui/VietnamAddressSelector';
+import { AppUser } from '../types';
+import { onSnapshot } from 'firebase/firestore';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -24,6 +27,18 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
+  const [userProfile, setUserProfile] = useState<AppUser | null>(null);
+  const { config: rewardsConfig } = useRewardsConfig();
+  const [pointsToUseInput, setPointsToUseInput] = useState<string>('');
+  const [appliedPoints, setAppliedPoints] = useState<number>(0);
+  
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+      if (doc.exists()) setUserProfile(doc.data() as AppUser);
+    });
+    return unsub;
+  }, [user]);
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
   const [orderFinalAmount, setOrderFinalAmount] = useState<number>(0);
   const [orderTotalAmount, setOrderTotalAmount] = useState<number>(0);
@@ -102,7 +117,15 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
     shippingFee = shippingConfig.defaultFee;
   }
 
-  const finalAmount = totalAmount + shippingFee - discountAmount;
+  // Calculate Points Discount
+  let pointsDiscountAmount = 0;
+  if (rewardsConfig && rewardsConfig.isActive && appliedPoints > 0) {
+    const pointsValueInVND = appliedPoints * rewardsConfig.pointValueVND;
+    const maxDiscountVND = totalAmount * (rewardsConfig.maxDiscountPercentage / 100);
+    pointsDiscountAmount = Math.min(pointsValueInVND, maxDiscountVND, totalAmount - discountAmount);
+  }
+
+  const finalAmount = Math.max(0, totalAmount + shippingFee - discountAmount - pointsDiscountAmount);
 
   const handleApplyDiscount = async () => {
     if (!discountCodeInput.trim()) return;
@@ -448,6 +471,14 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           orderData.discountCode = appliedDiscount.code;
           orderData.discountAmount = discountAmount;
         }
+        if (appliedPoints > 0) {
+          orderData.discountCode = (orderData.discountCode ? orderData.discountCode + ', ' : '') + `Dùng ${appliedPoints} điểm`;
+          orderData.discountAmount = (orderData.discountAmount || 0) + pointsDiscountAmount;
+          // Deduct points from user
+          transaction.update(doc(db, 'users', user.uid), {
+            points: increment(-appliedPoints)
+          });
+        }
         orderData.shippingFee = shippingFee;
         orderData.finalAmount = finalAmount;
 
@@ -755,6 +786,64 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
               ))}
             </div>
 
+            {/* Points Usage */}
+            {rewardsConfig?.isActive && userProfile && userProfile.points > 0 && (
+              <div className="border-t border-gray-200 dark:border-zinc-800 pt-6 mb-6">
+                <h3 className="text-sm font-bold text-yellow-500 mb-3 flex items-center gap-2">
+                  <Ticket className="w-4 h-4" /> Điểm thưởng: <span className="text-gray-900 dark:text-white font-mono">{userProfile.points.toLocaleString()}</span>
+                </h3>
+                
+                { appliedPoints > 0 ? (
+                  <div className="flex items-center justify-between bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-xl p-3">
+                    <div className="flex items-center gap-2">
+                       <CheckCircle2 className="w-5 h-5 text-yellow-500" />
+                       <div>
+                         <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400">Đã dùng {appliedPoints} điểm</p>
+                         <p className="text-xs text-yellow-600 dark:text-yellow-500">Giảm thêm {pointsDiscountAmount.toLocaleString('vi-VN')}đ</p>
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => setAppliedPoints(0)}
+                      className="p-1.5 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-500/20 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input 
+                      type="number"
+                      value={pointsToUseInput}
+                      onChange={(e) => setPointsToUseInput(e.target.value)}
+                      placeholder={`Có thể dùng tới ${userProfile.points}`}
+                      className="flex-1 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm outline-none w-full text-gray-900 dark:text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const num = parseInt(pointsToUseInput);
+                        if (isNaN(num) || num <= 0) {
+                          toast.error('Số điểm không hợp lệ'); return;
+                        }
+                        if (num > userProfile.points) {
+                          toast.error('Bạn không đủ điểm!'); return;
+                        }
+                        if (num < rewardsConfig.minPointsToUse) {
+                          toast.error(`Điểm tối thiểu được dùng là ${rewardsConfig.minPointsToUse} điểm`); return;
+                        }
+                        setAppliedPoints(num);
+                        setPointsToUseInput('');
+                      }}
+                      className="bg-yellow-500 text-black px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400"
+                    >
+                      Dùng Điểm
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-2">1 điểm = {rewardsConfig.pointValueVND.toLocaleString('vi-VN')}đ. Giảm tối đa {rewardsConfig.maxDiscountPercentage}% giá trị đơn hàng.</p>
+              </div>
+            )}
+
             {/* Discount Code Input */}
             <div className="border-t border-gray-200 dark:border-zinc-800 pt-6 mb-6">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -818,6 +907,12 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                 <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                   <span>Giảm giá ({appliedDiscount.code})</span>
                   <span>-{discountAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              )}
+              {appliedPoints > 0 && (
+                <div className="flex justify-between text-yellow-600 dark:text-yellow-400 font-medium">
+                  <span>Dùng điểm ({appliedPoints})</span>
+                  <span>-{pointsDiscountAmount.toLocaleString('vi-VN')}đ</span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white pt-3 border-t border-gray-200 dark:border-zinc-800">

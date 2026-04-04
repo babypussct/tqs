@@ -7,13 +7,14 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield, Database } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield, Database, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
 import AdminHeroEditor from './admin/AdminHeroEditor';
 import AdminPermissions from './admin/AdminPermissions';
 import AdminDatabaseRules from './admin/AdminDatabaseRules';
+import AdminRewardsConfig from './admin/AdminRewardsConfig';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,7 +26,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'permissions' | 'rules'>('products');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -120,6 +121,7 @@ export default function AdminDashboard() {
               { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
               { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
               { id: 'settings', label: 'Cấu hình', icon: Settings, requiredPermission: 'manageSettings' },
+              { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
               { id: 'permissions', label: 'Thành viên', icon: Shield, requiredPermission: 'manageRoles' },
               { id: 'rules', label: 'Sửa lỗi Database', icon: Database, requiredPermission: null },
             ].map((tab) => {
@@ -669,6 +671,11 @@ export default function AdminDashboard() {
       {/* Tab Content: Settings */}
       {activeTab === 'settings' && (
         <AdminSettings />
+      )}
+
+      {/* Tab Content: Rewards */}
+      {activeTab === 'rewards' && (
+        <AdminRewardsConfig />
       )}
 
       {/* Tab Content: Permissions */}

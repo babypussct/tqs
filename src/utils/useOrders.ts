@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Order } from '../types';
+import { Order, RewardsConfig } from '../types';
 import { handleFirestoreError, OperationType } from './firebaseError';
 import { toast } from 'sonner';
+import { DEFAULT_REWARDS_CONFIG } from './useRewardsConfig';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,16 +36,58 @@ export function useOrders() {
         updatedAt: serverTimestamp()
       });
 
-      // Update Points if delivered
+      // Update Points & Tier if delivered
       if (newStatus === 'delivered' && userId && amount) {
         try {
-          const pointsEarned = Math.floor(amount / 10000); // 1 point per 10k VND
-          await updateDoc(doc(db, 'users', userId), {
-            totalSpent: increment(amount),
-            points: increment(pointsEarned)
-          });
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const currentSpent = userData.totalSpent || 0;
+            const currentOrders = userData.totalOrders || 0;
+            const newSpent = currentSpent + amount;
+            const newOrders = currentOrders + 1;
+
+            // Fetch Rewards Config
+            const configRef = doc(db, 'system_settings', 'tiers_config');
+            const configSnap = await getDoc(configRef);
+            const config: RewardsConfig = configSnap.exists() ? (configSnap.data() as RewardsConfig) : DEFAULT_REWARDS_CONFIG;
+            
+            let pointsEarned = 0;
+            let newTier = userData.tier || 'bronze';
+
+            if (config && config.isActive) {
+              const currentTierKey = userData.tier || 'bronze';
+              const currentTierConfig = config.tiers[currentTierKey as keyof RewardsConfig['tiers']] || config.tiers['bronze'];
+              const multiplier = currentTierConfig.pointMultiplier || 0.01;
+              
+              // Points earned is (Amount * Multiplier) / Point Value VND
+              const pointValueVND = config.pointValueVND || 1000;
+              pointsEarned = Math.floor((amount * multiplier) / pointValueVND);
+
+              // Recalculate Tier
+              const sortedTiers = Object.values(config.tiers).sort((a, b) => b.minSpent - a.minSpent);
+              for (const tier of sortedTiers) {
+                if (newSpent >= tier.minSpent) {
+                  newTier = tier.tierId;
+                  break;
+                }
+              }
+            } else {
+              // Fallback legacy calculation
+              pointsEarned = Math.floor(amount / 10000);
+            }
+
+            await updateDoc(userRef, {
+              totalSpent: newSpent,
+              totalOrders: newOrders,
+              tier: newTier,
+              points: increment(pointsEarned)
+            });
+          }
         } catch (e) {
-          console.error("Lỗi khi cộng điểm:", e);
+          console.error("Lỗi khi cộng điểm và nâng hạng:", e);
         }
       }
 

@@ -217,6 +217,7 @@ export interface AdminPermissions {
   manageDiscounts: boolean;
   manageSettings: boolean;
   manageRoles: boolean;
+  manageRewards?: boolean;
 }
 
 export interface AdminUser {
@@ -244,4 +245,20 @@ export interface AppUser {
   lastLoginAt: any;
   createdAt: any;
   adminPermissions?: AdminPermissions; // Migrated from AdminUser
+}
+
+export interface TierConfig {
+  tierId: 'bronze' | 'silver' | 'gold' | 'diamond';
+  name: string;
+  minSpent: number;
+  pointMultiplier: number;
+  benefits: string[];
+}
+
+export interface RewardsConfig {
+  isActive: boolean;
+  pointValueVND: number;
+  minPointsToUse: number;
+  maxDiscountPercentage: number;
+  tiers: Record<'bronze' | 'silver' | 'gold' | 'diamond', TierConfig>;
 }
