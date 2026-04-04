@@ -7,12 +7,13 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
 import AdminHeroEditor from './admin/AdminHeroEditor';
 import AdminPermissions from './admin/AdminPermissions';
+import AdminDatabaseRules from './admin/AdminDatabaseRules';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,7 +25,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'permissions'>('products');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'permissions' | 'rules'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -120,6 +121,7 @@ export default function AdminDashboard() {
               { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
               { id: 'settings', label: 'Cấu hình', icon: Settings, requiredPermission: 'manageSettings' },
               { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
+              { id: 'rules', label: 'Sửa lỗi Database', icon: Database, requiredPermission: null },
             ].map((tab) => {
               // Hide tab if user doesn't have permission
               if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
@@ -671,6 +673,11 @@ export default function AdminDashboard() {
       {/* Tab Content: Permissions */}
       {activeTab === 'permissions' && (
         <AdminPermissions />
+      )}
+
+      {/* Tab Content: Database Rules */}
+      {activeTab === 'rules' && (
+        <AdminDatabaseRules />
       )}
         </div>
       </main>
