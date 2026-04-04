@@ -7,21 +7,24 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
 import AdminHeroEditor from './admin/AdminHeroEditor';
+import AdminPermissions from './admin/AdminPermissions';
 import { useProductConfig } from '../hooks/useProductConfig';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
   const { products, loading: productsLoading } = useProducts(false); // Fetch all including inactive
   const { config: initialConfig, loading: configLoading } = useHomepage();
   const { config: productConfig } = useProductConfig();
   const { orders, loading: ordersLoading, updateOrderStatus } = useOrders();
+  const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'permissions'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -110,14 +113,19 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Quản trị</h2>
           <nav className="space-y-1.5">
             {[
-              { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
-              { id: 'products', label: 'Sản phẩm', icon: Package },
-              { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
-              { id: 'homepage', label: 'Giao diện', icon: Palette },
-              { id: 'discounts', label: 'Mã giảm giá', icon: Ticket },
-              { id: 'settings', label: 'Cấu hình', icon: Settings },
+              { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard, requiredPermission: null },
+              { id: 'products', label: 'Sản phẩm', icon: Package, requiredPermission: 'manageProducts' },
+              { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag, requiredPermission: 'manageOrders' },
+              { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
+              { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
+              { id: 'settings', label: 'Cấu hình', icon: Settings, requiredPermission: 'manageSettings' },
+              { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
             ].map((tab) => {
-              const Icon = tab.icon;
+              // Hide tab if user doesn't have permission
+              if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
+                return null;
+              }
+              const Icon = tab.icon as any;
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -658,6 +666,11 @@ export default function AdminDashboard() {
       {/* Tab Content: Settings */}
       {activeTab === 'settings' && (
         <AdminSettings />
+      )}
+
+      {/* Tab Content: Permissions */}
+      {activeTab === 'permissions' && (
+        <AdminPermissions />
       )}
         </div>
       </main>

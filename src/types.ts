@@ -114,8 +114,10 @@ export interface Product {
     description?: string;
   }[];
   isActive?: boolean;
+  allowedPaymentMethods?: ('cod' | 'vietqr')[]; // Selected payment methods for this product
   createdAt?: any;
 }
+
 
 export interface Category {
   id: string;
@@ -206,4 +208,23 @@ export interface Order {
   };
   createdAt: any;
   updatedAt: any;
+}
+
+export interface AdminPermissions {
+  manageProducts: boolean;
+  manageOrders: boolean;
+  manageHomepage: boolean;
+  manageDiscounts: boolean;
+  manageSettings: boolean;
+  manageRoles: boolean;
+}
+
+export interface AdminUser {
+  id: string; // The user UID
+  email: string;
+  name: string;
+  permissions: AdminPermissions;
+  createdAt: any;
+  updatedAt: any;
+  isSuperAdmin?: boolean; // Main admin account
 }

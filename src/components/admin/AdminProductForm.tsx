@@ -24,7 +24,8 @@ export default function AdminProductForm() {
     images: [],
     specifications: [],
     customVariants: [],
-    addonIds: []
+    addonIds: [],
+    allowedPaymentMethods: ['cod', 'vietqr']
   });
   const [loading, setLoading] = useState(false);
 
@@ -74,6 +75,7 @@ export default function AdminProductForm() {
       if (editingProduct.images) productData.images = editingProduct.images;
       if (editingProduct.specifications) productData.specifications = editingProduct.specifications;
       if (editingProduct.addonIds) productData.addonIds = editingProduct.addonIds;
+      if (editingProduct.allowedPaymentMethods) productData.allowedPaymentMethods = editingProduct.allowedPaymentMethods;
       if (editingProduct.soldCount !== undefined) productData.soldCount = Number(editingProduct.soldCount);
       if (editingProduct.customVariants) {
         productData.customVariants = editingProduct.customVariants.map(v => ({
@@ -225,6 +227,38 @@ export default function AdminProductForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">Đã bán</label>
               <input type="number" min="0" value={editingProduct.soldCount ?? ''} onChange={e => setEditingProduct({...editingProduct, soldCount: e.target.value === '' ? undefined : Number(e.target.value)})} className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" placeholder="0" />
+            </div>
+            
+            <div className="sm:col-span-2 lg:col-span-4 mt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-3">Phương thức thanh toán hỗ trợ</label>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(editingProduct.allowedPaymentMethods || []).includes('cod')}
+                    onChange={(e) => {
+                      const current = editingProduct.allowedPaymentMethods || [];
+                      if (e.target.checked) setEditingProduct({...editingProduct, allowedPaymentMethods: [...current, 'cod']});
+                      else setEditingProduct({...editingProduct, allowedPaymentMethods: current.filter(m => m !== 'cod')});
+                    }}
+                    className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                  />
+                  <span className="text-gray-900 dark:text-white font-medium">COD (Thanh toán khi nhận hàng)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(editingProduct.allowedPaymentMethods || []).includes('vietqr')}
+                    onChange={(e) => {
+                      const current = editingProduct.allowedPaymentMethods || [];
+                      if (e.target.checked) setEditingProduct({...editingProduct, allowedPaymentMethods: [...current, 'vietqr']});
+                      else setEditingProduct({...editingProduct, allowedPaymentMethods: current.filter(m => m !== 'vietqr')});
+                    }}
+                    className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                  />
+                  <span className="text-gray-900 dark:text-white font-medium">VietQR (Chuyển khoản)</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>

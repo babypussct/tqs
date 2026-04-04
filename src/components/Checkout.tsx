@@ -30,11 +30,19 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   // Honeypot - ẩn với người dùng, bot thường tự điền
   const [honeypot, setHoneypot] = useState('');
 
+  // Check if any product restricts COD, or if there's a payment method clash
+  const allowCOD = cartItems.every(item => 
+    !item.product.allowedPaymentMethods || 
+    item.product.allowedPaymentMethods.includes('cod')
+  );
+
   useEffect(() => {
-    if (paymentConfig && !paymentConfig.isActive && paymentMethod === 'vietqr') {
+    if (!allowCOD && paymentConfig?.isActive) {
+      setPaymentMethod('vietqr');
+    } else if (paymentConfig && !paymentConfig.isActive && paymentMethod === 'vietqr') {
       setPaymentMethod('cod');
     }
-  }, [paymentConfig, paymentMethod]);
+  }, [paymentConfig, paymentMethod, allowCOD]);
   
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.displayName || '',
@@ -658,21 +666,28 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
               <div className="pt-4 border-t border-gray-200 dark:border-zinc-800">
                 <label className="block text-sm font-bold text-gray-900 dark:text-white mb-4">Phương thức thanh toán</label>
+                {!allowCOD && paymentConfig?.isActive && (
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-sm text-amber-800 dark:text-amber-400">
+                    ℹ️ Đơn hàng có sản phẩm yêu cầu thanh toán chuyển khoản trước (VietQR).
+                  </div>
+                )}
                 <div className="space-y-3">
-                  <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="cod"
-                      checked={paymentMethod === 'cod'}
-                      onChange={() => setPaymentMethod('cod')}
-                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
-                    />
-                    <div className="ml-3">
-                      <span className="block text-sm font-medium text-gray-900 dark:text-white">Thanh toán khi nhận hàng (COD)</span>
-                      <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Thanh toán bằng tiền mặt khi giao hàng</span>
-                    </div>
-                  </label>
+                  {allowCOD && (
+                    <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value="cod"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                        className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                      />
+                      <div className="ml-3">
+                        <span className="block text-sm font-medium text-gray-900 dark:text-white">Thanh toán khi nhận hàng (COD)</span>
+                        <span className="block text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Thanh toán bằng tiền mặt khi giao hàng</span>
+                      </div>
+                    </label>
+                  )}
                   
                   {paymentConfig.isActive && (
                     <label className={`flex items-center p-4 border rounded-xl cursor-pointer transition-all ${paymentMethod === 'vietqr' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-500/50'}`}>
