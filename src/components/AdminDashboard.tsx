@@ -370,6 +370,7 @@ export default function AdminDashboard() {
                           updateOrderStatus(order.id, e.target.value as Order['status']);
                         }}
                         className={`text-xs font-medium px-2.5 py-1 rounded-full border outline-none cursor-pointer ${
+                          order.status === 'suspicious' ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30' :
                           order.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20' :
                           order.status === 'processing' ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-500 dark:border-blue-500/20' :
                           order.status === 'shipped' ? 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-500/10 dark:text-purple-500 dark:border-purple-500/20' :
@@ -377,12 +378,23 @@ export default function AdminDashboard() {
                           'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
                         }`}
                       >
+                        <option value="suspicious">⚠ Nghi ngờ</option>
                         <option value="pending">Chờ xử lý</option>
                         <option value="processing">Đang chuẩn bị</option>
                         <option value="shipped">Đang giao</option>
                         <option value="delivered">Đã giao</option>
                         <option value="cancelled">Đã hủy</option>
                       </select>
+                      {/* Risk score badge */}
+                      {(order as any).riskScore !== undefined && (order as any).riskScore >= 40 && (
+                        <div className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                          (order as any).riskScore >= 60
+                            ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+                        }`}>
+                          🔥 Rủi ro: {(order as any).riskScore}/100
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400">
                       {order.createdAt?.toDate().toLocaleDateString('vi-VN')}

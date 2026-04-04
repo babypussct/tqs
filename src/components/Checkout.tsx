@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc, increment, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc, increment, runTransaction, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
@@ -26,6 +26,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
   const [orderFinalAmount, setOrderFinalAmount] = useState<number>(0);
   const [orderTotalAmount, setOrderTotalAmount] = useState<number>(0);
+  // Honeypot - ẩn với người dùng, bot thường tự điền
+  const [honeypot, setHoneypot] = useState('');
 
   useEffect(() => {
     if (paymentConfig && !paymentConfig.isActive && paymentMethod === 'vietqr') {
@@ -187,35 +189,112 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   };
 
   const validateShippingInfo = () => {
-    const nameWords = shippingInfo.fullName.trim().split(/\s+/);
+    // --- Họ & Tên ---
+    const trimmedName = shippingInfo.fullName.trim();
+    const nameWords = trimmedName.split(/\s+/).filter(w => w.length >= 2);
     if (nameWords.length < 2) {
-      toast.error('Vui lòng nhập đầy đủ họ và tên người nhận (ít nhất 2 từ).');
+      toast.error('Vui lòng nhập đầy đủ họ và tên người nhận (ít nhất 2 từ, mỗi từ ít nhất 2 ký tự).');
       return false;
     }
-    
+    // Không được chứa số hoặc ký tự đặc biệt trong tên
+    if (/[0-9!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?`~]/.test(trimmedName)) {
+      toast.error('Họ và tên không được chứa số hoặc ký tự đặc biệt.');
+      return false;
+    }
+    // Không có ký tự lặp lại quá nhiều trong tên
+    if (/(.)\1{2,}/.test(trimmedName.replace(/\s/g, ''))) {
+      toast.error('Họ và tên không hợp lệ.');
+      return false;
+    }
+
+    // --- Số điện thoại ---
+    const cleanPhone = shippingInfo.phone.replace(/\s+/g, '');
     const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
-    if (!phoneRegex.test(shippingInfo.phone.replace(/\s+/g, ''))) {
+    if (!phoneRegex.test(cleanPhone)) {
       toast.error('Số điện thoại không hợp lệ. Vui lòng nhập đúng số điện thoại Việt Nam (10 số).');
       return false;
     }
-
-    if (shippingInfo.address.trim().length < 15) {
-      toast.error('Địa chỉ giao hàng quá ngắn. Vui lòng nhập chi tiết: Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố.');
+    // Chặn SĐT test phổ biến
+    const blockedPhones = ['0123456789', '0987654321', '0111111111', '0000000000', '0999999999', '0123123123', '0369369369'];
+    if (blockedPhones.includes(cleanPhone)) {
+      toast.error('Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại thực của bạn.');
+      return false;
+    }
+    // Không chấp nhận số gồm toàn một chữ số (0333333333, 0555555555...)
+    if (/^0(.)\1{8}$/.test(cleanPhone)) {
+      toast.error('Số điện thoại không hợp lệ.');
       return false;
     }
 
-    const repetitiveRegex = /(.)\1{4,}/; 
-    if (repetitiveRegex.test(shippingInfo.address.replace(/\s+/g, ''))) {
+    // --- Địa chỉ ---
+    const trimmedAddr = shippingInfo.address.trim();
+    if (trimmedAddr.length < 20) {
+      toast.error('Địa chỉ giao hàng quá ngắn. Vui lòng nhập đầy đủ: Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố.');
+      return false;
+    }
+    // Phải có ít nhất 1 chữ số (số nhà, ngõ, km...)
+    if (!/\d/.test(trimmedAddr)) {
+      toast.error('Địa chỉ phải có số nhà hoặc số đường. Ví dụ: 123 Nguyễn Trãi, Thanh Xuân, Hà Nội.');
+      return false;
+    }
+    // Phải có dấu phẩy (phân cách đơn vị hành chính)
+    if (!trimmedAddr.includes(',')) {
+      toast.error('Địa chỉ phải có dấu phẩy phân cách. Ví dụ: 123 Nguyễn Trãi, Thanh Xuân, Hà Nội.');
+      return false;
+    }
+    const repetitiveRegex = /(.)\1{4,}/;
+    if (repetitiveRegex.test(trimmedAddr.replace(/\s+/g, ''))) {
       toast.error('Địa chỉ giao hàng không hợp lệ (nghi ngờ spam/đơn ảo).');
       return false;
     }
+    // Địa chỉ không được toàn số
+    if (/^[\d\s,]+$/.test(trimmedAddr)) {
+      toast.error('Địa chỉ giao hàng không hợp lệ.');
+      return false;
+    }
 
+    // --- Ghi chú ---
     if (shippingInfo.notes && repetitiveRegex.test(shippingInfo.notes.replace(/\s+/g, ''))) {
       toast.error('Ghi chú chứa ký tự lặp lại không hợp lệ.');
       return false;
     }
 
     return true;
+  };
+
+  // Tính điểm rủi ro đơn hàng (0-100)
+  const calculateRiskScore = async (uid: string): Promise<number> => {
+    let score = 0;
+
+    // 1. Tuổi tài khoản
+    const creationTime = user?.metadata?.creationTime;
+    if (creationTime) {
+      const ageDays = (Date.now() - new Date(creationTime).getTime()) / (1000 * 60 * 60 * 24);
+      if (ageDays < 1) score += 30;
+      else if (ageDays < 7) score += 15;
+    } else {
+      score += 20; // Không biết tuổi tài khoản
+    }
+
+    // 2. Lịch sử đơn hàng (tỷ lệ huỷ)
+    try {
+      const allOrdersSnap = await getDocs(
+        query(collection(db, 'orders'), where('userId', '==', uid))
+      );
+      const total = allOrdersSnap.size;
+      const cancelled = allOrdersSnap.docs.filter(d => d.data().status === 'cancelled').length;
+
+      if (total === 0) score += 10; // Đơn đầu tiên
+      if (total > 0) {
+        const cancelRate = cancelled / total;
+        if (cancelRate > 0.5) score += 35;
+        else if (cancelRate > 0.3) score += 20;
+      }
+    } catch {
+      // Bỏ qua nếu không đọc được lịch sử
+    }
+
+    return Math.min(score, 100);
   };
 
   const generateOrderCode = () => {
@@ -234,7 +313,33 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
       toast.error('Vui lòng đăng nhập để đặt hàng!');
       return;
     }
+
+    // Honeypot check — bot detection
+    if (honeypot !== '') {
+      // Âm thầm giả vờ thành công để bot không biết
+      setIsSuccess(true);
+      return;
+    }
+
     if (!validateShippingInfo()) return;
+
+    // Rate limiting: tối đa 3 đơn trong 1 giờ
+    try {
+      const oneHourAgo = Timestamp.fromDate(new Date(Date.now() - 3600000));
+      const recentSnap = await getDocs(
+        query(
+          collection(db, 'orders'),
+          where('userId', '==', user.uid),
+          where('createdAt', '>=', oneHourAgo)
+        )
+      );
+      if (recentSnap.size >= 3) {
+        toast.error('Bạn đã đặt quá nhiều đơn trong 1 giờ. Vui lòng thử lại sau.');
+        return;
+      }
+    } catch {
+      // Bỏ qua lỗi rate limit check, tiếp tục xử lý
+    }
 
     setIsSubmitting(true);
     try {
@@ -295,7 +400,11 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           }
         }
 
-        // 6. Create order
+        // 6. Tính điểm rủi ro
+        const riskScore = await calculateRiskScore(user.uid);
+        const orderStatus = riskScore >= 60 ? 'suspicious' : 'pending';
+
+        // 7. Create order
         const orderId = generateOrderCode();
         const orderRef = doc(db, 'orders', orderId);
         const orderData: any = {
@@ -317,10 +426,11 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
             return itemData;
           }),
           totalAmount,
-          status: 'pending',
+          status: orderStatus,
           paymentMethod: paymentMethod,
           paymentStatus: paymentMethod === 'vietqr' ? 'pending' : 'paid',
           shippingInfo,
+          riskScore,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -493,11 +603,17 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-zinc-800 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Thông tin giao hàng</h2>
             
-            {!user && (
-              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-amber-800 dark:text-amber-500 text-sm">
-                Bạn cần đăng nhập để có thể đặt hàng. Vui lòng đăng nhập ở góc trên bên phải màn hình.
-              </div>
-            )}
+            {/* Honeypot field - ẩn với người dùng thật, bot thường tự điền */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={e => setHoneypot(e.target.value)}
+              style={{ display: 'none', position: 'absolute', left: '-9999px' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
 
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -697,7 +813,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
             <button
               type="submit"
               form="checkout-form"
-              disabled={isSubmitting || !user}
+              disabled={isSubmitting}
               className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:dark:bg-zinc-700 text-white py-3.5 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

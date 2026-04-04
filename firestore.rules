@@ -39,7 +39,7 @@ service cloud.firestore {
     //   - userId: string (required, matches creator UID, immutable)
     //   - items: list (required, size > 0, size <= 50)
     //   - totalAmount: number (required, >= 0)
-    //   - status: string (required, in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
+    //   - status: string (required, in ['pending', 'suspicious', 'processing', 'shipped', 'delivered', 'cancelled'])
     //   - shippingInfo: map (required)
     //   - createdAt: timestamp (required, immutable)
     //   - updatedAt: timestamp (required)
@@ -149,12 +149,18 @@ service cloud.firestore {
       return hasRequiredFields(['userId', 'items', 'totalAmount', 'status', 'shippingInfo', 'createdAt', 'updatedAt']) &&
              request.resource.data.userId is string &&
              request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 50 &&
-             isPositiveNumber('totalAmount') &&
+             // totalAmount must be strictly positive
+             request.resource.data.totalAmount is number && request.resource.data.totalAmount > 0 &&
              (!('discountCode' in request.resource.data) || request.resource.data.discountCode is string) &&
              (!('discountAmount' in request.resource.data) || request.resource.data.discountAmount is number && request.resource.data.discountAmount >= 0) &&
              (!('finalAmount' in request.resource.data) || request.resource.data.finalAmount is number && request.resource.data.finalAmount >= 0) &&
-             request.resource.data.status in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] &&
+             (!('shippingFee' in request.resource.data) || request.resource.data.shippingFee is number && request.resource.data.shippingFee >= 0) &&
+             // riskScore is optional but must be a valid number if present
+             (!('riskScore' in request.resource.data) || (request.resource.data.riskScore is number && request.resource.data.riskScore >= 0 && request.resource.data.riskScore <= 100)) &&
+             request.resource.data.status in ['pending', 'suspicious', 'processing', 'shipped', 'delivered', 'cancelled'] &&
              request.resource.data.shippingInfo is map &&
+             // shippingInfo must contain the required keys
+             request.resource.data.shippingInfo.keys().hasAll(['fullName', 'phone', 'address', 'notes']) &&
              request.resource.data.createdAt is timestamp &&
              request.resource.data.updatedAt is timestamp;
     }
@@ -249,9 +255,10 @@ service cloud.firestore {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
       
       // Users can create orders for themselves
+      // Status on create must be 'pending' or 'suspicious' (risk-scored by client)
       allow create: if isAuthenticated() && isValidOrder() && 
                     request.resource.data.userId == request.auth.uid &&
-                    request.resource.data.status == 'pending';
+                    request.resource.data.status in ['pending', 'suspicious'];
                     
       // Users can only cancel their pending orders, admins can update anything
       allow update: if isAuthenticated() && isValidOrder() &&
