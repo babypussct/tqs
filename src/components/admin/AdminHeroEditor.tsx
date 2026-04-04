@@ -73,15 +73,15 @@ const Input = ({ label, value, onChange, placeholder, hint }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string;
 }) => (
   <div>
-    <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">{label}</label>
+    <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">{label}</label>
     <input
       type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-500/70 focus:bg-zinc-800 transition-all placeholder-zinc-600"
+      className="w-full bg-slate-50 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-800 transition-all placeholder-slate-400 dark:placeholder-zinc-600"
     />
-    {hint && <p className="text-xs text-zinc-600 mt-1">{hint}</p>}
+    {hint && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">{hint}</p>}
   </div>
 );
 
@@ -91,7 +91,7 @@ const Slider = ({ label, value, min, max, step = 1, unit = '', onChange, color =
 }) => (
   <div>
     <div className="flex justify-between items-center mb-2">
-      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</label>
+      <label className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">{label}</label>
       <span className="text-sm font-bold" style={{ color }}>{value}{unit}</span>
     </div>
     <input
@@ -102,7 +102,7 @@ const Slider = ({ label, value, min, max, step = 1, unit = '', onChange, color =
         background: `linear-gradient(to right,${color} ${((value-min)/(max-min))*100}%,#3F3F46 ${((value-min)/(max-min))*100}%)`,
       }}
     />
-    <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>{min}{unit}</span><span>{max}{unit}</span></div>
+    <div className="flex justify-between text-xs text-slate-400 dark:text-zinc-500 mt-1"><span>{min}{unit}</span><span>{max}{unit}</span></div>
   </div>
 );
 
@@ -112,15 +112,15 @@ const Section = ({ title, icon, children, defaultOpen = true, accent }: {
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'rgba(255,200,50,0.1)', background: 'rgba(255,255,255,0.03)' }}>
-      <button className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5" onClick={() => setOpen(o => !o)}>
+    <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800/50 bg-slate-50 dark:bg-zinc-900/30">
+      <button className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-100 dark:hover:bg-zinc-800/50" onClick={() => setOpen(o => !o)}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: accent || 'rgba(255,200,50,0.1)' }}>{icon}</div>
-          <span className="font-bold text-white text-sm">{title}</span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-100 dark:bg-indigo-500/20">{icon}</div>
+          <span className="font-bold text-slate-900 dark:text-white text-sm">{title}</span>
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+        {open ? <ChevronUp className="w-4 h-4 text-slate-400 dark:text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-slate-400 dark:text-zinc-500" />}
       </button>
-      {open && <div className="px-5 pb-5 space-y-4 border-t" style={{ borderColor: 'rgba(255,200,50,0.08)' }}>{children}</div>}
+      {open && <div className="px-5 pb-5 space-y-4 border-t border-slate-200 dark:border-zinc-800/30">{children}</div>}
     </div>
   );
 };
@@ -130,7 +130,7 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   <button
     onClick={() => onChange(!value)}
     className="relative w-12 h-6 rounded-full transition-all shrink-0"
-    style={{ background: value ? '#F59E0B' : '#3F3F46' }}
+    style={{ background: value ? '#4f46e5' : '#cbd5e1' }}
   >
     <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300" style={{ left: value ? '26px' : '2px' }} />
   </button>
@@ -140,14 +140,14 @@ function ImageField({ label, value, onChange, onClear, hint }: { label: string; 
   return (
     <div>
       <div className="mb-1.5">
-        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</label>
+        <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">{label}</label>
       </div>
       <ImageUploader 
         value={value}
         onChange={onChange}
         onClear={onClear}
       />
-      {hint && <p className="text-xs text-zinc-600 mt-2">{hint}</p>}
+      {hint && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-2">{hint}</p>}
     </div>
   );
 }
@@ -190,8 +190,8 @@ function ImageMiniPreview({ src, title, subtitle, effects }: { src: string; titl
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0a0500' }}>
           {imgStatus === 'loading' && src ? (
             <div className="flex flex-col items-center gap-2">
-              <Loader className="w-6 h-6 text-amber-400/60 animate-spin" />
-              <p className="text-xs text-zinc-600">Đang tải ảnh...</p>
+              <Loader className="w-6 h-6 text-indigo-500/60 animate-spin" />
+              <p className="text-xs text-slate-400 dark:text-zinc-500">Đang tải ảnh...</p>
             </div>
           ) : null}
         </div>
@@ -293,13 +293,13 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
     <div className="space-y-4">
 
       {/* Tabs */}
-      <div className="bg-zinc-800/40 border border-zinc-700/50 p-2 rounded-xl flex items-center gap-2 overflow-x-auto">
+      <div className="bg-slate-50 dark:bg-zinc-800/40 border border-slate-200 dark:border-zinc-700/50 p-2 rounded-xl flex items-center gap-2 overflow-x-auto">
         {concepts.map(c => (
-          <div key={c.id} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all ${c.id === currentConcept.id ? 'bg-amber-500/20 border-amber-500/50' : 'bg-zinc-800/60 border-transparent'}`}>
-            <button onClick={() => setActiveConceptId(c.id)} className={`text-sm font-bold truncate max-w-[150px] ${c.id === currentConcept.id ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'}`}>
+          <div key={c.id} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all ${c.id === currentConcept.id ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/50' : 'bg-slate-50 dark:bg-zinc-800/60 border-transparent'}`}>
+            <button onClick={() => setActiveConceptId(c.id)} className={`text-sm font-bold truncate max-w-[150px] ${c.id === currentConcept.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-zinc-400 hover:text-zinc-200'}`}>
               {c.name}
             </button>
-            <div className="flex items-center gap-1.5 border-l border-zinc-700/50 pl-2">
+            <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-zinc-700/50 pl-2">
               <button 
                 title="Bật/Tắt hiển thị"
                 onClick={() => {
@@ -310,12 +310,12 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                 <div className={`w-2.5 h-2.5 rounded-full ${c.isActive ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`} />
               </button>
               {concepts.length > 1 && (
-                <button onClick={() => removeConcept(c.id)} className="text-zinc-500 hover:text-red-400 ml-1">✕</button>
+                <button onClick={() => removeConcept(c.id)} className="text-slate-400 dark:text-zinc-500 hover:text-red-400 ml-1">✕</button>
               )}
             </div>
           </div>
         ))}
-        <button onClick={addConcept} className="px-3 py-1.5 rounded-lg border border-dashed border-zinc-600 text-zinc-400 hover:text-zinc-200 text-sm flex items-center gap-1 shrink-0 ml-1">
+        <button onClick={addConcept} className="px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-zinc-600 text-slate-500 dark:text-zinc-400 hover:text-zinc-200 text-sm flex items-center gap-1 shrink-0 ml-1">
           + Thêm Concept
         </button>
       </div>
@@ -345,15 +345,15 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
           {/* Vị trí ảnh */}
           <div>
-            <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Vị trí ảnh trong khung</label>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Vị trí ảnh trong khung</label>
             <div className="grid grid-cols-5 gap-1.5">
               {(['center','top','bottom','left','right'] as const).map(pos => (
                 <button key={pos} onClick={() => updateEffects({ objectPosition: pos })}
                   className="py-2 rounded-xl text-xs font-medium border transition-all"
                   style={{
-                    background: effects.objectPosition === pos ? 'rgba(255,200,50,0.15)' : 'rgba(255,255,255,0.03)',
-                    borderColor: effects.objectPosition === pos ? 'rgba(255,200,50,0.5)' : 'rgba(255,255,255,0.08)',
-                    color: effects.objectPosition === pos ? '#FFD700' : '#888',
+                    background: effects.objectPosition === pos ? 'var(--tw-colors-indigo-500-15)' : 'transparent',
+                    borderColor: effects.objectPosition === pos ? '#6366f1' : 'var(--tw-colors-slate-200)',
+                    color: effects.objectPosition === pos ? '#4f46e5' : '#94a3b8',
                   }}>
                   {pos === 'center' ? 'Giữa' : pos === 'top' ? 'Trên' : pos === 'bottom' ? 'Dưới' : pos === 'left' ? 'Trái' : 'Phải'}
                 </button>
@@ -369,14 +369,14 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
           <Slider label="Độ mờ" value={effects.overlayStrength} min={0} max={100} unit="%" onChange={v => updateEffects({ overlayStrength: v })} color="#9F7AEA" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Màu lớp phủ</label>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Màu lớp phủ</label>
           <div className="grid grid-cols-2 gap-2">
             {(Object.entries(OVERLAY_STYLES) as [HeroEffects['overlayStyle'], typeof OVERLAY_STYLES[keyof typeof OVERLAY_STYLES]][]).map(([key, { label, preview }]) => (
               <button key={key} onClick={() => updateEffects({ overlayStyle: key })}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-left"
                 style={{
-                  background: effects.overlayStyle === key ? 'rgba(255,200,50,0.12)' : 'rgba(255,255,255,0.02)',
-                  borderColor: effects.overlayStyle === key ? 'rgba(255,200,50,0.4)' : 'rgba(255,255,255,0.06)',
+                  background: effects.overlayStyle === key ? 'var(--tw-colors-indigo-500-15)' : 'transparent',
+                  borderColor: effects.overlayStyle === key ? '#6366f1' : 'var(--tw-colors-slate-200)',
                   color: effects.overlayStyle === key ? '#FFD700' : '#888',
                 }}>
                 <div className="w-5 h-5 rounded-md shrink-0" style={{ background: preview }} />
@@ -390,17 +390,17 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             <input type="color" value={effects.overlayCustomColor || '#000000'} onChange={e => updateEffects({ overlayCustomColor: e.target.value })}
               className="w-10 h-10 rounded-lg border-0 cursor-pointer bg-transparent" />
             <input type="text" value={effects.overlayCustomColor || '#000000'} onChange={e => updateEffects({ overlayCustomColor: e.target.value })}
-              className="flex-1 bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-amber-500/70"
+              className="flex-1 bg-slate-50 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500"
               placeholder="#000000" />
           </div>
         )}
       </Section>
 
       {/* ── 3. Lớp hiệu ứng động ── */}
-      <Section title="Hiệu Ứng Động (Animation Layer)" icon={<Sparkles className="w-4 h-4 text-amber-400" />} accent="rgba(245,158,11,0.15)">
+      <Section title="Hiệu Ứng Động (Animation Layer)" icon={<Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />} accent="rgba(245,158,11,0.15)">
         {/* ─ Mode selector ─ */}
         <div className="pt-3">
-          <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Chọn loại hiệu ứng</label>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Chọn loại hiệu ứng</label>
           <div className="grid grid-cols-3 gap-2">
             {([
               { key: 'particles', label: 'Đốm Sáng',   icon: <Sparkles className="w-4 h-4" />, desc: 'Particle tự vẽ' },
@@ -415,7 +415,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                 }}>
                 <div style={{ color: effects.animationLayer === key ? '#FFD700' : '#666' }}>{icon}</div>
                 <span className="text-xs font-bold" style={{ color: effects.animationLayer === key ? '#FFD700' : '#ccc' }}>{label}</span>
-                <span className="text-[10px] text-zinc-600">{desc}</span>
+                <span className="text-[10px] text-slate-400 dark:text-zinc-500">{desc}</span>
               </button>
             ))}
           </div>
@@ -426,8 +426,8 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             {/* Mobile visibility */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Hiển thị trên Mobile</p>
-                <p className="text-[10px] text-zinc-500">Tắt để giảm mượt nếu web nặng trên điện thoại</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Hiển thị trên Mobile</p>
+                <p className="text-[10px] text-slate-400 dark:text-zinc-500">Tắt để giảm mượt nếu web nặng trên điện thoại</p>
               </div>
               <Toggle value={!effects.hideAnimationOnMobile} onChange={v => updateEffects({ hideAnimationOnMobile: !v })} />
             </div>
@@ -435,9 +435,9 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             {/* Vị trí và kích thước */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mr-2">Căn lề (Neo toạ độ 0)</p>
-                <button onClick={() => updateEffects({ animAnchorX: 'left' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX !== 'right' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-transparent text-zinc-500 border border-zinc-700/50 hover:bg-white/5'}`}>Lề Trái</button>
-                <button onClick={() => updateEffects({ animAnchorX: 'right' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX === 'right' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-transparent text-zinc-500 border border-zinc-700/50 hover:bg-white/5'}`}>Lề Phải</button>
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mr-2">Căn lề (Neo toạ độ 0)</p>
+                <button onClick={() => updateEffects({ animAnchorX: 'left' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX !== 'right' ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/40' : 'bg-transparent text-slate-400 dark:text-zinc-500 border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800/50'}`}>Lề Trái</button>
+                <button onClick={() => updateEffects({ animAnchorX: 'right' })} className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all ${effects.animAnchorX === 'right' ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/40' : 'bg-transparent text-slate-400 dark:text-zinc-500 border border-slate-200 dark:border-zinc-700/50 hover:bg-slate-100 dark:hover:bg-zinc-800/50'}`}>Lề Phải</button>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Slider label={effects.animAnchorX === 'right' ? 'Toạ độ X (Từ phải)' : 'Toạ độ X (Từ trái)'} value={effects.animPositionX ?? 0} min={0} max={100} unit="%" onChange={v => updateEffects({ animPositionX: v })} color="#10B981" />
@@ -482,7 +482,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
             {/* Blend mode */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Chế độ hoà trộn (Blend Mode)</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Chế độ hoà trộn (Blend Mode)</label>
               <div className="grid grid-cols-2 gap-2">
                 {([
                   { key: 'screen',   label: 'Screen',   desc: 'Tốt nhất cho hiệu ứng sáng' },
@@ -497,12 +497,12 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                       borderColor: effects.videoBlend === key ? 'rgba(255,200,50,0.4)' : 'rgba(255,255,255,0.06)',
                     }}>
                     <span className="text-xs font-bold" style={{ color: effects.videoBlend === key ? '#FFD700' : '#ccc' }}>{label}</span>
-                    <span className="text-[10px] text-zinc-600">{desc}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500">{desc}</span>
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-zinc-600 mt-2">
-                💡 <span className="text-amber-500/70">Screen</span> sẽ làm nền đen trong suốt, chỉ giữ lại phần sáng của video — lý tưởng cho video hiệu ứng lửa, hào quang, bụi sáng.
+              <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-2">
+                💡 <span className="text-indigo-500">Screen</span> sẽ làm nền đen trong suốt, chỉ giữ lại phần sáng của video — lý tưởng cho video hiệu ứng lửa, hào quang, bụi sáng.
               </p>
             </div>
 
@@ -512,8 +512,8 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             {/* Loop toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Lặp lại (Loop)</p>
-                <p className="text-xs text-zinc-500">Video phát lại khi kết thúc</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Lặp lại (Loop)</p>
+                <p className="text-xs text-slate-400 dark:text-zinc-500">Video phát lại khi kết thúc</p>
               </div>
               <Toggle value={effects.videoLoop !== false} onChange={v => updateEffects({ videoLoop: v })} />
             </div>
@@ -526,8 +526,8 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             {/* Bật/tắt */}
             <div className="flex items-center justify-between pt-1">
               <div>
-                <p className="text-sm font-semibold text-white">Bật đốm sáng</p>
-                <p className="text-xs text-zinc-500">Các hạt phát sáng di chuyển trên màn hình</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Bật đốm sáng</p>
+                <p className="text-xs text-slate-400 dark:text-zinc-500">Các hạt phát sáng di chuyển trên màn hình</p>
               </div>
               <Toggle value={effects.particleEnabled} onChange={v => updateEffects({ particleEnabled: v })} />
             </div>
@@ -536,7 +536,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
           <>
             {/* ─ Hướng di chuyển ─ */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Hướng di chuyển</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Hướng di chuyển</label>
               <div className="grid grid-cols-2 gap-2">
                 {DIRECTIONS.map(({ key, label, icon, desc }) => (
                   <button key={key} onClick={() => updateEffects({ particleDirection: key })}
@@ -551,7 +551,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                     </div>
                     <div>
                       <p className="font-bold text-xs" style={{ color: effects.particleDirection === key ? '#FFD700' : '#ccc' }}>{label}</p>
-                      <p className="text-[10px] text-zinc-600">{desc}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-500">{desc}</p>
                     </div>
                   </button>
                 ))}
@@ -560,7 +560,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
             {/* ─ Tốc độ (preset) ─ */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Tốc độ chuyển động</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Tốc độ chuyển động</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(ANIMATION_PRESETS) as [HeroEffects['animationPreset'], typeof ANIMATION_PRESETS[keyof typeof ANIMATION_PRESETS]][]).map(([key, { label, desc, icon }]) => (
                   <button key={key} onClick={() => updateEffects({ animationPreset: key })}
@@ -571,7 +571,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                     }}>
                     <span className="text-sm mb-0.5">{icon}</span>
                     <span className="font-bold text-xs" style={{ color: effects.animationPreset === key ? '#FFD700' : '#ccc' }}>{label}</span>
-                    <span className="text-[10px] text-zinc-600">{desc}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500">{desc}</span>
                   </button>
                 ))}
               </div>
@@ -579,7 +579,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
             {/* ─ Màu hạt ─ */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Màu đốm sáng</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Màu đốm sáng</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(PARTICLE_COLORS) as [HeroEffects['particleColor'], typeof PARTICLE_COLORS[keyof typeof PARTICLE_COLORS]][]).map(([key, { label, color }]) => (
                   <button key={key} onClick={() => updateEffects({ particleColor: key })}
@@ -605,21 +605,21 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
               {/* Size range */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Maximize2 className="w-3.5 h-3.5" /> Kích thước hạt
                   </label>
-                  <span className="text-xs font-bold text-amber-400">{effects.particleSizeMin ?? 1} – {effects.particleSizeMax ?? 3} px</span>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{effects.particleSizeMin ?? 1} – {effects.particleSizeMax ?? 3} px</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[10px] text-zinc-600 mb-1">Nhỏ nhất</p>
+                    <p className="text-[10px] text-slate-400 dark:text-zinc-500 mb-1">Nhỏ nhất</p>
                     <input type="range" min={0.5} max={5} step={0.5} value={effects.particleSizeMin ?? 1}
                       onChange={e => updateEffects({ particleSizeMin: Number(e.target.value) })}
                       className="w-full h-2 rounded-full appearance-none cursor-pointer"
                       style={{ background: `linear-gradient(to right,#F59E0B ${((( effects.particleSizeMin ?? 1) - 0.5) / 4.5) * 100}%,#3F3F46 ${(((effects.particleSizeMin ?? 1) - 0.5) / 4.5) * 100}%)` }} />
                   </div>
                   <div>
-                    <p className="text-[10px] text-zinc-600 mb-1">Lớn nhất</p>
+                    <p className="text-[10px] text-slate-400 dark:text-zinc-500 mb-1">Lớn nhất</p>
                     <input type="range" min={1} max={10} step={0.5} value={effects.particleSizeMax ?? 3}
                       onChange={e => updateEffects({ particleSizeMax: Number(e.target.value) })}
                       className="w-full h-2 rounded-full appearance-none cursor-pointer"
@@ -631,16 +631,16 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
               {/* Spread (horizontal drift) */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                     <MoveHorizontal className="w-3.5 h-3.5" /> Độ phân tán ngang
                   </label>
-                  <span className="text-xs font-bold text-amber-400">{(effects.particleSpread ?? 1).toFixed(1)}x</span>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{(effects.particleSpread ?? 1).toFixed(1)}x</span>
                 </div>
                 <input type="range" min={0} max={3} step={0.1} value={effects.particleSpread ?? 1}
                   onChange={e => updateEffects({ particleSpread: Number(e.target.value) })}
                   className="w-full h-2 rounded-full appearance-none cursor-pointer"
                   style={{ background: `linear-gradient(to right,#F59E0B ${((effects.particleSpread ?? 1) / 3) * 100}%,#3F3F46 ${((effects.particleSpread ?? 1) / 3) * 100}%)` }} />
-                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>Thẳng</span><span>Lan rộng</span></div>
+                <div className="flex justify-between text-xs text-slate-400 dark:text-zinc-500 mt-1"><span>Thẳng</span><span>Lan rộng</span></div>
               </div>
             </div>
           </>
@@ -652,14 +652,14 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
       <Section title="Phát Sáng Văn Bản (Glow)" icon={<Zap className="w-4 h-4 text-yellow-400" />} accent="rgba(252,211,77,0.12)">
         <div className="flex items-center justify-between pt-3">
           <div>
-            <p className="text-sm font-semibold text-white">Bật glow cho chữ</p>
-            <p className="text-xs text-zinc-500">Title và subtitle phát ánh sáng</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Bật glow cho chữ</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500">Title và subtitle phát ánh sáng</p>
           </div>
           <Toggle value={effects.glowEnabled} onChange={v => updateEffects({ glowEnabled: v })} />
         </div>
         {effects.glowEnabled && (
           <div>
-            <label className="block text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wider">Màu ánh sáng</label>
+            <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-2 uppercase tracking-wider">Màu ánh sáng</label>
             <div className="flex gap-2">
               {(Object.entries(GLOW_COLORS) as [HeroEffects['glowColor'], typeof GLOW_COLORS[keyof typeof GLOW_COLORS]][]).map(([key, { label, color }]) => (
                 <button key={key} onClick={() => updateEffects({ glowColor: key })}
@@ -686,9 +686,9 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
         </div>
         <Input label="Phụ đề (gradient)" value={currentConcept.main.subtitle} onChange={v => updateMain({ subtitle: v })} placeholder="Tiêu Chuẩn 2024" />
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">Mô tả</label>
+          <label className="block text-xs font-semibold text-slate-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">Mô tả</label>
           <textarea rows={2} value={currentConcept.main.description || ''} onChange={e => updateMain({ description: e.target.value })}
-            className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-500/70 transition-all resize-none placeholder-zinc-600"
+            className="w-full bg-slate-50 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all resize-none placeholder-slate-400 dark:placeholder-zinc-600"
             placeholder="Mô tả ngắn..." />
         </div>
         <Input label="Nút CTA" value={currentConcept.main.buttonText || ''} onChange={v => updateMain({ buttonText: v })} placeholder="Mua Ngay" />
@@ -699,7 +699,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
         <div className="pt-3 space-y-5">
           {(['side1', 'side2'] as const).map((side, i) => (
             <div key={side}>
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Card {i + 1}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Card {i + 1}</p>
               <div className="space-y-3">
                 <ImageField label="URL ảnh" value={currentConcept[side].image} onChange={v => updateSide(side, { image: v })} onClear={() => updateSide(side, { image: '' })} />
                 <div className="grid grid-cols-2 gap-2">
@@ -711,7 +711,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                   {currentConcept[side].image && <img src={currentConcept[side].image} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-2.5">
                     <p className="text-white text-xs font-bold">{currentConcept[side].title}</p>
-                    <p className="text-amber-400 text-[10px]">{currentConcept[side].subtitle}</p>
+                    <p className="text-indigo-600 dark:text-indigo-400 text-[10px]">{currentConcept[side].subtitle}</p>
                   </div>
                 </div>
               </div>
@@ -722,7 +722,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
       {/* Reset */}
       <button onClick={resetEffects}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium transition-all hover:bg-white/5"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-medium transition-all hover:bg-slate-100 dark:hover:bg-zinc-800/50"
         style={{ borderColor: 'rgba(255,255,255,0.07)', color: '#555' }}>
         <RefreshCw className="w-3.5 h-3.5" /> Đặt lại hiệu ứng về mặc định
       </button>
