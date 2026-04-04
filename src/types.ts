@@ -228,3 +228,20 @@ export interface AdminUser {
   updatedAt: any;
   isSuperAdmin?: boolean; // Main admin account
 }
+
+export type UserTier = 'bronze' | 'silver' | 'gold' | 'diamond';
+
+export interface AppUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  isBanned: boolean;
+  tier: UserTier;
+  points: number;
+  totalOrders: number;
+  totalSpent: number;
+  lastLoginAt: any;
+  createdAt: any;
+  adminPermissions?: AdminPermissions; // Migrated from AdminUser
+}

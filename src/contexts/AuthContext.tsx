@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';
-import { AdminUser, AdminPermissions } from '../types';
+import { AdminUser, AdminPermissions, AppUser } from '../types';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -23,7 +24,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data() as AppUser;
+            if (userData.isBanned) {
+              await signOut(auth);
+              toast.error('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.', { duration: 5000 });
+              setUser(null);
+              setAdminUser(null);
+              setLoading(false);
+              return;
+            }
+            
+            // Update last login
+            await setDoc(userRef, {
+              lastLoginAt: serverTimestamp(),
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+            }, { merge: true });
+          } else {
+            // Create new user profile
+            const newUser: Partial<AppUser> = {
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              isBanned: false,
+              tier: 'bronze',
+              points: 0,
+              totalOrders: 0,
+              totalSpent: 0,
+              createdAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp()
+            };
+            await setDoc(userRef, newUser);
+          }
+        } catch (error) {
+          console.error("Lỗi khi kiểm tra hoặc ghi thông tin user:", error);
+        }
+      }
+      
       setUser(currentUser);
       if (!currentUser) {
         setAdminUser(null);
@@ -64,15 +110,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const docId = user.email ? user.email.toLowerCase() : user.uid;
-
-    const unsubscribe = onSnapshot(doc(db, 'adminUsers', docId), (docSnap) => {
+    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data() as AdminUser;
-        setAdminUser({
-          ...data,
-          isSuperAdmin: false
-        });
+        const data = docSnap.data() as AppUser;
+        
+        // REAL-TIME BAN ENFORCEMENT
+        if (data.isBanned) {
+          toast.error('Tài khoản của bạn đã bị khóa bởi Quản trị viên.', { duration: 5000 });
+          await signOut(auth);
+          setUser(null);
+          setAdminUser(null);
+          setLoading(false);
+          return;
+        }
+
+        if (data.adminPermissions) {
+          setAdminUser({
+            id: user.uid,
+            email: data.email || user.email || '',
+            name: data.displayName || user.displayName || 'Admin',
+            permissions: data.adminPermissions,
+            createdAt: data.createdAt,
+            updatedAt: data.lastLoginAt,
+            isSuperAdmin: false
+          });
+        } else {
+          setAdminUser(null);
+        }
       } else {
         setAdminUser(null);
       }

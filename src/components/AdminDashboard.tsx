@@ -120,7 +120,7 @@ export default function AdminDashboard() {
               { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
               { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
               { id: 'settings', label: 'Cấu hình', icon: Settings, requiredPermission: 'manageSettings' },
-              { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
+              { id: 'permissions', label: 'Thành viên', icon: Shield, requiredPermission: 'manageRoles' },
               { id: 'rules', label: 'Sửa lỗi Database', icon: Database, requiredPermission: null },
             ].map((tab) => {
               // Hide tab if user doesn't have permission
@@ -377,7 +377,8 @@ export default function AdminDashboard() {
                       <select
                         value={order.status}
                         onChange={(e) => {
-                          updateOrderStatus(order.id, e.target.value as Order['status']);
+                          const newStatus = e.target.value as Order['status'];
+                          updateOrderStatus(order.id, newStatus, order.userId, order.finalAmount || order.totalAmount);
                         }}
                         className={`text-xs font-medium px-2.5 py-1 rounded-full border outline-none cursor-pointer ${
                           order.status === 'suspicious' ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30' :

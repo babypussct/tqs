@@ -460,6 +460,11 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           });
         }
         
+        // 8. Update user stats
+        transaction.update(doc(db, 'users', user.uid), {
+          totalOrders: increment(1)
+        });
+        
         setCreatedOrderId(orderRef.id);
         setOrderFinalAmount(finalAmount);
         setOrderTotalAmount(totalAmount);

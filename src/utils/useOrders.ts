@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Order } from '../types';
 import { handleFirestoreError, OperationType } from './firebaseError';
@@ -28,12 +28,26 @@ export function useOrders() {
     return () => unsubscribe();
   }, []);
 
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status'], userId?: string, amount?: number) => {
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
         updatedAt: serverTimestamp()
       });
+
+      // Update Points if delivered
+      if (newStatus === 'delivered' && userId && amount) {
+        try {
+          const pointsEarned = Math.floor(amount / 10000); // 1 point per 10k VND
+          await updateDoc(doc(db, 'users', userId), {
+            totalSpent: increment(amount),
+            points: increment(pointsEarned)
+          });
+        } catch (e) {
+          console.error("Lỗi khi cộng điểm:", e);
+        }
+      }
+
       toast.success('Cập nhật trạng thái đơn hàng thành công');
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
