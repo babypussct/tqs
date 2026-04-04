@@ -109,13 +109,13 @@ export default function AdminRewardsConfig() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold font-serif text-white mb-2">Hệ Thống Hạng & Điểm (Tiers & Points)</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Hệ Thống Hạng & Điểm (Tiers & Points)</h2>
           <p className="text-slate-400">Cấu hình tự động chuyển hạng và tính điểm cho khách hàng sau khi hoàn thành đơn.</p>
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center space-x-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+          className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-medium transition-all disabled:opacity-50"
         >
           {isSaving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           <span>{isSaving ? 'Đang lưu...' : 'Lưu Cấu Hình'}</span>
@@ -137,9 +137,9 @@ export default function AdminRewardsConfig() {
       )}
 
       {/* Phần 1: Cấu hình hệ thống Điểm */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold font-serif text-yellow-500">1. Cấu Hình Điểm Thưởng (Points)</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">1. Cấu Hình Điểm Thưởng (Points)</h3>
           <label className="flex items-center cursor-pointer">
             <div className="relative">
               <input 
@@ -148,7 +148,7 @@ export default function AdminRewardsConfig() {
                 checked={formData.isActive}
                 onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
               />
-              <div className={`block w-14 h-8 rounded-full transition-colors ${formData.isActive ? 'bg-yellow-500' : 'bg-zinc-700'}`}></div>
+              <div className={`block w-14 h-8 rounded-full transition-colors ${formData.isActive ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-zinc-700'}`}></div>
               <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${formData.isActive ? 'transform translate-x-6' : ''}`}></div>
             </div>
             <span className="ml-3 text-white font-medium">Bật Tích/Tiêu Điểm</span>
@@ -162,7 +162,7 @@ export default function AdminRewardsConfig() {
               type="number"
               value={formData.pointValueVND}
               onChange={(e) => setFormData({...formData, pointValueVND: Number(e.target.value)})}
-              className="w-full bg-black border border-zinc-800 text-white rounded-lg px-4 py-2 focus:ring-1 focus:ring-yellow-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -171,7 +171,7 @@ export default function AdminRewardsConfig() {
               type="number"
               value={formData.minPointsToUse}
               onChange={(e) => setFormData({...formData, minPointsToUse: Number(e.target.value)})}
-              className="w-full bg-black border border-zinc-800 text-white rounded-lg px-4 py-2 focus:ring-1 focus:ring-yellow-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -180,7 +180,7 @@ export default function AdminRewardsConfig() {
               type="number"
               value={formData.maxDiscountPercentage}
               onChange={(e) => setFormData({...formData, maxDiscountPercentage: Number(e.target.value)})}
-              className="w-full bg-black border border-zinc-800 text-white rounded-lg px-4 py-2 focus:ring-1 focus:ring-yellow-500 outline-none"
+              className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
               max="100"
             />
           </div>
@@ -188,12 +188,12 @@ export default function AdminRewardsConfig() {
       </div>
 
       {/* Phần 2: Cấu hình phân hạng */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-        <h3 className="text-xl font-bold font-serif text-yellow-500 mb-6">2. Cấu Hình Phân Hạng (Tiers)</h3>
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm p-6">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">2. Cấu Hình Phân Hạng (Tiers)</h3>
         
         <div className="space-y-8">
           {(Object.entries(formData.tiers) as [keyof RewardsConfig['tiers'], TierConfig][]).map(([tierKey, tier]) => (
-            <div key={tierKey} className="bg-black/50 border border-zinc-800 rounded-lg p-6">
+            <div key={tierKey} className="bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800/50 rounded-xl p-6">
               
               <div className="flex items-center space-x-4 mb-4">
                 <div className={`p-3 rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-lg shadow-lg uppercase
@@ -209,7 +209,7 @@ export default function AdminRewardsConfig() {
                     type="text"
                     value={tier.name}
                     onChange={(e) => handleTierChange(tierKey, 'name', e.target.value)}
-                    className="bg-transparent border-b border-zinc-700 text-white font-bold text-xl px-0 py-1 focus:border-yellow-500 outline-none w-full max-w-sm"
+                    className="bg-transparent border-b border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white font-bold text-xl px-0 py-1 focus:border-indigo-500 outline-none w-full max-w-sm"
                     placeholder="Tên hạng (VD: Thành viên Vàng)"
                   />
                 </div>
@@ -222,7 +222,7 @@ export default function AdminRewardsConfig() {
                     type="number"
                     value={tier.minSpent}
                     onChange={(e) => handleTierChange(tierKey, 'minSpent', Number(e.target.value))}
-                    className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2 focus:ring-1 focus:ring-yellow-500 outline-none"
+                    className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
                   />
                 </div>
                 <div>
@@ -232,7 +232,7 @@ export default function AdminRewardsConfig() {
                     step="0.01"
                     value={tier.pointMultiplier}
                     onChange={(e) => handleTierChange(tierKey, 'pointMultiplier', Number(e.target.value))}
-                    className="w-full bg-zinc-900 border border-zinc-800 text-white rounded-lg px-4 py-2 focus:ring-1 focus:ring-yellow-500 outline-none"
+                    className="w-full bg-slate-50 dark:bg-zinc-900/50 border border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:ring-1 focus:ring-indigo-500 outline-none"
                   />
                 </div>
               </div>
@@ -243,7 +243,7 @@ export default function AdminRewardsConfig() {
                   <label className="block text-sm text-slate-400">Các Quyền Lợi Hiển Thị:</label>
                   <button 
                     onClick={() => addBenefit(tierKey)}
-                    className="text-yellow-500 hover:text-yellow-400 text-sm flex items-center space-x-1"
+                    className="text-indigo-600 dark:text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 text-sm flex items-center space-x-1"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Thêm quyền lợi</span>
@@ -252,7 +252,7 @@ export default function AdminRewardsConfig() {
                 <div className="space-y-3">
                   {tier.benefits.map((benefit, idx) => (
                     <div key={idx} className="flex items-center space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" />
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
                       <input
                         type="text"
                         value={benefit}
