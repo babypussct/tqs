@@ -9,6 +9,7 @@ import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy } from 'lucide-re
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
+import VietnamAddressSelector from './ui/VietnamAddressSelector';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -639,14 +640,9 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">Địa chỉ giao hàng *</label>
-                <input 
-                  required 
-                  type="text" 
+                <VietnamAddressSelector 
                   value={shippingInfo.address}
-                  onChange={e => setShippingInfo({...shippingInfo, address: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all" 
-                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố" 
+                  onChange={(val) => setShippingInfo({...shippingInfo, address: val})}
                 />
               </div>
               <div>
