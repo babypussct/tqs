@@ -35,9 +35,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!user) return;
+    const userEmail = user.email || user.providerData?.[0]?.email || '';
     
-    // Make sure case-insensitive comparison
-    const isSuperAdmin = user.email?.toLowerCase() === 'oneloveonepeopleforever@gmail.com';
+    // Make sure case-insensitive comparison and stripped of spaces
+    const isSuperAdmin = userEmail.toLowerCase().trim() === 'oneloveonepeopleforever@gmail.com';
 
     const defaultSuperAdmin: AdminUser = {
       id: user.uid,
@@ -56,6 +57,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSuperAdmin: true
     };
 
+    // If SuperAdmin, bypass Firestore completely to guarantee 100% access without any network/rules blocking
+    if (isSuperAdmin) {
+      setAdminUser(defaultSuperAdmin);
+      setLoading(false);
+      return;
+    }
+
     const docId = user.email ? user.email.toLowerCase() : user.uid;
 
     const unsubscribe = onSnapshot(doc(db, 'adminUsers', docId), (docSnap) => {
@@ -63,22 +71,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = docSnap.data() as AdminUser;
         setAdminUser({
           ...data,
-          isSuperAdmin: isSuperAdmin
+          isSuperAdmin: false
         });
-      } else if (isSuperAdmin) {
-        setAdminUser(defaultSuperAdmin);
       } else {
         setAdminUser(null);
       }
       setLoading(false);
     }, (error) => {
       console.error("Error fetching admin status:", error);
-      // Fallback: If network/rules block the read, give superadmin its rights anyway
-      if (isSuperAdmin) {
-        setAdminUser(defaultSuperAdmin);
-      } else {
-        setAdminUser(null);
-      }
+      setAdminUser(null);
       setLoading(false);
     });
 

@@ -33,7 +33,8 @@ export default function AdminPermissions() {
       setAdmins(adminList);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'adminUsers');
+      console.error("Lỗi khi tải danh sách admin:", error);
+      toast.error('Lỗi khi tải danh sách phân quyền (Kiểm tra Firestore Rules)');
       setLoading(false);
     });
 
