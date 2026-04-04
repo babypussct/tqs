@@ -34,19 +34,19 @@ service cloud.firestore {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Database className="w-6 h-6 text-indigo-500" />
           Cấu hình Database Rules
         </h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+        <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
           Đây là toàn bộ mã cấu hình Security Rules để sửa lỗi "Missing or insufficient permissions". 
           Hãy sao chép toàn bộ mã bên dưới và dán đè lên nội dung cũ trong tab Rules của Firebase Firestore.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950">
-          <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">Firebase Firestore Security Rules</span>
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950">
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">Firebase Firestore Security Rules</span>
           <button
             onClick={handleCopy}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -66,14 +66,14 @@ service cloud.firestore {
             )}
           </button>
         </div>
-        <div className="p-6 bg-gray-900 text-gray-100 overflow-x-auto">
+        <div className="p-6 bg-slate-900 text-slate-100 overflow-x-auto">
           <pre className="text-sm font-mono leading-relaxed">
             <code>{firestoreRules}</code>
           </pre>
         </div>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl p-6">
+      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-6">
         <h3 className="font-bold text-blue-900 dark:text-blue-400 mb-4">Các bước thực hiện:</h3>
         <ol className="list-decimal list-inside space-y-3 text-sm text-blue-800 dark:text-blue-300/80">
           <li>Truy cập vào <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="font-bold underline">Firebase Console</a> và chọn dự án TQS của bạn.</li>

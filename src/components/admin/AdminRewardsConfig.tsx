@@ -18,7 +18,7 @@ export default function AdminRewardsConfig() {
   if (loading || !formData) {
     return (
       <div className="flex items-center justify-center p-8">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+        <RefreshCw className="w-6 h-6 animate-spin text-slate-400" />
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function AdminRewardsConfig() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold font-serif text-white mb-2">Hệ Thống Hạng & Điểm (Tiers & Points)</h2>
-          <p className="text-gray-400">Cấu hình tự động chuyển hạng và tính điểm cho khách hàng sau khi hoàn thành đơn.</p>
+          <p className="text-slate-400">Cấu hình tự động chuyển hạng và tính điểm cho khách hàng sau khi hoàn thành đơn.</p>
         </div>
         <button
           onClick={handleSave}
@@ -123,7 +123,7 @@ export default function AdminRewardsConfig() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 text-red-500 p-4 rounded-lg flex items-start space-x-3">
+        <div className="bg-indigo-500/10 text-indigo-500 p-4 rounded-lg flex items-start space-x-3">
           <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <p>{error}</p>
         </div>
@@ -157,7 +157,7 @@ export default function AdminRewardsConfig() {
 
         <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${!formData.isActive ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="space-y-2">
-            <label className="block text-sm text-gray-400">Giá trị quy đổi (1 Point = ? VNĐ)</label>
+            <label className="block text-sm text-slate-400">Giá trị quy đổi (1 Point = ? VNĐ)</label>
             <input
               type="number"
               value={formData.pointValueVND}
@@ -166,7 +166,7 @@ export default function AdminRewardsConfig() {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm text-gray-400">Số điểm tối thiểu để dùng (Min Points)</label>
+            <label className="block text-sm text-slate-400">Số điểm tối thiểu để dùng (Min Points)</label>
             <input
               type="number"
               value={formData.minPointsToUse}
@@ -175,7 +175,7 @@ export default function AdminRewardsConfig() {
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm text-gray-400">Giới hạn phần trăm giảm (% tối đa 1 đơn)</label>
+            <label className="block text-sm text-slate-400">Giới hạn phần trăm giảm (% tối đa 1 đơn)</label>
             <input
               type="number"
               value={formData.maxDiscountPercentage}
@@ -198,7 +198,7 @@ export default function AdminRewardsConfig() {
               <div className="flex items-center space-x-4 mb-4">
                 <div className={`p-3 rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-lg shadow-lg uppercase
                   ${tierKey === 'bronze' ? 'from-orange-400 to-amber-700 text-white' : 
-                    tierKey === 'silver' ? 'from-gray-300 to-gray-500 text-white' : 
+                    tierKey === 'silver' ? 'from-slate-300 to-slate-500 text-white' : 
                     tierKey === 'gold' ? 'from-yellow-400 to-yellow-600 text-black' : 
                     'from-cyan-300 to-blue-600 text-white'
                   }`}>
@@ -217,7 +217,7 @@ export default function AdminRewardsConfig() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Điều kiện Tổng Chi Tiêu tối thiểu (VNĐ)</label>
+                  <label className="block text-sm text-slate-400 mb-2">Điều kiện Tổng Chi Tiêu tối thiểu (VNĐ)</label>
                   <input
                     type="number"
                     value={tier.minSpent}
@@ -226,7 +226,7 @@ export default function AdminRewardsConfig() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Hệ số Tích Điểm (Ví dụ 0.05 = 5%)</label>
+                  <label className="block text-sm text-slate-400 mb-2">Hệ số Tích Điểm (Ví dụ 0.05 = 5%)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -240,7 +240,7 @@ export default function AdminRewardsConfig() {
               {/* Benefits */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm text-gray-400">Các Quyền Lợi Hiển Thị:</label>
+                  <label className="block text-sm text-slate-400">Các Quyền Lợi Hiển Thị:</label>
                   <button 
                     onClick={() => addBenefit(tierKey)}
                     className="text-yellow-500 hover:text-yellow-400 text-sm flex items-center space-x-1"
@@ -262,14 +262,14 @@ export default function AdminRewardsConfig() {
                       />
                       <button 
                         onClick={() => removeBenefit(tierKey, idx)}
-                        className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
                   {tier.benefits.length === 0 && (
-                    <p className="text-gray-500 text-sm italic">Chưa có quyền lợi nào được thiết lập.</p>
+                    <p className="text-slate-500 text-sm italic">Chưa có quyền lợi nào được thiết lập.</p>
                   )}
                 </div>
               </div>

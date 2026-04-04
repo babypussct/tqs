@@ -169,19 +169,19 @@ export default function AdminDiscountCodes() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Đang tải...</div>;
+    return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
   }
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Mã Giảm Giá</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Quản lý Mã Giảm Giá</h2>
         <button
           onClick={() => {
             resetForm();
             setIsFormOpen(true);
           }}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-sm text-white px-4 py-2 rounded-lg transition-colors"
         >
           <Plus className="w-5 h-5" />
           Thêm Mã Mới
@@ -189,12 +189,12 @@ export default function AdminDiscountCodes() {
       </div>
 
       {isFormOpen && (
-        <div className="mb-8 bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
+        <div className="mb-8 bg-white dark:bg-zinc-900 p-6 shadow-sm border-b border-slate-200 dark:border-zinc-800">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               {editingCode ? 'Sửa Mã Giảm Giá' : 'Thêm Mã Giảm Giá Mới'}
             </h3>
-            <button onClick={resetForm} className="text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300">
+            <button onClick={resetForm} className="text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-300">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -209,23 +209,23 @@ export default function AdminDiscountCodes() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Mã giảm giá *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Mã giảm giá *</label>
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white uppercase"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white uppercase"
                   required
                   disabled={!!editingCode}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Loại giảm giá *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Loại giảm giá *</label>
                 <select
                   value={discountType}
                   onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 >
                   <option value="percentage">Phần trăm (%)</option>
                   <option value="fixed">Số tiền cố định (VNĐ)</option>
@@ -235,14 +235,14 @@ export default function AdminDiscountCodes() {
 
               {discountType !== 'freeship_only' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">
                     Giá trị giảm * {discountType === 'percentage' ? '(%)' : '(VNĐ)'}
                   </label>
                   <input
                     type="number"
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                     required
                     min="1"
                     max={discountType === 'percentage' ? "100" : undefined}
@@ -251,11 +251,11 @@ export default function AdminDiscountCodes() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Đối tượng khách hàng</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Đối tượng khách hàng</label>
                 <select
                   value={customerType}
                   onChange={(e) => setCustomerType(e.target.value as 'all' | 'new')}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 >
                   <option value="all">Tất cả khách hàng</option>
                   <option value="new">Chỉ khách hàng mới (chưa có đơn)</option>
@@ -263,80 +263,80 @@ export default function AdminDiscountCodes() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
                 <input
                   type="text"
                   value={applicableCategories}
                   onChange={(e) => setApplicableCategories(e.target.value)}
                   placeholder="Ví dụ: base, expansion, accessory... (Bỏ trống để áp dụng toàn shop)"
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Sản phẩm - cách nhau bằng dấu phẩy</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Sản phẩm - cách nhau bằng dấu phẩy</label>
                 <input
                   type="text"
                   value={applicableProducts}
                   onChange={(e) => setApplicableProducts(e.target.value)}
                   placeholder="Ví dụ: SP001, SP002... (Bỏ trống để áp dụng toàn shop)"
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Giá trị đơn tối thiểu (VNĐ)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giá trị đơn tối thiểu (VNĐ)</label>
                 <input
                   type="number"
                   value={minOrderValue}
                   onChange={(e) => setMinOrderValue(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                   min="0"
                 />
               </div>
 
               {discountType === 'percentage' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Giảm tối đa (VNĐ)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giảm tối đa (VNĐ)</label>
                   <input
                     type="number"
                     value={maxDiscount}
                     onChange={(e) => setMaxDiscount(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                     min="0"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Giới hạn số lần sử dụng</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giới hạn số lần sử dụng</label>
                 <input
                   type="number"
                   value={usageLimit}
                   onChange={(e) => setUsageLimit(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                   min="1"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Ngày bắt đầu *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Ngày bắt đầu *</label>
                 <input
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Ngày kết thúc *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Ngày kết thúc *</label>
                 <input
                   type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-gray-900 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                   required
                 />
               </div>
@@ -349,9 +349,9 @@ export default function AdminDiscountCodes() {
                   id="isFreeship"
                   checked={isFreeship}
                   onChange={(e) => setIsFreeship(e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
                 />
-                <label htmlFor="isFreeship" className="ml-2 text-sm font-medium text-gray-700 dark:text-zinc-300">
+                <label htmlFor="isFreeship" className="ml-2 text-sm font-medium text-slate-700 dark:text-zinc-300">
                   Mã này cũng bao gồm Miễn phí vận chuyển (Freeship)
                 </label>
               </div>
@@ -363,9 +363,9 @@ export default function AdminDiscountCodes() {
                 id="isActive"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
               />
-              <label htmlFor="isActive" className="ml-2 text-sm font-medium text-gray-700 dark:text-zinc-300">
+              <label htmlFor="isActive" className="ml-2 text-sm font-medium text-slate-700 dark:text-zinc-300">
                 Kích hoạt mã giảm giá này
               </label>
             </div>
@@ -374,13 +374,13 @@ export default function AdminDiscountCodes() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 shadow-sm text-white font-medium rounded-lg transition-colors"
               >
                 {editingCode ? 'Cập nhật' : 'Thêm mới'}
               </button>
@@ -389,10 +389,10 @@ export default function AdminDiscountCodes() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400">
+            <thead className="bg-slate-50 dark:bg-zinc-900/50 text-slate-600 dark:text-zinc-400 text-xs uppercase tracking-wider font-semibold">
               <tr>
                 <th className="px-6 py-4 font-medium">Mã</th>
                 <th className="px-6 py-4 font-medium">Giảm giá</th>
@@ -403,10 +403,10 @@ export default function AdminDiscountCodes() {
                 <th className="px-6 py-4 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
               {codes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-zinc-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-zinc-400">
                     Chưa có mã giảm giá nào
                   </td>
                 </tr>
@@ -417,13 +417,13 @@ export default function AdminDiscountCodes() {
                   const isActuallyActive = code.isActive && !isExpired && !isLimitReached;
 
                   return (
-                    <tr key={code.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+                    <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50">
                       <td className="px-6 py-4">
-                        <span className="font-mono font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded">
                           {code.code}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-zinc-300">
+                      <td className="px-6 py-4 text-slate-700 dark:text-zinc-300">
                         {code.discountType === 'freeship_only'
                           ? 'Freeship'
                           : code.discountType === 'percentage' 
@@ -435,25 +435,25 @@ export default function AdminDiscountCodes() {
                           </div>
                         )}
                         {code.maxDiscount && (
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-slate-500 mt-1">
                             Tối đa: {formatCurrency(code.maxDiscount)}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-zinc-300">
+                      <td className="px-6 py-4 text-slate-700 dark:text-zinc-300">
                         <div className="space-y-1">
                           {code.minOrderValue ? <div>Đơn từ ${formatCurrency(code.minOrderValue)}</div> : null}
                           {code.customerType === 'new' && <div className="text-blue-600 text-xs font-bold px-1.5 py-0.5 bg-blue-100 rounded inline-block">Khách mới</div>}
-                          {code.applicableCategories && code.applicableCategories.length > 0 && <div className="text-xs text-gray-500">Giới hạn loại: {code.applicableCategories.join(', ')}</div>}
-                          {code.applicableProducts && code.applicableProducts.length > 0 && <div className="text-xs text-gray-500">Giới hạn SP: {code.applicableProducts.join(', ')}</div>}
+                          {code.applicableCategories && code.applicableCategories.length > 0 && <div className="text-xs text-slate-500">Giới hạn loại: {code.applicableCategories.join(', ')}</div>}
+                          {code.applicableProducts && code.applicableProducts.length > 0 && <div className="text-xs text-slate-500">Giới hạn SP: {code.applicableProducts.join(', ')}</div>}
                           {(!code.minOrderValue && code.customerType !== 'new' && (!code.applicableCategories || code.applicableCategories.length === 0) && (!code.applicableProducts || code.applicableProducts.length === 0)) ? 'Mọi đơn hàng' : null}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-zinc-300 text-xs">
+                      <td className="px-6 py-4 text-slate-700 dark:text-zinc-300 text-xs">
                         <div>Từ: {code.startDate?.toDate ? new Date(code.startDate.toDate()).toLocaleString('vi-VN') : ''}</div>
                         <div>Đến: {code.endDate?.toDate ? new Date(code.endDate.toDate()).toLocaleString('vi-VN') : ''}</div>
                       </td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-zinc-300">
+                      <td className="px-6 py-4 text-slate-700 dark:text-zinc-300">
                         {code.usedCount} {code.usageLimit ? `/ ${code.usageLimit}` : ''}
                       </td>
                       <td className="px-6 py-4">
@@ -469,14 +469,14 @@ export default function AdminDiscountCodes() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(code)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                             title="Sửa"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(code.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                             title="Xóa"
                           >
                             <Trash2 className="w-4 h-4" />

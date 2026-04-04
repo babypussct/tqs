@@ -18,7 +18,7 @@ const DEFAULT_PERMISSIONS: IAdminPermissions = {
 
 const TIER_COLORS = {
   bronze: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30',
-  silver: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30',
+  silver: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-500/30',
   gold: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30',
   diamond: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
 };
@@ -146,11 +146,11 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <User className="w-6 h-6 text-indigo-500" />
             Quản lý Thành viên & Phân quyền
           </h2>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
             Quản lý khách hàng, thăng hạng VIP, khóa tài khoản chống spam và cấp quyền cho Ban quản trị.
           </p>
         </div>
@@ -160,16 +160,16 @@ export default function AdminUsers() {
             placeholder="Tìm theo email hoặc tên..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
+            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
           />
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-zinc-900/80 text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800/50">
+            <thead className="bg-slate-50 dark:bg-zinc-900/80 text-slate-500 dark:text-zinc-400 border-b border-slate-200 dark:border-zinc-800/50">
               <tr>
                 <th className="px-6 py-4 font-medium">Người dùng</th>
                 <th className="px-6 py-4 font-medium text-center">Xếp hạng</th>
@@ -178,18 +178,18 @@ export default function AdminUsers() {
                 <th className="px-6 py-4 font-medium text-right">Vai trò / Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-zinc-800/50">
+            <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/50">
               {filteredUsers.map((user) => {
                 const isSuperAdmin = user.email?.toLowerCase() === 'oneloveonepeopleforever@gmail.com';
                 const isAdmin = isSuperAdmin || !!user.adminPermissions;
                 
                 return (
-                  <tr key={user.uid} className={`hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors ${user.isBanned ? 'opacity-75' : ''}`}>
+                  <tr key={user.uid} className={`hover:bg-slate-50 dark:hover:bg-zinc-800/30 transition-colors ${user.isBanned ? 'opacity-75' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           {user.photoURL ? (
-                            <img src={user.photoURL} alt={user.displayName || ''} className="w-10 h-10 rounded-full border border-gray-200 dark:border-zinc-700 object-cover" />
+                            <img src={user.photoURL} alt={user.displayName || ''} className="w-10 h-10 rounded-full border border-slate-200 dark:border-zinc-700 object-cover" />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                               <User className="w-5 h-5" />
@@ -202,10 +202,10 @@ export default function AdminUsers() {
                           )}
                         </div>
                         <div>
-                          <div className={`font-medium ${user.isBanned ? 'text-gray-400 dark:text-zinc-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+                          <div className={`font-medium ${user.isBanned ? 'text-slate-400 dark:text-zinc-500 line-through' : 'text-slate-900 dark:text-white'}`}>
                             {user.displayName || user.email?.split('@')[0]}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5">
+                          <div className="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5">
                             <Mail className="w-3 h-3" /> {user.email}
                           </div>
                         </div>
@@ -230,7 +230,7 @@ export default function AdminUsers() {
                     {/* Stats Column */}
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center justify-center">
-                        <div className="flex items-center gap-1 text-gray-700 dark:text-zinc-300 font-medium">
+                        <div className="flex items-center gap-1 text-slate-700 dark:text-zinc-300 font-medium">
                           <ShoppingBag className="w-3.5 h-3.5" /> {(user.totalOrders || 0)} đơn
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-500 mt-1 flex items-center gap-1">
@@ -249,7 +249,7 @@ export default function AdminUsers() {
                           disabled={!currentUser?.isSuperAdmin && !currentUser?.permissions.manageRoles}
                           className={`flex items-center gap-1.5 mx-auto text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
                             user.isBanned 
-                              ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30' 
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30' 
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
                           }`}
                         >
@@ -270,7 +270,7 @@ export default function AdminUsers() {
                         </button>
                       )}
                       {isSuperAdmin && (
-                        <span className="text-xs text-gray-400 dark:text-zinc-500 font-medium px-3 py-1.5 border border-transparent">
+                        <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium px-3 py-1.5 border border-transparent">
                           Không thể sửa
                         </span>
                       )}
@@ -302,41 +302,41 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full shadow-2xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-950">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-950">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-500" />
             Cấu hình quyền Admin
           </h3>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 bg-gray-100 dark:bg-zinc-800 rounded-full">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-indigo-500 bg-slate-100 dark:bg-zinc-800 rounded-full">
             <X className="w-4 h-4" />
           </button>
         </div>
         
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl">
-            <img src={user.photoURL || ''} className="w-12 h-12 rounded-full hidden sm:block bg-gray-200" alt="" />
+            <img src={user.photoURL || ''} className="w-12 h-12 rounded-full hidden sm:block bg-slate-200" alt="" />
             <div>
-              <p className="font-bold text-gray-900 dark:text-white">{user.displayName || user.email}</p>
-              <p className="text-sm text-gray-500 dark:text-zinc-400">{user.email}</p>
+              <p className="font-bold text-slate-900 dark:text-white">{user.displayName || user.email}</p>
+              <p className="text-sm text-slate-500 dark:text-zinc-400">{user.email}</p>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 p-4 border border-gray-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors mb-6">
+          <label className="flex items-center gap-3 p-4 border border-slate-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors mb-6">
             <input 
               type="checkbox" 
               checked={isAdmin} 
               onChange={e => setIsAdmin(e.target.checked)} 
-              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300"
             />
             <div>
-              <div className="font-bold text-gray-900 dark:text-white">Cấp quyền Quản trị viên (Admin)</div>
-              <div className="text-xs text-gray-500">Giới hạn trong các module được phép bên dưới</div>
+              <div className="font-bold text-slate-900 dark:text-white">Cấp quyền Quản trị viên (Admin)</div>
+              <div className="text-xs text-slate-500">Giới hạn trong các module được phép bên dưới</div>
             </div>
           </label>
 
           <div className={`space-y-4 transition-all ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
-            <h4 className="font-medium text-sm text-gray-700 dark:text-zinc-300 uppercase tracking-wider">Module được phép truy cập</h4>
+            <h4 className="font-medium text-sm text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Module được phép truy cập</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { key: 'manageProducts' as keyof IAdminPermissions, label: 'Quản lý Sản phẩm' },
@@ -346,8 +346,8 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
                 { key: 'manageSettings' as keyof IAdminPermissions, label: 'Thiết lập Hệ thống' },
                 { key: 'manageRoles' as keyof IAdminPermissions, label: 'Quản lý Thành viên' },
               ].map(module => (
-                <label key={module.key} className="flex items-center justify-between p-3 border border-gray-100 dark:border-zinc-800 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/30">
-                  <span className="text-sm font-medium text-gray-700 dark:text-zinc-300">{module.label}</span>
+                <label key={module.key} className="flex items-center justify-between p-3 border border-slate-100 dark:border-zinc-800 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/30">
+                  <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">{module.label}</span>
                   <div className="relative inline-flex items-center">
                     <input 
                       type="checkbox" 
@@ -355,7 +355,7 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
                       checked={permissions[module.key]}
                       onChange={(e) => setPermissions({...permissions, [module.key]: e.target.checked})}
                     />
-                    <div className="w-9 h-5 bg-gray-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                    <div className="w-9 h-5 bg-slate-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                   </div>
                 </label>
               ))}
@@ -363,13 +363,13 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
           </div>
         </div>
         
-        <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 flex justify-end gap-3">
-          <button onClick={onClose} className="px-5 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-800 transition-colors">
+        <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950 flex justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2 rounded-xl text-sm font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors">
             Hủy
           </button>
           <button 
             onClick={() => onSave(isAdmin ? permissions : null)}
-            className="px-5 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+            className="px-5 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm"
           >
             Lưu thay đổi
           </button>

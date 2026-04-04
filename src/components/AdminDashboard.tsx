@@ -7,7 +7,7 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, TrendingUp, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, LayoutDashboard, Palette, Settings, Shield, Database, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, Palette, Settings, Shield, Database, Star, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
@@ -19,14 +19,14 @@ import { useProductConfig } from '../hooks/useProductConfig';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
-  const { products, loading: productsLoading } = useProducts(false); // Fetch all including inactive
+  const { products, loading: productsLoading } = useProducts(false);
   const { config: initialConfig, loading: configLoading } = useHomepage();
   const { config: productConfig } = useProductConfig();
   const { orders, loading: ordersLoading, updateOrderStatus } = useOrders();
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -37,11 +37,9 @@ export default function AdminDashboard() {
     let code = trackingInputs[orderId]?.trim();
     if (!code) return;
 
-    // Extract SPX tracking code if user pasted the full tracking URL
     if (code.includes('spx.vn/track?')) {
       code = code.split('spx.vn/track?')[1].split('&')[0];
     } else if (code.startsWith('http')) {
-      // Fallback matching logic for other ways code might be in a URL
       const match = code.match(/(SPX[A-Z0-9]+)/i);
       if (match) code = match[1];
     }
@@ -74,14 +72,6 @@ export default function AdminDashboard() {
 
   const loading = productsLoading || configLoading || ordersLoading;
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    const total = products.length;
-    const active = products.filter(p => p.isActive).length;
-    const outOfStock = products.filter(p => p.stock === 0).length;
-    return { total, active, outOfStock };
-  }, [products]);
-
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [products, searchTerm]);
@@ -100,593 +90,445 @@ export default function AdminDashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-gray-500 dark:text-zinc-400 flex items-center gap-3">
-        <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-        Đang tải dữ liệu quản trị...
+      <div className="text-slate-500 dark:text-zinc-400 flex items-center gap-3 font-medium">
+        <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        Đang đồng bộ dữ liệu quản trị...
       </div>
     </div>
   );
 
+  const tabs = [
+    { id: 'products', label: 'Sản phẩm', icon: Package, requiredPermission: 'manageProducts' },
+    { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag, requiredPermission: 'manageOrders' },
+    { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
+    { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
+    { id: 'settings', label: 'Cấu hình chung', icon: Settings, requiredPermission: 'manageSettings' },
+    { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
+    { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
+    { id: 'rules', label: 'Bảo trì dữ liệu', icon: Database, requiredPermission: null },
+  ];
+
+  const activeTabInfo = tabs.find(t => t.id === activeTab);
+
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] bg-gray-50 dark:bg-zinc-950">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 shrink-0">
-        <div className="sticky top-[73px] p-6">
-          <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Quản trị</h2>
-          <nav className="space-y-1.5">
-            {[
-              { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard, requiredPermission: null },
-              { id: 'products', label: 'Sản phẩm', icon: Package, requiredPermission: 'manageProducts' },
-              { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag, requiredPermission: 'manageOrders' },
-              { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
-              { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
-              { id: 'settings', label: 'Cấu hình', icon: Settings, requiredPermission: 'manageSettings' },
-              { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
-              { id: 'permissions', label: 'Thành viên', icon: Shield, requiredPermission: 'manageRoles' },
-              { id: 'rules', label: 'Sửa lỗi Database', icon: Database, requiredPermission: null },
-            ].map((tab) => {
-              // Hide tab if user doesn't have permission
-              if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
-                return null;
-              }
-              const Icon = tab.icon as any;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-500'
-                      : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" /> {tab.label}
-                </button>
-              );
-            })}
-          </nav>
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] bg-slate-50 dark:bg-zinc-950 font-sans text-slate-900 dark:text-slate-100">
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 shrink-0 md:sticky md:top-[73px] md:h-[calc(100vh-73px)] overflow-y-auto">
+        <div className="p-6 pb-2">
+          <h2 className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Danh mục quản lý</h2>
         </div>
+        <nav className="px-3 space-y-1 pb-6">
+          {tabs.map((tab) => {
+            if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
+              return null;
+            }
+            const Icon = tab.icon as any;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 shadow-sm ring-1 ring-inset ring-indigo-500/20'
+                    : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
+                  {tab.label}
+                </div>
+                {isActive && <ChevronRight className="w-4 h-4 opacity-50" />}
+              </button>
+            );
+          })}
+        </nav>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 md:p-10 overflow-x-hidden">
-        <div className="max-w-6xl mx-auto">
-          {/* Tab Content: Overview */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl">
-                  <Package className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Tổng sản phẩm</p>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-                  <ShoppingBag className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Đang mở bán</p>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Hết hàng</p>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.outOfStock}</h3>
-                </div>
-              </div>
-            </div>
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 flex flex-col">
+        {/* Top Header */}
+        <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-[73px] z-10">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              {activeTabInfo?.icon && <activeTabInfo.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
+              {activeTabInfo?.label}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+              Quản lý và thiết lập hệ thống TQS.
+            </p>
           </div>
-          <div className="bg-white dark:bg-zinc-900/30 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-12 text-center">
-            <TrendingUp className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-700 dark:text-zinc-300 mb-2">Biểu đồ doanh thu</h3>
-            <p className="text-gray-500 dark:text-zinc-500">Tính năng thống kê doanh thu sẽ sớm được cập nhật khi có dữ liệu đơn hàng thực tế.</p>
+          <div className="flex items-center gap-3">
+            {activeTab === 'products' && (
+              <button 
+                onClick={() => navigate('/admin/product/new')} 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Thêm Gói/SP
+              </button>
+            )}
+            {activeTab === 'homepage' && (
+              <button
+                onClick={async () => {
+                  try {
+                    await setDoc(doc(db, 'settings', 'homepage'), homeConfig);
+                    toast.success('Đã lưu cấu hình trang chủ!');
+                  } catch (error) {
+                    console.error(error);
+                    toast.error('Lỗi khi lưu cấu hình.');
+                  }
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+              >
+                <Save className="w-4 h-4" /> Lưu Giao Diện
+              </button>
+            )}
           </div>
-        </div>
-      )}
+        </header>
 
-      {/* Tab Content: Products */}
-      {activeTab === 'products' && (
-        <div className="space-y-6">
-          {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 dark:text-zinc-500" />
-              <input 
-                type="text" 
-                placeholder="Tìm kiếm sản phẩm..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-red-500 transition-colors"
-              />
-            </div>
-            <button 
-              onClick={() => navigate('/admin/product/new')} 
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 font-medium transition-colors shadow-lg shadow-red-600/20"
-            >
-              <Plus className="w-5 h-5" /> Thêm Sản phẩm
-            </button>
-          </div>
+        {/* Content Body */}
+        <div className="p-6 md:p-8 max-w-7xl mx-auto w-full">
+          
+          {/* Tab Content: Products */}
+          {activeTab === 'products' && (
+            <div className="space-y-6">
+              {/* Filter Bar */}
+              <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-3 flex-wrap rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm kiếm theo Tên..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg pl-9 pr-4 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  />
+                </div>
+              </div>
 
-          {/* Product List */}
-          <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-zinc-900/80 text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800/50">
-                  <tr>
-                    <th className="px-6 py-4 font-medium">Sản phẩm</th>
-                    <th className="px-6 py-4 font-medium">Giá bán</th>
-                    <th className="px-6 py-4 font-medium">Kho</th>
-                    <th className="px-6 py-4 font-medium">Trạng thái</th>
-                    <th className="px-6 py-4 font-medium text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-zinc-800/50">
-                  {filteredProducts.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 overflow-hidden shrink-0">
-                            {p.image ? (
-                              <img src={p.image} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                            ) : (
-                              <ImageIcon className="w-6 h-6 text-gray-400 dark:text-zinc-600 m-auto mt-3" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white line-clamp-1">{p.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-500 dark:text-zinc-500 capitalize">{p.type}</span>
-                              {p.badge && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300">{p.badge}</span>}
+              {/* Data Table */}
+              <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800 text-sm text-left">
+                    <thead className="bg-slate-50 dark:bg-zinc-900/50">
+                      <tr>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Sản phẩm</th>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Phân loại</th>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Đơn giá</th>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-center">Tồn kho</th>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-center">Tình trạng</th>
+                        <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-right">Tác vụ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
+                      {filteredProducts.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
+                                {p.image ? (
+                                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <ImageIcon className="w-4 h-4 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="font-medium text-slate-900 dark:text-slate-100 max-w-[200px] truncate" title={p.name}>
+                                {p.name}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-white">{p.price.toLocaleString('vi-VN')}đ</div>
-                        {p.originalPrice && <div className="text-xs text-gray-500 dark:text-zinc-500 line-through">{p.originalPrice.toLocaleString('vi-VN')}đ</div>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`font-medium ${p.stock === 0 ? 'text-red-400' : 'text-gray-700 dark:text-zinc-300'}`}>
-                          {p.stock !== undefined ? p.stock : '∞'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          p.isActive 
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-300 dark:border-zinc-700'
-                        }`}>
-                          {p.isActive ? 'Đang bán' : 'Đã ẩn'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => navigate('/admin/product/' + p.id)} className="p-2 text-gray-500 dark:text-zinc-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Sửa">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(p.id)} className="p-2 text-gray-500 dark:text-zinc-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Xóa">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredProducts.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-zinc-500">
-                        <Package className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-zinc-700" />
-                        <p>Không tìm thấy sản phẩm nào.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab Content: Orders */}
-      {activeTab === 'orders' && (
-        <div className="bg-white dark:bg-zinc-900/30 border border-gray-200 dark:border-zinc-800/50 rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-zinc-900/80 border-b border-gray-200 dark:border-zinc-800/50 text-sm font-medium text-gray-500 dark:text-zinc-400">
-                  <th className="px-6 py-4">Mã Đơn</th>
-                  <th className="px-6 py-4">Khách hàng</th>
-                  <th className="px-6 py-4">Sản phẩm</th>
-                  <th className="px-6 py-4">Tổng tiền</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4">Ngày đặt</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/50">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors group">
-                    <td className="px-6 py-4 text-sm font-mono text-gray-500 dark:text-zinc-400">
-                      #{order.id.slice(-6).toUpperCase()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{order.shippingInfo.fullName}</div>
-                      <div className="text-xs text-gray-500 dark:text-zinc-400">{order.shippingInfo.phone}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white">{order.items.length} sản phẩm</div>
-                      <div className="text-xs text-gray-500 dark:text-zinc-400 truncate max-w-[200px]">
-                        {order.items.map(item => item.name).join(', ')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-bold text-red-600 dark:text-red-500">
-                      {(order.finalAmount || order.totalAmount).toLocaleString('vi-VN')}đ
-                      {order.discountCode && (
-                        <div className="text-xs font-normal text-emerald-600 dark:text-emerald-500 mt-0.5">
-                          Mã: {order.discountCode}
-                        </div>
-                      )}
-                      {order.paymentMethod === 'vietqr' ? (
-                        <div className="mt-2">
-                          {order.paymentStatus === 'pending' ? (
-                            <div className="flex flex-col gap-1">
-                              <span className="inline-block px-2 py-1 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-500 text-[10px] font-bold rounded-full w-fit">
-                                Chờ chuyển khoản
-                              </span>
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
-                                    toast.success('Đã xác nhận thanh toán');
-                                  } catch (error) {
-                                    handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
-                                    toast.error('Lỗi khi xác nhận thanh toán');
-                                  }
-                                }}
-                                className="text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded transition-colors w-fit"
-                              >
-                                Xác nhận đã nhận
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-zinc-400 capitalize">
+                            {p.type} {p.badge && <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">{p.badge}</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-slate-900 dark:text-slate-100 font-medium">{p.price.toLocaleString('vi-VN')} đ</div>
+                            {p.originalPrice && <div className="text-xs text-slate-400 line-through">{p.originalPrice.toLocaleString('vi-VN')} đ</div>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
+                              p.stock === 0 ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'
+                            }`}>
+                              {p.stock !== undefined ? p.stock : '∞'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
+                              p.isActive 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
+                                : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+                            }`}>
+                              {p.isActive ? 'Đang bán' : 'Tạm ẩn'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => navigate('/admin/product/' + p.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-md transition-colors tooltip-trigger" title="Sửa">
+                                <Edit className="w-4 h-4" />
                               </button>
+                              <button onClick={() => handleDelete(p.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-md transition-colors tooltip-trigger" title="Xóa">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredProducts.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-zinc-400">
+                            <Package className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-zinc-600" />
+                            <p>Không tìm thấy sản phẩm nào.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Content: Orders */}
+          {activeTab === 'orders' && (
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-zinc-800 text-sm text-left">
+                  <thead className="bg-slate-50 dark:bg-zinc-900/50">
+                    <tr>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Mã đơn</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Khách hàng</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Sản phẩm</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Thanh toán</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Trạng thái</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-right">Vận chuyển</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors align-top">
+                        <td className="px-6 py-4">
+                          <div className="font-mono text-xs font-semibold text-slate-700 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded inline-block">
+                            #{order.id.slice(-6).toUpperCase()}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-2">
+                            {order.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-900 dark:text-slate-100">{order.shippingInfo.fullName}</div>
+                          <div className="text-xs text-slate-500 mt-1">{order.shippingInfo.phone}</div>
+                          <button 
+                            onClick={() => {
+                              const alertStr = `Chi tiết:\nKhách: ${order.shippingInfo.fullName}\nSĐT: ${order.shippingInfo.phone}\nĐịa chỉ: ${order.shippingInfo.address}\nGhi chú: ${order.shippingInfo.notes || 'Không có'}`;
+                              alert(alertStr);
+                            }}
+                            className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 hover:underline inline-flex items-center gap-1"
+                          >
+                            Xem địa chỉ <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 max-w-[200px]">
+                          <div className="text-slate-900 dark:text-slate-100 font-medium mb-1">{order.items.length} món</div>
+                          {order.items.slice(0, 2).map((item, i) => (
+                            <div key={i} className="text-xs text-slate-500 truncate">- {item.name} (x{item.quantity})</div>
+                          ))}
+                          {order.items.length > 2 && <div className="text-xs text-slate-400 italic">...và {order.items.length - 2} món khác</div>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {(order.finalAmount || order.totalAmount).toLocaleString('vi-VN')} đ
+                          </div>
+                          {order.paymentMethod === 'vietqr' ? (
+                            <div className="mt-2">
+                              {order.paymentStatus === 'pending' ? (
+                                <div className="flex flex-col gap-1 items-start">
+                                  <span className="inline-flex items-center px-2 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 text-[10px] font-medium">Chờ CKQR</span>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
+                                        toast.success('Đã xác nhận thanh toán');
+                                      } catch (error) { toast.error('Lỗi khi xác nhận thanh toán'); }
+                                    }}
+                                    className="text-[10px] bg-slate-800 hover:bg-slate-900 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white px-2 py-1 rounded transition-colors"
+                                  >Xác nhận Đã Nhận Tiền</button>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 text-[10px] font-medium">Đã thanh toán (QR)</span>
+                              )}
                             </div>
                           ) : (
-                            <span className="inline-block px-2 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-500 text-[10px] font-bold rounded-full w-fit">
-                              Đã thanh toán
-                            </span>
+                            <div className="mt-2 text-[10px] text-slate-500 border border-slate-200 dark:border-zinc-700 rounded px-2 py-1 inline-block bg-slate-50 dark:bg-zinc-800">
+                              Thanh toán COD
+                            </div>
                           )}
-                        </div>
-                      ) : (
-                        <div className="mt-2">
-                          <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-bold rounded-full w-fit">
-                            Thanh toán COD
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <select
-                        value={order.status}
-                        onChange={(e) => {
-                          const newStatus = e.target.value as Order['status'];
-                          updateOrderStatus(order.id, newStatus, order.userId, order.finalAmount || order.totalAmount);
-                        }}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full border outline-none cursor-pointer ${
-                          order.status === 'suspicious' ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30' :
-                          order.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-500 dark:border-amber-500/20' :
-                          order.status === 'processing' ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-500 dark:border-blue-500/20' :
-                          order.status === 'shipped' ? 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-500/10 dark:text-purple-500 dark:border-purple-500/20' :
-                          order.status === 'delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border-emerald-500/20' :
-                          'bg-gray-50 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
-                        }`}
-                      >
-                        <option value="suspicious">⚠ Nghi ngờ</option>
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="processing">Đang chuẩn bị</option>
-                        <option value="shipped">Đang giao</option>
-                        <option value="delivered">Đã giao</option>
-                        <option value="cancelled">Đã hủy</option>
-                      </select>
-                      {/* Risk score badge */}
-                      {(order as any).riskScore !== undefined && (order as any).riskScore >= 40 && (
-                        <div className={`mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
-                          (order as any).riskScore >= 60
-                            ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-                        }`}>
-                          🔥 Rủi ro: {(order as any).riskScore}/100
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-zinc-400">
-                      {order.createdAt?.toDate().toLocaleDateString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => {
-                          const discountInfo = order.discountCode ? `\nMã giảm giá: ${order.discountCode} (-${order.discountAmount?.toLocaleString('vi-VN')}đ)` : '';
-                          const finalTotal = order.finalAmount || order.totalAmount;
-                          const itemsList = order.items.map(i => {
-                            let details = [];
-                            if (i.selectedBox) details.push(`Hộp: ${i.selectedBox}`);
-                            if (i.selectedLang) details.push(`Ngôn ngữ: ${i.selectedLang}`);
-                            if (i.selectedVariants) {
-                              Object.entries(i.selectedVariants).forEach(([k, v]) => details.push(`${k}: ${v}`));
-                            }
-                            if (i.quickAddAccessoryNames) {
-                              i.quickAddAccessoryNames.forEach(name => details.push(`+ ${name}`));
-                            }
-                            if (i.addSleeves && !i.quickAddAccessoryNames) details.push(`+ ${(i as any).quickAddAccessoryName || 'Sleeves'}`);
-                            const detailsStr = details.length > 0 ? ` (${details.join(', ')})` : '';
-                            return `- ${i.name}${detailsStr} (x${i.quantity})`;
-                          }).join('\n');
-                          alert(`Chi tiết đơn hàng:\nKhách: ${order.shippingInfo.fullName}\nSĐT: ${order.shippingInfo.phone}\nĐịa chỉ: ${order.shippingInfo.address}\nGhi chú: ${order.shippingInfo.notes || 'Không có'}\n\nSản phẩm:\n${itemsList}\n\nTạm tính: ${order.totalAmount.toLocaleString('vi-VN')}đ${discountInfo}\nTổng cộng: ${finalTotal.toLocaleString('vi-VN')}đ`);
-                        }}
-                        className="text-sm text-blue-600 dark:text-blue-500 hover:underline block ml-auto mb-2"
-                      >
-                        Chi tiết
-                      </button>
-
-                      <div className="flex flex-col items-end gap-1 mt-2">
-                        {order.trackingCode && !editingTracking[order.id] ? (
-                          <div className="flex items-center gap-2">
-                            <span 
-                              className="text-xs font-mono bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded max-w-[150px] truncate"
-                              title={order.trackingCode}
-                            >
-                              {order.trackingCode.includes('spx.vn/track?') ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] : order.trackingCode}
-                            </span>
-                            <button
-                              onClick={() => {
-                                handleTrackingDelete(order.id);
-                              }}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                              title="Xóa mã"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! }));
-                                setEditingTracking(prev => ({ ...prev, [order.id]: true }));
-                              }}
-                              className="text-gray-400 hover:text-blue-500 transition-colors"
-                              title="Sửa mã"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              placeholder="Mã SPX hoặc Link..."
-                              value={trackingInputs[order.id] || ''}
-                              onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
-                              className="border border-gray-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-24 bg-transparent text-gray-900 dark:text-white focus:border-blue-500 outline-none"
-                            />
-                            <button
-                              onClick={() => handleTrackingSave(order.id)}
-                              disabled={!trackingInputs[order.id]?.trim()}
-                              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:dark:bg-zinc-700 text-white px-2 py-1 rounded text-xs transition-colors"
-                            >
-                              Lưu
-                            </button>
-                            {editingTracking[order.id] && (
-                              <button
-                                onClick={() => setEditingTracking(prev => ({ ...prev, [order.id]: false }))}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors ml-1"
-                                title="Hủy"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {orders.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-zinc-500">
-                      <ShoppingBag className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-zinc-700" />
-                      <p>Chưa có đơn hàng nào.</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Tab Content: Homepage */}
-      {activeTab === 'homepage' && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div
-            className="rounded-2xl p-6 flex items-center justify-between"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,200,50,0.08) 0%, rgba(200,30,30,0.06) 100%)',
-              border: '1px solid rgba(255,200,50,0.12)',
-            }}
-          >
-            <div>
-              <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <Palette className="w-5 h-5 text-amber-400" />
-                Thiết kế Trang Chủ
-              </h2>
-              <p className="text-zinc-400 text-sm mt-1">Tuỳ chỉnh hình ảnh nền, hiệu ứng động và nội dung hero section.</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <select
+                            value={order.status}
+                            onChange={(e) => {
+                              const newStatus = e.target.value as Order['status'];
+                              updateOrderStatus(order.id, newStatus, order.userId, order.finalAmount || order.totalAmount);
+                            }}
+                            className={`text-xs font-semibold px-2 py-1 rounded border outline-none cursor-pointer appearance-none ${
+                              order.status === 'suspicious' ? 'bg-red-50 text-red-700 border-red-200' :
+                              order.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              order.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              order.status === 'shipped' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                              order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              'bg-slate-50 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            <option value="suspicious">⚠ Nghi ngờ</option>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="processing">Đang chuẩn bị</option>
+                            <option value="shipped">Đang giao</option>
+                            <option value="delivered">Đã giao</option>
+                            <option value="cancelled">Đã hủy</option>
+                          </select>
+                          {(order as any).riskScore !== undefined && (order as any).riskScore >= 40 && (
+                            <div className={`mt-2 text-[10px] font-semibold px-2 py-0.5 rounded inline-flex ${
+                              (order as any).riskScore >= 60
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              Risk: {(order as any).riskScore}/100
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right align-top">
+                          {order.trackingCode && !editingTracking[order.id] ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded max-w-[150px] truncate" title={order.trackingCode}>
+                                {order.trackingCode.includes('spx.vn/track?') ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] : order.trackingCode}
+                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <button onClick={() => { setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! })); setEditingTracking(prev => ({ ...prev, [order.id]: true })); }} className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium">Sửa mã</button>
+                                <button onClick={() => handleTrackingDelete(order.id)} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Xóa</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-end gap-1">
+                              <input
+                                type="text"
+                                placeholder="Mã vận đơn..."
+                                value={trackingInputs[order.id] || ''}
+                                onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                className="border border-slate-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-32 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 outline-none"
+                              />
+                              <div className="flex gap-1 mt-1">
+                                {editingTracking[order.id] && (
+                                  <button onClick={() => setEditingTracking(prev => ({ ...prev, [order.id]: false }))} className="bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-medium">Hủy</button>
+                                )}
+                                <button onClick={() => handleTrackingSave(order.id)} disabled={!trackingInputs[order.id]?.trim()} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-medium">Lưu</button>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {orders.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-zinc-500">
+                          <ShoppingBag className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-zinc-700" />
+                          <p>Chưa có đơn hàng nào.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <button
-              onClick={async () => {
-                try {
-                  await setDoc(doc(db, 'settings', 'homepage'), homeConfig);
-                  toast.success('Đã lưu cấu hình trang chủ!');
-                } catch (error) {
-                  console.error(error);
-                  toast.error('Lỗi khi lưu cấu hình.');
-                }
-              }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105 active:scale-95"
-              style={{
-                background: 'linear-gradient(135deg, #CC0000 0%, #FF3333 100%)',
-                boxShadow: '0 4px 20px rgba(200,30,30,0.4)',
-                color: '#fff',
-              }}
-            >
-              <Save className="w-4 h-4" /> Lưu Thay Đổi
-            </button>
-          </div>
+          )}
 
-          {/* Two-column: Editor (left) + Sections/Badges (right) */}
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-            {/* Hero Editor — dark themed */}
-            <div
-              className="xl:col-span-3 rounded-2xl p-6 min-w-0"
-              style={{
-                background: 'rgba(10,5,0,0.6)',
-                border: '1px solid rgba(255,200,50,0.1)',
-              }}
-            >
-              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" /> Hero Section
-              </h3>
-              <AdminHeroEditor homeConfig={homeConfig} setHomeConfig={setHomeConfig} />
-            </div>
-
-            {/* Right column: Sections + Trust Badges */}
-            <div className="xl:col-span-2 space-y-5">
-
-
-
-              {/* Sections */}
-              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Box className="w-4 h-4 text-purple-500" /> Khối Sản Phẩm
-                  </h3>
-                  <button 
-                    onClick={() => {
-                      setHomeConfig({
-                        ...homeConfig, 
-                        sections: [...homeConfig.sections, { id: `section-${Date.now()}`, title: 'Khối mới', typeFilter: 'all', icon: 'Box', iconColorClass: 'text-gray-500 dark:text-zinc-500' }]
-                      });
-                    }}
-                    className="text-xs bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {homeConfig.sections.map((section, index) => (
-                    <div key={section.id} className="relative grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9">
-                      <button 
-                        onClick={() => {
-                          const newSections = [...homeConfig.sections];
-                          newSections.splice(index, 1);
-                          setHomeConfig({...homeConfig, sections: newSections});
-                        }}
-                        className="absolute top-2 right-2 p-1 text-gray-400 dark:text-zinc-600 hover:text-red-500 rounded transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <div className="col-span-2">
-                        <input type="text" placeholder="Tiêu đề khối" value={section.title} onChange={e => {
-                          const ns = [...homeConfig.sections]; ns[index].title = e.target.value; setHomeConfig({...homeConfig, sections: ns});
-                        }} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                      </div>
-                      <input type="text" placeholder="Icon (e.g. Flame)" value={section.icon} onChange={e => {
-                        const ns = [...homeConfig.sections]; ns[index].icon = e.target.value; setHomeConfig({...homeConfig, sections: ns});
-                      }} className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                      <select value={section.typeFilter} onChange={e => {
-                        const ns = [...homeConfig.sections]; ns[index].typeFilter = e.target.value; setHomeConfig({...homeConfig, sections: ns});
-                      }} className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500 appearance-none">
-                        <option value="all">Tất cả</option>
-                        <option value="base">Bản Cơ Bản</option>
-                        <option value="expansion">Bản Mở Rộng</option>
-                        <option value="accessory">Phụ Kiện</option>
-                        <option value="combo">Combo</option>
-                        {productConfig.types?.map(type => <option key={type} value={type}>{type}</option>)}
-                      </select>
-                    </div>
-                  ))}
-                </div>
+          {/* Tab Content: Homepage Editor */}
+          {activeTab === 'homepage' && (
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+              {/* Hero Editor */}
+              <div className="xl:col-span-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-5 flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
+                  <ImageIcon className="w-4 h-4 text-indigo-500" /> Thiết kế Banner / Hero
+                </h3>
+                <AdminHeroEditor homeConfig={homeConfig} setHomeConfig={setHomeConfig} />
               </div>
 
-              {/* Trust Badges */}
-              <div className="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-pink-500" /> Cam Kết
-                  </h3>
-                  <button 
-                    onClick={() => setHomeConfig({ ...homeConfig, trustBadges: [...homeConfig.trustBadges, { icon: 'Shield', title: 'Cam kết mới', desc: 'Mô tả cam kết', colorClass: 'text-emerald-500' }] })}
-                    className="text-xs bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm
-                  </button>
+              {/* Sections & Trust Badges */}
+              <div className="xl:col-span-2 space-y-6">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-zinc-800 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <Box className="w-4 h-4 text-indigo-500" /> Hệ thống Khối (Sections)
+                    </h3>
+                    <button 
+                      onClick={() => setHomeConfig({ ...homeConfig, sections: [...homeConfig.sections, { id: `section-${Date.now()}`, title: 'Khối mới', typeFilter: 'all', icon: 'Box', iconColorClass: 'text-slate-500' }] })}
+                      className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-md font-medium"
+                    >
+                      + Thêm Khối
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {homeConfig.sections.map((section, index) => (
+                      <div key={section.id} className="relative grid grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-100 dark:border-zinc-700/50">
+                        <button onClick={() => { const ns = [...homeConfig.sections]; ns.splice(index, 1); setHomeConfig({...homeConfig, sections: ns}); }} className="absolute -top-2 -right-2 bg-white shadow-sm border p-1 text-slate-400 hover:text-red-500 rounded-full w-6 h-6 flex items-center justify-center">
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="col-span-2">
+                          <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Tiêu đề</label>
+                          <input type="text" value={section.title} onChange={e => { const ns = [...homeConfig.sections]; ns[index].title = e.target.value; setHomeConfig({...homeConfig, sections: ns}); }} className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Icon</label>
+                          <input type="text" value={section.icon} onChange={e => { const ns = [...homeConfig.sections]; ns[index].icon = e.target.value; setHomeConfig({...homeConfig, sections: ns}); }} className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-xs outline-none focus:border-indigo-500" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Loại SP</label>
+                          <select value={section.typeFilter} onChange={e => { const ns = [...homeConfig.sections]; ns[index].typeFilter = e.target.value; setHomeConfig({...homeConfig, sections: ns}); }} className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded px-2 py-1.5 text-xs outline-none focus:border-indigo-500">
+                            <option value="all">Tất cả</option>
+                            <option value="base">Bản Cơ Bản</option>
+                            <option value="expansion">Bản Mở Rộng</option>
+                            <option value="accessory">Phụ Kiện</option>
+                            <option value="combo">Combo</option>
+                            {productConfig.types?.map(type => <option key={type} value={type}>{type}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {homeConfig.trustBadges.map((badge, index) => (
-                    <div key={index} className="relative p-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pr-9">
-                      <button 
-                        onClick={() => { const nb = [...homeConfig.trustBadges]; nb.splice(index, 1); setHomeConfig({...homeConfig, trustBadges: nb}); }}
-                        className="absolute top-2 right-2 p-1 text-gray-400 dark:text-zinc-600 hover:text-red-500 rounded transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <input type="text" placeholder="Tiêu đề" value={badge.title} onChange={e => {
-                        const nb = [...homeConfig.trustBadges]; nb[index].title = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb});
-                      }} className="w-full mb-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                      <input type="text" placeholder="Mô tả" value={badge.desc} onChange={e => {
-                        const nb = [...homeConfig.trustBadges]; nb[index].desc = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb});
-                      }} className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500" />
-                    </div>
-                  ))}
+
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-zinc-800 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-indigo-500" /> Badge Cam Kết
+                    </h3>
+                    <button onClick={() => setHomeConfig({ ...homeConfig, trustBadges: [...homeConfig.trustBadges, { icon: 'Shield', title: 'Cam kết mới', desc: 'Mô tả', colorClass: 'text-indigo-500' }] })} className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-md font-medium">
+                      + Thêm Badge
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {homeConfig.trustBadges.map((badge, index) => (
+                      <div key={index} className="relative p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-100 dark:border-zinc-700/50">
+                        <button onClick={() => { const nb = [...homeConfig.trustBadges]; nb.splice(index, 1); setHomeConfig({...homeConfig, trustBadges: nb}); }} className="absolute -top-2 -right-2 bg-white shadow-sm border p-1 text-slate-400 hover:text-red-500 rounded-full w-6 h-6 flex items-center justify-center">
+                          <X className="w-3 h-3" />
+                        </button>
+                        <input type="text" placeholder="Tiêu đề" value={badge.title} onChange={e => { const nb = [...homeConfig.trustBadges]; nb[index].title = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb}); }} className="w-full mb-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm font-medium outline-none focus:border-indigo-500" />
+                        <input type="text" placeholder="Mô tả chi tiết" value={badge.desc} onChange={e => { const nb = [...homeConfig.trustBadges]; nb[index].desc = e.target.value; setHomeConfig({...homeConfig, trustBadges: nb}); }} className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1 text-xs outline-none focus:border-indigo-500" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div> {/* end right col */}
-          </div> {/* end 2-col grid */}
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* Tab Content: Discounts */}
-      {activeTab === 'discounts' && (
-        <AdminDiscountCodes />
-      )}
-
-      {/* Tab Content: Settings */}
-      {activeTab === 'settings' && (
-        <AdminSettings />
-      )}
-
-      {/* Tab Content: Rewards */}
-      {activeTab === 'rewards' && (
-        <AdminRewardsConfig />
-      )}
-
-      {/* Tab Content: Permissions */}
-      {activeTab === 'permissions' && (
-        <AdminPermissions />
-      )}
-
-      {/* Tab Content: Database Rules */}
-      {activeTab === 'rules' && (
-        <AdminDatabaseRules />
-      )}
+          {/* Sub-Components Routing */}
+          <div className="space-y-6">
+            {activeTab === 'discounts' && <AdminDiscountCodes />}
+            {activeTab === 'settings' && <AdminSettings />}
+            {activeTab === 'rewards' && <AdminRewardsConfig />}
+            {activeTab === 'permissions' && <AdminPermissions />}
+            {activeTab === 'rules' && <AdminDatabaseRules />}
+          </div>
+          
         </div>
       </main>
     </div>
