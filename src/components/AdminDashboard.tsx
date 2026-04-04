@@ -444,7 +444,7 @@ export default function AdminDashboard() {
           {activeTab === 'homepage' && (
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
               {/* Hero Editor */}
-              <div className="xl:col-span-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+              <div className="xl:col-span-3 min-w-0 overflow-hidden bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-5 flex items-center gap-2 border-b border-slate-100 dark:border-zinc-800 pb-3">
                   <ImageIcon className="w-4 h-4 text-indigo-500" /> Thiết kế Banner / Hero
                 </h3>
@@ -452,7 +452,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Sections & Trust Badges */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="xl:col-span-2 space-y-6 min-w-0">
                 <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-zinc-800 pb-3">
                     <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
