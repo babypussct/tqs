@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
 import AdminHeroEditor from './admin/AdminHeroEditor';
+import AdminNavigation from './admin/AdminNavigation';
 import AdminPermissions from './admin/AdminPermissions';
 import AdminDatabaseRules from './admin/AdminDatabaseRules';
 import AdminRewardsConfig from './admin/AdminRewardsConfig';
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -101,6 +102,7 @@ export default function AdminDashboard() {
     { id: 'products', label: 'Sản phẩm', icon: Package, requiredPermission: 'manageProducts' },
     { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag, requiredPermission: 'manageOrders' },
     { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
+    { id: 'navigation', label: 'Thanh điều hướng', icon: LayoutTemplate, requiredPermission: 'manageHomepage' },
     { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
     { id: 'settings', label: 'Cấu hình chung', icon: Settings, requiredPermission: 'manageSettings' },
     { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
@@ -522,6 +524,7 @@ export default function AdminDashboard() {
 
           {/* Sub-Components Routing */}
           <div className="space-y-6">
+            {activeTab === 'navigation' && <AdminNavigation />}
             {activeTab === 'discounts' && <AdminDiscountCodes />}
             {activeTab === 'settings' && <AdminSettings />}
             {activeTab === 'rewards' && <AdminRewardsConfig />}
