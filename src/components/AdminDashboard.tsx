@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   const { products, loading: productsLoading } = useProducts(false);
   const { config: initialConfig, loading: configLoading } = useHomepage();
   const { config: productConfig } = useProductConfig();
-  const { orders, loading: ordersLoading, updateOrderStatus } = useOrders();
+  const { orders, loading: ordersLoading, updateOrderStatus, deleteOrder } = useOrders();
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Sản phẩm</th>
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Thanh toán</th>
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs">Trạng thái</th>
-                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-right">Vận chuyển</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider text-xs text-right">Tác vụ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -404,33 +404,49 @@ export default function AdminDashboard() {
                           )}
                         </td>
                         <td className="px-6 py-4 text-right align-top">
-                          {order.trackingCode && !editingTracking[order.id] ? (
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-xs font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded max-w-[150px] truncate" title={order.trackingCode}>
-                                {order.trackingCode.includes('spx.vn/track?') ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] : order.trackingCode}
-                              </span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <button onClick={() => { setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! })); setEditingTracking(prev => ({ ...prev, [order.id]: true })); }} className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium">Sửa mã</button>
-                                <button onClick={() => handleTrackingDelete(order.id)} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Xóa</button>
-                              </div>
+                          <div className="flex flex-col h-full items-end gap-3">
+                            <div className="w-full flex justify-end">
+                              {order.trackingCode && !editingTracking[order.id] ? (
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="text-xs font-mono bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded max-w-[150px] truncate" title={order.trackingCode}>
+                                    {order.trackingCode.includes('spx.vn/track?') ? order.trackingCode.split('spx.vn/track?')[1].split('&')[0] : order.trackingCode}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <button onClick={() => { setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! })); setEditingTracking(prev => ({ ...prev, [order.id]: true })); }} className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium">Sửa mã</button>
+                                    <button onClick={() => handleTrackingDelete(order.id)} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Xóa</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-end gap-1">
+                                  <input
+                                    type="text"
+                                    placeholder="Mã vận đơn..."
+                                    value={trackingInputs[order.id] || ''}
+                                    onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                    className="border border-slate-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-32 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 outline-none"
+                                  />
+                                  <div className="flex gap-1 mt-1">
+                                    {editingTracking[order.id] && (
+                                      <button onClick={() => setEditingTracking(prev => ({ ...prev, [order.id]: false }))} className="bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-medium">Hủy</button>
+                                    )}
+                                    <button onClick={() => handleTrackingSave(order.id)} disabled={!trackingInputs[order.id]?.trim()} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-medium">Lưu</button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-end gap-1">
-                              <input
-                                type="text"
-                                placeholder="Mã vận đơn..."
-                                value={trackingInputs[order.id] || ''}
-                                onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
-                                className="border border-slate-300 dark:border-zinc-700 rounded px-2 py-1 text-xs w-32 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500 outline-none"
-                              />
-                              <div className="flex gap-1 mt-1">
-                                {editingTracking[order.id] && (
-                                  <button onClick={() => setEditingTracking(prev => ({ ...prev, [order.id]: false }))} className="bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-[10px] font-medium">Hủy</button>
-                                )}
-                                <button onClick={() => handleTrackingSave(order.id)} disabled={!trackingInputs[order.id]?.trim()} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-medium">Lưu</button>
-                              </div>
-                            </div>
-                          )}
+                            
+                            <button
+                              onClick={() => {
+                                if (window.confirm('CẢNH BÁO: Xoá đơn hàng này sẽ làm mất toàn bộ dữ liệu đơn hàng và thu hồi lại điểm nếu đã giao thành công. Bạn có chắc chắn muốn xoá vĩnh viễn?')) {
+                                  deleteOrder(order);
+                                }
+                              }}
+                              className="mt-auto text-[10px] flex items-center gap-1 text-slate-400 hover:text-red-600 transition-colors bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded shadow-sm opacity-50 hover:opacity-100"
+                              title="Xoá vĩnh viễn đơn hàng"
+                            >
+                              <Trash2 className="w-3 h-3" /> Xoá Đơn
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Order, RewardsConfig } from '../types';
 import { handleFirestoreError, OperationType } from './firebaseError';
@@ -169,5 +169,81 @@ export function useOrders() {
     }
   };
 
-  return { orders, loading, updateOrderStatus };
+  const deleteOrder = async (order: Order) => {
+    const { id: orderId, userId, status, earnedPoints } = order;
+    const amount = order.finalAmount || order.totalAmount;
+
+    try {
+      if (status === 'delivered' && userId) {
+        try {
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const currentSpent = userData.totalSpent || 0;
+            const currentOrders = userData.totalOrders || 0;
+            
+            const newSpent = Math.max(0, currentSpent - (amount || 0));
+            const newOrders = Math.max(0, currentOrders - 1);
+            let newTier = userData.tier || 'bronze';
+
+            const configRef = doc(db, 'system_settings', 'tiers_config');
+            const configSnap = await getDoc(configRef);
+            
+            let finalRollbackPoints = earnedPoints;
+            
+            if (configSnap.exists()) {
+              const config = configSnap.data() as RewardsConfig;
+              
+              if (finalRollbackPoints === undefined) {
+                 if (config.isActive && amount) {
+                   const fallbackTierKey = userData.tier || 'bronze';
+                   const currentTierConfig = config.tiers[fallbackTierKey as keyof RewardsConfig['tiers']] || config.tiers['bronze'];
+                   const multiplier = currentTierConfig.pointMultiplier || 0.01;
+                   const pointValueVND = config.pointValueVND || 1000;
+                   finalRollbackPoints = Math.floor((amount * multiplier) / pointValueVND);
+                 } else if (amount) {
+                   finalRollbackPoints = Math.floor(amount / 10000);
+                 } else {
+                   finalRollbackPoints = 0;
+                 }
+              }
+
+              if (config.isActive) {
+                const sortedTiers = Object.values(config.tiers).sort((a, b) => b.minSpent - a.minSpent);
+                newTier = sortedTiers[sortedTiers.length - 1]?.tierId || 'bronze'; // fallback string
+                for (const tier of sortedTiers) {
+                  if (newSpent >= tier.minSpent) {
+                    newTier = tier.tierId;
+                    break;
+                  }
+                }
+              }
+            } else if (finalRollbackPoints === undefined) {
+                finalRollbackPoints = amount ? Math.floor(amount / 10000) : 0;
+            }
+
+            await updateDoc(userRef, {
+              totalSpent: newSpent,
+              totalOrders: newOrders,
+              tier: newTier,
+              points: increment(-(finalRollbackPoints || 0))
+            });
+          }
+        } catch (e) {
+          console.error("Lỗi khi trừ điểm và hạ hạng lúc xoá đơn:", e);
+        }
+      }
+
+      await deleteDoc(doc(db, 'orders', orderId));
+      toast.success('Đã xóa đơn hàng thành công');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `orders/${orderId}`);
+      toast.error('Có lỗi xảy ra khi xóa đơn hàng');
+      throw error;
+    }
+  };
+
+  return { orders, loading, updateOrderStatus, deleteOrder };
 }
