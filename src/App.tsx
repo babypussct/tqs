@@ -23,6 +23,9 @@ import { Product, CartItem } from './types';
 import { useSiteConfig } from './hooks/useSiteConfig';
 
 import AdminProductForm from './components/admin/AdminProductForm';
+import AdminPostForm from './components/admin/AdminPostForm';
+import Blog from './components/Blog';
+import BlogPostDetail from './components/BlogPostDetail';
 
 // Protected Route Component - Admin only
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -200,6 +203,8 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home onAddToCart={handleAddToCart} />} />
                 <Route path="/shop" element={<Shop onAddToCart={handleAddToCart} />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPostDetail />} />
                 <Route path="/product/:id" element={<ProductDetail onAddToCart={handleAddToCart} />} />
                 <Route path="/checkout" element={
                   <AuthRoute>
@@ -220,6 +225,16 @@ export default function App() {
                 <Route path="/admin/product/:id" element={
                   <AdminRoute>
                     <AdminProductForm />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/post/new" element={
+                  <AdminRoute>
+                    <AdminPostForm />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/post/:id" element={
+                  <AdminRoute>
+                    <AdminPostForm />
                   </AdminRoute>
                 } />
               </Routes>

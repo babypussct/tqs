@@ -219,6 +219,7 @@ export interface AdminPermissions {
   manageSettings: boolean;
   manageRoles: boolean;
   manageRewards?: boolean;
+  managePosts?: boolean;
 }
 
 export interface AdminUser {
@@ -262,4 +263,21 @@ export interface RewardsConfig {
   minPointsToUse: number;
   maxDiscountPercentage: number;
   tiers: Record<'bronze' | 'silver' | 'gold' | 'diamond', TierConfig>;
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  thumbnail: string;
+  category: string;
+  tags?: string[];
+  status: 'draft' | 'published';
+  authorId: string;
+  authorName?: string;
+  viewCount: number;
+  createdAt: any;
+  updatedAt: any;
 }

@@ -7,7 +7,7 @@ import { useHomepage } from '../hooks/useHomepage';
 import { useOrders } from '../utils/useOrders';
 import { Product, HomepageConfig, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { Plus, Edit, Trash2, X, Save, Package, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, Palette, Settings, Shield, Database, Star, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Package, ShoppingBag, Search, Tag, Image as ImageIcon, Box, AlertCircle, LayoutTemplate, Clock, CheckCircle, Truck, XCircle, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminSettings from './AdminSettings';
@@ -16,6 +16,7 @@ import AdminNavigation from './admin/AdminNavigation';
 import AdminPermissions from './admin/AdminPermissions';
 import AdminDatabaseRules from './admin/AdminDatabaseRules';
 import AdminRewardsConfig from './admin/AdminRewardsConfig';
+import AdminPostList from './admin/AdminPostList';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
@@ -106,6 +107,7 @@ export default function AdminDashboard() {
     { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
     { id: 'settings', label: 'Cấu hình chung', icon: Settings, requiredPermission: 'manageSettings' },
     { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
+    { id: 'posts', label: 'Bài viết', icon: FileText, requiredPermission: 'managePosts' },
     { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
     { id: 'rules', label: 'Bảo trì dữ liệu', icon: Database, requiredPermission: null },
   ];
@@ -548,6 +550,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {activeTab === 'navigation' && <AdminNavigation />}
             {activeTab === 'discounts' && <AdminDiscountCodes />}
+            {activeTab === 'posts' && <AdminPostList />}
             {activeTab === 'settings' && <AdminSettings />}
             {activeTab === 'rewards' && <AdminRewardsConfig />}
             {activeTab === 'permissions' && <AdminPermissions />}
