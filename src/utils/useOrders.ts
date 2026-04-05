@@ -29,15 +29,18 @@ export function useOrders() {
     return () => unsubscribe();
   }, []);
 
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status'], userId?: string, amount?: number) => {
+  const updateOrderStatus = async (order: Order, newStatus: Order['status']) => {
+    const { id: orderId, userId, status: oldStatus, earnedPoints } = order;
+    const amount = order.finalAmount || order.totalAmount;
+
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
         updatedAt: serverTimestamp()
       });
 
-      // Update Points & Tier if delivered
-      if (newStatus === 'delivered' && userId && amount) {
+      // Give points if transitioning TO delivered
+      if (newStatus === 'delivered' && oldStatus !== 'delivered' && userId && amount) {
         try {
           const userRef = doc(db, 'users', userId);
           const userSnap = await getDoc(userRef);
@@ -49,7 +52,6 @@ export function useOrders() {
             const newSpent = currentSpent + amount;
             const newOrders = currentOrders + 1;
 
-            // Fetch Rewards Config
             const configRef = doc(db, 'system_settings', 'tiers_config');
             const configSnap = await getDoc(configRef);
             const config: RewardsConfig = configSnap.exists() ? (configSnap.data() as RewardsConfig) : DEFAULT_REWARDS_CONFIG;
@@ -62,11 +64,9 @@ export function useOrders() {
               const currentTierConfig = config.tiers[currentTierKey as keyof RewardsConfig['tiers']] || config.tiers['bronze'];
               const multiplier = currentTierConfig.pointMultiplier || 0.01;
               
-              // Points earned is (Amount * Multiplier) / Point Value VND
               const pointValueVND = config.pointValueVND || 1000;
               pointsEarned = Math.floor((amount * multiplier) / pointValueVND);
 
-              // Recalculate Tier
               const sortedTiers = Object.values(config.tiers).sort((a, b) => b.minSpent - a.minSpent);
               for (const tier of sortedTiers) {
                 if (newSpent >= tier.minSpent) {
@@ -75,7 +75,6 @@ export function useOrders() {
                 }
               }
             } else {
-              // Fallback legacy calculation
               pointsEarned = Math.floor(amount / 10000);
             }
 
@@ -85,9 +84,62 @@ export function useOrders() {
               tier: newTier,
               points: increment(pointsEarned)
             });
+
+            await updateDoc(doc(db, 'orders', orderId), {
+              earnedPoints: pointsEarned
+            });
           }
         } catch (e) {
           console.error("Lỗi khi cộng điểm và nâng hạng:", e);
+        }
+      }
+
+      // Rollback points if transitioning AWAY FROM delivered
+      if (oldStatus === 'delivered' && newStatus !== 'delivered' && userId) {
+        try {
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const rollbackPoints = earnedPoints || 0;
+            const currentSpent = userData.totalSpent || 0;
+            const currentOrders = userData.totalOrders || 0;
+            
+            const newSpent = Math.max(0, currentSpent - (amount || 0));
+            const newOrders = Math.max(0, currentOrders - 1);
+            let newTier = userData.tier || 'bronze';
+
+            const configRef = doc(db, 'system_settings', 'tiers_config');
+            const configSnap = await getDoc(configRef);
+            
+            if (configSnap.exists()) {
+              const config = configSnap.data() as RewardsConfig;
+              if (config.isActive) {
+                const sortedTiers = Object.values(config.tiers).sort((a, b) => b.minSpent - a.minSpent);
+                newTier = sortedTiers[sortedTiers.length - 1]?.tierId || 'bronze'; // fallback string
+                for (const tier of sortedTiers) {
+                  if (newSpent >= tier.minSpent) {
+                    newTier = tier.tierId;
+                    break;
+                  }
+                }
+              }
+            }
+
+            await updateDoc(userRef, {
+              totalSpent: newSpent,
+              totalOrders: newOrders,
+              tier: newTier,
+              points: increment(-rollbackPoints)
+            });
+
+            await updateDoc(doc(db, 'orders', orderId), {
+              earnedPoints: 0
+            });
+          }
+        } catch (e) {
+          console.error("Lỗi khi trừ điểm và hạ hạng:", e);
         }
       }
 

@@ -196,7 +196,8 @@ export interface Order {
   discountCode?: string;
   discountAmount?: number;
   finalAmount?: number;
-  status: 'pending' | 'suspicious' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  earnedPoints?: number;
+  status: 'pending' | 'suspicious' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned' | 'refunded' | 'failed_delivery';
   paymentMethod?: 'cod' | 'vietqr';
   paymentStatus?: 'pending' | 'paid';
   trackingCode?: string;

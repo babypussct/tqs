@@ -369,10 +369,13 @@ export default function AdminDashboard() {
                             value={order.status}
                             onChange={(e) => {
                               const newStatus = e.target.value as Order['status'];
-                              updateOrderStatus(order.id, newStatus, order.userId, order.finalAmount || order.totalAmount);
+                              updateOrderStatus(order, newStatus);
                             }}
                             className={`text-xs font-semibold px-2 py-1 rounded border outline-none cursor-pointer appearance-none ${
                               order.status === 'suspicious' ? 'bg-red-50 text-red-700 border-red-200' :
+                              order.status === 'failed_delivery' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              order.status === 'returned' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                              order.status === 'refunded' ? 'bg-pink-50 text-pink-700 border-pink-200' :
                               order.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               order.status === 'processing' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                               order.status === 'shipped' ? 'bg-purple-50 text-purple-700 border-purple-200' :
@@ -385,6 +388,9 @@ export default function AdminDashboard() {
                             <option value="processing">Đang chuẩn bị</option>
                             <option value="shipped">Đang giao</option>
                             <option value="delivered">Đã giao</option>
+                            <option value="failed_delivery">Giao thất bại</option>
+                            <option value="returned">Đã hoàn hàng</option>
+                            <option value="refunded">Đã hoàn tiền</option>
                             <option value="cancelled">Đã hủy</option>
                           </select>
                           {(order as any).riskScore !== undefined && (order as any).riskScore >= 40 && (
