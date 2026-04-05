@@ -1,38 +1,156 @@
+import React from 'react';
+import { Facebook, Youtube, Mail, MapPin, Phone, ChevronRight, ShieldCheck, Gamepad2, PackageCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 export default function Footer() {
+  const navigate = useNavigate();
+
   return (
-    <footer className="bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 pt-16 pb-8 mt-auto transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          <div className="col-span-1 md:col-span-2">
-            <span className="text-2xl font-black tracking-tighter text-red-600 dark:text-red-500 uppercase mb-4 block">TQS<span className="text-gray-900 dark:text-white">Store</span></span>
-            <p className="text-gray-500 dark:text-zinc-400 max-w-sm mb-6">
+    <footer className="bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 pt-16 pb-8 mt-auto transition-colors duration-300 relative overflow-hidden">
+      {/* Background subtle gradients */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-zinc-800 to-transparent" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-500/5 dark:bg-red-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-500/5 dark:bg-amber-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
+          
+          {/* Column 1: Brand Info */}
+          <div className="lg:col-span-1">
+            <div 
+              className="flex items-center gap-1 cursor-pointer mb-6"
+              onClick={() => window.scrollTo(0, 0)}
+            >
+              <div className="relative">
+                <span className="text-3xl font-black tracking-tighter text-red-600 dark:text-red-500 uppercase drop-shadow-sm">TQS</span>
+                <span className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white uppercase ml-1">Store</span>
+              </div>
+            </div>
+            <p className="text-gray-500 dark:text-zinc-400 text-sm leading-relaxed mb-6">
               Hệ thống phân phối boardgame Tam Quốc Sát chính hãng lớn nhất Việt Nam. Cam kết chất lượng, đóng gói chuẩn sưu tầm.
             </p>
+            <div className="flex items-center gap-4">
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a href="https://youtube.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <Youtube className="w-5 h-5" />
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <Mail className="w-5 h-5" />
+              </a>
+            </div>
           </div>
+
+          {/* Column 2: Danh Mục */}
           <div>
-            <h4 className="text-gray-900 dark:text-white font-bold mb-4 uppercase tracking-wider text-sm">Danh Mục</h4>
-            <ul className="space-y-3 text-gray-500 dark:text-zinc-400 text-sm">
-              <li><a href="#" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">Bản Cơ Bản</a></li>
-              <li><a href="#" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">Bản Mở Rộng</a></li>
-              <li><a href="#" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">Quốc Chiến</a></li>
-              <li><a href="#" className="hover:text-amber-600 dark:hover:text-amber-500 transition-colors font-medium">Phụ Kiện & Sleeves</a></li>
+            <h4 className="text-gray-900 dark:text-white font-bold mb-6 uppercase tracking-wider text-sm flex items-center gap-2">
+              <Gamepad2 className="w-4 h-4 text-amber-500" />
+              Danh Mục Sản Phẩm
+            </h4>
+            <ul className="space-y-4 text-sm">
+              {[
+                { label: 'Bản Cơ Bản', path: '/shop?category=co-ban' },
+                { label: 'Bản Mở Rộng', path: '/shop?category=mo-rong' },
+                { label: 'Quốc Chiến', path: '/shop?category=quoc-chien' },
+                { label: 'Phụ Kiện & Sleeves', path: '/shop?category=phu-kien', special: true },
+              ].map((item, idx) => (
+                <li key={idx}>
+                  <button 
+                    onClick={() => { navigate(item.path); window.scrollTo(0, 0); }} 
+                    className="group flex items-center text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-300"
+                  >
+                    <ChevronRight className="w-4 h-4 mr-1 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                    <span className={item.special ? 'text-amber-600 dark:text-amber-500 font-medium' : ''}>
+                      {item.label}
+                    </span>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
+
+          {/* Column 3: Chính Sách */}
           <div>
-            <h4 className="text-gray-900 dark:text-white font-bold mb-4 uppercase tracking-wider text-sm">Chính Sách</h4>
-            <ul className="space-y-3 text-gray-500 dark:text-zinc-400 text-sm">
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Chính sách bảo hành</a></li>
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Chính sách đổi trả (Anti-Móp)</a></li>
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Giao hàng & Thanh toán</a></li>
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Hướng dẫn luật chơi</a></li>
+            <h4 className="text-gray-900 dark:text-white font-bold mb-6 uppercase tracking-wider text-sm flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              Hỗ Trợ Khách Hàng
+            </h4>
+            <ul className="space-y-4 text-sm">
+              {[
+                { label: 'Chính sách bảo hành', path: '#' },
+                { label: 'Chính sách đổi trả (Anti-Móp)', path: '#' },
+                { label: 'Giao hàng & Thanh toán', path: '#' },
+                { label: 'Hướng dẫn luật chơi cơ bản', path: '#' },
+              ].map((item, idx) => (
+                <li key={idx}>
+                  <a 
+                    href={item.path} 
+                    className="group flex items-center text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
+                  >
+                    <ChevronRight className="w-4 h-4 mr-1 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
+
+          {/* Column 4: Liên Hệ & Address */}
+          <div>
+            <h4 className="text-gray-900 dark:text-white font-bold mb-6 uppercase tracking-wider text-sm flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-red-500" />
+              Thông Tin Liên Hệ
+            </h4>
+            <ul className="space-y-4 text-sm text-gray-500 dark:text-zinc-400">
+              <li className="flex items-start gap-3 group">
+                <MapPin className="w-5 h-5 flex-shrink-0 text-gray-400 dark:text-zinc-500 mt-0.5 group-hover:text-red-500 transition-colors" />
+                <span className="leading-relaxed group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                  Kho tổng TQS Store<br/>
+                  (Mở cửa: 9:00 - 18:00 từ Thứ 2 - T7)<br/>
+                  Hà Nội, Việt Nam.
+                </span>
+              </li>
+              <li className="flex items-center gap-3 group">
+                <Phone className="w-5 h-5 flex-shrink-0 text-gray-400 dark:text-zinc-500 group-hover:text-amber-500 transition-colors" />
+                <div>
+                  <span className="block text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-500 transition-colors">Hotline tư vấn</span>
+                  <a href="tel:0987654321" className="text-gray-900 dark:text-white font-medium hover:text-red-500 transition-colors block mt-0.5">0987.654.321</a>
+                </div>
+              </li>
+              <li className="flex items-center gap-3 group">
+                <Mail className="w-5 h-5 flex-shrink-0 text-gray-400 dark:text-zinc-500 group-hover:text-indigo-500 transition-colors" />
+                <div>
+                  <span className="block text-xs text-gray-400 dark:text-zinc-500 group-hover:text-gray-500 transition-colors">Email hỗ trợ</span>
+                  <a href="mailto:support@tqsstore.com" className="text-gray-900 dark:text-white font-medium hover:text-red-500 transition-colors block mt-0.5">support@tqsstore.com</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+
         </div>
-        <div className="border-t border-gray-200 dark:border-zinc-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-400 dark:text-zinc-500 text-sm">© 2024 TQS Store. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-gray-400 dark:text-zinc-500 text-sm">
-            <span>Đóng gói chuẩn sưu tầm.</span>
-            <span>Hoàn tiền nếu móp hộp.</span>
+
+        {/* Bottom Bar: Copyright & Trusted Badges */}
+        <div className="border-t border-gray-200 dark:border-zinc-800/50 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 text-sm text-gray-400 dark:text-zinc-500">
+            <p>© 2024 TQS Store. All rights reserved.</p>
+            <div className="hidden md:block w-1 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full" />
+            <div className="flex items-center gap-1.5 hover:text-amber-600 dark:hover:text-amber-500 transition-colors cursor-default">
+              <PackageCheck className="w-4 h-4 text-amber-500" />
+              <span className="font-medium text-gray-600 dark:text-zinc-400">Đóng gói chuẩn sưu tầm.</span>
+            </div>
+            <div className="hidden md:block w-1 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full" />
+            <div className="flex items-center gap-1.5 hover:text-emerald-600 dark:hover:text-emerald-500 transition-colors cursor-default">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span className="font-medium text-gray-600 dark:text-zinc-400">Hoàn tiền 100% nếu móp hộp.</span>
+            </div>
+          </div>
+          
+          {/* Payment Methods (Visual placeholders) */}
+          <div className="flex flex-wrap justify-center items-center gap-2 opacity-60 hover:opacity-100 transition-opacity duration-300">
+            <div className="h-8 w-12 bg-white dark:bg-zinc-900 rounded border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-zinc-300 shadow-sm">COD</div>
+            <div className="h-8 w-16 bg-white dark:bg-zinc-900 rounded border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400 shadow-sm">VNPay</div>
+            <div className="h-8 w-12 bg-white dark:bg-zinc-900 rounded border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 shadow-sm">VISA</div>
           </div>
         </div>
       </div>
