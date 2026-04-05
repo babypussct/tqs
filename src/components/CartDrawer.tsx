@@ -203,7 +203,10 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="p-6 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] dark:shadow-[0_-10px_20px_rgba(0,0,0,0.2)]">
+          <div 
+            className="p-6 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] dark:shadow-[0_-10px_20px_rgba(0,0,0,0.2)]"
+            style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+          >
             <div className="flex items-center justify-between mb-4">
               <span className="text-gray-500 dark:text-zinc-400 font-medium">Tổng tiền</span>
               <span className="text-2xl font-black text-red-600 dark:text-red-500">{formatPrice(totalPrice)}</span>

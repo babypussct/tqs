@@ -477,7 +477,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       {relatedProducts.length > 0 && (
         <div className="mt-16 border-t border-gray-200 dark:border-zinc-800 pt-16">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Sản phẩm liên quan</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {relatedProducts.map(relatedProduct => (
               <ProductCard
                 key={relatedProduct.id}

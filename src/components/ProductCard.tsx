@@ -37,8 +37,8 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
           </div>
         )}
         
-        {/* Quick Add Overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent">
+        {/* Quick Add Overlay for Desktop */}
+        <div className="hidden lg:block absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -82,14 +82,28 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
           )}
         </div>
 
-        {/* Price */}
-        <div className="flex items-end gap-2 mt-auto">
-          <span className="text-lg font-bold text-red-600 dark:text-red-500">{formatPrice(product.price)}</span>
-          {product.originalPrice && (
-            <span className="text-xs text-gray-400 dark:text-zinc-500 line-through mb-0.5">
-              {formatPrice(product.originalPrice)}
-            </span>
-          )}
+        {/* Price and Mobile Add to Cart */}
+        <div className="flex flex-wrap items-end justify-between gap-2 mt-auto pt-2">
+          <div className="flex flex-col">
+            <span className="text-base sm:text-lg font-bold text-red-600 dark:text-red-500">{formatPrice(product.price)}</span>
+            {product.originalPrice && (
+              <span className="text-[10px] sm:text-xs text-gray-400 dark:text-zinc-500 line-through">
+                {formatPrice(product.originalPrice)}
+              </span>
+            )}
+          </div>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (product.stock !== undefined && product.stock <= 0) return;
+              if (onAddToCart) onAddToCart(product);
+            }}
+            disabled={product.stock !== undefined && product.stock <= 0}
+            className={`lg:hidden p-2.5 rounded-full flex items-center justify-center transition-colors shadow-sm min-h-[44px] min-w-[44px] ${product.stock !== undefined && product.stock <= 0 ? 'bg-gray-100 dark:bg-zinc-800 text-gray-400 cursor-not-allowed' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-500 active:bg-red-100'}`}
+          >
+            <ShoppingCart className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </div>

@@ -117,11 +117,11 @@ export default function AdminDashboard() {
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-73px)] bg-slate-50 dark:bg-zinc-950 font-sans text-slate-900 dark:text-slate-100">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 shrink-0 md:sticky md:top-[73px] md:h-[calc(100vh-73px)] overflow-y-auto">
-        <div className="p-6 pb-2">
+      <aside className="w-full md:w-64 bg-white dark:bg-zinc-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-zinc-800 shrink-0 sticky top-[64px] lg:top-[80px] md:top-[73px] md:h-[calc(100vh-73px)] overflow-x-auto md:overflow-y-auto z-20 custom-scrollbar shadow-sm md:shadow-none">
+        <div className="hidden md:block p-6 pb-2">
           <h2 className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-4">Danh mục quản lý</h2>
         </div>
-        <nav className="px-3 space-y-1 pb-6">
+        <nav className="flex md:block px-2 py-2 md:px-3 md:pb-6 space-x-2 md:space-x-0 md:space-y-1 w-max md:w-auto">
           {tabs.map((tab) => {
             if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
               return null;
@@ -132,17 +132,17 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center justify-between px-3 py-2 md:py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 shadow-sm ring-1 ring-inset ring-indigo-500/20'
                     : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                   <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
                   {tab.label}
                 </div>
-                {isActive && <ChevronRight className="w-4 h-4 opacity-50" />}
+                {isActive && <ChevronRight className="hidden md:block w-4 h-4 opacity-50" />}
               </button>
             );
           })}

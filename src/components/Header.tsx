@@ -207,7 +207,7 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
               </button>
 
               {/* Auth User */}
-              <div className="relative group">
+              <div className="relative group hidden lg:block">
                 {user ? (
                   <div className="flex items-center gap-2 cursor-pointer p-1 rounded-full transition-all duration-300 hover:scale-105">
                     {user.photoURL ? (
@@ -276,7 +276,7 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
               {/* Cart */}
               <button
                 onClick={onOpenCart}
-                className="relative p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 hover:bg-black/5 dark:hover:bg-white/5"
+                className="hidden lg:flex relative p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 hover:bg-black/5 dark:hover:bg-white/5"
                 style={{ color: isTransparent ? 'rgba(255,255,255,0.9)' : theme === 'dark' ? '#ccc' : '#444' }}
               >
                 <ShoppingCart className="h-5 w-5" />

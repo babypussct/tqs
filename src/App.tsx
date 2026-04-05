@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster, toast } from 'sonner';
 import Header from './components/Header';
+import BottomNav from './components/BottomNav';
 import Home from './components/Home';
 import Shop from './components/Shop';
 import ProductDetail from './components/ProductDetail';
@@ -193,7 +194,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 transition-colors duration-200">
+          <div className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 transition-colors duration-200 flex flex-col min-h-screen pb-20 lg:pb-0" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
             <Header 
               cartCount={cartCount}
               onOpenCart={() => setIsCartOpen(true)}
@@ -250,6 +251,10 @@ export default function App() {
               onUpdateQuantity={handleUpdateQuantity}
               onRemove={handleRemoveItem}
               clearCart={clearCart}
+            />
+            <BottomNav 
+              cartCount={cartCount}
+              onOpenCart={() => setIsCartOpen(true)}
             />
           </div>
         </Router>
