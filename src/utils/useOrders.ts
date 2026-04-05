@@ -102,7 +102,6 @@ export function useOrders() {
           
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            const rollbackPoints = earnedPoints || 0;
             const currentSpent = userData.totalSpent || 0;
             const currentOrders = userData.totalOrders || 0;
             
@@ -113,8 +112,25 @@ export function useOrders() {
             const configRef = doc(db, 'system_settings', 'tiers_config');
             const configSnap = await getDoc(configRef);
             
+            let finalRollbackPoints = earnedPoints;
+            
             if (configSnap.exists()) {
               const config = configSnap.data() as RewardsConfig;
+              
+              if (finalRollbackPoints === undefined) {
+                 if (config.isActive && amount) {
+                   const fallbackTierKey = userData.tier || 'bronze';
+                   const currentTierConfig = config.tiers[fallbackTierKey as keyof RewardsConfig['tiers']] || config.tiers['bronze'];
+                   const multiplier = currentTierConfig.pointMultiplier || 0.01;
+                   const pointValueVND = config.pointValueVND || 1000;
+                   finalRollbackPoints = Math.floor((amount * multiplier) / pointValueVND);
+                 } else if (amount) {
+                   finalRollbackPoints = Math.floor(amount / 10000);
+                 } else {
+                   finalRollbackPoints = 0;
+                 }
+              }
+
               if (config.isActive) {
                 const sortedTiers = Object.values(config.tiers).sort((a, b) => b.minSpent - a.minSpent);
                 newTier = sortedTiers[sortedTiers.length - 1]?.tierId || 'bronze'; // fallback string
@@ -125,13 +141,15 @@ export function useOrders() {
                   }
                 }
               }
+            } else if (finalRollbackPoints === undefined) {
+                finalRollbackPoints = amount ? Math.floor(amount / 10000) : 0;
             }
 
             await updateDoc(userRef, {
               totalSpent: newSpent,
               totalOrders: newOrders,
               tier: newTier,
-              points: increment(-rollbackPoints)
+              points: increment(-(finalRollbackPoints || 0))
             });
 
             await updateDoc(doc(db, 'orders', orderId), {
