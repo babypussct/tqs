@@ -6,12 +6,14 @@ import { usePaymentConfig, PaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useProducts } from '../hooks/useProducts';
 import { useSiteConfig, SiteConfig } from '../hooks/useSiteConfig';
+import { useFooterConfig, FooterConfig } from '../hooks/useFooterConfig';
 import { ImageUploader } from './ui/ImageUploader';
 
 export default function AdminSettings() {
   const { config, loading: configLoading, updateConfig } = useProductConfig();
   const { paymentConfig, loading: paymentLoading, updatePaymentConfig } = usePaymentConfig();
   const { config: siteConfig, loading: siteLoading, updateConfig: updateSiteConfig } = useSiteConfig();
+  const { config: footerConfig, loading: footerLoading, updateConfig: updateFooterConfig } = useFooterConfig();
   
   const [badges, setBadges] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
@@ -23,6 +25,7 @@ export default function AdminSettings() {
   const [localPaymentConfig, setLocalPaymentConfig] = useState<PaymentConfig | null>(null);
   const [localShippingConfig, setLocalShippingConfig] = useState<any>(null);
   const [localSiteConfig, setLocalSiteConfig] = useState<SiteConfig | null>(null);
+  const [localFooterConfig, setLocalFooterConfig] = useState<FooterConfig | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,6 +69,12 @@ export default function AdminSettings() {
     }
   }, [siteConfig, siteLoading]);
 
+  useEffect(() => {
+    if (!footerLoading && footerConfig) {
+      setLocalFooterConfig(footerConfig);
+    }
+  }, [footerConfig, footerLoading]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -78,6 +87,9 @@ export default function AdminSettings() {
       }
       if (localSiteConfig) {
         await updateSiteConfig(localSiteConfig);
+      }
+      if (localFooterConfig) {
+        await updateFooterConfig(localFooterConfig);
       }
       toast.success('Đã lưu cấu hình thành công');
     } catch (error) {
@@ -115,7 +127,7 @@ export default function AdminSettings() {
     setTypes(types.filter((_, i) => i !== index));
   };
 
-  if (configLoading || paymentLoading || shippingLoading || siteLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig) return <div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>;
+  if (configLoading || paymentLoading || shippingLoading || siteLoading || footerLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig || !localFooterConfig) return <div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>;
 
   return (
     <div className="space-y-8 pb-12">
@@ -173,6 +185,63 @@ export default function AdminSettings() {
             className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500 resize-y"
           />
           <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">Nội dung này hiển thị phía dưới phần thông tin tại tất cả các trang chi tiết sản phẩm. Có thể sử dụng thẻ HTML cơ bản như &lt;strong&gt;Nội dung in đậm&lt;/strong&gt;.</p>
+        </div>
+      </div>
+
+      {/* Footer Configuration */}
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl p-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Cấu hình Footer (Chân trang)</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 dark:text-slate-200">1. Thương hiệu & Mô tả</h4>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Mô tả ngắn</label>
+              <textarea
+                value={localFooterConfig.brandDescription}
+                onChange={e => setLocalFooterConfig({...localFooterConfig, brandDescription: e.target.value})}
+                className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Facebook URL</label>
+              <input type="text" value={localFooterConfig.socialLinks.facebook} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, facebook: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Youtube URL</label>
+              <input type="text" value={localFooterConfig.socialLinks.youtube} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, youtube: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Liên kết khác (Email/Tiktok...)</label>
+              <input type="text" value={localFooterConfig.socialLinks.email} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, email: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 dark:text-slate-200">2. Thông tin Liên hệ</h4>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Địa chỉ</label>
+              <input type="text" value={localFooterConfig.contactInfo.address} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, address: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Giờ làm việc</label>
+              <input type="text" value={localFooterConfig.contactInfo.workingHours} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, workingHours: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Hotline</label>
+              <input type="text" value={localFooterConfig.contactInfo.phone} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, phone: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Email hỗ trợ</label>
+              <input type="text" value={localFooterConfig.contactInfo.email} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, email: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
+          <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Dòng chữ Bản quyền dưới cùng (Copyright)</label>
+          <input type="text" value={localFooterConfig.bottomText} onChange={e => setLocalFooterConfig({...localFooterConfig, bottomText: e.target.value})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
         </div>
       </div>
 
