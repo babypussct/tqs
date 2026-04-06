@@ -8,6 +8,7 @@ import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag, QrCode, Copy,
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useRewardsConfig } from '../utils/useRewardsConfig';
+import VoucherCenter from './VoucherCenter';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -17,7 +18,7 @@ export default function Profile() {
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedPaymentOrderId, setExpandedPaymentOrderId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'rewards' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'rewards' | 'vouchers' | 'settings'>('overview');
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'shipping' | 'delivered'>('all');
 
   useEffect(() => {
@@ -147,6 +148,7 @@ export default function Profile() {
   const tabs = [
     { id: 'overview', label: 'Tổng quan', icon: UserIcon },
     { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag },
+    { id: 'vouchers', label: 'Kho Voucher', icon: Ticket },
     { id: 'rewards', label: 'Hạng & Điểm', icon: Trophy },
     { id: 'settings', label: 'Tài khoản', icon: Settings },
   ];
@@ -648,6 +650,13 @@ export default function Profile() {
                     </div>
                  </div>
               )}
+           </div>
+        )}
+
+        {/* Tab Content: VOUCHERS */}
+        {activeTab === 'vouchers' && (
+           <div className="animate-fade-in transition-all">
+              <VoucherCenter />
            </div>
         )}
 

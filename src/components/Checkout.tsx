@@ -31,6 +31,8 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
   const { config: rewardsConfig } = useRewardsConfig();
   const [pointsToUseInput, setPointsToUseInput] = useState<string>('');
   const [appliedPoints, setAppliedPoints] = useState<number>(0);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [savedVouchersList, setSavedVouchersList] = useState<DiscountCode[]>([]);
   
   useEffect(() => {
     if (!user) return;
@@ -39,6 +41,23 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
     });
     return unsub;
   }, [user]);
+
+  useEffect(() => {
+    if (!userProfile?.savedVouchers || userProfile.savedVouchers.length === 0) {
+      setSavedVouchersList([]);
+      return;
+    }
+    const fetchVouchers = async () => {
+      try {
+        const q = query(collection(db, 'discountCodes'), where('isActive', '==', true));
+        const snap = await getDocs(q);
+        const allActive = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DiscountCode));
+        const userSaved = allActive.filter(v => userProfile.savedVouchers?.includes(v.id));
+        setSavedVouchersList(userSaved);
+      } catch (err) {}
+    };
+    if (showVoucherModal) fetchVouchers();
+  }, [userProfile?.savedVouchers, showVoucherModal]);
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
   const [orderFinalAmount, setOrderFinalAmount] = useState<number>(0);
   const [orderTotalAmount, setOrderTotalAmount] = useState<number>(0);
@@ -127,14 +146,15 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
   const finalAmount = Math.max(0, totalAmount + shippingFee - discountAmount - pointsDiscountAmount);
 
-  const handleApplyDiscount = async () => {
-    if (!discountCodeInput.trim()) return;
+  const handleApplyDiscount = async (overrideCode?: string) => {
+    const codeToApply = overrideCode || discountCodeInput.trim();
+    if (!codeToApply) return;
     
     setIsApplyingDiscount(true);
     try {
       const q = query(
         collection(db, 'discountCodes'), 
-        where('code', '==', discountCodeInput.trim().toUpperCase()),
+        where('code', '==', codeToApply.toUpperCase()),
         where('isActive', '==', true)
       );
       
@@ -879,13 +899,23 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                   />
                   <button 
                     type="button"
-                    onClick={handleApplyDiscount}
+                    onClick={() => handleApplyDiscount()}
                     disabled={isApplyingDiscount || !discountCodeInput.trim()}
                     className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >
                     {isApplyingDiscount ? 'Đang áp dụng...' : 'Áp dụng'}
                   </button>
                 </div>
+              )}
+
+              {!appliedDiscount && (
+                <button
+                  type="button"
+                  onClick={() => setShowVoucherModal(true)}
+                  className="mt-3 text-sm text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2 hover:underline w-full text-left"
+                >
+                  <Ticket className="w-4 h-4" /> Hoặc chọn từ Kho Voucher
+                </button>
               )}
             </div>
 
@@ -939,6 +969,87 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           </div>
         </div>
       </div>
+
+      {showVoucherModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-indigo-500" />
+                Chọn Voucher Đã Lưu
+              </h3>
+              <button 
+                onClick={() => setShowVoucherModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50 dark:bg-zinc-950">
+              {savedVouchersList.length === 0 ? (
+                <div className="text-center py-10">
+                  <Ticket className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-zinc-400 font-medium pb-2">Bạn chưa lưu mã giảm giá nào.</p>
+                  <a href="/profile" className="text-indigo-500 hover:underline text-sm font-bold">Vào Kho Voucher</a> 
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedVouchersList.map(voucher => {
+                    // Caculate if eligible
+                    let isEligible = true;
+                    let ineligibleReason = '';
+                    
+                    const now = new Date();
+                    const endDate = voucher.endDate?.toDate ? voucher.endDate.toDate() : new Date(8640000000000000);
+                    if (now > endDate) { isEligible = false; ineligibleReason = 'Đã hết hạn'; }
+                    if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) { isEligible = false; ineligibleReason = 'Hết lượt sử dụng'; }
+                    if (voucher.minOrderValue && totalAmount < voucher.minOrderValue) { isEligible = false; ineligibleReason = `Cần mua thêm ${(voucher.minOrderValue - totalAmount).toLocaleString('vi-VN')}đ`; }
+                    if (voucher.applicableTiers && voucher.applicableTiers.length > 0 && !voucher.applicableTiers.includes((userProfile?.tier as any) || 'unknown')) { isEligible = false; ineligibleReason = 'Không đúng hạng'; }
+                    
+                    if (
+                      (voucher.applicableProducts && voucher.applicableProducts.length > 0) ||
+                      (voucher.applicableCategories && voucher.applicableCategories.length > 0)
+                    ) {
+                      const hasApplicable = cartItems.some(item => 
+                        voucher.applicableProducts?.includes(item.product.id) ||
+                        voucher.applicableCategories?.includes(item.product.type)
+                      );
+                      if (!hasApplicable) { isEligible = false; ineligibleReason = 'Không áp dụng cho sp trong giỏ'; }
+                    }
+
+                    return (
+                      <div key={voucher.id} className={`p-4 border rounded-xl flex items-center justify-between transition-all ${isEligible ? 'bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-500' : 'bg-gray-100 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800 opacity-60'}`} onClick={() => {
+                        if (!isEligible) return;
+                        setDiscountCodeInput(voucher.code);
+                        setShowVoucherModal(false);
+                        handleApplyDiscount(voucher.code);
+                      }}>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-gray-900 dark:text-white uppercase">{voucher.code}</span>
+                            {voucher.isFlashSale && <span className="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Flash Sale</span>}
+                          </div>
+                          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-500 mb-1">
+                            {voucher.discountType === 'freeship_only' ? 'Free-ship' : voucher.discountType === 'percentage' ? `Giảm ${voucher.discountValue}%` : `Giảm ${voucher.discountValue.toLocaleString('vi-VN')}đ`}
+                          </p>
+                          {voucher.minOrderValue ? <p className="text-xs text-gray-500">Đơn từ {voucher.minOrderValue.toLocaleString('vi-VN')}đ</p> : null}
+                          {!isEligible && <p className="text-xs font-bold text-red-500 mt-1">{ineligibleReason}</p>}
+                        </div>
+                        {isEligible && (
+                          <button className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-sm font-bold shrink-0">
+                            Áp dụng
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

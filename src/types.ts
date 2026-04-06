@@ -115,6 +115,7 @@ export interface Product {
   }[];
   isActive?: boolean;
   allowedPaymentMethods?: ('cod' | 'vietqr')[]; // Selected payment methods for this product
+  minTierRequired?: UserTier; // Early access / Exclusive
   createdAt?: any;
 }
 
@@ -160,12 +161,18 @@ export interface DiscountCode {
   startDate: any;
   endDate: any;
   usageLimit?: number;
+  usageLimitPerUser?: number;
   usedCount: number;
   isActive: boolean;
   isFreeship?: boolean; // Toggles whether it ALSO grants freeship (for percentage/fixed)
+  isPubliclyVisible?: boolean;
+  isFlashSale?: boolean;
+  pointsCost?: number;
+  applicableTiers?: UserTier[];
   applicableProducts?: string[];
   applicableCategories?: string[];
-  customerType?: 'all' | 'new';
+  excludeCategories?: string[];
+  customerType?: 'all' | 'new' | 'returning';
   createdAt: any;
 }
 
@@ -247,6 +254,7 @@ export interface AppUser {
   lastLoginAt: any;
   createdAt: any;
   adminPermissions?: AdminPermissions; // Migrated from AdminUser
+  savedVouchers?: string[]; // IDs of collected discount codes
 }
 
 export interface TierConfig {

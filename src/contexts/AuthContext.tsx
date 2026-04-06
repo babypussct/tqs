@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
+  appUser: AppUser | null;
   adminUser: AdminUser | null;
   isAdmin: boolean;
   loading: boolean;
@@ -20,6 +21,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await signOut(auth);
               toast.error('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.', { duration: 5000 });
               setUser(null);
+              setAppUser(null);
               setAdminUser(null);
               setLoading(false);
               return;
@@ -73,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentUser);
       if (!currentUser) {
         setAdminUser(null);
+        setAppUser(null);
         setLoading(false);
       }
     });
@@ -114,12 +118,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (docSnap.exists()) {
         const data = docSnap.data() as AppUser;
         
+        setAppUser(data);
         // REAL-TIME BAN ENFORCEMENT
         if (data.isBanned) {
           toast.error('Tài khoản của bạn đã bị khóa bởi Quản trị viên.', { duration: 5000 });
           await signOut(auth);
           setUser(null);
           setAdminUser(null);
+          setAppUser(null);
           setLoading(false);
           return;
         }
@@ -139,6 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         setAdminUser(null);
+        setAppUser(null);
       }
       setLoading(false);
     }, (error) => {
@@ -181,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = !!adminUser;
 
   return (
-    <AuthContext.Provider value={{ user, adminUser, isAdmin, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, appUser, adminUser, isAdmin, loading, login, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );

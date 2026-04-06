@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check, Lock } from 'lucide-react';
 import { Product } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import { useProducts } from '../hooks/useProducts';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import ProductReviews from './ProductReviews';
@@ -16,6 +17,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const navigate = useNavigate();
   const { products, loading } = useProducts(true);
   const { config: siteConfig } = useSiteConfig();
+  const { appUser } = useAuth();
   const product = products.find(p => p.id === id);
 
   const [selectedBox, setSelectedBox] = useState('');
@@ -98,6 +100,18 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
+
+  const TIER_ORDER = ['bronze', 'silver', 'gold', 'diamond'];
+  const userTierIdx = appUser ? TIER_ORDER.indexOf(appUser.tier) : -1;
+  const reqTierIdx = product.minTierRequired ? TIER_ORDER.indexOf(product.minTierRequired) : -1;
+  const isTierLocked = reqTierIdx !== -1 && userTierIdx < reqTierIdx;
+
+  const TIER_COLORS: Record<string, string> = {
+    bronze: 'text-amber-700 bg-amber-50 border-amber-200',
+    silver: 'text-slate-600 bg-slate-50 border-slate-200',
+    gold: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+    diamond: 'text-blue-600 bg-blue-50 border-blue-200',
   };
 
   const relatedProducts = products
@@ -206,6 +220,18 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                 <h4 className="text-amber-800 dark:text-amber-500 font-bold">Lưu ý quan trọng</h4>
                 <p className="text-amber-700 dark:text-amber-500/80 text-sm mt-1">
                   Đây là bản mở rộng. Bạn bắt buộc phải có <strong>Bản Cơ Bản</strong> (Tiêu Chuẩn) mới có thể chơi được.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isTierLocked && (
+            <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 border ${TIER_COLORS[product.minTierRequired!]}`}>
+              <Lock className="h-6 w-6 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold uppercase tracking-wider">Sản Phẩm Độc Quyền</h4>
+                <p className="text-sm mt-1 opacity-90">
+                  Sản phẩm này chỉ dành cho thành viên Hạng <strong>{product.minTierRequired?.toUpperCase()}</strong> trở lên. Vui lòng nâng hạng để mua.
                 </p>
               </div>
             </div>
@@ -390,11 +416,15 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           {/* Add to Cart */}
           <button 
             onClick={handleAddToCart}
-            disabled={product.stock !== undefined && product.stock <= 0}
-            className={`w-full font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg mb-12 ${product.stock !== undefined && product.stock <= 0 ? 'bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed shadow-none' : 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20'}`}
+            disabled={isTierLocked || (product.stock !== undefined && product.stock <= 0)}
+            className={`w-full font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg mb-12 ${
+              isTierLocked || (product.stock !== undefined && product.stock <= 0) 
+              ? 'bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed shadow-none' 
+              : 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20 transform hover:scale-[1.02] active:scale-[0.98]'
+            }`}
           >
-            <ShoppingCart className="h-5 w-5" />
-            {product.stock !== undefined && product.stock <= 0 ? 'Hết hàng' : `Thêm Vào Giỏ Hàng - ${formatPrice(finalTotalPrice)}`}
+            {isTierLocked ? <Lock className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
+            {isTierLocked ? `Khóa Hạng ${product.minTierRequired?.toUpperCase()}` : (product.stock !== undefined && product.stock <= 0 ? 'Hết hàng' : `Thêm Vào Giỏ Hàng - ${formatPrice(finalTotalPrice)}`)}
           </button>
 
         </div>

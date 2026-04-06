@@ -18,13 +18,19 @@ export default function AdminDiscountCodes() {
   const [isFreeship, setIsFreeship] = useState(false);
   const [applicableProducts, setApplicableProducts] = useState('');
   const [applicableCategories, setApplicableCategories] = useState('');
-  const [customerType, setCustomerType] = useState<'all' | 'new'>('all');
+  const [customerType, setCustomerType] = useState<'all' | 'new' | 'returning'>('all');
   const [discountValue, setDiscountValue] = useState('');
   const [minOrderValue, setMinOrderValue] = useState('');
   const [maxDiscount, setMaxDiscount] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [usageLimit, setUsageLimit] = useState('');
+  const [usageLimitPerUser, setUsageLimitPerUser] = useState('1');
+  const [pointsCost, setPointsCost] = useState('0');
+  const [excludeCategories, setExcludeCategories] = useState('');
+  const [applicableTiers, setApplicableTiers] = useState<string[]>([]);
+  const [isPubliclyVisible, setIsPubliclyVisible] = useState(true);
+  const [isFlashSale, setIsFlashSale] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
@@ -54,9 +60,16 @@ export default function AdminDiscountCodes() {
     setDiscountValue('');
     setMinOrderValue('');
     setMaxDiscount('');
+    setMaxDiscount('');
     setStartDate('');
     setEndDate('');
     setUsageLimit('');
+    setUsageLimitPerUser('1');
+    setPointsCost('0');
+    setExcludeCategories('');
+    setApplicableTiers([]);
+    setIsPubliclyVisible(true);
+    setIsFlashSale(false);
     setIsActive(true);
     setEditingCode(null);
     setIsFormOpen(false);
@@ -87,6 +100,12 @@ export default function AdminDiscountCodes() {
     setEndDate(endStr);
     
     setUsageLimit(codeToEdit.usageLimit?.toString() || '');
+    setUsageLimitPerUser(codeToEdit.usageLimitPerUser?.toString() || '1');
+    setPointsCost(codeToEdit.pointsCost?.toString() || '0');
+    setExcludeCategories(codeToEdit.excludeCategories?.join(', ') || '');
+    setApplicableTiers(codeToEdit.applicableTiers || []);
+    setIsPubliclyVisible(codeToEdit.isPubliclyVisible ?? true);
+    setIsFlashSale(codeToEdit.isFlashSale ?? false);
     setIsActive(codeToEdit.isActive);
     setIsFormOpen(true);
   };
@@ -120,6 +139,12 @@ export default function AdminDiscountCodes() {
         startDate: start,
         endDate: end,
         usageLimit: usageLimit ? Number(usageLimit) : null,
+        usageLimitPerUser: Number(usageLimitPerUser) || 1,
+        pointsCost: Number(pointsCost) || 0,
+        excludeCategories: excludeCategories.trim() ? excludeCategories.split(',').map(s=>s.trim()).filter(Boolean) : null,
+        applicableTiers: applicableTiers.length > 0 ? applicableTiers : null,
+        isPubliclyVisible,
+        isFlashSale,
         isActive,
         updatedAt: serverTimestamp()
       };
@@ -254,12 +279,33 @@ export default function AdminDiscountCodes() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Đối tượng khách hàng</label>
                 <select
                   value={customerType}
-                  onChange={(e) => setCustomerType(e.target.value as 'all' | 'new')}
+                  onChange={(e) => setCustomerType(e.target.value as 'all' | 'new' | 'returning')}
                   className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 >
                   <option value="all">Tất cả khách hàng</option>
                   <option value="new">Chỉ khách hàng mới (chưa có đơn)</option>
+                  <option value="returning">Chỉ khách hàng cũ (đã có đơn)</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho Hạng Thành Viên</label>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {['bronze', 'silver', 'gold', 'diamond'].map(tier => (
+                    <label key={tier} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                      <input 
+                        type="checkbox"
+                        checked={applicableTiers.includes(tier)}
+                        onChange={(e) => {
+                          if (e.target.checked) setApplicableTiers([...applicableTiers, tier]);
+                          else setApplicableTiers(applicableTiers.filter(t => t !== tier));
+                        }}
+                        className="w-4 h-4 text-indigo-600 rounded border-slate-300"
+                      />
+                      <span className="uppercase">{tier}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="md:col-span-2">
@@ -269,6 +315,17 @@ export default function AdminDiscountCodes() {
                   value={applicableCategories}
                   onChange={(e) => setApplicableCategories(e.target.value)}
                   placeholder="Ví dụ: base, expansion, accessory... (Bỏ trống để áp dụng toàn shop)"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">LOẠI TRỪ ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
+                <input
+                  type="text"
+                  value={excludeCategories}
+                  onChange={(e) => setExcludeCategories(e.target.value)}
+                  placeholder="Không giảm giá cho nhóm này. Ví dụ: combo"
                   className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                 />
               </div>
@@ -309,13 +366,38 @@ export default function AdminDiscountCodes() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giới hạn số lần sử dụng</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giới hạn TỔNG lượt dùng (Tuỳ chọn)</label>
                 <input
                   type="number"
                   value={usageLimit}
                   onChange={(e) => setUsageLimit(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
                   min="1"
+                  placeholder="Ví dụ: 100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Giới hạn lượt dùng MỖI KHÁCH *</label>
+                <input
+                  type="number"
+                  value={usageLimitPerUser}
+                  onChange={(e) => setUsageLimitPerUser(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Điểm yêu cầu để lưu mã (Gamification)</label>
+                <input
+                  type="number"
+                  value={pointsCost}
+                  onChange={(e) => setPointsCost(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
+                  min="0"
+                  placeholder="Để 0 là lấy miễn phí"
                 />
               </div>
 
@@ -356,6 +438,32 @@ export default function AdminDiscountCodes() {
                 </label>
               </div>
             )}
+
+            <div className="flex items-center mt-4 pt-2 border-t border-slate-200 dark:border-zinc-800">
+              <input
+                type="checkbox"
+                id="isPubliclyVisible"
+                checked={isPubliclyVisible}
+                onChange={(e) => setIsPubliclyVisible(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="isPubliclyVisible" className="ml-2 text-sm font-medium text-slate-700 dark:text-zinc-300">
+                Hiển thị Công khai ra KHO VOUCHER (Nếu tắt, đây là mã ẩn)
+              </label>
+            </div>
+
+            <div className="flex items-center mt-4">
+              <input
+                type="checkbox"
+                id="isFlashSale"
+                checked={isFlashSale}
+                onChange={(e) => setIsFlashSale(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="isFlashSale" className="ml-2 text-sm font-medium text-slate-700 dark:text-zinc-300">
+                Đánh dấu là Flash Sale (Làm nổi bật ở Kho Voucher)
+              </label>
+            </div>
 
             <div className="flex items-center mt-4">
               <input

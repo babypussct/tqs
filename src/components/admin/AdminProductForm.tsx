@@ -76,6 +76,7 @@ export default function AdminProductForm() {
       if (editingProduct.specifications) productData.specifications = editingProduct.specifications;
       if (editingProduct.addonIds) productData.addonIds = editingProduct.addonIds;
       if (editingProduct.allowedPaymentMethods) productData.allowedPaymentMethods = editingProduct.allowedPaymentMethods;
+      if (editingProduct.minTierRequired) productData.minTierRequired = editingProduct.minTierRequired;
       if (editingProduct.soldCount !== undefined) productData.soldCount = Number(editingProduct.soldCount);
       if (editingProduct.customVariants) {
         productData.customVariants = editingProduct.customVariants.map(v => ({
@@ -193,6 +194,16 @@ export default function AdminProductForm() {
                 {productConfig.badges?.map(badge => (
                   <option key={badge} value={badge}>{badge}</option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2">Đặc quyền mua (Tối thiểu)</label>
+              <select value={editingProduct.minTierRequired || ''} onChange={e => setEditingProduct({...editingProduct, minTierRequired: e.target.value as any || undefined})} className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all appearance-none">
+                <option value="">Không giới hạn (Tất cả)</option>
+                <option value="bronze">Từ Đồng trở lên</option>
+                <option value="silver">Từ Bạc trở lên</option>
+                <option value="gold">Từ Vàng trở lên</option>
+                <option value="diamond">Chỉ Kim Cương</option>
               </select>
             </div>
             <div className="sm:col-span-2">
