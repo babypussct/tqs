@@ -19,6 +19,8 @@ export default function AdminSettings() {
   const [types, setTypes] = useState<string[]>([]);
   const [newBadge, setNewBadge] = useState('');
   const [newType, setNewType] = useState('');
+  const [newFooterBadge, setNewFooterBadge] = useState('');
+  const [newFooterPayment, setNewFooterPayment] = useState('');
   
   const { shippingConfig, loading: shippingLoading, updateShippingConfig } = useShippingConfig();
 
@@ -125,6 +127,40 @@ export default function AdminSettings() {
 
   const handleRemoveType = (index: number) => {
     setTypes(types.filter((_, i) => i !== index));
+  };
+
+  const handleAddFooterBadge = () => {
+    if (!newFooterBadge.trim() || !localFooterConfig) return;
+    if (localFooterConfig.badges?.includes(newFooterBadge.trim())) {
+      toast.error('Cam kết này đã tồn tại');
+      return;
+    }
+    setLocalFooterConfig({ ...localFooterConfig, badges: [...(localFooterConfig.badges || []), newFooterBadge.trim()] });
+    setNewFooterBadge('');
+  };
+
+  const handleRemoveFooterBadge = (index: number) => {
+    if (!localFooterConfig) return;
+    const newBadges = [...(localFooterConfig.badges || [])];
+    newBadges.splice(index, 1);
+    setLocalFooterConfig({ ...localFooterConfig, badges: newBadges });
+  };
+
+  const handleAddFooterPayment = () => {
+    if (!newFooterPayment.trim() || !localFooterConfig) return;
+    if (localFooterConfig.paymentMethods?.includes(newFooterPayment.trim())) {
+      toast.error('Phương thức này đã tồn tại');
+      return;
+    }
+    setLocalFooterConfig({ ...localFooterConfig, paymentMethods: [...(localFooterConfig.paymentMethods || []), newFooterPayment.trim()] });
+    setNewFooterPayment('');
+  };
+
+  const handleRemoveFooterPayment = (index: number) => {
+    if (!localFooterConfig) return;
+    const newPayments = [...(localFooterConfig.paymentMethods || [])];
+    newPayments.splice(index, 1);
+    setLocalFooterConfig({ ...localFooterConfig, paymentMethods: newPayments });
   };
 
   if (configLoading || paymentLoading || shippingLoading || siteLoading || footerLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig || !localFooterConfig) return <div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>;
@@ -241,16 +277,83 @@ export default function AdminSettings() {
 
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Các cam kết (Badges)</label>
-            <input type="text" value={localFooterConfig.badges?.join(', ') || ''} onChange={e => setLocalFooterConfig({...localFooterConfig, badges: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} placeholder="VD: Đóng gói chuẩn, Hoàn tiền 100%" className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            <p className="text-xs text-slate-500 mt-2">Phân cách mỗi cam kết bằng dấu phẩy (,)</p>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
+          {/* Footer Badges Array */}
+          <div className="bg-white dark:bg-zinc-900/50 p-5 rounded-xl border border-slate-200 dark:border-zinc-700/50">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Các cam kết (Badges)</h4>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newFooterBadge}
+                onChange={e => setNewFooterBadge(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddFooterBadge()}
+                placeholder="VD: Đóng gói chuẩn sưu tầm"
+                className="flex-1 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+              />
+              <button
+                onClick={handleAddFooterBadge}
+                className="bg-slate-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 rounded-xl font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+                title="Thêm cam kết"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+              {localFooterConfig.badges?.map((badge, index) => (
+                <div key={index} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg px-4 py-3">
+                  <span className="text-slate-900 dark:text-white font-medium">{badge}</span>
+                  <button
+                    onClick={() => handleRemoveFooterBadge(index)}
+                    className="text-slate-400 hover:text-indigo-500 transition-colors p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {(!localFooterConfig.badges || localFooterConfig.badges.length === 0) && (
+                <p className="text-slate-500 dark:text-zinc-500 text-center py-4 text-sm">Chưa có cam kết nào</p>
+              )}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Các phương thức thanh toán</label>
-            <input type="text" value={localFooterConfig.paymentMethods?.join(', ') || ''} onChange={e => setLocalFooterConfig({...localFooterConfig, paymentMethods: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} placeholder="VD: COD, VNPay, VISA" className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            <p className="text-xs text-slate-500 mt-2">Phân cách mỗi phương thức bằng dấu phẩy (,)</p>
+
+          {/* Footer Payments Array */}
+          <div className="bg-white dark:bg-zinc-900/50 p-5 rounded-xl border border-slate-200 dark:border-zinc-700/50">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Các phương thức thanh toán</h4>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newFooterPayment}
+                onChange={e => setNewFooterPayment(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddFooterPayment()}
+                placeholder="VD: COD, VNPay, VISA"
+                className="flex-1 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+              />
+              <button
+                onClick={handleAddFooterPayment}
+                className="bg-slate-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 rounded-xl font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+                title="Thêm thanh toán"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+              {localFooterConfig.paymentMethods?.map((payment, index) => (
+                <div key={index} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg px-4 py-3">
+                  <span className="text-slate-900 dark:text-white font-medium">{payment}</span>
+                  <button
+                    onClick={() => handleRemoveFooterPayment(index)}
+                    className="text-slate-400 hover:text-indigo-500 transition-colors p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {(!localFooterConfig.paymentMethods || localFooterConfig.paymentMethods.length === 0) && (
+                <p className="text-slate-500 dark:text-zinc-500 text-center py-4 text-sm">Chưa có phương thức nào</p>
+              )}
+            </div>
           </div>
         </div>
 
