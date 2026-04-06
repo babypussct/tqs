@@ -232,7 +232,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           toast.error('Vui lòng đăng nhập để kiểm tra hạng thành viên');
           return;
         }
-        if (!discountData.applicableTiers.includes((userProfile.tier as any) || 'unknown')) {
+        if (!discountData.applicableTiers.includes((userProfile.tier as any) || 'bronze')) {
           toast.error('Mã giảm giá này không dành cho hạng thành viên của bạn');
           return;
         }
@@ -1033,7 +1033,12 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                     if (now > endDate) { isEligible = false; ineligibleReason = 'Đã hết hạn'; }
                     if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) { isEligible = false; ineligibleReason = 'Hết lượt sử dụng chung'; }
                     if (voucher.minOrderValue && totalAmount < voucher.minOrderValue) { isEligible = false; ineligibleReason = `Cần mua thêm ${(voucher.minOrderValue - totalAmount).toLocaleString('vi-VN')}đ`; }
-                    if (voucher.applicableTiers && voucher.applicableTiers.length > 0 && !voucher.applicableTiers.includes((userProfile?.tier as any) || 'unknown')) { isEligible = false; ineligibleReason = 'Không đúng hạng'; }
+                    if (voucher.applicableTiers && voucher.applicableTiers.length > 0 && !voucher.applicableTiers.includes((userProfile?.tier as any) || 'bronze')) {
+                      const tierNames: Record<string, string> = { bronze: 'Đồng', silver: 'Bạc', gold: 'Vàng', diamond: 'Kim Cương' };
+                      const allowedTiers = voucher.applicableTiers.map((t: string) => tierNames[t] || t).join(', ');
+                      isEligible = false; 
+                      ineligibleReason = `Chỉ Hạng: ${allowedTiers}`; 
+                    }
                     
                     if (
                       (voucher.applicableProducts && voucher.applicableProducts.length > 0) ||

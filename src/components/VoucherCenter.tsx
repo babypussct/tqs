@@ -123,19 +123,32 @@ export default function VoucherCenter() {
             const notEnoughPoints = (appUser?.points || 0) < cost;
             
             // Check tier
-            let isTierLocked = false;
+            let lockedReason = '';
+            const userTier = appUser?.tier || 'bronze';
+            
             if (voucher.applicableTiers && voucher.applicableTiers.length > 0) {
-              if (!voucher.applicableTiers.includes((appUser?.tier as any) || 'unknown')) {
-                isTierLocked = true;
+              if (!voucher.applicableTiers.includes(userTier)) {
+                // translate tiers to Vietnamese strings
+                const tierNames: Record<string, string> = {
+                   'bronze': 'Đồng',
+                   'silver': 'Bạc',
+                   'gold': 'Vàng',
+                   'diamond': 'Kim Cương'
+                };
+                const allowedTiers = voucher.applicableTiers.map((t: string) => tierNames[t] || t).join(', ');
+                lockedReason = `Hạng ${allowedTiers}`;
               }
             }
             
             // Check customer type
-            let isCustomerTypeLocked = false;
-            if (voucher.customerType === 'new' && (appUser?.totalOrders || 0) > 0) isCustomerTypeLocked = true;
-            if (voucher.customerType === 'returning' && (appUser?.totalOrders || 0) === 0) isCustomerTypeLocked = true;
+            if (!lockedReason && voucher.customerType === 'new' && (appUser?.totalOrders || 0) > 0) {
+               lockedReason = 'Khách Mới';
+            }
+            if (!lockedReason && voucher.customerType === 'returning' && (appUser?.totalOrders || 0) === 0) {
+               lockedReason = 'Khách Cũ';
+            }
 
-            const isLocked = isTierLocked || isCustomerTypeLocked;
+            const isLocked = !!lockedReason;
 
             return (
               <div key={voucher.id} className="relative bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl flex overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -174,7 +187,7 @@ export default function VoucherCenter() {
                       </button>
                     ) : isLocked ? (
                       <button disabled className="bg-slate-100 dark:bg-zinc-800 text-slate-400 px-4 py-1.5 rounded-lg text-xs font-bold shrink-0">
-                        {isTierLocked ? 'Không đủ Hạng' : 'Không thỏa điều kiện'}
+                        Chỉ: {lockedReason}
                       </button>
                     ) : (
                       <button 
