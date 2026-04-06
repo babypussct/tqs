@@ -4,6 +4,8 @@ import { db } from '../../firebase';
 import { DiscountCode } from '../../types';
 import { Plus, Edit2, Trash2, X, Check, AlertCircle } from 'lucide-react';
 import { handleFirestoreError } from '../../utils/firebaseError';
+import { useProducts } from '../../hooks/useProducts';
+import { useProductConfig } from '../../hooks/useProductConfig';
 
 export default function AdminDiscountCodes() {
   const [codes, setCodes] = useState<DiscountCode[]>([]);
@@ -16,8 +18,8 @@ export default function AdminDiscountCodes() {
   const [code, setCode] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | 'freeship_only'>('percentage');
   const [isFreeship, setIsFreeship] = useState(false);
-  const [applicableProducts, setApplicableProducts] = useState('');
-  const [applicableCategories, setApplicableCategories] = useState('');
+  const [applicableProducts, setApplicableProducts] = useState<string[]>([]);
+  const [applicableCategories, setApplicableCategories] = useState<string[]>([]);
   const [customerType, setCustomerType] = useState<'all' | 'new' | 'returning'>('all');
   const [discountValue, setDiscountValue] = useState('');
   const [minOrderValue, setMinOrderValue] = useState('');
@@ -27,11 +29,22 @@ export default function AdminDiscountCodes() {
   const [usageLimit, setUsageLimit] = useState('');
   const [usageLimitPerUser, setUsageLimitPerUser] = useState('1');
   const [pointsCost, setPointsCost] = useState('0');
-  const [excludeCategories, setExcludeCategories] = useState('');
+  const [excludeCategories, setExcludeCategories] = useState<string[]>([]);
   const [applicableTiers, setApplicableTiers] = useState<string[]>([]);
   const [isPubliclyVisible, setIsPubliclyVisible] = useState(true);
   const [isFlashSale, setIsFlashSale] = useState(false);
   const [isActive, setIsActive] = useState(true);
+
+  const { products } = useProducts(false);
+  const { config: productConfig } = useProductConfig();
+
+  const categoryOptions = [
+    { id: 'base', name: 'Bản Cơ Bản' },
+    { id: 'expansion', name: 'Bản Mở Rộng' },
+    { id: 'accessory', name: 'Phụ Kiện' },
+    { id: 'combo', name: 'Combo' },
+    ...(productConfig?.types || []).map(t => ({ id: t, name: t }))
+  ];
 
   useEffect(() => {
     const q = query(collection(db, 'discountCodes'), orderBy('createdAt', 'desc'));
@@ -54,8 +67,8 @@ export default function AdminDiscountCodes() {
     setCode('');
     setDiscountType('percentage');
     setIsFreeship(false);
-    setApplicableProducts('');
-    setApplicableCategories('');
+    setApplicableProducts([]);
+    setApplicableCategories([]);
     setCustomerType('all');
     setDiscountValue('');
     setMinOrderValue('');
@@ -66,7 +79,7 @@ export default function AdminDiscountCodes() {
     setUsageLimit('');
     setUsageLimitPerUser('1');
     setPointsCost('0');
-    setExcludeCategories('');
+    setExcludeCategories([]);
     setApplicableTiers([]);
     setIsPubliclyVisible(true);
     setIsFlashSale(false);
@@ -81,8 +94,8 @@ export default function AdminDiscountCodes() {
     setCode(codeToEdit.code);
     setDiscountType(codeToEdit.discountType || 'percentage');
     setIsFreeship(codeToEdit.isFreeship || false);
-    setApplicableProducts(codeToEdit.applicableProducts?.join(', ') || '');
-    setApplicableCategories(codeToEdit.applicableCategories?.join(', ') || '');
+    setApplicableProducts(codeToEdit.applicableProducts || []);
+    setApplicableCategories(codeToEdit.applicableCategories || []);
     setCustomerType(codeToEdit.customerType || 'all');
     setDiscountValue(codeToEdit.discountValue.toString());
     setMinOrderValue(codeToEdit.minOrderValue?.toString() || '');
@@ -102,7 +115,7 @@ export default function AdminDiscountCodes() {
     setUsageLimit(codeToEdit.usageLimit?.toString() || '');
     setUsageLimitPerUser(codeToEdit.usageLimitPerUser?.toString() || '1');
     setPointsCost(codeToEdit.pointsCost?.toString() || '0');
-    setExcludeCategories(codeToEdit.excludeCategories?.join(', ') || '');
+    setExcludeCategories(codeToEdit.excludeCategories || []);
     setApplicableTiers(codeToEdit.applicableTiers || []);
     setIsPubliclyVisible(codeToEdit.isPubliclyVisible ?? true);
     setIsFlashSale(codeToEdit.isFlashSale ?? false);
@@ -130,8 +143,8 @@ export default function AdminDiscountCodes() {
         code: code.toUpperCase(),
         discountType,
         isFreeship: isFreeship || discountType === 'freeship_only',
-        applicableProducts: applicableProducts.trim() ? applicableProducts.split(',').map(s=>s.trim()).filter(Boolean) : null,
-        applicableCategories: applicableCategories.trim() ? applicableCategories.split(',').map(s=>s.trim()).filter(Boolean) : null,
+        applicableProducts: applicableProducts.length > 0 ? applicableProducts : null,
+        applicableCategories: applicableCategories.length > 0 ? applicableCategories : null,
         customerType,
         discountValue: Number(discountValue) || 0,
         minOrderValue: minOrderValue ? Number(minOrderValue) : null,
@@ -141,7 +154,7 @@ export default function AdminDiscountCodes() {
         usageLimit: usageLimit ? Number(usageLimit) : null,
         usageLimitPerUser: Number(usageLimitPerUser) || 1,
         pointsCost: Number(pointsCost) || 0,
-        excludeCategories: excludeCategories.trim() ? excludeCategories.split(',').map(s=>s.trim()).filter(Boolean) : null,
+        excludeCategories: excludeCategories.length > 0 ? excludeCategories : null,
         applicableTiers: applicableTiers.length > 0 ? applicableTiers : null,
         isPubliclyVisible,
         isFlashSale,
@@ -309,36 +322,66 @@ export default function AdminDiscountCodes() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
-                <input
-                  type="text"
-                  value={applicableCategories}
-                  onChange={(e) => setApplicableCategories(e.target.value)}
-                  placeholder="Ví dụ: base, expansion, accessory... (Bỏ trống để áp dụng toàn shop)"
-                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
-                />
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho Nhóm hàng (Category)</label>
+                <div className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg p-3 max-h-40 overflow-y-auto custom-scrollbar flex flex-wrap gap-2">
+                  {categoryOptions.map(cat => (
+                    <label key={cat.id} className="flex items-center gap-1.5 cursor-pointer text-sm bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-3 py-1.5 rounded-full hover:border-indigo-500 transition-colors">
+                      <input 
+                        type="checkbox"
+                        checked={applicableCategories.includes(cat.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setApplicableCategories([...applicableCategories, cat.id]);
+                          else setApplicableCategories(applicableCategories.filter(t => t !== cat.id));
+                        }}
+                        className="w-4 h-4 text-indigo-600 rounded border-slate-300"
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                  {applicableCategories.length === 0 && <span className="text-sm text-slate-400 italic px-2 py-1">Áp dụng toàn shop (nếu không chọn nhóm nào)</span>}
+                </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">LOẠI TRỪ ID Nhóm hàng (Category) - cách nhau bằng dấu phẩy</label>
-                <input
-                  type="text"
-                  value={excludeCategories}
-                  onChange={(e) => setExcludeCategories(e.target.value)}
-                  placeholder="Không giảm giá cho nhóm này. Ví dụ: combo"
-                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
-                />
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">LOẠI TRỪ Nhóm hàng (Category)</label>
+                <div className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg p-3 max-h-40 overflow-y-auto custom-scrollbar flex flex-wrap gap-2">
+                  {categoryOptions.map(cat => (
+                    <label key={cat.id} className="flex items-center gap-1.5 cursor-pointer text-sm bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 px-3 py-1.5 rounded-full hover:border-red-500 transition-colors">
+                      <input 
+                        type="checkbox"
+                        checked={excludeCategories.includes(cat.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setExcludeCategories([...excludeCategories, cat.id]);
+                          else setExcludeCategories(excludeCategories.filter(t => t !== cat.id));
+                        }}
+                        className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Sản phẩm - cách nhau bằng dấu phẩy</label>
-                <input
-                  type="text"
-                  value={applicableProducts}
-                  onChange={(e) => setApplicableProducts(e.target.value)}
-                  placeholder="Ví dụ: SP001, SP002... (Bỏ trống để áp dụng toàn shop)"
-                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-slate-900 dark:text-white"
-                />
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Áp dụng cho ID Sản phẩm</label>
+                <div className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg p-3 max-h-60 overflow-y-auto custom-scrollbar">
+                  <div className="text-xs text-slate-500 mb-2 italic">Chọn các sản phẩm cụ thể (bỏ trống để áp dụng toàn shop)</div>
+                  {products.map(p => (
+                    <label key={p.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 dark:hover:bg-zinc-900 rounded-lg cursor-pointer transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={applicableProducts.includes(p.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setApplicableProducts([...applicableProducts, p.id]);
+                          else setApplicableProducts(applicableProducts.filter(id => id !== p.id));
+                        }}
+                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                      />
+                      {p.image ? <img src={p.image} className="w-8 h-8 rounded shrink-0 object-cover" alt="" /> : <div className="w-8 h-8 rounded shrink-0 bg-slate-200 dark:bg-zinc-800" />}
+                      <span className="text-sm truncate max-w-full text-slate-700 dark:text-zinc-300">{p.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div>
