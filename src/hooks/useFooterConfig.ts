@@ -25,6 +25,8 @@ export interface FooterConfig {
     email: string;
   };
   bottomText: string;
+  badges: string[];
+  paymentMethods: string[];
 }
 
 const DEFAULT_CONFIG: FooterConfig = {
@@ -53,6 +55,8 @@ const DEFAULT_CONFIG: FooterConfig = {
     email: 'support@tqsstore.com',
   },
   bottomText: '© 2024 TQS Store. All rights reserved.',
+  badges: ['Đóng gói chuẩn sưu tầm.', 'Hoàn tiền 100% nếu móp hộp.'],
+  paymentMethods: ['COD', 'VNPay', 'VISA'],
 };
 
 export function useFooterConfig() {
@@ -72,6 +76,8 @@ export function useFooterConfig() {
           contactInfo: { ...DEFAULT_CONFIG.contactInfo, ...data.contactInfo },
           categoryLinks: data.categoryLinks || DEFAULT_CONFIG.categoryLinks,
           policyLinks: data.policyLinks || DEFAULT_CONFIG.policyLinks,
+          badges: data.badges || DEFAULT_CONFIG.badges,
+          paymentMethods: data.paymentMethods || DEFAULT_CONFIG.paymentMethods,
         });
       } else {
         // Initialize with defaults if not exists

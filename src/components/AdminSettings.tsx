@@ -239,6 +239,21 @@ export default function AdminSettings() {
           </div>
         </div>
 
+
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Các cam kết (Badges)</label>
+            <input type="text" value={localFooterConfig.badges?.join(', ') || ''} onChange={e => setLocalFooterConfig({...localFooterConfig, badges: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} placeholder="VD: Đóng gói chuẩn, Hoàn tiền 100%" className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            <p className="text-xs text-slate-500 mt-2">Phân cách mỗi cam kết bằng dấu phẩy (,)</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Các phương thức thanh toán</label>
+            <input type="text" value={localFooterConfig.paymentMethods?.join(', ') || ''} onChange={e => setLocalFooterConfig({...localFooterConfig, paymentMethods: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})} placeholder="VD: COD, VNPay, VISA" className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
+            <p className="text-xs text-slate-500 mt-2">Phân cách mỗi phương thức bằng dấu phẩy (,)</p>
+          </div>
+        </div>
+
         <div className="mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
           <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Dòng chữ Bản quyền dưới cùng (Copyright)</label>
           <input type="text" value={localFooterConfig.bottomText} onChange={e => setLocalFooterConfig({...localFooterConfig, bottomText: e.target.value})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
