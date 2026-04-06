@@ -152,9 +152,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async () => {
     try {
+      // Phát hiện các trình duyệt nhúng trong ứng dụng (Facebook, Zalo, Instagram, TikTok...)
+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isInAppBrowser = /FBAN|FBAV|Instagram|Zalo|TikTok|Line|Snapchat|Viber/i.test(ua);
+
+      if (isInAppBrowser) {
+        toast.error('Trình duyệt này chặn đăng nhập Google. Vui lòng chọn "Mở bằng trình duyệt" (Chrome/Safari) từ menu để tiếp tục.', {
+          duration: 10000,
+        });
+        return;
+      }
+
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, do nothing
+      } else {
+        toast.error('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.', { duration: 4000 });
+      }
     }
   };
 
