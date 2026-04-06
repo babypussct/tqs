@@ -184,10 +184,26 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
         return;
       }
 
-      // Validate usage limit
+      // Validate usage limit overall
       if (discountData.usageLimit && discountData.usedCount >= discountData.usageLimit) {
         toast.error('Mã giảm giá đã hết lượt sử dụng');
         return;
+      }
+
+      // Check usageLimitPerUser
+      if (user) {
+        const usageLimitPerUser = discountData.usageLimitPerUser || 1;
+        const usageQ = query(
+          collection(db, 'orders'), 
+          where('userId', '==', user.uid), 
+          where('discountCode', '==', discountData.code),
+          where('status', '!=', 'cancelled')
+        );
+        const usageSnap = await getDocs(usageQ);
+        if (usageSnap.size >= usageLimitPerUser) {
+          toast.error(`Bạn đã hết lượt sử dụng mã này (Tối đa ${usageLimitPerUser} lượt/người)`);
+          return;
+        }
       }
 
       // Validate min order value
@@ -206,6 +222,18 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
         const ordersSnap = await getDocs(ordersQ);
         if (!ordersSnap.empty) {
           toast.error('Mã giảm giá này chỉ dành cho khách hàng mới (chưa có đơn hàng)');
+          return;
+        }
+      }
+
+      // Check applicable tiers
+      if (discountData.applicableTiers && discountData.applicableTiers.length > 0) {
+        if (!userProfile) {
+          toast.error('Vui lòng đăng nhập để kiểm tra hạng thành viên');
+          return;
+        }
+        if (!discountData.applicableTiers.includes((userProfile.tier as any) || 'unknown')) {
+          toast.error('Mã giảm giá này không dành cho hạng thành viên của bạn');
           return;
         }
       }
@@ -1003,7 +1031,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
                     const now = new Date();
                     const endDate = voucher.endDate?.toDate ? voucher.endDate.toDate() : new Date(8640000000000000);
                     if (now > endDate) { isEligible = false; ineligibleReason = 'Đã hết hạn'; }
-                    if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) { isEligible = false; ineligibleReason = 'Hết lượt sử dụng'; }
+                    if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) { isEligible = false; ineligibleReason = 'Hết lượt sử dụng chung'; }
                     if (voucher.minOrderValue && totalAmount < voucher.minOrderValue) { isEligible = false; ineligibleReason = `Cần mua thêm ${(voucher.minOrderValue - totalAmount).toLocaleString('vi-VN')}đ`; }
                     if (voucher.applicableTiers && voucher.applicableTiers.length > 0 && !voucher.applicableTiers.includes((userProfile?.tier as any) || 'unknown')) { isEligible = false; ineligibleReason = 'Không đúng hạng'; }
                     
