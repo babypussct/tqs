@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, setDoc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, query, orderBy, getDoc, getDocs, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { AppUser, AdminPermissions as IAdminPermissions, UserTier } from '../../types';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
-import { Shield, ShieldAlert, User, Mail, Search, Ban, Medal, ShoppingBag, Edit, X } from 'lucide-react';
+import { Shield, ShieldAlert, User, Mail, Search, Ban, Medal, ShoppingBag, Edit, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -56,6 +56,80 @@ export default function AdminUsers() {
 
     return () => unsubscribe();
   }, []);
+
+  const handleSyncLegacyUsers = async () => {
+    if (!currentUser?.isSuperAdmin) {
+      toast.error('Chỉ Super Admin mới có quyền chạy chức năng này.');
+      return;
+    }
+    
+    if (!window.confirm('CẢNH BÁO: Bạn chuẩn bị quét toàn bộ cơ sở dữ liệu để sửa lỗi mất field và xếp hạng tự động cho TẤT CẢ người dùng cũ dựa trên lịch sử đơn hàng. Bạn đã chuẩn bị sẵn sàng chưa?')) return;
+
+    const loadingToast = toast.loading('Hệ thống đang rà soát dữ liệu (có thể tốn vài giây)...');
+    try {
+      const settingsRef = doc(db, 'settings', 'rewards');
+      const settingsSnap = await getDoc(settingsRef);
+      const rewardsConfig = settingsSnap.exists() ? settingsSnap.data() : { tiers: [], pointMultiplier: 1000 };
+
+      const ordersQ = query(collection(db, 'orders'), where('status', '==', 'delivered'));
+      const ordersSnap = await getDocs(ordersQ);
+      
+      const userStats: Record<string, { totalOrders: number, totalSpent: number, points: number }> = {};
+      ordersSnap.forEach(docSnap => {
+        const o = docSnap.data();
+        const uid = o.userId;
+        if (!uid) return;
+        if (!userStats[uid]) userStats[uid] = { totalOrders: 0, totalSpent: 0, points: 0 };
+        userStats[uid].totalOrders += 1;
+        userStats[uid].totalSpent += Number(o.totalAmount || 0);
+        userStats[uid].points += Number(o.earnedPoints || Math.floor((o.totalAmount || 0) / (rewardsConfig.pointMultiplier || 1000)));
+      });
+
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let updatedCount = 0;
+      const updatePromises: Promise<void>[] = [];
+
+      usersSnap.forEach(userDoc => {
+        const userData = userDoc.data();
+        const uid = userDoc.id;
+        const stats = userStats[uid] || { totalOrders: 0, totalSpent: 0, points: 0 };
+        
+        let newTier: UserTier = 'bronze';
+        if (rewardsConfig.tiers) {
+          const sortedTiers = [...rewardsConfig.tiers].sort((a: any, b: any) => b.minSpent - a.minSpent);
+          for (const t of sortedTiers) {
+            if (stats.totalSpent >= t.minSpent) {
+              newTier = t.id as UserTier;
+              break;
+            }
+          }
+        }
+
+        const updateData: any = {};
+        let needsUpdate = false;
+
+        if ((userData.totalOrders || 0) !== stats.totalOrders) { updateData.totalOrders = stats.totalOrders; needsUpdate = true; }
+        if ((userData.totalSpent || 0) !== stats.totalSpent) { updateData.totalSpent = stats.totalSpent; needsUpdate = true; }
+        if (!userData.tier || userData.tier === 'unknown' || userData.tier !== newTier) { updateData.tier = newTier; needsUpdate = true; }
+        if (userData.points === undefined) { updateData.points = stats.points; needsUpdate = true; }
+        if (userData.savedVouchers === undefined) { updateData.savedVouchers = []; needsUpdate = true; }
+
+        if (needsUpdate) {
+          updatePromises.push(setDoc(doc(db, 'users', uid), updateData, { merge: true }));
+          updatedCount++;
+        }
+      });
+
+      await Promise.all(updatePromises);
+      
+      toast.dismiss(loadingToast);
+      toast.success(`Hoàn tất! Đã đồng bộ và vá lỗi dữ liệu cho ${updatedCount} tài khoản.`);
+
+    } catch (err: any) {
+      toast.dismiss(loadingToast);
+      toast.error('Có lỗi xảy ra: ' + err.message);
+    }
+  };
 
   const handleUpdateTier = async (userId: string, newTier: UserTier) => {
     if (!currentUser?.isSuperAdmin && !currentUser?.permissions.manageRoles) {
@@ -164,6 +238,16 @@ export default function AdminUsers() {
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
+        
+        {currentUser?.isSuperAdmin && (
+          <button 
+            onClick={handleSyncLegacyUsers}
+            className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl text-sm shadow hover:shadow-lg transition-all"
+            title="Sửa lỗi và Khôi phục dữ liệu Hạng/Điểm cho User cũ"
+          >
+            <RefreshCw className="w-4 h-4" /> Đồng bộ Dữ liệu Cũ
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl overflow-hidden shadow-sm">
