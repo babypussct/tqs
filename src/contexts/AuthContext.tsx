@@ -107,11 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSuperAdmin: true
     };
 
-    // If SuperAdmin, bypass Firestore completely to guarantee 100% access without any network/rules blocking
+    // If SuperAdmin, set admin privileges but continue loading the appUser profile
     if (isSuperAdmin) {
       setAdminUser(defaultSuperAdmin);
-      setLoading(false);
-      return;
     }
 
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (docSnap) => {
@@ -130,21 +128,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        if (data.adminPermissions) {
-          setAdminUser({
-            id: user.uid,
-            email: data.email || user.email || '',
-            name: data.displayName || user.displayName || 'Admin',
-            permissions: data.adminPermissions,
-            createdAt: data.createdAt,
-            updatedAt: data.lastLoginAt,
-            isSuperAdmin: false
-          });
-        } else {
-          setAdminUser(null);
+        if (!isSuperAdmin) {
+          if (data.adminPermissions) {
+            setAdminUser({
+              id: user.uid,
+              email: data.email || user.email || '',
+              name: data.displayName || user.displayName || 'Admin',
+              permissions: data.adminPermissions,
+              createdAt: data.createdAt,
+              updatedAt: data.lastLoginAt,
+              isSuperAdmin: false
+            });
+          } else {
+            setAdminUser(null);
+          }
         }
       } else {
-        setAdminUser(null);
+        if (!isSuperAdmin) setAdminUser(null);
         setAppUser(null);
       }
       setLoading(false);
