@@ -49,15 +49,22 @@ export default function VoucherCenter() {
   }, [user]);
 
   const handleSaveVoucher = async (voucher: DiscountCode) => {
-    if (!user || !appUser) return;
-    const cost = voucher.pointsCost || 0;
+    if (!user) {
+      toast.error('Vui lòng đăng nhập để lưu mã');
+      return;
+    }
+    if (!appUser) {
+      toast.error('Chưa tải xong hồ sơ, vui lòng thử lại');
+      return;
+    }
+    const cost = Number(voucher.pointsCost) || 0;
 
     if (appUser.savedVouchers?.includes(voucher.id)) {
       toast.error('Bạn đã lưu mã này rồi!');
       return;
     }
 
-    if (appUser.points < cost) {
+    if ((appUser.points || 0) < cost) {
       toast.error('Bạn không đủ điểm để đổi mã này!');
       return;
     }
@@ -66,15 +73,20 @@ export default function VoucherCenter() {
     try {
       const userRef = doc(db, 'users', user.uid);
       
-      // We should ideally run a transaction if we are deducting points, but for simplicity:
-      await updateDoc(userRef, {
-        savedVouchers: arrayUnion(voucher.id),
-        points: increment(-cost)
-      });
+      const updateData: any = {
+        savedVouchers: arrayUnion(voucher.id)
+      };
+      
+      if (cost > 0) {
+        updateData.points = increment(-cost);
+      }
+      
+      await updateDoc(userRef, updateData);
 
       toast.success(cost > 0 ? `Đã đổi mã thành công (-${cost} điểm)` : 'Đã lưu mã thành công!');
     } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi lưu mã');
+      console.error('Lỗi khi lưu mã:', err);
+      toast.error('Lỗi khi lưu mã: ' + (err.message || 'Vui lòng kiểm tra lại kết nối'));
     } finally {
       setSavingId(null);
     }
