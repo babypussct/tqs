@@ -19,7 +19,6 @@ if (!admin.apps.length) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
-  // URL GET đặc biệt để cài đặt Webhook nhanh
   if (req.method === 'GET' && req.query.setup === 'true') {
     const url = `https://${req.headers.host}/api/telegram-webhook`;
     try {
@@ -31,7 +30,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // Chặn mọi method không phải POST (Do Telegram bắn Webhook bằng POST)
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -42,73 +40,112 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Nếu đây là sự kiện bấm nút Inline Button
     if (update.callback_query) {
       const callbackQuery = update.callback_query;
-      const data = callbackQuery.data; // VD: confirm_payment:ABCXYZ
+      const data = callbackQuery.data; // VD: action:paid:ABCXYZ
       
-      if (data && data.startsWith('confirm_payment:')) {
-        const orderId = data.split(':')[1];
+      if (data && data.startsWith('action:')) {
+        const parts = data.split(':');
+        const actionType = parts[1]; // 'paid', 'shipped', 'cancelled'
+        const orderId = parts[2];
         
-        // 1. Kết nối cơ sở dữ liệu
         const db = admin.firestore();
         const orderRef = db.collection('orders').doc(orderId);
-        const orderSnap = await orderRef.get();
         
-        if (orderSnap.exists) {
-          const currentOrder = orderSnap.data();
+        try {
+          const orderSnap = await orderRef.get();
           
-          if (currentOrder?.paymentStatus === 'paid') {
-             // Đã xác nhận rồi
+          if (!orderSnap.exists) {
              await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ callback_query_id: callbackQuery.id, text: 'Đơn này đã được xác nhận trước đó rồi!' })
+               body: JSON.stringify({ callback_query_id: callbackQuery.id, text: 'Lỗi: Không tìm thấy hóa đơn mã này!', show_alert: true })
              });
              return res.status(200).json({ success: true });
           }
 
-          // Gạch nợ hóa đơn
+          const currentOrder = orderSnap.data();
+          let newPaymentStatus = currentOrder?.paymentStatus;
+          let newStatus = currentOrder?.status;
+          let actionLabel = '';
+
+          // Tính toán trạng thái tiếp theo
+          if (actionType === 'paid') {
+            if (currentOrder?.paymentStatus === 'paid') {
+               actionLabel = 'Tiền đã được nhận từ trước!';
+            } else {
+               newPaymentStatus = 'paid';
+               newStatus = currentOrder?.status === 'pending' ? 'processing' : currentOrder?.status;
+               actionLabel = '✅ Đã gạch nợ thành công!';
+            }
+          } else if (actionType === 'shipped') {
+             if (currentOrder?.status === 'shipped') {
+               actionLabel = 'Đơn này vốn đã đang giao!';
+             } else {
+               newStatus = 'shipped';
+               actionLabel = '🚚 Cập nhật thành ĐANG GIAO!';
+             }
+          } else if (actionType === 'cancelled') {
+             if (currentOrder?.status === 'cancelled') {
+               actionLabel = 'Hóa đơn này đã được HỦY từ trước!';
+             } else {
+               newStatus = 'cancelled';
+               actionLabel = '❌ Đã HỦY hóa đơn này!';
+             }
+          }
+
+          // Cập nhật Database
           await orderRef.update({
-            paymentStatus: 'paid',
-            status: currentOrder?.status === 'pending' ? 'processing' : currentOrder?.status
+            paymentStatus: newPaymentStatus,
+            status: newStatus
           });
 
-          // 2. Trả lời Callback để hết biểu tượng Loading trên nút bấm
+          // Giải phóng nút bấm đang Load
           await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callback_query_id: callbackQuery.id,
-              text: 'Gạch nợ thành công!'
-            })
+            body: JSON.stringify({ callback_query_id: callbackQuery.id, text: actionLabel, show_alert: true })
           });
 
-          // 3. Sửa tin nhắn cũ: Xóa nút đi và thêm dòng trạng thái
+          // Cập nhật lại giao diện tin nhắn cũ (Xóa nút đó đi, giữ nguyên các nút còn hợp lý)
           const chatId = callbackQuery.message.chat.id;
           const messageId = callbackQuery.message.message_id;
           const originalText = callbackQuery.message.text; 
           
+          let statusFootnote = '';
+          const remainedButtons = [];
+
+          if (actionType === 'paid') {
+            statusFootnote = '✅ ĐÃ XÁC NHẬN NHẬN TIỀN';
+            if (newStatus !== 'cancelled' && newStatus !== 'shipped') {
+              remainedButtons.push([{ text: '🚚 Chuyển Đang Giao', callback_data: `action:shipped:${orderId}` }]);
+            }
+          } else if (actionType === 'shipped') {
+            statusFootnote = '🚚 ĐANG TRONG QUÁ TRÌNH GIAO HÀNG';
+          } else if (actionType === 'cancelled') {
+            statusFootnote = '❌ ĐÃ CHÍNH THỨC HỦY ĐƠN';
+          }
+
+          // Nếu còn nút nào chừa lại
+          const nextMarkup = remainedButtons.length > 0 ? { inline_keyboard: remainedButtons } : { inline_keyboard: [] };
+
           await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: chatId,
               message_id: messageId,
-              text: originalText + '\n\n✅ <b>ĐÃ XÁC NHẬN NHẬN TIỀN (Thủ công)</b>',
+              text: originalText + '\n\n' + statusFootnote,
               parse_mode: 'HTML',
-              reply_markup: { inline_keyboard: [] }
+              reply_markup: nextMarkup
             })
           });
           
-        } else {
-           // Báo lỗi bằng popup alert
-           await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+        } catch (dbError) {
+          console.error(dbError);
+          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({
-               callback_query_id: callbackQuery.id,
-               text: 'Lỗi: Không tìm thấy hóa đơn mã này!',
-               show_alert: true
-             })
-           });
+             body: JSON.stringify({ callback_query_id: callbackQuery.id, text: 'Lỗi: Mất kết nối CSDL (Kiểm tra biến Vercel)', show_alert: true })
+          });
         }
       }
     }

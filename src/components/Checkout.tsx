@@ -565,6 +565,9 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
             payload: {
               orderId: completedOrderId,
               customerName: shippingInfo.fullName,
+              phone: shippingInfo.phone,
+              address: shippingInfo.address,
+              notes: shippingInfo.notes,
               amount: finalAmount,
               paymentMethod: paymentMethod
             }
