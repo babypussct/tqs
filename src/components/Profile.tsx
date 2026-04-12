@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Order, AppUser, TierConfig } from '../types';
@@ -127,6 +127,41 @@ export default function Profile() {
     
     return { nextTier: nextTierConfig, progressPercentage, missingAmount, activeTierConfig };
   }, [appUser, rewardsConfig]);
+
+  const [isConfirming, setIsConfirming] = useState<string | null>(null);
+
+  const handleConfirmReceived = async (order: Order) => {
+    if (!window.confirm('Xác nhận bạn đã nhận được hàng và hàng hóa nguyên vẹn? Bằng việc xác nhận, bạn đồng ý kết thúc đơn hàng này.')) return;
+    
+    setIsConfirming(order.id);
+    try {
+      // 1. Cập nhật trạng thái
+      await updateDoc(doc(db, 'orders', order.id), {
+        status: 'delivered',
+        updatedAt: serverTimestamp()
+      });
+      
+      // 2. Thưởng điểm
+      let earnedPoints = 0;
+      if (activeTierConfig && rewardsConfig?.pointValueVND) {
+        earnedPoints = Math.floor((order.finalAmount || order.totalAmount) / 1000) * (activeTierConfig.pointMultiplier || 1);
+      } else {
+        earnedPoints = Math.floor((order.finalAmount || order.totalAmount) / 1000); // Mặc định 1 điểm = 1k
+      }
+      
+      await updateDoc(doc(db, 'users', user!.uid), {
+        points: increment(earnedPoints),
+        totalSpent: increment(order.finalAmount || order.totalAmount)
+      });
+      
+      toast.success(`Cảm ơn bạn! Đã cộng ${earnedPoints} điểm thưởng vào tài khoản.`);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi cập nhật.');
+      console.error(error);
+    } finally {
+      setIsConfirming(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -570,6 +605,22 @@ export default function Profile() {
                                  </div>
                                </div>
                              )}
+                           </div>
+                         )}
+                         {/* Render Receive confirmation if Shipped */}
+                         {order.status === 'shipped' && (
+                           <div className="mt-6 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                             <div>
+                               <h4 className="font-bold text-gray-900 dark:text-white mb-1">Kiện hàng đã đến nơi?</h4>
+                               <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">Vui lòng xác nhận khi bạn đã nhận đủ hàng để nhận ngay điểm thưởng.</p>
+                             </div>
+                             <button
+                               onClick={() => handleConfirmReceived(order)}
+                               disabled={isConfirming === order.id}
+                               className={`w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 whitespace-nowrap ${isConfirming === order.id ? 'opacity-70 cursor-not-allowed' : ''}`}
+                             >
+                               {isConfirming === order.id ? 'Đang xử lý...' : 'Xác nhận Đã nhận hàng'}
+                             </button>
                            </div>
                          )}
                        </div>

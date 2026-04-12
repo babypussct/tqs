@@ -423,7 +423,7 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
 
     setIsSubmitting(true);
     try {
-      await runTransaction(db, async (transaction) => {
+      const completedOrderId = await runTransaction(db, async (transaction) => {
         // 1. Read all products to check stock
         const productRefs = cartItems.map(item => doc(db, 'products', item.product.id));
         const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
@@ -547,11 +547,31 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
         setCreatedOrderId(orderRef.id);
         setOrderFinalAmount(finalAmount);
         setOrderTotalAmount(totalAmount);
+        
+        return orderRef.id;
       });
 
       clearCart();
       setIsSuccess(true);
       toast.success('Đặt hàng thành công!');
+      
+      // Bắn Notification Telegram
+      try {
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'NEW_ORDER',
+            payload: {
+              orderId: completedOrderId,
+              customerName: shippingInfo.fullName,
+              amount: finalAmount,
+              paymentMethod: paymentMethod
+            }
+          })
+        }).catch(err => console.log('Telegram Notify Error:', err));
+      } catch (err) {}
+      
     } catch (error: any) {
       if (error.message && (error.message.includes('chỉ còn') || error.message.includes('ngừng kinh doanh') || error.message.includes('không còn tồn tại'))) {
         toast.error(error.message);
