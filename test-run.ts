@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
+import * as admin from 'firebase-admin';
 
 // Khởi tạo Firebase Admin an toàn
 if (!admin.apps.length) {
