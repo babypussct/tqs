@@ -4,13 +4,26 @@ import admin from 'firebase-admin';
 // Khởi tạo Firebase Admin an toàn
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      })
-    });
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      // Cách 1: Parse trực tiếp nguyên cụm JSON (Chống lỗi gãy dòng)
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+    } else {
+      // Cách 2: Parse từng dòng truyền thống
+      let pk = process.env.FIREBASE_PRIVATE_KEY || '';
+      if (pk.startsWith('"') && pk.endsWith('"')) pk = pk.slice(1, -1);
+      pk = pk.replace(/\\n/g, '\n');
+
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: pk,
+        })
+      });
+    }
   } catch (error) {
     console.error('Firebase Admin Init Error:', error);
   }
