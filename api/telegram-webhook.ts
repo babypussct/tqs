@@ -40,8 +40,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Nếu tin nhắn là dạng chữ (Tra cứu /don)
     if (update.message && update.message.text) {
       const text = update.message.text.trim();
-      if (text.startsWith('/don ') || text.startsWith('/order ')) {
-        const orderId = text.split(' ')[1]?.toUpperCase();
+      const match = text.match(/^\/(?:don|order)(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]+)/i);
+      
+      if (match) {
+        const orderId = match[1].toUpperCase();
         if (orderId) {
           const db = admin.firestore();
           const orderSnap = await db.collection('orders').doc(orderId).get();
