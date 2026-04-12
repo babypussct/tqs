@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 // Khởi tạo Firebase Admin an toàn
 if (!admin.apps.length) {
@@ -58,7 +59,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (match) {
         const orderId = match[1].toUpperCase();
         if (orderId) {
-          const db = admin.firestore();
+          const dbId = process.env.FIREBASE_DATABASE_ID || 'ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b';
+          const db = getFirestore(admin.app(), dbId);
           const orderSnap = await db.collection('orders').doc(orderId).get();
           
           if (!orderSnap.exists) {
@@ -129,7 +131,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const actionType = parts[1]; // 'paid', 'shipped', 'cancelled'
         const orderId = parts[2];
         
-        const db = admin.firestore();
+        const dbId = process.env.FIREBASE_DATABASE_ID || 'ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b';
+        const db = getFirestore(admin.app(), dbId);
         const orderRef = db.collection('orders').doc(orderId);
         
         try {
