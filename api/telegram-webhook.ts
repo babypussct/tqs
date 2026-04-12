@@ -37,6 +37,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const update = req.body;
     
+    // Nếu tin nhắn là dạng chữ (Tra cứu /don)
+    if (update.message && update.message.text) {
+      const text = update.message.text.trim();
+      if (text.startsWith('/don ') || text.startsWith('/order ')) {
+        const orderId = text.split(' ')[1]?.toUpperCase();
+        if (orderId) {
+          const db = admin.firestore();
+          const orderSnap = await db.collection('orders').doc(orderId).get();
+          
+          if (!orderSnap.exists) {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: update.message.chat.id, text: `❌ Không tìm thấy đơn hàng mã #${orderId}` })
+            });
+          } else {
+            const currentOrder = orderSnap.data();
+            let msg = `🔎 <b>TRA CỨU LẠI ĐƠN HÀNG</b> 🔎\n`;
+            msg += `Mã đơn: <b>#${orderId}</b>\n`;
+            let statusVn = currentOrder?.status;
+            if (statusVn === 'shipped') statusVn = 'Đang giao (Shipped)';
+            else if (statusVn === 'processing') statusVn = 'Đang chuẩn bị (Processing)';
+            else if (statusVn === 'pending') statusVn = 'Chờ xử lý (Pending)';
+            else if (statusVn === 'cancelled') statusVn = 'Đã hủy (Cancelled)';
+            else if (statusVn === 'delivered') statusVn = 'Hoàn tất (Delivered)';
+
+            msg += `Trạng thái: <b>${statusVn}</b>\n`;
+            msg += `Thanh toán: <b>${currentOrder?.paymentStatus === 'paid' ? 'Đã thu tiền' : 'Chờ gạch nợ'}</b>\n`;
+            msg += `Người nhận: ${currentOrder?.shippingInfo?.fullName || 'N/A'}\n`;
+            msg += `SĐT: <code>${currentOrder?.shippingInfo?.phone || 'N/A'}</code>\n`;
+            msg += `Địa chỉ: ${currentOrder?.shippingInfo?.address || 'N/A'}\n`;
+            if (currentOrder?.shippingInfo?.notes) msg += `Ghi chú: <i>${currentOrder?.shippingInfo?.notes}</i>\n`;
+            msg += `------------------\n`;
+            
+            const finalAm = currentOrder?.finalAmount || currentOrder?.totalAmount || 0;
+            msg += `Số tiền: <b>${finalAm.toLocaleString('vi-VN')} đ</b>\n`;
+            msg += `Phương thức: <b>${currentOrder?.paymentMethod === 'vietqr' ? 'Chuyển khoản (VietQR)' : 'Tiền mặt (COD)'}</b>\n`;
+
+            const inlineButtons = [];
+            // Nếu chưa thu tiền, vẫn hiện nút Gạch nợ
+            if (currentOrder?.paymentMethod === 'vietqr' && currentOrder?.paymentStatus !== 'paid') {
+               inlineButtons.push([{ text: '✅ Đã nhận tiền', callback_data: `action:paid:${orderId}` }]);
+            }
+            // Nếu chưa giao, chưa hủy, hiện nút Đang giao
+            if (currentOrder?.status !== 'shipped' && currentOrder?.status !== 'cancelled' && currentOrder?.status !== 'delivered') {
+               inlineButtons.push([{ text: '🚚 Chuyển Đang Giao', callback_data: `action:shipped:${orderId}` }]);
+            }
+            if (currentOrder?.status !== 'cancelled') {
+               inlineButtons.push([{ text: '❌ Hủy đơn', callback_data: `action:cancelled:${orderId}` }]);
+            }
+            
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: update.message.chat.id,
+                text: msg,
+                parse_mode: 'HTML',
+                reply_markup: inlineButtons.length > 0 ? { inline_keyboard: inlineButtons } : undefined
+              })
+            });
+          }
+          return res.status(200).json({ success: true });
+        }
+      }
+    }
+    
     // Nếu đây là sự kiện bấm nút Inline Button
     if (update.callback_query) {
       const callbackQuery = update.callback_query;
