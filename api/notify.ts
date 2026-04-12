@@ -33,23 +33,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message += `Người nhận: ${payload.customerName}\n`;
       message += `Số tiền: <b>${payload.amount.toLocaleString('vi-VN')} đ</b>\n`;
       message += `Phương thức: ${payload.paymentMethod === 'vietqr' ? 'Chuyển khoản (VietQR)' : 'Tiền mặt (COD)'}\n`;
-    } else {
-      message = `🔔 <b>THÔNG BÁO HỆ THỐNG</b>\n${JSON.stringify(payload, null, 2)}`;
-    }
+      
+      let replyMarkup = undefined;
+      // Nếu phương thức là vietqr, thêm nút bấm kèm chứa data xác nhận đơn
+      if (payload.paymentMethod === 'vietqr') {
+        replyMarkup = {
+          inline_keyboard: [[
+            { text: '✅ Xác nhận Đã nhận đủ tiền', callback_data: `confirm_payment:${payload.orderId}` }
+          ]]
+        };
+      }
 
-    // Send to Telegram
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(telegramUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML'
-      })
-    });
+      // Send to Telegram
+      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const response = await fetch(telegramUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML',
+          reply_markup: replyMarkup
+        })
+      });
 
     if (!response.ok) {
       console.error('Telegram API Error:', await response.text());
