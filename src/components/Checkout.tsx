@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
-import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy, Plus, Minus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
@@ -17,9 +17,11 @@ import { onSnapshot } from 'firebase/firestore';
 interface CheckoutProps {
   cartItems: CartItem[];
   clearCart: () => void;
+  onUpdateQuantity?: (id: string, deltaOrQuantity: number, isAbsolute?: boolean) => void;
+  onRemoveItem?: (id: string) => void;
 }
 
-export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
+export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRemoveItem }: CheckoutProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { paymentConfig, loading: paymentLoading } = usePaymentConfig();
@@ -828,38 +830,82 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-zinc-800 shadow-sm sticky top-24">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Đơn hàng của bạn</h2>
             
-            <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex gap-4">
-                  <div className="w-16 h-16 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
-                    {item.product.image ? (
-                      <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-snug">{item.product.name}</h4>
-                    <div className="text-xs text-gray-500 dark:text-zinc-400 mt-1 space-y-0.5">
-                      {item.selectedBox && <p>Hộp: {item.selectedBox}</p>}
-                      {item.selectedLang && <p>Ngôn ngữ: {item.selectedLang}</p>}
-                      {item.selectedVariants && Object.entries(item.selectedVariants).map(([k, v]) => (
-                        <p key={k}>{k}: {v}</p>
-                      ))}
-                      {item.quickAddAccessoryNames?.map(name => (
-                        <p key={name}>+ {name}</p>
-                      ))}
-                      {item.addSleeves && !item.quickAddAccessoryNames && <p>+ {(item as any).quickAddAccessoryName || 'Kèm Sleeves'}</p>}
+            <div className="space-y-3 mb-6 max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar">
+              {cartItems.map((item) => {
+                const totalProductQuantity = cartItems
+                  .filter(i => i.product.id === item.product.id)
+                  .reduce((sum, i) => sum + i.quantity, 0);
+                return (
+                  <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3 border border-gray-100 dark:border-zinc-700/50">
+                    <div className="w-14 h-14 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
+                      {item.product.image ? (
+                        <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm text-gray-500 dark:text-zinc-400">SL: {item.quantity}</span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{item.product.name}</h4>
+                      <div className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 space-y-0.5">
+                        {item.selectedBox && <p>Hộp: {item.selectedBox}</p>}
+                        {item.selectedLang && <p>NN: {item.selectedLang}</p>}
+                        {item.selectedVariants && Object.entries(item.selectedVariants).map(([k, v]) => (
+                          <p key={k}>{k}: {v}</p>
+                        ))}
+                        {item.quickAddAccessoryNames?.map(name => (
+                          <p key={name} className="text-emerald-600 dark:text-emerald-500">+ {name}</p>
+                        ))}
+                        {item.addSleeves && !item.quickAddAccessoryNames && <p className="text-emerald-600 dark:text-emerald-500">+ {(item as any).quickAddAccessoryName || 'Kèm Sleeves'}</p>}
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        {/* Quantity controls */}
+                        {onUpdateQuantity && onRemoveItem ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-600">
+                              <button
+                                onClick={() => {
+                                  if (item.quantity <= 1) {
+                                    onRemoveItem(item.id);
+                                  } else {
+                                    onUpdateQuantity(item.id, -1);
+                                  }
+                                }}
+                                className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-l-lg"
+                              >
+                                {item.quantity <= 1 ? <Trash2 className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                              </button>
+                              <span className="w-7 text-center text-xs font-bold text-gray-900 dark:text-white">{item.quantity}</span>
+                              <button
+                                onClick={() => onUpdateQuantity(item.id, 1)}
+                                disabled={item.product.stock !== undefined && totalProductQuantity >= item.product.stock}
+                                className={`p-1 transition-colors rounded-r-lg ${
+                                  item.product.stock !== undefined && totalProductQuantity >= item.product.stock
+                                    ? 'text-gray-200 dark:text-zinc-700 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                }`}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => onRemoveItem(item.id)}
+                              className="p-1 text-gray-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Xóa sản phẩm"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500 dark:text-zinc-400">SL: {item.quantity}</span>
+                        )}
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Points Usage */}

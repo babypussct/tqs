@@ -209,7 +209,7 @@ export default function App() {
                 <Route path="/product/:id" element={<ProductDetail onAddToCart={handleAddToCart} />} />
                 <Route path="/checkout" element={
                   <AuthRoute>
-                    <Checkout cartItems={cartItems} clearCart={clearCart} />
+                    <Checkout cartItems={cartItems} clearCart={clearCart} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveItem} />
                   </AuthRoute>
                 } />
                 <Route path="/profile" element={<Profile />} />

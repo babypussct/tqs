@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check, Lock } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check, Lock, Plus, Minus } from 'lucide-react';
 import { Product } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useProducts } from '../hooks/useProducts';
@@ -25,7 +25,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedQuickAdds, setSelectedQuickAdds] = useState<string[]>([]);
   const [activeImage, setActiveImage] = useState('');
-  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (product) {
@@ -44,7 +44,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       
       setSelectedQuickAdds([]);
       setActiveImage(product.image);
-      setSelectedAddonIds([]);
+      setAddonQuantities({});
       window.scrollTo(0, 0);
     }
   }, [product]);
@@ -93,8 +93,8 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const quickAddsPrice = quickAdds.filter(qa => selectedQuickAdds.includes(qa.name)).reduce((sum, qa) => sum + qa.price, 0);
   
   const addonProducts = products.filter(p => product.addonIds?.includes(p.id));
-  const addonsTotal = addonProducts.filter(p => selectedAddonIds.includes(p.id)).reduce((sum, p) => sum + p.price, 0);
-  
+  const addonsTotal = addonProducts.reduce((sum, p) => sum + p.price * (addonQuantities[p.id] || 0), 0);
+
   const totalPrice = product.price + BOX_UPGRADE_PRICE + customVariantsPrice + quickAddsPrice;
   const finalTotalPrice = totalPrice + addonsTotal;
 
@@ -128,10 +128,10 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       price: totalPrice
     });
     
-    // Add selected addons
-    selectedAddonIds.forEach(addonId => {
-      const addon = addonProducts.find(p => p.id === addonId);
-      if (addon) {
+    // Add selected addons with their respective quantities
+    addonProducts.forEach(addon => {
+      const qty = addonQuantities[addon.id] || 0;
+      for (let i = 0; i < qty; i++) {
         onAddToCart(addon, { price: addon.price });
       }
     });
@@ -379,37 +379,90 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                 <PackageOpen className="w-5 h-5 text-red-500" /> Thường được mua cùng
               </h3>
               <div className="bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
-                {addonProducts.map(addon => (
-                  <label key={addon.id} className="flex items-center gap-4 p-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-red-300 dark:hover:border-red-500/50 transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedAddonIds.includes(addon.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAddonIds([...selectedAddonIds, addon.id]);
-                        } else {
-                          setSelectedAddonIds(selectedAddonIds.filter(id => id !== addon.id));
-                        }
-                      }}
-                      className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500"
-                    />
-                    {addon.image ? (
-                      <img src={addon.image} alt={addon.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-zinc-800" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">Img</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">{addon.name}</h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-sm font-bold text-red-600 dark:text-red-500">{formatPrice(addon.price)}</span>
-                        {addon.originalPrice && (
-                          <span className="text-xs text-gray-400 line-through">{formatPrice(addon.originalPrice)}</span>
-                        )}
+                {addonProducts.map(addon => {
+                  const qty = addonQuantities[addon.id] || 0;
+                  const isSelected = qty > 0;
+                  return (
+                    <div
+                      key={addon.id}
+                      className={`flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 border rounded-xl transition-all ${
+                        isSelected
+                          ? 'border-red-400 dark:border-red-500/60 shadow-sm shadow-red-100 dark:shadow-red-900/20'
+                          : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {/* Image */}
+                      {addon.image ? (
+                        <img src={addon.image} alt={addon.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-zinc-800 shrink-0" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs shrink-0">Img</div>
+                      )}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">{addon.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-sm font-bold text-red-600 dark:text-red-500">{formatPrice(addon.price)}</span>
+                          {addon.originalPrice && (
+                            <span className="text-xs text-gray-400 line-through">{formatPrice(addon.originalPrice)}</span>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Quantity stepper */}
+                      {isSelected ? (
+                        <div className="flex items-center gap-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-600 rounded-lg shrink-0">
+                          <button
+                            onClick={() =>
+                              setAddonQuantities(prev => ({
+                                ...prev,
+                                [addon.id]: Math.max(0, (prev[addon.id] || 0) - 1)
+                              }))
+                            }
+                            className="p-1.5 text-gray-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 transition-colors"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">{qty}</span>
+                          <button
+                            onClick={() =>
+                              setAddonQuantities(prev => ({
+                                ...prev,
+                                [addon.id]: (prev[addon.id] || 0) + 1
+                              }))
+                            }
+                            disabled={addon.stock !== undefined && qty >= addon.stock}
+                            className={`p-1.5 transition-colors ${
+                              addon.stock !== undefined && qty >= addon.stock
+                                ? 'text-gray-200 dark:text-zinc-700 cursor-not-allowed'
+                                : 'text-gray-500 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-400'
+                            }`}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            setAddonQuantities(prev => ({ ...prev, [addon.id]: 1 }))
+                          }
+                          className="shrink-0 flex items-center gap-1 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        >
+                          <Plus className="w-3 h-3" /> Thêm
+                        </button>
+                      )}
                     </div>
-                  </label>
-                ))}
+                  );
+                })}
               </div>
+
+              {/* Addons subtotal */}
+              {addonsTotal > 0 && (
+                <div className="mt-2 flex items-center justify-between px-1 text-sm">
+                  <span className="text-gray-500 dark:text-zinc-400">Sản phẩm mua kèm:</span>
+                  <span className="font-bold text-red-600 dark:text-red-500">+{formatPrice(addonsTotal)}</span>
+                </div>
+              )}
             </div>
           )}
 
