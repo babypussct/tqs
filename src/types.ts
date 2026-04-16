@@ -61,6 +61,7 @@ export interface HeroConfig {
   side1: Banner;
   side2: Banner;
   effects?: HeroEffects;
+  trustChips?: { label: string; icon: string }[];
 }
 
 export interface HomepageConfig {

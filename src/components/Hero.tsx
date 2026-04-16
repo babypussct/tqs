@@ -4,7 +4,7 @@ import { HomepageConfig, HeroEffects } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 interface HeroProps {
-  data: HomepageConfig['hero'];
+  data: HomepageConfig['hero'] & { trustChips?: { label: string; icon: string }[] };
 }
 
 interface Particle {
@@ -331,11 +331,14 @@ export default function Hero({ data }: HeroProps) {
 
         {/* Stats / Trust quick chips */}
         <div className="flex flex-wrap items-center gap-4 mt-8">
-          {[
-            { label: 'Sản phẩm chính hãng', icon: '✦' },
-            { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
-            { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
-          ].map((item, i) => (
+          {(data.trustChips && data.trustChips.length > 0
+            ? data.trustChips
+            : [
+                { label: 'Sản phẩm chính hãng', icon: '✦' },
+                { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
+                { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+              ]
+          ).map((item, i) => (
             <span
               key={i}
               className="flex items-center gap-1.5 text-xs text-gray-300"

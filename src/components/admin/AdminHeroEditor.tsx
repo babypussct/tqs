@@ -692,7 +692,86 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             placeholder="Mô tả ngắn..." />
         </div>
         <Input label="Nút CTA" value={currentConcept.main.buttonText || ''} onChange={v => updateMain({ buttonText: v })} placeholder="Mua Ngay" />
+
+        {/* ─ Trust Chips ─ */}
+        <div className="pt-2 border-t border-slate-200 dark:border-zinc-800/40">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Dòng cam kết (Trust Chips)</p>
+              <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">Hiển thị bên dưới nút CTA trên Hero</p>
+            </div>
+            <button
+              onClick={() => {
+                const chips = currentConcept.trustChips || [
+                  { label: 'Sản phẩm chính hãng', icon: '✦' },
+                  { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
+                  { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+                ];
+                updateConcept({ trustChips: [...chips, { label: '', icon: '✦' }] });
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+              style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
+            >
+              <Plus className="w-3.5 h-3.5" /> Thêm dòng
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {(currentConcept.trustChips || [
+              { label: 'Sản phẩm chính hãng', icon: '✦' },
+              { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
+              { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+            ]).map((chip, idx) => {
+              const chips = currentConcept.trustChips || [
+                { label: 'Sản phẩm chính hãng', icon: '✦' },
+                { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
+                { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+              ];
+              return (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={chip.icon}
+                    onChange={e => {
+                      const updated = chips.map((c, i) => i === idx ? { ...c, icon: e.target.value } : c);
+                      updateConcept({ trustChips: updated });
+                    }}
+                    className="w-12 text-center bg-slate-50 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 rounded-lg px-2 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all"
+                    placeholder="✦"
+                    title="Icon/ký hiệu"
+                  />
+                  <input
+                    type="text"
+                    value={chip.label}
+                    onChange={e => {
+                      const updated = chips.map((c, i) => i === idx ? { ...c, label: e.target.value } : c);
+                      updateConcept({ trustChips: updated });
+                    }}
+                    className="flex-1 bg-slate-50 dark:bg-zinc-800/60 border border-slate-300 dark:border-zinc-700/60 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all placeholder-slate-400 dark:placeholder-zinc-600"
+                    placeholder="Nội dung cam kết..."
+                  />
+                  <button
+                    onClick={() => {
+                      const updated = chips.filter((_, i) => i !== idx);
+                      updateConcept({ trustChips: updated });
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-red-500/20 text-slate-400 dark:text-zinc-500 hover:text-red-400 shrink-0"
+                    title="Xóa dòng"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {!currentConcept.trustChips && (
+            <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-2">
+              💡 Đang dùng nội dung mặc định. Chỉnh sửa để lưu tùy chỉnh riêng cho concept này.
+            </p>
+          )}
+        </div>
       </Section>
+
 
       {/* ── 6. Banner phụ ── */}
       <Section title="Floating Cards (Banner Phụ)" icon={<ImageIcon className="w-4 h-4 text-rose-400" />} accent="rgba(244,63,94,0.12)" defaultOpen={false}>
