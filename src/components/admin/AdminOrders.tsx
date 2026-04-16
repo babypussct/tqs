@@ -6,11 +6,13 @@ import { toast } from 'sonner';
 import { useOrders } from '../../utils/useOrders';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
 import { Order } from '../../types';
+import AdminOrderDetailModal from './AdminOrderDetailModal';
 
 export default function AdminOrders() {
   const { orders, loading, updateOrderStatus, deleteOrder } = useOrders();
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [editingTracking, setEditingTracking] = useState<Record<string, boolean>>({});
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const handleTrackingSave = async (orderId: string) => {
     let code = trackingInputs[orderId]?.trim();
@@ -137,10 +139,7 @@ export default function AdminOrders() {
                 </div>
                 
                 <button
-                    onClick={() => {
-                        const alertStr = `Chi tiết Đơn:\n- Khách: ${order.shippingInfo.fullName}\n- SĐT: ${order.shippingInfo.phone}\n- Địa chỉ: ${order.shippingInfo.address}\n- Ghi chú: ${order.shippingInfo.notes || 'Không có'}`;
-                        alert(alertStr);
-                    }}
+                    onClick={() => setSelectedOrder(order)}
                     className="text-xs bg-slate-200 hover:bg-slate-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-slate-800 dark:text-zinc-200 px-3 py-1.5 rounded-lg flex items-center justify-center font-bold transition-colors"
                 >
                   <ShoppingBag className="w-3.5 h-3.5 mr-1.5" /> Chi tiết
@@ -198,13 +197,10 @@ export default function AdminOrders() {
                     <a href={`https://zalo.me/${order.shippingInfo.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded inline-flex items-center gap-1">💬 Zalo</a>
                   </div>
                   <button 
-                    onClick={() => {
-                      const alertStr = `Chi tiết:\nKhách: ${order.shippingInfo.fullName}\nSĐT: ${order.shippingInfo.phone}\nĐịa chỉ: ${order.shippingInfo.address}\nGhi chú: ${order.shippingInfo.notes || 'Không có'}`;
-                      alert(alertStr);
-                    }}
+                    onClick={() => setSelectedOrder(order)}
                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
                   >
-                    Xem địa chỉ <ChevronRight className="w-3 h-3" />
+                    Xem chi tiết <ChevronRight className="w-3 h-3" />
                   </button>
                 </td>
                 <td className="px-6 py-4 max-w-[200px]">
@@ -340,6 +336,13 @@ export default function AdminOrders() {
           </tbody>
         </table>
       </div>
+      {selectedOrder && (
+        <AdminOrderDetailModal 
+          order={selectedOrder} 
+          onClose={() => setSelectedOrder(null)} 
+          updateOrderStatus={updateOrderStatus} 
+        />
+      )}
     </div>
   );
 }
