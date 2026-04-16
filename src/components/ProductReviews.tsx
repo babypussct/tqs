@@ -103,7 +103,22 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
         comment: comment.trim(),
         createdAt: serverTimestamp()
       });
-      
+
+      // Thông báo Telegram
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'NEW_REVIEW',
+          payload: {
+            productName: productId, // sẽ hiển thị productId, admin có thể tra cứu
+            userName: user.displayName || 'Người dùng ẩn danh',
+            rating,
+            comment: comment.trim()
+          }
+        })
+      }).catch(() => {});
+
       setComment('');
       setRating(5);
     } catch (err) {

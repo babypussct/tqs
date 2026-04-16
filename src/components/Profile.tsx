@@ -155,6 +155,22 @@ export default function Profile() {
       });
       
       toast.success(`Cảm ơn bạn! Đã cộng ${earnedPoints} điểm thưởng vào tài khoản.`);
+
+      // Thông báo Telegram
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'ORDER_DELIVERED',
+          payload: {
+            orderId: order.id,
+            customerName: order.shippingInfo.fullName,
+            phone: order.shippingInfo.phone,
+            amount: order.finalAmount || order.totalAmount,
+            earnedPoints
+          }
+        })
+      }).catch(() => {});
     } catch (error) {
       toast.error('Có lỗi xảy ra khi cập nhật.');
       console.error(error);

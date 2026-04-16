@@ -572,6 +572,7 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
               notes: shippingInfo.notes,
               amount: finalAmount,
               paymentMethod: paymentMethod,
+              riskScore,
               items: cartItems.map(item => ({
                 name: item.product.name,
                 quantity: item.quantity,
