@@ -703,9 +703,9 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
             <button
               onClick={() => {
                 const chips = currentConcept.trustChips || [
-                  { label: 'Sản phẩm chính hãng', icon: '✦' },
-                  { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
-                  { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+                  { label: 'Sản phẩm Việt hóa chuẩn 100%', icon: '✦' },
+                  { label: 'Hỗ trợ giải đáp thắc mắc', icon: '✦' },
+                  { label: 'Cộng đồng kết nối đông đảo', icon: '✦' },
                 ];
                 updateConcept({ trustChips: [...chips, { label: '', icon: '✦' }] });
               }}
@@ -718,14 +718,14 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
 
           <div className="space-y-2">
             {(currentConcept.trustChips || [
-              { label: 'Sản phẩm chính hãng', icon: '✦' },
-              { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
-              { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+              { label: 'Sản phẩm Việt hóa chuẩn 100%', icon: '✦' },
+              { label: 'Hỗ trợ giải đáp thắc mắc', icon: '✦' },
+              { label: 'Cộng đồng kết nối đông đảo', icon: '✦' },
             ]).map((chip, idx) => {
               const chips = currentConcept.trustChips || [
-                { label: 'Sản phẩm chính hãng', icon: '✦' },
-                { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
-                { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+                { label: 'Sản phẩm Việt hóa chuẩn 100%', icon: '✦' },
+                { label: 'Hỗ trợ giải đáp thắc mắc', icon: '✦' },
+                { label: 'Cộng đồng kết nối đông đảo', icon: '✦' },
               ];
               return (
                 <div key={idx} className="flex items-center gap-2">

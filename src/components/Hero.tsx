@@ -334,9 +334,9 @@ export default function Hero({ data }: HeroProps) {
           {(data.trustChips && data.trustChips.length > 0
             ? data.trustChips
             : [
-                { label: 'Sản phẩm chính hãng', icon: '✦' },
-                { label: 'Đóng gói chuẩn sưu tầm', icon: '✦' },
-                { label: 'Hoàn tiền nếu móp hộp', icon: '✦' },
+                { label: 'Sản phẩm Việt hóa chuẩn 100%', icon: '✦' },
+                { label: 'Hỗ trợ giải đáp thắc mắc', icon: '✦' },
+                { label: 'Cộng đồng kết nối đông đảo', icon: '✦' },
               ]
           ).map((item, i) => (
             <span
