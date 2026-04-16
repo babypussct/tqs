@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Menu, User as UserIcon, LogOut, Settings, Moon, Sun, ShoppingBag, X } from 'lucide-react';
+import { ShoppingCart, Search, Menu, User as UserIcon, LogOut, Settings, Moon, Sun, ShoppingBag, X, Bell } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationConfig } from '../hooks/useNavigationConfig';
+import { useNotifications } from '../hooks/useNotifications';
+import NotificationDrawer from './NotificationDrawer';
 
 interface HeaderProps {
   cartCount: number;
@@ -18,11 +20,13 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
   
   // Custom navigation
   const { config: navConfig, loading: navLoading } = useNavigationConfig();
+  const { unreadCount } = useNotifications();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
   const isHome = location.pathname === '/';
 
@@ -246,6 +250,16 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
                         <p className="text-xs truncate text-gray-500 dark:text-gray-400 mt-0.5">{user.email}</p>
                       </div>
                       <div className="p-1.5">
+                        <button onClick={() => setNotificationOpen(true)} className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg flex items-center justify-between transition-colors text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-amber-500">
+                          <div className="flex items-center gap-2">
+                             <Bell className="w-4 h-4" /> Thông báo
+                          </div>
+                          {unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </button>
                         <button onClick={() => navigate('/profile')} className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-red-500">
                           <ShoppingBag className="w-4 h-4" /> Đơn hàng của tôi
                         </button>
@@ -383,21 +397,53 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
             {/* Bottom Auth area */}
             <div className="p-6 border-t border-gray-200 dark:border-white/10">
               {user ? (
-                <div className="flex items-center gap-3">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-zinc-700" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
-                      {user.displayName?.charAt(0) || 'U'}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-zinc-700" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                        {user.displayName?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.displayName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.displayName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-zinc-800 rounded-full">
+                      <LogOut className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-zinc-800 rounded-full">
-                    <LogOut className="h-4 w-4" />
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => {setNotificationOpen(true); setMobileMenuOpen(false);}} 
+                      className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+                    >
+                      <Bell className="w-4 h-4" />
+                      Thông báo
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => {navigate('/profile'); setMobileMenuOpen(false);}} 
+                      className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      Đơn hàng
+                    </button>
+                    {isAdmin && (
+                      <button 
+                        onClick={() => {navigate('/admin'); setMobileMenuOpen(false);}} 
+                        className="col-span-2 flex items-center justify-center gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors text-sm font-medium text-amber-700 dark:text-amber-500"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Bảng Quản Trị
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <button
@@ -411,6 +457,12 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
           </div>
         </div>
       )}
+
+      {/* Notification Drawer */}
+      <NotificationDrawer 
+        isOpen={notificationOpen} 
+        onClose={() => setNotificationOpen(false)} 
+      />
     </>
   );
 }
