@@ -51,9 +51,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const update = req.body;
     
-    // Nếu tin nhắn là dạng chữ (Tra cứu /don)
+    // Nếu tin nhắn là dạng chữ (Tra cứu /don hoặc reply)
     if (update.message && update.message.text) {
       const text = update.message.text.trim();
+
+      // Xử lý reply tin nhắn để thêm note
+      if (update.message.reply_to_message && update.message.reply_to_message.text) {
+        const replyText = update.message.reply_to_message.text;
+        const noteMatch = replyText.match(/Mã đơn:\s*#([A-Za-z0-9]+)/);
+        if (noteMatch) {
+          const orderId = noteMatch[1].toUpperCase();
+          const dbId = process.env.FIREBASE_DATABASE_ID || 'ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b';
+          const db = getFirestore(admin.app(), dbId);
+          const orderRef = db.collection('orders').doc(orderId);
+          
+          try {
+            const orderSnap = await orderRef.get();
+            if (orderSnap.exists) {
+              const currentOrder = orderSnap.data();
+              const prevNotes = currentOrder?.adminNotes ? currentOrder.adminNotes + '\n' : '';
+              await orderRef.update({
+                adminNotes: prevNotes + `- ${text}`
+              });
+              
+              await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: update.message.chat.id,
+                  text: `✅ Đã lưu ghi chú cho đơn <b>#${orderId}</b>`,
+                  reply_to_message_id: update.message.message_id,
+                  parse_mode: 'HTML'
+                })
+              });
+            }
+          } catch(e) {
+            console.error('Error saving admin note:', e);
+          }
+          return res.status(200).json({ success: true });
+        }
+      }
+
       const match = text.match(/^\/(?:don|order)(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]+)/i);
       
       if (match) {
@@ -86,7 +124,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             msg += `SĐT: <code>${currentOrder?.shippingInfo?.phone || 'N/A'}</code>\n`;
             msg += `Địa chỉ: ${currentOrder?.shippingInfo?.address || 'N/A'}\n`;
             if (currentOrder?.shippingInfo?.notes) msg += `Ghi chú: <i>${currentOrder?.shippingInfo?.notes}</i>\n`;
+            if (currentOrder?.adminNotes) msg += `📝 Ghi chú Admin: <b>${currentOrder?.adminNotes}</b>\n`;
             msg += `------------------\n`;
+            if (currentOrder?.items && currentOrder?.items.length > 0) {
+              currentOrder.items.forEach((item: any) => {
+                msg += `- ${item.quantity} x ${item.name} (${item.price?.toLocaleString('vi-VN')}đ)\n`;
+              });
+              msg += `------------------\n`;
+            }
             
             const finalAm = currentOrder?.finalAmount || currentOrder?.totalAmount || 0;
             msg += `Số tiền: <b>${finalAm.toLocaleString('vi-VN')} đ</b>\n`;

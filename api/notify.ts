@@ -35,6 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message += `Địa chỉ: ${payload.address || 'N/A'}\n`;
       if (payload.notes) message += `Ghi chú: <i>${payload.notes}</i>\n`;
       message += `------------------\n`;
+      if (payload.items && payload.items.length > 0) {
+        payload.items.forEach((item: any) => {
+          message += `- ${item.quantity} x ${item.name} (${item.price?.toLocaleString('vi-VN')}đ)\n`;
+        });
+        message += `------------------\n`;
+      }
       message += `Số tiền: <b>${payload.amount?.toLocaleString('vi-VN')} đ</b>\n`;
       message += `Phương thức: <b>${payload.paymentMethod === 'vietqr' ? 'Chuyển khoản (VietQR)' : 'Tiền mặt (COD)'}</b>\n`;
       

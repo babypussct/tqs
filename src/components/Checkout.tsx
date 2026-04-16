@@ -569,7 +569,12 @@ export default function Checkout({ cartItems, clearCart }: CheckoutProps) {
               address: shippingInfo.address,
               notes: shippingInfo.notes,
               amount: finalAmount,
-              paymentMethod: paymentMethod
+              paymentMethod: paymentMethod,
+              items: cartItems.map(item => ({
+                name: item.product.name,
+                quantity: item.quantity,
+                price: item.price
+              }))
             }
           })
         }).catch(err => console.log('Telegram Notify Error:', err));
