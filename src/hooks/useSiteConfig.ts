@@ -10,9 +10,9 @@ export interface SiteConfig {
 }
 
 const DEFAULT_CONFIG: SiteConfig = {
-  siteTitle: 'My Google AI Studio App',
+  siteTitle: 'TQSShop Online - By Otada',
   siteFavicon: '/favicon.ico', // Or whatever default they have
-  packagingCommitment: 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!'
+  packagingCommitment: 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>.'
 };
 
 export function useSiteConfig() {
