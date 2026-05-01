@@ -61,6 +61,24 @@ export default function App() {
     localStorage.setItem('tqs_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
+  // ――― Service Worker Update Notification ―――
+  useEffect(() => {
+    const handleSWUpdate = () => {
+      toast('🚀 Có phiên bản mới!', {
+        description: 'TQSShop đã được cập nhật. Tải lại để dùng phiên bản mới nhất.',
+        action: {
+          label: 'Cập nhật ngay',
+          onClick: () => window.location.reload(),
+        },
+        duration: 10000,
+        dismissible: true,
+      });
+    };
+
+    window.addEventListener('sw-updated', handleSWUpdate);
+    return () => window.removeEventListener('sw-updated', handleSWUpdate);
+  }, []);
+
   // Test Firebase Connection
   useEffect(() => {
     async function testConnection() {

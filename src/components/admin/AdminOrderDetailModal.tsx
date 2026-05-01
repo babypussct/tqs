@@ -5,6 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { toast } from 'sonner';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
+import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 interface AdminOrderDetailModalProps {
   order: Order;
@@ -210,14 +211,16 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
                <div className="divide-y divide-slate-100 dark:divide-zinc-800 max-h-[300px] overflow-y-auto">
                  {order.items.map((item, index) => (
                    <div key={index} className="px-5 py-4 flex items-start gap-4 hover:bg-slate-50/50 dark:hover:bg-zinc-800/50 transition-colors">
-                     <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-900 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-zinc-700">
-                        <img 
-                          src={item.image || 'https://via.placeholder.com/150'} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150' }}
-                        />
-                     </div>
+                      <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-900 rounded-lg overflow-hidden flex-shrink-0 border border-slate-200 dark:border-zinc-700">
+                         <img 
+                           src={cloudinaryUrl(item.image, { width: 80, quality: 'auto:low' }) || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e5e7eb%22/%3E%3C/svg%3E'} 
+                           alt={item.name}
+                           loading="lazy"
+                           decoding="async"
+                           className="w-full h-full object-cover"
+                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                         />
+                      </div>
                      <div className="flex-1 min-w-0">
                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm line-clamp-2">{item.name}</h4>
                        

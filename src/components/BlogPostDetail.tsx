@@ -6,6 +6,7 @@ import { Post } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { Calendar, Eye, User, ArrowLeft, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 export default function BlogPostDetail() {
   const { slug } = useParams();
@@ -116,8 +117,11 @@ export default function BlogPostDetail() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
           <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-zinc-700/50 bg-slate-100 dark:bg-zinc-800">
             <img 
-              src={post.thumbnail} 
+              src={cloudinaryUrl(post.thumbnail, { width: 1200, quality: 'auto:good' })} 
               alt={post.title} 
+              // @ts-ignore
+              fetchpriority="high"
+              decoding="async"
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />

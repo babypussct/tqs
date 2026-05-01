@@ -6,6 +6,69 @@ interface UseCloudinaryUploadResult {
   uploadFile: (file: File) => Promise<string | null>;
 }
 
+/** Kích thước tối đa và quality khi nén ảnh client-side trước upload */
+const MAX_IMAGE_DIMENSION = 1920;
+const IMAGE_QUALITY = 0.82; // 0.82 = cân bằng chất lượng/size tốt nhất
+
+/**
+ * Nén ảnh phía client trước khi upload lên Cloudinary.
+ * - Resize về max 1920px (giữ tỷ lệ)
+ * - Nén JPEG quality 0.82
+ * - Giảm ~60% dung lượng so với ảnh gốc
+ * - Video/GIF/SVG: trả về file gốc, không xử lý
+ */
+async function compressImage(file: File): Promise<File> {
+  // Chỉ nén ảnh JPEG/PNG/WebP — bỏ qua video, GIF, SVG
+  const compressibleTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!compressibleTypes.includes(file.type)) return file;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Tính toán kích thước mới (giữ tỷ lệ)
+        let { width, height } = img;
+        if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+          if (width > height) {
+            height = Math.round((height * MAX_IMAGE_DIMENSION) / width);
+            width = MAX_IMAGE_DIMENSION;
+          } else {
+            width = Math.round((width * MAX_IMAGE_DIMENSION) / height);
+            height = MAX_IMAGE_DIMENSION;
+          }
+        }
+
+        // Vẽ lên canvas và xuất ra JPEG nén
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(file); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            const compressed = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            // Chỉ dùng bản nén nếu nhỏ hơn file gốc
+            resolve(compressed.size < file.size ? compressed : file);
+          },
+          'image/jpeg',
+          IMAGE_QUALITY
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function useCloudinaryUpload(): UseCloudinaryUploadResult {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -21,11 +84,14 @@ export function useCloudinaryUpload(): UseCloudinaryUploadResult {
     setIsUploading(true);
 
     try {
+      // Nén ảnh client-side trước khi upload (video/GIF/SVG không bị ảnh hưởng)
+      const fileToUpload = await compressImage(file);
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
       formData.append('upload_preset', uploadPreset);
 
-      // Using auto resource_type correctly handles both videos and images
+      // resource_type=auto xử lý đúng cả video lẫn ảnh
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
         method: 'POST',
         body: formData,

@@ -10,6 +10,7 @@ import { useProducts } from '../../hooks/useProducts';
 import { useProductConfig } from '../../hooks/useProductConfig';
 import { ImageUploader } from '../ui/ImageUploader';
 import { RichTextEditor } from '../ui/RichTextEditor';
+import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 export default function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -531,7 +532,7 @@ export default function AdminProductForm() {
                           className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                         />
                         {p.image ? (
-                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                          <img src={cloudinaryUrl(p.image, { width: 60, quality: 'auto:low' })} alt={p.name} loading="lazy" decoding="async" className="w-10 h-10 rounded-lg object-cover" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
                             <ImageIcon className="w-5 h-5 text-slate-400" />

@@ -13,6 +13,7 @@ import { useRewardsConfig } from '../utils/useRewardsConfig';
 import VietnamAddressSelector from './ui/VietnamAddressSelector';
 import { AppUser } from '../types';
 import { onSnapshot } from 'firebase/firestore';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface CheckoutProps {
   cartItems: CartItem[];
@@ -840,7 +841,7 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
                   <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3 border border-gray-100 dark:border-zinc-700/50">
                     <div className="w-14 h-14 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
                       {item.product.image ? (
-                        <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={cloudinaryUrl(item.product.image, { width: 80, quality: 'auto:low' })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                       )}

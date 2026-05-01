@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useRewardsConfig } from '../utils/useRewardsConfig';
 import VoucherCenter from './VoucherCenter';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -217,7 +218,7 @@ export default function Profile() {
         <div className="flex flex-col md:flex-row md:items-end gap-4 mb-8">
           <div className="relative inline-block w-fit">
             {user.photoURL ? (
-              <img src={user.photoURL} alt="Avatar" className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 shadow-xl object-cover bg-white" referrerPolicy="no-referrer" />
+              <img src={cloudinaryUrl(user.photoURL, { width: 200, quality: 'auto' })} alt="Avatar" className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-zinc-900 shadow-xl object-cover bg-white" referrerPolicy="no-referrer" />
             ) : (
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 text-4xl font-bold border-4 border-white dark:border-zinc-900 shadow-xl">
                 {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
@@ -362,7 +363,7 @@ export default function Profile() {
                          <div key={order.id} className="p-4 border-b border-gray-100 dark:border-zinc-800 last:border-0 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                             <div className="flex items-center gap-4">
                                <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 p-2 shrink-0">
-                                  {order.items[0]?.image ? <img src={order.items[0].image} className="w-full h-full object-cover rounded" referrerPolicy="no-referrer"/> : <Package className="w-full h-full text-slate-400"/>}
+                                  {order.items[0]?.image ? <img src={cloudinaryUrl(order.items[0].image, { width: 80, quality: 'auto:low' })} loading="lazy" decoding="async" className="w-full h-full object-cover rounded" referrerPolicy="no-referrer"/> : <Package className="w-full h-full text-slate-400"/>}
                                </div>
                                <div>
                                  <p className="font-bold text-gray-900 dark:text-white text-sm">#{order.id.slice(-6).toUpperCase()} <span className="font-normal text-gray-500 dark:text-zinc-500 ml-2">{(order.finalAmount || order.totalAmount).toLocaleString('vi-VN')}đ</span></p>
@@ -477,7 +478,7 @@ export default function Profile() {
                            {order.items.map((item, index) => (
                              <div key={index} className="flex gap-4">
                                {item.image ? (
-                                 <img src={item.image} alt={item.name} className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm" referrerPolicy="no-referrer" />
+                                 <img src={cloudinaryUrl(item.image, { width: 100, quality: 'auto:low' })} alt={item.name} loading="lazy" decoding="async" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm" referrerPolicy="no-referrer" />
                                ) : (
                                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border border-gray-100 dark:border-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs shadow-sm bg-gray-50 dark:bg-zinc-950">Img</div>
                                )}

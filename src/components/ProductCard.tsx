@@ -1,6 +1,7 @@
 import { Product } from '../types';
 import { ShoppingCart, AlertTriangle, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface ProductCardProps {
   product: Product;
@@ -48,8 +49,10 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
         </div>
         {product.image ? (
           <img 
-            src={product.image} 
+            src={cloudinaryUrl(product.image, { width: 400, quality: 'auto' })}
             alt={product.name} 
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
             referrerPolicy="no-referrer"
           />

@@ -4,6 +4,7 @@ import { CartItem } from '../types';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -130,7 +131,7 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
               <div key={item.id} className="flex gap-4 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm">
                 <Link to={`/product/${item.product.id}`} onClick={onClose} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-50 dark:bg-zinc-800 shrink-0 border border-gray-100 dark:border-zinc-700 block transition-transform hover:scale-105">
                   {item.product.image ? (
-                    <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <img src={cloudinaryUrl(item.product.image, { width: 100, quality: 'auto:low' })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                   )}

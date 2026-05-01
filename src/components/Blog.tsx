@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePosts } from '../hooks/usePosts';
 import { Clock, Eye, ChevronRight, FileText, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 export default function Blog() {
   const { posts, loading } = usePosts();
@@ -83,8 +84,10 @@ export default function Blog() {
                 <div className="relative h-56 w-full overflow-hidden bg-slate-100 dark:bg-zinc-800">
                   {post.thumbnail ? (
                     <img 
-                      src={post.thumbnail} 
+                      src={cloudinaryUrl(post.thumbnail, { width: 600, quality: 'auto' })} 
                       alt={post.title} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       referrerPolicy="no-referrer"
                     />

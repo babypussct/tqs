@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { HomepageConfig, HeroEffects } from '../../types';
 import { ImageUploader } from '../ui/ImageUploader';
+import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 const DEFAULT_EFFECTS: HeroEffects = {
   particleEnabled: true,
@@ -787,7 +788,7 @@ export default function AdminHeroEditor({ homeConfig, setHomeConfig }: Props) {
                 </div>
                 {/* mini preview */}
                 <div className="h-16 rounded-xl overflow-hidden relative border border-white/5">
-                  {currentConcept[side].image && <img src={currentConcept[side].image} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />}
+                  {currentConcept[side].image && <img src={cloudinaryUrl(currentConcept[side].image, { width: 800, quality: 'auto' })} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-2.5">
                     <p className="text-white text-xs font-bold">{currentConcept[side].title}</p>
                     <p className="text-indigo-600 dark:text-indigo-400 text-[10px]">{currentConcept[side].subtitle}</p>

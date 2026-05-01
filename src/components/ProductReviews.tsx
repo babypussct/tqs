@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Review, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { Star, Trash2, User, MessageSquareReply, ShieldCheck } from 'lucide-react';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface ProductReviewsProps {
   productId: string;
@@ -261,7 +262,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   {review.userPhoto ? (
-                    <img src={review.userPhoto} alt={review.userName} className="w-10 h-10 rounded-full border border-gray-200 dark:border-zinc-700" referrerPolicy="no-referrer" />
+                    <img src={cloudinaryUrl(review.userPhoto, { width: 80, quality: 'auto' })} alt={review.userName} className="w-10 h-10 rounded-full border border-gray-200 dark:border-zinc-700" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-zinc-800 flex items-center justify-center text-gray-500 dark:text-zinc-400">
                       <User className="w-5 h-5" />

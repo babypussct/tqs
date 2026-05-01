@@ -7,6 +7,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import ProductReviews from './ProductReviews';
 import ProductCard from './ProductCard';
+import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface ProductDetailProps {
   onAddToCart: (product: Product, variants: { selectedBox?: string, selectedLang?: string, selectedVariants?: Record<string, string>, addSleeves?: boolean, quickAddAccessoryNames?: string[], price: number }) => void;
@@ -158,8 +159,11 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             )}
             {activeImage ? (
               <img 
-                src={activeImage} 
+                src={cloudinaryUrl(activeImage, { width: 800, quality: 'auto:good' })} 
                 alt={product.name} 
+                // @ts-ignore
+                fetchpriority="high"
+                decoding="async"
                 className="w-full h-auto max-h-[600px] object-contain"
                 referrerPolicy="no-referrer"
               />
@@ -176,7 +180,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                 className={`w-20 h-20 shrink-0 rounded-xl border-2 overflow-hidden transition-all ${activeImage === product.image ? 'border-red-500 shadow-md' : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-700'}`}
               >
                 {product.image ? (
-                  <img src={product.image} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
+                  <img src={cloudinaryUrl(product.image, { width: 100, quality: 'auto:low' })} className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                 )}
@@ -188,7 +192,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                   className={`w-20 h-20 shrink-0 rounded-xl border-2 overflow-hidden bg-white dark:bg-zinc-900 transition-all ${activeImage === img ? 'border-red-500 shadow-md' : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-700'}`}
                 >
                   {img ? (
-                    <img src={img} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
+                    <img src={cloudinaryUrl(img, { width: 100, quality: 'auto:low' })} className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                   )}
@@ -393,7 +397,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                     >
                       {/* Image */}
                       {addon.image ? (
-                        <img src={addon.image} alt={addon.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-zinc-800 shrink-0" referrerPolicy="no-referrer" />
+                        <img src={cloudinaryUrl(addon.image, { width: 60, quality: 'auto:low' })} alt={addon.name} loading="lazy" decoding="async" className="w-12 h-12 rounded-lg object-cover border border-gray-100 dark:border-zinc-800 shrink-0" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-12 h-12 rounded-lg border border-gray-100 dark:border-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs shrink-0">Img</div>
                       )}

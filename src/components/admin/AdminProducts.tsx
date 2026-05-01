@@ -6,6 +6,7 @@ import { Package, Edit, Trash2, Search, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner';
 import { useProducts } from '../../hooks/useProducts';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
+import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 export default function AdminProducts() {
   const { products, loading } = useProducts(false);
@@ -76,7 +77,7 @@ export default function AdminProducts() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
                         {p.image ? (
-                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          <img src={cloudinaryUrl(p.image, { width: 80, quality: 'auto:low' })} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           <ImageIcon className="w-4 h-4 text-slate-400" />
                         )}

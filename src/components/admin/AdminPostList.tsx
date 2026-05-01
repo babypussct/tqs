@@ -7,6 +7,7 @@ import { Post } from '../../types';
 import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
 import { Plus, Edit, Trash2, Search, FileText, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 export default function AdminPostList() {
   const { posts, loading } = usePosts();
@@ -81,7 +82,7 @@ export default function AdminPostList() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
                         {post.thumbnail ? (
-                          <img src={post.thumbnail} alt={post.title} className="w-full h-full object-cover" />
+                          <img src={cloudinaryUrl(post.thumbnail, { width: 100, quality: 'auto:low' })} alt={post.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                         ) : (
                           <ImageIcon className="w-5 h-5 text-slate-400" />
                         )}
