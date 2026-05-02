@@ -426,7 +426,7 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
 
     setIsSubmitting(true);
     try {
-      const completedOrderId = await runTransaction(db, async (transaction) => {
+      const { id: completedOrderId, riskScore: completedRiskScore } = await runTransaction(db, async (transaction) => {
         // 1. Read all products to check stock
         const productRefs = cartItems.map(item => doc(db, 'products', item.product.id));
         const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
@@ -551,7 +551,7 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
         setOrderFinalAmount(finalAmount);
         setOrderTotalAmount(totalAmount);
         
-        return orderRef.id;
+        return { id: orderRef.id, riskScore };
       });
 
       clearCart();
@@ -573,7 +573,7 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
               notes: shippingInfo.notes,
               amount: finalAmount,
               paymentMethod: paymentMethod,
-              riskScore,
+              riskScore: completedRiskScore,
               items: cartItems.map(item => ({
                 name: item.product.name,
                 quantity: item.quantity,
