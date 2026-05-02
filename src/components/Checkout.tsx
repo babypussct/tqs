@@ -14,15 +14,12 @@ import VietnamAddressSelector from './ui/VietnamAddressSelector';
 import { AppUser } from '../types';
 import { onSnapshot } from 'firebase/firestore';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { useCart } from '../contexts/CartContext';
+import VietQRModal from './checkout/VietQRModal';
+import OrderSummary from './checkout/OrderSummary';
 
-interface CheckoutProps {
-  cartItems: CartItem[];
-  clearCart: () => void;
-  onUpdateQuantity?: (id: string, deltaOrQuantity: number, isAbsolute?: boolean) => void;
-  onRemoveItem?: (id: string) => void;
-}
-
-export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRemoveItem }: CheckoutProps) {
+export default function Checkout() {
+  const { cartItems, clearCart, updateQuantity: onUpdateQuantity, removeItem: onRemoveItem } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { paymentConfig, loading: paymentLoading } = usePaymentConfig();
@@ -599,80 +596,14 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
   if (isSuccess) {
     if (paymentMethod === 'vietqr') {
       return (
-        <div className="max-w-3xl mx-auto px-4 py-16 sm:px-6 sm:py-24 lg:px-8 text-center">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 border border-gray-200 dark:border-zinc-800 shadow-sm max-w-md mx-auto">
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Thanh toán đơn hàng</h1>
-            <p className="text-gray-500 dark:text-zinc-400 mb-6 text-sm">
-              Vui lòng quét mã QR bên dưới bằng ứng dụng ngân hàng của bạn để thanh toán.
-            </p>
-            <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 mb-6 flex flex-col items-center justify-center">
-              <div className="bg-white dark:bg-white p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 flex items-center justify-center w-full max-w-[320px] mx-auto">
-                <img 
-                  src={`https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.template}.png?amount=${orderFinalAmount || orderTotalAmount}&addInfo=${createdOrderId}&accountName=${encodeURIComponent(paymentConfig.accountName)}`} 
-                  alt="VietQR" 
-                  className="w-full h-auto aspect-square object-contain rounded-xl"
-                />
-              </div>
-              
-              <div className="w-full mt-6 space-y-3 bg-white dark:bg-zinc-900 p-4 rounded-lg border border-gray-200 dark:border-zinc-800">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-zinc-400">Ngân hàng:</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{paymentConfig.bankId}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm group">
-                  <span className="text-gray-500 dark:text-zinc-400">Mã đơn (Nội dung):</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{createdOrderId}</span>
-                    <button onClick={() => { navigator.clipboard.writeText(createdOrderId); toast.success('Đã copy nội dung'); }} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm group">
-                  <span className="text-gray-500 dark:text-zinc-400">Số tài khoản:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-gray-900 dark:text-white">{paymentConfig.accountNumber}</span>
-                    <button onClick={() => { navigator.clipboard.writeText(paymentConfig.accountNumber); toast.success('Đã copy số tài khoản'); }} className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm group">
-                  <span className="text-gray-500 dark:text-zinc-400">Số tiền:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-red-600 dark:text-red-500">{(orderFinalAmount || orderTotalAmount).toLocaleString('vi-VN')}</span>
-                    <button onClick={() => { navigator.clipboard.writeText((orderFinalAmount || orderTotalAmount).toString()); toast.success('Đã copy số tiền'); }} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-center text-gray-500 dark:text-zinc-400 mt-4 leading-relaxed font-medium">
-                {paymentConfig.paymentNote}
-              </p>
-            </div>
-
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  toast.success('Đang chờ xác nhận thanh toán');
-                  navigate('/profile');
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-xl font-bold transition-colors shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-5 h-5" /> Tôi đã chuyển khoản
-              </button>
-              <button
-                onClick={() => navigate('/profile')}
-                className="w-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white px-8 py-3.5 rounded-xl font-bold transition-colors"
-              >
-                Thanh toán sau
-              </button>
-            </div>
-          </div>
-        </div>
+        <VietQRModal
+          paymentConfig={paymentConfig}
+          orderFinalAmount={orderFinalAmount}
+          orderTotalAmount={orderTotalAmount}
+          createdOrderId={createdOrderId}
+          onConfirm={() => navigate('/profile')}
+          onLater={() => navigate('/profile')}
+        />
       );
     }
 
@@ -829,248 +760,32 @@ export default function Checkout({ cartItems, clearCart, onUpdateQuantity, onRem
 
         {/* Order Summary */}
         <div className="lg:col-span-5">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-zinc-800 shadow-sm sticky top-24">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Đơn hàng của bạn</h2>
-            
-            <div className="space-y-3 mb-6 max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar">
-              {cartItems.map((item) => {
-                const totalProductQuantity = cartItems
-                  .filter(i => i.product.id === item.product.id)
-                  .reduce((sum, i) => sum + i.quantity, 0);
-                return (
-                  <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-3 border border-gray-100 dark:border-zinc-700/50">
-                    <div className="w-14 h-14 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
-                      {item.product.image ? (
-                        <img src={cloudinaryUrl(item.product.image, { width: 80, quality: 'auto:low' })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{item.product.name}</h4>
-                      <div className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 space-y-0.5">
-                        {item.selectedBox && <p>Hộp: {item.selectedBox}</p>}
-                        {item.selectedLang && <p>NN: {item.selectedLang}</p>}
-                        {item.selectedVariants && Object.entries(item.selectedVariants).map(([k, v]) => (
-                          <p key={k}>{k}: {v}</p>
-                        ))}
-                        {item.quickAddAccessoryNames?.map(name => (
-                          <p key={name} className="text-emerald-600 dark:text-emerald-500">+ {name}</p>
-                        ))}
-                        {item.addSleeves && !item.quickAddAccessoryNames && <p className="text-emerald-600 dark:text-emerald-500">+ {(item as any).quickAddAccessoryName || 'Kèm Sleeves'}</p>}
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        {/* Quantity controls */}
-                        {onUpdateQuantity && onRemoveItem ? (
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-600">
-                              <button
-                                onClick={() => {
-                                  if (item.quantity <= 1) {
-                                    onRemoveItem(item.id);
-                                  } else {
-                                    onUpdateQuantity(item.id, -1);
-                                  }
-                                }}
-                                className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-l-lg"
-                              >
-                                {item.quantity <= 1 ? <Trash2 className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-                              </button>
-                              <span className="w-7 text-center text-xs font-bold text-gray-900 dark:text-white">{item.quantity}</span>
-                              <button
-                                onClick={() => onUpdateQuantity(item.id, 1)}
-                                disabled={item.product.stock !== undefined && totalProductQuantity >= item.product.stock}
-                                className={`p-1 transition-colors rounded-r-lg ${
-                                  item.product.stock !== undefined && totalProductQuantity >= item.product.stock
-                                    ? 'text-gray-200 dark:text-zinc-700 cursor-not-allowed'
-                                    : 'text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400'
-                                }`}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => onRemoveItem(item.id)}
-                              className="p-1 text-gray-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                              title="Xóa sản phẩm"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-500 dark:text-zinc-400">SL: {item.quantity}</span>
-                        )}
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">
-                          {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Points Usage */}
-            {rewardsConfig?.isActive && userProfile && userProfile.points > 0 && (
-              <div className="border-t border-gray-200 dark:border-zinc-800 pt-6 mb-6">
-                <h3 className="text-sm font-bold text-yellow-500 mb-3 flex items-center gap-2">
-                  <Ticket className="w-4 h-4" /> Điểm thưởng: <span className="text-gray-900 dark:text-white font-mono">{userProfile.points.toLocaleString()}</span>
-                </h3>
-                
-                { appliedPoints > 0 ? (
-                  <div className="flex items-center justify-between bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-xl p-3">
-                    <div className="flex items-center gap-2">
-                       <CheckCircle2 className="w-5 h-5 text-yellow-500" />
-                       <div>
-                         <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400">Đã dùng {appliedPoints} điểm</p>
-                         <p className="text-xs text-yellow-600 dark:text-yellow-500">Giảm thêm {pointsDiscountAmount.toLocaleString('vi-VN')}đ</p>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => setAppliedPoints(0)}
-                      className="p-1.5 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-500/20 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input 
-                      type="number"
-                      value={pointsToUseInput}
-                      onChange={(e) => setPointsToUseInput(e.target.value)}
-                      placeholder={`Có thể dùng tới ${userProfile.points}`}
-                      className="flex-1 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm outline-none w-full text-gray-900 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const num = parseInt(pointsToUseInput);
-                        if (isNaN(num) || num <= 0) {
-                          toast.error('Số điểm không hợp lệ'); return;
-                        }
-                        if (num > userProfile.points) {
-                          toast.error('Bạn không đủ điểm!'); return;
-                        }
-                        if (num < rewardsConfig.minPointsToUse) {
-                          toast.error(`Điểm tối thiểu được dùng là ${rewardsConfig.minPointsToUse} điểm`); return;
-                        }
-                        setAppliedPoints(num);
-                        setPointsToUseInput('');
-                      }}
-                      className="bg-yellow-500 text-black px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-yellow-400"
-                    >
-                      Dùng Điểm
-                    </button>
-                  </div>
-                )}
-                <p className="text-xs text-gray-400 mt-2">1 điểm = {rewardsConfig.pointValueVND.toLocaleString('vi-VN')}đ. Giảm tối đa {rewardsConfig.maxDiscountPercentage}% giá trị đơn hàng.</p>
-              </div>
-            )}
-
-            {/* Discount Code Input */}
-            <div className="border-t border-gray-200 dark:border-zinc-800 pt-6 mb-6">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <Ticket className="w-4 h-4" /> Mã giảm giá
-              </h3>
-              
-              {appliedDiscount ? (
-                <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                    <div>
-                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{appliedDiscount.code}</p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-500">
-                        Đã giảm {discountAmount.toLocaleString('vi-VN')}đ
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={removeDiscount}
-                    className="p-1.5 text-emerald-600 dark:text-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={discountCodeInput}
-                    onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
-                    placeholder="Nhập mã giảm giá" 
-                    className="flex-1 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all uppercase"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => handleApplyDiscount()}
-                    disabled={isApplyingDiscount || !discountCodeInput.trim()}
-                    className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
-                  >
-                    {isApplyingDiscount ? 'Đang áp dụng...' : 'Áp dụng'}
-                  </button>
-                </div>
-              )}
-
-              {!appliedDiscount && (
-                <button
-                  type="button"
-                  onClick={() => setShowVoucherModal(true)}
-                  className="mt-3 text-sm text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2 hover:underline w-full text-left"
-                >
-                  <Ticket className="w-4 h-4" /> Hoặc chọn từ Kho Voucher
-                </button>
-              )}
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-zinc-800 pt-4 space-y-3 mb-6">
-              <div className="flex justify-between text-gray-500 dark:text-zinc-400">
-                <span>Tạm tính</span>
-                <span>{totalAmount.toLocaleString('vi-VN')}đ</span>
-              </div>
-              <div className="flex justify-between text-gray-500 dark:text-zinc-400">
-                <span>Phí vận chuyển</span>
-                <span>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}đ`}</span>
-              </div>
-              {shippingFee > 0 && shippingConfig.isActive && threshold > 0 && (
-                <div className="text-xs text-blue-600 dark:text-blue-500 text-right mt-1">
-                  Mua thêm {(threshold - totalAmount).toLocaleString('vi-VN')}đ để được Freeship
-                </div>
-              )}
-              {appliedDiscount && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                  <span>Giảm giá ({appliedDiscount.code})</span>
-                  <span>-{discountAmount.toLocaleString('vi-VN')}đ</span>
-                </div>
-              )}
-              {appliedPoints > 0 && (
-                <div className="flex justify-between text-yellow-600 dark:text-yellow-400 font-medium">
-                  <span>Dùng điểm ({appliedPoints})</span>
-                  <span>-{pointsDiscountAmount.toLocaleString('vi-VN')}đ</span>
-                </div>
-              )}
-              <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white pt-3 border-t border-gray-200 dark:border-zinc-800">
-                <span>Tổng cộng</span>
-                <span className="text-red-600 dark:text-red-500">{finalAmount.toLocaleString('vi-VN')}đ</span>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              form="checkout-form"
-              disabled={isSubmitting}
-              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:dark:bg-zinc-700 text-white py-3.5 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Đang xử lý...
-                </>
-              ) : (
-                'Đặt Hàng'
-              )}
-            </button>
-          </div>
+          <OrderSummary
+            cartItems={cartItems}
+            onUpdateQuantity={onUpdateQuantity}
+            onRemoveItem={onRemoveItem}
+            totalAmount={totalAmount}
+            shippingFee={shippingFee}
+            discountAmount={discountAmount}
+            pointsDiscountAmount={pointsDiscountAmount}
+            finalAmount={finalAmount}
+            shippingConfig={shippingConfig}
+            threshold={threshold}
+            rewardsConfig={rewardsConfig}
+            userProfile={userProfile}
+            appliedPoints={appliedPoints}
+            pointsToUseInput={pointsToUseInput}
+            setPointsToUseInput={setPointsToUseInput}
+            setAppliedPoints={setAppliedPoints}
+            appliedDiscount={appliedDiscount}
+            discountCodeInput={discountCodeInput}
+            setDiscountCodeInput={setDiscountCodeInput}
+            handleApplyDiscount={handleApplyDiscount}
+            removeDiscount={removeDiscount}
+            isApplyingDiscount={isApplyingDiscount}
+            setShowVoucherModal={setShowVoucherModal}
+            isSubmitting={isSubmitting}
+          />
         </div>
       </div>
 
