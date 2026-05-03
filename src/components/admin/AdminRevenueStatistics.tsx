@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useOrders } from '../../utils/useOrders';
-import { DollarSign, TrendingUp, Package, Truck, Wallet, FileBarChart, ArrowDownRight, ArrowUpRight, Coins } from 'lucide-react';
+import { DollarSign, TrendingUp, Package, Truck, Wallet, FileBarChart, ArrowDownRight, ArrowUpRight, Coins, Box } from 'lucide-react';
 import { Order } from '../../types';
 
 export default function AdminRevenueStatistics() {

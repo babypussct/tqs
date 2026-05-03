@@ -4,7 +4,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useHomepage } from '../hooks/useHomepage';
 import { HomepageConfig } from '../types';
-import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon } from 'lucide-react';
+import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon, FileBarChart } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Admin Sub-components
