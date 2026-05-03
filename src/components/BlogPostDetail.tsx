@@ -142,7 +142,11 @@ export default function BlogPostDetail() {
           className="prose prose-slate dark:prose-invert prose-lg max-w-none 
                     prose-headings:font-bold prose-h2:text-3xl prose-h3:text-2xl 
                     prose-a:text-indigo-600 dark:prose-a:text-indigo-400 
-                    prose-img:rounded-xl prose-img:shadow-md"
+                    prose-img:rounded-xl prose-img:shadow-md
+                    prose-table:w-full prose-table:border-collapse prose-table:my-8
+                    prose-th:border prose-th:border-slate-200 dark:prose-th:border-zinc-700 prose-th:p-3 prose-th:bg-slate-50 dark:prose-th:bg-zinc-800/50 
+                    prose-td:border prose-td:border-slate-200 dark:prose-td:border-zinc-700 prose-td:p-3
+                    prose-iframe:w-full prose-iframe:aspect-video prose-iframe:rounded-xl prose-iframe:shadow-md"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
         
