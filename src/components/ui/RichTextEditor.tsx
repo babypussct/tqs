@@ -32,7 +32,12 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+        }
+      }),
       Underline,
       TextStyle,
       Color,
@@ -42,10 +47,6 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
-      }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
       }),
       Youtube.configure({
         controls: false,
