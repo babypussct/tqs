@@ -67,7 +67,7 @@ export default function OrderHistory({
 
              const trackingUrl = order.trackingCode?.startsWith('http') 
                ? order.trackingCode 
-               : \`https://spx.vn/track?\${order.trackingCode}\`;
+               : `https://spx.vn/track?\${order.trackingCode}`;
              
              return (
                <div key={order.id} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -80,7 +80,7 @@ export default function OrderHistory({
                        Đặt lúc {order.createdAt?.toDate().toLocaleTimeString('vi-VN')} ngày {order.createdAt?.toDate().toLocaleDateString('vi-VN')}
                      </p>
                    </div>
-                   <div className={\`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border \${statusConfig.bg} \${statusConfig.border} \${statusConfig.color} text-xs font-bold w-fit\`}>
+                   <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border \${statusConfig.bg} \${statusConfig.border} \${statusConfig.color} text-xs font-bold w-fit`}>
                      <StatusIcon className="w-4 h-4" />
                      {statusConfig.label}
                    </div>
@@ -223,7 +223,7 @@ export default function OrderHistory({
                          <div className="p-4 sm:p-6 bg-white dark:bg-zinc-900 border-t border-emerald-500/30 flex flex-col md:flex-row items-center gap-6 md:gap-8 animate-fade-in">
                            <div className="bg-white p-3 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm shrink-0 mx-auto md:mx-0">
                              <img 
-                               src={\`https://img.vietqr.io/image/\${paymentConfig.bankId}-\${paymentConfig.accountNumber}-\${paymentConfig.template}.png?amount=\${order.finalAmount || order.totalAmount}&addInfo=\${order.id}&accountName=\${encodeURIComponent(paymentConfig.accountName)}\`} 
+                               src={`https://img.vietqr.io/image/\${paymentConfig.bankId}-\${paymentConfig.accountNumber}-\${paymentConfig.template}.png?amount=\${order.finalAmount || order.totalAmount}&addInfo=\${order.id}&accountName=\${encodeURIComponent(paymentConfig.accountName)}`} 
                                alt="VietQR" 
                                className="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl"
                              />
@@ -281,7 +281,7 @@ export default function OrderHistory({
                        <button
                          onClick={() => handleConfirmReceived(order)}
                          disabled={isConfirming === order.id}
-                         className={\`w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 whitespace-nowrap \${isConfirming === order.id ? 'opacity-70 cursor-not-allowed' : ''}\`}
+                         className={`w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 whitespace-nowrap \${isConfirming === order.id ? 'opacity-70 cursor-not-allowed' : ''}`}
                        >
                          {isConfirming === order.id ? 'Đang xử lý...' : 'Xác nhận Đã nhận hàng'}
                        </button>
