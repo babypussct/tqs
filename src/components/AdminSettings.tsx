@@ -6,28 +6,27 @@ import { usePaymentConfig, PaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useProducts } from '../hooks/useProducts';
 import { useSiteConfig, SiteConfig } from '../hooks/useSiteConfig';
-import { useFooterConfig, FooterConfig } from '../hooks/useFooterConfig';
+
 import { ImageUploader } from './ui/ImageUploader';
 
 export default function AdminSettings() {
   const { config, loading: configLoading, updateConfig } = useProductConfig();
   const { paymentConfig, loading: paymentLoading, updatePaymentConfig } = usePaymentConfig();
   const { config: siteConfig, loading: siteLoading, updateConfig: updateSiteConfig } = useSiteConfig();
-  const { config: footerConfig, loading: footerLoading, updateConfig: updateFooterConfig } = useFooterConfig();
+
   
   const [badges, setBadges] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [newBadge, setNewBadge] = useState('');
   const [newType, setNewType] = useState('');
-  const [newFooterBadge, setNewFooterBadge] = useState('');
-  const [newFooterPayment, setNewFooterPayment] = useState('');
+
   
   const { shippingConfig, loading: shippingLoading, updateShippingConfig } = useShippingConfig();
 
   const [localPaymentConfig, setLocalPaymentConfig] = useState<PaymentConfig | null>(null);
   const [localShippingConfig, setLocalShippingConfig] = useState<any>(null);
   const [localSiteConfig, setLocalSiteConfig] = useState<SiteConfig | null>(null);
-  const [localFooterConfig, setLocalFooterConfig] = useState<FooterConfig | null>(null);
+
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -71,11 +70,7 @@ export default function AdminSettings() {
     }
   }, [siteConfig, siteLoading]);
 
-  useEffect(() => {
-    if (!footerLoading && footerConfig) {
-      setLocalFooterConfig(footerConfig);
-    }
-  }, [footerConfig, footerLoading]);
+
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -90,9 +85,7 @@ export default function AdminSettings() {
       if (localSiteConfig) {
         await updateSiteConfig(localSiteConfig);
       }
-      if (localFooterConfig) {
-        await updateFooterConfig(localFooterConfig);
-      }
+
       toast.success('Đã lưu cấu hình thành công');
     } catch (error) {
       toast.error('Lỗi khi lưu cấu hình');
@@ -129,41 +122,9 @@ export default function AdminSettings() {
     setTypes(types.filter((_, i) => i !== index));
   };
 
-  const handleAddFooterBadge = () => {
-    if (!newFooterBadge.trim() || !localFooterConfig) return;
-    if (localFooterConfig.badges?.includes(newFooterBadge.trim())) {
-      toast.error('Cam kết này đã tồn tại');
-      return;
-    }
-    setLocalFooterConfig({ ...localFooterConfig, badges: [...(localFooterConfig.badges || []), newFooterBadge.trim()] });
-    setNewFooterBadge('');
-  };
 
-  const handleRemoveFooterBadge = (index: number) => {
-    if (!localFooterConfig) return;
-    const newBadges = [...(localFooterConfig.badges || [])];
-    newBadges.splice(index, 1);
-    setLocalFooterConfig({ ...localFooterConfig, badges: newBadges });
-  };
 
-  const handleAddFooterPayment = () => {
-    if (!newFooterPayment.trim() || !localFooterConfig) return;
-    if (localFooterConfig.paymentMethods?.includes(newFooterPayment.trim())) {
-      toast.error('Phương thức này đã tồn tại');
-      return;
-    }
-    setLocalFooterConfig({ ...localFooterConfig, paymentMethods: [...(localFooterConfig.paymentMethods || []), newFooterPayment.trim()] });
-    setNewFooterPayment('');
-  };
-
-  const handleRemoveFooterPayment = (index: number) => {
-    if (!localFooterConfig) return;
-    const newPayments = [...(localFooterConfig.paymentMethods || [])];
-    newPayments.splice(index, 1);
-    setLocalFooterConfig({ ...localFooterConfig, paymentMethods: newPayments });
-  };
-
-  if (configLoading || paymentLoading || shippingLoading || siteLoading || footerLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig || !localFooterConfig) return <div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>;
+  if (configLoading || paymentLoading || shippingLoading || siteLoading || !localPaymentConfig || !localShippingConfig || !localSiteConfig) return <div className="p-8 text-center text-slate-500">Đang tải cấu hình...</div>;
 
   return (
     <div className="space-y-8 pb-12">
@@ -224,144 +185,7 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* Footer Configuration */}
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl p-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Cấu hình Footer (Chân trang)</h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="space-y-4">
-            <h4 className="font-bold text-slate-800 dark:text-slate-200">1. Thương hiệu & Mô tả</h4>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Mô tả ngắn</label>
-              <textarea
-                value={localFooterConfig.brandDescription}
-                onChange={e => setLocalFooterConfig({...localFooterConfig, brandDescription: e.target.value})}
-                className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Facebook URL</label>
-              <input type="text" value={localFooterConfig.socialLinks.facebook} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, facebook: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Youtube URL</label>
-              <input type="text" value={localFooterConfig.socialLinks.youtube} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, youtube: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Liên kết khác (Email/Tiktok...)</label>
-              <input type="text" value={localFooterConfig.socialLinks.email} onChange={e => setLocalFooterConfig({...localFooterConfig, socialLinks: {...localFooterConfig.socialLinks, email: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <h4 className="font-bold text-slate-800 dark:text-slate-200">2. Thông tin Liên hệ</h4>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Địa chỉ</label>
-              <input type="text" value={localFooterConfig.contactInfo.address} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, address: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Giờ làm việc</label>
-              <input type="text" value={localFooterConfig.contactInfo.workingHours} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, workingHours: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Hotline</label>
-              <input type="text" value={localFooterConfig.contactInfo.phone} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, phone: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Email hỗ trợ</label>
-              <input type="text" value={localFooterConfig.contactInfo.email} onChange={e => setLocalFooterConfig({...localFooterConfig, contactInfo: {...localFooterConfig.contactInfo, email: e.target.value}})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-            </div>
-          </div>
-        </div>
-
-
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
-          {/* Footer Badges Array */}
-          <div className="bg-white dark:bg-zinc-900/50 p-5 rounded-xl border border-slate-200 dark:border-zinc-700/50">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Các cam kết (Badges)</h4>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={newFooterBadge}
-                onChange={e => setNewFooterBadge(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddFooterBadge()}
-                placeholder="VD: Đóng gói chuẩn sưu tầm"
-                className="flex-1 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
-              />
-              <button
-                onClick={handleAddFooterBadge}
-                className="bg-slate-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 rounded-xl font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
-                title="Thêm cam kết"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-              {localFooterConfig.badges?.map((badge, index) => (
-                <div key={index} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg px-4 py-3">
-                  <span className="text-slate-900 dark:text-white font-medium">{badge}</span>
-                  <button
-                    onClick={() => handleRemoveFooterBadge(index)}
-                    className="text-slate-400 hover:text-indigo-500 transition-colors p-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {(!localFooterConfig.badges || localFooterConfig.badges.length === 0) && (
-                <p className="text-slate-500 dark:text-zinc-500 text-center py-4 text-sm">Chưa có cam kết nào</p>
-              )}
-            </div>
-          </div>
-
-          {/* Footer Payments Array */}
-          <div className="bg-white dark:bg-zinc-900/50 p-5 rounded-xl border border-slate-200 dark:border-zinc-700/50">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Các phương thức thanh toán</h4>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={newFooterPayment}
-                onChange={e => setNewFooterPayment(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddFooterPayment()}
-                placeholder="VD: COD, VNPay, VISA"
-                className="flex-1 bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white outline-none focus:border-indigo-500"
-              />
-              <button
-                onClick={handleAddFooterPayment}
-                className="bg-slate-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2 rounded-xl font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
-                title="Thêm thanh toán"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-              {localFooterConfig.paymentMethods?.map((payment, index) => (
-                <div key={index} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700/50 rounded-lg px-4 py-3">
-                  <span className="text-slate-900 dark:text-white font-medium">{payment}</span>
-                  <button
-                    onClick={() => handleRemoveFooterPayment(index)}
-                    className="text-slate-400 hover:text-indigo-500 transition-colors p-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {(!localFooterConfig.paymentMethods || localFooterConfig.paymentMethods.length === 0) && (
-                <p className="text-slate-500 dark:text-zinc-500 text-center py-4 text-sm">Chưa có phương thức nào</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-zinc-800">
-          <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">Dòng chữ Bản quyền dưới cùng (Copyright)</label>
-          <input type="text" value={localFooterConfig.bottomText} onChange={e => setLocalFooterConfig({...localFooterConfig, bottomText: e.target.value})} className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-2 text-slate-900 dark:text-white outline-none" />
-        </div>
-      </div>
 
       {/* Shipping Configuration */}
       <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-xl p-6">

@@ -1,43 +1,38 @@
 import { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { toast } from 'sonner';
 
 const STORAGE_KEY = 'tqs_sync_version';
 
-export function useDeltaSync() {
+interface DeltaSyncOptions {
+  onDataUpdate?: () => void;
+}
+
+export function useDeltaSync(options: DeltaSyncOptions = {}) {
   useEffect(() => {
     // Chỉ lắng nghe đúng 1 document siêu nhỏ này
     const unsubscribe = onSnapshot(doc(db, 'system', 'version'), (docSnap) => {
       if (docSnap.exists()) {
         const serverVersion = docSnap.data().productsUpdated || 0;
         const localVersionStr = localStorage.getItem(STORAGE_KEY);
-        const localVersion = localVersionStr ? parseInt(localVersionStr, 10) : 0;
 
-        // Nếu mới vào web lần đầu, lưu version nhưng không báo cáo F5
+        // Nếu mới vào web lần đầu, lưu version nhưng không báo
         if (!localVersionStr) {
           localStorage.setItem(STORAGE_KEY, serverVersion.toString());
           return;
         }
 
+        const localVersion = parseInt(localVersionStr, 10);
+
         // Nếu server có dữ liệu mới (timestamp lớn hơn local)
         if (serverVersion > localVersion) {
-          toast('📢 Cập nhật Sản phẩm mới!', {
-            description: 'Dữ liệu cửa hàng đã có sự thay đổi (giá mới, tồn kho,...).',
-            action: {
-              label: 'Tải lại trang',
-              onClick: () => {
-                localStorage.setItem(STORAGE_KEY, serverVersion.toString());
-                window.location.reload();
-              },
-            },
-            duration: Infinity, // Giữ thông báo cho đến khi user click
-            dismissible: false,
-          });
+          localStorage.setItem(STORAGE_KEY, serverVersion.toString());
+          options.onDataUpdate?.();
         }
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
+
