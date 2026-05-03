@@ -204,6 +204,9 @@ export interface Order {
   discountCode?: string;
   discountAmount?: number;
   finalAmount?: number;
+  actualShippingCost?: number; // Phí ship thực tế trả cho đơn vị vận chuyển
+  baseCost?: number; // Tổng giá vốn hàng bán của đơn hàng
+  packagingCost?: number; // Chi phí đóng gói (hộp, mút xốp...)
   earnedPoints?: number;
   status: 'pending' | 'suspicious' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned' | 'refunded' | 'failed_delivery';
   paymentMethod?: 'cod' | 'vietqr';

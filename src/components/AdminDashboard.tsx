@@ -19,6 +19,7 @@ import AdminDiscountCodes from './admin/AdminDiscountCodes';
 import AdminProducts from './admin/AdminProducts';
 import AdminOrders from './admin/AdminOrders';
 import AdminHomepageLayout from './admin/AdminHomepageLayout';
+import AdminRevenueStatistics from './admin/AdminRevenueStatistics';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
   const [homeConfig, setHomeConfig] = useState<HomepageConfig>(initialConfig);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'products', label: 'Sản phẩm', icon: Package, requiredPermission: 'manageProducts' },
     { id: 'orders', label: 'Đơn hàng', icon: ShoppingBag, requiredPermission: 'manageOrders' },
+    { id: 'revenue', label: 'Thống kê Doanh thu', icon: FileBarChart, requiredPermission: 'manageOrders' },
     { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
     { id: 'navigation', label: 'Thanh điều hướng', icon: LayoutTemplate, requiredPermission: 'manageHomepage' },
     { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
@@ -142,6 +144,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {activeTab === 'products' && <AdminProducts />}
             {activeTab === 'orders' && <AdminOrders />}
+            {activeTab === 'revenue' && <AdminRevenueStatistics />}
             {activeTab === 'homepage' && (
               <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
                 {/* Hero Editor */}

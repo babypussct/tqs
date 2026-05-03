@@ -16,6 +16,10 @@ interface AdminOrderDetailModalProps {
 export default function AdminOrderDetailModal({ order, onClose, updateOrderStatus }: AdminOrderDetailModalProps) {
   const [trackingInput, setTrackingInput] = useState<string>(order.trackingCode || '');
   const [isSavingTracking, setIsSavingTracking] = useState(false);
+  const [actualShippingCost, setActualShippingCost] = useState<string>(order.actualShippingCost?.toString() || '');
+  const [baseCost, setBaseCost] = useState<string>(order.baseCost?.toString() || '');
+  const [packagingCost, setPackagingCost] = useState<string>(order.packagingCost?.toString() || '');
+  const [isSavingCosts, setIsSavingCosts] = useState(false);
 
   // Status mapping
   const statusColors = {
@@ -61,6 +65,37 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
       toast.error('Lỗi khi xác nhận thanh toán');
+    }
+  };
+
+  const handleCostsSave = async () => {
+    setIsSavingCosts(true);
+    try {
+      const updates: any = {};
+      
+      const parsedShipping = parseInt(actualShippingCost);
+      if (!isNaN(parsedShipping)) updates.actualShippingCost = parsedShipping;
+      else if (actualShippingCost === '') updates.actualShippingCost = null;
+
+      const parsedBase = parseInt(baseCost);
+      if (!isNaN(parsedBase)) updates.baseCost = parsedBase;
+      else if (baseCost === '') updates.baseCost = null;
+
+      const parsedPackaging = parseInt(packagingCost);
+      if (!isNaN(parsedPackaging)) updates.packagingCost = parsedPackaging;
+      else if (packagingCost === '') updates.packagingCost = null;
+
+      if (Object.keys(updates).length > 0) {
+        await updateDoc(doc(db, 'orders', order.id), updates);
+        toast.success('Đã lưu dữ liệu chi phí');
+      } else {
+        toast.error('Không có dữ liệu hợp lệ để lưu');
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
+      toast.error('Có lỗi xảy ra khi lưu chi phí');
+    } finally {
+      setIsSavingCosts(false);
     }
   };
 
@@ -149,6 +184,65 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
                         Lưu
                      </button>
                   </div>
+               </div>
+            </div>
+
+            {/* Accounting Center */}
+            <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl p-5 border border-emerald-100 dark:border-emerald-800/30 space-y-4">
+               <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                 <Coins className="w-4 h-4" /> Kế toán & Chi phí
+               </h3>
+               
+               <div className="space-y-3">
+                 <div>
+                   <label className="block text-xs font-semibold text-emerald-800 dark:text-emerald-500 mb-1">Giá vốn hàng bán (COGS)</label>
+                   <div className="relative">
+                     <input 
+                       type="number"
+                       placeholder="0"
+                       value={baseCost}
+                       onChange={(e) => setBaseCost(e.target.value)}
+                       className="w-full bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800/50 rounded-lg px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                     />
+                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium">đ</span>
+                   </div>
+                 </div>
+
+                 <div>
+                   <label className="block text-xs font-semibold text-emerald-800 dark:text-emerald-500 mb-1">Phí vận chuyển thực tế (Trả SPX)</label>
+                   <div className="relative">
+                     <input 
+                       type="number"
+                       placeholder="0"
+                       value={actualShippingCost}
+                       onChange={(e) => setActualShippingCost(e.target.value)}
+                       className="w-full bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800/50 rounded-lg px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                     />
+                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium">đ</span>
+                   </div>
+                 </div>
+
+                 <div>
+                   <label className="block text-xs font-semibold text-emerald-800 dark:text-emerald-500 mb-1">Chi phí đóng gói (Hộp, mút...)</label>
+                   <div className="relative">
+                     <input 
+                       type="number"
+                       placeholder="0"
+                       value={packagingCost}
+                       onChange={(e) => setPackagingCost(e.target.value)}
+                       className="w-full bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800/50 rounded-lg px-3 py-2 pr-8 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                     />
+                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-medium">đ</span>
+                   </div>
+                 </div>
+
+                 <button
+                    onClick={handleCostsSave}
+                    disabled={isSavingCosts || (actualShippingCost === (order.actualShippingCost?.toString() || '') && baseCost === (order.baseCost?.toString() || '') && packagingCost === (order.packagingCost?.toString() || ''))}
+                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-200 dark:disabled:bg-emerald-900/50 disabled:text-emerald-50 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors"
+                 >
+                    {isSavingCosts ? 'Đang lưu...' : 'Lưu Chi phí'}
+                 </button>
                </div>
             </div>
 
