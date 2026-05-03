@@ -4,7 +4,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useHomepage } from '../hooks/useHomepage';
 import { HomepageConfig } from '../types';
-import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon, FileBarChart } from 'lucide-react';
+import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon, FileBarChart, PanelBottom } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Admin Sub-components
@@ -20,6 +20,7 @@ import AdminProducts from './admin/AdminProducts';
 import AdminOrders from './admin/AdminOrders';
 import AdminHomepageLayout from './admin/AdminHomepageLayout';
 import AdminRevenueStatistics from './admin/AdminRevenueStatistics';
+import AdminFooterEditor from './admin/AdminFooterEditor';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'homepage' | 'navigation' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'homepage' | 'navigation' | 'footer' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
   const [homeConfig, setHomeConfig] = useState<HomepageConfig>(initialConfig);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
     { id: 'revenue', label: 'Thống kê Doanh thu', icon: FileBarChart, requiredPermission: 'manageOrders' },
     { id: 'homepage', label: 'Giao diện', icon: Palette, requiredPermission: 'manageHomepage' },
     { id: 'navigation', label: 'Thanh điều hướng', icon: LayoutTemplate, requiredPermission: 'manageHomepage' },
+    { id: 'footer', label: 'Chân trang (Footer)', icon: PanelBottom, requiredPermission: 'manageHomepage' },
     { id: 'discounts', label: 'Mã giảm giá', icon: Ticket, requiredPermission: 'manageDiscounts' },
     { id: 'settings', label: 'Cấu hình chung', icon: Settings, requiredPermission: 'manageSettings' },
     { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
@@ -159,6 +161,7 @@ export default function AdminDashboard() {
               </div>
             )}
             {activeTab === 'navigation' && <AdminNavigation />}
+            {activeTab === 'footer' && <AdminFooterEditor />}
             {activeTab === 'discounts' && <AdminDiscountCodes />}
             {activeTab === 'posts' && <AdminPostList />}
             {activeTab === 'settings' && <AdminSettings />}
