@@ -55,7 +55,7 @@ const DEFAULT_CONFIG: FooterConfig = {
     email: 'support@tqsstore.com',
   },
   bottomText: '© 2024 TQS Store. All rights reserved.',
-  badges: ['Đóng gói chuẩn sưu tầm.', 'Hoàn tiền 100% nếu móp hộp.'],
+  badges: ['Đóng gói chuẩn sưu tầm.', 'Việt hóa 100%'],
   paymentMethods: ['COD', 'VNPay', 'VISA'],
 };
 
