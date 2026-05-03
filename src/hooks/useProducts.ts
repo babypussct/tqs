@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, getDocs, getDocsFromCache, getDocsFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Product } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
+
+const CACHE_KEY = 'tqs_products_last_fetch';
 
 export function useProducts(activeOnly = true) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,27 +17,57 @@ export function useProducts(activeOnly = true) {
       q = query(q, where('isActive', '==', true));
     }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const prods: Product[] = [];
-      snapshot.forEach((doc) => {
-        prods.push({ id: doc.id, ...doc.data() } as Product);
+    // Dành cho Admin (cần realtime cập nhật liên tục để sửa lỗi, quản lý tồn kho)
+    if (!activeOnly) {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const prods: Product[] = [];
+        snapshot.forEach((doc) => prods.push({ id: doc.id, ...doc.data() } as Product));
+        prods.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        setProducts(prods);
+        setLoading(false);
       });
-      
-      // Sort client-side to avoid needing a composite index in Firestore initially
-      prods.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis?.() || 0;
-        const timeB = b.createdAt?.toMillis?.() || 0;
-        return timeB - timeA;
-      });
+      return () => unsubscribe();
+    }
 
-      setProducts(prods);
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'products');
-      setLoading(false);
-    });
+    // Dành cho Khách hàng (Sử dụng cơ chế Delta Sync - Đọc 1 lần)
+    let isMounted = true;
+    const fetchProducts = async () => {
+      try {
+        const lastFetchStr = sessionStorage.getItem(CACHE_KEY);
+        const now = Date.now();
+        // Force fetch server nếu quá 1 tiếng không lấy dữ liệu hoặc lần đầu vào web
+        const shouldFetchServer = !lastFetchStr || (now - parseInt(lastFetchStr)) > 3600000;
 
-    return () => unsubscribe();
+        let snapshot;
+        if (shouldFetchServer) {
+          snapshot = await getDocsFromServer(q);
+          sessionStorage.setItem(CACHE_KEY, now.toString());
+        } else {
+          // Lấy từ Local Cache (0 Reads Firestore)
+          try {
+            snapshot = await getDocsFromCache(q);
+            if (snapshot.empty) snapshot = await getDocsFromServer(q); // Fallback nếu cache rỗng
+          } catch {
+            snapshot = await getDocsFromServer(q);
+          }
+        }
+
+        if (!isMounted) return;
+
+        const prods: Product[] = [];
+        snapshot.forEach((doc) => prods.push({ id: doc.id, ...doc.data() } as Product));
+        prods.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        
+        setProducts(prods);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'products');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchProducts();
+    return () => { isMounted = false; };
   }, [activeOnly]);
 
   return { products, loading };

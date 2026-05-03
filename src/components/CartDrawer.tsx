@@ -3,19 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { CartItem } from '../types';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
-interface CartDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  items: CartItem[];
-  onUpdateQuantity: (id: string, deltaOrQuantity: number, isAbsolute?: boolean) => void;
-  onRemove: (id: string) => void;
-  clearCart: () => void;
-}
-
-export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, onRemove, clearCart }: CartDrawerProps) {
+export default function CartDrawer() {
+  const { isCartOpen, setIsCartOpen, cartItems: items, updateQuantity: onUpdateQuantity, removeItem: onRemove, clearCart } = useCart();
+  const isOpen = isCartOpen;
+  const onClose = () => setIsCartOpen(false);
   const navigate = useNavigate();
   const { shippingConfig } = useShippingConfig();
   const { user, login } = useAuth();

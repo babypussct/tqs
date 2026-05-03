@@ -1,13 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with the specific database ID if provided
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+// Initialize Firestore with local cache for offline capabilities and read reduction
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  }),
+  // @ts-ignore - type mismatch for databaseId in some TS configurations, but it works in Firebase 10+
+  databaseId: (firebaseConfig as any).firestoreDatabaseId
+});
 
 // Initialize Auth
 export const auth = getAuth(app);

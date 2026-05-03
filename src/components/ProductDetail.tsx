@@ -8,12 +8,10 @@ import { useSiteConfig } from '../hooks/useSiteConfig';
 import ProductReviews from './ProductReviews';
 import ProductCard from './ProductCard';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { useCart } from '../contexts/CartContext';
 
-interface ProductDetailProps {
-  onAddToCart: (product: Product, variants: { selectedBox?: string, selectedLang?: string, selectedVariants?: Record<string, string>, addSleeves?: boolean, quickAddAccessoryNames?: string[], price: number }) => void;
-}
-
-export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
+export default function ProductDetail() {
+  const { addToCart } = useCart();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { products, loading } = useProducts(true);
@@ -121,7 +119,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
 
   const handleAddToCart = () => {
     // Add main product
-    onAddToCart(product, {
+    addToCart(product, {
       selectedBox: product.variants?.boxType ? selectedBox : undefined,
       selectedLang: product.variants?.language ? selectedLang : undefined,
       selectedVariants: Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined,
@@ -133,7 +131,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
     addonProducts.forEach(addon => {
       const qty = addonQuantities[addon.id] || 0;
       for (let i = 0; i < qty; i++) {
-        onAddToCart(addon, { price: addon.price });
+        addToCart(addon, { price: addon.price });
       }
     });
   };
@@ -569,7 +567,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               <ProductCard
                 key={relatedProduct.id}
                 product={relatedProduct}
-                onAddToCart={(p) => onAddToCart(p, { price: p.price })}
+                onAddToCart={(p) => addToCart(p, { price: p.price })}
               />
             ))}
           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Package, Edit, Trash2, Search, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +21,10 @@ export default function AdminProducts() {
     if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.')) {
       try {
         await deleteDoc(doc(db, 'products', id));
+        // Delta Sync: Báo toàn hệ thống có thay đổi
+        await setDoc(doc(db, 'system', 'version'), {
+          productsUpdated: Date.now()
+        }, { merge: true });
         toast.success('Đã xóa sản phẩm');
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, `products/${id}`);

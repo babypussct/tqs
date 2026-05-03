@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deleteDoc, doc } from 'firebase/firestore';
+import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { usePosts } from '../../hooks/usePosts';
 import { Post } from '../../types';
@@ -23,6 +23,10 @@ export default function AdminPostList() {
     if (window.confirm(`Bạn có chắc chắn muốn xóa bài viết "${title}"?`)) {
       try {
         await deleteDoc(doc(db, 'posts', id));
+        // Delta Sync
+        await setDoc(doc(db, 'system', 'version'), {
+          postsUpdated: Date.now()
+        }, { merge: true });
         toast.success('Đã xóa bài viết');
       } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, `posts/${id}`);

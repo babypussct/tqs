@@ -7,12 +7,10 @@ import ProductCard from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { useHomepage } from '../hooks/useHomepage';
 import { Product } from '../types';
+import { useCart } from '../contexts/CartContext';
 
-interface HomeProps {
-  onAddToCart: (product: Product) => void;
-}
-
-export default function Home({ onAddToCart }: HomeProps) {
+export default function Home() {
+  const { addToCart } = useCart();
   const navigate = useNavigate();
   const { products, loading: productsLoading } = useProducts(true);
   const { config, loading: configLoading } = useHomepage();
@@ -64,7 +62,7 @@ export default function Home({ onAddToCart }: HomeProps) {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {sectionProducts.map(product => (
-                      <ProductCard key={product.id} product={product} onClick={(id) => navigate(`/product/${id}`)} onAddToCart={onAddToCart} />
+                      <ProductCard key={product.id} product={product} onClick={(id) => navigate(`/product/${id}`)} onAddToCart={addToCart} />
                     ))}
                   </div>
                 </section>

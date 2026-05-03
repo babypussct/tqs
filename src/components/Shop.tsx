@@ -5,12 +5,10 @@ import ProductCard from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { useProductConfig } from '../hooks/useProductConfig';
 import { Product } from '../types';
+import { useCart } from '../contexts/CartContext';
 
-interface ShopProps {
-  onAddToCart: (product: Product) => void;
-}
-
-export default function Shop({ onAddToCart }: ShopProps) {
+export default function Shop() {
+  const { addToCart } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
@@ -204,7 +202,7 @@ export default function Shop({ onAddToCart }: ShopProps) {
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                 {paginatedProducts.map(product => (
-                  <ProductCard key={product.id} product={product} onClick={(id) => navigate(`/product/${id}`)} onAddToCart={onAddToCart} />
+                  <ProductCard key={product.id} product={product} onClick={(id) => navigate(`/product/${id}`)} onAddToCart={addToCart} />
                 ))}
               </div>
               

@@ -98,6 +98,12 @@ export default function AdminProductForm() {
         });
         toast.success('Thêm sản phẩm thành công');
       }
+
+      // Delta Sync: Thông báo cho toàn hệ thống có dữ liệu sản phẩm mới
+      await setDoc(doc(db, 'system', 'version'), {
+        productsUpdated: Date.now()
+      }, { merge: true });
+
       navigate('/admin');
     } catch (error) {
       handleFirestoreError(error, id ? OperationType.UPDATE : OperationType.CREATE, 'products');

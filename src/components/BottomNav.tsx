@@ -3,13 +3,10 @@ import { Home, ShoppingBag, ShoppingCart, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
-interface BottomNavProps {
-  cartCount: number;
-  onOpenCart: () => void;
-}
-
-export default function BottomNav({ cartCount, onOpenCart }: BottomNavProps) {
+export default function BottomNav() {
+  const { cartCount, setIsCartOpen } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
@@ -20,7 +17,7 @@ export default function BottomNav({ cartCount, onOpenCart }: BottomNavProps) {
   const navItems = [
     { id: 'home', label: 'Trang chủ', path: '/', icon: Home },
     { id: 'shop', label: 'Cửa hàng', path: '/shop', icon: ShoppingBag },
-    { id: 'cart', label: 'Giỏ hàng', path: '#cart', icon: ShoppingCart, action: onOpenCart },
+    { id: 'cart', label: 'Giỏ hàng', path: '#cart', icon: ShoppingCart, action: () => setIsCartOpen(true) },
     { id: 'profile', label: 'Tài khoản', path: '/profile', icon: User, action: () => {
         if (!user) {
           login();

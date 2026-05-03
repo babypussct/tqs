@@ -96,6 +96,12 @@ export default function AdminPostForm() {
       }
 
       await setDoc(postRef, postData, { merge: true });
+      
+      // Delta Sync: Thông báo cho toàn hệ thống có dữ liệu blog mới
+      await setDoc(doc(db, 'system', 'version'), {
+        postsUpdated: Date.now()
+      }, { merge: true });
+
       toast.success(isEditing ? 'Đã cập nhật bài viết' : 'Đã tạo bài viết mới');
       // Always go back to admin dashboard where the posts tab should be active
       // In the future you might save the tab state, but here we just navigate to /admin

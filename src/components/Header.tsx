@@ -6,13 +6,10 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationConfig } from '../hooks/useNavigationConfig';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationDrawer from './NotificationDrawer';
+import { useCart } from '../contexts/CartContext';
 
-interface HeaderProps {
-  cartCount: number;
-  onOpenCart: () => void;
-}
-
-export default function Header({ cartCount, onOpenCart }: HeaderProps) {
+export default function Header() {
+  const { cartCount, setIsCartOpen } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAdmin, login, logout } = useAuth();
@@ -289,7 +286,7 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
 
               {/* Cart */}
               <button
-                onClick={onOpenCart}
+                onClick={() => setIsCartOpen(true)}
                 className="hidden lg:flex relative p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 hover:bg-black/5 dark:hover:bg-white/5"
                 style={{ color: isTransparent ? 'rgba(255,255,255,0.9)' : theme === 'dark' ? '#ccc' : '#444' }}
               >
@@ -379,7 +376,7 @@ export default function Header({ cartCount, onOpenCart }: HeaderProps) {
               
               <button
                 onClick={() => {
-                  onOpenCart();
+                  setIsCartOpen(true);
                   setMobileMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-3.5 rounded-xl text-base font-medium transition-all flex items-center gap-3 text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5"
