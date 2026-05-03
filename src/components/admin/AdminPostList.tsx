@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 
 export default function AdminPostList() {
-  const { posts, loading } = usePosts();
+  const { posts, loading } = usePosts(true);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 

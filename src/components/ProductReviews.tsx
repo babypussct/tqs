@@ -9,9 +9,10 @@ import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
 interface ProductReviewsProps {
   productId: string;
+  productName?: string;
 }
 
-export default function ProductReviews({ productId }: ProductReviewsProps) {
+export default function ProductReviews({ productId, productName }: ProductReviewsProps) {
   const { user, isAdmin } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +113,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
         body: JSON.stringify({
           type: 'NEW_REVIEW',
           payload: {
-            productName: productId, // sẽ hiển thị productId, admin có thể tra cứu
+            productName: productName || productId,
             userName: user.displayName || 'Người dùng ẩn danh',
             rating,
             comment: comment.trim()

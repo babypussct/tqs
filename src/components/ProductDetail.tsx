@@ -556,7 +556,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Product Reviews Section */}
-      <ProductReviews productId={product.id} />
+      <ProductReviews productId={product.id} productName={product.name} />
 
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (

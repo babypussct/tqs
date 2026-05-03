@@ -60,8 +60,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const inlineButtons = [];
       if (payload.paymentMethod === 'vietqr') {
         inlineButtons.push([{ text: '✅ Đã nhận tiền', callback_data: `action:paid:${payload.orderId}` }]);
+      } else {
+        inlineButtons.push([{ text: '💰 Đã thu COD', callback_data: `action:paid:${payload.orderId}` }]);
       }
+      inlineButtons.push([{ text: '🔧 Đang chuẩn bị', callback_data: `action:processing:${payload.orderId}` }]);
       inlineButtons.push([{ text: '🚚 Chuyển Đang Giao', callback_data: `action:shipped:${payload.orderId}` }]);
+      inlineButtons.push([{ text: '✅ Đã giao thành công', callback_data: `action:delivered:${payload.orderId}` }]);
       inlineButtons.push([{ text: '❌ Hủy đơn', callback_data: `action:cancelled:${payload.orderId}` }]);
       replyMarkup = { inline_keyboard: inlineButtons };
 
