@@ -7,13 +7,15 @@ import firebaseConfig from '../firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore with local cache for offline capabilities and read reduction
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  }),
-  // @ts-ignore - type mismatch for databaseId in some TS configurations, but it works in Firebase 10+
-  databaseId: (firebaseConfig as any).firestoreDatabaseId
-});
+export const db = initializeFirestore(
+  app, 
+  {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  },
+  (firebaseConfig as any).firestoreDatabaseId
+);
 
 // Initialize Auth
 export const auth = getAuth(app);
