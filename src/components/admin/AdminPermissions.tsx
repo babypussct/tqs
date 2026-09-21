@@ -193,11 +193,13 @@ export default function AdminUsers() {
       email: 'oneloveonepeopleforever@gmail.com',
       displayName: 'Super Admin',
       photoURL: null,
+      role: 'admin',
       isBanned: false,
       tier: 'diamond',
       points: 9999,
       totalOrders: 0,
       totalSpent: 0,
+      rewardReversalDebt: 0,
       createdAt: new Date(),
       lastLoginAt: new Date(),
       adminPermissions: {

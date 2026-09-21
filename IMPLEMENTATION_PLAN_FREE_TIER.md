@@ -414,6 +414,17 @@ Tiêu chí qua pha:
 - Admin hợp lệ mở được đúng tab/quyền.
 - Blog, notifications, rewards hoạt động không cần mở toàn quyền.
 
+**Progress snapshot (2026-09-21): IN PROGRESS**
+
+- [x] `firestore.rules` đã được viết lại theo access matrix; không còn wildcard mở toàn quyền.
+- [x] Đã thêm `firebase.json`, `firestore.indexes.json` và `npm run test:rules` chạy Firestore Emulator.
+- [x] Đã thêm 16 emulator scenarios cho guest, customer, admin, order service, profile bootstrap,
+  order/event/idempotency, products, posts, notifications, settings và system metadata.
+- [x] Auth bootstrap tạo `role: customer` cùng defaults tương thích Rules; màn hình admin không còn
+  hiển thị snippet allow-all.
+- [ ] Chuyển Checkout/Profile/Admin/Telegram từ direct Firestore mutation sang order service/API.
+- [ ] Chạy smoke test trên staging/test project rồi mới deploy Rules restrictive production.
+
 ### Pha 2 — Giảm reads/writes để bảo vệ Spark quota
 
 **Mục tiêu:** First load và navigation bình thường không tạo listener/query dư.

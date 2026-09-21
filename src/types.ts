@@ -250,14 +250,16 @@ export interface AppUser {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  role: 'admin' | 'customer';
   isBanned: boolean;
   tier: UserTier;
   points: number;
   totalOrders: number;
   totalSpent: number;
+  rewardReversalDebt?: number;
   lastLoginAt: any;
   createdAt: any;
-  adminPermissions?: AdminPermissions; // Migrated from AdminUser
+  adminPermissions?: AdminPermissions | null; // Migrated from AdminUser
   savedVouchers?: string[]; // IDs of collected discount codes
 }
 

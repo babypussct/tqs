@@ -29,3 +29,14 @@ View your app in AI Studio: https://ai.studio/apps/ae9f678c-29b1-4f19-b872-e5b15
    npm run lint
    npm run build
    ```
+5. Run Firestore Rules contract tests in the local emulator:
+   ```bash
+   npm run test:rules
+   ```
+
+The canonical Rules source is [`firestore.rules`](./firestore.rules). Deploy it only
+from a reviewed commit, after the emulator suite and the frontend/API smoke tests pass:
+
+```bash
+firebase deploy --only firestore:rules
+```

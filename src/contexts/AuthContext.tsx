@@ -58,11 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: currentUser.email,
               displayName: currentUser.displayName,
               photoURL: currentUser.photoURL,
+              role: 'customer',
               isBanned: false,
               tier: 'bronze',
               points: 0,
               totalOrders: 0,
               totalSpent: 0,
+              rewardReversalDebt: 0,
+              adminPermissions: null,
               createdAt: serverTimestamp(),
               lastLoginAt: serverTimestamp()
             };

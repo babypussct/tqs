@@ -5,26 +5,21 @@ import { toast } from 'sonner';
 export default function AdminDatabaseRules() {
   const [copied, setCopied] = useState(false);
 
-  const firestoreRules = `rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-  
-    // MANG LẠI TOÀN QUYỀN TRUY CẬP CHO HỆ THỐNG (VƯỢT QUA LỖI HẾT HẠN TEST MODE)
-    // Quy tắc này đảm bảo tất cả các module: Sản phẩm, Đơn hàng, Phân quyền... đều hoạt động
-    match /{document=**} {
-      allow read, write: if true;
-    }
-    
-    // Nếu bạn muốn bảo mật cao hơn trong tương lai, 
-    // hãy thay thế '{document=**}' bằng các quyền cụ thể từng collection.
-  }
-}`;
+  const firestoreRules = `Canonical Firestore Rules are maintained in firestore.rules.
+
+Run the emulator contract suite before deploying:
+npm run test:rules
+
+Deploy the reviewed rules file:
+firebase deploy --only firestore:rules
+
+Do not paste an allow-all wildcard into production.`;
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(firestoreRules);
       setCopied(true);
-      toast.success('Đã sao chép mã Rules!');
+      toast.success('Đã sao chép checklist triển khai Rules!');
       setTimeout(() => setCopied(false), 3000);
     } catch (err) {
       toast.error('Lỗi khi sao chép');
@@ -39,14 +34,15 @@ service cloud.firestore {
           Cấu hình Database Rules
         </h2>
         <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-          Đây là toàn bộ mã cấu hình Security Rules để sửa lỗi "Missing or insufficient permissions". 
-          Hãy sao chép toàn bộ mã bên dưới và dán đè lên nội dung cũ trong tab Rules của Firebase Firestore.
+          Rules là mã nguồn được quản lý trong repository, không chỉnh sửa bằng cách dán một
+          snippet tạm thời trong Console. Hãy chạy contract tests trên Emulator và review
+          thay đổi trước khi deploy.
         </p>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950">
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">Firebase Firestore Security Rules</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">Firestore Rules — source-controlled</span>
           <button
             onClick={handleCopy}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -61,7 +57,7 @@ service cloud.firestore {
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4" /> Sao chép toàn bộ
+                <Copy className="w-4 h-4" /> Sao chép checklist
               </>
             )}
           </button>
@@ -74,14 +70,13 @@ service cloud.firestore {
       </div>
 
       <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-6">
-        <h3 className="font-bold text-blue-900 dark:text-blue-400 mb-4">Các bước thực hiện:</h3>
+        <h3 className="font-bold text-blue-900 dark:text-blue-400 mb-4">Quy trình triển khai an toàn:</h3>
         <ol className="list-decimal list-inside space-y-3 text-sm text-blue-800 dark:text-blue-300/80">
-          <li>Truy cập vào <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="font-bold underline">Firebase Console</a> và chọn dự án TQS của bạn.</li>
-          <li>Tìm và bấm vào <strong>Firestore Database</strong> ở menu cột bên trái.</li>
-          <li>Bấm sang thẻ (tab) <strong>Rules</strong>.</li>
-          <li>Xóa sạch nội dung cũ trong đó.</li>
-          <li>Dán toàn bộ mã vừa sao chép ở trên vào.</li>
-          <li>Bấm nút <strong>Publish</strong>. Đợi khoảng vài phút và tải lại trang này.</li>
+          <li>Chạy <code>npm run test:rules</code> và xác nhận toàn bộ scenario pass trên Emulator.</li>
+          <li>Review diff của <code>firestore.rules</code>, không có wildcard <code>allow read, write: if true</code>.</li>
+          <li>Deploy bằng <code>firebase deploy --only firestore:rules</code> từ commit đã review.</li>
+          <li>Chạy smoke test storefront, checkout, admin và order service sau deploy.</li>
+          <li>Giữ rollback plan và không deploy Rules restrictive trước khi frontend/API mới đã sẵn sàng.</li>
         </ol>
       </div>
     </div>
