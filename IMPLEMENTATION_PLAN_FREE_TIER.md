@@ -422,7 +422,8 @@ Tiêu chí qua pha:
   order/event/idempotency, products, posts, notifications, settings và system metadata.
 - [x] Auth bootstrap tạo `role: customer` cùng defaults tương thích Rules; màn hình admin không còn
   hiển thị snippet allow-all.
-- [ ] Chuyển Checkout/Profile/Admin/Telegram từ direct Firestore mutation sang order service/API.
+- [x] Chuyển Checkout/Profile/Admin/Telegram từ direct Firestore mutation sang order service/API; các
+  mutation payment, tracking, chi phí, cancellation và delivery reward đều đi qua command service.
 - [ ] Chạy smoke test trên staging/test project rồi mới deploy Rules restrictive production.
 
 ### Pha 2 — Giảm reads/writes để bảo vệ Spark quota

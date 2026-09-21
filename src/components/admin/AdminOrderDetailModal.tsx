@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Order } from '../../types';
 import { X, Phone, MessageCircle, Package, Truck, Receipt, CheckCircle, CreditCard, Box, AlertTriangle, Coins } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 import { toast } from 'sonner';
-import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
 import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
+import { postOrderCommand } from '../../utils/orderApi';
 
 interface AdminOrderDetailModalProps {
   order: Order;
@@ -47,12 +45,14 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
 
     setIsSavingTracking(true);
     try {
-      await updateDoc(doc(db, 'orders', order.id), { trackingCode: code });
-      // Cập nhật lại UI state (bằng cách order list ngoài kia sẽ tự fetch hoặc cập nhật local)
+      await postOrderCommand({
+        orderId: order.id,
+        actionType: 'update_order_metadata',
+        metadata: { trackingCode: code },
+      });
       toast.success('Đã lưu mã vận đơn');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
-      toast.error('Có lỗi xảy ra khi lưu mã vận đơn');
+      toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi lưu mã vận đơn');
     } finally {
       setIsSavingTracking(false);
     }
@@ -60,11 +60,13 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
 
   const handlePaymentConfirm = async () => {
     try {
-      await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
+      await postOrderCommand({
+        orderId: order.id,
+        actionType: 'confirm_payment',
+      });
       toast.success('Đã xác nhận lấy tiền vào tài khoản!');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
-      toast.error('Lỗi khi xác nhận thanh toán');
+      toast.error(error instanceof Error ? error.message : 'Lỗi khi xác nhận thanh toán');
     }
   };
 
@@ -86,14 +88,17 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
       else if (packagingCost === '') updates.packagingCost = null;
 
       if (Object.keys(updates).length > 0) {
-        await updateDoc(doc(db, 'orders', order.id), updates);
+        await postOrderCommand({
+          orderId: order.id,
+          actionType: 'update_order_metadata',
+          metadata: updates,
+        });
         toast.success('Đã lưu dữ liệu chi phí');
       } else {
         toast.error('Không có dữ liệu hợp lệ để lưu');
       }
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${order.id}`);
-      toast.error('Có lỗi xảy ra khi lưu chi phí');
+      toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi lưu chi phí');
     } finally {
       setIsSavingCosts(false);
     }

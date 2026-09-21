@@ -77,6 +77,7 @@ export const ACTION_TYPE = [
   'request_refund',
   'complete_refund',
   'reconcile_side_effect',
+  'update_order_metadata',
 ] as const;
 export type ActionType = typeof ACTION_TYPE[number];
 
@@ -98,6 +99,7 @@ export const EVENT_TYPE = [
   'refund_completed',
   'operation_replayed',
   'operation_failed',
+  'order_metadata_updated',
 ] as const;
 export type EventType = typeof EVENT_TYPE[number];
 

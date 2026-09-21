@@ -62,6 +62,17 @@ class MockDb {
           u.points = (u.points || 0) + pointsDelta;
         }
       },
+      updateUserRewardStats: async (uid, update) => {
+        const u = this.users.get(uid);
+        if (!u) return;
+        if (update.pointsDelta !== undefined) u.points = (u.points || 0) + update.pointsDelta;
+        if (update.totalSpentDelta !== undefined) u.totalSpent = (u.totalSpent || 0) + update.totalSpentDelta;
+        if (update.totalOrdersDelta !== undefined) u.totalOrders = (u.totalOrders || 0) + update.totalOrdersDelta;
+        if (update.rewardReversalDebtDelta !== undefined) {
+          u.rewardReversalDebt = Math.max(0, (u.rewardReversalDebt || 0) + update.rewardReversalDebtDelta);
+        }
+        if (update.tier !== undefined) u.tier = update.tier;
+      },
       saveOrder: async (order: OrderDocument) => {
         this.orders.set(order.id, JSON.parse(JSON.stringify(order)));
       },
@@ -266,7 +277,12 @@ async function runTests() {
   db6.users.set('user_6', { uid: 'user_6', email: 'c6@test.com', points: 0, tier: 'bronze', isBanned: false });
 
   const cust6: AuthenticatedActor = { uid: 'user_6', email: 'c6@test.com', role: 'customer' };
-  const adminActor: AuthenticatedActor = { uid: 'admin_1', email: 'admin@tqs.vn', role: 'admin' };
+  const adminActor: AuthenticatedActor = {
+    uid: 'admin_1',
+    email: 'admin@tqs.vn',
+    role: 'admin',
+    permissions: { manageOrders: true },
+  };
 
   const { order: order6 } = await createOrder(
     cust6,
@@ -298,6 +314,24 @@ async function runTests() {
   assert(Boolean(deliveredRes.order.returnEligibleUntil), 'returnEligibleUntil 7-day window set');
   // Bronze tier = 1 pt per 10k VND of 100k = 10 pts
   assert(db6.users.get('user_6').points === 10, 'Loyalty reward point credited to user (10 pts for 100k VND)');
+  assert(db6.users.get('user_6').totalOrders === 1, 'Delivered order increments totalOrders exactly once');
+  assert(db6.users.get('user_6').totalSpent === 100000, 'Delivered order increments totalSpent from reward-eligible amount');
+
+  const returnedRes = await transitionOrder(
+    adminActor,
+    {
+      orderId: order6.id,
+      targetStatus: 'returned',
+      returnReason: 'defective',
+      stockDisposition: 'sellable',
+    },
+    db6.getDeps()
+  );
+  assert(returnedRes.order.status === 'returned', 'Delivered order can enter the approved return path');
+  assert(Boolean(returnedRes.order.rewardReversedAt), 'Reward reversal marker recorded on return');
+  assert(db6.users.get('user_6').points === 0, 'Returned order reverses granted points once');
+  assert(db6.users.get('user_6').totalOrders === 0, 'Returned order reverses totalOrders');
+  assert(db6.users.get('user_6').totalSpent === 0, 'Returned order reverses reward-eligible spend');
 
   // =========================================================================
   // SCENARIO 7: Security Boundaries & Role Enforcement
@@ -355,6 +389,81 @@ async function runTests() {
     assert(err.code === 'ILLEGAL_TRANSITION', 'Illegal transition from shipped to cancelled blocked');
   }
   assert(illegalCancelCaught, 'State machine rejects shipped -> cancelled transition');
+
+  // =========================================================================
+  // SCENARIO 8: Metadata & Payment Commands Stay Inside the Service
+  // =========================================================================
+  console.log('\n--- Test 8: Metadata & Payment Command Authorization ---');
+  const paymentResult = await transitionOrder(
+    adminActor,
+    { orderId: pendingOrder.id, actionType: 'confirm_payment' },
+    db6.getDeps()
+  );
+  assert(paymentResult.order.paymentStatus === 'paid', 'Admin payment command marks payment as paid');
+  assert(paymentResult.event.actionType === 'confirm_payment', 'Payment confirmation records the canonical action');
+
+  const paymentReplay = await transitionOrder(
+    adminActor,
+    { orderId: pendingOrder.id, actionType: 'confirm_payment' },
+    db6.getDeps()
+  );
+  assert(paymentReplay.event.eventType === 'operation_replayed', 'Repeated payment command is idempotently replayed');
+
+  const metadataResult = await transitionOrder(
+    adminActor,
+    {
+      orderId: pendingOrder.id,
+      actionType: 'update_order_metadata',
+      metadata: { trackingCode: 'SPX123456', actualShippingCost: 18000 },
+    },
+    db6.getDeps()
+  );
+  assert(metadataResult.order.trackingCode === 'SPX123456', 'Admin metadata command updates tracking code');
+  assert(metadataResult.order.actualShippingCost === 18000, 'Admin metadata command updates shipping cost');
+  assert(metadataResult.event.eventType === 'order_metadata_updated', 'Metadata update records an audit event');
+
+  let metadataPermissionCaught = false;
+  try {
+    await transitionOrder(
+      cust6,
+      {
+        orderId: pendingOrder.id,
+        actionType: 'update_order_metadata',
+        metadata: { trackingCode: 'FORGED' },
+      },
+      db6.getDeps()
+    );
+  } catch (err: any) {
+    metadataPermissionCaught = true;
+    assert(err.code === 'ORDER_PERMISSION_REQUIRED', 'Customer cannot update order metadata');
+  }
+  assert(metadataPermissionCaught, 'Metadata command requires order-management permission');
+
+  let missingPermissionCaught = false;
+  try {
+    await transitionOrder(
+      { ...adminActor, permissions: {} },
+      { orderId: pendingOrder.id, targetStatus: 'processing' },
+      db6.getDeps()
+    );
+  } catch (err: any) {
+    missingPermissionCaught = true;
+    assert(err.code === 'ORDER_PERMISSION_REQUIRED', 'Admin without manageOrders permission is rejected');
+  }
+  assert(missingPermissionCaught, 'Status transition requires manageOrders permission');
+
+  let cancelPermissionCaught = false;
+  try {
+    await transitionOrder(
+      { ...adminActor, permissions: {} },
+      { orderId: pendingOrder.id, targetStatus: 'cancelled', actionType: 'cancel_order' },
+      db6.getDeps()
+    );
+  } catch (err: any) {
+    cancelPermissionCaught = true;
+    assert(err.code === 'ORDER_PERMISSION_REQUIRED', 'Admin without manageOrders cannot cancel orders');
+  }
+  assert(cancelPermissionCaught, 'Cancellation also requires manageOrders permission for admins');
 
   // Summary
   console.log('\n=============================================================');

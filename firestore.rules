@@ -319,13 +319,14 @@ service cloud.firestore {
           'stock_reserved', 'stock_restored', 'voucher_reserved', 'voucher_restored',
           'points_debited', 'points_refunded', 'reward_granted', 'reward_reversed',
           'return_received', 'refund_requested', 'refund_completed',
-          'operation_replayed', 'operation_failed'
+          'operation_replayed', 'operation_failed', 'order_metadata_updated'
         ] &&
         request.resource.data.actionType in [
           'create_order', 'review_risk', 'confirm_payment', 'fail_payment',
           'expire_payment', 'start_processing', 'ship_order', 'mark_delivered',
           'mark_failed_delivery', 'retry_delivery', 'cancel_order', 'accept_return',
-          'request_refund', 'complete_refund', 'reconcile_side_effect'
+          'request_refund', 'complete_refund', 'reconcile_side_effect',
+          'update_order_metadata'
         ] &&
         request.resource.data.actorType in [
           'customer', 'admin', 'super_admin', 'system', 'payment_provider',

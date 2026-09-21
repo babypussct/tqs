@@ -144,14 +144,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Fetch user profile from Firestore to determine role
     const userDoc = await db.collection('users').doc(uid).get();
     const userData = userDoc.data() || {};
+    if (userData.isBanned === true) {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_BANNED',
+        message: 'Tài khoản của bạn đã bị khóa.',
+      });
+    }
     const role: 'customer' | 'admin' = userData.role === 'admin' ? 'admin' : 'customer';
-    const isSuperAdmin = Boolean(userData.isSuperAdmin || email === 'quyencute3@gmail.com');
+    const isSuperAdmin = Boolean(decoded.super_admin === true || userData.isSuperAdmin === true);
 
     actor = {
       uid,
       email,
       role,
       isSuperAdmin,
+      permissions: userData.adminPermissions && typeof userData.adminPermissions === 'object'
+        ? userData.adminPermissions
+        : undefined,
     };
   } catch (authErr: any) {
     console.error('ID Token Verification Error:', authErr.message);
@@ -190,7 +200,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ─── Route: POST /api/orders (Create or Transition) ───
   if (req.method === 'POST') {
     const body = req.body || {};
-    const isTransition = Boolean(body.targetStatus || req.query.action === 'transition');
+    const isTransition = Boolean(
+      body.targetStatus ||
+      body.actionType ||
+      req.query.action === 'transition'
+    );
 
     // ── Transition Flow ──
     if (isTransition) {
@@ -204,6 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         carrierDeliveryEvidence: body.carrierDeliveryEvidence,
         overrideWindow: body.overrideWindow,
         actionType: body.actionType,
+        metadata: body.metadata,
       };
 
       try {
@@ -232,6 +247,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
             updateUserPoints: async (uid, delta) => {
               transaction.update(db.collection('users').doc(uid), { points: FieldValue.increment(delta) });
+            },
+            updateUserRewardStats: async (uid, update) => {
+              const statsUpdate: Record<string, unknown> = {};
+              if (update.pointsDelta !== undefined) statsUpdate.points = FieldValue.increment(update.pointsDelta);
+              if (update.totalSpentDelta !== undefined) statsUpdate.totalSpent = FieldValue.increment(update.totalSpentDelta);
+              if (update.totalOrdersDelta !== undefined) statsUpdate.totalOrders = FieldValue.increment(update.totalOrdersDelta);
+              if (update.rewardReversalDebtDelta !== undefined) {
+                statsUpdate.rewardReversalDebt = FieldValue.increment(update.rewardReversalDebtDelta);
+              }
+              if (update.tier !== undefined) statsUpdate.tier = update.tier;
+              if (Object.keys(statsUpdate).length > 0) {
+                transaction.update(db.collection('users').doc(uid), statsUpdate);
+              }
+            },
+            getTiersConfig: async () => {
+              const snap = await transaction.get(db.collection('system_settings').doc('tiers_config'));
+              return snap.exists ? snap.data() : null;
             },
             getVoucher: async (code) => {
               const docSnap = await transaction.get(db.collection('discountCodes').doc(code));
@@ -297,7 +329,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updateUserPoints: async (uid, delta) => {
             transaction.update(db.collection('users').doc(uid), {
               points: FieldValue.increment(delta),
-              totalOrders: FieldValue.increment(1),
             });
           },
           getProduct: async (id) => {

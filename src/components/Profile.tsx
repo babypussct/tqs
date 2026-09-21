@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Order, AppUser, TierConfig } from '../types';
@@ -12,6 +12,7 @@ import VoucherCenter from './VoucherCenter';
 import OrderHistory from './profile/OrderHistory';
 import UserSettings from './profile/UserSettings';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { postOrderCommand } from '../utils/orderApi';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -122,54 +123,25 @@ export default function Profile() {
     return { nextTier: nextTierConfig, progressPercentage, missingAmount, activeTierConfig };
   }, [appUser, rewardsConfig]);
 
-  const [isConfirming, setIsConfirming] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState<string | null>(null);
 
-  const handleConfirmReceived = async (order: Order) => {
-    if (!window.confirm('Xác nhận bạn đã nhận được hàng và hàng hóa nguyên vẹn? Bằng việc xác nhận, bạn đồng ý kết thúc đơn hàng này.')) return;
-    
-    setIsConfirming(order.id);
+  const handleCancelOrder = async (order: Order) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Hệ thống sẽ hoàn lại kho, voucher và điểm đã dùng nếu đủ điều kiện.')) return;
+
+    setIsCancelling(order.id);
     try {
-      // 1. Cập nhật trạng thái
-      await updateDoc(doc(db, 'orders', order.id), {
-        status: 'delivered',
-        updatedAt: serverTimestamp()
+      await postOrderCommand({
+        orderId: order.id,
+        targetStatus: 'cancelled',
+        actionType: 'cancel_order',
+        cancelReason: 'customer_requested',
       });
-      
-      // 2. Thưởng điểm
-      let earnedPoints = 0;
-      if (activeTierConfig && rewardsConfig?.pointValueVND) {
-        earnedPoints = Math.floor((order.finalAmount || order.totalAmount) / 1000) * (activeTierConfig.pointMultiplier || 1);
-      } else {
-        earnedPoints = Math.floor((order.finalAmount || order.totalAmount) / 1000); // Mặc định 1 điểm = 1k
-      }
-      
-      await updateDoc(doc(db, 'users', user!.uid), {
-        points: increment(earnedPoints),
-        totalSpent: increment(order.finalAmount || order.totalAmount)
-      });
-      
-      toast.success(`Cảm ơn bạn! Đã cộng ${earnedPoints} điểm thưởng vào tài khoản.`);
-
-      // Thông báo Telegram
-      fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'ORDER_DELIVERED',
-          payload: {
-            orderId: order.id,
-            customerName: order.shippingInfo.fullName,
-            phone: order.shippingInfo.phone,
-            amount: order.finalAmount || order.totalAmount,
-            earnedPoints
-          }
-        })
-      }).catch(() => {});
+      toast.success('Đã gửi yêu cầu hủy đơn hàng');
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi cập nhật.');
+      toast.error(error instanceof Error ? error.message : 'Không thể hủy đơn hàng.');
       console.error(error);
     } finally {
-      setIsConfirming(null);
+      setIsCancelling(null);
     }
   };
 
@@ -380,8 +352,8 @@ export default function Profile() {
            <OrderHistory 
              orders={orders}
              getStatusConfig={getStatusConfig}
-             isConfirming={isConfirming}
-             handleConfirmReceived={handleConfirmReceived}
+             isCancelling={isCancelling}
+             handleCancelOrder={handleCancelOrder}
              paymentConfig={paymentConfig}
            />
         )}

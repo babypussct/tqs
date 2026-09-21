@@ -1,6 +1,14 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import {
+  AuthenticatedActor,
+  OrderServiceDependencies,
+  OrderServiceError,
+  TransitionOrderInput,
+  transitionOrder,
+} from '../src/order/orderService';
+import { IdempotencyRecord, OrderDocument } from '../src/order/canonical';
 
 // Khởi tạo Firebase Admin an toàn
 if (!admin.apps.length) {
@@ -34,6 +42,98 @@ function getDb() {
   return getFirestore(admin.app(), dbId);
 }
 
+const telegramActor: AuthenticatedActor = {
+  uid: 'telegram:internal',
+  email: 'telegram-internal',
+  role: 'admin',
+  permissions: { manageOrders: true },
+};
+
+/**
+ * Execute an internal Telegram order command through the same domain service
+ * and transaction boundary as the authenticated HTTP API.
+ */
+async function runTelegramOrderCommand(
+  db: FirebaseFirestore.Firestore,
+  input: TransitionOrderInput
+) {
+  return db.runTransaction(async (transaction) => {
+    const deps: OrderServiceDependencies = {
+      getOrder: async (id) => {
+        const snap = await transaction.get(db.collection('orders').doc(id));
+        return snap.exists ? (snap.data() as OrderDocument) : null;
+      },
+      updateOrder: async (id, updates) => {
+        transaction.update(db.collection('orders').doc(id), updates);
+      },
+      saveOrder: async (order) => {
+        transaction.set(db.collection('orders').doc(order.id), order);
+      },
+      getProduct: async (id) => {
+        const snap = await transaction.get(db.collection('products').doc(id));
+        return snap.exists ? { id: snap.id, ...snap.data() } : null;
+      },
+      updateProductStock: async (id, stock) => {
+        transaction.update(db.collection('products').doc(id), { stock });
+      },
+      getUserProfile: async (uid) => {
+        const snap = await transaction.get(db.collection('users').doc(uid));
+        return snap.exists ? { id: snap.id, ...snap.data() } : null;
+      },
+      updateUserPoints: async (uid, delta) => {
+        transaction.update(db.collection('users').doc(uid), { points: FieldValue.increment(delta) });
+      },
+      updateUserRewardStats: async (uid, update) => {
+        const statsUpdate: Record<string, unknown> = {};
+        if (update.pointsDelta !== undefined) statsUpdate.points = FieldValue.increment(update.pointsDelta);
+        if (update.totalSpentDelta !== undefined) statsUpdate.totalSpent = FieldValue.increment(update.totalSpentDelta);
+        if (update.totalOrdersDelta !== undefined) statsUpdate.totalOrders = FieldValue.increment(update.totalOrdersDelta);
+        if (update.rewardReversalDebtDelta !== undefined) {
+          statsUpdate.rewardReversalDebt = FieldValue.increment(update.rewardReversalDebtDelta);
+        }
+        if (update.tier !== undefined) statsUpdate.tier = update.tier;
+        if (Object.keys(statsUpdate).length > 0) {
+          transaction.update(db.collection('users').doc(uid), statsUpdate);
+        }
+      },
+      getTiersConfig: async () => {
+        const snap = await transaction.get(db.collection('system_settings').doc('tiers_config'));
+        return snap.exists ? snap.data() : null;
+      },
+      getVoucher: async (code) => {
+        const directSnap = await transaction.get(db.collection('discountCodes').doc(code));
+        if (directSnap.exists) return { id: directSnap.id, ...directSnap.data() };
+        const querySnap = await transaction.get(
+          db.collection('discountCodes').where('code', '==', code).limit(1)
+        );
+        return querySnap.empty ? null : { id: querySnap.docs[0].id, ...querySnap.docs[0].data() };
+      },
+      incrementVoucherUsage: async (id) => {
+        transaction.update(db.collection('discountCodes').doc(id), {
+          usedCount: FieldValue.increment(1),
+        });
+      },
+      decrementVoucherUsage: async (id) => {
+        transaction.update(db.collection('discountCodes').doc(id), {
+          usedCount: FieldValue.increment(-1),
+        });
+      },
+      saveEvent: async (orderId, event) => {
+        transaction.set(db.collection('orders').doc(orderId).collection('events').doc(event.id), event);
+      },
+      getIdempotencyRecord: async (id) => {
+        const snap = await transaction.get(db.collection('idempotency').doc(id));
+        return snap.exists ? (snap.data() as IdempotencyRecord) : null;
+      },
+      saveIdempotencyRecord: async (record) => {
+        transaction.set(db.collection('idempotency').doc(record.id), record);
+      },
+    };
+
+    return transitionOrder(telegramActor, input, deps);
+  });
+}
+
 // ─── Helper: Gọi Telegram API ───
 async function tg(method: string, body: any) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -42,71 +142,6 @@ async function tg(method: string, body: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-}
-
-// ─── Helper: Hoàn stock khi hủy đơn ───
-async function restoreStock(db: FirebaseFirestore.Firestore, items: any[]) {
-  const batch = db.batch();
-  for (const item of items) {
-    if (item.productId && item.quantity) {
-      const productRef = db.collection('products').doc(item.productId);
-      batch.update(productRef, { stock: FieldValue.increment(item.quantity) });
-    }
-  }
-  await batch.commit();
-}
-
-// ─── Helper: Cộng điểm thưởng khi giao thành công ───
-async function awardPoints(db: FirebaseFirestore.Firestore, orderId: string, orderData: any) {
-  const userId = orderData.userId;
-  if (!userId) return 0;
-
-  const userRef = db.collection('users').doc(userId);
-  const userSnap = await userRef.get();
-  if (!userSnap.exists) return 0;
-
-  const userData = userSnap.data()!;
-  const amount = orderData.finalAmount || orderData.totalAmount || 0;
-  const currentSpent = userData.totalSpent || 0;
-  const currentOrders = userData.totalOrders || 0;
-  const newSpent = currentSpent + amount;
-  const newOrders = currentOrders + 1;
-
-  // Đọc config tiers
-  const configSnap = await db.collection('system_settings').doc('tiers_config').get();
-  let pointsEarned = 0;
-  let newTier = userData.tier || 'bronze';
-
-  if (configSnap.exists) {
-    const config = configSnap.data()!;
-    if (config.isActive) {
-      const currentTierKey = userData.tier || 'bronze';
-      const currentTierConfig = config.tiers?.[currentTierKey] || config.tiers?.['bronze'];
-      const multiplier = currentTierConfig?.pointMultiplier || 0.01;
-      const pointValueVND = config.pointValueVND || 1000;
-      pointsEarned = Math.floor((amount * multiplier) / pointValueVND);
-
-      const sortedTiers = Object.values(config.tiers || {}).sort((a: any, b: any) => b.minSpent - a.minSpent);
-      for (const tier of sortedTiers as any[]) {
-        if (newSpent >= tier.minSpent) { newTier = tier.tierId; break; }
-      }
-    } else {
-      pointsEarned = Math.floor(amount / 10000);
-    }
-  } else {
-    pointsEarned = Math.floor(amount / 10000);
-  }
-
-  await userRef.update({
-    totalSpent: newSpent,
-    totalOrders: newOrders,
-    tier: newTier,
-    points: FieldValue.increment(pointsEarned)
-  });
-
-  await db.collection('orders').doc(orderId).update({ earnedPoints: pointsEarned });
-
-  return pointsEarned;
 }
 
 // ─── Helper: Build trạng thái VN ───
@@ -211,7 +246,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const orderSnap = await orderRef.get();
             if (orderSnap.exists) {
               const prevNotes = orderSnap.data()?.adminNotes ? orderSnap.data()!.adminNotes + '\n' : '';
-              await orderRef.update({ adminNotes: prevNotes + `- ${text}` });
+              await runTelegramOrderCommand(db, {
+                orderId,
+                actionType: 'update_order_metadata',
+                metadata: { adminNotes: prevNotes + `- ${text}` },
+              });
               await tg('sendMessage', {
                 chat_id: chatId,
                 text: `✅ Đã lưu ghi chú cho đơn <b>#${orderId}</b>`,
@@ -264,7 +303,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!orderSnap.exists) {
           await tg('sendMessage', { chat_id: chatId, text: `❌ Không tìm thấy đơn #${orderId}` });
         } else {
-          await db.collection('orders').doc(orderId).update({ trackingCode });
+          await runTelegramOrderCommand(db, {
+            orderId,
+            actionType: 'update_order_metadata',
+            metadata: { trackingCode },
+          });
           await tg('sendMessage', {
             chat_id: chatId, parse_mode: 'HTML',
             text: `✅ Đã lưu mã vận đơn cho <b>#${orderId}</b>\n📦 MVĐ: <code>${trackingCode}</code>`
@@ -372,18 +415,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
           const order = orderSnap.data()!;
-          let newPaymentStatus = order.paymentStatus || 'pending';
-          let newStatus = order.status;
+          let transitionInput: TransitionOrderInput | null = null;
           let actionLabel = '';
           let statusFootnote = '';
 
-          // ─── Xử lý từng loại action ───
+          // ─── Build a domain command; all order mutations happen in the service ───
           if (actionType === 'paid') {
             if (order.paymentStatus === 'paid') {
               actionLabel = 'Tiền đã được nhận từ trước!';
             } else {
-              newPaymentStatus = 'paid';
-              if (order.status === 'pending') newStatus = 'processing';
+              transitionInput = {
+                orderId,
+                targetStatus: order.status === 'pending' ? 'processing' : order.status,
+                actionType: 'confirm_payment',
+                paymentStatus: 'paid',
+              };
               actionLabel = '✅ Đã gạch nợ thành công!';
               statusFootnote = '✅ ĐÃ XÁC NHẬN NHẬN TIỀN';
             }
@@ -392,7 +438,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (order.status === 'processing') {
               actionLabel = 'Đơn này đã ở trạng thái Đang chuẩn bị!';
             } else {
-              newStatus = 'processing';
+              transitionInput = { orderId, targetStatus: 'processing', actionType: 'start_processing' };
               actionLabel = '🔧 Cập nhật thành ĐANG CHUẨN BỊ!';
               statusFootnote = '🔧 ĐANG CHUẨN BỊ HÀNG';
             }
@@ -401,7 +447,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (order.status === 'shipped') {
               actionLabel = 'Đơn này vốn đã đang giao!';
             } else {
-              newStatus = 'shipped';
+              transitionInput = { orderId, targetStatus: 'shipped', actionType: 'ship_order' };
               actionLabel = '🚚 Cập nhật thành ĐANG GIAO!';
               statusFootnote = '🚚 ĐANG GIAO HÀNG';
             }
@@ -410,9 +456,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (order.status === 'delivered') {
               actionLabel = 'Đơn này đã hoàn tất từ trước!';
             } else {
-              newStatus = 'delivered';
-              newPaymentStatus = 'paid'; // Giao thành công = đã thu tiền
-              const points = await awardPoints(db, orderId, order);
+              transitionInput = {
+                orderId,
+                targetStatus: 'delivered',
+                actionType: 'mark_delivered',
+                paymentStatus: 'paid',
+              };
+              const points = order.earnedPoints || 0;
               actionLabel = `✅ Đã giao thành công! Cộng ${points} điểm cho khách.`;
               statusFootnote = `✅ ĐÃ GIAO THÀNH CÔNG (+${points} điểm)`;
             }
@@ -421,33 +471,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (order.status === 'cancelled') {
               actionLabel = 'Đơn này đã được HỦY từ trước!';
             } else {
-              newStatus = 'cancelled';
-              // Hoàn lại stock sản phẩm
-              if (order.items?.length > 0) {
-                try { await restoreStock(db, order.items); } catch (e) { console.error('Restore stock error:', e); }
-              }
+              transitionInput = {
+                orderId,
+                targetStatus: 'cancelled',
+                actionType: 'cancel_order',
+                cancelReason: 'telegram_admin',
+              };
               actionLabel = '❌ Đã HỦY đơn + hoàn kho thành công!';
               statusFootnote = '❌ ĐÃ HỦY ĐƠN (Kho đã hoàn)';
             }
+          } else {
+            throw new OrderServiceError('Loại thao tác Telegram không hợp lệ.', 'UNKNOWN_TELEGRAM_ACTION', 400);
           }
 
-          // Cập nhật Firestore
-          const updateData: any = { status: newStatus, paymentStatus: newPaymentStatus };
-          // Không ghi đè earnedPoints nếu đã xử lý trong awardPoints
-          if (actionType !== 'delivered') {
-            await orderRef.update(updateData);
-          } else {
-            // awardPoints đã update earnedPoints, chỉ cần update status/payment
-            await orderRef.update({ status: newStatus, paymentStatus: newPaymentStatus });
-          }
+          const transitionResult = transitionInput
+            ? await runTelegramOrderCommand(db, transitionInput)
+            : null;
+          const updatedOrder = transitionResult?.order || order;
 
           // Trả lời callback
           await tg('answerCallbackQuery', { callback_query_id: cq.id, text: actionLabel, show_alert: true });
 
           // Cập nhật tin nhắn — rebuild toàn bộ để giữ format HTML
           if (statusFootnote) {
-            const updatedOrderSnap = await orderRef.get();
-            const updatedOrder = updatedOrderSnap.data()!;
             const newMsg = buildOrderMessage(orderId, updatedOrder, '🔔 <b>CẬP NHẬT ĐƠN HÀNG</b>');
             const newButtons = buildOrderButtons(orderId, updatedOrder.status, updatedOrder.paymentStatus || 'pending', updatedOrder.paymentMethod || 'cod');
 
@@ -461,8 +507,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
         } catch (dbError) {
-          console.error('DB Error:', dbError);
-          await tg('answerCallbackQuery', { callback_query_id: cq.id, text: 'Lỗi: Mất kết nối CSDL', show_alert: true });
+          console.error('Order command error:', dbError);
+          const message = dbError instanceof OrderServiceError
+            ? dbError.message
+            : 'Lỗi: Không thể cập nhật đơn hàng';
+          await tg('answerCallbackQuery', { callback_query_id: cq.id, text: message, show_alert: true });
         }
       }
     }

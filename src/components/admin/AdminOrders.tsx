@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 import { ShoppingBag, ChevronRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOrders } from '../../utils/useOrders';
-import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
+import { postOrderCommand } from '../../utils/orderApi';
 import { Order } from '../../types';
 import AdminOrderDetailModal from './AdminOrderDetailModal';
 
@@ -26,23 +24,29 @@ export default function AdminOrders() {
     }
 
     try {
-      await updateDoc(doc(db, 'orders', orderId), { trackingCode: code });
+      await postOrderCommand({
+        orderId,
+        actionType: 'update_order_metadata',
+        metadata: { trackingCode: code },
+      });
       setEditingTracking(prev => ({ ...prev, [orderId]: false }));
       toast.success('Đã lưu mã vận đơn');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
-      toast.error('Có lỗi xảy ra khi lưu mã vận đơn');
+      toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi lưu mã vận đơn');
     }
   };
 
   const handleTrackingDelete = async (orderId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa mã vận đơn này?')) {
       try {
-        await updateDoc(doc(db, 'orders', orderId), { trackingCode: null });
+        await postOrderCommand({
+          orderId,
+          actionType: 'update_order_metadata',
+          metadata: { trackingCode: null },
+        });
         toast.success('Đã xóa mã vận đơn');
       } catch (error) {
-        handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
-        toast.error('Có lỗi xảy ra khi xóa mã vận đơn');
+        toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi xóa mã vận đơn');
       }
     }
   };
@@ -151,7 +155,10 @@ export default function AdminOrders() {
                     <button
                         onClick={async () => {
                             try {
-                            await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
+                            await postOrderCommand({
+                              orderId: order.id,
+                              actionType: 'confirm_payment',
+                            });
                             toast.success('Đã xác nhận thanh toán');
                             } catch (error) { toast.error('Lỗi khi xác nhận thanh toán'); }
                         }}
@@ -222,7 +229,10 @@ export default function AdminOrders() {
                           <button
                             onClick={async () => {
                               try {
-                                await updateDoc(doc(db, 'orders', order.id), { paymentStatus: 'paid' });
+                                await postOrderCommand({
+                                  orderId: order.id,
+                                  actionType: 'confirm_payment',
+                                });
                                 toast.success('Đã xác nhận thanh toán');
                               } catch (error) { toast.error('Lỗi khi xác nhận thanh toán'); }
                             }}
@@ -288,7 +298,7 @@ export default function AdminOrders() {
                           </span>
                           <div className="flex items-center gap-2 mt-1">
                             <button onClick={() => { setTrackingInputs(prev => ({ ...prev, [order.id]: order.trackingCode! })); setEditingTracking(prev => ({ ...prev, [order.id]: true })); }} className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium">Sửa mã</button>
-                            <button onClick={() => handleTrackingDelete(order.id)} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Xóa</button>
+                            <button onClick={() => handleTrackingDelete(order.id)} className="text-[10px] text-red-600 hover:text-red-700 font-medium">Xóa mã</button>
                           </div>
                         </div>
                       ) : (
@@ -310,17 +320,19 @@ export default function AdminOrders() {
                       )}
                     </div>
                     
-                    <button
-                      onClick={() => {
-                        if (window.confirm('CẢNH BÁO: Xoá đơn hàng này sẽ làm mất toàn bộ dữ liệu đơn hàng và thu hồi lại điểm nếu đã giao thành công. Bạn có chắc chắn muốn xoá vĩnh viễn?')) {
-                          deleteOrder(order);
-                        }
-                      }}
-                      className="mt-auto text-[10px] flex items-center gap-1 text-slate-400 hover:text-red-600 transition-colors bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded shadow-sm opacity-50 hover:opacity-100"
-                      title="Xoá vĩnh viễn đơn hàng"
-                    >
-                      <Trash2 className="w-3 h-3" /> Xoá Đơn
-                    </button>
+                    {['pending', 'suspicious', 'processing'].includes(order.status) && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Hệ thống sẽ xử lý hoàn kho và các side effect đủ điều kiện.')) {
+                            deleteOrder(order);
+                          }
+                        }}
+                        className="mt-auto text-[10px] flex items-center gap-1 text-slate-400 hover:text-red-600 transition-colors bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-1 rounded shadow-sm opacity-50 hover:opacity-100"
+                        title="Hủy đơn hàng"
+                      >
+                        <Trash2 className="w-3 h-3" /> Hủy Đơn
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

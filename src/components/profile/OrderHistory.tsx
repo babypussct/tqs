@@ -7,16 +7,16 @@ import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 interface OrderHistoryProps {
   orders: Order[];
   getStatusConfig: (status: Order['status']) => { icon: React.ElementType, color: string, bg: string, border: string, label: string };
-  isConfirming: string | null;
-  handleConfirmReceived: (order: Order) => void;
+  isCancelling: string | null;
+  handleCancelOrder: (order: Order) => void;
   paymentConfig: any;
 }
 
 export default function OrderHistory({
   orders,
   getStatusConfig,
-  isConfirming,
-  handleConfirmReceived,
+  isCancelling,
+  handleCancelOrder,
   paymentConfig
 }: OrderHistoryProps) {
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'shipping' | 'delivered'>('all');
@@ -271,19 +271,19 @@ export default function OrderHistory({
                        )}
                      </div>
                    )}
-                   {/* Render Receive confirmation if Shipped */}
-                   {order.status === 'shipped' && (
-                     <div className="mt-6 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                   {/* Customer cancellation is only available before shipment. */}
+                   {(order.status === 'pending' || order.status === 'suspicious') && (
+                     <div className="mt-6 border border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                        <div>
-                         <h4 className="font-bold text-gray-900 dark:text-white mb-1">Kiện hàng đã đến nơi?</h4>
-                         <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">Vui lòng xác nhận khi bạn đã nhận đủ hàng để nhận ngay điểm thưởng.</p>
+                         <h4 className="font-bold text-gray-900 dark:text-white mb-1">Muốn hủy đơn hàng?</h4>
+                         <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400">Bạn chỉ có thể hủy trước khi shop bắt đầu chuẩn bị hàng.</p>
                        </div>
                        <button
-                         onClick={() => handleConfirmReceived(order)}
-                         disabled={isConfirming === order.id}
-                         className={`w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 whitespace-nowrap \${isConfirming === order.id ? 'opacity-70 cursor-not-allowed' : ''}`}
+                         onClick={() => handleCancelOrder(order)}
+                         disabled={isCancelling === order.id}
+                         className={`w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-md shadow-red-500/20 whitespace-nowrap \${isCancelling === order.id ? 'opacity-70 cursor-not-allowed' : ''}`}
                        >
-                         {isConfirming === order.id ? 'Đang xử lý...' : 'Xác nhận Đã nhận hàng'}
+                         {isCancelling === order.id ? 'Đang xử lý...' : 'Hủy đơn hàng'}
                        </button>
                      </div>
                    )}

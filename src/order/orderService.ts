@@ -61,7 +61,7 @@ export interface CreateOrderInput {
 
 export interface TransitionOrderInput {
   orderId: string;
-  targetStatus: OrderStatus;
+  targetStatus?: OrderStatus;
   paymentStatus?: PaymentStatus;
   cancelReason?: string;
   returnReason?: ReturnReason;
@@ -69,6 +69,13 @@ export interface TransitionOrderInput {
   carrierDeliveryEvidence?: string;
   overrideWindow?: boolean;
   actionType?: ActionType;
+  metadata?: {
+    trackingCode?: string | null;
+    actualShippingCost?: number | null;
+    baseCost?: number | null;
+    packagingCost?: number | null;
+    adminNotes?: string | null;
+  };
 }
 
 export interface AuthenticatedActor {
@@ -76,6 +83,15 @@ export interface AuthenticatedActor {
   email: string;
   role: 'customer' | 'admin';
   isSuperAdmin?: boolean;
+  permissions?: Record<string, boolean>;
+}
+
+export interface UserRewardStatsUpdate {
+  pointsDelta?: number;
+  totalSpentDelta?: number;
+  totalOrdersDelta?: number;
+  rewardReversalDebtDelta?: number;
+  tier?: string;
 }
 
 export interface OrderServiceDependencies {
@@ -92,6 +108,7 @@ export interface OrderServiceDependencies {
   saveEvent: (orderId: string, event: OrderEvent) => Promise<void>;
   getIdempotencyRecord: (id: string) => Promise<IdempotencyRecord | null>;
   saveIdempotencyRecord: (record: IdempotencyRecord) => Promise<void>;
+  updateUserRewardStats?: (uid: string, update: UserRewardStatsUpdate) => Promise<void>;
   getShippingConfig?: () => Promise<any | null>;
   getTiersConfig?: () => Promise<any | null>;
 }
@@ -114,6 +131,58 @@ export function generateOrderCode(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+function canManageOrders(actor: AuthenticatedActor): boolean {
+  return actor.isSuperAdmin === true || (
+    actor.role === 'admin' && actor.permissions?.manageOrders === true
+  );
+}
+
+function assertCanManageOrders(actor: AuthenticatedActor): void {
+  if (!canManageOrders(actor)) {
+    throw new OrderServiceError(
+      'Bạn không có quyền thực hiện thao tác quản trị đơn hàng.',
+      'ORDER_PERMISSION_REQUIRED',
+      403
+    );
+  }
+}
+
+function validateOrderMetadata(metadata: NonNullable<TransitionOrderInput['metadata']>): void {
+  if (metadata.trackingCode !== undefined && metadata.trackingCode !== null) {
+    if (typeof metadata.trackingCode !== 'string' || metadata.trackingCode.length > 200) {
+      throw new OrderServiceError('Mã vận đơn không hợp lệ.', 'INVALID_TRACKING_CODE', 400);
+    }
+  }
+
+  for (const [field, value] of Object.entries(metadata)) {
+    if (field === 'trackingCode' || field === 'adminNotes') continue;
+    if (value !== null && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+      throw new OrderServiceError(`Giá trị ${field} không hợp lệ.`, 'INVALID_ORDER_METADATA', 400);
+    }
+  }
+
+  if (metadata.adminNotes !== undefined && metadata.adminNotes !== null &&
+      (typeof metadata.adminNotes !== 'string' || metadata.adminNotes.length > 5000)) {
+    throw new OrderServiceError('Ghi chú admin không hợp lệ.', 'INVALID_ADMIN_NOTES', 400);
+  }
+}
+
+function resolveTierForSpend(userProfile: any, totalSpent: number, tiersConfig: any): string | undefined {
+  const configuredTiers = tiersConfig?.tiers;
+  if (!configuredTiers) return userProfile?.tier;
+
+  const tierEntries = Array.isArray(configuredTiers)
+    ? configuredTiers.map((tier: any) => [tier.tierId, tier] as const)
+    : Object.entries(configuredTiers);
+
+  const matchingTier = tierEntries
+    .filter(([, tier]) => typeof (tier as any)?.minSpent === 'number')
+    .sort(([, left], [, right]) => (right as any).minSpent - (left as any).minSpent)
+    .find(([, tier]) => totalSpent >= (tier as any).minSpent);
+
+  return matchingTier?.[0] || userProfile?.tier;
 }
 
 /**
@@ -401,7 +470,7 @@ export async function transitionOrder(
   input: TransitionOrderInput,
   deps: OrderServiceDependencies
 ): Promise<{ order: OrderDocument; event: OrderEvent }> {
-  const { orderId, targetStatus } = input;
+  const { orderId } = input;
 
   // 1. Read existing order
   const order = await deps.getOrder(orderId);
@@ -415,6 +484,8 @@ export async function transitionOrder(
     : actor.role === 'admin'
     ? 'admin'
     : 'customer';
+
+  const targetStatus = input.targetStatus || order.status;
 
   // 3. Resolve action type
   const actionType: ActionType =
@@ -435,6 +506,107 @@ export async function transitionOrder(
       ? 'complete_refund'
       : 'reconcile_side_effect');
 
+  if (actorType === 'admin') {
+    assertCanManageOrders(actor);
+  }
+
+  if (actionType === 'update_order_metadata') {
+    assertCanManageOrders(actor);
+    if (!input.metadata || Object.keys(input.metadata).length === 0) {
+      throw new OrderServiceError('Không có dữ liệu đơn hàng cần cập nhật.', 'EMPTY_ORDER_METADATA', 400);
+    }
+    validateOrderMetadata(input.metadata);
+
+    const now = new Date().toISOString();
+    const nextRevision = (order.revision || 1) + 1;
+    const orderUpdates: Partial<OrderDocument> = {
+      ...input.metadata,
+      revision: nextRevision,
+      updatedAt: now,
+    };
+    await deps.updateOrder(order.id, orderUpdates);
+
+    const event: OrderEvent = {
+      id: `evt_${order.id}_${nextRevision}`,
+      sequence: nextRevision,
+      orderId: order.id,
+      eventType: 'order_metadata_updated',
+      actionType: 'update_order_metadata',
+      actorType,
+      actorId: actor.uid,
+      fromStatus: order.status,
+      toStatus: order.status,
+      fromPaymentStatus: order.paymentStatus,
+      toPaymentStatus: order.paymentStatus,
+      sideEffectsExecuted: [],
+      createdAt: now,
+    };
+    await deps.saveEvent(order.id, event);
+
+    return {
+      order: { ...order, ...orderUpdates },
+      event,
+    };
+  }
+
+  // Payment confirmation is a valid admin command even when it does not
+  // change the order status. It remains idempotent for repeated callbacks.
+  if (actionType === 'confirm_payment' && targetStatus === order.status) {
+    assertCanManageOrders(actor);
+    if (order.paymentStatus === 'paid') {
+      return {
+        order,
+        event: {
+          id: `evt_${order.id}_${order.revision}_payment_replay`,
+          sequence: order.revision,
+          orderId: order.id,
+          eventType: 'operation_replayed',
+          actionType: 'confirm_payment',
+          actorType,
+          actorId: actor.uid,
+          fromStatus: order.status,
+          toStatus: order.status,
+          fromPaymentStatus: order.paymentStatus,
+          toPaymentStatus: order.paymentStatus,
+          sideEffectsExecuted: ['payment_already_paid'],
+          createdAt: new Date().toISOString(),
+        },
+      };
+    }
+
+    const now = new Date().toISOString();
+    const nextRevision = (order.revision || 1) + 1;
+    const orderUpdates: Partial<OrderDocument> = {
+      paymentStatus: 'paid',
+      paymentConfirmedAt: now,
+      revision: nextRevision,
+      updatedAt: now,
+    };
+    await deps.updateOrder(order.id, orderUpdates);
+
+    const event: OrderEvent = {
+      id: `evt_${order.id}_${nextRevision}`,
+      sequence: nextRevision,
+      orderId: order.id,
+      eventType: 'payment_status_changed',
+      actionType: 'confirm_payment',
+      actorType,
+      actorId: actor.uid,
+      fromStatus: order.status,
+      toStatus: order.status,
+      fromPaymentStatus: order.paymentStatus,
+      toPaymentStatus: 'paid',
+      sideEffectsExecuted: ['payment_confirmed'],
+      createdAt: now,
+    };
+    await deps.saveEvent(order.id, event);
+
+    return {
+      order: { ...order, ...orderUpdates },
+      event,
+    };
+  }
+
   // 4. Plan transition & side effects
   const transitionReq: TransitionRequest = {
     targetStatus,
@@ -453,12 +625,16 @@ export async function transitionOrder(
 
   // 5. Read phase for side effects (all reads before writes)
   let userProfile: any = null;
+  let tiersConfig: any = null;
   if (
     plan.sideEffects.grantReward ||
     plan.sideEffects.refundPoints ||
     plan.sideEffects.reverseReward
   ) {
     userProfile = await deps.getUserProfile(order.userId);
+  }
+  if (plan.sideEffects.grantReward && deps.getTiersConfig) {
+    tiersConfig = await deps.getTiersConfig();
   }
 
   const stockRestoreMap: Array<{ productId: string; currentStock: number; qtyToRestore: number }> = [];
@@ -498,24 +674,55 @@ export async function transitionOrder(
     sideEffectsExecuted.push('points_refunded');
   }
 
-  // C. Grant loyalty rewards
-  if (plan.sideEffects.grantReward && order.earnedPoints && order.earnedPoints > 0) {
-    await deps.updateUserPoints(order.userId, order.earnedPoints);
-    sideEffectsExecuted.push('reward_granted');
+  // C. Grant loyalty rewards and update the delivered-order customer stats.
+  if (plan.sideEffects.grantReward) {
+    const grossPoints = Math.max(0, order.earnedPoints || 0);
+    const existingDebt = Math.max(0, userProfile?.rewardReversalDebt || 0);
+    const debtApplied = Math.min(grossPoints, existingDebt);
+    const pointsToGrant = grossPoints - debtApplied;
+    const totalSpentDelta = Math.max(0, order.rewardEligibleAmount || 0);
+    const nextTier = resolveTierForSpend(
+      userProfile,
+      Math.max(0, (userProfile?.totalSpent || 0) + totalSpentDelta),
+      tiersConfig
+    );
+
+    if (deps.updateUserRewardStats) {
+      await deps.updateUserRewardStats(order.userId, {
+        pointsDelta: pointsToGrant,
+        totalSpentDelta,
+        totalOrdersDelta: 1,
+        rewardReversalDebtDelta: -debtApplied,
+        tier: nextTier,
+      });
+    } else if (pointsToGrant > 0) {
+      await deps.updateUserPoints(order.userId, pointsToGrant);
+    }
+
+    if (debtApplied > 0) sideEffectsExecuted.push('reward_reversal_debt_applied');
+    sideEffectsExecuted.push('reward_granted', 'customer_stats_updated');
   }
 
   // D. Reverse loyalty rewards
   let reversalDebt: number | null = null;
-  if (plan.sideEffects.reverseReward && order.earnedPoints && order.earnedPoints > 0) {
+  if (plan.sideEffects.reverseReward) {
+    const earnedPoints = Math.max(0, order.earnedPoints || 0);
     const reversal = calculateRewardReversal({
       currentBalance: userProfile?.points || 0,
-      earnedPointsToReverse: order.earnedPoints,
+      earnedPointsToReverse: earnedPoints,
     });
-    if (reversal.deductedPoints > 0) {
+    if (deps.updateUserRewardStats) {
+      await deps.updateUserRewardStats(order.userId, {
+        pointsDelta: -reversal.deductedPoints,
+        totalSpentDelta: -Math.max(0, order.rewardEligibleAmount || 0),
+        totalOrdersDelta: -1,
+        rewardReversalDebtDelta: reversal.debtCreated,
+      });
+    } else if (reversal.deductedPoints > 0) {
       await deps.updateUserPoints(order.userId, -reversal.deductedPoints);
     }
     reversalDebt = reversal.debtCreated;
-    sideEffectsExecuted.push('reward_reversed');
+    sideEffectsExecuted.push('reward_reversed', 'customer_stats_reversed');
   }
 
   // E. Release voucher usage
@@ -532,6 +739,10 @@ export async function transitionOrder(
     revision: nextRevision,
     updatedAt: now,
   };
+
+  if (plan.toPaymentStatus === 'paid' && order.paymentStatus !== 'paid') {
+    orderUpdates.paymentConfirmedAt = now;
+  }
 
   if (plan.toStatus === 'cancelled') {
     orderUpdates.cancelledAt = now;

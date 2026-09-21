@@ -167,8 +167,9 @@ export function planOrderTransition(
 
   // B. Delivery side effects
   if (targetStatus === 'delivered' && currentStatus === 'shipped') {
-    // Grant loyalty points if not already granted
-    if (!order.rewardGrantedAt && (order.earnedPoints || 0) > 0) {
+    // Delivery is the single trigger for reward and customer order stats.
+    // The service also records the marker when the calculated reward is zero.
+    if (!order.rewardGrantedAt) {
       sideEffects.grantReward = true;
     }
     // For COD, delivery triggers payment completion
@@ -180,8 +181,8 @@ export function planOrderTransition(
 
   // C. Return / After-sales side effects
   if (targetStatus === 'returned') {
-    // Reverse reward points if previously granted
-    if (order.rewardGrantedAt && !order.rewardReversedAt && (order.earnedPoints || 0) > 0) {
+    // Reverse reward points and delivered-order stats exactly once.
+    if (order.rewardGrantedAt && !order.rewardReversedAt) {
       sideEffects.reverseReward = true;
     }
     // Restore stock if sellable and not already restored
@@ -200,7 +201,7 @@ export function planOrderTransition(
     sideEffects.setRefunded = true;
     targetPaymentStatus = 'refunded';
     // If returning directly from delivered (emergency exception)
-    if (order.rewardGrantedAt && !order.rewardReversedAt && (order.earnedPoints || 0) > 0) {
+    if (order.rewardGrantedAt && !order.rewardReversedAt) {
       sideEffects.reverseReward = true;
     }
   }
