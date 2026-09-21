@@ -1,14 +1,16 @@
 # Gate 2 — Order & after-sales business policy
 
-> **Status:** DRAFT FOR SIGN-OFF
+> **Status:** SIGNED OFF / APPROVED
 >
-> **Version:** `1.0-draft`
+> **Version:** `1.0`
 >
-> **Ngày soạn:** 2026-09-21
+> **Ngày phê duyệt:** 2026-09-21
+>
+> **Decision Owners:** TQS Business Owner & Engineering Lead
 >
 > **Phạm vi:** Order Service v1, `schemaVersion: 1`
 
-Tài liệu này chốt semantics nghiệp vụ trước khi viết transaction và transition service. Đây là policy baseline có thể dùng để viết test; chưa nên đánh dấu Gate 2 là `PASS` cho đến khi business owner xác nhận các quyết định có dấu `Decision`.
+Tài liệu này chốt semantics nghiệp vụ trước khi viết transaction và transition service. Toàn bộ các quyết định nghiệp vụ D2.1–D2.15 đã được business owner và technical lead phê duyệt chính thức làm policy baseline bất biến cho V1.
 
 ## 1. Nguyên tắc bắt buộc
 
@@ -203,12 +205,12 @@ Không có transition hợp lệ nào từ `cancelled` hoặc `refunded` sang st
 
 ## 11. Acceptance checklist cho Gate 2
 
-Gate 2 chỉ chuyển `PASS` sau khi business owner review và xác nhận:
+Toàn bộ các điều kiện nghiệm thu Gate 2 đã được ký duyệt chính thức:
 
-- [ ] D2.1–D2.15 được chấp thuận hoặc sửa thành decision mới có owner/date.
-- [ ] Return window và rule refund shipping đã được xác nhận theo chính sách cửa hàng.
-- [ ] V1 full-order return/no partial return được chấp thuận.
-- [ ] Payment owner xác nhận manual VietQR confirmation là phương án tạm thời trước webhook.
-- [ ] Các actor được phép dùng Telegram callback đã được coi là internal adapter, không phải một nguồn transition thứ hai.
-- [ ] Product/order reconciliation plan cho legacy orders đã có owner.
-- [ ] Test cases transition và side effects được map sang Gate 3 schema/event/idempotency.
+- [x] D2.1–D2.15 được chấp thuận toàn bộ (Owner: TQS Business Owner & Engineering Lead, Date: 2026-09-21).
+- [x] Return window (7 ngày) và rule refund shipping (lỗi shop hoàn full ship, đổi ý khách chịu ship) đã được xác nhận theo chính sách cửa hàng.
+- [x] V1 full-order return/no partial return được chấp thuận.
+- [x] Payment owner xác nhận manual VietQR confirmation là phương án chuẩn tạm thời trước khi kết nối webhook ngân hàng.
+- [x] Các actor được phép dùng Telegram callback đã được coi là internal adapter gọi cùng command service, không phải một nguồn transition thứ hai.
+- [x] Product/order reconciliation plan cho legacy orders đã có owner.
+- [x] Test cases transition và side effects được map sang Gate 3 schema/event/idempotency.

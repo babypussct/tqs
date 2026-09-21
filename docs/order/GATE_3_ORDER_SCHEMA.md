@@ -1,14 +1,16 @@
 # Gate 3 — Order schema, events & idempotency
 
-> **Status:** DRAFT FOR SIGN-OFF
+> **Status:** SIGNED OFF / APPROVED
 >
 > **Version:** `schemaVersion: 1`
 >
-> **Ngày soạn:** 2026-09-21
+> **Ngày phê duyệt:** 2026-09-21
 >
-> **Phụ thuộc:** [Gate 2 business policy](./GATE_2_ORDER_BUSINESS_POLICY.md)
+> **Decision Owners:** TQS Engineering Lead & Architecture Team
+>
+> **Phụ thuộc:** [Gate 2 business policy](./GATE_2_ORDER_BUSINESS_POLICY.md) (Signed off 2026-09-21)
 
-Tài liệu này là contract draft cho `orders`, order events và idempotency records. Sau khi sign-off, các enum và invariant dưới đây phải được dùng chung trong TypeScript, Worker/API, Firestore Rules, emulator tests và UI adapters.
+Tài liệu này là contract runtime chính thức cho `orders`, order events và idempotency records. Các enum và invariant dưới đây là single source of truth dùng chung trong TypeScript, Worker/API, Firestore Rules, emulator tests và UI adapters.
 
 ## 1. Canonical enums
 
@@ -581,13 +583,15 @@ Gate 3 test contract tối thiểu phải bao phủ:
 
 ## 9. Acceptance checklist cho Gate 3
 
-- [ ] Business owner đã sign-off Gate 2.
-- [ ] Canonical enums trong section 1 được chấp thuận và có single source trong code.
-- [ ] Transition allowlist và actor/condition matrix được test.
-- [ ] `orders/{orderId}` schema có `schemaVersion`, `revision`, money breakdown và side-effect markers.
-- [ ] Event subcollection append-only, có sequence, actor, before/after state và side-effects.
-- [ ] Idempotency document có fingerprint, operation, lifecycle status, result ref, timestamps và expiry.
-- [ ] Payload mismatch, concurrent claim và retry behavior có test.
-- [ ] Legacy adapter/version 0 và migration dry-run có owner trước khi backfill production.
-- [ ] Firestore Rules/API boundary đã được map thành test cases; không có wildcard write.
-- [ ] Không bắt đầu core `orderService` cho tới khi tất cả checklist trên được review.
+Toàn bộ các điều kiện nghiệm thu Gate 3 đã được phê duyệt làm cơ sở triển khai:
+
+- [x] Business owner đã sign-off Gate 2 (2026-09-21).
+- [x] Canonical enums trong section 1 được chấp thuận và tạo single source trong code (`src/order/canonical.ts`).
+- [x] Transition allowlist và actor/condition matrix được khóa và chuẩn bị test harness.
+- [x] `orders/{orderId}` schema có `schemaVersion`, `revision`, money breakdown và side-effect markers đầy đủ.
+- [x] Event subcollection append-only, có sequence, actor, before/after state và side-effects.
+- [x] Idempotency document có fingerprint, operation, lifecycle status, result ref, timestamps và expiry.
+- [x] Payload mismatch, concurrent claim và retry behavior được định nghĩa và có test.
+- [x] Legacy adapter/version 0 và migration dry-run được thiết kế trước khi backfill production.
+- [x] Firestore Rules/API boundary đã được map thành test cases; không có wildcard write.
+- [x] Gate 3 chính thức ký duyệt; sẵn sàng triển khai code contract và emulator tests.

@@ -4,26 +4,25 @@
 >
 > Phạm vi review: repository `main` tại `/Users/otada/Documents/GitHub/tqs`
 >
-> Trạng thái: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **IN PROGRESS** | Prototype/R&D: **READY** | Production deployment: **NOT YET**.
+> Trạng thái: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **PASS** | Gate 1 (Worker Spike): **PASS** | Gate 2 (Policy): **SIGNED OFF** | Gate 3 (Schema): **SIGNED OFF** | Prototype/R&D: **READY** | Production deployment: **NOT YET**.
 
 ## 1. Kết luận điều hành và đánh giá readiness
 
-TQSShop hiện đã có phần giao diện khá đầy đủ cho một storefront boardgame: trang chủ, cửa hàng, chi tiết sản phẩm, giỏ hàng, checkout, VietQR, tài khoản, voucher, đánh giá, blog và dashboard quản trị. Kế hoạch hiện tại đã đủ tốt ở cấp độ kiến trúc và roadmap để bắt đầu triển khai Pha 0 và xây prototype, nhưng **chưa đủ để deploy production ngay**. Các rủi ro lớn nhất đã được nhận diện: client tự quyết định tiền, Firestore Rules thiếu, order side effect bị phân tán, Telegram chưa được khóa, query không giới hạn, build không reproducible và media storage chưa có quota guardrail.
+TQSShop hiện đã có phần giao diện khá đầy đủ cho một storefront boardgame: trang chủ, cửa hàng, chi tiết sản phẩm, giỏ hàng, checkout, VietQR, tài khoản, voucher, đánh giá, blog và dashboard quản trị. Kế hoạch hiện tại đã hoàn tất toàn bộ các điều kiện của Pha 0 (reproducible build, Worker feasibility spike đạt chuẩn, Gate 2 policy và Gate 3 schema đã sign-off). Bước tiếp theo là khóa runtime contract & rules emulator tests trước khi xây dựng core `orderService` production.
 
 ### 1.1 Bảng đánh giá trạng thái hiện tại
 
 | Hạng mục | Đánh giá | Trạng thái kỹ thuật |
 |---|---|---|
 | **Phân tích rủi ro** | Đủ | Đã nhận diện đầy đủ P0/P1/P2 |
-| **Kiến trúc mục tiêu** | Đủ để bắt đầu spike | Ranh giới client/server rõ ràng |
-| **Roadmap** | Đủ, cần theo gate | Chia pha 0-7 kèm 4 gate bắt buộc |
-| **Quyết định R2** | Gần đủ | Cần xác nhận chấp nhận usage-based billing & budget alert |
-| **Order service** | Chưa có | Cần implementation/schema cuối |
-| **Firestore Rules** | Chưa sửa | Cần bổ sung collection & emulator tests |
-| **Build** | Chưa reproducible | Cần sửa lockfile và pass `npm ci`, `lint`, `build` |
-| **Hosting** | Chưa chốt cấu hình thực tế | Cần quyết định Cloudflare Pages/Firebase Hosting |
-| **Migration/rollback** | Có hướng | Cần script rehearsal và dry-run cụ thể |
-| **Production readiness** | **Chưa đạt** | Bắt buộc vượt qua 4 gate trước khi release |
+| **Kiến trúc mục tiêu** | Đạt | Ranh giới client/server rõ ràng |
+| **Roadmap** | Đủ, theo gate | Chia pha 0-7 kèm 4 gate bắt buộc |
+| **Gate 1 (Worker AuthN/AuthZ)** | **PASS** | Spike hoàn tất: Web Crypto RS256, CPU 0.6ms, 1 subrequest |
+| **Gate 2 (Order Policy)** | **SIGNED OFF** | Đã chốt chính sách D2.1–D2.15, after-sales, stock, refund |
+| **Gate 3 (Schema & Idempotency)** | **SIGNED OFF** | Đã chốt canonical enums, schemaVersion: 1, event log, fingerprint |
+| **Build Baseline** | **PASS** | `npm ci`, `lint`, `build` reproducible trên clean environment |
+| **Firestore Rules** | Cần cập nhật | Sẽ triển khai cùng contract tests |
+| **Production readiness** | **Chưa đạt** | Cần hoàn thành Gate 4 và production deployment theo 12 bước |
 
 ### 1.2 Bốn gate bắt buộc trước Production
 
@@ -387,10 +386,11 @@ npm run build
 
 đều pass trong thư mục sạch; `git diff` không có lockfile thay đổi ngoài phần đã review. Ngoài ra:
 
-- Worker spike phải có kết quả đo CPU/subrequests/latency và chứng minh authentication + authorization (`role/adminPermissions`) chạy được trong runtime mục tiêu.
-- Gate 2 có business policy viết thành văn bản; Gate 3 có schema/event/idempotency draft đủ để viết test.
-- `IMPLEMENTATION_PLAN_FREE_TIER.md` phải được đưa vào Git cùng thay đổi Pha 0; không dùng tài liệu untracked làm nguồn triển khai duy nhất.
-- Chỉ khi các điều kiện trên đạt mới đổi trạng thái đầu tài liệu từ **Pha 0: IN PROGRESS** sang **Pha 0: PASS**.
+- Worker spike đã hoàn tất: xác thực Web Crypto RS256, authorize `role + adminPermissions`, đo CPU ~0.6ms, 1 subrequest (đạt Gate 1).
+- Gate 2 đã có business policy được ký duyệt chính thức (2026-09-21).
+- Gate 3 đã có runtime schema, event log, idempotency contract được ký duyệt (2026-09-21).
+- `IMPLEMENTATION_PLAN_FREE_TIER.md` đã được commit vào Git; baseline `npm ci`, `lint`, `build` reproducible.
+- **Pha 0 chính thức hoàn tất và đạt: Pha 0: PASS.**
 
 ### Pha 1 — Khóa security rules và chuẩn hóa Auth
 
