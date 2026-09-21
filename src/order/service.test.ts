@@ -439,6 +439,23 @@ async function runTests() {
   }
   assert(metadataPermissionCaught, 'Metadata command requires order-management permission');
 
+  const telegramCallbackKey = 'tg_cq_unit_test_001';
+  const callbackTransition = await transitionOrder(
+    adminActor,
+    { orderId: pendingOrder.id, targetStatus: 'processing', idempotencyKey: telegramCallbackKey },
+    db6.getDeps()
+  );
+  const callbackReplay = await transitionOrder(
+    adminActor,
+    { orderId: pendingOrder.id, targetStatus: 'processing', idempotencyKey: telegramCallbackKey },
+    db6.getDeps()
+  );
+  assert(callbackReplay.event.id === callbackTransition.event.id, 'Telegram callback retry replays the original transition event');
+  assert(
+    (db6.events.get(pendingOrder.id) || []).filter((event) => event.id === callbackTransition.event.id).length === 1,
+    'Telegram callback retry does not append a duplicate event'
+  );
+
   let missingPermissionCaught = false;
   try {
     await transitionOrder(

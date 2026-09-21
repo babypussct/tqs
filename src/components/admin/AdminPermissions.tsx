@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, setDoc, query, orderBy, getDoc, getDocs, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { AppUser, AdminPermissions as IAdminPermissions, UserTier } from '../../types';
-import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
+import { AppUser, AdminPermissions as IAdminPermissions } from '../../types';
 import { Shield, ShieldAlert, User, Mail, Search, Ban, Medal, ShoppingBag, Edit, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,13 +20,6 @@ const TIER_COLORS = {
   silver: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-500/30',
   gold: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30',
   diamond: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
-};
-
-const TIER_LABELS = {
-  bronze: 'Đồng',
-  silver: 'Bạc',
-  gold: 'Vàng',
-  diamond: 'Kim Cương',
 };
 
 export default function AdminUsers() {
@@ -62,87 +54,16 @@ export default function AdminUsers() {
       toast.error('Chỉ Super Admin mới có quyền chạy chức năng này.');
       return;
     }
-    
-    if (!window.confirm('CẢNH BÁO: Bạn chuẩn bị quét toàn bộ cơ sở dữ liệu để sửa lỗi mất field và xếp hạng tự động cho TẤT CẢ người dùng cũ dựa trên lịch sử đơn hàng. Bạn đã chuẩn bị sẵn sàng chưa?')) return;
 
-    const loadingToast = toast.loading('Hệ thống đang rà soát dữ liệu (có thể tốn vài giây)...');
-    try {
-      const settingsRef = doc(db, 'settings', 'rewards');
-      const settingsSnap = await getDoc(settingsRef);
-      const rewardsConfig = settingsSnap.exists() ? settingsSnap.data() : { tiers: [], pointMultiplier: 1000 };
+    if (!window.confirm(
+      'Production Rules đã khóa việc ghi totalOrders, totalSpent, points và tier từ trình duyệt. ' +
+      'Bạn muốn xem hướng dẫn migration server-side thay vì chạy client sync không?'
+    )) return;
 
-      const ordersQ = query(collection(db, 'orders'), where('status', '==', 'delivered'));
-      const ordersSnap = await getDocs(ordersQ);
-      
-      const userStats: Record<string, { totalOrders: number, totalSpent: number, points: number }> = {};
-      ordersSnap.forEach(docSnap => {
-        const o = docSnap.data();
-        const uid = o.userId;
-        if (!uid) return;
-        if (!userStats[uid]) userStats[uid] = { totalOrders: 0, totalSpent: 0, points: 0 };
-        userStats[uid].totalOrders += 1;
-        userStats[uid].totalSpent += Number(o.totalAmount || 0);
-        userStats[uid].points += Number(o.earnedPoints || Math.floor((o.totalAmount || 0) / (rewardsConfig.pointMultiplier || 1000)));
-      });
-
-      const usersSnap = await getDocs(collection(db, 'users'));
-      let updatedCount = 0;
-      const updatePromises: Promise<void>[] = [];
-
-      usersSnap.forEach(userDoc => {
-        const userData = userDoc.data();
-        const uid = userDoc.id;
-        const stats = userStats[uid] || { totalOrders: 0, totalSpent: 0, points: 0 };
-        
-        let newTier: UserTier = 'bronze';
-        if (rewardsConfig.tiers) {
-          const sortedTiers = [...rewardsConfig.tiers].sort((a: any, b: any) => b.minSpent - a.minSpent);
-          for (const t of sortedTiers) {
-            if (stats.totalSpent >= t.minSpent) {
-              newTier = t.id as UserTier;
-              break;
-            }
-          }
-        }
-
-        const updateData: any = {};
-        let needsUpdate = false;
-
-        if ((userData.totalOrders || 0) !== stats.totalOrders) { updateData.totalOrders = stats.totalOrders; needsUpdate = true; }
-        if ((userData.totalSpent || 0) !== stats.totalSpent) { updateData.totalSpent = stats.totalSpent; needsUpdate = true; }
-        if (!userData.tier || userData.tier === 'unknown' || userData.tier !== newTier) { updateData.tier = newTier; needsUpdate = true; }
-        if (userData.points === undefined) { updateData.points = stats.points; needsUpdate = true; }
-        if (userData.savedVouchers === undefined) { updateData.savedVouchers = []; needsUpdate = true; }
-
-        if (needsUpdate) {
-          updatePromises.push(setDoc(doc(db, 'users', uid), updateData, { merge: true }));
-          updatedCount++;
-        }
-      });
-
-      await Promise.all(updatePromises);
-      
-      toast.dismiss(loadingToast);
-      toast.success(`Hoàn tất! Đã đồng bộ và vá lỗi dữ liệu cho ${updatedCount} tài khoản.`);
-
-    } catch (err: any) {
-      toast.dismiss(loadingToast);
-      toast.error('Có lỗi xảy ra: ' + err.message);
-    }
-  };
-
-  const handleUpdateTier = async (userId: string, newTier: UserTier) => {
-    if (!currentUser?.isSuperAdmin && !currentUser?.permissions.manageRoles) {
-      toast.error('Bạn không có quyền quản lý thành viên');
-      return;
-    }
-    
-    try {
-      await setDoc(doc(db, 'users', userId), { tier: newTier }, { merge: true });
-      toast.success('Đã cập nhật hạng thành viên');
-    } catch (e) {
-      toast.error('Lỗi khi cập nhật hạng');
-    }
+    toast.info(
+      'Statistics và tier là dữ liệu authoritative của Order Service. Hãy chạy migration có kiểm soát ở server/admin job; ' +
+      'client sync đã bị vô hiệu hóa để không tạo các write bị Rules từ chối.'
+    );
   };
 
   const handleToggleBan = async (userId: string, currentBanStatus: boolean) => {
@@ -151,7 +72,8 @@ export default function AdminUsers() {
       return;
     }
 
-    if (userId === 'HCcsu4D0FEWV1axlrlyKfzEON953') {
+    const targetUser = users.find(user => user.uid === userId);
+    if (targetUser?.isSuperAdmin === true) {
       toast.error('Không thể khóa Super Admin');
       return;
     }
@@ -185,35 +107,7 @@ export default function AdminUsers() {
     );
   }
 
-  // Inject Super Admin visually if missing
-  const displayUsers = [...users];
-  if (!displayUsers.some(u => u.email === 'oneloveonepeopleforever@gmail.com')) {
-    displayUsers.unshift({
-      uid: 'superadmin_id',
-      email: 'oneloveonepeopleforever@gmail.com',
-      displayName: 'Super Admin',
-      photoURL: null,
-      role: 'admin',
-      isBanned: false,
-      tier: 'diamond',
-      points: 9999,
-      totalOrders: 0,
-      totalSpent: 0,
-      rewardReversalDebt: 0,
-      createdAt: new Date(),
-      lastLoginAt: new Date(),
-      adminPermissions: {
-        manageProducts: true,
-        manageOrders: true,
-        manageHomepage: true,
-        manageDiscounts: true,
-        manageSettings: true,
-        manageRoles: true
-      }
-    });
-  }
-
-  const filteredUsers = displayUsers.filter(u => 
+  const filteredUsers = users.filter(u =>
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -266,8 +160,8 @@ export default function AdminUsers() {
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-zinc-800/50">
               {filteredUsers.map((user) => {
-                const isSuperAdmin = user.email?.toLowerCase() === 'oneloveonepeopleforever@gmail.com';
-                const isAdmin = isSuperAdmin || !!user.adminPermissions;
+                const isSuperAdmin = user.isSuperAdmin === true;
+                const isAdmin = isSuperAdmin || (user.role === 'admin' && !!user.adminPermissions);
                 
                 return (
                   <tr key={user.uid} className={`hover:bg-slate-50 dark:hover:bg-zinc-800/30 transition-colors ${user.isBanned ? 'opacity-75' : ''}`}>
@@ -302,8 +196,8 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 text-center">
                       <select 
                         value={user.tier || 'bronze'}
-                        onChange={(e) => handleUpdateTier(user.uid, e.target.value as UserTier)}
-                        disabled={!currentUser?.isSuperAdmin && !currentUser?.permissions.manageRoles}
+                        disabled
+                        title="Hạng thành viên được Order Service tính từ dữ liệu đơn hàng"
                         className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium outline-none cursor-pointer ${TIER_COLORS[user.tier || 'bronze']} appearance-none text-center`}
                       >
                         <option value="bronze">Đồng</option>

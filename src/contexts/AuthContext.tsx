@@ -88,76 +88,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!user) return;
-    const userEmail = user.email || user.providerData?.[0]?.email || '';
-    
-    // Make sure case-insensitive comparison and stripped of spaces
-    const isSuperAdmin = userEmail.toLowerCase().trim() === 'oneloveonepeopleforever@gmail.com';
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
 
-    const defaultSuperAdmin: AdminUser = {
-      id: user.uid,
-      email: user.email || 'oneloveonepeopleforever@gmail.com',
-      name: user.displayName || 'Super Admin',
-      permissions: {
-        manageProducts: true,
-        manageOrders: true,
-        manageHomepage: true,
-        manageDiscounts: true,
-        manageSettings: true,
-        manageRoles: true
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isSuperAdmin: true
+    const fullPermissions: AdminPermissions = {
+      manageProducts: true,
+      manageOrders: true,
+      manageHomepage: true,
+      manageDiscounts: true,
+      manageSettings: true,
+      manageRoles: true,
     };
 
-    // If SuperAdmin, set admin privileges but continue loading the appUser profile
-    if (isSuperAdmin) {
-      setAdminUser(defaultSuperAdmin);
-    }
+    const subscribeToAuthority = async () => {
+      let hasSuperAdminClaim = false;
+      try {
+        const tokenResult = await user.getIdTokenResult();
+        hasSuperAdminClaim = tokenResult.claims.super_admin === true;
+      } catch (error) {
+        console.error('Error reading Firebase authority claims:', error);
+      }
 
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as AppUser;
-        
-        setAppUser(data);
-        // REAL-TIME BAN ENFORCEMENT
-        if (data.isBanned) {
-          toast.error('Tài khoản của bạn đã bị khóa bởi Quản trị viên.', { duration: 5000 });
-          await signOut(auth);
-          setUser(null);
-          setAdminUser(null);
+      if (!active) return;
+
+      unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (docSnap) => {
+        if (!active) return;
+
+        if (!docSnap.exists()) {
           setAppUser(null);
+          setAdminUser(hasSuperAdminClaim ? {
+            id: user.uid,
+            email: user.email || '',
+            name: user.displayName || 'Super Admin',
+            permissions: fullPermissions,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isSuperAdmin: true,
+          } : null);
           setLoading(false);
           return;
         }
 
-        if (!isSuperAdmin) {
-          if (data.adminPermissions) {
-            setAdminUser({
-              id: user.uid,
-              email: data.email || user.email || '',
-              name: data.displayName || user.displayName || 'Admin',
-              permissions: data.adminPermissions,
-              createdAt: data.createdAt,
-              updatedAt: data.lastLoginAt,
-              isSuperAdmin: false
-            });
-          } else {
-            setAdminUser(null);
-          }
-        }
-      } else {
-        if (!isSuperAdmin) setAdminUser(null);
-        setAppUser(null);
-      }
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching admin status:", error);
-      setAdminUser(null);
-      setLoading(false);
-    });
+        const data = docSnap.data() as AppUser;
+        setAppUser(data);
 
-    return unsubscribe;
+        // REAL-TIME BAN ENFORCEMENT
+        if (data.isBanned) {
+          toast.error('Tài khoản của bạn đã bị khóa bởi Quản trị viên.', { duration: 5000 });
+          await signOut(auth);
+          if (active) {
+            setUser(null);
+            setAdminUser(null);
+            setAppUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const isSuperAdmin = hasSuperAdminClaim || data.isSuperAdmin === true;
+        if (isSuperAdmin) {
+          setAdminUser({
+            id: user.uid,
+            email: data.email || user.email || '',
+            name: data.displayName || user.displayName || 'Super Admin',
+            permissions: fullPermissions,
+            createdAt: data.createdAt,
+            updatedAt: data.lastLoginAt,
+            isSuperAdmin: true,
+          });
+        } else if (data.role === 'admin' && data.adminPermissions) {
+          setAdminUser({
+            id: user.uid,
+            email: data.email || user.email || '',
+            name: data.displayName || user.displayName || 'Admin',
+            permissions: data.adminPermissions,
+            createdAt: data.createdAt,
+            updatedAt: data.lastLoginAt,
+            isSuperAdmin: false,
+          });
+        } else {
+          setAdminUser(null);
+        }
+        setLoading(false);
+      }, (error) => {
+        console.error('Error fetching admin status:', error);
+        if (active) {
+          setAdminUser(null);
+          setLoading(false);
+        }
+      });
+    };
+
+    void subscribeToAuthority();
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, [user]);
 
   const login = async () => {

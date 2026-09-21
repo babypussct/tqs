@@ -12,7 +12,7 @@ interface ProductReviewsProps {
   productName?: string;
 }
 
-export default function ProductReviews({ productId, productName }: ProductReviewsProps) {
+export default function ProductReviews({ productId }: ProductReviewsProps) {
   const { user, isAdmin } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
     setError('');
 
     try {
-      await addDoc(collection(db, 'reviews'), {
+      const reviewRef = await addDoc(collection(db, 'reviews'), {
         productId,
         userId: user.uid,
         userName: user.displayName || 'Người dùng ẩn danh',
@@ -106,20 +106,26 @@ export default function ProductReviews({ productId, productName }: ProductReview
         createdAt: serverTimestamp()
       });
 
-      // Thông báo Telegram
-      fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'NEW_REVIEW',
-          payload: {
-            productName: productName || productId,
-            userName: user.displayName || 'Người dùng ẩn danh',
-            rating,
-            comment: comment.trim()
-          }
-        })
-      }).catch(() => {});
+      // Notification data is re-read and authorized by the server from the
+      // review document; the browser only submits the newly-created ID.
+      try {
+        const idToken = await user.getIdToken();
+        const notificationResponse = await fetch('/api/notify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ type: 'NEW_REVIEW', reviewId: reviewRef.id }),
+        });
+        if (!notificationResponse.ok) {
+          console.warn('Review notification was not dispatched:', notificationResponse.status);
+        }
+      } catch (notificationError) {
+        // A Telegram outage must not make a successfully saved review look
+        // like a failed review submission to the customer.
+        console.warn('Review notification failed:', notificationError);
+      }
 
       setComment('');
       setRating(5);

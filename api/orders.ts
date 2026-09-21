@@ -51,6 +51,21 @@ function getDb(): FirebaseFirestore.Firestore {
   }
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function boundedText(value: unknown, maxLength: number, fallback = 'N/A'): string {
+  const text = String(value ?? '').trim();
+  if (!text) return fallback;
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}
+
 // ─── 2. Telegram Notification Helper ───
 async function notifyTelegramNewOrder(order: OrderDocument): Promise<void> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -63,25 +78,27 @@ async function notifyTelegramNewOrder(order: OrderDocument): Promise<void> {
       ? `⚠️ <b>CẢNH BÁO: ĐƠN HÀNG RỦI RO CAO</b> ⚠️\nĐiểm rủi ro: <b>${order.riskScore}/100</b>\n─────────────────────\n`
       : `🚀 <b>ĐƠN HÀNG MỚI</b> 🚀\n`;
 
-    message += `Mã đơn: <b>#${order.id}</b>\n`;
-    message += `Người nhận: ${order.shippingInfo?.fullName || 'N/A'}\n`;
-    message += `SĐT: <code>${order.shippingInfo?.phone || 'N/A'}</code>\n`;
-    message += `Địa chỉ: ${order.shippingInfo?.address || 'N/A'}\n`;
-    if (order.shippingInfo?.notes) message += `Ghi chú: <i>${order.shippingInfo.notes}</i>\n`;
+    message += `Mã đơn: <b>#${escapeHtml(order.id)}</b>\n`;
+    message += `Người nhận: ${escapeHtml(boundedText(order.shippingInfo?.fullName, 160))}\n`;
+    message += `SĐT: <code>${escapeHtml(boundedText(order.shippingInfo?.phone, 40))}</code>\n`;
+    message += `Địa chỉ: ${escapeHtml(boundedText(order.shippingInfo?.address, 300))}\n`;
+    if (order.shippingInfo?.notes) {
+      message += `Ghi chú: <i>${escapeHtml(boundedText(order.shippingInfo.notes, 500))}</i>\n`;
+    }
     message += `─────────────────────\n`;
 
     if (order.items && order.items.length > 0) {
       order.items.forEach((item) => {
-        message += `- ${item.quantity} x ${item.name} (${item.unitPrice?.toLocaleString('vi-VN')}đ)\n`;
+        message += `- ${escapeHtml(item.quantity)} x ${escapeHtml(boundedText(item.name, 160))} (${Number(item.unitPrice || 0).toLocaleString('vi-VN')}đ)\n`;
       });
       message += `─────────────────────\n`;
     }
 
-    message += `Tạm tính: ${order.totalAmount?.toLocaleString('vi-VN')} đ\n`;
-    if (order.shippingFee > 0) message += `Phí ship: +${order.shippingFee.toLocaleString('vi-VN')} đ\n`;
-    if (order.voucherDiscountAmount > 0) message += `Giảm voucher: -${order.voucherDiscountAmount.toLocaleString('vi-VN')} đ\n`;
-    if (order.pointsDiscountAmount > 0) message += `Giảm điểm (${order.pointsApplied} pts): -${order.pointsDiscountAmount.toLocaleString('vi-VN')} đ\n`;
-    message += `Số tiền cần thu: <b>${order.finalAmount?.toLocaleString('vi-VN')} đ</b>\n`;
+    message += `Tạm tính: ${Number(order.totalAmount || 0).toLocaleString('vi-VN')} đ\n`;
+    if (order.shippingFee > 0) message += `Phí ship: +${Number(order.shippingFee).toLocaleString('vi-VN')} đ\n`;
+    if (order.voucherDiscountAmount > 0) message += `Giảm voucher: -${Number(order.voucherDiscountAmount).toLocaleString('vi-VN')} đ\n`;
+    if (order.pointsDiscountAmount > 0) message += `Giảm điểm (${escapeHtml(order.pointsApplied)} pts): -${Number(order.pointsDiscountAmount).toLocaleString('vi-VN')} đ\n`;
+    message += `Số tiền cần thu: <b>${Number(order.finalAmount || 0).toLocaleString('vi-VN')} đ</b>\n`;
     message += `Phương thức: <b>${order.paymentMethod === 'vietqr' ? 'Chuyển khoản (VietQR)' : 'Tiền mặt (COD)'}</b>\n`;
 
     const inlineButtons: any[][] = [];

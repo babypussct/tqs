@@ -18,7 +18,7 @@ if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
-    } else {
+    } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
       let pk = process.env.FIREBASE_PRIVATE_KEY || '';
       if (pk.startsWith('"') && pk.endsWith('"')) pk = pk.slice(1, -1);
       pk = pk.replace(/\\n/g, '\n');
@@ -29,6 +29,10 @@ if (!admin.apps.length) {
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
           privateKey: pk,
         })
+      });
+    } else {
+      admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
       });
     }
   } catch (error) {
@@ -48,6 +52,65 @@ const telegramActor: AuthenticatedActor = {
   role: 'admin',
   permissions: { manageOrders: true },
 };
+
+const MAX_TELEGRAM_INPUT_LENGTH = 2000;
+const MAX_ADMIN_NOTE_LENGTH = 500;
+const MAX_REVIEW_REPLY_LENGTH = 1000;
+const MAX_TRACKING_CODE_LENGTH = 200;
+
+/** Escape dynamic values before placing them in Telegram HTML messages. */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getHeaderValue(req: VercelRequest, name: string): string {
+  const value = req.headers[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] || '' : value || '';
+}
+
+function getQueryValue(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] || '' : value || '';
+}
+
+function getTelegramChatId(update: any): string | null {
+  const chatId = update?.message?.chat?.id ?? update?.callback_query?.message?.chat?.id;
+  return chatId === undefined || chatId === null ? null : String(chatId);
+}
+
+function getTelegramSenderId(update: any): string | null {
+  const senderId = update?.message?.from?.id ?? update?.callback_query?.from?.id;
+  return senderId === undefined || senderId === null ? null : String(senderId);
+}
+
+function isAllowedTelegramUpdate(update: any): boolean {
+  const configuredChatId = process.env.TELEGRAM_CHAT_ID?.trim();
+  const chatId = getTelegramChatId(update);
+  if (!configuredChatId || !chatId || chatId !== configuredChatId) return false;
+
+  const allowedUserIds = (process.env.TELEGRAM_ALLOWED_USER_IDS || '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (allowedUserIds.length === 0) return true;
+
+  const senderId = getTelegramSenderId(update);
+  return Boolean(senderId && allowedUserIds.includes(senderId));
+}
+
+function isWebhookSecretValid(req: VercelRequest): boolean {
+  const configuredSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  if (!configuredSecret) {
+    // Keep local development usable, but never allow an unsecreted webhook in
+    // a deployed production environment.
+    return process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production';
+  }
+  return getHeaderValue(req, 'x-telegram-bot-api-secret-token') === configuredSecret;
+}
 
 /**
  * Execute an internal Telegram order command through the same domain service
@@ -180,23 +243,24 @@ function buildOrderButtons(orderId: string, status: string, paymentStatus: strin
 // ─── Helper: Build chi tiết đơn hàng (dùng chung cho /don và tra cứu lại) ───
 function buildOrderMessage(orderId: string, order: any, title: string) {
   let msg = `${title}\n`;
-  msg += `Mã đơn: <b>#${orderId}</b>\n`;
-  msg += `Trạng thái: <b>${statusVN(order.status)}</b>\n`;
+  msg += `Mã đơn: <b>#${escapeHtml(orderId)}</b>\n`;
+  msg += `Trạng thái: <b>${escapeHtml(statusVN(order.status))}</b>\n`;
   msg += `Thanh toán: <b>${order.paymentStatus === 'paid' ? 'Đã thu tiền ✅' : 'Chờ gạch nợ ⏳'}</b>\n`;
-  msg += `Người nhận: ${order.shippingInfo?.fullName || 'N/A'}\n`;
-  msg += `SĐT: <code>${order.shippingInfo?.phone || 'N/A'}</code>\n`;
-  msg += `Địa chỉ: ${order.shippingInfo?.address || 'N/A'}\n`;
-  if (order.shippingInfo?.notes) msg += `Ghi chú: <i>${order.shippingInfo.notes}</i>\n`;
-  if (order.trackingCode) msg += `Mã vận đơn: <code>${order.trackingCode}</code>\n`;
-  if (order.adminNotes) msg += `📝 Ghi chú Admin: <b>${order.adminNotes}</b>\n`;
+  msg += `Người nhận: ${escapeHtml(order.shippingInfo?.fullName || 'N/A')}\n`;
+  msg += `SĐT: <code>${escapeHtml(order.shippingInfo?.phone || 'N/A')}</code>\n`;
+  msg += `Địa chỉ: ${escapeHtml(order.shippingInfo?.address || 'N/A')}\n`;
+  if (order.shippingInfo?.notes) msg += `Ghi chú: <i>${escapeHtml(order.shippingInfo.notes)}</i>\n`;
+  if (order.trackingCode) msg += `Mã vận đơn: <code>${escapeHtml(order.trackingCode)}</code>\n`;
+  if (order.adminNotes) msg += `📝 Ghi chú Admin: <b>${escapeHtml(order.adminNotes)}</b>\n`;
   msg += `─────────────────────\n`;
   if (order.items?.length > 0) {
     order.items.forEach((item: any) => {
-      msg += `- ${item.quantity} x ${item.name} (${item.price?.toLocaleString('vi-VN')}đ)\n`;
+      const itemPrice = Number(item.price ?? item.unitPrice ?? 0).toLocaleString('vi-VN');
+      msg += `- ${escapeHtml(item.quantity)} x ${escapeHtml(item.name)} (${itemPrice}đ)\n`;
     });
     msg += `─────────────────────\n`;
   }
-  const finalAm = order.finalAmount || order.totalAmount || 0;
+  const finalAm = Number(order.finalAmount || order.totalAmount || 0);
   msg += `Số tiền: <b>${finalAm.toLocaleString('vi-VN')} đ</b>\n`;
   msg += `Phương thức: <b>${order.paymentMethod === 'vietqr' ? 'Chuyển khoản (VietQR)' : 'Tiền mặt (COD)'}</b>\n`;
   return msg;
@@ -210,13 +274,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── Setup Webhook (GET đặc biệt) ───
   if (req.method === 'GET' && req.query.setup === 'true') {
+    const setupSecret = process.env.TELEGRAM_SETUP_SECRET?.trim() || process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+    const suppliedSecret = getQueryValue(req.query.secret);
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+    if (!setupSecret || suppliedSecret !== setupSecret) {
+      return res.status(403).json({ error: 'Forbidden', code: 'TELEGRAM_SETUP_SECRET_REQUIRED' });
+    }
+    if (!botToken || !webhookSecret) {
+      return res.status(503).json({ error: 'Telegram webhook secrets are not configured.' });
+    }
+
     const url = `https://${req.headers.host}/api/telegram-webhook`;
     try {
-      const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook?url=${url}`);
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, secret_token: webhookSecret }),
+      });
       const data = await response.json();
-      return res.status(200).json({ success: true, message: 'Đã kích hoạt chế độ bắt nút Telegram', data });
+      const telegramOk = response.ok && data?.ok === true;
+      return res.status(telegramOk ? 200 : 502).json({
+        success: telegramOk,
+        message: telegramOk ? 'Đã kích hoạt chế độ bắt nút Telegram' : 'Telegram từ chối đăng ký webhook',
+        data,
+      });
     } catch (e: any) {
-      return res.status(500).json({ error: e.message });
+      return res.status(502).json({ error: 'Không thể đăng ký Telegram webhook.' });
     }
   }
 
@@ -224,8 +307,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  if (!botToken) {
+    return res.status(503).json({ error: 'Telegram bot is not configured.' });
+  }
+  if (!isWebhookSecretValid(req)) {
+    return res.status(403).json({ error: 'Forbidden', code: 'INVALID_TELEGRAM_WEBHOOK_SECRET' });
+  }
+
   try {
     const update = req.body;
+    if (!update || typeof update !== 'object') {
+      return res.status(400).json({ error: 'Invalid Telegram update.' });
+    }
+    if (!isAllowedTelegramUpdate(update)) {
+      return res.status(403).json({ error: 'Forbidden', code: 'TELEGRAM_ACTOR_NOT_ALLOWED' });
+    }
+
     const db = getDb();
 
     // ═══════════════════════════════════════════════
@@ -234,22 +331,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (update.message?.text) {
       const text = update.message.text.trim();
       const chatId = update.message.chat.id;
+      if (text.length === 0 || text.length > MAX_TELEGRAM_INPUT_LENGTH) {
+        return res.status(200).json({ success: false, code: 'TELEGRAM_INPUT_TOO_LONG' });
+      }
 
       // ─── Reply tin nhắn để ghi chú Admin ───
       if (update.message.reply_to_message?.text) {
         const replyText = update.message.reply_to_message.text;
         const noteMatch = replyText.match(/Mã đơn:\s*#([A-Za-z0-9]+)/);
         if (noteMatch) {
+          if (text.length > MAX_ADMIN_NOTE_LENGTH) {
+            await tg('sendMessage', {
+              chat_id: chatId,
+              text: `❌ Ghi chú Admin tối đa ${MAX_ADMIN_NOTE_LENGTH} ký tự.`,
+              reply_to_message_id: update.message.message_id,
+            });
+            return res.status(200).json({ success: false, code: 'ADMIN_NOTE_TOO_LONG' });
+          }
           const orderId = noteMatch[1].toUpperCase();
           const orderRef = db.collection('orders').doc(orderId);
           try {
             const orderSnap = await orderRef.get();
             if (orderSnap.exists) {
               const prevNotes = orderSnap.data()?.adminNotes ? orderSnap.data()!.adminNotes + '\n' : '';
+              const nextNotes = prevNotes + `- ${text}`;
+              if (nextNotes.length > MAX_ADMIN_NOTE_LENGTH) {
+                await tg('sendMessage', {
+                  chat_id: chatId,
+                  text: `❌ Tổng ghi chú Admin tối đa ${MAX_ADMIN_NOTE_LENGTH} ký tự.`,
+                  reply_to_message_id: update.message.message_id,
+                });
+                return res.status(200).json({ success: false, code: 'ADMIN_NOTES_TOO_LONG' });
+              }
               await runTelegramOrderCommand(db, {
                 orderId,
                 actionType: 'update_order_metadata',
-                metadata: { adminNotes: prevNotes + `- ${text}` },
+                idempotencyKey: `tg_note_${chatId}_${update.message.message_id}`,
+                metadata: { adminNotes: nextNotes },
               });
               await tg('sendMessage', {
                 chat_id: chatId,
@@ -266,7 +384,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // ─── Lệnh /don hoặc /order — Tra cứu đơn hàng ───
-      const orderMatch = text.match(/^\/(?:don|order)(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]+)/i);
+      const orderMatch = text.match(/^\/(?:don|order)(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]{1,64})$/i);
       if (orderMatch) {
         const orderId = orderMatch[1].toUpperCase();
         const orderSnap = await db.collection('orders').doc(orderId).get();
@@ -286,7 +404,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // ─── Lệnh /tracking — Thêm mã vận đơn ───
-      const trackingMatch = text.match(/^\/tracking(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]+)\s+(.+)/i);
+      const trackingMatch = text.match(/^\/tracking(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]{1,64})\s+(.+)$/i);
       if (trackingMatch) {
         const orderId = trackingMatch[1].toUpperCase();
         let trackingCode = trackingMatch[2].trim();
@@ -298,6 +416,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const spxMatch = trackingCode.match(/(SPX[A-Z0-9]+)/i);
           if (spxMatch) trackingCode = spxMatch[1];
         }
+        if (trackingCode.length === 0 || trackingCode.length > MAX_TRACKING_CODE_LENGTH) {
+          await tg('sendMessage', {
+            chat_id: chatId,
+            text: `❌ Mã vận đơn tối đa ${MAX_TRACKING_CODE_LENGTH} ký tự.`,
+          });
+          return res.status(200).json({ success: false, code: 'TRACKING_CODE_TOO_LONG' });
+        }
 
         const orderSnap = await db.collection('orders').doc(orderId).get();
         if (!orderSnap.exists) {
@@ -306,11 +431,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await runTelegramOrderCommand(db, {
             orderId,
             actionType: 'update_order_metadata',
+            idempotencyKey: `tg_tracking_${chatId}_${update.message.message_id}`,
             metadata: { trackingCode },
           });
           await tg('sendMessage', {
             chat_id: chatId, parse_mode: 'HTML',
-            text: `✅ Đã lưu mã vận đơn cho <b>#${orderId}</b>\n📦 MVĐ: <code>${trackingCode}</code>`
+            text: `✅ Đã lưu mã vận đơn cho <b>#${escapeHtml(orderId)}</b>\n📦 MVĐ: <code>${escapeHtml(trackingCode)}</code>`
           });
         }
         return res.status(200).json({ success: true });
@@ -368,10 +494,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // ─── Lệnh /reply — Phản hồi đánh giá sản phẩm ───
-      const replyMatch = text.match(/^\/reply(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]+)\s+(.+)/is);
+      const replyMatch = text.match(/^\/reply(?:@[A-Za-z0-9_]+)?\s+([A-Za-z0-9]{1,150})\s+(.+)$/is);
       if (replyMatch) {
         const reviewId = replyMatch[1];
         const replyContent = replyMatch[2].trim();
+        if (replyContent.length > MAX_REVIEW_REPLY_LENGTH) {
+          await tg('sendMessage', {
+            chat_id: chatId,
+            text: `❌ Phản hồi đánh giá tối đa ${MAX_REVIEW_REPLY_LENGTH} ký tự.`,
+          });
+          return res.status(200).json({ success: false, code: 'REVIEW_REPLY_TOO_LONG' });
+        }
         const reviewRef = db.collection('reviews').doc(reviewId);
         const reviewSnap = await reviewRef.get();
 
@@ -385,7 +518,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const reviewData = reviewSnap.data()!;
           await tg('sendMessage', {
             chat_id: chatId, parse_mode: 'HTML',
-            text: `✅ Đã phản hồi đánh giá!\n📝 SP: ${reviewData.productId}\n⭐ ${reviewData.rating}/5 — ${reviewData.userName}\n💬 Phản hồi: <i>"${replyContent}"</i>`
+            text: `✅ Đã phản hồi đánh giá!\n📝 SP: ${escapeHtml(reviewData.productId)}\n⭐ ${escapeHtml(reviewData.rating)}/5 — ${escapeHtml(reviewData.userName)}\n💬 Phản hồi: <i>"${escapeHtml(replyContent)}"</i>`
           });
         }
         return res.status(200).json({ success: true });
@@ -401,6 +534,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (data?.startsWith('action:')) {
         const parts = data.split(':');
+        if (parts.length !== 3 || !/^[A-Za-z0-9]{1,64}$/.test(parts[2])) {
+          await tg('answerCallbackQuery', {
+            callback_query_id: cq.id,
+            text: 'Callback không hợp lệ.',
+            show_alert: true,
+          });
+          return res.status(200).json({ success: false, code: 'INVALID_CALLBACK_DATA' });
+        }
         const actionType = parts[1];
         const orderId = parts[2];
 
@@ -484,6 +625,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             throw new OrderServiceError('Loại thao tác Telegram không hợp lệ.', 'UNKNOWN_TELEGRAM_ACTION', 400);
           }
 
+          if (transitionInput) {
+            transitionInput = {
+              ...transitionInput,
+              idempotencyKey: `tg_cq_${cq.id}`,
+            };
+          }
+
           const transitionResult = transitionInput
             ? await runTelegramOrderCommand(db, transitionInput)
             : null;
@@ -497,6 +645,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const newMsg = buildOrderMessage(orderId, updatedOrder, '🔔 <b>CẬP NHẬT ĐƠN HÀNG</b>');
             const newButtons = buildOrderButtons(orderId, updatedOrder.status, updatedOrder.paymentStatus || 'pending', updatedOrder.paymentMethod || 'cod');
 
+            if (cq.message?.chat?.id === undefined || cq.message?.message_id === undefined) {
+              throw new OrderServiceError('Callback không có message đích hợp lệ.', 'INVALID_CALLBACK_MESSAGE', 400);
+            }
             await tg('editMessageText', {
               chat_id: cq.message.chat.id,
               message_id: cq.message.message_id,

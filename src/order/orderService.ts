@@ -61,6 +61,8 @@ export interface CreateOrderInput {
 
 export interface TransitionOrderInput {
   orderId: string;
+  /** Optional deduplication key for retried callbacks/webhook commands. */
+  idempotencyKey?: string;
   targetStatus?: OrderStatus;
   paymentStatus?: PaymentStatus;
   cancelReason?: string;
@@ -164,7 +166,7 @@ function validateOrderMetadata(metadata: NonNullable<TransitionOrderInput['metad
   }
 
   if (metadata.adminNotes !== undefined && metadata.adminNotes !== null &&
-      (typeof metadata.adminNotes !== 'string' || metadata.adminNotes.length > 5000)) {
+      (typeof metadata.adminNotes !== 'string' || metadata.adminNotes.length > 500)) {
     throw new OrderServiceError('Ghi chú admin không hợp lệ.', 'INVALID_ADMIN_NOTES', 400);
   }
 }
@@ -510,6 +512,68 @@ export async function transitionOrder(
     assertCanManageOrders(actor);
   }
 
+  // Telegram callbacks can be delivered more than once. When a caller
+  // supplies a key, persist the completed transition snapshot so a retry
+  // returns the original result without executing any side effect again.
+  const transitionIdempotencyRecordId = input.idempotencyKey
+    ? `idem_${actor.uid}_transition_${input.idempotencyKey}`
+    : null;
+  const transitionRequestFingerprint = input.idempotencyKey
+    ? await generateRequestFingerprint({ ...input, actionType, targetStatus })
+    : null;
+
+  if (transitionIdempotencyRecordId && transitionRequestFingerprint) {
+    const existingTransitionRecord = await deps.getIdempotencyRecord(transitionIdempotencyRecordId);
+    if (existingTransitionRecord) {
+      if (existingTransitionRecord.requestFingerprint !== transitionRequestFingerprint) {
+        throw new OrderServiceError(
+          'Idempotency key reused with different request payload.',
+          'IDEMPOTENCY_PAYLOAD_MISMATCH',
+          409
+        );
+      }
+      if (existingTransitionRecord.status === 'succeeded') {
+        const snapshot = existingTransitionRecord.responseSnapshot;
+        if (snapshot?.order && snapshot.event) {
+          return {
+            order: snapshot.order as OrderDocument,
+            event: snapshot.event as OrderEvent,
+          };
+        }
+        throw new OrderServiceError(
+          'Idempotency record không có response snapshot hợp lệ.',
+          'CORRUPT_IDEMPOTENCY_RECORD',
+          500
+        );
+      }
+      if (existingTransitionRecord.status === 'processing') {
+        throw new OrderServiceError(
+          'Yêu cầu đang được xử lý. Vui lòng chờ trong giây lát.',
+          'CONCURRENT_IDEMPOTENCY_REQUEST',
+          409
+        );
+      }
+    }
+  }
+
+  const saveTransitionIdempotencyRecord = async (updatedOrder: OrderDocument, event: OrderEvent) => {
+    if (!transitionIdempotencyRecordId || !transitionRequestFingerprint || !input.idempotencyKey) return;
+    const now = new Date().toISOString();
+    await deps.saveIdempotencyRecord({
+      id: transitionIdempotencyRecordId,
+      actorId: actor.uid,
+      operation: actionType,
+      idempotencyKey: input.idempotencyKey,
+      requestFingerprint: transitionRequestFingerprint,
+      status: 'succeeded',
+      resourceId: order.id,
+      responseSnapshot: { success: true, order: updatedOrder, event },
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+    });
+  };
+
   if (actionType === 'update_order_metadata') {
     assertCanManageOrders(actor);
     if (!input.metadata || Object.keys(input.metadata).length === 0) {
@@ -539,14 +603,14 @@ export async function transitionOrder(
       fromPaymentStatus: order.paymentStatus,
       toPaymentStatus: order.paymentStatus,
       sideEffectsExecuted: [],
+      idempotencyKey: input.idempotencyKey,
       createdAt: now,
     };
+    const updatedOrder = { ...order, ...orderUpdates };
     await deps.saveEvent(order.id, event);
+    await saveTransitionIdempotencyRecord(updatedOrder, event);
 
-    return {
-      order: { ...order, ...orderUpdates },
-      event,
-    };
+    return { order: updatedOrder, event };
   }
 
   // Payment confirmation is a valid admin command even when it does not
@@ -554,24 +618,24 @@ export async function transitionOrder(
   if (actionType === 'confirm_payment' && targetStatus === order.status) {
     assertCanManageOrders(actor);
     if (order.paymentStatus === 'paid') {
-      return {
-        order,
-        event: {
-          id: `evt_${order.id}_${order.revision}_payment_replay`,
-          sequence: order.revision,
-          orderId: order.id,
-          eventType: 'operation_replayed',
-          actionType: 'confirm_payment',
-          actorType,
-          actorId: actor.uid,
-          fromStatus: order.status,
-          toStatus: order.status,
-          fromPaymentStatus: order.paymentStatus,
-          toPaymentStatus: order.paymentStatus,
-          sideEffectsExecuted: ['payment_already_paid'],
-          createdAt: new Date().toISOString(),
-        },
+      const replayEvent: OrderEvent = {
+        id: `evt_${order.id}_${order.revision}_payment_replay`,
+        sequence: order.revision,
+        orderId: order.id,
+        eventType: 'operation_replayed',
+        actionType: 'confirm_payment',
+        actorType,
+        actorId: actor.uid,
+        fromStatus: order.status,
+        toStatus: order.status,
+        fromPaymentStatus: order.paymentStatus,
+        toPaymentStatus: order.paymentStatus,
+        sideEffectsExecuted: ['payment_already_paid'],
+        idempotencyKey: input.idempotencyKey,
+        createdAt: new Date().toISOString(),
       };
+      await saveTransitionIdempotencyRecord(order, replayEvent);
+      return { order, event: replayEvent };
     }
 
     const now = new Date().toISOString();
@@ -597,14 +661,15 @@ export async function transitionOrder(
       fromPaymentStatus: order.paymentStatus,
       toPaymentStatus: 'paid',
       sideEffectsExecuted: ['payment_confirmed'],
+      idempotencyKey: input.idempotencyKey,
       createdAt: now,
     };
     await deps.saveEvent(order.id, event);
 
-    return {
-      order: { ...order, ...orderUpdates },
-      event,
-    };
+    const updatedOrder = { ...order, ...orderUpdates };
+    await saveTransitionIdempotencyRecord(updatedOrder, event);
+
+    return { order: updatedOrder, event };
   }
 
   // 4. Plan transition & side effects
@@ -805,6 +870,7 @@ export async function transitionOrder(
     fromPaymentStatus: plan.fromPaymentStatus,
     toPaymentStatus: plan.toPaymentStatus,
     sideEffectsExecuted,
+    idempotencyKey: input.idempotencyKey,
     createdAt: now,
   };
 
@@ -814,6 +880,8 @@ export async function transitionOrder(
     ...order,
     ...orderUpdates,
   };
+
+  await saveTransitionIdempotencyRecord(updatedOrder, event);
 
   return { order: updatedOrder, event };
 }

@@ -4,7 +4,7 @@
 >
 > Phạm vi review: repository `main` tại `/Users/otada/Documents/GitHub/tqs`
 >
-> Trạng thái: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **PASS** | Gate 1 (Worker Spike): **PASS** | Gate 2 (Policy): **SIGNED OFF** | Gate 3 (Schema): **SIGNED OFF** | Prototype/R&D: **READY** | Production deployment: **NOT YET**.
+> Trạng thái: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **PASS** | Gate 1 (Worker Spike): **PASS** | Gate 2 (Policy): **SIGNED OFF** | Gate 3 (Schema): **SIGNED OFF** | Gate 4 (Private API/Webhook hardening): **CODE COMPLETE / PROD SMOKE PENDING** | Prototype/R&D: **READY** | Production deployment: **NOT YET**.
 
 ## 1. Kết luận điều hành và đánh giá readiness
 
@@ -20,9 +20,10 @@ TQSShop hiện đã có phần giao diện khá đầy đủ cho một storefron
 | **Gate 1 (Worker AuthN/AuthZ)** | **PASS** | Spike hoàn tất: Web Crypto RS256, CPU 0.6ms, 1 subrequest |
 | **Gate 2 (Order Policy)** | **SIGNED OFF** | Đã chốt chính sách D2.1–D2.15, after-sales, stock, refund |
 | **Gate 3 (Schema & Idempotency)** | **SIGNED OFF** | Đã chốt canonical enums, schemaVersion: 1, event log, fingerprint |
+| **Gate 4 (Private API & Telegram)** | **CODE COMPLETE** | Webhook secret/allowlist/setup lock, review notification ownership, callback idempotency, HTML escaping, authority alignment |
 | **Build Baseline** | **PASS** | `npm ci`, `lint`, `build` reproducible trên clean environment |
 | **Firestore Rules** | Cần cập nhật | Sẽ triển khai cùng contract tests |
-| **Production readiness** | **Chưa đạt** | Cần hoàn thành Gate 4 và production deployment theo 12 bước |
+| **Production readiness** | **Chưa đạt** | Gate 4 đã code-complete; còn production secret smoke test và deployment theo 12 bước |
 
 ### 1.2 Bốn gate bắt buộc trước Production
 
@@ -495,6 +496,30 @@ Tiêu chí qua pha:
 - Webhook từ chat/user ngoài allowlist không thể đổi order.
 - Dữ liệu có `<`, `>`, `&` không phá format Telegram.
 - Retry Telegram không tạo duplicate reward/stock mutation.
+
+### Gate 4 — Kết quả hardening (code complete)
+
+Gate 4 đã được triển khai ở mức source/test; production vẫn phải chạy smoke test với
+secret thật trước khi deploy Rules restrictive:
+
+- `api/telegram-webhook.ts` yêu cầu `X-Telegram-Bot-Api-Secret-Token` khi đã cấu hình,
+  bắt buộc `TELEGRAM_CHAT_ID`, hỗ trợ `TELEGRAM_ALLOWED_USER_IDS`, khóa `setup=true`
+  bằng `TELEGRAM_SETUP_SECRET`/webhook secret và truyền `secret_token` khi đăng ký.
+- Admin notes bị giới hạn 500 ký tự, review reply 1.000 ký tự, command/callback có
+  giới hạn kích thước; các giá trị động trong Telegram HTML được escape.
+- Callback order dùng `tg_cq_<callbackId>` ở `transitionOrder`; idempotency record lưu
+  snapshot order/event để retry không chạy lại stock, voucher, points hoặc reward.
+- `api/notify.ts` chỉ còn `NEW_REVIEW`, bắt buộc Firebase ID token, tự đọc review bằng
+  Admin SDK và kiểm tra `review.userId === authenticatedUid`; client chỉ gửi `reviewId`.
+- `AuthContext.tsx` và danh sách Admin không còn suy luận Super Admin từ email cố định;
+  authority lấy từ `isSuperAdmin` trong profile hoặc custom claim `super_admin`, còn
+  admin thường phải có `role == admin` và `adminPermissions`.
+- Legacy statistics sync trên client đã bị khóa; `totalOrders`, `totalSpent`, `points`
+  và tier tiếp tục thuộc quyền ghi của Order Service.
+
+Biến môi trường bắt buộc/tuỳ chọn được ghi trong [`.env.example`](./.env.example).
+Các bước còn lại trước production là cấu hình secret trên môi trường đích, chạy manual
+security smoke test, kiểm tra Telegram/Firestore project đúng, rồi mới deploy.
 
 ### Pha 5 — Media, PWA và static hosting
 

@@ -251,6 +251,7 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
   role: 'admin' | 'customer';
+  isSuperAdmin?: boolean;
   isBanned: boolean;
   tier: UserTier;
   points: number;

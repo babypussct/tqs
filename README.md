@@ -40,3 +40,19 @@ from a reviewed commit, after the emulator suite and the frontend/API smoke test
 ```bash
 firebase deploy --only firestore:rules
 ```
+
+## Gate 4 security configuration
+
+Telegram is treated as a private admin channel. Configure `TELEGRAM_WEBHOOK_SECRET`
+and `TELEGRAM_CHAT_ID` in the server environment; optionally set
+`TELEGRAM_ALLOWED_USER_IDS` to a comma-separated list of numeric Telegram user IDs.
+Webhook registration is locked behind `TELEGRAM_SETUP_SECRET` (or the webhook secret
+as a fallback) and must be invoked only during an intentional setup operation:
+
+```text
+GET /api/telegram-webhook?setup=true&secret=<TELEGRAM_SETUP_SECRET>
+```
+
+`/api/notify` is private and accepts only an authenticated Firebase ID token with a
+`NEW_REVIEW` payload containing `reviewId`; the server reloads the review and checks
+that the caller owns it. Do not put Telegram secrets in Vite/client variables.
