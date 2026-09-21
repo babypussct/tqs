@@ -3,7 +3,7 @@
  * Implements server-authoritative financial invariants defined in Gate 2.
  */
 
-import { OrderDocument, OrderMoneyBreakdown, ReturnReason } from './canonical';
+import type { OrderDocument, OrderMoneyBreakdown, ReturnReason } from './canonical.js';
 
 export interface CalculateOrderTotalsInput {
   items: Array<{ unitPrice: number; quantity: number }>;

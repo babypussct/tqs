@@ -4,7 +4,7 @@
  * Implements "Legacy Fail Closed" invariant: does NOT guess missing side-effect markers.
  */
 
-import { OrderDocument, OrderItem, OrderStatus, PaymentMethod, PaymentStatus } from './canonical';
+import type { OrderDocument, OrderItem, OrderStatus, PaymentMethod, PaymentStatus } from './canonical.js';
 
 export function normalizeLegacyOrder(raw: Record<string, unknown>): OrderDocument {
   const schemaVersion = typeof raw.schemaVersion === 'number' ? raw.schemaVersion : 0;

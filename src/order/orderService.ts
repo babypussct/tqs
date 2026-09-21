@@ -9,10 +9,9 @@
  * - Firestore Transaction Compatibility (Strict Read-Before-Write)
  */
 
-import {
+import type {
   ActionType,
   ActorType,
-  ALLOWED_TRANSITIONS,
   IdempotencyRecord,
   OrderDocument,
   OrderEvent,
@@ -22,15 +21,16 @@ import {
   PaymentStatus,
   ReturnReason,
   StockDisposition,
-} from './canonical';
-import { generateRequestFingerprint } from './fingerprint';
+} from './canonical.js';
+import { generateRequestFingerprint } from './fingerprint.js';
 import {
   calculateEarnedPoints,
   calculateOrderTotals,
   calculateRefundAmount,
   calculateRewardReversal,
-} from './money';
-import { planOrderTransition, TransitionRequest } from './transitions';
+} from './money.js';
+import { planOrderTransition } from './transitions.js';
+import type { TransitionRequest } from './transitions.js';
 
 export interface OrderItemInput {
   productId: string;

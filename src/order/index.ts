@@ -2,9 +2,9 @@
  * TQSShop Order Domain Module
  */
 
-export * from './canonical';
-export * from './money';
-export * from './fingerprint';
-export * from './transitions';
-export * from './legacyAdapter';
-export * from './orderService';
+export * from './canonical.js';
+export * from './money.js';
+export * from './fingerprint.js';
+export * from './transitions.js';
+export * from './legacyAdapter.js';
+export * from './orderService.js';

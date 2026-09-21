@@ -1,14 +1,13 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import {
+import { OrderServiceError, transitionOrder } from '../src/order/orderService.js';
+import type {
   AuthenticatedActor,
   OrderServiceDependencies,
-  OrderServiceError,
   TransitionOrderInput,
-  transitionOrder,
-} from '../src/order/orderService';
-import { IdempotencyRecord, OrderDocument } from '../src/order/canonical';
+} from '../src/order/orderService.js';
+import type { IdempotencyRecord, OrderDocument } from '../src/order/canonical.js';
 
 // Khởi tạo Firebase Admin an toàn
 if (!admin.apps.length) {

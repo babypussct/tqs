@@ -3,16 +3,16 @@
  * Implements the state machine and actor permissions defined in Gate 2 & Gate 3.
  */
 
-import {
+import { ALLOWED_TRANSITIONS } from './canonical.js';
+import type {
   ActionType,
   ActorType,
-  ALLOWED_TRANSITIONS,
   OrderDocument,
   OrderStatus,
   PaymentStatus,
   ReturnReason,
   StockDisposition,
-} from './canonical';
+} from './canonical.js';
 
 export class TransitionError extends Error {
   constructor(

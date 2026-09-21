@@ -1,16 +1,18 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import {
   createOrder,
   transitionOrder,
-  CreateOrderInput,
-  TransitionOrderInput,
-  AuthenticatedActor,
-  OrderServiceDependencies,
   OrderServiceError,
-} from '../src/order/orderService';
-import { OrderDocument, IdempotencyRecord } from '../src/order/canonical';
+} from '../src/order/orderService.js';
+import type {
+  AuthenticatedActor,
+  CreateOrderInput,
+  OrderServiceDependencies,
+  TransitionOrderInput,
+} from '../src/order/orderService.js';
+import type { IdempotencyRecord, OrderDocument } from '../src/order/canonical.js';
 
 // ─── 1. Initialize Firebase Admin safely ───
 if (!admin.apps.length) {
