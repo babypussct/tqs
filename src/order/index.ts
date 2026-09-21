@@ -7,3 +7,4 @@ export * from './money';
 export * from './fingerprint';
 export * from './transitions';
 export * from './legacyAdapter';
+export * from './orderService';

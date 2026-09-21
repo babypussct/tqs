@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, getDocs, query, where, updateDoc, doc, increment, runTransaction, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
-import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { CheckCircle2, ShoppingBag, ArrowLeft, Ticket, X, Copy, Plus, Minus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
@@ -12,7 +11,6 @@ import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useRewardsConfig } from '../utils/useRewardsConfig';
 import VietnamAddressSelector from './ui/VietnamAddressSelector';
 import { AppUser } from '../types';
-import { onSnapshot } from 'firebase/firestore';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 import { useCart } from '../contexts/CartContext';
 import VietQRModal from './checkout/VietQRModal';
@@ -342,50 +340,6 @@ export default function Checkout() {
     return true;
   };
 
-  // Tính điểm rủi ro đơn hàng (0-100)
-  const calculateRiskScore = async (uid: string): Promise<number> => {
-    let score = 0;
-
-    // 1. Tuổi tài khoản
-    const creationTime = user?.metadata?.creationTime;
-    if (creationTime) {
-      const ageDays = (Date.now() - new Date(creationTime).getTime()) / (1000 * 60 * 60 * 24);
-      if (ageDays < 1) score += 30;
-      else if (ageDays < 7) score += 15;
-    } else {
-      score += 20; // Không biết tuổi tài khoản
-    }
-
-    // 2. Lịch sử đơn hàng (tỷ lệ huỷ)
-    try {
-      const allOrdersSnap = await getDocs(
-        query(collection(db, 'orders'), where('userId', '==', uid))
-      );
-      const total = allOrdersSnap.size;
-      const cancelled = allOrdersSnap.docs.filter(d => d.data().status === 'cancelled').length;
-
-      if (total === 0) score += 10; // Đơn đầu tiên
-      if (total > 0) {
-        const cancelRate = cancelled / total;
-        if (cancelRate > 0.5) score += 35;
-        else if (cancelRate > 0.3) score += 20;
-      }
-    } catch {
-      // Bỏ qua nếu không đọc được lịch sử
-    }
-
-    return Math.min(score, 100);
-  };
-
-  const generateOrderCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
@@ -423,171 +377,54 @@ export default function Checkout() {
 
     setIsSubmitting(true);
     try {
-      const { id: completedOrderId, riskScore: completedRiskScore } = await runTransaction(db, async (transaction) => {
-        // 1. Read all products to check stock
-        const productRefs = cartItems.map(item => doc(db, 'products', item.product.id));
-        const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
-        
-        // 2. Map current stock
-        const stockMap = new Map<string, number>();
-        const existingProducts = new Set<string>();
-        const inactiveProducts = new Set<string>();
-        productDocs.forEach(docSnap => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (data.isActive === false) {
-              inactiveProducts.add(docSnap.id);
-            } else {
-              existingProducts.add(docSnap.id);
-              if (data.stock !== undefined) {
-                stockMap.set(docSnap.id, data.stock);
-              }
-            }
-          }
-        });
+      const idempotencyKey = `idem_${user.uid}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const idToken = await user.getIdToken();
 
-        // 3. Calculate total quantity needed per product
-        const quantityNeeded = new Map<string, number>();
-        cartItems.forEach(item => {
-          const current = quantityNeeded.get(item.product.id) || 0;
-          quantityNeeded.set(item.product.id, current + item.quantity);
-        });
-
-        // 4. Check if stock is sufficient and product exists/active
-        for (const [productId, needed] of quantityNeeded.entries()) {
-          if (inactiveProducts.has(productId)) {
-            const product = cartItems.find(i => i.product.id === productId)?.product;
-            throw new Error(`Sản phẩm "${product?.name}" hiện đang ngừng kinh doanh.`);
-          }
-          if (!existingProducts.has(productId)) {
-            const product = cartItems.find(i => i.product.id === productId)?.product;
-            throw new Error(`Sản phẩm "${product?.name}" không còn tồn tại.`);
-          }
-          const available = stockMap.get(productId);
-          if (available !== undefined && available < needed) {
-            const product = cartItems.find(i => i.product.id === productId)?.product;
-            throw new Error(`Sản phẩm "${product?.name}" chỉ còn ${available} sản phẩm trong kho.`);
-          }
-        }
-
-        // 5. Deduct stock
-        for (const [productId, needed] of quantityNeeded.entries()) {
-          const available = stockMap.get(productId);
-          if (available !== undefined) {
-            transaction.update(doc(db, 'products', productId), {
-              stock: available - needed
-            });
-          }
-        }
-
-        // 6. Tính điểm rủi ro
-        const riskScore = await calculateRiskScore(user.uid);
-        const orderStatus = riskScore >= 60 ? 'suspicious' : 'pending';
-
-        // 7. Create order
-        const orderId = generateOrderCode();
-        const orderRef = doc(db, 'orders', orderId);
-        const orderData: any = {
-          userId: user.uid,
-          items: cartItems.map(item => {
-            const itemData: any = {
-              productId: item.product.id,
-              name: item.product.name,
-              price: item.price,
-              quantity: item.quantity,
-              image: item.product.image
-            };
-            if (item.selectedBox) itemData.selectedBox = item.selectedBox;
-            if (item.selectedLang) itemData.selectedLang = item.selectedLang;
-            if (item.selectedVariants) itemData.selectedVariants = item.selectedVariants;
-            if (item.addSleeves) itemData.addSleeves = item.addSleeves;
-            if (item.quickAddAccessoryNames) itemData.quickAddAccessoryNames = item.quickAddAccessoryNames;
-            if ((item as any).quickAddAccessoryName) itemData.quickAddAccessoryName = (item as any).quickAddAccessoryName;
-            return itemData;
-          }),
-          totalAmount,
-          status: orderStatus,
-          paymentMethod: paymentMethod,
-          paymentStatus: paymentMethod === 'vietqr' ? 'pending' : 'paid',
-          shippingInfo,
-          riskScore,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-        
-        if (appliedDiscount) {
-          orderData.discountCode = appliedDiscount.code;
-          orderData.discountAmount = discountAmount;
-        }
-        if (appliedPoints > 0) {
-          orderData.discountCode = (orderData.discountCode ? orderData.discountCode + ', ' : '') + `Dùng ${appliedPoints} điểm`;
-          orderData.discountAmount = (orderData.discountAmount || 0) + pointsDiscountAmount;
-          // Deduct points from user
-          transaction.update(doc(db, 'users', user.uid), {
-            points: increment(-appliedPoints)
-          });
-        }
-        orderData.shippingFee = shippingFee;
-        orderData.finalAmount = finalAmount;
-
-        transaction.set(orderRef, orderData);
-
-        // 7. Update discount code usage
-        if (appliedDiscount) {
-          transaction.update(doc(db, 'discountCodes', appliedDiscount.id), {
-            usedCount: increment(1)
-          });
-        }
-        
-        // 8. Update user stats
-        transaction.update(doc(db, 'users', user.uid), {
-          totalOrders: increment(1)
-        });
-        
-        setCreatedOrderId(orderRef.id);
-        setOrderFinalAmount(finalAmount);
-        setOrderTotalAmount(totalAmount);
-        
-        return { id: orderRef.id, riskScore };
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+            selectedBox: item.selectedBox || null,
+            selectedLang: item.selectedLang || null,
+            selectedVariants: item.selectedVariants || null,
+            addSleeves: Boolean(item.addSleeves),
+            quickAddAccessoryNames: item.quickAddAccessoryNames || ((item as any).quickAddAccessoryName ? [(item as any).quickAddAccessoryName] : null),
+          })),
+          shippingInfo: {
+            fullName: shippingInfo.fullName.trim(),
+            phone: shippingInfo.phone.trim(),
+            address: shippingInfo.address.trim(),
+            notes: shippingInfo.notes?.trim() || '',
+          },
+          paymentMethod,
+          discountCode: appliedDiscount ? appliedDiscount.code : null,
+          pointsToUse: appliedPoints > 0 ? appliedPoints : 0,
+          idempotencyKey,
+        }),
       });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại sau.');
+      }
+
+      const completedOrder = data.order;
+      setCreatedOrderId(completedOrder.id);
+      setOrderFinalAmount(completedOrder.finalAmount);
+      setOrderTotalAmount(completedOrder.totalAmount);
 
       clearCart();
       setIsSuccess(true);
       toast.success('Đặt hàng thành công!');
-      
-      // Bắn Notification Telegram
-      try {
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'NEW_ORDER',
-            payload: {
-              orderId: completedOrderId,
-              customerName: shippingInfo.fullName,
-              phone: shippingInfo.phone,
-              address: shippingInfo.address,
-              notes: shippingInfo.notes,
-              amount: finalAmount,
-              paymentMethod: paymentMethod,
-              riskScore: completedRiskScore,
-              items: cartItems.map(item => ({
-                name: item.product.name,
-                quantity: item.quantity,
-                price: item.price
-              }))
-            }
-          })
-        }).catch(err => console.log('Telegram Notify Error:', err));
-      } catch (err) {}
-      
     } catch (error: any) {
-      if (error.message && (error.message.includes('chỉ còn') || error.message.includes('ngừng kinh doanh') || error.message.includes('không còn tồn tại'))) {
-        toast.error(error.message);
-      } else {
-        handleFirestoreError(error, OperationType.CREATE, 'orders');
-        toast.error('Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại sau.');
-      }
+      toast.error(error.message || 'Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại sau.');
     } finally {
       setIsSubmitting(false);
     }
