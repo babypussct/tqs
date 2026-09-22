@@ -323,6 +323,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const db = getDb();
+    let callbackIdempotencyReplay = false;
 
     // ═══════════════════════════════════════════════
     // XỬ LÝ TIN NHẮN TEXT
@@ -545,6 +546,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const orderId = parts[2];
 
         const orderRef = db.collection('orders').doc(orderId);
+        const callbackIdempotencyKey = `tg_cq_${cq.id}`;
+        const callbackIdempotencyRecordId =
+          `idem_${telegramActor.uid}_transition_${callbackIdempotencyKey}`;
 
         try {
           const orderSnap = await orderRef.get();
@@ -555,13 +559,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
 
           const order = orderSnap.data()!;
+          // Telegram may retry the same callback update after a timeout. Read
+          // the completed command snapshot before building the command so a
+          // sequential retry still reaches the domain idempotency guard even
+          // after the order has already moved to its target state.
+          const callbackIdempotencySnapshot = await db
+            .collection('idempotency')
+            .doc(callbackIdempotencyRecordId)
+            .get();
+          const isCompletedCallbackReplay =
+            callbackIdempotencySnapshot.exists &&
+            callbackIdempotencySnapshot.data()?.status === 'succeeded';
           let transitionInput: TransitionOrderInput | null = null;
           let actionLabel = '';
           let statusFootnote = '';
 
           // ─── Build a domain command; all order mutations happen in the service ───
           if (actionType === 'paid') {
-            if (order.paymentStatus === 'paid') {
+            if (order.paymentStatus === 'paid' && !isCompletedCallbackReplay) {
               actionLabel = 'Tiền đã được nhận từ trước!';
             } else {
               transitionInput = {
@@ -575,7 +590,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
           } else if (actionType === 'processing') {
-            if (order.status === 'processing') {
+            if (order.status === 'processing' && !isCompletedCallbackReplay) {
               actionLabel = 'Đơn này đã ở trạng thái Đang chuẩn bị!';
             } else {
               transitionInput = { orderId, targetStatus: 'processing', actionType: 'start_processing' };
@@ -584,7 +599,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
           } else if (actionType === 'shipped') {
-            if (order.status === 'shipped') {
+            if (order.status === 'shipped' && !isCompletedCallbackReplay) {
               actionLabel = 'Đơn này vốn đã đang giao!';
             } else {
               transitionInput = { orderId, targetStatus: 'shipped', actionType: 'ship_order' };
@@ -593,7 +608,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
           } else if (actionType === 'delivered') {
-            if (order.status === 'delivered') {
+            if (order.status === 'delivered' && !isCompletedCallbackReplay) {
               actionLabel = 'Đơn này đã hoàn tất từ trước!';
             } else {
               transitionInput = {
@@ -608,7 +623,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
           } else if (actionType === 'cancelled') {
-            if (order.status === 'cancelled') {
+            if (order.status === 'cancelled' && !isCompletedCallbackReplay) {
               actionLabel = 'Đơn này đã được HỦY từ trước!';
             } else {
               transitionInput = {
@@ -627,13 +642,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (transitionInput) {
             transitionInput = {
               ...transitionInput,
-              idempotencyKey: `tg_cq_${cq.id}`,
+              idempotencyKey: callbackIdempotencyKey,
             };
           }
 
           const transitionResult = transitionInput
             ? await runTelegramOrderCommand(db, transitionInput)
             : null;
+          callbackIdempotencyReplay = Boolean(isCompletedCallbackReplay && transitionResult);
           const updatedOrder = transitionResult?.order || order;
 
           // Trả lời callback
@@ -666,7 +682,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({
+      success: true,
+      ...(update.callback_query ? { idempotencyReplay: callbackIdempotencyReplay } : {}),
+    });
 
   } catch (error) {
     console.error('Telegram Webhook Error:', error);
