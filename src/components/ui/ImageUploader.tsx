@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { Upload, X } from 'lucide-react';
-import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
+import { useMediaUpload } from '../../hooks/useMediaUpload';
+import type { MediaCategory } from '../../media/mediaPolicy';
 import { toast } from 'sonner';
 
 interface ImageUploaderProps {
@@ -11,6 +12,7 @@ interface ImageUploaderProps {
   className?: string;
   label?: string;
   onClear?: () => void;
+  category?: MediaCategory;
 }
 
 export function ImageUploader({ 
@@ -20,9 +22,10 @@ export function ImageUploader({
   required = false,
   className = '',
   label,
-  onClear
+  onClear,
+  category = 'products',
 }: ImageUploaderProps) {
-  const { isUploading, uploadFile } = useCloudinaryUpload();
+  const { isUploading, uploadFile } = useMediaUpload(category);
   const inputId = useId();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +69,7 @@ export function ImageUploader({
               type="file" 
               id={inputId} 
               className="hidden" 
-              accept="image/*,video/*" 
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleFileChange} 
               disabled={isUploading}
             />

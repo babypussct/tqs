@@ -166,6 +166,7 @@ export default function AdminSettings() {
               onChange={url => setLocalSiteConfig({...localSiteConfig, siteFavicon: url})}
               onClear={() => setLocalSiteConfig({...localSiteConfig, siteFavicon: ''})}
               label="Chọn hình cho Favicon"
+              category="banners"
             />
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">Nên là hình vuông, kích thước nhỏ gọn. Hiển thị ở góc tab trình duyệt.</p>
           </div>
@@ -539,4 +540,3 @@ export default function AdminSettings() {
     </div>
   );
 }
-

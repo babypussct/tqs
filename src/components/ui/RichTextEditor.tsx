@@ -18,16 +18,18 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify, Table as TableIcon
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
+import { useMediaUpload } from '../../hooks/useMediaUpload';
+import type { MediaCategory } from '../../media/mediaPolicy';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  category?: MediaCategory;
 }
 
-export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
-  const { isUploading, uploadFile } = useCloudinaryUpload();
+export function RichTextEditor({ value, onChange, placeholder, category = 'posts' }: RichTextEditorProps) {
+  const { isUploading, uploadFile } = useMediaUpload(category);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({

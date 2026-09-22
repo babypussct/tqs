@@ -147,6 +147,7 @@ function ImageField({ label, value, onChange, onClear, hint }: { label: string; 
         value={value}
         onChange={onChange}
         onClear={onClear}
+        category="banners"
       />
       {hint && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-2">{hint}</p>}
     </div>

@@ -2,7 +2,7 @@
  * TQSShop Service Worker — Powered by Workbox
  * =============================================
  * Strategies:
- *   - Cloudinary images  → CacheFirst (90 ngày, max 500 entries)
+ *   - Immutable media (R2 uploads + legacy Cloudinary) → CacheFirst (180 ngày)
  *   - App shell (JS/CSS) → StaleWhileRevalidate (7 ngày)
  *   - Navigation (HTML)  → NetworkFirst → offline.html fallback
  *   - VietQR / API       → NetworkOnly (dynamic, không cache)
@@ -20,7 +20,7 @@ const { CacheableResponsePlugin } = cacheableResponse;
 // ─── Cấu hình chung ────────────────────────────────────────────────────────
 core.setCacheNameDetails({
   prefix: 'tqs',
-  suffix: 'v1',
+  suffix: 'v2',
   precache: 'precache',
   runtime: 'runtime',
 });
@@ -32,20 +32,23 @@ core.clientsClaim();
 // ─── Precache: App shell files ──────────────────────────────────────────────
 // offline.html được precache để luôn có sẵn khi mất mạng
 precaching.precacheAndRoute([
-  { url: '/offline.html', revision: 'v1' },
+  { url: '/offline.html', revision: 'v2' },
 ]);
 
-// ─── Route 1: Cloudinary Images — CacheFirst ────────────────────────────────
-// URL ảnh Cloudinary KHÔNG THAY ĐỔI khi đã có transform → an toàn 100% để cache lâu dài
+// ─── Route 1: Immutable Media — CacheFirst ───────────────────────────────────
+// R2 object keys are content-addressed-by-public-URL and receive immutable cache headers.
+// Keep the legacy Cloudinary route so existing catalog data remains fast during migration.
 routing.registerRoute(
-  ({ url }) => url.hostname === 'res.cloudinary.com',
+  ({ url }) =>
+    url.hostname === 'res.cloudinary.com' ||
+    url.pathname.startsWith('/uploads/'),
   new CacheFirst({
-    cacheName: 'tqs-cloudinary-images-v1',
+    cacheName: 'tqs-media-v2',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
-        maxEntries: 500,           // Max 500 ảnh (LRU eviction)
-        maxAgeSeconds: 90 * 24 * 60 * 60, // 90 ngày
+        maxEntries: 1000,
+        maxAgeSeconds: 180 * 24 * 60 * 60,
         purgeOnQuotaError: true,   // Tự xóa khi storage đầy
       }),
     ],
@@ -59,7 +62,7 @@ routing.registerRoute(
     (request.destination === 'script' || request.destination === 'style') &&
     url.origin === self.location.origin,
   new StaleWhileRevalidate({
-    cacheName: 'tqs-app-shell-v1',
+    cacheName: 'tqs-app-shell-v2',
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({
@@ -76,7 +79,7 @@ routing.registerRoute(
     url.hostname === 'fonts.googleapis.com' ||
     url.hostname === 'fonts.gstatic.com',
   new StaleWhileRevalidate({
-    cacheName: 'tqs-fonts-v1',
+    cacheName: 'tqs-fonts-v2',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
@@ -116,7 +119,7 @@ routing.registerRoute(
     request.destination === 'image' &&
     url.origin === self.location.origin,
   new CacheFirst({
-    cacheName: 'tqs-static-images-v1',
+    cacheName: 'tqs-static-images-v2',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
@@ -132,7 +135,7 @@ routing.registerRoute(
 routing.registerRoute(
   ({ request }) => request.mode === 'navigate',
   new NetworkFirst({
-    cacheName: 'tqs-pages-v1',
+    cacheName: 'tqs-pages-v2',
     networkTimeoutSeconds: 3,    // Timeout 3s → fallback to cache
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
@@ -163,7 +166,7 @@ self.addEventListener('activate', (event) => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames
-          .filter(name => name.startsWith('tqs-') && !name.endsWith('-v1'))
+          .filter(name => name.startsWith('tqs-') && name.endsWith('-v1'))
           .map(name => caches.delete(name))
       );
 
@@ -227,4 +230,4 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-console.log('[TQSShop SW] Service Worker loaded — CacheFirst Cloudinary, NetworkFirst Navigation, Offline Ready ✓');
+console.log('[TQSShop SW] Service Worker loaded — CacheFirst immutable media, NetworkFirst navigation, Offline Ready ✓');

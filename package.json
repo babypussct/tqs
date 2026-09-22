@@ -9,9 +9,12 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "test:media": "tsx src/media/mediaPolicy.test.ts",
     "test:rules": "firebase emulators:exec --only firestore --project demo-tqs \"tsx tests/firestore.rules.test.ts\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1137.0",
+    "@aws-sdk/s3-request-presigner": "^3.1137.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-color": "^3.22.5",
     "@tiptap/extension-image": "^3.22.5",

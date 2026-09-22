@@ -56,3 +56,15 @@ GET /api/telegram-webhook?setup=true&secret=<TELEGRAM_SETUP_SECRET>
 `/api/notify` is private and accepts only an authenticated Firebase ID token with a
 `NEW_REVIEW` payload containing `reviewId`; the server reloads the review and checks
 that the caller owns it. Do not put Telegram secrets in Vite/client variables.
+
+## Phase 5 media uploads
+
+Admin media uploads use [`POST /api/media/upload-url`](./api/media/upload-url.ts)
+and Cloudflare R2 presigned `PUT` URLs. The endpoint requires a Firebase ID token,
+checks the category-specific admin permission, accepts only JPEG/PNG/WebP up to
+5 MiB, and returns an immutable public URL. Configure the server-only R2 variables
+and explicit browser origins described in [`docs/media/R2_SETUP.md`](./docs/media/R2_SETUP.md).
+
+The browser upload flow is shared by `ImageUploader` and `RichTextEditor`; no R2
+credential or Cloudinary upload preset is exposed to Vite. Existing Cloudinary
+URLs remain readable for backward compatibility while catalog data is migrated.

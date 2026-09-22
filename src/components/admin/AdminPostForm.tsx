@@ -158,6 +158,7 @@ export default function AdminPostForm() {
             <ImageUploader
               value={post.thumbnail || ''}
               onChange={(url) => setPost(prev => ({ ...prev, thumbnail: url }))}
+              category="posts"
             />
           </div>
 

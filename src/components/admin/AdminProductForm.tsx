@@ -219,6 +219,7 @@ export default function AdminProductForm() {
                 value={editingProduct.description || ''} 
                 onChange={content => setEditingProduct({...editingProduct, description: content})} 
                 placeholder="Mô tả chi tiết về sản phẩm, luật chơi cơ bản..."
+                category="products"
               />
             </div>
           </div>
@@ -291,6 +292,7 @@ export default function AdminProductForm() {
               <ImageUploader 
                 label="URL Hình ảnh chính"
                 required={true}
+                category="products"
                 value={editingProduct.image || ''} 
                 onChange={(url) => setEditingProduct({...editingProduct, image: url})} 
                 onClear={() => setEditingProduct({...editingProduct, image: ''})}
@@ -316,6 +318,7 @@ export default function AdminProductForm() {
                 {(editingProduct.images || []).map((img, idx) => (
                   <div key={idx} className="flex gap-4">
                     <ImageUploader 
+                      category="products"
                       value={img} 
                       onChange={(url) => {
                         const newImages = [...(editingProduct.images || [])];
