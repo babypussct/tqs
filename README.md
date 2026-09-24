@@ -54,7 +54,8 @@ The canonical Rules source is [`firestore.rules`](./firestore.rules). Deploy it 
 from a reviewed commit, after the emulator suite and the frontend/API smoke tests pass:
 
 ```bash
-firebase deploy --project production --only firestore:rules,firestore:indexes
+npm run firebase:dry-run
+npm run firebase:deploy
 ```
 
 ## Gate 4 security configuration
