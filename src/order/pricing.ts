@@ -1,4 +1,4 @@
-import type { OrderItemInput } from './orderService';
+import type { OrderItemInput } from './orderService.js';
 
 export const DEFAULT_SLEEVES_PRICE = 20_000;
 export const DEFAULT_BOX_UPGRADE_PRICE = 50_000;

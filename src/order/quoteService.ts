@@ -1,12 +1,12 @@
-import type { OrderItem } from './canonical';
-import { calculateOrderTotals, type CalculateOrderTotalsInput } from './money';
-import { resolveProductUnitPrice } from './pricing';
+import type { OrderItem } from './canonical.js';
+import { calculateOrderTotals, type CalculateOrderTotalsInput } from './money.js';
+import { resolveProductUnitPrice } from './pricing.js';
 import { toDate } from '../shared/data/date.js';
 import type {
   AuthenticatedActor,
   CreateOrderInput,
   OrderServiceDependencies,
-} from './orderService';
+} from './orderService.js';
 
 export interface OrderQuote {
   items: OrderItem[];
