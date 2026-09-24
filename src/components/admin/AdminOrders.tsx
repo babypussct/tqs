@@ -5,6 +5,7 @@ import { useOrders } from '../../utils/useOrders';
 import { postOrderCommand } from '../../utils/orderApi';
 import { Order } from '../../types';
 import AdminOrderDetailModal from './AdminOrderDetailModal';
+import { formatDate } from '../../shared/data/date';
 
 export default function AdminOrders() {
   const { orders, loading, updateOrderStatus, deleteOrder } = useOrders();
@@ -81,7 +82,7 @@ export default function AdminOrders() {
                     #{order.id.slice(-6).toUpperCase()}
                   </div>
                   <div className="text-[10px] text-slate-400 mt-1.5">
-                    {order.createdAt?.toDate().toLocaleDateString('vi-VN')} {order.createdAt?.toDate().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                    {formatDate(order.createdAt, { dateStyle: 'short', timeStyle: 'short' })}
                   </div>
                 </div>
                 <div className="text-right">
@@ -194,7 +195,7 @@ export default function AdminOrders() {
                     #{order.id.slice(-6).toUpperCase()}
                   </div>
                   <div className="text-xs text-slate-400 mt-2">
-                    {order.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                    {formatDate(order.createdAt, { dateStyle: 'short' })}
                   </div>
                 </td>
                 <td className="px-6 py-4">

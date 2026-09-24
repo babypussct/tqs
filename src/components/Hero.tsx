@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { HomepageConfig, HeroEffects } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -51,11 +51,17 @@ export default function Hero({ data }: HeroProps) {
   const videoRef    = useRef<HTMLVideoElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number>(0);
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
   const navigate    = useNavigate();
+
+  useEffect(() => {
+    // Cho phép một URL video mới thử lại sau khi admin thay đổi cấu hình.
+    setVideoUnavailable(false);
+  }, [effects.animationLayer, effects.videoUrl]);
 
   // Particle system — only runs when animationLayer === 'particles'
   useEffect(() => {
-    if (effects.animationLayer !== 'particles') return;
+    if (effects.animationLayer !== 'particles' || effects.particleEnabled === false) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -159,10 +165,10 @@ export default function Hero({ data }: HeroProps) {
     };
   // Re-run when any particle effect setting changes
   }, [
-    effects.particleEnabled, effects.particleColor, effects.particleCount,
+    effects.particleColor, effects.particleCount,
     effects.particleIntensity, effects.animationPreset, effects.particleDirection,
     effects.particleSizeMin, effects.particleSizeMax, effects.particleSpread,
-    effects.animationLayer,
+    effects.animationLayer, effects.particleEnabled,
   ]);
 
   const animationStyle: React.CSSProperties = {
@@ -184,7 +190,7 @@ export default function Hero({ data }: HeroProps) {
       {/* ── Background Media Container ── */}
       <div className="absolute inset-0 z-0">
         {/* Layer 1: Video (Bottom, hidden on mobile) */}
-        {effects.animationLayer === 'video' && effects.videoUrl && (
+        {effects.animationLayer === 'video' && effects.videoUrl && !videoUnavailable && (
           <div className="absolute pointer-events-none hidden md:block" style={animationStyle}>
             <video
               ref={videoRef}
@@ -194,6 +200,8 @@ export default function Hero({ data }: HeroProps) {
               loop={effects.videoLoop !== false}
               playsInline
               className="w-full h-full object-cover"
+              aria-hidden="true"
+              onError={() => setVideoUnavailable(true)}
               style={{
                 mixBlendMode: (effects.videoBlend || 'normal') as React.CSSProperties['mixBlendMode'],
                 opacity: effects.videoOpacity ?? 0.8,
@@ -233,7 +241,7 @@ export default function Hero({ data }: HeroProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-10" />
 
       {/* ── Animation Layer: Particle Canvas ── */}
-      {effects.animationLayer === 'particles' && (
+      {effects.animationLayer === 'particles' && effects.particleEnabled !== false && (
         <div className={`absolute pointer-events-none z-10 ${animVisibilityClass}`} style={animationStyle}>
           <canvas
             ref={canvasRef}

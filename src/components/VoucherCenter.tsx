@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, increment, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { DiscountCode, AppUser } from '../types';
 import { Ticket, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { toDate, formatDate } from '../shared/data/date';
 
 export default function VoucherCenter() {
   const { user, appUser } = useAuth();
@@ -27,7 +28,8 @@ export default function VoucherCenter() {
         .map(doc => ({ id: doc.id, ...doc.data() } as DiscountCode))
         .filter(c => {
           // Filter out expired or fully used
-          const isExpired = c.endDate?.toDate && c.endDate.toDate() < now;
+          const endDate = toDate(c.endDate);
+          const isExpired = endDate !== null && endDate < now;
           const isLimitReached = c.usageLimit && c.usedCount >= c.usageLimit;
           return !isExpired && !isLimitReached;
         });
@@ -71,17 +73,19 @@ export default function VoucherCenter() {
 
     setSavingId(voucher.id);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      
-      const updateData: any = {
-        savedVouchers: arrayUnion(voucher.id)
-      };
-      
-      if (cost > 0) {
-        updateData.points = increment(-cost);
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/vouchers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ voucherId: voucher.id }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Không thể lưu mã voucher.');
       }
-      
-      await updateDoc(userRef, updateData);
 
       toast.success(cost > 0 ? `Đã đổi mã thành công (-${cost} điểm)` : 'Đã lưu mã thành công!');
     } catch (err: any) {
@@ -97,8 +101,7 @@ export default function VoucherCenter() {
   };
 
   const formatDateTime = (dateObj: any) => {
-    if (!dateObj?.toDate) return '';
-    return dateObj.toDate().toLocaleString('vi-VN');
+    return formatDate(dateObj);
   };
 
   const TIER_ORDER = ['bronze', 'silver', 'gold', 'diamond'];

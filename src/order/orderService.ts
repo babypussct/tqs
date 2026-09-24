@@ -31,6 +31,8 @@ import {
 } from './money.js';
 import { planOrderTransition } from './transitions.js';
 import type { TransitionRequest } from './transitions.js';
+import { resolveProductUnitPrice } from './pricing.js';
+import { toDate } from '../shared/data/date.js';
 
 export interface OrderItemInput {
   productId: string;
@@ -113,6 +115,19 @@ export interface OrderServiceDependencies {
   updateUserRewardStats?: (uid: string, update: UserRewardStatsUpdate) => Promise<void>;
   getShippingConfig?: () => Promise<any | null>;
   getTiersConfig?: () => Promise<any | null>;
+  getUserOrderCount?: (uid: string, discountCode?: string | null) => Promise<number>;
+}
+
+/**
+ * Idempotency keys become part of a Firestore document id. Keep the accepted
+ * alphabet deliberately narrow so user input cannot create nested paths or
+ * invalid document references.
+ */
+export function isValidIdempotencyKey(value: unknown): value is string {
+  return typeof value === 'string' &&
+    value.length >= 1 &&
+    value.length <= 200 &&
+    /^[A-Za-z0-9._:-]+$/.test(value);
 }
 
 export class OrderServiceError extends Error {
@@ -208,8 +223,11 @@ export async function createOrder(
   if (!['cod', 'vietqr'].includes(input.paymentMethod)) {
     throw new OrderServiceError('Phương thức thanh toán không hợp lệ.', 'INVALID_PAYMENT_METHOD', 400);
   }
-  if (!input.idempotencyKey || typeof input.idempotencyKey !== 'string') {
+  if (!input.idempotencyKey) {
     throw new OrderServiceError('Thiếu idempotencyKey.', 'MISSING_IDEMPOTENCY_KEY', 400);
+  }
+  if (!isValidIdempotencyKey(input.idempotencyKey)) {
+    throw new OrderServiceError('idempotencyKey không hợp lệ.', 'INVALID_IDEMPOTENCY_KEY', 400);
   }
 
   // 2. Read Idempotency Record
@@ -248,7 +266,8 @@ export async function createOrder(
 
   // 4. Read Products & Validate Stock
   const resolvedItems: OrderItem[] = [];
-  const stockDeductionMap: Array<{ productId: string; currentStock: number; qtyNeeded: number }> = [];
+  const productCategoryMap = new Map<string, string>();
+  const stockDeductionMap = new Map<string, { productId: string; currentStock: number; qtyNeeded: number }>();
 
   for (const itemInput of input.items) {
     const product = await deps.getProduct(itemInput.productId);
@@ -258,36 +277,43 @@ export async function createOrder(
     if (product.isActive === false) {
       throw new OrderServiceError(`Sản phẩm "${product.name}" hiện ngừng kinh doanh.`, 'PRODUCT_INACTIVE', 400);
     }
+    if (Array.isArray(product.allowedPaymentMethods) && !product.allowedPaymentMethods.includes(input.paymentMethod)) {
+      throw new OrderServiceError(
+        `Sản phẩm "${product.name}" yêu cầu phương thức thanh toán khác.`,
+        'PRODUCT_PAYMENT_METHOD_NOT_ALLOWED',
+        400,
+      );
+    }
 
     const qty = Math.max(1, Math.floor(itemInput.quantity));
     const currentStock = typeof product.stock === 'number' ? product.stock : 0;
-    if (currentStock < qty) {
+    const reservedBefore = stockDeductionMap.get(product.id)?.qtyNeeded || 0;
+    const reservedAfter = reservedBefore + qty;
+    if (currentStock < reservedAfter) {
       throw new OrderServiceError(
-        `Sản phẩm "${product.name}" chỉ còn ${currentStock} món trong kho (yêu cầu: ${qty}).`,
+        `Sản phẩm "${product.name}" chỉ còn ${currentStock} món trong kho (yêu cầu: ${reservedAfter}).`,
         'INSUFFICIENT_STOCK',
         400
       );
     }
 
-    // Authoritative item price calculation (base price + variants adjustments)
-    let unitPrice = Math.max(0, product.price || 0);
+    productCategoryMap.set(product.id, String(product.type || ''));
 
-    // Add custom variants price adjustment if applicable
-    if (itemInput.selectedVariants && product.customVariants) {
-      for (const [varName, optName] of Object.entries(itemInput.selectedVariants)) {
-        const varDef = product.customVariants.find((cv: any) => cv.name === varName);
-        if (varDef) {
-          const optDef = varDef.options.find((opt: any) => opt.name === optName);
-          if (optDef && optDef.priceAdjustment) {
-            unitPrice += optDef.priceAdjustment;
-          }
-        }
-      }
-    }
-
-    // Sleeves add-on price
-    if (itemInput.addSleeves) {
-      unitPrice += 20000;
+    // Authoritative item price calculation. No client-calculated prices enter
+    // the domain service.
+    let unitPrice: number;
+    try {
+      unitPrice = resolveProductUnitPrice(product, itemInput);
+    } catch (error) {
+      const message = String(error instanceof Error ? error.message : error);
+      const [code, ...details] = message.split(':');
+      throw new OrderServiceError(
+        code === 'INVALID_PRODUCT_VARIANT'
+          ? `Lựa chọn biến thể "${details.join(':')}" không hợp lệ.`
+          : `Phụ kiện mua kèm "${details.join(':')}" không còn khả dụng.`,
+        code || 'INVALID_PRODUCT_OPTION',
+        400,
+      );
     }
 
     resolvedItems.push({
@@ -304,10 +330,10 @@ export async function createOrder(
       image: product.image || '',
     });
 
-    stockDeductionMap.push({
+    stockDeductionMap.set(product.id, {
       productId: product.id,
       currentStock,
-      qtyNeeded: qty,
+      qtyNeeded: reservedAfter,
     });
   }
 
@@ -321,16 +347,60 @@ export async function createOrder(
   if (input.discountCode) {
     const codeClean = input.discountCode.trim().toUpperCase();
     const voucher = await deps.getVoucher(codeClean);
-    if (voucher && voucher.isActive !== false) {
-      const nowMs = Date.now();
-      const startMs = voucher.startDate ? new Date(voucher.startDate).getTime() : 0;
-      const endMs = voucher.endDate ? new Date(voucher.endDate).getTime() : Infinity;
+    if (!voucher || voucher.isActive === false) {
+      throw new OrderServiceError('Mã giảm giá không hợp lệ.', 'INVALID_DISCOUNT_CODE', 400);
+    }
 
-      if (nowMs >= startMs && nowMs <= endMs) {
-        if (!voucher.usageLimit || (voucher.usedCount || 0) < voucher.usageLimit) {
-          resolvedVoucher = voucher;
-        }
+    const nowMs = Date.now();
+    const startMs = toDate(voucher.startDate)?.getTime() ?? 0;
+    const endMs = toDate(voucher.endDate)?.getTime() ?? Infinity;
+    if (nowMs < startMs) {
+      throw new OrderServiceError('Mã giảm giá chưa đến thời gian sử dụng.', 'DISCOUNT_NOT_STARTED', 400);
+    }
+    if (nowMs > endMs) {
+      throw new OrderServiceError('Mã giảm giá đã hết hạn.', 'DISCOUNT_EXPIRED', 400);
+    }
+    if (voucher.usageLimit && Number(voucher.usedCount || 0) >= Number(voucher.usageLimit)) {
+      throw new OrderServiceError('Mã giảm giá đã hết lượt sử dụng.', 'DISCOUNT_USAGE_EXHAUSTED', 400);
+    }
+    resolvedVoucher = voucher;
+  }
+
+  if (resolvedVoucher) {
+    if (resolvedVoucher.customerType && deps.getUserOrderCount) {
+      const orderCount = await deps.getUserOrderCount(uid);
+      if (resolvedVoucher.customerType === 'new' && orderCount > 0) {
+        throw new OrderServiceError('Mã giảm giá chỉ dành cho khách hàng mới.', 'DISCOUNT_CUSTOMER_TYPE_INVALID', 400);
       }
+      if (resolvedVoucher.customerType === 'returning' && orderCount === 0) {
+        throw new OrderServiceError('Mã giảm giá chỉ dành cho khách hàng cũ.', 'DISCOUNT_CUSTOMER_TYPE_INVALID', 400);
+      }
+    }
+    if (resolvedVoucher.usageLimitPerUser && deps.getUserOrderCount) {
+      const usedByUser = await deps.getUserOrderCount(uid, resolvedVoucher.code);
+      if (usedByUser >= Number(resolvedVoucher.usageLimitPerUser)) {
+        throw new OrderServiceError('Bạn đã hết lượt sử dụng mã giảm giá này.', 'DISCOUNT_USAGE_PER_USER_EXHAUSTED', 400);
+      }
+    }
+    const hasScope = Boolean(resolvedVoucher.applicableProducts?.length || resolvedVoucher.applicableCategories?.length);
+    const eligibleItems = resolvedItems.filter((item) => {
+      const category = productCategoryMap.get(item.productId) || '';
+      if (resolvedVoucher.excludeCategories?.includes(category)) return false;
+      if (!hasScope) return true;
+      return Boolean(
+        resolvedVoucher.applicableProducts?.includes(item.productId) ||
+        resolvedVoucher.applicableCategories?.includes(category),
+      );
+    });
+    const eligibleTotal = eligibleItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    if (hasScope && eligibleItems.length === 0) {
+      throw new OrderServiceError('Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng.', 'DISCOUNT_SCOPE_INVALID', 400);
+    }
+    if (resolvedVoucher.minOrderValue && eligibleTotal < resolvedVoucher.minOrderValue) {
+      throw new OrderServiceError('Giá trị đơn hàng chưa đạt điều kiện của mã giảm giá.', 'DISCOUNT_MIN_ORDER_NOT_MET', 400);
+    }
+    if (resolvedVoucher.applicableTiers?.length && !resolvedVoucher.applicableTiers.includes(userProfile?.tier || 'bronze')) {
+      throw new OrderServiceError('Mã giảm giá không áp dụng cho hạng thành viên hiện tại.', 'DISCOUNT_TIER_NOT_ELIGIBLE', 400);
     }
   }
 
@@ -339,8 +409,13 @@ export async function createOrder(
   const pointsRequested = Math.max(0, Math.floor(input.pointsToUse || 0));
 
   const moneyBreakdown = calculateOrderTotals({
-    items: resolvedItems,
+    items: resolvedItems.map((item) => ({
+      ...item,
+      category: productCategoryMap.get(item.productId),
+    })),
     defaultShippingFee,
+    shippingActive: shippingConfig?.isActive !== false,
+    hasFreeshipProduct: resolvedItems.some((item) => shippingConfig?.freeshipProductIds?.includes(item.productId)),
     freeshipThreshold,
     voucher: resolvedVoucher,
     pointsToUse: pointsRequested,
@@ -366,6 +441,7 @@ export async function createOrder(
     schemaVersion: 1,
     revision: 1,
     userId: uid,
+    currency: 'VND',
     customerEmail: email,
     customerName: input.shippingInfo.fullName,
     items: resolvedItems,
@@ -403,6 +479,7 @@ export async function createOrder(
   };
 
   const orderEvent: OrderEvent = {
+    schemaVersion: 1,
     id: `evt_${orderId}_1`,
     sequence: 1,
     orderId,
@@ -423,6 +500,11 @@ export async function createOrder(
 
   const idempotencyRecord: IdempotencyRecord = {
     id: idempotencyRecordId,
+    schemaVersion: 1,
+    scope: 'orders:create',
+    actorType: 'customer',
+    actorUid: uid,
+    requestKeyHash: await generateRequestFingerprint(input.idempotencyKey),
     actorId: uid,
     operation: 'create_order',
     idempotencyKey: input.idempotencyKey,
@@ -430,6 +512,9 @@ export async function createOrder(
     status: 'succeeded',
     resourceId: orderId,
     responseSnapshot: { success: true, order: newOrder },
+    orderId,
+    resultRef: `orders/${orderId}`,
+    resultCode: 'ORDER_CREATED',
     createdAt: now,
     updatedAt: now,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
@@ -437,7 +522,7 @@ export async function createOrder(
 
   // 8. Atomic Writes (Strictly after all reads)
   // A. Deduct stock for all items
-  for (const item of stockDeductionMap) {
+  for (const item of stockDeductionMap.values()) {
     await deps.updateProductStock(item.productId, item.currentStock - item.qtyNeeded);
   }
 
@@ -518,6 +603,9 @@ export async function transitionOrder(
   const transitionIdempotencyRecordId = input.idempotencyKey
     ? `idem_${actor.uid}_transition_${input.idempotencyKey}`
     : null;
+  if (input.idempotencyKey !== undefined && !isValidIdempotencyKey(input.idempotencyKey)) {
+    throw new OrderServiceError('idempotencyKey không hợp lệ.', 'INVALID_IDEMPOTENCY_KEY', 400);
+  }
   const transitionRequestFingerprint = input.idempotencyKey
     ? await generateRequestFingerprint({ ...input, actionType, targetStatus })
     : null;
@@ -561,6 +649,11 @@ export async function transitionOrder(
     const now = new Date().toISOString();
     await deps.saveIdempotencyRecord({
       id: transitionIdempotencyRecordId,
+      schemaVersion: 1,
+      scope: 'orders:transition',
+      actorType,
+      actorUid: actor.uid,
+      requestKeyHash: await generateRequestFingerprint(input.idempotencyKey),
       actorId: actor.uid,
       operation: actionType,
       idempotencyKey: input.idempotencyKey,
@@ -568,6 +661,9 @@ export async function transitionOrder(
       status: 'succeeded',
       resourceId: order.id,
       responseSnapshot: { success: true, order: updatedOrder, event },
+      orderId: order.id,
+      resultRef: `orders/${order.id}`,
+      resultCode: 'ORDER_TRANSITIONED',
       createdAt: now,
       updatedAt: now,
       expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
@@ -591,6 +687,7 @@ export async function transitionOrder(
     await deps.updateOrder(order.id, orderUpdates);
 
     const event: OrderEvent = {
+      schemaVersion: 1,
       id: `evt_${order.id}_${nextRevision}`,
       sequence: nextRevision,
       orderId: order.id,
@@ -619,6 +716,7 @@ export async function transitionOrder(
     assertCanManageOrders(actor);
     if (order.paymentStatus === 'paid') {
       const replayEvent: OrderEvent = {
+        schemaVersion: 1,
         id: `evt_${order.id}_${order.revision}_payment_replay`,
         sequence: order.revision,
         orderId: order.id,
@@ -649,6 +747,7 @@ export async function transitionOrder(
     await deps.updateOrder(order.id, orderUpdates);
 
     const event: OrderEvent = {
+      schemaVersion: 1,
       id: `evt_${order.id}_${nextRevision}`,
       sequence: nextRevision,
       orderId: order.id,
@@ -854,6 +953,7 @@ export async function transitionOrder(
 
   // 8. Save Audit Event
   const event: OrderEvent = {
+    schemaVersion: 1,
     id: `evt_${order.id}_${nextRevision}`,
     sequence: nextRevision,
     orderId: order.id,

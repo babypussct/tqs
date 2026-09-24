@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOrders } from '../../utils/useOrders';
 import { DollarSign, TrendingUp, Package, Truck, Wallet, FileBarChart, ArrowDownRight, ArrowUpRight, Coins, Box } from 'lucide-react';
 import { Order } from '../../types';
+import { toDate } from '../../shared/data/date';
 
 export default function AdminRevenueStatistics() {
   const { orders, loading } = useOrders();
@@ -20,7 +21,7 @@ export default function AdminRevenueStatistics() {
     // Lọc theo thời gian
     const filteredOrders = deliveredOrders.filter(o => {
       if (dateFilter === 'all') return true;
-      const orderDate = o.createdAt?.toDate();
+      const orderDate = toDate(o.createdAt);
       if (!orderDate) return false;
       
       const oMonth = orderDate.getMonth();

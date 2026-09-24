@@ -6,8 +6,10 @@
 import type { OrderDocument, OrderMoneyBreakdown, ReturnReason } from './canonical.js';
 
 export interface CalculateOrderTotalsInput {
-  items: Array<{ unitPrice: number; quantity: number }>;
+  items: Array<{ unitPrice: number; quantity: number; productId?: string; category?: string }>;
   defaultShippingFee: number;
+  shippingActive?: boolean;
+  hasFreeshipProduct?: boolean;
   freeshipThreshold?: number | null;
   voucher?: {
     code: string;
@@ -16,6 +18,9 @@ export interface CalculateOrderTotalsInput {
     maxDiscount?: number;
     minOrderValue?: number;
     isFreeship?: boolean;
+    applicableProducts?: string[];
+    applicableCategories?: string[];
+    excludeCategories?: string[];
   } | null;
   pointsToUse?: number;
   userPointsBalance?: number;
@@ -27,6 +32,8 @@ export function calculateOrderTotals(input: CalculateOrderTotalsInput): OrderMon
   const {
     items,
     defaultShippingFee,
+    shippingActive = true,
+    hasFreeshipProduct = false,
     freeshipThreshold = null,
     voucher = null,
     pointsToUse = 0,
@@ -42,11 +49,11 @@ export function calculateOrderTotals(input: CalculateOrderTotalsInput): OrderMon
   }, 0);
 
   // 2. Calculate shipping fee
-  let shippingFee = Math.max(0, Math.round(defaultShippingFee));
+  let shippingFee = shippingActive ? Math.max(0, Math.round(defaultShippingFee)) : 0;
   const qualifiesForThresholdFreeship =
     freeshipThreshold !== null && freeshipThreshold !== undefined && totalAmount >= freeshipThreshold;
 
-  if (qualifiesForThresholdFreeship) {
+  if (qualifiesForThresholdFreeship || hasFreeshipProduct) {
     shippingFee = 0;
   }
 
@@ -55,14 +62,30 @@ export function calculateOrderTotals(input: CalculateOrderTotalsInput): OrderMon
   let voucherGrantsFreeship = false;
 
   if (voucher) {
+    const hasProductScope = Boolean(voucher.applicableProducts?.length || voucher.applicableCategories?.length);
+    const eligibleItems = items.filter((item) => {
+      const category = item.category || '';
+      const excluded = voucher.excludeCategories?.includes(category) === true;
+      if (excluded) return false;
+      if (!hasProductScope) return true;
+      return Boolean(
+        (item.productId && voucher.applicableProducts?.includes(item.productId)) ||
+        (category && voucher.applicableCategories?.includes(category))
+      );
+    });
+    const eligibleAmount = eligibleItems.reduce(
+      (sum, item) => sum + Math.max(0, Math.round(item.unitPrice)) * Math.max(1, Math.round(item.quantity)),
+      0
+    );
     // Check minimum order value condition
-    const meetsMinOrder = !voucher.minOrderValue || totalAmount >= voucher.minOrderValue;
+    const meetsMinOrder = (!hasProductScope || eligibleItems.length > 0) &&
+      (!voucher.minOrderValue || eligibleAmount >= voucher.minOrderValue);
 
     if (meetsMinOrder) {
       if (voucher.discountType === 'freeship_only') {
         voucherGrantsFreeship = true;
       } else if (voucher.discountType === 'percentage') {
-        const rawDiscount = Math.round((totalAmount * voucher.discountValue) / 100);
+        const rawDiscount = Math.round((eligibleAmount * voucher.discountValue) / 100);
         voucherDiscountAmount = voucher.maxDiscount
           ? Math.min(rawDiscount, voucher.maxDiscount)
           : rawDiscount;
@@ -70,7 +93,7 @@ export function calculateOrderTotals(input: CalculateOrderTotalsInput): OrderMon
           voucherGrantsFreeship = true;
         }
       } else if (voucher.discountType === 'fixed') {
-        voucherDiscountAmount = Math.min(totalAmount, Math.round(voucher.discountValue));
+        voucherDiscountAmount = Math.min(eligibleAmount, Math.round(voucher.discountValue));
         if (voucher.isFreeship) {
           voucherGrantsFreeship = true;
         }

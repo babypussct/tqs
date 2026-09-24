@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, getDocsFromCache, getDocsFromServer, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, getDocsFromCache, getDocsFromServer, where, type Query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Post } from '../types';
 
@@ -10,7 +10,7 @@ export function usePosts(isAdmin = false) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let q: any = collection(db, 'posts');
+    let q: Query = collection(db, 'posts');
     if (!isAdmin) {
       q = query(q, where('status', '==', 'published'), orderBy('createdAt', 'desc'));
     } else {

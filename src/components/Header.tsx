@@ -287,6 +287,7 @@ export default function Header() {
               {/* Cart */}
               <button
                 onClick={() => setIsCartOpen(true)}
+                aria-label={`Giỏ hàng${cartCount > 0 ? `, ${cartCount} sản phẩm` : ''}`}
                 className="hidden lg:flex relative p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:scale-110 hover:bg-black/5 dark:hover:bg-white/5"
                 style={{ color: isTransparent ? 'rgba(255,255,255,0.9)' : theme === 'dark' ? '#ccc' : '#444' }}
               >
@@ -306,6 +307,7 @@ export default function Header() {
 
               {/* Mobile menu toggle */}
               <button
+                aria-label="Mở menu điều hướng"
                 className="lg:hidden p-2 sm:p-2.5 rounded-full transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5"
                 style={{ color: isTransparent ? 'rgba(255,255,255,0.9)' : theme === 'dark' ? '#ccc' : '#444' }}
                 onClick={() => setMobileMenuOpen(true)}
@@ -344,6 +346,7 @@ export default function Header() {
                 <span className="text-gray-900 dark:text-white ml-1">Store</span>
               </span>
               <button 
+                aria-label="Đóng menu điều hướng"
                 onClick={() => setMobileMenuOpen(false)} 
                 className="p-2 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400"
               >
@@ -407,7 +410,7 @@ export default function Header() {
                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.displayName}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                     </div>
-                    <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-zinc-800 rounded-full">
+                    <button aria-label="Đăng xuất" onClick={logout} className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-zinc-800 rounded-full">
                       <LogOut className="h-4 w-4" />
                     </button>
                   </div>

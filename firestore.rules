@@ -353,7 +353,8 @@ service cloud.firestore {
           'create_order', 'review_risk', 'confirm_payment', 'fail_payment',
           'expire_payment', 'start_processing', 'ship_order', 'mark_delivered',
           'mark_failed_delivery', 'retry_delivery', 'cancel_order', 'accept_return',
-          'request_refund', 'complete_refund', 'reconcile_side_effect'
+          'request_refund', 'complete_refund', 'reconcile_side_effect',
+          'update_order_metadata'
         ] &&
         request.resource.data.status in ['processing', 'succeeded', 'failed_retryable', 'failed_permanent'] &&
         request.resource.data.createdAt is timestamp &&
@@ -450,7 +451,10 @@ service cloud.firestore {
 
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isAuthenticated() && !isBanned() &&
+      // Review creation is a trusted command. The API verifies delivered
+      // ownership before writing; direct client creates would otherwise be
+      // able to bypass that purchase check.
+      allow create: if isOrderService() &&
         request.resource.data.userId == request.auth.uid &&
         hasAll(request.resource.data, ['productId', 'userId', 'userName', 'rating', 'comment', 'createdAt']) &&
         request.resource.data.rating is number && request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&

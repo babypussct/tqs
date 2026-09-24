@@ -3,6 +3,8 @@ import { Package, Clock, CheckCircle, Truck, XCircle, Copy, ChevronDown, Chevron
 import { toast } from 'sonner';
 import { Order, TierConfig } from '../../types';
 import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
+import { formatDate } from '../../shared/data/date';
+import { getOrderItemUnitPrice } from '../../shared/orders/orderView';
 
 interface OrderHistoryProps {
   orders: Order[];
@@ -77,7 +79,7 @@ export default function OrderHistory({
                        Mã đơn: <span className="font-mono text-gray-900 dark:text-white font-bold text-base">#{order.id.slice(-6).toUpperCase()}</span>
                      </p>
                      <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">
-                       Đặt lúc {order.createdAt?.toDate().toLocaleTimeString('vi-VN')} ngày {order.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                       Đặt lúc {formatDate(order.createdAt)}
                      </p>
                    </div>
                    <div className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border \${statusConfig.bg} \${statusConfig.border} \${statusConfig.color} text-xs font-bold w-fit`}>
@@ -94,7 +96,7 @@ export default function OrderHistory({
                          <div className="flex items-center gap-3">
                            <span 
                              className="font-mono font-black text-xl text-blue-900 dark:text-blue-100" 
-                             title={displayTrackingCode}
+                             title={displayTrackingCode || ''}
                            >
                              {displayTrackingCode}
                            </span>
@@ -144,7 +146,7 @@ export default function OrderHistory({
                            </div>
                          </div>
                          <div className="text-right shrink-0">
-                           <p className="text-sm sm:text-base font-black text-gray-900 dark:text-white">{item.price.toLocaleString('vi-VN')}đ</p>
+                           <p className="text-sm sm:text-base font-black text-gray-900 dark:text-white">{getOrderItemUnitPrice(item).toLocaleString('vi-VN')}đ</p>
                            <p className="text-xs font-bold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded inline-block mt-1">x{item.quantity}</p>
                          </div>
                        </div>

@@ -71,6 +71,7 @@ export interface HomepageConfig {
     side1: Banner;
     side2: Banner;
     effects?: HeroEffects;
+    trustChips?: { label: string; icon: string }[];
   };
   trustBadges: TrustBadge[];
   sections: HomeSection[];
@@ -107,7 +108,7 @@ export interface Product {
   };
   customVariants?: {
     name: string;
-    options: { name: string; priceAdjustment?: number }[];
+    options: (string | { name: string; priceAdjustment?: number })[];
   }[];
   quickAddAccessories?: {
     name: string;
@@ -184,43 +185,11 @@ export interface ShippingConfig {
   freeshipProductIds: string[];
 }
 
-export interface Order {
-  id: string;
-  userId: string;
-  items: {
-    productId: string;
-    name: string;
-    price: number;
-    quantity: number;
-    selectedBox: string | null;
-    selectedLang: string | null;
-    selectedVariants?: Record<string, string> | null;
-    addSleeves: boolean;
-    quickAddAccessoryNames?: string[] | null;
-    image: string;
-  }[];
-  totalAmount: number;
-  shippingFee?: number;
-  discountCode?: string;
-  discountAmount?: number;
-  finalAmount?: number;
-  actualShippingCost?: number; // Phí ship thực tế trả cho đơn vị vận chuyển
-  baseCost?: number; // Tổng giá vốn hàng bán của đơn hàng
-  packagingCost?: number; // Chi phí đóng gói (hộp, mút xốp...)
-  earnedPoints?: number;
-  status: 'pending' | 'suspicious' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned' | 'refunded' | 'failed_delivery';
-  paymentMethod?: 'cod' | 'vietqr';
-  paymentStatus?: 'pending' | 'paid';
-  trackingCode?: string;
-  shippingInfo: {
-    fullName: string;
-    phone: string;
-    address: string;
-    notes: string;
-  };
-  createdAt: any;
-  updatedAt: any;
-}
+/**
+ * Order screens consume the canonical order document. Legacy Firestore
+ * documents are normalized at repository boundaries before reaching React.
+ */
+export type Order = OrderDocument;
 
 export interface AdminPermissions {
   manageProducts: boolean;
@@ -296,3 +265,4 @@ export interface Post {
   createdAt: any;
   updatedAt: any;
 }
+import type { OrderDocument } from './order/canonical';

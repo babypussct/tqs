@@ -85,7 +85,12 @@ export default function Footer() {
               {config.policyLinks?.map((item, idx) => (
                 <li key={idx}>
                   <a 
-                    href={item.path} 
+                    href={item.path === '#' ? [
+                      '/support/warranty',
+                      '/support/returns',
+                      '/support/shipping',
+                      '/support/how-to-play',
+                    ][idx] || '/support/shipping' : item.path}
                     className="group flex items-center text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
                   >
                     <ChevronRight className="w-4 h-4 mr-1 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />

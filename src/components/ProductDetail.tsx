@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check, Lock, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertTriangle, ShieldCheck, PackageOpen, Check, ImageOff, Lock, Plus, Minus } from 'lucide-react';
 import { Product } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useProducts } from '../hooks/useProducts';
@@ -24,6 +24,7 @@ export default function ProductDetail() {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [selectedQuickAdds, setSelectedQuickAdds] = useState<string[]>([]);
   const [activeImage, setActiveImage] = useState('');
+  const [imageFailed, setImageFailed] = useState(false);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -35,7 +36,8 @@ export default function ProductDetail() {
       if (product.customVariants) {
         product.customVariants.forEach(v => {
           if (v.options && v.options.length > 0) {
-            initialVariants[v.name] = v.options[0].name;
+            const firstOption = v.options[0];
+            initialVariants[v.name] = typeof firstOption === 'string' ? firstOption : firstOption.name;
           }
         });
       }
@@ -43,10 +45,15 @@ export default function ProductDetail() {
       
       setSelectedQuickAdds([]);
       setActiveImage(product.image);
+      setImageFailed(false);
       setAddonQuantities({});
       window.scrollTo(0, 0);
     }
   }, [product]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [activeImage]);
 
   if (loading) {
     return (
@@ -65,14 +72,20 @@ export default function ProductDetail() {
     );
   }
   
-  const quickAdds = product.quickAddAccessories || ((product as any).quickAddAccessory ? [(product as any).quickAddAccessory] : []);
-  if (quickAdds.length === 0 && product.size) {
-    quickAdds.push({
-      name: 'Mua kèm 200 Bọc bài (Sleeves)',
-      price: 50000,
-      description: `Size chuẩn ${product.size} vừa khít thẻ bài. Bảo vệ bài không trầy xước, chống nước.`
-    });
-  }
+  const configuredQuickAdds = product.quickAddAccessories?.length
+    ? product.quickAddAccessories
+    : (product as any).quickAddAccessory
+      ? [(product as any).quickAddAccessory]
+      : [];
+  const quickAdds = configuredQuickAdds.length > 0
+    ? configuredQuickAdds
+    : product.size
+      ? [{
+          name: 'Mua kèm 200 Bọc bài (Sleeves)',
+          price: 50000,
+          description: `Size chuẩn ${product.size} vừa khít thẻ bài. Bảo vệ bài không trầy xước, chống nước.`
+        }]
+      : [];
 
   const BOX_UPGRADE_PRICE = selectedBox.includes('Hộp Sắt') ? 50000 : 0;
   
@@ -139,6 +152,7 @@ export default function ProductDetail() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button 
+        type="button"
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-8 font-medium"
       >
@@ -155,7 +169,7 @@ export default function ProductDetail() {
                 {product.badge}
               </div>
             )}
-            {activeImage ? (
+            {activeImage && !imageFailed ? (
               <img 
                 src={cloudinaryUrl(activeImage, { width: 800, quality: 'auto:good' })} 
                 alt={product.name} 
@@ -164,33 +178,41 @@ export default function ProductDetail() {
                 decoding="async"
                 className="w-full h-auto max-h-[600px] object-contain"
                 referrerPolicy="no-referrer"
+                onError={() => setImageFailed(true)}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500">No Image</div>
+              <div className="w-full min-h-[300px] flex flex-col gap-2 items-center justify-center text-gray-400 dark:text-zinc-500">
+                <ImageOff className="w-10 h-10" aria-hidden="true" />
+                <span>Chưa có ảnh sản phẩm</span>
+              </div>
             )}
           </div>
           
           {/* Thumbnails */}
           {product.images && product.images.length > 0 && (
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-              <button 
+              <button
+                type="button"
+                aria-label={`Xem ảnh chính của ${product.name}`}
                 onClick={() => setActiveImage(product.image)} 
                 className={`w-20 h-20 shrink-0 rounded-xl border-2 overflow-hidden transition-all ${activeImage === product.image ? 'border-red-500 shadow-md' : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-700'}`}
               >
                 {product.image ? (
-                  <img src={cloudinaryUrl(product.image, { width: 100, quality: 'auto:low' })} className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+                  <img src={cloudinaryUrl(product.image, { width: 100, quality: 'auto:low' })} alt="" className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                 )}
               </button>
               {product.images.map((img, idx) => (
-                <button 
+                <button
+                  type="button"
+                  aria-label={`Xem ảnh phụ ${idx + 1} của ${product.name}`}
                   key={idx} 
                   onClick={() => setActiveImage(img)} 
                   className={`w-20 h-20 shrink-0 rounded-xl border-2 overflow-hidden bg-white dark:bg-zinc-900 transition-all ${activeImage === img ? 'border-red-500 shadow-md' : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-700'}`}
                 >
                   {img ? (
-                    <img src={cloudinaryUrl(img, { width: 100, quality: 'auto:low' })} className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+                    <img src={cloudinaryUrl(img, { width: 100, quality: 'auto:low' })} alt="" className="w-full h-full object-contain p-1" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
                   )}
@@ -345,14 +367,20 @@ export default function ProductDetail() {
               {quickAdds.map((qa, idx) => {
                 const isSelected = selectedQuickAdds.includes(qa.name);
                 return (
-                  <div key={idx} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 transition-colors hover:border-gray-300 dark:hover:border-zinc-600 cursor-pointer" onClick={() => {
-                    if (isSelected) {
-                      setSelectedQuickAdds(selectedQuickAdds.filter(name => name !== qa.name));
-                    } else {
-                      setSelectedQuickAdds([...selectedQuickAdds, qa.name]);
-                    }
-                  }}>
-                    <label className="flex items-start gap-3 cursor-pointer">
+                  <button
+                    type="button"
+                    aria-pressed={isSelected}
+                    key={idx}
+                    className="w-full text-left bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 transition-colors hover:border-gray-300 dark:hover:border-zinc-600"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedQuickAdds(selectedQuickAdds.filter(name => name !== qa.name));
+                      } else {
+                        setSelectedQuickAdds([...selectedQuickAdds, qa.name]);
+                      }
+                    }}
+                  >
+                    <span className="flex items-start gap-3">
                       <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 dark:border-zinc-500 bg-white dark:bg-zinc-950'}`}>
                         {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
                       </div>
@@ -367,8 +395,8 @@ export default function ProductDetail() {
                           </p>
                         )}
                       </div>
-                    </label>
-                  </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -415,6 +443,8 @@ export default function ProductDetail() {
                       {isSelected ? (
                         <div className="flex items-center gap-1 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-600 rounded-lg shrink-0">
                           <button
+                            type="button"
+                            aria-label={`Giảm số lượng ${addon.name}`}
                             onClick={() =>
                               setAddonQuantities(prev => ({
                                 ...prev,
@@ -427,6 +457,8 @@ export default function ProductDetail() {
                           </button>
                           <span className="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">{qty}</span>
                           <button
+                            type="button"
+                            aria-label={`Tăng số lượng ${addon.name}`}
                             onClick={() =>
                               setAddonQuantities(prev => ({
                                 ...prev,
@@ -445,6 +477,8 @@ export default function ProductDetail() {
                         </div>
                       ) : (
                         <button
+                          type="button"
+                          aria-label={`Thêm ${addon.name} vào sản phẩm mua kèm`}
                           onClick={() =>
                             setAddonQuantities(prev => ({ ...prev, [addon.id]: 1 }))
                           }
@@ -469,7 +503,9 @@ export default function ProductDetail() {
           )}
 
           {/* Add to Cart */}
-          <button 
+          <button
+            type="button"
+            aria-label={isTierLocked ? `Sản phẩm dành cho hạng ${product.minTierRequired}` : product.stock !== undefined && product.stock <= 0 ? 'Sản phẩm hết hàng' : 'Thêm sản phẩm vào giỏ hàng'}
             onClick={handleAddToCart}
             disabled={isTierLocked || (product.stock !== undefined && product.stock <= 0)}
             className={`w-full font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg mb-12 ${

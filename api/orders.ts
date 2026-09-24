@@ -1,57 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { getAdminDb } from './_lib/firebaseAdmin.js';
+import { authenticateActor } from './_lib/auth.js';
+import { createOrderTransactionDependencies, normalizeOrderDocument } from './_lib/orderTransaction.js';
 import {
   createOrder,
   transitionOrder,
   OrderServiceError,
+  isValidIdempotencyKey,
 } from '../src/order/orderService.js';
 import type {
   AuthenticatedActor,
   CreateOrderInput,
-  OrderServiceDependencies,
   TransitionOrderInput,
 } from '../src/order/orderService.js';
-import type { IdempotencyRecord, OrderDocument } from '../src/order/canonical.js';
-
-// ─── 1. Initialize Firebase Admin safely ───
-if (!admin.apps.length) {
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      let pk = process.env.FIREBASE_PRIVATE_KEY || '';
-      if (pk.startsWith('"') && pk.endsWith('"')) pk = pk.slice(1, -1);
-      pk = pk.replace(/\\n/g, '\n');
-
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0845413094',
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: pk,
-        }),
-      });
-    } else {
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-      });
-    }
-  } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
-  }
-}
-
-function getDb(): FirebaseFirestore.Firestore {
-  const dbId = process.env.FIREBASE_DATABASE_ID || 'ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b';
-  try {
-    return getFirestore(admin.app(), dbId);
-  } catch {
-    return getFirestore(admin.app());
-  }
-}
+import type { OrderDocument } from '../src/order/canonical.js';
+import { quoteOrder } from '../src/order/quoteService.js';
+import type { QuoteOrderInput } from '../src/order/quoteService.js';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -131,8 +96,10 @@ async function notifyTelegramNewOrder(order: OrderDocument): Promise<void> {
 
 // ─── 3. Main Serverless Handler ───
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS configuration
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Same-origin by default. A separate trusted origin can be configured for
+  // preview/admin clients without opening the order endpoint to every site.
+  const allowedOrigin = process.env.APP_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+  if (allowedOrigin) res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
@@ -140,56 +107,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const db = getDb();
-
-  // Extract and verify Bearer token
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
+  const db = getAdminDb();
+  const authResult = await authenticateActor(req, db);
+  if ('errorCode' in authResult) {
+    return res.status(authResult.status).json({
       success: false,
-      code: 'UNAUTHORIZED',
-      message: 'Thiếu hoặc sai định dạng Authorization Bearer token.',
+      code: authResult.errorCode,
+      message: authResult.message,
     });
   }
-
-  const idToken = authHeader.split('Bearer ')[1].trim();
-  let actor: AuthenticatedActor;
-
-  try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const uid = decoded.uid;
-    const email = decoded.email || '';
-
-    // Fetch user profile from Firestore to determine role
-    const userDoc = await db.collection('users').doc(uid).get();
-    const userData = userDoc.data() || {};
-    if (userData.isBanned === true) {
-      return res.status(403).json({
-        success: false,
-        code: 'ACCOUNT_BANNED',
-        message: 'Tài khoản của bạn đã bị khóa.',
-      });
-    }
-    const role: 'customer' | 'admin' = userData.role === 'admin' ? 'admin' : 'customer';
-    const isSuperAdmin = Boolean(decoded.super_admin === true || userData.isSuperAdmin === true);
-
-    actor = {
-      uid,
-      email,
-      role,
-      isSuperAdmin,
-      permissions: userData.adminPermissions && typeof userData.adminPermissions === 'object'
-        ? userData.adminPermissions
-        : undefined,
-    };
-  } catch (authErr: any) {
-    console.error('ID Token Verification Error:', authErr.message);
-    return res.status(401).json({
-      success: false,
-      code: 'INVALID_TOKEN',
-      message: 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.',
-    });
-  }
+  const actor: AuthenticatedActor = authResult.actor;
 
   // ─── Route: GET /api/orders?orderId=... ───
   if (req.method === 'GET') {
@@ -204,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ success: false, code: 'ORDER_NOT_FOUND', message: 'Không tìm thấy đơn hàng.' });
       }
 
-      const orderData = orderSnap.data() as OrderDocument;
+      const orderData = normalizeOrderDocument(orderSnap.data() || {}, orderSnap.id);
       // Ownership check: customer can only read their own order
       if (actor.role === 'customer' && orderData.userId !== actor.uid) {
         return res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'Bạn không có quyền xem đơn hàng này.' });
@@ -219,11 +146,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ─── Route: POST /api/orders (Create or Transition) ───
   if (req.method === 'POST') {
     const body = req.body || {};
+
+    if (body.intent === 'quote' || req.query.action === 'quote') {
+      const quoteInput: QuoteOrderInput = {
+        items: body.items,
+        shippingInfo: body.shippingInfo,
+        paymentMethod: body.paymentMethod,
+        discountCode: body.discountCode,
+        pointsToUse: body.pointsToUse,
+      };
+      try {
+        const quote = await db.runTransaction((transaction) =>
+          quoteOrder(actor, quoteInput, createOrderTransactionDependencies(db, transaction)),
+        );
+        return res.status(200).json({ success: true, quote });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'QUOTE_FAILED';
+        const messages: Record<string, string> = {
+          EMPTY_CART: 'Giỏ hàng không được để trống.',
+          INVALID_SHIPPING_INFO: 'Thông tin giao hàng chưa đầy đủ.',
+          INVALID_PAYMENT_METHOD: 'Phương thức thanh toán không hợp lệ.',
+          INVALID_DISCOUNT_CODE: 'Mã giảm giá không hợp lệ.',
+          DISCOUNT_NOT_STARTED: 'Mã giảm giá chưa đến thời gian sử dụng.',
+          DISCOUNT_EXPIRED: 'Mã giảm giá đã hết hạn.',
+          DISCOUNT_USAGE_EXHAUSTED: 'Mã giảm giá đã hết lượt sử dụng.',
+          DISCOUNT_USAGE_PER_USER_EXHAUSTED: 'Bạn đã hết lượt sử dụng mã này.',
+          DISCOUNT_CUSTOMER_TYPE_INVALID: 'Mã giảm giá không áp dụng cho loại khách hàng của bạn.',
+          DISCOUNT_SCOPE_INVALID: 'Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng.',
+          DISCOUNT_MIN_ORDER_NOT_MET: 'Giá trị sản phẩm chưa đạt điều kiện của mã giảm giá.',
+          DISCOUNT_TIER_NOT_ELIGIBLE: 'Mã giảm giá không áp dụng cho hạng thành viên của bạn.',
+          PRODUCT_NOT_FOUND: 'Một sản phẩm trong giỏ không còn tồn tại.',
+          PRODUCT_INACTIVE: 'Một sản phẩm trong giỏ đã ngừng kinh doanh.',
+          INSUFFICIENT_STOCK: 'Một sản phẩm trong giỏ không đủ tồn kho.',
+          PRODUCT_PAYMENT_METHOD_NOT_ALLOWED: 'Phương thức thanh toán không phù hợp với sản phẩm trong giỏ.',
+        };
+        return res.status(400).json({ success: false, code, message: messages[code] || 'Không thể tính lại đơn hàng.' });
+      }
+    }
+
     const isTransition = Boolean(
       body.targetStatus ||
       body.actionType ||
       req.query.action === 'transition'
     );
+
+    if (!isTransition) {
+      const idempotencyKey = typeof body.idempotencyKey === 'string' ? body.idempotencyKey : '';
+      const replay = isValidIdempotencyKey(idempotencyKey)
+        ? await db.collection('idempotency').doc(`idem_${actor.uid}_create_${idempotencyKey}`).get()
+        : null;
+      if (!replay?.exists) {
+        const recentOrders = await db.collection('orders')
+          .where('userId', '==', actor.uid)
+          .where('createdAt', '>=', Timestamp.fromMillis(Date.now() - 60 * 60 * 1000))
+          .limit(4)
+          .get();
+        if (recentOrders.size >= 3) {
+          return res.status(429).json({
+            success: false,
+            code: 'ORDER_RATE_LIMITED',
+            message: 'Bạn đã đặt quá nhiều đơn trong 1 giờ. Vui lòng thử lại sau.',
+          });
+        }
+      }
+    }
 
     // ── Transition Flow ──
     if (isTransition) {
@@ -242,73 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       try {
         const transitionResult = await db.runTransaction(async (transaction) => {
-          const deps: OrderServiceDependencies = {
-            getOrder: async (id) => {
-              const snap = await transaction.get(db.collection('orders').doc(id));
-              return snap.exists ? (snap.data() as OrderDocument) : null;
-            },
-            updateOrder: async (id, updates) => {
-              transaction.update(db.collection('orders').doc(id), updates);
-            },
-            saveOrder: async (order) => {
-              transaction.set(db.collection('orders').doc(order.id), order);
-            },
-            getProduct: async (id) => {
-              const snap = await transaction.get(db.collection('products').doc(id));
-              return snap.exists ? { id: snap.id, ...snap.data() } : null;
-            },
-            updateProductStock: async (id, stock) => {
-              transaction.update(db.collection('products').doc(id), { stock });
-            },
-            getUserProfile: async (uid) => {
-              const snap = await transaction.get(db.collection('users').doc(uid));
-              return snap.exists ? { id: snap.id, ...snap.data() } : null;
-            },
-            updateUserPoints: async (uid, delta) => {
-              transaction.update(db.collection('users').doc(uid), { points: FieldValue.increment(delta) });
-            },
-            updateUserRewardStats: async (uid, update) => {
-              const statsUpdate: Record<string, unknown> = {};
-              if (update.pointsDelta !== undefined) statsUpdate.points = FieldValue.increment(update.pointsDelta);
-              if (update.totalSpentDelta !== undefined) statsUpdate.totalSpent = FieldValue.increment(update.totalSpentDelta);
-              if (update.totalOrdersDelta !== undefined) statsUpdate.totalOrders = FieldValue.increment(update.totalOrdersDelta);
-              if (update.rewardReversalDebtDelta !== undefined) {
-                statsUpdate.rewardReversalDebt = FieldValue.increment(update.rewardReversalDebtDelta);
-              }
-              if (update.tier !== undefined) statsUpdate.tier = update.tier;
-              if (Object.keys(statsUpdate).length > 0) {
-                transaction.update(db.collection('users').doc(uid), statsUpdate);
-              }
-            },
-            getTiersConfig: async () => {
-              const snap = await transaction.get(db.collection('system_settings').doc('tiers_config'));
-              return snap.exists ? snap.data() : null;
-            },
-            getVoucher: async (code) => {
-              const docSnap = await transaction.get(db.collection('discountCodes').doc(code));
-              if (docSnap.exists) return { id: docSnap.id, ...docSnap.data() };
-              const qSnap = await transaction.get(db.collection('discountCodes').where('code', '==', code).limit(1));
-              return qSnap.empty ? null : { id: qSnap.docs[0].id, ...qSnap.docs[0].data() };
-            },
-            incrementVoucherUsage: async (id) => {
-              transaction.update(db.collection('discountCodes').doc(id), { usedCount: FieldValue.increment(1) });
-            },
-            decrementVoucherUsage: async (id) => {
-              transaction.update(db.collection('discountCodes').doc(id), { usedCount: FieldValue.increment(-1) });
-            },
-            saveEvent: async (orderId, event) => {
-              transaction.set(db.collection('orders').doc(orderId).collection('events').doc(event.id), event);
-            },
-            getIdempotencyRecord: async (id) => {
-              const snap = await transaction.get(db.collection('idempotency').doc(id));
-              return snap.exists ? (snap.data() as IdempotencyRecord) : null;
-            },
-            saveIdempotencyRecord: async (record) => {
-              transaction.set(db.collection('idempotency').doc(record.id), record);
-            },
-          };
-
-          return await transitionOrder(actor, transitionInput, deps);
+          return transitionOrder(actor, transitionInput, createOrderTransactionDependencies(db, transaction));
         });
 
         return res.status(200).json({ success: true, order: transitionResult.order, event: transitionResult.event });
@@ -333,62 +253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       const result = await db.runTransaction(async (transaction) => {
-        const deps: OrderServiceDependencies = {
-          getIdempotencyRecord: async (id) => {
-            const snap = await transaction.get(db.collection('idempotency').doc(id));
-            return snap.exists ? (snap.data() as IdempotencyRecord) : null;
-          },
-          saveIdempotencyRecord: async (record) => {
-            transaction.set(db.collection('idempotency').doc(record.id), record);
-          },
-          getUserProfile: async (uid) => {
-            const snap = await transaction.get(db.collection('users').doc(uid));
-            return snap.exists ? { id: snap.id, ...snap.data() } : null;
-          },
-          updateUserPoints: async (uid, delta) => {
-            transaction.update(db.collection('users').doc(uid), {
-              points: FieldValue.increment(delta),
-            });
-          },
-          getProduct: async (id) => {
-            const snap = await transaction.get(db.collection('products').doc(id));
-            return snap.exists ? { id: snap.id, ...snap.data() } : null;
-          },
-          updateProductStock: async (id, stock) => {
-            transaction.update(db.collection('products').doc(id), { stock });
-          },
-          getShippingConfig: async () => {
-            const snap = await transaction.get(db.collection('system_settings').doc('shipping_config'));
-            return snap.exists ? snap.data() : null;
-          },
-          getVoucher: async (code) => {
-            const docSnap = await transaction.get(db.collection('discountCodes').doc(code));
-            if (docSnap.exists) return { id: docSnap.id, ...docSnap.data() };
-            const qSnap = await transaction.get(db.collection('discountCodes').where('code', '==', code).limit(1));
-            return qSnap.empty ? null : { id: qSnap.docs[0].id, ...qSnap.docs[0].data() };
-          },
-          incrementVoucherUsage: async (id) => {
-            transaction.update(db.collection('discountCodes').doc(id), { usedCount: FieldValue.increment(1) });
-          },
-          decrementVoucherUsage: async (id) => {
-            transaction.update(db.collection('discountCodes').doc(id), { usedCount: FieldValue.increment(-1) });
-          },
-          saveOrder: async (order) => {
-            transaction.set(db.collection('orders').doc(order.id), order);
-          },
-          getOrder: async (id) => {
-            const snap = await transaction.get(db.collection('orders').doc(id));
-            return snap.exists ? (snap.data() as OrderDocument) : null;
-          },
-          updateOrder: async (id, updates) => {
-            transaction.update(db.collection('orders').doc(id), updates);
-          },
-          saveEvent: async (orderId, event) => {
-            transaction.set(db.collection('orders').doc(orderId).collection('events').doc(event.id), event);
-          },
-        };
-
-        return await createOrder(actor, createInput, deps);
+        return createOrder(actor, createInput, createOrderTransactionDependencies(db, transaction));
       });
 
       // Dispatch Telegram notification asynchronously on server side for fresh orders

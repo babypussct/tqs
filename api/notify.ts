@@ -1,42 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
-
-if (!admin.apps.length) {
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-        privateKey = privateKey.slice(1, -1);
-      }
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey.replace(/\\n/g, '\n'),
-        }),
-      });
-    } else {
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-      });
-    }
-  } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
-  }
-}
-
-function getDb(): FirebaseFirestore.Firestore {
-  const databaseId = process.env.FIREBASE_DATABASE_ID;
-  try {
-    return databaseId ? getFirestore(admin.app(), databaseId) : getFirestore(admin.app());
-  } catch {
-    return getFirestore(admin.app());
-  }
-}
+import { getAdminDb } from './_lib/firebaseAdmin.js';
+import { authenticateActor } from './_lib/auth.js';
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -53,15 +17,9 @@ function boundedText(value: unknown, maxLength: number, fallback = 'N/A'): strin
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
 }
 
-function getBearerToken(req: VercelRequest): string | null {
-  const authorization = req.headers.authorization;
-  if (!authorization) return null;
-  const match = authorization.match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() || null;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = process.env.APP_ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
@@ -72,24 +30,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ success: false, code: 'METHOD_NOT_ALLOWED' });
   }
 
-  const idToken = getBearerToken(req);
-  if (!idToken) {
-    return res.status(401).json({
+  let db: FirebaseFirestore.Firestore;
+  try {
+    db = getAdminDb();
+  } catch (error: any) {
+    console.error('Notification database initialization failed:', error?.message || error);
+    return res.status(500).json({
       success: false,
-      code: 'UNAUTHORIZED',
-      message: 'Thiếu Firebase ID token.',
+      code: 'NOTIFICATION_INTERNAL_ERROR',
+      message: 'Không thể xử lý thông báo lúc này.',
     });
   }
 
-  let decodedToken: admin.auth.DecodedIdToken;
-  try {
-    decodedToken = await admin.auth().verifyIdToken(idToken);
-  } catch (error: any) {
-    console.error('Notification ID token verification failed:', error?.message || error);
-    return res.status(401).json({
+  const authResult = await authenticateActor(req, db);
+  if ('errorCode' in authResult) {
+    return res.status(authResult.status).json({
       success: false,
-      code: 'INVALID_TOKEN',
-      message: 'Firebase ID token không hợp lệ hoặc đã hết hạn.',
+      code: authResult.errorCode,
+      message: authResult.message,
     });
   }
 
@@ -108,18 +66,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: false,
       code: 'INVALID_REVIEW_ID',
       message: 'reviewId không hợp lệ.',
-    });
-  }
-
-  let db: FirebaseFirestore.Firestore;
-  try {
-    db = getDb();
-  } catch (error: any) {
-    console.error('Notification database initialization failed:', error?.message || error);
-    return res.status(500).json({
-      success: false,
-      code: 'NOTIFICATION_INTERNAL_ERROR',
-      message: 'Không thể xử lý thông báo lúc này.',
     });
   }
 
@@ -143,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const review = reviewSnapshot.data() || {};
-  if (review.userId !== decodedToken.uid) {
+  if (review.userId !== authResult.actor.uid) {
     return res.status(403).json({
       success: false,
       code: 'REVIEW_OWNERSHIP_REQUIRED',

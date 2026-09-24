@@ -32,6 +32,10 @@ export async function registerSW(): Promise<void> {
   }
 
   try {
+    // Cài đặt lần đầu không phải là một bản cập nhật. Ghi nhận trạng thái
+    // trước khi register để tránh chặn người dùng bằng overlay ngay lần mở
+    // website đầu tiên.
+    const hadControllerBeforeRegistration = Boolean(navigator.serviceWorker.controller);
     const registration = await navigator.serviceWorker.register(SW_PATH, {
       scope: '/',
       // updateViaCache: 'none' — luôn fetch sw.js mới từ server (không cache)
@@ -61,7 +65,7 @@ export async function registerSW(): Promise<void> {
 
     // Lắng nghe message từ SW (SW_UPDATED event)
     navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'SW_UPDATED') {
+      if (event.data?.type === 'SW_UPDATED' && hadControllerBeforeRegistration) {
         console.log('[SW Register] SW mới đã activate → dispatch sw-updated');
         window.dispatchEvent(new CustomEvent('sw-updated'));
       }

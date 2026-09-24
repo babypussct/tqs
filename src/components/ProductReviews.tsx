@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, deleteDoc, doc, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Review, Order } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { Star, Trash2, User, MessageSquareReply, ShieldCheck } from 'lucide-react';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { normalizeOrder } from '../shared/orders/orderView';
 
 interface ProductReviewsProps {
   productId: string;
@@ -66,7 +67,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
           where('status', '==', 'delivered')
         );
         const snapshot = await getDocs(q);
-        const orders = snapshot.docs.map(doc => doc.data() as Order);
+        const orders = snapshot.docs.map(doc => normalizeOrder(doc.data(), doc.id)) as Order[];
         
         const purchased = orders.some(order => 
           order.items.some(item => item.productId === productId)
@@ -96,15 +97,23 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     setError('');
 
     try {
-      const reviewRef = await addDoc(collection(db, 'reviews'), {
-        productId,
-        userId: user.uid,
-        userName: user.displayName || 'Người dùng ẩn danh',
-        userPhoto: user.photoURL || '',
-        rating,
-        comment: comment.trim(),
-        createdAt: serverTimestamp()
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          productId,
+          rating,
+          comment: comment.trim(),
+        }),
       });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Có lỗi xảy ra khi gửi đánh giá.');
+      }
 
       // Notification data is re-read and authorized by the server from the
       // review document; the browser only submits the newly-created ID.
@@ -116,7 +125,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
           },
-          body: JSON.stringify({ type: 'NEW_REVIEW', reviewId: reviewRef.id }),
+          body: JSON.stringify({ type: 'NEW_REVIEW', reviewId: data.reviewId }),
         });
         if (!notificationResponse.ok) {
           console.warn('Review notification was not dispatched:', notificationResponse.status);
@@ -130,8 +139,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       setComment('');
       setRating(5);
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'reviews');
-      setError('Có lỗi xảy ra khi gửi đánh giá.');
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi đánh giá.');
     } finally {
       setSubmitting(false);
     }

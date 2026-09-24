@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
+import { admin, getAdminDb } from '../_lib/firebaseAdmin.js';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
@@ -14,50 +13,6 @@ import {
 } from '../../src/media/mediaPolicy.js';
 
 const PRESIGNED_URL_TTL_SECONDS = 15 * 60;
-
-function initializeFirebaseAdmin(): void {
-  if (admin.apps.length > 0) return;
-
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-      return;
-    }
-
-    if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-        privateKey = privateKey.slice(1, -1);
-      }
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey.replace(/\\n/g, '\n'),
-        }),
-      });
-      return;
-    }
-
-    admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-    });
-  } catch (error) {
-    console.error('Firebase Admin initialization failed for media upload:', error);
-  }
-}
-
-initializeFirebaseAdmin();
-
-function getDb(): FirebaseFirestore.Firestore {
-  const databaseId = process.env.FIREBASE_DATABASE_ID;
-  try {
-    return databaseId ? getFirestore(admin.app(), databaseId) : getFirestore(admin.app());
-  } catch {
-    return getFirestore(admin.app());
-  }
-}
 
 function getBearerToken(req: VercelRequest): string | null {
   const authorization = req.headers.authorization;
@@ -186,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let profile: Record<string, unknown>;
   try {
-    const userSnapshot = await getDb().collection('users').doc(decodedToken.uid).get();
+    const userSnapshot = await getAdminDb().collection('users').doc(decodedToken.uid).get();
     profile = (userSnapshot.data() || {}) as Record<string, unknown>;
   } catch (error: any) {
     console.error('Media upload user lookup failed:', error?.message || error);

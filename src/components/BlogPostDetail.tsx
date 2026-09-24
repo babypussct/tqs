@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Post } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
 import { Calendar, Eye, User, ArrowLeft, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { formatDateOnly } from '../shared/data/date';
 
 export default function BlogPostDetail() {
   const { slug } = useParams();
@@ -29,10 +30,13 @@ export default function BlogPostDetail() {
           if (postData.status === 'published') {
             setPost(postData);
             
-            // Increment view count (fire and forget)
-            updateDoc(doc(db, 'posts', postDoc.id), {
-              viewCount: increment(1)
-            }).catch(console.error);
+            // View counters are server-owned so public readers cannot mutate
+            // editorial content directly.
+            fetch('/api/post-view', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ postId: postDoc.id }),
+            }).catch(() => undefined);
           } else {
             toast.error('Bài viết này hiện chưa được xuất bản.');
             navigate('/blog');
@@ -99,7 +103,7 @@ export default function BlogPostDetail() {
           <div className="flex flex-wrap items-center gap-y-3 gap-x-6 text-sm text-slate-500 dark:text-zinc-400 font-medium">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              {post.createdAt?.toDate().toLocaleDateString('vi-VN')}
+              {formatDateOnly(post.createdAt)}
             </div>
             <div className="flex items-center gap-2">
               <Eye className="w-4 h-4" />

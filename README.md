@@ -2,11 +2,14 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# TQSShop — cửa hàng boardgame Tam Quốc Sát
 
-This contains everything you need to run your app locally.
+Repository này chứa storefront TQSShop, order service server-authoritative và
+các API quản trị/notification. Kiến trúc sau refactor được mô tả tại
+[`docs/architecture/SHOP_REFACTOR.md`](./docs/architecture/SHOP_REFACTOR.md).
 
-View your app in AI Studio: https://ai.studio/apps/ae9f678c-29b1-4f19-b872-e5b15e1cee0b
+The repository currently tracks `dist/`; regenerate it with `npm run build`
+before a deployment that consumes the checked-in static output.
 
 ## Run Locally
 

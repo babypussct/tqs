@@ -31,6 +31,7 @@ const AdminProductForm = lazy(() => import('./components/admin/AdminProductForm'
 const AdminPostForm = lazy(() => import('./components/admin/AdminPostForm'));
 const Blog = lazy(() => import('./components/Blog'));
 const BlogPostDetail = lazy(() => import('./components/BlogPostDetail'));
+const SupportPage = lazy(() => import('./components/SupportPage'));
 
 // Protected Route Component - Admin only
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -89,6 +90,10 @@ export default function App() {
 
   // ――― Service Worker Update → hiện overlay ―――
   useEffect(() => {
+    // Dev server không dùng SW; guard này cũng bảo vệ trường hợp trình duyệt
+    // còn giữ một registration cũ từ lần chạy production trước đó.
+    if (!import.meta.env.PROD) return;
+
     const handleSWUpdate = () => setUpdateOverlay('build');
     window.addEventListener('sw-updated', handleSWUpdate);
     return () => window.removeEventListener('sw-updated', handleSWUpdate);
@@ -143,6 +148,7 @@ export default function App() {
                     <Route path="/shop" element={<Shop />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/blog/:slug" element={<BlogPostDetail />} />
+                    <Route path="/support/:topic" element={<SupportPage />} />
                     <Route path="/product/:id" element={<ProductDetail />} />
                     <Route path="/checkout" element={
                       <AuthRoute>

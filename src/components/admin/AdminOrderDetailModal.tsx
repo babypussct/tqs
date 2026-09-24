@@ -4,6 +4,8 @@ import { X, Phone, MessageCircle, Package, Truck, Receipt, CheckCircle, CreditCa
 import { toast } from 'sonner';
 import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
 import { postOrderCommand } from '../../utils/orderApi';
+import { formatDate } from '../../shared/data/date';
+import { getOrderItemUnitPrice } from '../../shared/orders/orderView';
 
 interface AdminOrderDetailModalProps {
   order: Order;
@@ -128,7 +130,7 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
                 )}
               </h2>
               <div className="text-sm text-slate-500 dark:text-zinc-400">
-                 {order.createdAt?.toDate().toLocaleString('vi-VN')}
+                 {formatDate(order.createdAt)}
               </div>
             </div>
           </div>
@@ -361,9 +363,9 @@ export default function AdminOrderDetailModal({ order, onClose, updateOrderStatu
                      </div>
                      
                      <div className="text-right flex-shrink-0 ml-4">
-                        <div className="font-bold text-slate-900 dark:text-white text-sm">{(item.price * item.quantity).toLocaleString('vi-VN')} đ</div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{(getOrderItemUnitPrice(item) * item.quantity).toLocaleString('vi-VN')} đ</div>
                         <div className="text-[11px] text-slate-500">
-                          {item.price.toLocaleString('vi-VN')} đ x {item.quantity}
+                          {getOrderItemUnitPrice(item).toLocaleString('vi-VN')} đ x {item.quantity}
                         </div>
                      </div>
                    </div>

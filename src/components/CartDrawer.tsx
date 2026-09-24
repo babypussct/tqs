@@ -5,7 +5,7 @@ import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
-import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { OptimizedImage } from './ui/OptimizedImage';
 
 export default function CartDrawer() {
   const { isCartOpen, setIsCartOpen, cartItems: items, updateQuantity: onUpdateQuantity, removeItem: onRemove, clearCart } = useCart();
@@ -47,12 +47,12 @@ export default function CartDrawer() {
       />
       
       {/* Drawer */}
-      <div className="relative w-full max-w-md bg-white dark:bg-zinc-950 h-full flex flex-col shadow-2xl border-l border-gray-200 dark:border-zinc-800 animate-in slide-in-from-right duration-300">
+      <div role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title" className="relative w-full max-w-md bg-white dark:bg-zinc-950 h-full flex flex-col shadow-2xl border-l border-gray-200 dark:border-zinc-800 animate-in slide-in-from-right duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
           <div className="flex items-center gap-3">
             <ShoppingBag className="h-6 w-6 text-gray-900 dark:text-white" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">Giỏ Hàng</h2>
+            <h2 id="cart-drawer-title" className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">Giỏ Hàng</h2>
             <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {items.reduce((sum, item) => sum + item.quantity, 0)}
             </span>
@@ -71,6 +71,8 @@ export default function CartDrawer() {
               </button>
             )}
             <button 
+              type="button"
+              aria-label="Đóng giỏ hàng"
               onClick={onClose}
               className="p-2 hover:bg-gray-200 dark:hover:bg-zinc-800 rounded-full text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
@@ -125,11 +127,7 @@ export default function CartDrawer() {
               return (
               <div key={item.id} className="flex gap-4 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm">
                 <Link to={`/product/${item.product.id}`} onClick={onClose} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-50 dark:bg-zinc-800 shrink-0 border border-gray-100 dark:border-zinc-700 block transition-transform hover:scale-105">
-                  {item.product.image ? (
-                    <img src={cloudinaryUrl(item.product.image, { width: 100, quality: 'auto:low' })} alt={item.product.name} loading="lazy" decoding="async" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-zinc-500 text-xs">No Image</div>
-                  )}
+                  <OptimizedImage src={item.product.image} alt={item.product.name} width={100} quality="auto:low" className="w-full h-full" />
                 </Link>
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
@@ -153,13 +151,16 @@ export default function CartDrawer() {
                     
                     <div className="flex items-center gap-3">
                       <div className="flex items-center bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                        <button 
+                        <button
+                          type="button"
+                          aria-label={`Giảm số lượng ${item.product.name}`}
                           onClick={() => onUpdateQuantity(item.id, -1)}
                           className="p-1.5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <input 
+                        <input
+                          aria-label={`Số lượng ${item.product.name}`}
                           type="number"
                           min="1"
                           value={item.quantity}
@@ -175,7 +176,9 @@ export default function CartDrawer() {
                           }}
                           className="w-10 text-center text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none p-0 focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
-                        <button 
+                        <button
+                          type="button"
+                          aria-label={`Tăng số lượng ${item.product.name}`}
                           onClick={() => onUpdateQuantity(item.id, 1)}
                           disabled={item.product.stock !== undefined && totalProductQuantity >= item.product.stock}
                           className={`p-1.5 transition-colors ${item.product.stock !== undefined && totalProductQuantity >= item.product.stock ? 'text-gray-300 dark:text-zinc-600 cursor-not-allowed' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'}`}
@@ -183,7 +186,9 @@ export default function CartDrawer() {
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <button 
+                      <button
+                        type="button"
+                        aria-label={`Xóa ${item.product.name} khỏi giỏ hàng`}
                         onClick={() => onRemove(item.id)}
                         className="p-1.5 text-gray-400 dark:text-zinc-500 hover:text-red-600 dark:hover:text-red-500 transition-colors"
                       >
@@ -207,12 +212,16 @@ export default function CartDrawer() {
               <span className="text-gray-500 dark:text-zinc-400 font-medium">Tổng tiền</span>
               <span className="text-2xl font-black text-red-600 dark:text-red-500">{formatPrice(totalPrice)}</span>
             </div>
-            <button 
+            <button
+              type="button"
+              aria-label={!user ? 'Đăng nhập để thanh toán' : 'Thanh toán ngay'}
               onClick={async () => {
                 if (!user) {
                   try {
-                    await login();
-                    toast.success('Đăng nhập thành công! Bạn có thể tiếp tục thanh toán.');
+                    const loggedIn = await login();
+                    if (loggedIn) {
+                      toast.success('Đăng nhập thành công! Bạn có thể tiếp tục thanh toán.');
+                    }
                   } catch {
                     toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
                   }

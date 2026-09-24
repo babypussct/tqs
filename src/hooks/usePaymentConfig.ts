@@ -30,10 +30,9 @@ export function usePaymentConfig() {
       if (docSnap.exists()) {
         setPaymentConfig({ ...DEFAULT_CONFIG, ...docSnap.data() });
       } else {
-        // Initialize with defaults if not exists
-        setDoc(doc(db, 'settings', 'paymentConfig'), DEFAULT_CONFIG).catch(error => {
-          handleFirestoreError(error, OperationType.WRITE, 'settings/paymentConfig');
-        });
+        // Public reads must never seed protected settings. Admin setup/migration
+        // owns creation; storefront uses the in-memory default meanwhile.
+        setPaymentConfig(DEFAULT_CONFIG);
       }
       setLoading(false);
     }, (error) => {

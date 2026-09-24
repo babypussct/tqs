@@ -1,5 +1,6 @@
 import { Product } from '../types';
-import { ShoppingCart, AlertTriangle, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ShoppingCart, AlertTriangle, ImageOff, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 
@@ -11,6 +12,11 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onClick, onAddToCart }: ProductCardProps) {
   const { appUser } = useAuth();
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [product.image]);
   
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -47,7 +53,7 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
             </div>
           )}
         </div>
-        {product.image ? (
+        {product.image && !imageFailed ? (
           <img 
             src={cloudinaryUrl(product.image, { width: 400, quality: 'auto' })}
             alt={product.name} 
@@ -55,16 +61,19 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
             decoding="async"
             className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
             referrerPolicy="no-referrer"
+            onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-gray-500 dark:text-zinc-400">
-            No Image
+          <div className="w-full h-full bg-gray-100 dark:bg-zinc-800 flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-zinc-500">
+            <ImageOff className="h-8 w-8" aria-hidden="true" />
+            <span className="text-xs">Chưa có ảnh</span>
           </div>
         )}
         
         {/* Quick Add Overlay for Desktop */}
         <div className="hidden lg:block absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent">
           <button 
+            aria-label={isTierLocked ? `Sản phẩm dành cho hạng ${product.minTierRequired}` : product.stock !== undefined && product.stock <= 0 ? 'Sản phẩm hết hàng' : `Thêm ${product.name} vào giỏ hàng`}
             onClick={(e) => {
               e.stopPropagation();
               if (isTierLocked) return;
@@ -120,6 +129,7 @@ export default function ProductCard({ product, onClick, onAddToCart }: ProductCa
           </div>
           
           <button
+            aria-label={isTierLocked ? `Sản phẩm dành cho hạng ${product.minTierRequired}` : product.stock !== undefined && product.stock <= 0 ? 'Sản phẩm hết hàng' : `Thêm ${product.name} vào giỏ hàng`}
             onClick={(e) => {
               e.stopPropagation();
               if (isTierLocked || (product.stock !== undefined && product.stock <= 0)) return;

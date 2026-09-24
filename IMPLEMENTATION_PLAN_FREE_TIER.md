@@ -4,7 +4,12 @@
 >
 > Phạm vi review: repository `main` tại `/Users/otada/Documents/GitHub/tqs`
 >
-> Trạng thái: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **PASS** | Gate 1 (Worker Spike): **PASS** | Gate 2 (Policy): **SIGNED OFF** | Gate 3 (Schema): **SIGNED OFF** | Gate 4 (Private API/Webhook hardening): **CODE COMPLETE / PROD SMOKE PENDING** | Prototype/R&D: **READY** | Production deployment: **NOT YET**.
+> Trạng thái baseline: Architecture review: **PASS** | Implementation kickoff: **PASS** | Pha 0: **PASS** | Gate 1 (Worker Spike): **PASS** | Gate 2 (Policy): **SIGNED OFF** | Gate 3 (Schema): **SIGNED OFF** | Gate 4 (Private API/Webhook hardening): **CODE COMPLETE / PROD SMOKE PENDING** | Core refactor: **IMPLEMENTED / LOCAL VERIFIED** | Production deployment: **NOT YET**.
+
+> Cập nhật 2026-09-24: core order/API boundary, canonical order contract, shared
+> Firebase adapter, sensitive mutation APIs, rules/indexes và strict typecheck đã
+> được triển khai. Checklist rollout hiện hành nằm trong
+> [`docs/architecture/SHOP_REFACTOR.md`](docs/architecture/SHOP_REFACTOR.md).
 
 ## 1. Kết luận điều hành và đánh giá readiness
 

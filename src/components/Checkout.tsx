@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, where, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CartItem, DiscountCode } from '../types';
@@ -10,36 +10,28 @@ import { usePaymentConfig } from '../hooks/usePaymentConfig';
 import { useShippingConfig } from '../hooks/useShippingConfig';
 import { useRewardsConfig } from '../utils/useRewardsConfig';
 import VietnamAddressSelector from './ui/VietnamAddressSelector';
-import { AppUser } from '../types';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 import { useCart } from '../contexts/CartContext';
+import { toDate } from '../shared/data/date';
+import type { OrderQuote } from '../order/quoteService';
 import VietQRModal from './checkout/VietQRModal';
 import OrderSummary from './checkout/OrderSummary';
 
 export default function Checkout() {
   const { cartItems, clearCart, updateQuantity: onUpdateQuantity, removeItem: onRemoveItem } = useCart();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, appUser: userProfile } = useAuth();
   const { paymentConfig, loading: paymentLoading } = usePaymentConfig();
   const { shippingConfig, loading: shippingLoading } = useShippingConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'vietqr'>('cod');
-  const [userProfile, setUserProfile] = useState<AppUser | null>(null);
   const { config: rewardsConfig } = useRewardsConfig();
   const [pointsToUseInput, setPointsToUseInput] = useState<string>('');
   const [appliedPoints, setAppliedPoints] = useState<number>(0);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
   const [savedVouchersList, setSavedVouchersList] = useState<DiscountCode[]>([]);
   
-  useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) setUserProfile(doc.data() as AppUser);
-    });
-    return unsub;
-  }, [user]);
-
   useEffect(() => {
     if (!userProfile?.savedVouchers || userProfile.savedVouchers.length === 0) {
       setSavedVouchersList([]);
@@ -59,6 +51,8 @@ export default function Checkout() {
   const [createdOrderId, setCreatedOrderId] = useState<string>('');
   const [orderFinalAmount, setOrderFinalAmount] = useState<number>(0);
   const [orderTotalAmount, setOrderTotalAmount] = useState<number>(0);
+  const [serverQuote, setServerQuote] = useState<OrderQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   // Honeypot - ẩn với người dùng, bot thường tự điền
   const [honeypot, setHoneypot] = useState('');
 
@@ -87,12 +81,63 @@ export default function Checkout() {
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(null);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  useEffect(() => {
+    if (!user || cartItems.length === 0) {
+      setServerQuote(null);
+      return;
+    }
+
+    let cancelled = false;
+    const refreshQuote = async () => {
+      setQuoteLoading(true);
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/orders?action=quote', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            intent: 'quote',
+            items: cartItems.map((item) => ({
+              productId: item.product.id,
+              quantity: item.quantity,
+              selectedBox: item.selectedBox || null,
+              selectedLang: item.selectedLang || null,
+              selectedVariants: item.selectedVariants || null,
+              addSleeves: Boolean(item.addSleeves),
+              quickAddAccessoryNames: item.quickAddAccessoryNames || null,
+            })),
+            paymentMethod,
+            discountCode: appliedDiscount?.code || null,
+            pointsToUse: appliedPoints > 0 ? appliedPoints : 0,
+            shippingInfo,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!cancelled && response.ok && data.success) setServerQuote(data.quote as OrderQuote);
+        if (!cancelled && !response.ok) setServerQuote(null);
+      } catch {
+        if (!cancelled) setServerQuote(null);
+      } finally {
+        if (!cancelled) setQuoteLoading(false);
+      }
+    };
+
+    const timer = window.setTimeout(() => void refreshQuote(), 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [user, cartItems, appliedDiscount?.code, appliedPoints, paymentMethod]);
+
+  const localTotalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   // Calculate discount
-  let discountAmount = 0;
+  let localDiscountAmount = 0;
   if (appliedDiscount && appliedDiscount.discountType !== 'freeship_only') {
-    let baseAmountForDiscount = totalAmount;
+    let baseAmountForDiscount = localTotalAmount;
 
     // Filter by products / categories if specified
     if (
@@ -110,39 +155,44 @@ export default function Checkout() {
     }
 
     if (appliedDiscount.discountType === 'percentage') {
-      discountAmount = (baseAmountForDiscount * appliedDiscount.discountValue) / 100;
-      if (appliedDiscount.maxDiscount && discountAmount > appliedDiscount.maxDiscount) {
-        discountAmount = appliedDiscount.maxDiscount;
+      localDiscountAmount = (baseAmountForDiscount * appliedDiscount.discountValue) / 100;
+      if (appliedDiscount.maxDiscount && localDiscountAmount > appliedDiscount.maxDiscount) {
+        localDiscountAmount = appliedDiscount.maxDiscount;
       }
     } else if (appliedDiscount.discountType === 'fixed') {
       // Fixed discount cannot exceed the eligible amount
-      discountAmount = Math.min(appliedDiscount.discountValue, baseAmountForDiscount);
+      localDiscountAmount = Math.min(appliedDiscount.discountValue, baseAmountForDiscount);
     }
   }
 
   // Ensure discount doesn't exceed total
-  discountAmount = Math.min(discountAmount, totalAmount);
+  localDiscountAmount = Math.min(localDiscountAmount, localTotalAmount);
   
   // Calculate shipping
-  let shippingFee = 0;
+  let localShippingFee = 0;
   const hasFreeshipProduct = cartItems.some(item => shippingConfig.freeshipProductIds.includes(item.product.id));
   const isCodeFreeship = appliedDiscount?.isFreeship || appliedDiscount?.discountType === 'freeship_only';
   const threshold = shippingConfig.freeshipThreshold ?? 0;
-  const meetsThreshold = threshold > 0 && totalAmount >= threshold;
+  const meetsThreshold = threshold > 0 && localTotalAmount >= threshold;
   
   if (shippingConfig.isActive && !hasFreeshipProduct && !isCodeFreeship && !meetsThreshold) {
-    shippingFee = shippingConfig.defaultFee;
+    localShippingFee = shippingConfig.defaultFee;
   }
 
   // Calculate Points Discount
-  let pointsDiscountAmount = 0;
+  let localPointsDiscountAmount = 0;
   if (rewardsConfig && rewardsConfig.isActive && appliedPoints > 0) {
     const pointsValueInVND = appliedPoints * rewardsConfig.pointValueVND;
-    const maxDiscountVND = totalAmount * (rewardsConfig.maxDiscountPercentage / 100);
-    pointsDiscountAmount = Math.min(pointsValueInVND, maxDiscountVND, totalAmount - discountAmount);
+    const maxDiscountVND = localTotalAmount * (rewardsConfig.maxDiscountPercentage / 100);
+    localPointsDiscountAmount = Math.min(pointsValueInVND, maxDiscountVND, localTotalAmount - localDiscountAmount);
   }
 
-  const finalAmount = Math.max(0, totalAmount + shippingFee - discountAmount - pointsDiscountAmount);
+  const localFinalAmount = Math.max(0, localTotalAmount + localShippingFee - localDiscountAmount - localPointsDiscountAmount);
+  const totalAmount = serverQuote?.totalAmount ?? localTotalAmount;
+  const shippingFee = serverQuote?.shippingFee ?? localShippingFee;
+  const discountAmount = serverQuote?.discountAmount ?? localDiscountAmount;
+  const pointsDiscountAmount = serverQuote?.pointsDiscountAmount ?? localPointsDiscountAmount;
+  const finalAmount = serverQuote?.finalAmount ?? localFinalAmount;
 
   const handleApplyDiscount = async (overrideCode?: string) => {
     const codeToApply = overrideCode || discountCodeInput.trim();
@@ -150,112 +200,45 @@ export default function Checkout() {
     
     setIsApplyingDiscount(true);
     try {
-      const q = query(
-        collection(db, 'discountCodes'), 
-        where('code', '==', codeToApply.toUpperCase()),
-        where('isActive', '==', true)
-      );
-      
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) {
-        toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn');
-        setAppliedDiscount(null);
+      const idToken = await user?.getIdToken();
+      if (!idToken) {
+        toast.error('Vui lòng đăng nhập để kiểm tra mã giảm giá.');
         return;
       }
-
-      const discountDoc = snapshot.docs[0];
-      const discountData = { id: discountDoc.id, ...discountDoc.data() } as DiscountCode;
-
-      // Validate dates
-      const now = new Date();
-      const startDate = discountData.startDate?.toDate ? discountData.startDate.toDate() : new Date(0);
-      const endDate = discountData.endDate?.toDate ? discountData.endDate.toDate() : new Date(8640000000000000);
-
-      if (now < startDate) {
-        toast.error('Mã giảm giá chưa đến thời gian sử dụng');
-        return;
+      const response = await fetch('/api/orders?action=quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          intent: 'quote',
+          items: cartItems.map((item) => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+            selectedBox: item.selectedBox || null,
+            selectedLang: item.selectedLang || null,
+            selectedVariants: item.selectedVariants || null,
+            addSleeves: Boolean(item.addSleeves),
+            quickAddAccessoryNames: item.quickAddAccessoryNames || null,
+          })),
+          paymentMethod,
+          discountCode: codeToApply.trim().toUpperCase(),
+          pointsToUse: appliedPoints,
+          shippingInfo,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success || !data.quote?.voucher) {
+        throw new Error(data.message || 'Mã giảm giá không hợp lệ hoặc không áp dụng cho giỏ hàng.');
       }
 
-      if (now > endDate) {
-        toast.error('Mã giảm giá đã hết hạn');
-        return;
-      }
-
-      // Validate usage limit overall
-      if (discountData.usageLimit && discountData.usedCount >= discountData.usageLimit) {
-        toast.error('Mã giảm giá đã hết lượt sử dụng');
-        return;
-      }
-
-      // Check usageLimitPerUser
-      if (user) {
-        const usageLimitPerUser = discountData.usageLimitPerUser || 1;
-        const usageQ = query(
-          collection(db, 'orders'), 
-          where('userId', '==', user.uid), 
-          where('discountCode', '==', discountData.code),
-          where('status', '!=', 'cancelled')
-        );
-        const usageSnap = await getDocs(usageQ);
-        if (usageSnap.size >= usageLimitPerUser) {
-          toast.error(`Bạn đã hết lượt sử dụng mã này (Tối đa ${usageLimitPerUser} lượt/người)`);
-          return;
-        }
-      }
-
-      // Validate min order value
-      if (discountData.minOrderValue && totalAmount < discountData.minOrderValue) {
-        toast.error(`Đơn hàng phải từ ${discountData.minOrderValue.toLocaleString('vi-VN')}đ để sử dụng mã này`);
-        return;
-      }
-
-      // Check customer type
-      if (discountData.customerType === 'new') {
-        if (!user) {
-          toast.error('Vui lòng đăng nhập để kiểm tra điều kiện mã giảm giá');
-          return;
-        }
-        const ordersQ = query(collection(db, 'orders'), where('userId', '==', user.uid), where('status', '!=', 'cancelled'));
-        const ordersSnap = await getDocs(ordersQ);
-        if (!ordersSnap.empty) {
-          toast.error('Mã giảm giá này chỉ dành cho khách hàng mới (chưa có đơn hàng)');
-          return;
-        }
-      }
-
-      // Check applicable tiers
-      if (discountData.applicableTiers && discountData.applicableTiers.length > 0) {
-        if (!userProfile) {
-          toast.error('Vui lòng đăng nhập để kiểm tra hạng thành viên');
-          return;
-        }
-        if (!discountData.applicableTiers.includes((userProfile.tier as any) || 'bronze')) {
-          toast.error('Mã giảm giá này không dành cho hạng thành viên của bạn');
-          return;
-        }
-      }
-
-      // Check applicable products
-      if (
-        (discountData.applicableProducts && discountData.applicableProducts.length > 0) ||
-        (discountData.applicableCategories && discountData.applicableCategories.length > 0)
-      ) {
-        const hasApplicable = cartItems.some(item => 
-          discountData.applicableProducts?.includes(item.product.id) ||
-          discountData.applicableCategories?.includes(item.product.type)
-        );
-        if (!hasApplicable) {
-          toast.error('Mã giảm giá này không áp dụng cho các sản phẩm trong giỏ hàng');
-          return;
-        }
-      }
-
-      setAppliedDiscount(discountData);
+      const voucherData = data.quote.voucher as Record<string, unknown>;
+      setAppliedDiscount({ id: String(voucherData.id || ''), ...voucherData } as DiscountCode);
       toast.success('Áp dụng mã giảm giá thành công!');
     } catch (error) {
-      console.error("Error applying discount:", error);
-      toast.error('Có lỗi xảy ra khi kiểm tra mã giảm giá');
+      setAppliedDiscount(null);
+      toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi kiểm tra mã giảm giá');
     } finally {
       setIsApplyingDiscount(false);
     }
@@ -356,24 +339,6 @@ export default function Checkout() {
     }
 
     if (!validateShippingInfo()) return;
-
-    // Rate limiting: tối đa 3 đơn trong 1 giờ
-    try {
-      const oneHourAgo = Timestamp.fromDate(new Date(Date.now() - 3600000));
-      const recentSnap = await getDocs(
-        query(
-          collection(db, 'orders'),
-          where('userId', '==', user.uid),
-          where('createdAt', '>=', oneHourAgo)
-        )
-      );
-      if (recentSnap.size >= 3) {
-        toast.error('Bạn đã đặt quá nhiều đơn trong 1 giờ. Vui lòng thử lại sau.');
-        return;
-      }
-    } catch {
-      // Bỏ qua lỗi rate limit check, tiếp tục xử lý
-    }
 
     setIsSubmitting(true);
     try {
@@ -657,8 +622,8 @@ export default function Checkout() {
                     let ineligibleReason = '';
                     
                     const now = new Date();
-                    const endDate = voucher.endDate?.toDate ? voucher.endDate.toDate() : new Date(8640000000000000);
-                    if (now > endDate) { isEligible = false; ineligibleReason = 'Đã hết hạn'; }
+                    const endDate = toDate(voucher.endDate);
+                    if (endDate && now > endDate) { isEligible = false; ineligibleReason = 'Đã hết hạn'; }
                     if (voucher.usageLimit && voucher.usedCount >= voucher.usageLimit) { isEligible = false; ineligibleReason = 'Hết lượt sử dụng chung'; }
                     if (voucher.minOrderValue && totalAmount < voucher.minOrderValue) { isEligible = false; ineligibleReason = `Cần mua thêm ${(voucher.minOrderValue - totalAmount).toLocaleString('vi-VN')}đ`; }
                     if (voucher.applicableTiers && voucher.applicableTiers.length > 0 && !voucher.applicableTiers.includes((userProfile?.tier as any) || 'bronze')) {

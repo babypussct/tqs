@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, getDocs, getDocsFromCache, getDocsFromServer } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, getDocsFromCache, getDocsFromServer, type Query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Product } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firebaseError';
@@ -11,7 +11,7 @@ export function useProducts(activeOnly = true) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let q: any = collection(db, 'products');
+    let q: Query = collection(db, 'products');
     
     if (activeOnly) {
       q = query(q, where('isActive', '==', true));

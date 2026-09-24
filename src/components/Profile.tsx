@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, onSnapshot, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Order, AppUser, TierConfig } from '../types';
-import { handleFirestoreError, OperationType } from '../utils/firebaseError';
+import { Order, TierConfig } from '../types';
 import { Package, Clock, CheckCircle, Truck, XCircle, ShoppingBag, QrCode, Copy, ChevronDown, ChevronUp, Trophy, Star, TrendingUp, Settings, LogOut, ShieldCheck, Ticket, User as UserIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaymentConfig } from '../hooks/usePaymentConfig';
@@ -13,52 +10,15 @@ import OrderHistory from './profile/OrderHistory';
 import UserSettings from './profile/UserSettings';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 import { postOrderCommand } from '../utils/orderApi';
+import { formatDateOnly } from '../shared/data/date';
+import { useUserOrders } from '../hooks/useUserOrders';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, appUser, logout } = useAuth();
   const { paymentConfig } = usePaymentConfig();
   const { config: rewardsConfig } = useRewardsConfig();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [appUser, setAppUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { orders, loading } = useUserOrders(user?.uid);
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'rewards' | 'vouchers' | 'settings'>('overview');
-
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const q = query(
-      collection(db, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const unsubscribeOrders = onSnapshot(q, (snapshot) => {
-      const ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Order[];
-      
-      setOrders(ordersData);
-      setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'orders');
-      setLoading(false);
-    });
-
-    const unsubscribeUser = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) {
-        setAppUser(doc.data() as AppUser);
-      }
-    });
-
-    return () => {
-      unsubscribeOrders();
-      unsubscribeUser();
-    };
-  }, [user]);
 
   const getStatusConfig = (status: Order['status']) => {
     switch (status) {
@@ -332,7 +292,7 @@ export default function Profile() {
                                </div>
                                <div>
                                  <p className="font-bold text-gray-900 dark:text-white text-sm">#{order.id.slice(-6).toUpperCase()} <span className="font-normal text-gray-500 dark:text-zinc-500 ml-2">{(order.finalAmount || order.totalAmount).toLocaleString('vi-VN')}đ</span></p>
-                                 <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">{order.createdAt?.toDate().toLocaleDateString('vi-VN')} • {order.items.length} sản phẩm</p>
+                                 <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">{formatDateOnly(order.createdAt)} • {order.items.length} sản phẩm</p>
                                </div>
                             </div>
                             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} text-[11px] font-bold w-fit`}>

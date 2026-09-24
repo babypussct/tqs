@@ -36,7 +36,9 @@ class MockDb {
       },
       getVoucher: async (code: string) => {
         const v = this.vouchers.get(code.toUpperCase());
-        return v ? JSON.parse(JSON.stringify(v)) : null;
+        // Keep Firestore-like Timestamp objects intact so the service tests
+        // exercise the same boundary as the Admin SDK adapter.
+        return v ? { ...v } : null;
       },
       incrementVoucherUsage: async (voucherId: string) => {
         for (const v of this.vouchers.values()) {
@@ -209,6 +211,8 @@ async function runTests() {
     discountType: 'fixed',
     discountValue: 50000,
     isActive: true,
+    startDate: { toDate: () => new Date(Date.now() - 60_000) },
+    endDate: { toDate: () => new Date(Date.now() + 60_000) },
     usageLimit: 10,
     usedCount: 2,
   });

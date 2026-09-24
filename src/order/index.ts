@@ -8,3 +8,5 @@ export * from './fingerprint.js';
 export * from './transitions.js';
 export * from './legacyAdapter.js';
 export * from './orderService.js';
+export * from './pricing.js';
+export * from './quoteService.js';

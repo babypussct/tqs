@@ -8,6 +8,7 @@ import { handleFirestoreError, OperationType } from '../../utils/firebaseError';
 import { Plus, Edit, Trash2, Search, FileText, Image as ImageIcon, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { cloudinaryUrl } from '../../utils/cloudinaryUrl';
+import { formatDateOnly } from '../../shared/data/date';
 
 export default function AdminPostList() {
   const { posts, loading } = usePosts(true);
@@ -119,7 +120,7 @@ export default function AdminPostList() {
                     {post.viewCount || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-zinc-400 text-sm">
-                    {post.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                    {formatDateOnly(post.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex items-center justify-end gap-2">

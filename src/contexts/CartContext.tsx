@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Product, CartItem } from '../types';
+import { buildCartItemId } from '../shared/orders/cartKey';
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -58,9 +59,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     const price = variants?.price || product.price;
-    const variantsStr = variants?.selectedVariants ? Object.values(variants.selectedVariants).join('-') : '';
-    const quickAddStr = variants?.quickAddAccessoryNames ? variants.quickAddAccessoryNames.join('-') : '';
-    const id = `${product.id}-${variants?.selectedBox || ''}-${variants?.selectedLang || ''}-${variantsStr}-${variants?.addSleeves ? 'sleeves' : ''}-${quickAddStr}`;
+    const id = buildCartItemId({
+      productId: product.id,
+      selectedBox: variants?.selectedBox,
+      selectedLang: variants?.selectedLang,
+      selectedVariants: variants?.selectedVariants,
+      addSleeves: variants?.addSleeves,
+      quickAddAccessoryNames: variants?.quickAddAccessoryNames,
+    });
     
     setCartItems(prev => {
       // Check stock before updating state

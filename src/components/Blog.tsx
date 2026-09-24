@@ -4,6 +4,7 @@ import { usePosts } from '../hooks/usePosts';
 import { Clock, Eye, ChevronRight, FileText, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
+import { formatDateOnly } from '../shared/data/date';
 
 export default function Blog() {
   const { posts, loading } = usePosts();
@@ -105,7 +106,7 @@ export default function Blog() {
                 {/* Content */}
                 <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-zinc-400 mb-3">
-                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {post.createdAt?.toDate().toLocaleDateString('vi-VN')}</span>
+                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {formatDateOnly(post.createdAt)}</span>
                     <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> {post.viewCount || 0} lượt xem</span>
                   </div>
                   

@@ -11,7 +11,7 @@ interface AuthContextType {
   adminUser: AdminUser | null;
   isAdmin: boolean;
   loading: boolean;
-  login: () => Promise<void>;
+  login: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user]);
 
-  const login = async () => {
+  const login = async (): Promise<boolean> => {
     try {
       // Phát hiện các trình duyệt nhúng trong ứng dụng (Facebook, Zalo, Instagram, TikTok...)
       const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
@@ -196,10 +196,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error('Trình duyệt này chặn đăng nhập Google. Vui lòng chọn "Mở bằng trình duyệt" (Chrome/Safari) từ menu để tiếp tục.', {
           duration: 10000,
         });
-        return;
+        return false;
       }
 
       await signInWithPopup(auth, googleProvider);
+      return true;
     } catch (error: any) {
       console.error('Login failed', error);
       if (error.code === 'auth/popup-closed-by-user') {
@@ -207,6 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         toast.error('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.', { duration: 4000 });
       }
+      return false;
     }
   };
 

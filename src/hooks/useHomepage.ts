@@ -58,7 +58,8 @@ export function useHomepage() {
             main: chosenConcept.main,
             side1: chosenConcept.side1,
             side2: chosenConcept.side2,
-            effects: chosenConcept.effects
+            effects: chosenConcept.effects,
+            trustChips: chosenConcept.trustChips,
           };
         }
         

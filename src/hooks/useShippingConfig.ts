@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ShippingConfig } from '../types';
+import { FIRESTORE_PATHS } from '../shared/constants/firestorePaths';
 
 export function useShippingConfig() {
   const [config, setConfig] = useState<ShippingConfig>({
@@ -13,7 +14,7 @@ export function useShippingConfig() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'settings', 'shipping'), (docSnap) => {
+    const unsub = onSnapshot(doc(db, ...FIRESTORE_PATHS.systemSettings.shipping), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setConfig({
@@ -34,7 +35,7 @@ export function useShippingConfig() {
 
   const updateShippingConfig = async (newConfig: Partial<ShippingConfig>) => {
     try {
-      await setDoc(doc(db, 'settings', 'shipping'), { ...config, ...newConfig }, { merge: true });
+      await setDoc(doc(db, ...FIRESTORE_PATHS.systemSettings.shipping), { ...config, ...newConfig }, { merge: true });
     } catch (error) {
       console.error("Error updating shipping config:", error);
       throw error;

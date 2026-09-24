@@ -37,16 +37,16 @@ const DEFAULT_CONFIG: FooterConfig = {
     email: 'support@tqsstore.com',
   },
   categoryLinks: [
-    { label: 'Bản Cơ Bản', path: '/shop?category=co-ban' },
-    { label: 'Bản Mở Rộng', path: '/shop?category=mo-rong' },
+    { label: 'Bản Cơ Bản', path: '/shop?type=base' },
+    { label: 'Bản Mở Rộng', path: '/shop?type=expansion' },
     { label: 'Quốc Chiến', path: '/shop?category=quoc-chien' },
-    { label: 'Phụ Kiện & Sleeves', path: '/shop?category=phu-kien', special: true },
+    { label: 'Phụ Kiện & Sleeves', path: '/shop?type=accessory', special: true },
   ],
   policyLinks: [
-    { label: 'Chính sách bảo hành', path: '#' },
-    { label: 'Chính sách đổi trả (Anti-Móp)', path: '#' },
-    { label: 'Giao hàng & Thanh toán', path: '#' },
-    { label: 'Hướng dẫn luật chơi cơ bản', path: '#' },
+    { label: 'Chính sách bảo hành', path: '/support/warranty' },
+    { label: 'Chính sách đổi trả (Anti-Móp)', path: '/support/returns' },
+    { label: 'Giao hàng & Thanh toán', path: '/support/shipping' },
+    { label: 'Hướng dẫn luật chơi cơ bản', path: '/support/how-to-play' },
   ],
   contactInfo: {
     address: 'Hà Nội, Việt Nam.',
@@ -80,10 +80,9 @@ export function useFooterConfig() {
           paymentMethods: data.paymentMethods || DEFAULT_CONFIG.paymentMethods,
         });
       } else {
-        // Initialize with defaults if not exists
-        setDoc(doc(db, 'settings', 'footerConfig'), DEFAULT_CONFIG).catch(error => {
-          handleFirestoreError(error, OperationType.WRITE, 'settings/footerConfig');
-        });
+        // Public reads must never seed protected settings. Admin setup/migration
+        // owns creation; storefront uses the in-memory default meanwhile.
+        setConfig(DEFAULT_CONFIG);
       }
       setLoading(false);
     }, (error) => {

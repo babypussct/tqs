@@ -27,6 +27,9 @@ export type OrderStatus = typeof ORDER_STATUS[number];
 export const PAYMENT_METHOD = ['cod', 'vietqr'] as const;
 export type PaymentMethod = typeof PAYMENT_METHOD[number];
 
+export const ORDER_CURRENCY = 'VND' as const;
+export type OrderCurrency = typeof ORDER_CURRENCY;
+
 export const PAYMENT_STATUS = [
   'pending',
   'paid',
@@ -200,6 +203,7 @@ export interface OrderDocument extends OrderMoneyBreakdown, OrderSideEffectMarke
   schemaVersion: number;           // 1 for current production, 0 for legacy
   revision: number;                // Monotonically increasing optimistic lock counter
   userId: string;
+  currency: OrderCurrency;
   customerEmail: string;
   customerName?: string;
   items: OrderItem[];
@@ -227,6 +231,7 @@ export interface OrderDocument extends OrderMoneyBreakdown, OrderSideEffectMarke
 }
 
 export interface OrderEvent {
+  schemaVersion: number;
   id: string;
   sequence: number;
   orderId: string;
@@ -247,6 +252,11 @@ export interface OrderEvent {
 
 export interface IdempotencyRecord {
   id: string;                      // hash of (actorId + ':' + operation + ':' + idempotencyKey)
+  schemaVersion: number;
+  scope: string;
+  actorType: ActorType;
+  actorUid: string;
+  requestKeyHash: string;
   actorId: string;
   operation: ActionType;
   idempotencyKey: string;
@@ -256,6 +266,11 @@ export interface IdempotencyRecord {
   responseSnapshot?: Record<string, unknown>;
   errorMessage?: string;
   errorCode?: string;
+  orderId?: string;
+  resultRef?: string;
+  resultCode?: string;
+  errorMessageSafe?: string;
+  lockExpiresAt?: string | null;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;               // Retention TTL (default: 24h - 7 days)

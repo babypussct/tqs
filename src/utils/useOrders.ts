@@ -5,6 +5,7 @@ import { Order } from '../types';
 import { toast } from 'sonner';
 import { postOrderCommand } from './orderApi';
 import { handleFirestoreError, OperationType } from './firebaseError';
+import { normalizeOrder } from '../shared/orders/orderView';
 
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -14,10 +15,7 @@ export function useOrders() {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Order[];
+      const ordersData = snapshot.docs.map(doc => normalizeOrder(doc.data(), doc.id)) as Order[];
       
       setOrders(ordersData);
       setLoading(false);

@@ -7,19 +7,27 @@ import { useProductConfig } from '../hooks/useProductConfig';
 import { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 
+const LEGACY_CATEGORY_TO_TYPE: Record<string, string> = {
+  'co-ban': 'base',
+  'mo-rong': 'expansion',
+  'phu-kien': 'accessory',
+};
+
 export default function Shop() {
   const { addToCart } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
   const typeQuery = searchParams.get('type');
+  const categoryQuery = searchParams.get('category');
+  const activeTypeQuery = typeQuery || (categoryQuery ? LEGACY_CATEGORY_TO_TYPE[categoryQuery] : undefined);
   
   const { products, loading } = useProducts(true);
   const { config: productConfig } = useProductConfig();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   
   // Filter States
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(typeQuery ? [typeQuery] : []);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(activeTypeQuery ? [activeTypeQuery] : []);
   const [selectedLangs, setSelectedLangs] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>('newest');
   
@@ -28,13 +36,13 @@ export default function Shop() {
   const itemsPerPage = 12;
 
   useEffect(() => {
-    if (typeQuery) {
-      setSelectedTypes([typeQuery]);
+    if (activeTypeQuery) {
+      setSelectedTypes([activeTypeQuery]);
     } else {
       setSelectedTypes([]);
     }
     setCurrentPage(1); // Reset page on type change
-  }, [typeQuery]);
+  }, [activeTypeQuery]);
 
   const toggleFilter = (setState: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
     setState(prev => 
@@ -48,7 +56,12 @@ export default function Shop() {
       const matchType = selectedTypes.length === 0 || selectedTypes.includes(product.type);
       const matchLang = selectedLangs.length === 0 || (product.language && selectedLangs.includes(product.language));
       const matchSearch = searchQuery === '' || product.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchType && matchLang && matchSearch;
+      const normalizedName = product.name.toLowerCase();
+      // Giữ tương thích với các đường dẫn category cũ đã có thể được lưu
+      // trong cấu hình footer trước khi shop chuyển sang query `type`.
+      const matchLegacyCategory = categoryQuery !== 'quoc-chien' || normalizedName.includes('quốc chiến');
+      const excludeLegacyCategory = categoryQuery !== 'co-ban' || !normalizedName.includes('quốc chiến');
+      return matchType && matchLang && matchSearch && matchLegacyCategory && excludeLegacyCategory;
     });
 
     // Sorting
@@ -66,7 +79,7 @@ export default function Shop() {
     }
 
     return result;
-  }, [selectedTypes, selectedLangs, products, searchQuery, sortBy]);
+  }, [selectedTypes, selectedLangs, products, searchQuery, sortBy, categoryQuery]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -93,10 +106,16 @@ export default function Shop() {
             { id: 'combo', label: 'Combo Tiết Kiệm' },
             ...(productConfig.types || []).map(t => ({ id: t, label: t }))
           ].map(type => (
-            <label key={type.id} className="flex items-center gap-3 cursor-pointer group" onClick={(e) => { e.preventDefault(); toggleFilter(setSelectedTypes, type.id); }}>
-              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedTypes.includes(type.id) ? 'bg-red-600 border-red-600' : 'border-gray-300 dark:border-zinc-600 group-hover:border-red-500'}`}>
-                {selectedTypes.includes(type.id) && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
-              </div>
+            <label key={type.id} className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={selectedTypes.includes(type.id)}
+                onChange={() => toggleFilter(setSelectedTypes, type.id)}
+                className="sr-only"
+              />
+              <span aria-hidden="true" className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedTypes.includes(type.id) ? 'bg-red-600 border-red-600' : 'border-gray-300 dark:border-zinc-600 group-hover:border-red-500'}`}>
+                {selectedTypes.includes(type.id) && <span className="w-2.5 h-2.5 bg-white rounded-sm" />}
+              </span>
               <span className={`text-sm ${selectedTypes.includes(type.id) ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-zinc-400 group-hover:text-gray-900 dark:group-hover:text-zinc-200'}`}>
                 {type.label}
               </span>
@@ -113,10 +132,16 @@ export default function Shop() {
             { id: 'vi', label: 'Tiếng Việt (Bản Quyền)' },
             { id: 'zh', label: 'Tiếng Trung' }
           ].map(lang => (
-            <label key={lang.id} className="flex items-center gap-3 cursor-pointer group" onClick={(e) => { e.preventDefault(); toggleFilter(setSelectedLangs, lang.id); }}>
-              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedLangs.includes(lang.id) ? 'bg-red-600 border-red-600' : 'border-gray-300 dark:border-zinc-600 group-hover:border-red-500'}`}>
-                {selectedLangs.includes(lang.id) && <div className="w-2.5 h-2.5 bg-white rounded-sm" />}
-              </div>
+            <label key={lang.id} className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={selectedLangs.includes(lang.id)}
+                onChange={() => toggleFilter(setSelectedLangs, lang.id)}
+                className="sr-only"
+              />
+              <span aria-hidden="true" className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedLangs.includes(lang.id) ? 'bg-red-600 border-red-600' : 'border-gray-300 dark:border-zinc-600 group-hover:border-red-500'}`}>
+                {selectedLangs.includes(lang.id) && <span className="w-2.5 h-2.5 bg-white rounded-sm" />}
+              </span>
               <span className={`text-sm ${selectedLangs.includes(lang.id) ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-zinc-400 group-hover:text-gray-900 dark:group-hover:text-zinc-200'}`}>
                 {lang.label}
               </span>
@@ -140,6 +165,7 @@ export default function Shop() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <select
+              aria-label="Sắp xếp sản phẩm"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="appearance-none bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 px-4 py-2 pr-10 rounded-lg text-gray-900 dark:text-white font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors outline-none focus:border-red-500"
@@ -175,7 +201,7 @@ export default function Shop() {
             <div className="relative w-4/5 max-w-sm bg-white dark:bg-zinc-950 h-full p-6 overflow-y-auto border-r border-gray-200 dark:border-zinc-800 shadow-2xl">
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase">Bộ Lọc</h2>
-                <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <button aria-label="Đóng bộ lọc" onClick={() => setIsMobileFilterOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -224,6 +250,8 @@ export default function Shop() {
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
                         key={page}
+                        aria-label={`Trang ${page}`}
+                        aria-current={currentPage === page ? 'page' : undefined}
                         onClick={() => {
                           setCurrentPage(page);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -260,7 +288,14 @@ export default function Shop() {
                 Thử thay đổi bộ lọc hoặc xóa các tùy chọn để xem thêm sản phẩm.
               </p>
               <button 
-                onClick={() => { setSelectedTypes([]); setSelectedLangs([]); }}
+                onClick={() => {
+                  setSelectedTypes([]);
+                  setSelectedLangs([]);
+                  const nextParams = new URLSearchParams(searchParams);
+                  nextParams.delete('type');
+                  nextParams.delete('category');
+                  setSearchParams(nextParams);
+                }}
                 className="mt-6 text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold uppercase tracking-wider text-sm transition-colors"
               >
                 Xóa bộ lọc

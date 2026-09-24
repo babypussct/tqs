@@ -32,10 +32,9 @@ export function useNavigationConfig() {
       if (docSnap.exists()) {
         setConfig({ ...DEFAULT_CONFIG, ...docSnap.data() });
       } else {
-        // Initialize with defaults if not exists
-        setDoc(doc(db, 'settings', 'navigationConfig'), DEFAULT_CONFIG).catch(error => {
-          handleFirestoreError(error, OperationType.WRITE, 'settings/navigationConfig');
-        });
+        // Public reads must never seed protected settings. Admin setup/migration
+        // owns creation; storefront uses the in-memory default meanwhile.
+        setConfig(DEFAULT_CONFIG);
       }
       setLoading(false);
     }, (error) => {

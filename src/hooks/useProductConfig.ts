@@ -22,10 +22,9 @@ export function useProductConfig() {
       if (docSnap.exists()) {
         setConfig({ ...DEFAULT_CONFIG, ...docSnap.data() });
       } else {
-        // Initialize with defaults if not exists
-        setDoc(doc(db, 'settings', 'productConfig'), DEFAULT_CONFIG).catch(error => {
-          handleFirestoreError(error, OperationType.WRITE, 'settings/productConfig');
-        });
+        // Public reads must never seed protected settings. Admin setup/migration
+        // owns creation; storefront uses the in-memory default meanwhile.
+        setConfig(DEFAULT_CONFIG);
       }
       setLoading(false);
     }, (error) => {

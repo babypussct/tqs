@@ -6,7 +6,6 @@ import TrustBadges from './TrustBadges';
 import ProductCard from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { useHomepage } from '../hooks/useHomepage';
-import { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 
 export default function Home() {
@@ -17,14 +16,13 @@ export default function Home() {
 
   const loading = productsLoading || configLoading;
 
-  const activeConcepts = config.heroConcepts?.filter(c => c.isActive) || [];
-  const activeHeroData = activeConcepts.length > 0
-    ? activeConcepts[Math.floor(Math.random() * activeConcepts.length)] // Randomly pick one active concept
-    : config.hero; // Fallback to regular hero if none active
+  // useHomepage đã chọn concept một lần khi nhận cấu hình. Không random lại
+  // trong render, nếu không hero sẽ đổi bất ngờ mỗi lần state giỏ hàng thay đổi.
+  const activeHeroData = config.hero;
 
   return (
     <div className="bg-gray-50 dark:bg-zinc-950 pb-12 transition-colors duration-200">
-      {!configLoading && <Hero data={activeHeroData as typeof config.hero} />}
+      {!configLoading && <Hero data={activeHeroData} />}
       {!configLoading && (
         <div className="mt-0">
           <TrustBadges badges={config.trustBadges} />
@@ -51,7 +49,9 @@ export default function Home() {
                   <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-zinc-800 pb-4">
                     <div className="flex items-center gap-2">
                       <Icon className={`h-6 w-6 ${section.iconColorClass}`} />
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">{section.title}</h2>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
+                        {section.title.replace(/SLEEDVES/gi, 'SLEEVES')}
+                      </h2>
                     </div>
                     <button 
                       onClick={() => navigate('/shop')}

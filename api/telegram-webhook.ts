@@ -1,49 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb, admin } from './_lib/firebaseAdmin.js';
+import { createOrderTransactionDependencies } from './_lib/orderTransaction.js';
 import { OrderServiceError, transitionOrder } from '../src/order/orderService.js';
 import type {
   AuthenticatedActor,
-  OrderServiceDependencies,
   TransitionOrderInput,
 } from '../src/order/orderService.js';
-import type { IdempotencyRecord, OrderDocument } from '../src/order/canonical.js';
-
-// Khởi tạo Firebase Admin an toàn
-if (!admin.apps.length) {
-  try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-    } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
-      let pk = process.env.FIREBASE_PRIVATE_KEY || '';
-      if (pk.startsWith('"') && pk.endsWith('"')) pk = pk.slice(1, -1);
-      pk = pk.replace(/\\n/g, '\n');
-
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: pk,
-        })
-      });
-    } else {
-      admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || 'gen-lang-client-0845413094',
-      });
-    }
-  } catch (error) {
-    console.error('Firebase Admin Init Error:', error);
-  }
-}
-
-// ─── Helper: Lấy Firestore instance ───
-function getDb() {
-  const dbId = process.env.FIREBASE_DATABASE_ID || 'ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b';
-  return getFirestore(admin.app(), dbId);
-}
 
 const telegramActor: AuthenticatedActor = {
   uid: 'telegram:internal',
@@ -120,79 +82,7 @@ async function runTelegramOrderCommand(
   input: TransitionOrderInput
 ) {
   return db.runTransaction(async (transaction) => {
-    const deps: OrderServiceDependencies = {
-      getOrder: async (id) => {
-        const snap = await transaction.get(db.collection('orders').doc(id));
-        return snap.exists ? (snap.data() as OrderDocument) : null;
-      },
-      updateOrder: async (id, updates) => {
-        transaction.update(db.collection('orders').doc(id), updates);
-      },
-      saveOrder: async (order) => {
-        transaction.set(db.collection('orders').doc(order.id), order);
-      },
-      getProduct: async (id) => {
-        const snap = await transaction.get(db.collection('products').doc(id));
-        return snap.exists ? { id: snap.id, ...snap.data() } : null;
-      },
-      updateProductStock: async (id, stock) => {
-        transaction.update(db.collection('products').doc(id), { stock });
-      },
-      getUserProfile: async (uid) => {
-        const snap = await transaction.get(db.collection('users').doc(uid));
-        return snap.exists ? { id: snap.id, ...snap.data() } : null;
-      },
-      updateUserPoints: async (uid, delta) => {
-        transaction.update(db.collection('users').doc(uid), { points: FieldValue.increment(delta) });
-      },
-      updateUserRewardStats: async (uid, update) => {
-        const statsUpdate: Record<string, unknown> = {};
-        if (update.pointsDelta !== undefined) statsUpdate.points = FieldValue.increment(update.pointsDelta);
-        if (update.totalSpentDelta !== undefined) statsUpdate.totalSpent = FieldValue.increment(update.totalSpentDelta);
-        if (update.totalOrdersDelta !== undefined) statsUpdate.totalOrders = FieldValue.increment(update.totalOrdersDelta);
-        if (update.rewardReversalDebtDelta !== undefined) {
-          statsUpdate.rewardReversalDebt = FieldValue.increment(update.rewardReversalDebtDelta);
-        }
-        if (update.tier !== undefined) statsUpdate.tier = update.tier;
-        if (Object.keys(statsUpdate).length > 0) {
-          transaction.update(db.collection('users').doc(uid), statsUpdate);
-        }
-      },
-      getTiersConfig: async () => {
-        const snap = await transaction.get(db.collection('system_settings').doc('tiers_config'));
-        return snap.exists ? snap.data() : null;
-      },
-      getVoucher: async (code) => {
-        const directSnap = await transaction.get(db.collection('discountCodes').doc(code));
-        if (directSnap.exists) return { id: directSnap.id, ...directSnap.data() };
-        const querySnap = await transaction.get(
-          db.collection('discountCodes').where('code', '==', code).limit(1)
-        );
-        return querySnap.empty ? null : { id: querySnap.docs[0].id, ...querySnap.docs[0].data() };
-      },
-      incrementVoucherUsage: async (id) => {
-        transaction.update(db.collection('discountCodes').doc(id), {
-          usedCount: FieldValue.increment(1),
-        });
-      },
-      decrementVoucherUsage: async (id) => {
-        transaction.update(db.collection('discountCodes').doc(id), {
-          usedCount: FieldValue.increment(-1),
-        });
-      },
-      saveEvent: async (orderId, event) => {
-        transaction.set(db.collection('orders').doc(orderId).collection('events').doc(event.id), event);
-      },
-      getIdempotencyRecord: async (id) => {
-        const snap = await transaction.get(db.collection('idempotency').doc(id));
-        return snap.exists ? (snap.data() as IdempotencyRecord) : null;
-      },
-      saveIdempotencyRecord: async (record) => {
-        transaction.set(db.collection('idempotency').doc(record.id), record);
-      },
-    };
-
-    return transitionOrder(telegramActor, input, deps);
+    return transitionOrder(telegramActor, input, createOrderTransactionDependencies(db, transaction));
   });
 }
 
@@ -322,7 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: 'Forbidden', code: 'TELEGRAM_ACTOR_NOT_ALLOWED' });
     }
 
-    const db = getDb();
+    const db = getAdminDb();
     let callbackIdempotencyReplay = false;
 
     // ═══════════════════════════════════════════════
