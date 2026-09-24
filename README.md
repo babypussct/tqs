@@ -11,6 +11,19 @@ các API quản trị/notification. Kiến trúc sau refactor được mô tả 
 The repository currently tracks `dist/`; regenerate it with `npm run build`
 before a deployment that consumes the checked-in static output.
 
+## Firebase environments
+
+TQSShop production uses one canonical Firebase project and one named Firestore
+database:
+
+- Firebase project alias `production` → `gen-lang-client-0845413094` (`TQS SHOP`)
+- Firestore database → `ai-studio-ae9f678c-29b1-4f19-b872-e5b15e1cee0b`
+
+The alias is defined in [`.firebaserc`](./.firebaserc). Always pass the alias
+explicitly for production deploys so unrelated Firebase projects in the same
+Google account are not selected accidentally. A staging alias will be added
+only after the staging project access and ownership are verified.
+
 ## Run Locally
 
 **Prerequisites:** Node.js 20+
@@ -41,7 +54,7 @@ The canonical Rules source is [`firestore.rules`](./firestore.rules). Deploy it 
 from a reviewed commit, after the emulator suite and the frontend/API smoke tests pass:
 
 ```bash
-firebase deploy --only firestore:rules
+firebase deploy --project production --only firestore:rules,firestore:indexes
 ```
 
 ## Gate 4 security configuration
