@@ -120,8 +120,7 @@ export function OptimizedImage({
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
-        // @ts-ignore — fetchpriority is valid HTML but TS types may lag
-        fetchpriority={priority ? 'high' : 'low'}
+        fetchPriority={priority ? 'high' : 'low'}
         referrerPolicy={referrerPolicy}
         onLoad={handleLoad}
         onError={handleError}

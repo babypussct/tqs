@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from './_lib/firebaseAdmin.js';
 import { authenticateActor } from './_lib/auth.js';
 
@@ -115,6 +116,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  const dispatchRef = db.collection('reviewNotifications').doc(reviewId);
+  const dispatchState = await db.runTransaction(async (transaction) => {
+    const dispatchSnapshot = await transaction.get(dispatchRef);
+    const current = dispatchSnapshot.data() || {};
+    const currentStatus = current.status;
+    const updatedAt = current.updatedAt?.toMillis?.() || 0;
+    const isFreshProcessing = currentStatus === 'processing' && Date.now() - updatedAt < 5 * 60 * 1000;
+
+    if (currentStatus === 'succeeded') return 'succeeded';
+    if (isFreshProcessing) return 'processing';
+
+    transaction.set(dispatchRef, {
+      reviewId,
+      userId: authResult.actor.uid,
+      status: 'processing',
+      updatedAt: Timestamp.now(),
+    }, { merge: true });
+    return 'claimed';
+  });
+
+  if (dispatchState === 'succeeded') {
+    return res.status(200).json({ success: true, type: 'NEW_REVIEW', reviewId, replay: true });
+  }
+  if (dispatchState === 'processing') {
+    return res.status(409).json({
+      success: false,
+      code: 'NOTIFICATION_ALREADY_PROCESSING',
+      message: 'Thông báo này đang được xử lý.',
+    });
+  }
+
   let productName = boundedText(review.productId, 160);
   if (review.productId) {
     try {
@@ -157,6 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!telegramResponse.ok || telegramData?.ok !== true) {
       console.error('Telegram review notification failed:', telegramData);
+      await dispatchRef.set({ status: 'failed', updatedAt: Timestamp.now() }, { merge: true });
       return res.status(502).json({
         success: false,
         code: 'TELEGRAM_DISPATCH_FAILED',
@@ -165,12 +198,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error: any) {
     console.error('Telegram review notification error:', error?.message || error);
+    await dispatchRef.set({ status: 'failed', updatedAt: Timestamp.now() }, { merge: true });
     return res.status(502).json({
       success: false,
       code: 'TELEGRAM_DISPATCH_FAILED',
       message: 'Không thể gửi thông báo Telegram.',
     });
   }
+
+  await dispatchRef.set({ status: 'succeeded', updatedAt: Timestamp.now() }, { merge: true });
 
   return res.status(200).json({ success: true, type: 'NEW_REVIEW', reviewId });
 }

@@ -145,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        const isSuperAdmin = hasSuperAdminClaim || data.isSuperAdmin === true;
+        const isSuperAdmin = hasSuperAdminClaim;
         if (isSuperAdmin) {
           setAdminUser({
             id: user.uid,

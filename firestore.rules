@@ -261,6 +261,8 @@ service cloud.firestore {
         isOptionalNumber(request.resource.data, 'earnedPoints', 0) &&
         isOptionalNumber(request.resource.data, 'riskScore', 0) &&
         isOptionalString(request.resource.data, 'trackingCode', 0, 200) &&
+        isOptionalString(request.resource.data, 'returnReason', 0, 30) &&
+        (!('stockDisposition' in request.resource.data) || request.resource.data.stockDisposition == null || request.resource.data.stockDisposition in ['sellable', 'damaged', 'lost']) &&
         isOptionalString(request.resource.data, 'statusReason', 0, 200);
     }
 
@@ -283,6 +285,7 @@ service cloud.firestore {
           'rewardReversedAt', 'earnedPoints', 'cancelledAt', 'deliveredAt',
           'returnEligibleUntil', 'failedDeliveryAt', 'returnRequestedAt',
           'returnedAt', 'refundRequestedAt', 'refundedAt', 'returnCase',
+          'returnReason', 'stockDisposition',
           'refund', 'actualShippingCost', 'baseCost', 'packagingCost',
           'adminNotes', 'legacySource', 'updatedAt'
         ]) &&
@@ -303,6 +306,8 @@ service cloud.firestore {
         request.resource.data.paidAmount is number && request.resource.data.paidAmount >= 0 &&
         request.resource.data.refundAmount is number && request.resource.data.refundAmount >= 0 &&
         request.resource.data.refundAmount <= request.resource.data.paidAmount &&
+        isOptionalString(request.resource.data, 'returnReason', 0, 30) &&
+        (!('stockDisposition' in request.resource.data) || request.resource.data.stockDisposition == null || request.resource.data.stockDisposition in ['sellable', 'damaged', 'lost']) &&
         request.resource.data.updatedAt is timestamp;
     }
 
@@ -457,14 +462,26 @@ service cloud.firestore {
       allow create: if isOrderService() &&
         request.resource.data.userId == request.auth.uid &&
         hasAll(request.resource.data, ['productId', 'userId', 'userName', 'rating', 'comment', 'createdAt']) &&
-        request.resource.data.rating is number && request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-        isValidString(request.resource.data.comment, 0, 1000) &&
+        request.resource.data.productId is string && request.resource.data.productId.size() > 0 && request.resource.data.productId.size() <= 150 &&
+        isValidString(request.resource.data.userName, 0, 120) &&
+        isOptionalString(request.resource.data, 'userPhoto', 0, 1000) &&
+        (request.resource.data.rating == 1 || request.resource.data.rating == 2 || request.resource.data.rating == 3 || request.resource.data.rating == 4 || request.resource.data.rating == 5) &&
+        isValidString(request.resource.data.comment, 1, 1000) &&
         request.resource.data.createdAt is timestamp &&
         !('adminReply' in request.resource.data);
       allow update: if (
           isOwner(resource.data.userId) &&
-          hasOnlyChanged(['userName', 'userPhoto', 'rating', 'comment'])
-        ) || isAdmin();
+          hasOnlyChanged(['userName', 'userPhoto', 'rating', 'comment']) &&
+          isValidString(request.resource.data.userName, 0, 120) &&
+          isOptionalString(request.resource.data, 'userPhoto', 0, 1000) &&
+          (request.resource.data.rating == 1 || request.resource.data.rating == 2 || request.resource.data.rating == 3 || request.resource.data.rating == 4 || request.resource.data.rating == 5) &&
+          isValidString(request.resource.data.comment, 1, 1000)
+        ) || (
+          isAdmin() &&
+          hasOnlyChanged(['adminReply', 'adminReplyAt']) &&
+          isOptionalString(request.resource.data, 'adminReply', 0, 1000) &&
+          isOptionalTimestamp(request.resource.data, 'adminReplyAt')
+        );
       allow delete: if isAdmin() || isOwner(resource.data.userId);
     }
 
@@ -485,10 +502,12 @@ service cloud.firestore {
 
     match /settings/{document} {
       allow read: if isOrderService() || isAdmin() || document in [
-        'siteConfig', 'navigationConfig', 'footerConfig', 'shipping',
+        'siteConfig', 'homepage', 'navigationConfig', 'footerConfig', 'shipping',
         'paymentConfig', 'productConfig'
       ];
-      allow write: if isOrderService() || hasAdminPermission('manageSettings');
+      allow write: if isOrderService() ||
+        hasAdminPermission('manageSettings') ||
+        (document in ['homepage', 'navigationConfig', 'footerConfig'] && hasAdminPermission('manageHomepage'));
     }
 
     match /settings/{document=**} {
@@ -502,7 +521,8 @@ service cloud.firestore {
     }
 
     match /system_settings/{document} {
-      allow read: if isOrderService() || isAdmin() || (isAuthenticated() && !isBanned());
+      allow read: if isOrderService() || isAdmin() || document == 'shipping_config' ||
+        (isAuthenticated() && !isBanned());
       allow write: if isOrderService() || hasAdminPermission('manageRewards') || hasAdminPermission('manageSettings');
     }
   }

@@ -35,8 +35,15 @@ export async function authenticateActor(
       actor: {
         uid: decoded.uid,
         email: decoded.email || '',
+        displayName: typeof userData.displayName === 'string'
+          ? userData.displayName
+          : typeof decoded.name === 'string'
+          ? decoded.name
+          : undefined,
         role: userData.role === 'admin' ? 'admin' : 'customer',
-        isSuperAdmin: Boolean(decoded.super_admin === true || userData.isSuperAdmin === true),
+        // Profile fields are user-writable in older deployments. Server-side
+        // authority must come exclusively from the custom claim.
+        isSuperAdmin: decoded.super_admin === true,
         permissions: userData.adminPermissions && typeof userData.adminPermissions === 'object'
           ? userData.adminPermissions
           : undefined,

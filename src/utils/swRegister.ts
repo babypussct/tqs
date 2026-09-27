@@ -6,6 +6,9 @@
 
 const SW_PATH = '/sw.js';
 
+let pendingUpdateRegistration: ServiceWorkerRegistration | null = null;
+let reloadInProgress = false;
+
 export interface SWUpdateEvent {
   type: 'SW_UPDATED';
 }
@@ -44,6 +47,15 @@ export async function registerSW(): Promise<void> {
 
     console.log('[SW Register] ✓ Service Worker đã đăng ký, scope:', registration.scope);
 
+    const announceUpdateReady = (updatedRegistration: ServiceWorkerRegistration) => {
+      // Không hiển thị overlay cho lần cài đặt đầu tiên trên một tab chưa có
+      // controller. Đây chỉ là bootstrap, không phải bản deploy mới.
+      if (!hadControllerBeforeRegistration) return;
+      pendingUpdateRegistration = updatedRegistration;
+      console.log('[SW Register] SW mới đã cài đặt và đang chờ người dùng tải lại.');
+      window.dispatchEvent(new CustomEvent('sw-update-ready'));
+    };
+
     // Lắng nghe khi có SW mới được tìm thấy
     registration.addEventListener('updatefound', () => {
       const newSW = registration.installing;
@@ -53,9 +65,8 @@ export async function registerSW(): Promise<void> {
 
       newSW.addEventListener('statechange', () => {
         if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-          // SW mới đã cài xong, đang chờ activate
-          // skipWaiting trong sw.js sẽ tự activate ngay
-          console.log('[SW Register] SW mới đã cài đặt, đang activate...');
+          // SW mới đã cài xong và chờ người dùng bấm reload.
+          announceUpdateReady(registration);
         }
         if (newSW.state === 'activated') {
           console.log('[SW Register] ✓ SW mới đã activate');
@@ -65,11 +76,23 @@ export async function registerSW(): Promise<void> {
 
     // Lắng nghe message từ SW (SW_UPDATED event)
     navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'SW_UPDATED' && hadControllerBeforeRegistration) {
+      if (event.data?.type !== 'SW_UPDATED') return;
+
+      // Acknowledge the update protocol so the new SW can distinguish this
+      // bundle from an older client that still has the broken overlay.
+      event.source?.postMessage({ type: 'SW_UPDATE_CLIENT_READY' });
+
+      if (hadControllerBeforeRegistration) {
         console.log('[SW Register] SW mới đã activate → dispatch sw-updated');
         window.dispatchEvent(new CustomEvent('sw-updated'));
       }
     });
+
+    // Một bản SW có thể đã ở trạng thái waiting trước khi listener updatefound
+    // được gắn (ví dụ tab được mở lại sau khi deploy).
+    if (registration.waiting && navigator.serviceWorker.controller) {
+      announceUpdateReady(registration);
+    }
 
     // Kiểm tra update định kỳ mỗi 30 phút (khi tab đang mở)
     setInterval(() => {
@@ -80,6 +103,53 @@ export async function registerSW(): Promise<void> {
 
   } catch (error) {
     console.error('[SW Register] Đăng ký Service Worker thất bại:', error);
+  }
+}
+
+/**
+ * Kích hoạt bản SW đang chờ, xóa app cache cũ rồi tải lại trang.
+ *
+ * `window.location.reload()` đơn thuần không đủ tin cậy khi SW cũ đang phục
+ * vụ app-shell từ cache. Gửi SKIP_WAITING trước, chờ controllerchange, sau
+ * đó xóa cache theo prefix để request đầu tiên chắc chắn lấy deploy mới.
+ */
+export async function applySWUpdateAndReload(): Promise<void> {
+  if (reloadInProgress) return;
+  reloadInProgress = true;
+
+  try {
+    const registration =
+      pendingUpdateRegistration ||
+      (await navigator.serviceWorker.getRegistration('/'));
+    const waitingWorker = registration?.waiting;
+
+    if (waitingWorker) {
+      await new Promise<void>((resolve) => {
+        let settled = false;
+        let timeout: number | undefined;
+        const onControllerChange = () => {
+          if (settled) return;
+          settled = true;
+          if (timeout !== undefined) window.clearTimeout(timeout);
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+          resolve();
+        };
+
+        // Không khóa người dùng vô hạn nếu trình duyệt không phát controllerchange
+        // (một số WebView cũ có hành vi này).
+        timeout = window.setTimeout(onControllerChange, 5000);
+        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+      });
+    }
+
+    await clearTQSCache();
+    window.location.reload();
+  } catch (error) {
+    console.error('[SW Register] Không thể áp dụng bản cập nhật:', error);
+    // Vẫn cho phép người dùng thoát khỏi overlay ngay cả khi browser không hỗ
+    // trợ đầy đủ lifecycle API.
+    window.location.reload();
   }
 }
 

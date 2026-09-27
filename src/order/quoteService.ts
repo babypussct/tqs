@@ -1,5 +1,5 @@
 import type { OrderItem } from './canonical.js';
-import { calculateOrderTotals, type CalculateOrderTotalsInput } from './money.js';
+import { calculateOrderTotals, normalizeRewardsConfig, type CalculateOrderTotalsInput } from './money.js';
 import { resolveProductUnitPrice } from './pricing.js';
 import { toDate } from '../shared/data/date.js';
 import type {
@@ -7,6 +7,7 @@ import type {
   CreateOrderInput,
   OrderServiceDependencies,
 } from './orderService.js';
+import { assertValidOrderInput } from './orderService.js';
 
 export interface OrderQuote {
   items: OrderItem[];
@@ -27,12 +28,7 @@ export type QuoteOrderInput = Omit<CreateOrderInput, 'idempotencyKey'> & {
 };
 
 function assertValidQuoteInput(input: QuoteOrderInput): void {
-  if (!Array.isArray(input.items) || input.items.length === 0) {
-    throw new Error('EMPTY_CART');
-  }
-  if (input.paymentMethod !== 'cod' && input.paymentMethod !== 'vietqr') {
-    throw new Error('INVALID_PAYMENT_METHOD');
-  }
+  assertValidOrderInput(input, { requireShippingInfo: false });
 }
 
 /** Read-only counterpart of createOrder. It deliberately shares the same
@@ -46,6 +42,18 @@ export async function quoteOrder(
   const userProfile = await deps.getUserProfile(actor.uid);
   if (userProfile?.isBanned) throw new Error('ACCOUNT_BANNED');
 
+  const paymentConfig = deps.getPaymentConfig ? await deps.getPaymentConfig() : null;
+  if (input.paymentMethod === 'vietqr' && paymentConfig?.isActive === false) {
+    throw new Error('PAYMENT_METHOD_DISABLED');
+  }
+  const rewardsConfig = normalizeRewardsConfig(
+    deps.getRewardsConfig ? await deps.getRewardsConfig() : null,
+  );
+  if (input.pointsToUse && !rewardsConfig.isActive) throw new Error('POINTS_DISABLED');
+  if (input.pointsToUse && input.pointsToUse < rewardsConfig.minPointsToUse) {
+    throw new Error('MIN_POINTS_REQUIRED');
+  }
+
   const resolvedItems: OrderItem[] = [];
   const categories = new Map<string, string>();
   const stockRequested = new Map<string, number>();
@@ -54,6 +62,12 @@ export async function quoteOrder(
     const product = await deps.getProduct(itemInput.productId);
     if (!product) throw new Error('PRODUCT_NOT_FOUND');
     if (product.isActive === false) throw new Error('PRODUCT_INACTIVE');
+    const tierRank: Record<string, number> = { bronze: 0, silver: 1, gold: 2, diamond: 3 };
+    const requiredTier = typeof product.minTierRequired === 'string' ? product.minTierRequired.toLowerCase() : '';
+    const currentTier = String(userProfile?.tier || 'bronze').toLowerCase();
+    if (requiredTier && tierRank[requiredTier] !== undefined && (tierRank[currentTier] ?? 0) < tierRank[requiredTier]) {
+      throw new Error('TIER_REQUIRED');
+    }
     if (Array.isArray(product.allowedPaymentMethods) && !product.allowedPaymentMethods.includes(input.paymentMethod)) {
       throw new Error('PRODUCT_PAYMENT_METHOD_NOT_ALLOWED');
     }
@@ -82,9 +96,16 @@ export async function quoteOrder(
   }
 
   const shippingConfig = deps.getShippingConfig ? await deps.getShippingConfig() : null;
-  const defaultShippingFee = shippingConfig?.defaultFee !== undefined ? Number(shippingConfig.defaultFee) : 30000;
+  const configuredShippingFee = Number(shippingConfig?.defaultFee);
+  const defaultShippingFee = Number.isFinite(configuredShippingFee) && configuredShippingFee >= 0
+    ? Math.min(configuredShippingFee, Number.MAX_SAFE_INTEGER)
+    : 30000;
   const freeshipThreshold = shippingConfig?.freeshipThreshold !== undefined
-    ? shippingConfig.freeshipThreshold
+    ? shippingConfig.freeshipThreshold === null
+      ? null
+      : Number.isFinite(Number(shippingConfig.freeshipThreshold)) && Number(shippingConfig.freeshipThreshold) >= 0
+      ? Math.min(Number(shippingConfig.freeshipThreshold), Number.MAX_SAFE_INTEGER)
+      : 500000
     : 500000;
 
   let voucher: NonNullable<CalculateOrderTotalsInput['voucher']> | null = null;
@@ -141,11 +162,14 @@ export async function quoteOrder(
     })),
     defaultShippingFee,
     shippingActive: shippingConfig?.isActive !== false,
-    hasFreeshipProduct: resolvedItems.some((item) => shippingConfig?.freeshipProductIds?.includes(item.productId)),
+    hasFreeshipProduct: Array.isArray(shippingConfig?.freeshipProductIds) &&
+      resolvedItems.some((item) => shippingConfig.freeshipProductIds.includes(item.productId)),
     freeshipThreshold,
     voucher,
-    pointsToUse,
+    pointsToUse: rewardsConfig.isActive ? pointsToUse : 0,
     userPointsBalance: typeof userProfile?.points === 'number' ? userProfile.points : 0,
+    pointsRate: rewardsConfig.pointValueVND,
+    maxPointsDiscountPercent: rewardsConfig.maxDiscountPercentage,
   };
   const money = calculateOrderTotals(moneyInput);
 
@@ -153,7 +177,7 @@ export async function quoteOrder(
     items: resolvedItems,
     ...money,
     discountCode: voucher?.code || null,
-    pointsApplied: Math.floor(money.pointsDiscountAmount / 1000),
+    pointsApplied: Math.floor(money.pointsDiscountAmount / rewardsConfig.pointValueVND),
     voucher: voucher as Record<string, unknown> | null,
   };
 }

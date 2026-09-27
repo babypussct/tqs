@@ -40,25 +40,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ success: false, code: 'PURCHASE_REQUIRED', message: 'Bạn cần mua và nhận sản phẩm trước khi đánh giá.' });
   }
 
-  const existing = await db.collection('reviews')
-    .where('userId', '==', authResult.actor.uid)
-    .where('productId', '==', productId)
-    .limit(1)
-    .get();
-  if (!existing.empty) {
-    return res.status(409).json({ success: false, code: 'REVIEW_ALREADY_EXISTS', message: 'Bạn đã đánh giá sản phẩm này.' });
+  const reviewId = `review_${authResult.actor.uid}_${productId}`;
+  const reviewRef = db.collection('reviews').doc(reviewId);
+  const safeDisplayName = (authResult.actor.displayName || 'Người dùng ẩn danh').trim().slice(0, 120) || 'Người dùng ẩn danh';
+
+  try {
+    await db.runTransaction(async (transaction) => {
+      // The deterministic key closes the check-then-create race for new
+      // reviews. The query also protects against legacy random-ID reviews
+      // created before this endpoint was hardened.
+      const deterministicSnapshot = await transaction.get(reviewRef);
+      const legacySnapshot = await transaction.get(
+        db.collection('reviews')
+          .where('userId', '==', authResult.actor.uid)
+          .where('productId', '==', productId)
+          .limit(1),
+      );
+      if (deterministicSnapshot.exists || !legacySnapshot.empty) {
+        throw new Error('REVIEW_ALREADY_EXISTS');
+      }
+
+      transaction.create(reviewRef, {
+        productId,
+        userId: authResult.actor.uid,
+        userName: safeDisplayName,
+        userPhoto: '',
+        rating,
+        comment,
+        createdAt: Timestamp.now(),
+      });
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'REVIEW_ALREADY_EXISTS') {
+      return res.status(409).json({ success: false, code: 'REVIEW_ALREADY_EXISTS', message: 'Bạn đã đánh giá sản phẩm này.' });
+    }
+    console.error('Review creation failed:', error instanceof Error ? error.message : error);
+    return res.status(500).json({ success: false, code: 'REVIEW_CREATE_FAILED', message: 'Không thể lưu đánh giá lúc này.' });
   }
 
-  const reviewRef = db.collection('reviews').doc();
-  await reviewRef.set({
-    productId,
-    userId: authResult.actor.uid,
-    userName: authResult.actor.email || 'Người dùng ẩn danh',
-    userPhoto: '',
-    rating,
-    comment,
-    createdAt: Timestamp.now(),
-  });
-
-  return res.status(201).json({ success: true, reviewId: reviewRef.id });
+  return res.status(201).json({ success: true, reviewId });
 }

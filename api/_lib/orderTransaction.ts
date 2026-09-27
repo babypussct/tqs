@@ -136,6 +136,14 @@ export function createOrderTransactionDependencies(
       const snapshot = await transaction.get(db.collection('system_settings').doc('tiers_config'));
       return snapshot.exists ? snapshot.data() : null;
     },
+    getRewardsConfig: async () => {
+      const snapshot = await transaction.get(db.collection('system_settings').doc('tiers_config'));
+      return snapshot.exists ? snapshot.data() : null;
+    },
+    getPaymentConfig: async () => {
+      const snapshot = await transaction.get(db.collection('settings').doc('paymentConfig'));
+      return snapshot.exists ? snapshot.data() : null;
+    },
     getVoucher: async (code) => {
       const direct = await transaction.get(db.collection('discountCodes').doc(code));
       if (direct.exists) return { id: direct.id, ...direct.data() };

@@ -62,31 +62,32 @@ export default function AdminProductForm() {
       const productData: any = {
         name: editingProduct.name || '',
         price: Number(editingProduct.price) || 0,
+        originalPrice: editingProduct.originalPrice === undefined || editingProduct.originalPrice === null
+          ? null
+          : Number(editingProduct.originalPrice),
         image: editingProduct.image || '',
         type: editingProduct.type || 'base',
         isActive: editingProduct.isActive ?? true,
+        stock: editingProduct.stock === undefined || editingProduct.stock === null ? 0 : Number(editingProduct.stock),
+        badge: editingProduct.badge || null,
+        description: editingProduct.description || null,
+        size: editingProduct.size || null,
+        images: Array.isArray(editingProduct.images) ? editingProduct.images : [],
+        specifications: Array.isArray(editingProduct.specifications) ? editingProduct.specifications : [],
+        addonIds: Array.isArray(editingProduct.addonIds) ? editingProduct.addonIds : [],
+        allowedPaymentMethods: Array.isArray(editingProduct.allowedPaymentMethods)
+          ? editingProduct.allowedPaymentMethods
+          : [],
+        minTierRequired: editingProduct.minTierRequired || null,
+        soldCount: editingProduct.soldCount === undefined || editingProduct.soldCount === null ? 0 : Number(editingProduct.soldCount),
+        customVariants: Array.isArray(editingProduct.customVariants)
+          ? editingProduct.customVariants.map(v => ({
+              ...v,
+              options: v.options.map(opt => typeof opt === 'string' ? { name: opt, priceAdjustment: 0 } : opt),
+            }))
+          : [],
+        quickAddAccessories: Array.isArray(editingProduct.quickAddAccessories) ? editingProduct.quickAddAccessories : [],
       };
-
-      if (editingProduct.originalPrice) productData.originalPrice = Number(editingProduct.originalPrice);
-      if (editingProduct.stock !== undefined) productData.stock = Number(editingProduct.stock);
-      if (editingProduct.badge) productData.badge = editingProduct.badge;
-      if (editingProduct.description) productData.description = editingProduct.description;
-      if (editingProduct.size) productData.size = editingProduct.size;
-      
-      if (editingProduct.images) productData.images = editingProduct.images;
-      if (editingProduct.specifications) productData.specifications = editingProduct.specifications;
-      if (editingProduct.addonIds) productData.addonIds = editingProduct.addonIds;
-      if (editingProduct.allowedPaymentMethods) productData.allowedPaymentMethods = editingProduct.allowedPaymentMethods;
-      if (editingProduct.minTierRequired) productData.minTierRequired = editingProduct.minTierRequired;
-      if (editingProduct.soldCount !== undefined) productData.soldCount = Number(editingProduct.soldCount);
-      if (editingProduct.customVariants) {
-        productData.customVariants = editingProduct.customVariants.map(v => ({
-          ...v,
-          options: v.options.map(opt => typeof opt === 'string' ? { name: opt, priceAdjustment: 0 } : opt)
-        }));
-      }
-      if ((editingProduct as any).quickAddAccessory) (productData as any).quickAddAccessory = (editingProduct as any).quickAddAccessory;
-      if (editingProduct.quickAddAccessories) productData.quickAddAccessories = editingProduct.quickAddAccessories;
 
       if (id) {
         await updateDoc(doc(db, 'products', id), productData);
@@ -237,7 +238,7 @@ export default function AdminProductForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2">Giá gốc (VNĐ)</label>
-              <input type="number" min="0" value={editingProduct.originalPrice || ''} onChange={e => setEditingProduct({...editingProduct, originalPrice: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all" placeholder="300000" />
+              <input type="number" min="0" value={editingProduct.originalPrice ?? ''} onChange={e => setEditingProduct({...editingProduct, originalPrice: e.target.value === '' ? undefined : Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all" placeholder="300000" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2">Tồn kho</label>

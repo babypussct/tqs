@@ -114,16 +114,16 @@ function buildOrderButtons(orderId: string, status: string, paymentStatus: strin
     btns.push([{ text: paymentMethod === 'vietqr' ? '✅ Đã nhận tiền' : '💰 Đã thu COD', callback_data: `action:paid:${orderId}` }]);
   }
   // Nút chuyển trạng thái (chỉ hiện nếu hợp lệ)
-  if (['pending', 'suspicious'].includes(status)) {
+  if (['pending', 'suspicious'].includes(status) && (paymentMethod !== 'vietqr' || paymentStatus === 'paid')) {
     btns.push([{ text: '🔧 Đang chuẩn bị', callback_data: `action:processing:${orderId}` }]);
   }
-  if (['pending', 'suspicious', 'processing'].includes(status)) {
+  if (['pending', 'suspicious', 'processing'].includes(status) && (paymentMethod !== 'vietqr' || paymentStatus === 'paid')) {
     btns.push([{ text: '🚚 Chuyển Đang Giao', callback_data: `action:shipped:${orderId}` }]);
   }
-  if (status === 'shipped') {
+  if (status === 'shipped' && (paymentMethod !== 'vietqr' || paymentStatus === 'paid')) {
     btns.push([{ text: '✅ Đã giao thành công', callback_data: `action:delivered:${orderId}` }]);
   }
-  if (!['cancelled', 'delivered', 'refunded'].includes(status)) {
+  if (['pending', 'suspicious', 'processing'].includes(status)) {
     btns.push([{ text: '❌ Hủy đơn', callback_data: `action:cancelled:${orderId}` }]);
   }
   return btns;
@@ -505,7 +505,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 orderId,
                 targetStatus: 'delivered',
                 actionType: 'mark_delivered',
-                paymentStatus: 'paid',
               };
               const points = order.earnedPoints || 0;
               actionLabel = `✅ Đã giao thành công! Cộng ${points} điểm cho khách.`;

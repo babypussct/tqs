@@ -3,7 +3,7 @@
  * =============================================
  * Strategies:
  *   - Immutable media (R2 uploads + legacy Cloudinary) → CacheFirst (180 ngày)
- *   - App shell (JS/CSS) → StaleWhileRevalidate (7 ngày)
+ *   - App shell (JS/CSS) → NetworkFirst (4s timeout, 7 ngày fallback)
  *   - Navigation (HTML)  → NetworkFirst → offline.html fallback
  *   - VietQR / API       → NetworkOnly (dynamic, không cache)
  *   - Google Fonts       → StaleWhileRevalidate (365 ngày)
@@ -25,7 +25,12 @@ core.setCacheNameDetails({
   runtime: 'runtime',
 });
 
-// Kích hoạt SW mới ngay lập tức (không chờ tab đóng)
+// Bản SW mới tự activate để các tab đang chạy bundle cũ không bị kẹt trong
+// overlay update của phiên bản trước. Bundle mới vẫn hiện overlay và chờ
+// người dùng bấm reload; tab cũ không biết protocol mới sẽ được điều hướng
+// một lần sau handshake timeout.
+const UPDATE_PROTOCOL_VERSION = 2;
+const updateClientAcks = new Set();
 core.skipWaiting();
 core.clientsClaim();
 
@@ -55,14 +60,15 @@ routing.registerRoute(
   })
 );
 
-// ─── Route 2: App Shell (JS/CSS bundles) — StaleWhileRevalidate ─────────────
-// Trả cached ngay → cập nhật ngầm → User không chờ, nhưng luôn có bản mới
+// ─── Route 2: App Shell (JS/CSS bundles) — NetworkFirst ─────────────────────
+// Lấy bundle từ deploy mới trước; chỉ dùng cache khi mạng chậm/mất kết nối.
 routing.registerRoute(
   ({ request, url }) =>
     (request.destination === 'script' || request.destination === 'style') &&
     url.origin === self.location.origin,
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'tqs-app-shell-v2',
+    networkTimeoutSeconds: 4,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({
@@ -157,6 +163,16 @@ routing.setCatchHandler(async ({ request }) => {
   return Response.error();
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  if (event.data?.type === 'SW_UPDATE_CLIENT_READY' && event.source?.id) {
+    updateClientAcks.add(event.source.id);
+  }
+});
+
 // ─── SW Update Notification ──────────────────────────────────────────────────
 // Khi SW mới activate → thông báo cho tất cả tabs để hiện toast
 self.addEventListener('activate', (event) => {
@@ -171,10 +187,19 @@ self.addEventListener('activate', (event) => {
       );
 
       // Thông báo clients về SW mới
-      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
       clients.forEach(client => {
-        client.postMessage({ type: 'SW_UPDATED' });
+        client.postMessage({ type: 'SW_UPDATED', protocolVersion: UPDATE_PROTOCOL_VERSION });
       });
+
+      // Các bundle mới sẽ gửi ACK để giữ overlay cho người dùng lựa chọn thời
+      // điểm reload. Bundle cũ không biết ACK này; tự điều hướng giúp họ nhận
+      // bundle đã sửa thay vì mắc kẹt với nút reload không thể click.
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const currentClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+      await Promise.all(currentClients
+        .filter(client => !updateClientAcks.has(client.id) && client.url)
+        .map(client => client.navigate(client.url).catch(() => undefined)));
     })()
   );
 });

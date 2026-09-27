@@ -5,6 +5,67 @@
 
 import type { OrderDocument, OrderMoneyBreakdown, ReturnReason } from './canonical.js';
 
+export const DEFAULT_POINTS_RATE = 1000;
+export const DEFAULT_MAX_POINTS_DISCOUNT_PERCENT = 50;
+export const DEFAULT_BASE_EARN_RATE = 0.0001;
+
+export interface NormalizedRewardsConfig {
+  isActive: boolean;
+  pointValueVND: number;
+  minPointsToUse: number;
+  maxDiscountPercentage: number;
+  tierMultipliers: Record<string, number>;
+}
+
+const DEFAULT_TIER_MULTIPLIERS: Record<string, number> = {
+  bronze: 1,
+  silver: 1.2,
+  gold: 1.5,
+  diamond: 2,
+};
+
+/**
+ * Normalize the admin document before it reaches the money functions.
+ *
+ * The admin UI stores pointMultiplier as a display rate (0.01 = 1%, 0.02 =
+ * 2%, ...). The order engine historically used bronze as the 1x baseline, so
+ * we convert configured rates to a relative multiplier. This makes changes in
+ * the admin screen effective without silently changing the existing default
+ * bronze earning rate.
+ */
+export function normalizeRewardsConfig(raw: any): NormalizedRewardsConfig {
+  const pointValueVND = Number(raw?.pointValueVND);
+  const minPointsToUse = Number(raw?.minPointsToUse);
+  const maxDiscountPercentage = Number(raw?.maxDiscountPercentage);
+  const configuredTiers = raw?.tiers && typeof raw.tiers === 'object' ? raw.tiers : null;
+  const configuredBronzeRate = Number(configuredTiers?.bronze?.pointMultiplier);
+  const bronzeRate = Number.isFinite(configuredBronzeRate) && configuredBronzeRate > 0
+    ? configuredBronzeRate
+    : 0.01;
+
+  const tierMultipliers = { ...DEFAULT_TIER_MULTIPLIERS };
+  for (const tier of Object.keys(tierMultipliers)) {
+    const configuredRate = Number(configuredTiers?.[tier]?.pointMultiplier);
+    if (Number.isFinite(configuredRate) && configuredRate > 0) {
+      tierMultipliers[tier] = configuredRate / bronzeRate;
+    }
+  }
+
+  return {
+    isActive: raw?.isActive !== false,
+    pointValueVND: Number.isFinite(pointValueVND) && pointValueVND > 0
+      ? Math.round(pointValueVND)
+      : DEFAULT_POINTS_RATE,
+    minPointsToUse: Number.isFinite(minPointsToUse) && minPointsToUse >= 0
+      ? Math.floor(minPointsToUse)
+      : 0,
+    maxDiscountPercentage: Number.isFinite(maxDiscountPercentage)
+      ? Math.min(100, Math.max(0, maxDiscountPercentage))
+      : DEFAULT_MAX_POINTS_DISCOUNT_PERCENT,
+    tierMultipliers,
+  };
+}
+
 export interface CalculateOrderTotalsInput {
   items: Array<{ unitPrice: number; quantity: number; productId?: string; category?: string }>;
   defaultShippingFee: number;
@@ -38,8 +99,8 @@ export function calculateOrderTotals(input: CalculateOrderTotalsInput): OrderMon
     voucher = null,
     pointsToUse = 0,
     userPointsBalance = 0,
-    pointsRate = 1000,
-    maxPointsDiscountPercent = 50,
+    pointsRate = DEFAULT_POINTS_RATE,
+    maxPointsDiscountPercent = DEFAULT_MAX_POINTS_DISCOUNT_PERCENT,
   } = input;
 
   // 1. Calculate merchandise subtotal
@@ -185,8 +246,8 @@ export function calculateEarnedPoints(input: CalculateEarnedPointsInput): number
   const {
     rewardEligibleAmount,
     tier = 'bronze',
-    baseEarnRate = 0.0001, // 1 pt per 10k VND
-    tierMultipliers = { bronze: 1.0, silver: 1.2, gold: 1.5, diamond: 2.0 },
+    baseEarnRate = DEFAULT_BASE_EARN_RATE, // 1 pt per 10k VND
+    tierMultipliers = DEFAULT_TIER_MULTIPLIERS,
   } = input;
 
   const multiplier = tierMultipliers[tier] || 1.0;

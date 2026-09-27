@@ -116,7 +116,9 @@ export function hasMediaUploadPermission(
   profile: MediaAuthorityProfile,
   claims: MediaAuthorityClaims = {},
 ): boolean {
-  if (claims.super_admin === true || profile.isSuperAdmin === true) return true;
+  // A Firestore profile is user data and must not be able to self-promote.
+  // Super-admin authority comes only from the verified custom claim.
+  if (claims.super_admin === true) return true;
   if (profile.role !== 'admin') return false;
 
   const permissions = profile.adminPermissions || {};

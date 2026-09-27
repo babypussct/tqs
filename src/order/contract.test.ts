@@ -393,6 +393,94 @@ async function runTests() {
   }
 
   // --------------------------------------------------------------------------
+  // Test 10b: VietQR payment gate and emergency refund boundary
+  // --------------------------------------------------------------------------
+  console.log('\n--- Scenario 10b: VietQR Payment Gate & Emergency Refund Boundary ---');
+  {
+    const vietQrPending: OrderDocument = {
+      id: 'ord_vietqr_gate',
+      schemaVersion: 1,
+      revision: 1,
+      userId: 'user_gate',
+      currency: 'VND',
+      customerEmail: 'gate@test.com',
+      items: [{ productId: 'p1', name: 'Game', unitPrice: 100000, quantity: 1, lineTotal: 100000, image: '' }],
+      shippingInfo: { fullName: 'Gate User', phone: '0123', address: 'HN' },
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: 'vietqr',
+      totalAmount: 100000,
+      shippingFee: 0,
+      voucherDiscountAmount: 0,
+      pointsDiscountAmount: 0,
+      discountAmount: 0,
+      finalAmount: 100000,
+      rewardEligibleAmount: 100000,
+      paidAmount: 0,
+      refundAmount: 0,
+      createdAt: '',
+      updatedAt: '',
+    };
+
+    try {
+      planOrderTransition(vietQrPending, {
+        targetStatus: 'processing',
+        actorType: 'admin',
+        actorId: 'admin_1',
+        actionType: 'start_processing',
+      });
+      assert(false, 'VietQR unpaid order cannot enter processing', 'Did not throw');
+    } catch (error: any) {
+      assert(error.code === 'VIETQR_PAYMENT_REQUIRED', 'VietQR payment gate blocks unpaid processing');
+    }
+
+    try {
+      planOrderTransition(vietQrPending, {
+        targetStatus: 'processing',
+        paymentStatus: 'paid',
+        actorType: 'admin',
+        actorId: 'admin_1',
+        actionType: 'start_processing',
+      });
+      assert(false, 'Ordinary status update cannot forge paid state', 'Did not throw');
+    } catch (error: any) {
+      assert(error.code === 'PAYMENT_CONFIRMATION_REQUIRED', 'Paid status requires confirm_payment command');
+    }
+
+    const confirmed = planOrderTransition(vietQrPending, {
+      targetStatus: 'processing',
+      paymentStatus: 'paid',
+      actorType: 'admin',
+      actorId: 'admin_1',
+      actionType: 'confirm_payment',
+    });
+    assert(confirmed.toPaymentStatus === 'paid', 'Dedicated payment command can unlock VietQR processing');
+
+    const deliveredPaid = { ...vietQrPending, status: 'delivered' as const, paymentStatus: 'paid' as const, paidAmount: 100000 };
+    try {
+      planOrderTransition(deliveredPaid, {
+        targetStatus: 'refunded',
+        actorType: 'admin',
+        actorId: 'admin_1',
+        actionType: 'complete_refund',
+        overrideReason: 'emergency',
+      });
+      assert(false, 'Normal admin cannot skip return workflow', 'Did not throw');
+    } catch (error: any) {
+      assert(error.code === 'SUPER_ADMIN_REFUND_REASON_REQUIRED', 'Direct delivered refund is super-admin-only');
+    }
+
+    const emergencyRefund = planOrderTransition(deliveredPaid, {
+      targetStatus: 'refunded',
+      actorType: 'super_admin',
+      actorId: 'super_1',
+      actionType: 'complete_refund',
+      overrideReason: 'emergency',
+    });
+    assert(emergencyRefund.toPaymentStatus === 'refunded', 'Super-admin emergency refund records refunded payment state');
+  }
+
+  // --------------------------------------------------------------------------
   // Test 11: Return Shipping Refund Rules (Merchant Fault vs Change of Mind)
   // --------------------------------------------------------------------------
   console.log('\n--- Scenario 11: Shipping Refund Rules ---');

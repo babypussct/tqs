@@ -8,6 +8,7 @@ import { Calendar, Eye, User, ArrowLeft, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 import { formatDateOnly } from '../shared/data/date';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 export default function BlogPostDetail() {
   const { slug } = useParams();
@@ -124,7 +125,7 @@ export default function BlogPostDetail() {
               src={cloudinaryUrl(post.thumbnail, { width: 1200, quality: 'auto:good' })} 
               alt={post.title} 
               // @ts-ignore
-              fetchpriority="high"
+              fetchPriority="high"
               decoding="async"
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
@@ -151,7 +152,7 @@ export default function BlogPostDetail() {
                     prose-th:border prose-th:border-slate-200 dark:prose-th:border-zinc-700 prose-th:p-3 prose-th:bg-slate-50 dark:prose-th:bg-zinc-800/50 
                     prose-td:border prose-td:border-slate-200 dark:prose-td:border-zinc-700 prose-td:p-3
                     prose-iframe:w-full prose-iframe:aspect-video prose-iframe:rounded-xl prose-iframe:shadow-md"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
         />
         
         {/* Footer Actions */}

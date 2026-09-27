@@ -22,7 +22,9 @@ export default defineConfig(({mode}) => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            'vendor-firebase-app': ['firebase/app'],
+            'vendor-firebase-auth': ['firebase/auth'],
+            'vendor-firebase-firestore': ['firebase/firestore'],
             'vendor-editor': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-link'],
             'vendor-ui': ['lucide-react', 'motion', 'sonner'],
           }

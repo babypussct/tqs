@@ -22,12 +22,20 @@ import type {
   ReturnReason,
   StockDisposition,
 } from './canonical.js';
+import {
+  ACTION_TYPE,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  RETURN_REASON,
+  STOCK_DISPOSITION,
+} from './canonical.js';
 import { generateRequestFingerprint } from './fingerprint.js';
 import {
   calculateEarnedPoints,
   calculateOrderTotals,
   calculateRefundAmount,
   calculateRewardReversal,
+  normalizeRewardsConfig,
 } from './money.js';
 import { planOrderTransition } from './transitions.js';
 import type { TransitionRequest } from './transitions.js';
@@ -72,6 +80,8 @@ export interface TransitionOrderInput {
   stockDisposition?: StockDisposition;
   carrierDeliveryEvidence?: string;
   overrideWindow?: boolean;
+  overridePaymentGate?: boolean;
+  overrideReason?: string;
   actionType?: ActionType;
   metadata?: {
     trackingCode?: string | null;
@@ -85,6 +95,7 @@ export interface TransitionOrderInput {
 export interface AuthenticatedActor {
   uid: string;
   email: string;
+  displayName?: string;
   role: 'customer' | 'admin';
   isSuperAdmin?: boolean;
   permissions?: Record<string, boolean>;
@@ -115,6 +126,8 @@ export interface OrderServiceDependencies {
   updateUserRewardStats?: (uid: string, update: UserRewardStatsUpdate) => Promise<void>;
   getShippingConfig?: () => Promise<any | null>;
   getTiersConfig?: () => Promise<any | null>;
+  getRewardsConfig?: () => Promise<any | null>;
+  getPaymentConfig?: () => Promise<any | null>;
   getUserOrderCount?: (uid: string, discountCode?: string | null) => Promise<number>;
 }
 
@@ -128,6 +141,139 @@ export function isValidIdempotencyKey(value: unknown): value is string {
     value.length >= 1 &&
     value.length <= 200 &&
     /^[A-Za-z0-9._:-]+$/.test(value);
+}
+
+const TIER_RANK: Record<string, number> = {
+  bronze: 0,
+  silver: 1,
+  gold: 2,
+  diamond: 3,
+};
+
+function assertBoundedString(value: unknown, field: string, minLength: number, maxLength: number): void {
+  if (typeof value !== 'string' || value.trim().length < minLength || value.length > maxLength) {
+    throw new OrderServiceError(`${field} không hợp lệ.`, 'INVALID_ORDER_INPUT', 400);
+  }
+}
+
+function assertOptionalBoundedString(value: unknown, field: string, maxLength: number): void {
+  if (value !== undefined && value !== null && (typeof value !== 'string' || value.length > maxLength)) {
+    throw new OrderServiceError(`${field} không hợp lệ.`, 'INVALID_ORDER_INPUT', 400);
+  }
+}
+
+/** Validate untrusted checkout input before any product/config reads. */
+export function assertValidOrderInput(
+  input: any,
+  options: { requireIdempotencyKey?: boolean; requireShippingInfo?: boolean } = {},
+): void {
+  if (!input || typeof input !== 'object') {
+    throw new OrderServiceError('Dữ liệu đơn hàng không hợp lệ.', 'INVALID_ORDER_INPUT', 400);
+  }
+  if (!Array.isArray(input.items) || input.items.length < 1) {
+    throw new OrderServiceError('Giỏ hàng không được để trống.', 'EMPTY_CART', 400);
+  }
+  if (input.items.length > 50) {
+    throw new OrderServiceError('Giỏ hàng có quá nhiều sản phẩm.', 'CART_TOO_LARGE', 400);
+  }
+
+  for (const item of input.items) {
+    if (!item || typeof item !== 'object') {
+      throw new OrderServiceError('Sản phẩm trong giỏ không hợp lệ.', 'INVALID_ORDER_INPUT', 400);
+    }
+    assertBoundedString(item.productId, 'productId', 1, 150);
+    if (String(item.productId).includes('/')) {
+      throw new OrderServiceError('productId không hợp lệ.', 'INVALID_ORDER_INPUT', 400);
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 1000) {
+      throw new OrderServiceError('Số lượng sản phẩm không hợp lệ.', 'INVALID_QUANTITY', 400);
+    }
+    assertOptionalBoundedString(item.selectedBox, 'selectedBox', 200);
+    assertOptionalBoundedString(item.selectedLang, 'selectedLang', 100);
+    if (item.selectedVariants !== undefined && item.selectedVariants !== null) {
+      if (typeof item.selectedVariants !== 'object' || Array.isArray(item.selectedVariants)) {
+        throw new OrderServiceError('Biến thể sản phẩm không hợp lệ.', 'INVALID_PRODUCT_OPTION', 400);
+      }
+      const variantEntries = Object.entries(item.selectedVariants);
+      if (variantEntries.length > 20 || variantEntries.some(([key, value]) =>
+        key.length > 100 || typeof value !== 'string' || value.length > 200
+      )) {
+        throw new OrderServiceError('Biến thể sản phẩm không hợp lệ.', 'INVALID_PRODUCT_OPTION', 400);
+      }
+    }
+    if (item.quickAddAccessoryNames !== undefined && item.quickAddAccessoryNames !== null) {
+      if (!Array.isArray(item.quickAddAccessoryNames) || item.quickAddAccessoryNames.length > 20 ||
+          item.quickAddAccessoryNames.some((name: unknown) => typeof name !== 'string' || name.length > 200)) {
+        throw new OrderServiceError('Phụ kiện mua kèm không hợp lệ.', 'INVALID_PRODUCT_OPTION', 400);
+      }
+    }
+  }
+
+  if (input.shippingInfo !== undefined && input.shippingInfo !== null) {
+    if (typeof input.shippingInfo !== 'object' || Array.isArray(input.shippingInfo)) {
+      throw new OrderServiceError('Thông tin giao hàng không hợp lệ.', 'INVALID_SHIPPING_INFO', 400);
+    }
+    for (const [field, maxLength] of Object.entries({
+      fullName: 160,
+      phone: 40,
+      address: 300,
+      notes: 1000,
+      city: 120,
+      district: 120,
+      ward: 120,
+    })) {
+      const value = input.shippingInfo[field];
+      if ((field === 'fullName' || field === 'phone' || field === 'address') && options.requireShippingInfo) {
+        assertBoundedString(value, `shippingInfo.${field}`, 1, maxLength);
+      } else {
+        assertOptionalBoundedString(value, `shippingInfo.${field}`, maxLength);
+      }
+    }
+  } else if (options.requireShippingInfo) {
+    throw new OrderServiceError('Thông tin giao hàng không đầy đủ.', 'INVALID_SHIPPING_INFO', 400);
+  }
+
+  if (!['cod', 'vietqr'].includes(input.paymentMethod)) {
+    throw new OrderServiceError('Phương thức thanh toán không hợp lệ.', 'INVALID_PAYMENT_METHOD', 400);
+  }
+  if (input.discountCode !== undefined && input.discountCode !== null &&
+      (typeof input.discountCode !== 'string' || input.discountCode.length > 100)) {
+    throw new OrderServiceError('Mã giảm giá không hợp lệ.', 'INVALID_DISCOUNT_CODE', 400);
+  }
+  if (input.pointsToUse !== undefined && input.pointsToUse !== null &&
+      (!Number.isInteger(input.pointsToUse) || input.pointsToUse < 0 || input.pointsToUse > 1_000_000_000)) {
+    throw new OrderServiceError('Số điểm sử dụng không hợp lệ.', 'INVALID_POINTS', 400);
+  }
+  if (options.requireIdempotencyKey) {
+    if (!input.idempotencyKey) {
+      throw new OrderServiceError('Thiếu idempotencyKey.', 'MISSING_IDEMPOTENCY_KEY', 400);
+    }
+    if (!isValidIdempotencyKey(input.idempotencyKey)) {
+      throw new OrderServiceError('idempotencyKey không hợp lệ.', 'INVALID_IDEMPOTENCY_KEY', 400);
+    }
+  }
+}
+
+function assertTierEligible(product: any, userTier: string | undefined): void {
+  const requiredTier = typeof product?.minTierRequired === 'string'
+    ? product.minTierRequired.toLowerCase()
+    : '';
+  if (!requiredTier || TIER_RANK[requiredTier] === undefined) return;
+  const currentTier = String(userTier || 'bronze').toLowerCase();
+  if ((TIER_RANK[currentTier] ?? 0) < TIER_RANK[requiredTier]) {
+    throw new OrderServiceError(
+      `Sản phẩm yêu cầu hạng ${requiredTier} trở lên.`,
+      'TIER_REQUIRED',
+      403,
+    );
+  }
+}
+
+function safeNonNegativeNumber(value: unknown, fallback: number, maximum = Number.MAX_SAFE_INTEGER): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) && parsed >= 0
+    ? Math.min(maximum, parsed)
+    : fallback;
 }
 
 export class OrderServiceError extends Error {
@@ -186,6 +332,50 @@ function validateOrderMetadata(metadata: NonNullable<TransitionOrderInput['metad
   }
 }
 
+/** Validate transition fields before using untrusted API values in Firestore or the planner. */
+function assertValidTransitionInput(input: any): void {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new OrderServiceError('Dữ liệu chuyển trạng thái không hợp lệ.', 'INVALID_TRANSITION_INPUT', 400);
+  }
+
+  assertBoundedString(input.orderId, 'orderId', 1, 150);
+  if (input.orderId.includes('/')) {
+    throw new OrderServiceError('orderId không hợp lệ.', 'INVALID_TRANSITION_INPUT', 400);
+  }
+
+  const enumFields: Array<[string, unknown, readonly string[]]> = [
+    ['targetStatus', input.targetStatus, ORDER_STATUS],
+    ['paymentStatus', input.paymentStatus, PAYMENT_STATUS],
+    ['actionType', input.actionType, ACTION_TYPE],
+    ['returnReason', input.returnReason, RETURN_REASON],
+    ['stockDisposition', input.stockDisposition, STOCK_DISPOSITION],
+  ];
+  for (const [field, value, allowed] of enumFields) {
+    if (value !== undefined && value !== null && !allowed.some((candidate) => candidate === value)) {
+      throw new OrderServiceError(`${field} không hợp lệ.`, 'INVALID_TRANSITION_INPUT', 400);
+    }
+  }
+
+  assertOptionalBoundedString(input.cancelReason, 'cancelReason', 500);
+  assertOptionalBoundedString(input.carrierDeliveryEvidence, 'carrierDeliveryEvidence', 1000);
+  assertOptionalBoundedString(input.overrideReason, 'overrideReason', 500);
+
+  for (const field of ['overrideWindow', 'overridePaymentGate'] as const) {
+    if (input[field] !== undefined && input[field] !== null && typeof input[field] !== 'boolean') {
+      throw new OrderServiceError(`${field} không hợp lệ.`, 'INVALID_TRANSITION_INPUT', 400);
+    }
+  }
+
+  if (input.idempotencyKey !== undefined && !isValidIdempotencyKey(input.idempotencyKey)) {
+    throw new OrderServiceError('idempotencyKey không hợp lệ.', 'INVALID_IDEMPOTENCY_KEY', 400);
+  }
+
+  if (input.metadata !== undefined && input.metadata !== null &&
+      (typeof input.metadata !== 'object' || Array.isArray(input.metadata))) {
+    throw new OrderServiceError('Dữ liệu metadata đơn hàng không hợp lệ.', 'INVALID_ORDER_METADATA', 400);
+  }
+}
+
 function resolveTierForSpend(userProfile: any, totalSpent: number, tiersConfig: any): string | undefined {
   const configuredTiers = tiersConfig?.tiers;
   if (!configuredTiers) return userProfile?.tier;
@@ -214,21 +404,7 @@ export async function createOrder(
   const { uid, email } = actor;
 
   // 1. Basic validation
-  if (!input.items || !Array.isArray(input.items) || input.items.length === 0) {
-    throw new OrderServiceError('Giỏ hàng không được để trống.', 'EMPTY_CART', 400);
-  }
-  if (!input.shippingInfo || !input.shippingInfo.fullName || !input.shippingInfo.phone || !input.shippingInfo.address) {
-    throw new OrderServiceError('Thông tin giao hàng không đầy đủ.', 'INVALID_SHIPPING_INFO', 400);
-  }
-  if (!['cod', 'vietqr'].includes(input.paymentMethod)) {
-    throw new OrderServiceError('Phương thức thanh toán không hợp lệ.', 'INVALID_PAYMENT_METHOD', 400);
-  }
-  if (!input.idempotencyKey) {
-    throw new OrderServiceError('Thiếu idempotencyKey.', 'MISSING_IDEMPOTENCY_KEY', 400);
-  }
-  if (!isValidIdempotencyKey(input.idempotencyKey)) {
-    throw new OrderServiceError('idempotencyKey không hợp lệ.', 'INVALID_IDEMPOTENCY_KEY', 400);
-  }
+  assertValidOrderInput(input, { requireIdempotencyKey: true, requireShippingInfo: true });
 
   // 2. Read Idempotency Record
   const idempotencyRecordId = `idem_${uid}_create_${input.idempotencyKey}`;
@@ -264,6 +440,24 @@ export async function createOrder(
     throw new OrderServiceError('Tài khoản của bạn đã bị khóa.', 'ACCOUNT_BANNED', 403);
   }
 
+  const paymentConfig = deps.getPaymentConfig ? await deps.getPaymentConfig() : null;
+  if (input.paymentMethod === 'vietqr' && paymentConfig?.isActive === false) {
+    throw new OrderServiceError('Thanh toán VietQR hiện đang tạm ngưng.', 'PAYMENT_METHOD_DISABLED', 400);
+  }
+  const rewardsConfig = normalizeRewardsConfig(
+    deps.getRewardsConfig ? await deps.getRewardsConfig() : null,
+  );
+  if (input.pointsToUse && !rewardsConfig.isActive) {
+    throw new OrderServiceError('Tính năng sử dụng điểm hiện đang tạm ngưng.', 'POINTS_DISABLED', 400);
+  }
+  if (input.pointsToUse && input.pointsToUse < rewardsConfig.minPointsToUse) {
+    throw new OrderServiceError(
+      `Cần sử dụng tối thiểu ${rewardsConfig.minPointsToUse} điểm.`,
+      'MIN_POINTS_REQUIRED',
+      400,
+    );
+  }
+
   // 4. Read Products & Validate Stock
   const resolvedItems: OrderItem[] = [];
   const productCategoryMap = new Map<string, string>();
@@ -277,6 +471,7 @@ export async function createOrder(
     if (product.isActive === false) {
       throw new OrderServiceError(`Sản phẩm "${product.name}" hiện ngừng kinh doanh.`, 'PRODUCT_INACTIVE', 400);
     }
+    assertTierEligible(product, userProfile?.tier);
     if (Array.isArray(product.allowedPaymentMethods) && !product.allowedPaymentMethods.includes(input.paymentMethod)) {
       throw new OrderServiceError(
         `Sản phẩm "${product.name}" yêu cầu phương thức thanh toán khác.`,
@@ -339,8 +534,10 @@ export async function createOrder(
 
   // 5. Read Shipping Config
   const shippingConfig = deps.getShippingConfig ? await deps.getShippingConfig() : null;
-  const defaultShippingFee = shippingConfig?.defaultFee !== undefined ? shippingConfig.defaultFee : 30000;
-  const freeshipThreshold = shippingConfig?.freeshipThreshold !== undefined ? shippingConfig.freeshipThreshold : 500000;
+  const defaultShippingFee = safeNonNegativeNumber(shippingConfig?.defaultFee, 30000);
+  const freeshipThreshold = shippingConfig?.freeshipThreshold === null
+    ? null
+    : safeNonNegativeNumber(shippingConfig?.freeshipThreshold, 500000);
 
   // 6. Read Voucher
   let resolvedVoucher: any = null;
@@ -415,18 +612,24 @@ export async function createOrder(
     })),
     defaultShippingFee,
     shippingActive: shippingConfig?.isActive !== false,
-    hasFreeshipProduct: resolvedItems.some((item) => shippingConfig?.freeshipProductIds?.includes(item.productId)),
+    hasFreeshipProduct: Array.isArray(shippingConfig?.freeshipProductIds) &&
+      resolvedItems.some((item) => shippingConfig.freeshipProductIds.includes(item.productId)),
     freeshipThreshold,
     voucher: resolvedVoucher,
-    pointsToUse: pointsRequested,
+    pointsToUse: rewardsConfig.isActive ? pointsRequested : 0,
     userPointsBalance,
+    pointsRate: rewardsConfig.pointValueVND,
+    maxPointsDiscountPercent: rewardsConfig.maxDiscountPercentage,
   });
 
-  const actualPointsApplied = Math.floor(moneyBreakdown.pointsDiscountAmount / 1000);
-  const earnedPoints = calculateEarnedPoints({
-    rewardEligibleAmount: moneyBreakdown.rewardEligibleAmount,
-    tier: userProfile?.tier || 'bronze',
-  });
+  const actualPointsApplied = Math.floor(moneyBreakdown.pointsDiscountAmount / rewardsConfig.pointValueVND);
+  const earnedPoints = rewardsConfig.isActive
+    ? calculateEarnedPoints({
+        rewardEligibleAmount: moneyBreakdown.rewardEligibleAmount,
+        tier: userProfile?.tier || 'bronze',
+        tierMultipliers: rewardsConfig.tierMultipliers,
+      })
+    : 0;
 
   const orderId = generateOrderCode();
   const now = new Date().toISOString();
@@ -557,6 +760,7 @@ export async function transitionOrder(
   input: TransitionOrderInput,
   deps: OrderServiceDependencies
 ): Promise<{ order: OrderDocument; event: OrderEvent }> {
+  assertValidTransitionInput(input);
   const { orderId } = input;
 
   // 1. Read existing order
@@ -740,6 +944,7 @@ export async function transitionOrder(
     const nextRevision = (order.revision || 1) + 1;
     const orderUpdates: Partial<OrderDocument> = {
       paymentStatus: 'paid',
+      paidAmount: Math.max(0, order.paidAmount || order.finalAmount || 0),
       paymentConfirmedAt: now,
       revision: nextRevision,
       updatedAt: now,
@@ -783,6 +988,8 @@ export async function transitionOrder(
     stockDisposition: input.stockDisposition,
     carrierDeliveryEvidence: input.carrierDeliveryEvidence,
     overrideWindow: input.overrideWindow,
+    overridePaymentGate: input.overridePaymentGate,
+    overrideReason: input.overrideReason,
   };
 
   const plan = planOrderTransition(order, transitionReq);
@@ -895,6 +1102,9 @@ export async function transitionOrder(
     sideEffectsExecuted.push('voucher_restored');
   }
 
+  if (plan.sideEffects.setRefundPending) sideEffectsExecuted.push('refund_requested');
+  if (plan.sideEffects.setRefunded) sideEffectsExecuted.push('refund_completed');
+
   // 7. Compute updated order document
   const nextRevision = (order.revision || 1) + 1;
   const orderUpdates: Partial<OrderDocument> = {
@@ -904,8 +1114,9 @@ export async function transitionOrder(
     updatedAt: now,
   };
 
-  if (plan.toPaymentStatus === 'paid' && order.paymentStatus !== 'paid') {
+  if (plan.toPaymentStatus === 'paid' && (order.paymentStatus !== 'paid' || !(order.paidAmount > 0))) {
     orderUpdates.paymentConfirmedAt = now;
+    orderUpdates.paidAmount = Math.max(0, order.paidAmount || order.finalAmount || 0);
   }
 
   if (plan.toStatus === 'cancelled') {
@@ -928,11 +1139,12 @@ export async function transitionOrder(
     }
     if (plan.sideEffects.setPaymentPaid) {
       orderUpdates.paymentConfirmedAt = now;
+      orderUpdates.paidAmount = Math.max(0, order.paidAmount || order.finalAmount || 0);
     }
     orderUpdates.returnEligibleUntil = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
   } else if (plan.toStatus === 'returned') {
-    orderUpdates.returnReason = input.returnReason || 'other';
-    orderUpdates.stockDisposition = input.stockDisposition || 'sellable';
+    orderUpdates.returnReason = input.returnReason;
+    orderUpdates.stockDisposition = input.stockDisposition;
     if (plan.sideEffects.restoreStock) {
       orderUpdates.stockRestoredAt = now;
       orderUpdates.stockRestoredReason = 'customer_return';
@@ -943,6 +1155,19 @@ export async function transitionOrder(
     }
   } else if (plan.toStatus === 'refunded') {
     orderUpdates.refundedAt = now;
+    const paidAmount = Math.max(0, order.paidAmount || (order.paymentStatus === 'paid' ? order.finalAmount : 0));
+    const refundAmount = calculateRefundAmount({
+      order: {
+        paidAmount,
+        finalAmount: order.finalAmount,
+        shippingFee: order.shippingFee,
+        status: order.status,
+      },
+      reason: input.returnReason || order.returnReason,
+      isPreShipmentCancel: order.status === 'pending' || order.status === 'suspicious' || order.status === 'processing',
+    });
+    orderUpdates.paidAmount = paidAmount;
+    orderUpdates.refundAmount = Math.min(paidAmount, Math.max(0, refundAmount));
     if (plan.sideEffects.reverseReward) {
       orderUpdates.rewardReversedAt = now;
       orderUpdates.rewardReversalDebt = reversalDebt;
@@ -970,6 +1195,7 @@ export async function transitionOrder(
     fromPaymentStatus: plan.fromPaymentStatus,
     toPaymentStatus: plan.toPaymentStatus,
     sideEffectsExecuted,
+    reason: input.overrideReason || plan.reason,
     idempotencyKey: input.idempotencyKey,
     createdAt: now,
   };

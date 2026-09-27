@@ -9,6 +9,7 @@ import ProductReviews from './ProductReviews';
 import ProductCard from './ProductCard';
 import { cloudinaryUrl } from '../utils/cloudinaryUrl';
 import { useCart } from '../contexts/CartContext';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 export default function ProductDetail() {
   const { addToCart } = useCart();
@@ -174,7 +175,7 @@ export default function ProductDetail() {
                 src={cloudinaryUrl(activeImage, { width: 800, quality: 'auto:good' })} 
                 alt={product.name} 
                 // @ts-ignore
-                fetchpriority="high"
+                fetchPriority="high"
                 decoding="async"
                 className="w-full h-auto max-h-[600px] object-contain"
                 referrerPolicy="no-referrer"
@@ -531,7 +532,7 @@ export default function ProductDetail() {
           {product.description ? (
             <div 
               className="text-gray-800 dark:text-gray-200 leading-relaxed ck-content"
-              dangerouslySetInnerHTML={{ __html: product.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
             />
           ) : (
             <p className="text-gray-700 dark:text-zinc-300 leading-relaxed mb-6">
@@ -586,7 +587,7 @@ export default function ProductDetail() {
           <h4 className="text-emerald-700 dark:text-emerald-400 font-bold mb-2">Cam kết đóng gói chuẩn Sưu Tầm</h4>
           <p 
             className="text-emerald-800/80 dark:text-emerald-200/70 text-sm leading-relaxed ck-content"
-            dangerouslySetInnerHTML={{ __html: siteConfig?.packagingCommitment || 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(siteConfig?.packagingCommitment || 'Chúng tôi hiểu hộp game nguyên vẹn quan trọng thế nào với người chơi. Mọi đơn hàng đều được bọc <strong>3 lớp xốp bóng khí chống sốc</strong> và đặt trong <strong>hộp carton cứng cáp</strong>. Hoàn tiền 100% nếu hộp game bị móp méo do vận chuyển!') }}
           />
         </div>
       </div>

@@ -164,7 +164,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     validation.value.category,
     {
       role: profile.role,
-      isSuperAdmin: profile.isSuperAdmin,
       adminPermissions: profile.adminPermissions as Record<string, unknown> | null | undefined,
     },
     { super_admin: decodedToken.super_admin },
@@ -197,6 +196,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       Bucket: r2.bucketName,
       Key: objectKey,
       ContentType: validation.value.contentType,
+      // Bind the presigned request to the already validated size. S3/R2 will
+      // reject a PUT whose Content-Length differs from this signature.
+      ContentLength: validation.value.size,
       CacheControl: MEDIA_CACHE_CONTROL,
     });
     const uploadUrl = await getSignedUrl(r2.client, command, { expiresIn: PRESIGNED_URL_TTL_SECONDS });

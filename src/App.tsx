@@ -19,6 +19,7 @@ import { Product, CartItem } from './types';
 import { useSiteConfig } from './hooks/useSiteConfig';
 import { PageLoader } from './components/ui/PageLoader';
 import { useDeltaSync } from './hooks/useDeltaSync';
+import { applySWUpdateAndReload } from './utils/swRegister';
 
 // Lazy load components
 const Home = lazy(() => import('./components/Home'));
@@ -49,12 +50,26 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 
 // ――― Force Update Overlay Component ―――
 function ForceUpdateOverlay({ reason }: { reason: 'build' | 'data' }) {
+  const [reloading, setReloading] = useState(false);
+
+  const handleReload = async () => {
+    if (reloading) return;
+    setReloading(true);
+    if (reason === 'build') {
+      await applySWUpdateAndReload();
+      return;
+    }
+    window.location.reload();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center"
+      className="pointer-events-auto fixed inset-0 z-[99999] flex items-center justify-center"
       style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', background: 'rgba(0,0,0,0.6)' }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.preventDefault()}
+      role="dialog"
+      aria-modal="true"
     >
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-700 p-8 max-w-md mx-4 text-center animate-in fade-in zoom-in duration-300">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-3xl">
@@ -69,10 +84,12 @@ function ForceUpdateOverlay({ reason }: { reason: 'build' | 'data' }) {
             : 'Dữ liệu cửa hàng đã có sự thay đổi (giá mới, tồn kho,...). Vui lòng tải lại trang để cập nhật thông tin chính xác.'}
         </p>
         <button
-          onClick={() => window.location.reload()}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-indigo-500/25 active:scale-95"
+          type="button"
+          onClick={handleReload}
+          disabled={reloading}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-70 text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-indigo-500/25 active:scale-95"
         >
-          Tải lại trang ngay
+          {reloading ? 'Đang tải phiên bản mới…' : 'Tải lại trang ngay'}
         </button>
         <p className="text-xs text-slate-400 dark:text-zinc-500 mt-3">Bạn cần tải lại để tiếp tục sử dụng.</p>
       </div>
@@ -95,8 +112,12 @@ export default function App() {
     if (!import.meta.env.PROD) return;
 
     const handleSWUpdate = () => setUpdateOverlay('build');
+    window.addEventListener('sw-update-ready', handleSWUpdate);
     window.addEventListener('sw-updated', handleSWUpdate);
-    return () => window.removeEventListener('sw-updated', handleSWUpdate);
+    return () => {
+      window.removeEventListener('sw-update-ready', handleSWUpdate);
+      window.removeEventListener('sw-updated', handleSWUpdate);
+    };
   }, []);
 
   // Test Firebase Connection
@@ -137,7 +158,7 @@ export default function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
-            <div className={`bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 transition-colors duration-200 flex flex-col min-h-screen pb-20 lg:pb-0 ${updateOverlay ? 'pointer-events-none select-none' : ''}`} style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+            <div className="bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-zinc-50 font-sans selection:bg-red-500/30 transition-colors duration-200 flex flex-col min-h-screen pb-20 lg:pb-0" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
               {updateOverlay && <ForceUpdateOverlay reason={updateOverlay} />}
               <Header />
               

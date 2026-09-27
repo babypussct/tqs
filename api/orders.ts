@@ -74,9 +74,12 @@ async function notifyTelegramNewOrder(order: OrderDocument): Promise<void> {
     } else {
       inlineButtons.push([{ text: '💰 Đã thu COD', callback_data: `action:paid:${order.id}` }]);
     }
-    inlineButtons.push([{ text: '🔧 Đang chuẩn bị', callback_data: `action:processing:${order.id}` }]);
-    inlineButtons.push([{ text: '🚚 Chuyển Đang Giao', callback_data: `action:shipped:${order.id}` }]);
-    inlineButtons.push([{ text: '✅ Đã giao thành công', callback_data: `action:delivered:${order.id}` }]);
+    // VietQR cannot move to processing/shipped/delivered until the payment
+    // command has confirmed the transfer. The callback service enforces this
+    // again; these buttons are merely kept in sync with that rule.
+    if (order.paymentMethod !== 'vietqr') {
+      inlineButtons.push([{ text: '🔧 Đang chuẩn bị', callback_data: `action:processing:${order.id}` }]);
+    }
     inlineButtons.push([{ text: '❌ Hủy đơn', callback_data: `action:cancelled:${order.id}` }]);
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -120,8 +123,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ─── Route: GET /api/orders?orderId=... ───
   if (req.method === 'GET') {
-    const orderId = req.query.orderId as string;
-    if (!orderId) {
+    const orderId = typeof req.query.orderId === 'string' ? req.query.orderId.trim() : '';
+    if (!orderId || orderId.length > 150 || orderId.includes('/')) {
       return res.status(400).json({ success: false, code: 'MISSING_ORDER_ID', message: 'Thiếu orderId' });
     }
 
@@ -161,7 +164,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
         return res.status(200).json({ success: true, quote });
       } catch (error) {
-        const code = error instanceof Error ? error.message : 'QUOTE_FAILED';
+        const code = error instanceof OrderServiceError
+          ? error.code
+          : error instanceof Error
+          ? error.message
+          : 'QUOTE_FAILED';
         const messages: Record<string, string> = {
           EMPTY_CART: 'Giỏ hàng không được để trống.',
           INVALID_SHIPPING_INFO: 'Thông tin giao hàng chưa đầy đủ.',
@@ -179,6 +186,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           PRODUCT_INACTIVE: 'Một sản phẩm trong giỏ đã ngừng kinh doanh.',
           INSUFFICIENT_STOCK: 'Một sản phẩm trong giỏ không đủ tồn kho.',
           PRODUCT_PAYMENT_METHOD_NOT_ALLOWED: 'Phương thức thanh toán không phù hợp với sản phẩm trong giỏ.',
+          CART_TOO_LARGE: 'Giỏ hàng có quá nhiều sản phẩm.',
+          INVALID_ORDER_INPUT: 'Dữ liệu đơn hàng không hợp lệ.',
+          INVALID_QUANTITY: 'Số lượng sản phẩm không hợp lệ.',
+          INVALID_POINTS: 'Số điểm sử dụng không hợp lệ.',
+          TIER_REQUIRED: 'Một sản phẩm trong giỏ yêu cầu hạng thành viên cao hơn.',
+          PAYMENT_METHOD_DISABLED: 'Phương thức thanh toán này hiện đang tạm ngưng.',
+          POINTS_DISABLED: 'Tính năng sử dụng điểm hiện đang tạm ngưng.',
+          MIN_POINTS_REQUIRED: 'Số điểm sử dụng chưa đạt mức tối thiểu.',
         };
         return res.status(400).json({ success: false, code, message: messages[code] || 'Không thể tính lại đơn hàng.' });
       }
@@ -222,6 +237,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         stockDisposition: body.stockDisposition,
         carrierDeliveryEvidence: body.carrierDeliveryEvidence,
         overrideWindow: body.overrideWindow,
+        overridePaymentGate: body.overridePaymentGate,
+        overrideReason: body.overrideReason,
         actionType: body.actionType,
         metadata: body.metadata,
       };

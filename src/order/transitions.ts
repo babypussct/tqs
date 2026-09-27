@@ -36,6 +36,8 @@ export interface TransitionRequest {
   stockDisposition?: StockDisposition;
   carrierDeliveryEvidence?: string;
   overrideWindow?: boolean;
+  overridePaymentGate?: boolean;
+  overrideReason?: string;
 }
 
 export interface PlannedSideEffects {
@@ -130,6 +132,54 @@ export function planOrderTransition(
     }
   }
 
+  // Direct delivered -> refunded is an emergency shortcut. It cannot be used
+  // by a normal admin to skip the return/inspection workflow.
+  if (targetStatus === 'refunded' && currentStatus === 'delivered') {
+    if (actorType !== 'super_admin' || !request.overrideReason?.trim()) {
+      throw new TransitionError(
+        'Direct delivered to refunded requires a super-admin and an audit reason.',
+        'SUPER_ADMIN_REFUND_REASON_REQUIRED',
+        403,
+      );
+    }
+  }
+
+  // A payment status cannot be forged as part of an ordinary status update.
+  // The verified payment command is the only normal path that may mark paid.
+  if (
+    request.paymentStatus === 'paid' &&
+    !['confirm_payment'].includes(request.actionType) &&
+    actorType !== 'payment_provider' &&
+    actorType !== 'system'
+  ) {
+    throw new TransitionError(
+      'Payment must be confirmed by the dedicated payment command.',
+      'PAYMENT_CONFIRMATION_REQUIRED',
+      403,
+    );
+  }
+
+  const requestedPaymentStatus = request.paymentStatus || order.paymentStatus;
+  const vietQrNeedsPaid = order.paymentMethod === 'vietqr' &&
+    ['processing', 'shipped', 'delivered'].includes(targetStatus) &&
+    requestedPaymentStatus !== 'paid';
+  if (vietQrNeedsPaid && !(actorType === 'super_admin' && request.overridePaymentGate && request.overrideReason?.trim())) {
+    throw new TransitionError(
+      'Đơn VietQR phải được xác nhận đã thanh toán trước khi xử lý/giao hàng.',
+      'VIETQR_PAYMENT_REQUIRED',
+      409,
+    );
+  }
+
+  if (targetStatus === 'returned') {
+    if (!request.returnReason) {
+      throw new TransitionError('Thiếu lý do hoàn hàng.', 'RETURN_REASON_REQUIRED', 400);
+    }
+    if (!request.stockDisposition) {
+      throw new TransitionError('Thiếu kết quả kiểm hàng để quyết định hoàn kho.', 'STOCK_DISPOSITION_REQUIRED', 400);
+    }
+  }
+
   // 5. Plan Side Effects (Guarded against duplicate execution)
   const sideEffects: PlannedSideEffects = {
     restoreStock: false,
@@ -198,8 +248,15 @@ export function planOrderTransition(
 
   // D. Refund completion
   if (targetStatus === 'refunded') {
-    sideEffects.setRefunded = true;
-    targetPaymentStatus = 'refunded';
+    // COD orders can be closed after a physical return even when no money was
+    // collected. In that case status becomes refunded but payment remains
+    // pending; `refunded` is reserved for an actual payment confirmation.
+    if (order.paymentStatus === 'paid' || order.paidAmount > 0) {
+      sideEffects.setRefunded = true;
+      targetPaymentStatus = 'refunded';
+    } else {
+      targetPaymentStatus = order.paymentStatus;
+    }
     // If returning directly from delivered (emergency exception)
     if (order.rewardGrantedAt && !order.rewardReversedAt) {
       sideEffects.reverseReward = true;

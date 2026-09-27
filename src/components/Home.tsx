@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import * as Icons from 'lucide-react';
 import Hero from './Hero';
 import TrustBadges from './TrustBadges';
 import ProductCard from './ProductCard';
 import { useProducts } from '../hooks/useProducts';
 import { useHomepage } from '../hooks/useHomepage';
 import { useCart } from '../contexts/CartContext';
+import { resolveHomeIcon } from './ui/homeIcons';
 
 export default function Home() {
   const { addToCart } = useCart();
@@ -37,7 +37,7 @@ export default function Home() {
         ) : (
           <>
             {config.sections.map((section) => {
-              const Icon = (Icons as any)[section.icon] || Icons.Star;
+              const Icon = resolveHomeIcon(section.icon);
               const sectionProducts = section.typeFilter === 'all' 
                 ? products.slice(0, 4)
                 : products.filter(p => p.type === section.typeFilter).slice(0, 4);
