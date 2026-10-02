@@ -1,0 +1,13 @@
+{
+  "banWords": [],
+  "description": "Private Hegemony test server",
+  "iconUrl": "default",
+  "capacity": 10,
+  "tempBanTime": 20,
+  "motd": "Private group server. English package; admin managed.",
+  "hiddenPacks": [],
+  "enableBots": true,
+  "enableWhitelist": false,
+  "roomCountPerThread": 32,
+  "maxPlayersPerDevice": 2
+}
