@@ -132,10 +132,16 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') return res.writeHead(204).end();
   if (req.method !== 'GET' && req.method !== 'HEAD') return res.writeHead(405).end();
 
-  const url = new URL(req.url ?? '/', 'http://localhost');
-  const p = decodeURIComponent(url.pathname);
-
   try {
+    // A malformed percent-encoded request path is client input, not an
+    // exception that should crash the entire gateway process.
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    let p;
+    try {
+      p = decodeURIComponent(url.pathname);
+    } catch {
+      return res.writeHead(400).end();
+    }
     if (p === '/healthz') {
       return res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok');
     }
@@ -146,12 +152,17 @@ const server = http.createServer((req, res) => {
         .end(JSON.stringify(manifest));
     }
     if (p === '/bundle.zip') {
-      const { zip } = getCache();
+      const { zip, manifest } = getCache();
+      const requestedVersion = url.searchParams.get('v');
+      // Never label a different bundle immutable under an obsolete URL.
+      if (requestedVersion !== null && requestedVersion !== manifest.bundleHash) {
+        return res.writeHead(404, { 'Cache-Control': 'no-store' }).end();
+      }
       return res
         .writeHead(200, {
           'Content-Type': 'application/zip',
           'Content-Length': zip.length,
-          'Cache-Control': url.searchParams.has('v') ? 'public, max-age=31536000, immutable' : 'no-cache',
+          'Cache-Control': requestedVersion ? 'public, max-age=31536000, immutable' : 'no-cache',
         })
         .end(zip);
     }

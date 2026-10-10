@@ -31,12 +31,23 @@ type FS = {
   cwd(): string;
   readdir(p: string): string[];
   stat(p: string): { mode: number };
-  isDir(mode: number): boolean;
   mkdirTree?(p: string): void;
   mkdir(p: string): void;
   writeFile(p: string, d: Uint8Array | string): void;
-  analyzePath(p: string): { exists: boolean };
 };
+
+function pathExists(fs: FS, pathname: string): boolean {
+  try {
+    fs.stat(pathname);
+    return true;
+  } catch (error) {
+    // Only a missing path means false. Propagate permission / IO failures.
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+      return false;
+    }
+    throw error;
+  }
+}
 
 export class LuaRuntime {
   private engine!: LuaEngine;
@@ -58,7 +69,7 @@ export class LuaRuntime {
       if (dirs.has(dir) || dir === '' || dir === '/') return;
       const parent = dir.slice(0, dir.lastIndexOf('/'));
       mkdirp(parent);
-      if (!this.fs.analyzePath(dir).exists) this.fs.mkdir(dir);
+      if (!pathExists(this.fs, dir)) this.fs.mkdir(dir);
       dirs.add(dir);
     };
     for (const [rel, content] of files) {
@@ -77,6 +88,12 @@ export class LuaRuntime {
       injectObjects: false,
       enableProxy: false,
     });
+
+    // Wasmoon 1.16 exposes the LuaWasm used by the engine as `cmodule`.
+    // A separate module would silently lose files mounted before engine boot.
+    if ((this.engine as unknown as { cmodule?: unknown }).cmodule !== wasm) {
+      throw new Error('Wasmoon engine and mounted filesystem use different modules');
+    }
 
     const cb = this.opts.callbacks;
     const fs = this.fs;
@@ -100,10 +117,12 @@ export class LuaRuntime {
           return '';
         }
       },
-      exists: (p: string) => fs.analyzePath(resolve(p)).exists,
+      exists: (p: string) => pathExists(fs, resolve(p)),
       isDir: (p: string) => {
         try {
-          return fs.isDir(fs.stat(resolve(p)).mode);
+          // Wasmoon 1.16 exposes FS.stat(), but not Emscripten's FS.isDir().
+          // Decode the POSIX file-type bits (S_IFMT / S_IFDIR) directly.
+          return (fs.stat(resolve(p)).mode & 0o170000) === 0o040000;
         } catch {
           return false;
         }

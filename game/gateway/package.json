@@ -5,7 +5,8 @@
   "type": "module",
   "description": "WebSocket <-> TCP/CBOR bridge and Lua bundle server for the TQS web client (FreeKill backend).",
   "scripts": {
-    "start": "node src/server.mjs"
+    "start": "node src/server.mjs",
+    "test": "node --test scripts/gateway.test.mjs"
   },
   "engines": {
     "node": ">=20"

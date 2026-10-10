@@ -40,6 +40,8 @@ export interface Packet {
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
+const MAX_PACKET_BYTES = 4 * 1024 * 1024;
+const MAX_DECOMPRESSED_BYTES = 8 * 1024 * 1024;
 
 // ------------------------------------------------------------ encoding --
 
@@ -119,11 +121,14 @@ export function encodePacket(p: Packet): Uint8Array {
   return w.result();
 }
 
-/** CBOR array of text items, used by the login `Setup` payload. */
+/** CBOR login fields: strings are text, RSA ciphertext is a byte string. */
 export function encodeTextArray(items: (string | Uint8Array)[]): Uint8Array {
   const w = new Writer();
   w.head(4, items.length);
-  for (const it of items) w.text(it);
+  for (const it of items) {
+    if (typeof it === 'string') w.text(it);
+    else w.bytes(it);
+  }
   return w.result();
 }
 
@@ -148,9 +153,10 @@ class Reader {
     const n = ai === 24 ? 1 : ai === 25 ? 2 : ai === 26 ? 4 : ai === 27 ? 8 : -1;
     if (n < 0) throw new Error(`unsupported CBOR additional info ${ai}`);
     this.need(n);
-    let v = 0;
-    for (let i = 0; i < n; i++) v = v * 256 + this.b[this.pos++];
-    return { major, value: v };
+    let v = 0n;
+    for (let i = 0; i < n; i++) v = v * 256n + BigInt(this.b[this.pos++]);
+    if (v > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('CBOR integer exceeds JS safe range');
+    return { major, value: Number(v) };
   }
 
   int(): number {
@@ -163,6 +169,7 @@ class Reader {
   bytes(): Uint8Array {
     const { major, value } = this.head();
     if (major !== 2 && major !== 3) throw new Error(`expected bytes, got major ${major}`);
+    if (value > MAX_PACKET_BYTES) throw new Error('CBOR byte string too large');
     this.need(value);
     const out = this.b.subarray(this.pos, this.pos + value);
     this.pos += value;
@@ -171,8 +178,12 @@ class Reader {
 }
 
 function qUncompress(data: Uint8Array): Uint8Array {
-  if (data.length < 4) return new Uint8Array();
-  return unzlibSync(data.subarray(4));
+  if (data.length < 4) throw new Error('truncated compressed packet');
+  const expected = new DataView(data.buffer, data.byteOffset, 4).getUint32(0);
+  if (expected > MAX_DECOMPRESSED_BYTES) throw new Error('decompressed packet too large');
+  const result = unzlibSync(data.subarray(4), { out: new Uint8Array(expected) });
+  if (result.length !== expected) throw new Error('compressed packet length mismatch');
+  return result;
 }
 
 /** Incremental decoder for the TCP/WebSocket byte stream. */
@@ -180,6 +191,9 @@ export class PacketStream {
   private pending = new Uint8Array(0);
 
   push(chunk: Uint8Array): Packet[] {
+    if (chunk.length + this.pending.length > MAX_PACKET_BYTES) {
+      throw new Error('CBOR stream exceeds size limit');
+    }
     if (this.pending.length === 0) {
       this.pending = chunk;
     } else {

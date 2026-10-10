@@ -4,11 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/prepare-wasm.mjs",
     "dev": "vite --host 0.0.0.0 --port 5174",
+    "prebuild": "node scripts/prepare-wasm.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 5174",
     "typecheck": "tsc --noEmit",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:live": "tsx scripts/smoke.ts --live",
+    "test:protocol": "tsx --test scripts/protocol.test.ts",
+    "test:connection": "tsx --test scripts/connection.test.ts",
+    "test:store": "tsx --test scripts/store.test.ts",
+    "test:bundle": "tsx --test scripts/bundle.test.ts",
+    "test:e2e": "node scripts/e2e-placeholder.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",

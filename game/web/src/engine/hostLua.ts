@@ -196,32 +196,103 @@ fk.Player = FPlayer
 -- -------------------------------------------------------- JS entrypoints --
 
 local function report(err)
-  J.log("error", debug.traceback(tostring(err), 2))
+  local detail = debug.traceback(tostring(err), 2)
+  J.log("error", detail)
+  return detail
 end
 
 function __host_recv(command, hex, is_request)
-  xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
+  local ok, err = xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
+  if not ok then error(tostring(err), 0) end
 end
 
 -- Evaluate a Lua chunk and return its result as JSON. Used by the UI for
 -- read-only queries such as general/card/skill data.
 function __host_eval(code)
   local fn, err = load(code, "=ui", "t")
-  if not fn then report(err); return "null" end
+  if not fn then error(report(err), 0) end
   local ok, ret = xpcall(fn, report)
-  if not ok then return "null" end
+  if not ok then error(tostring(ret), 0) end
   local ok2, s = pcall(to_json, ret)
-  return ok2 and s or "null"
+  if not ok2 then error(report(s), 0) end
+  return s
 end
 
 -- Call a global function by name with JSON-encoded argument array.
 function __host_call(name, args_json)
   local f = _G[name]
-  if type(f) ~= "function" then report("no such Lua function: " .. tostring(name)); return "null" end
+  if type(f) ~= "function" then error(report("no such Lua function: " .. tostring(name)), 0) end
   local args = json.decode(args_json)
   local ok, ret = xpcall(f, report, table.unpack(args, 1, #args))
-  if not ok then return "null" end
+  if not ok then error(tostring(ret), 0) end
   local ok2, s = pcall(to_json, ret)
-  return ok2 and s or "null"
+  if not ok2 then error(report(s), 0) end
+  return s
+end
+
+-- Browser UI actions use the same native Lua CBOR encoder as the Qt client.
+-- Arguments arrive as JSON through __host_call; no Lua source is interpolated
+-- from user inputs such as room names or passwords.
+function __web_notify(command, data)
+  if type(command) ~= 'string' or command == '' then
+    error('invalid command')
+  end
+  __host_client:notifyServer(command, cbor.encode(data))
+  return true
+end
+
+-- QML sends its reply payload through the native client as CBOR bytes.
+-- In particular, the skill-invoke handler returns the strings "1" or
+-- "__cancel"; passing raw UTF-8 would be interpreted as invalid CBOR by
+-- Request:_checkReply on the server.
+function __web_reply(data)
+  if type(data) ~= 'string' then error('invalid reply value') end
+  __host_client:replyToServer('', cbor.encode(data))
+  return true
+end
+
+-- Use FreeKill's actual Hegemony rules, including wild/subkingdom handling.
+-- Reject pairs which match nominally but have no enabled common kingdom.
+function __web_general_kingdoms(main, deputy, enabled)
+  if type(main) ~= 'string' or type(deputy) ~= 'string' or main == deputy or
+     type(enabled) ~= 'table' or not Fk.generals[main] or not Fk.generals[deputy] then
+    return {}
+  end
+  if not Fk:canMatchInHegemony(main, deputy, enabled) then return {} end
+  return Fk:getKingdomInHegemony(main, deputy, enabled)
+end
+
+function __web_general_labels(generals)
+  local labels = {}
+  for i, name in ipairs(generals) do labels[i] = Fk:translate(name) end
+  return labels
+end
+
+local function general_reply_data(main, deputy, kingdom, enabled)
+  if type(kingdom) ~= 'string' or kingdom == '' or kingdom:find(',', 1, true) then
+    error('invalid kingdom')
+  end
+  local kingdoms = __web_general_kingdoms(main, deputy, enabled)
+  if not table.contains(kingdoms, kingdom) then error('invalid hegemony general pair') end
+  return {main .. ',' .. deputy, 'kingdom,' .. kingdom}
+end
+
+-- Pure expected-wire calculation, then the separately authorized send.
+-- The server splits BOTH array elements on commas after CBOR decoding.
+function __web_general_reply_hex(main, deputy, kingdom, enabled)
+  return bin2hex(cbor.encode(general_reply_data(main, deputy, kingdom, enabled)))
+end
+
+function __web_general_reply(main, deputy, kingdom, enabled)
+  __host_client:replyToServer('', cbor.encode(general_reply_data(main, deputy, kingdom, enabled)))
+  return true
+end
+
+function __web_room_feasible(mode, player_num, timeout)
+  local m = Fk.game_modes[mode]
+  if not m then return false end
+  local settings = { playerNum = player_num, timeout = timeout, gameMode = mode,
+    _game = {}, _mode = {} }
+  return m:feasible(settings)
 end
 `;
