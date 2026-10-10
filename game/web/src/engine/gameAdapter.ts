@@ -2,6 +2,7 @@ import { loadGatewayBundle, type LoadedBundle } from './bundle';
 import { GameConnection, webSocketOpener } from './connection';
 import { useGameStore } from '../store/gameStore';
 import { emptyBoard } from '../store/boardState';
+import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
 
 export interface GameModeInfo {
   name: string;
@@ -45,6 +46,7 @@ export class GameAdapter {
     const store = useGameStore.getState();
     store.update({ progress: 'Đang khởi tạo Lua WASM…', error: null,
       phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], ownId: null, board: emptyBoard() });
+    useGameStore.getState().update({ gameplay: emptyGameplay() });
 
     // Keep credentials in the connection only. Neither Zustand nor browser
     // storage receives them; this server auto-registers unknown usernames.
@@ -72,11 +74,12 @@ export class GameAdapter {
           useGameStore.getState().update({ ownId });
           this.refreshRooms();
         }
-        if (status.kind === 'closed') useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, initialGeneral: null, board: emptyBoard(), error: status.reason });
+        if (status.kind === 'closed') useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, initialGeneral: null,
+          board: emptyBoard(), gameplay: emptyGameplay(), error: status.reason });
       },
       onRequest: (request) => {
         if (generation === this.generation) useGameStore.getState().update({ pendingRequest: request,
-          ...(!request ? { skillInvoke: null, initialGeneral: null } : {}) });
+          ...(!request ? { skillInvoke: null, initialGeneral: null, gameplay: emptyGameplay() } : {}) });
       },
       log: (level, msg) => {
         if (level === 'error') console.error(`[FreeKill Lua] ${msg}`);
@@ -134,6 +137,11 @@ export class GameAdapter {
   /** Forward only a user's explicit decision to the current Lua request. */
   sendUiAction(requestId: number, choice: 'OK' | 'Cancel') {
     this.requireConnection().respondToSkillInvoke(requestId, choice);
+  }
+
+  updateRequestUI(requestId: number, type: GameplayItemType, id: string | number,
+    action: 'click' | 'finish', data: unknown) {
+    this.requireConnection().updateRequestUI(requestId, type, id, action, data);
   }
 
   getInitialGeneralKingdoms(requestId: number, main: string, deputy: string) {

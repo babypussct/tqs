@@ -246,9 +246,16 @@ end
 -- "__cancel"; passing raw UTF-8 would be interpreted as invalid CBOR by
 -- Request:_checkReply on the server.
 function __web_reply(data)
-  if type(data) ~= 'string' then error('invalid reply value') end
+  if type(data) ~= 'string' and type(data) ~= 'table' then error('invalid reply value') end
   __host_client:replyToServer('', cbor.encode(data))
   return true
+end
+
+-- The transport compares the wire representation independently before it
+-- authorizes any reply. Both functions use the same Lua CBOR implementation.
+function __web_reply_hex(data)
+  if type(data) ~= 'string' and type(data) ~= 'table' then error('invalid reply value') end
+  return bin2hex(cbor.encode(data))
 end
 
 -- Use FreeKill's actual Hegemony rules, including wild/subkingdom handling.

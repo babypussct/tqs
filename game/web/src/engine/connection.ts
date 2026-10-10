@@ -8,6 +8,8 @@
 import forge from 'node-forge';
 import { LuaRuntime } from './luaRuntime';
 import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from './generalSelection';
+import { emptyGameplay, getGameplayItem, reduceGameplay, GAMEPLAY_REQUESTS,
+  type GameplayItemType, type GameplayScene } from '../store/gameplayState';
 import {
   CLIENT_NOTIFY,
   CLIENT_REPLY,
@@ -70,7 +72,9 @@ export class GameConnection {
   private stream = new PacketStream();
   private pendingRequest: RequestInfo | null = null;
   private authorizedRequest: RequestInfo | null = null;
-  private capturedReply: '1' | '__cancel' | null = null;
+  private capturedReply: unknown = null;
+  private gameplayScene: GameplayScene = emptyGameplay();
+  private receivingRequestCommand: string | null = null;
   private initialGeneralPrompt: InitialGeneralPrompt | null = null;
   private expectedReplyHex: string | null = null;
   private completedAuthorizedReply: RequestInfo | null = null;
@@ -112,7 +116,69 @@ export class GameConnection {
     this.expectedReplyHex = null;
     this.completedAuthorizedReply = null;
     this.sendingAuthorizedReply = false;
+    this.gameplayScene = emptyGameplay();
     this.opts.onRequest?.(null);
+  }
+
+  /** A UI click changes Lua's scene; only Lua may decide when to reply. */
+  updateRequestUI(requestId: number, type: GameplayItemType, id: string | number,
+    action: 'click' | 'finish', data: unknown) {
+    const pending = this.pendingRequest;
+    if (this.status.kind !== 'online' || !this.socket || !pending ||
+        pending.requestId !== requestId || !GAMEPLAY_REQUESTS.has(pending.command)) {
+      throw new Error('Yêu cầu gameplay không còn hiệu lực');
+    }
+    if (pending.expiresAt !== null && Date.now() >= pending.expiresAt) {
+      this.clearRequest();
+      throw new Error('Yêu cầu gameplay đã hết thời gian');
+    }
+    if (this.authorizedRequest !== null) throw new Error('Đang xử lý câu trả lời');
+    const item = getGameplayItem(this.gameplayScene, type, id);
+    if (!item?.enabled || item.id !== id) throw new Error('Lựa chọn không được Lua cho phép');
+    if (type === 'CardItem' || type === 'Photo' || type === 'SkillButton') {
+      if (action !== 'click' || !data || typeof data !== 'object' ||
+          (data as { selected?: unknown }).selected !== !item.selected) {
+        throw new Error('Trạng thái lựa chọn không hợp lệ');
+      }
+      data = { selected: !item.selected };
+    } else if (type === 'Button') {
+      if (action !== 'click' || !['OK', 'Cancel', 'End'].includes(String(id)))
+        throw new Error('Nút gameplay không hợp lệ');
+      data = {};
+    } else if (type === 'SpecialSkills') {
+      if (action !== 'click' || typeof data !== 'string' || !item.skills?.includes(data))
+        throw new Error('Kỹ năng đặc biệt không hợp lệ');
+    } else if (type === 'Interaction') {
+      if (action !== 'finish' && action !== 'click') throw new Error('Tương tác không hợp lệ');
+      if (JSON.stringify(data)?.length > 4096) throw new Error('Dữ liệu tương tác quá dài');
+    }
+
+    this.authorizedRequest = pending;
+    this.capturedReply = null;
+    try {
+      this.lua.call('UpdateRequestUI', type, id, action, data);
+      if (this.pendingRequest !== pending || this.status.kind !== 'online') {
+        throw new Error('Yêu cầu gameplay đã thay đổi trong lúc xử lý');
+      }
+      if (this.capturedReply !== null) {
+        const response = this.capturedReply;
+        this.expectedReplyHex = this.lua.call<string>('__web_reply_hex', response).toLowerCase();
+        this.sendingAuthorizedReply = true;
+        try { this.lua.call('__web_reply', response); }
+        finally { this.sendingAuthorizedReply = false; }
+        if (this.completedAuthorizedReply !== pending) {
+          throw new Error('Phản hồi gameplay chưa đến máy chủ');
+        }
+      }
+    } catch (error) {
+      if (this.pendingRequest === pending) this.clearRequest();
+      throw error;
+    } finally {
+      this.authorizedRequest = null;
+      this.capturedReply = null;
+      this.expectedReplyHex = null;
+      this.completedAuthorizedReply = null;
+    }
   }
 
   /** Only a deliberate button click may send a reply to the active Lua request. */
@@ -216,6 +282,11 @@ export class GameConnection {
           this.authorizedRequest === pending && this.capturedReply === null &&
           (data === '1' || data === '__cancel')) {
         this.capturedReply = data;
+      } else if (pending && GAMEPLAY_REQUESTS.has(pending.command) &&
+          this.authorizedRequest === pending && this.capturedReply === null &&
+          (typeof data === 'string' || (data !== null && typeof data === 'object' &&
+            JSON.stringify(data).length <= 16384))) {
+        this.capturedReply = data;
       } else {
         this.opts.log?.('warn', 'Ignored gameplay reply without a matching user action');
       }
@@ -223,6 +294,11 @@ export class GameConnection {
     }
     if (command === 'CancelRequest' || command === 'StartGame' ||
         command === 'GameOver' || command === 'EnterLobby') this.clearRequest();
+    if (command === 'UpdateRequestUI') {
+      const current = this.pendingRequest?.command ?? this.receivingRequestCommand;
+      if (!current || !GAMEPLAY_REQUESTS.has(current)) return;
+      this.gameplayScene = reduceGameplay(this.gameplayScene, data);
+    }
     if (command === 'CustomDialog') {
       this.initialGeneralPrompt = parseInitialGeneralPrompt(data);
     }
@@ -331,7 +407,9 @@ export class GameConnection {
       if (socketGeneration !== this.socketGeneration ||
           requestGeneration !== this.requestGeneration) return;
     }
-    this.lua.receive(p.command, toHex(p.data), isRequest);
+    this.receivingRequestCommand = isRequest ? p.command : null;
+    try { this.lua.receive(p.command, toHex(p.data), isRequest); }
+    finally { this.receivingRequestCommand = null; }
     // UI callbacks can synchronously close the connection or dispatch another
     // request. Never republish a request from an invalidated socket/handler.
     if (socketGeneration !== this.socketGeneration ||
@@ -361,14 +439,15 @@ export class GameConnection {
       const pending = this.pendingRequest;
       // Lua can emit arbitrary callbacks during UpdateRequestUI. Permit the
       // reply only during our explicit __web_reply call, with the exact CBOR
-      // representation of the user's selected button and an empty command.
+      // representation validated by Lua and an empty command.
       // FreeKill's Lua cbor.encode(string) emits CBOR *byte strings* (major
       // type 2), unlike a JavaScript CBOR encoder's text strings (type 3).
       const expectedHex = this.expectedReplyHex ?? (this.capturedReply === '1' ? '4131' :
         this.capturedReply === '__cancel' ? '485f5f63616e63656c' : null);
       if (!pending || pending !== this.authorizedRequest ||
           !this.sendingAuthorizedReply || command !== '' ||
-          !expectedHex || hex.toLowerCase() !== expectedHex ||
+          !expectedHex || !/^(?:[0-9a-f]{2})+$/i.test(hex) ||
+          hex.toLowerCase() !== expectedHex ||
           this.status.kind !== 'online' || !this.socket ||
           (pending.expiresAt !== null && Date.now() >= pending.expiresAt)) {
         this.opts.log?.('warn', 'Dropped unsolicited, expired or mismatched Lua reply');

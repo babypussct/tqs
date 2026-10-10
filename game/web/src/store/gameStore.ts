@@ -3,6 +3,7 @@ import type { ConnectionStatus, RequestInfo } from '../engine/connection';
 import type { GatewayManifest } from '../engine/bundle';
 import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from '../engine/generalSelection';
 import { emptyBoard, updateBoard, type BoardState } from './boardState';
+import { emptyGameplay, reduceGameplay, type GameplayScene } from './gameplayState';
 
 export interface LobbyRoom {
   id: number;
@@ -45,6 +46,7 @@ export interface GameSnapshot {
   skillInvoke: SkillInvokePrompt | null;
   initialGeneral: InitialGeneralPrompt | null;
   board: BoardState;
+  gameplay: GameplayScene;
 }
 
 export const initialSnapshot: GameSnapshot = {
@@ -53,6 +55,7 @@ export const initialSnapshot: GameSnapshot = {
   capacity: 0, players: [], ownId: null, pendingRequest: null, skillInvoke: null,
   initialGeneral: null,
   board: emptyBoard(),
+  gameplay: emptyGameplay(),
 };
 
 function entries(data: unknown): unknown[] {
@@ -76,9 +79,12 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'EnterLobby':
       return { ...state, phase: 'lobby', error: null, roomName: '', roomMode: '',
         capacity: 0, players: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
-        board: emptyBoard() };
+        board: emptyBoard(), gameplay: emptyGameplay() };
     case 'CancelRequest':
-      return { ...state, pendingRequest: null, skillInvoke: null, initialGeneral: null };
+      return { ...state, pendingRequest: null, skillInvoke: null, initialGeneral: null,
+        gameplay: emptyGameplay() };
+    case 'UpdateRequestUI':
+      return { ...state, gameplay: reduceGameplay(state.gameplay, data) };
     case 'CustomDialog':
       return { ...state, initialGeneral: parseInitialGeneralPrompt(data) };
     case 'AskForSkillInvoke':
@@ -102,7 +108,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         players: basePlayers.length ? players : state.players,
         roomName: String(settings.roomName ?? ''), roomMode: String(settings.gameMode ?? ''),
         capacity: Number(arr[0]) || 0, pendingRequest: null, skillInvoke: null, initialGeneral: null,
-        board: emptyBoard() };
+        board: emptyBoard(), gameplay: emptyGameplay() };
     }
     case 'AddPlayer':
     case 'AddNpc': {
@@ -122,10 +128,10 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       return { ...state, players: state.players.map((p) => ({ ...p, owner: p.id === arr[0] })) };
     case 'StartGame':
       return { ...state, phase: 'playing', pendingRequest: null,
-        skillInvoke: null, initialGeneral: null, board: emptyBoard() };
+        skillInvoke: null, initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'GameOver':
       return { ...state, phase: 'room', pendingRequest: null, skillInvoke: null,
-        initialGeneral: null, board: emptyBoard() };
+        initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'ArrangeSeats':
     case 'PropertyUpdate':
     case 'SetPlayerMark':
