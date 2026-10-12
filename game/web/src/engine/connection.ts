@@ -1,3 +1,4 @@
+import { parseNativeDialog, movedRows, type NativeDialog, type NativeDialogPrompt } from './nativeDialogs';
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // GameConnection = socket transport + packet framing + login handshake +
@@ -5,11 +6,15 @@
 // (the same events the original QML received) and calls back into Lua via
 // `lua.call(...)` / `lua.eval(...)`.
 
+import { parseCardsAndChoice, cardsAndChoiceIds, type CardsAndChoicePrompt, type CardsAndChoiceSelection } from './cardsAndChoice';
+import { parseCardSelection, selectionIds, type CardSelection, type CardSelectionPrompt, type PoxiView } from './cardSelection';
 import forge from 'node-forge';
 import { LuaRuntime } from './luaRuntime';
 import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from './generalSelection';
 import { emptyGameplay, getGameplayItem, reduceGameplay, GAMEPLAY_REQUESTS,
   type GameplayItemType, type GameplayScene } from '../store/gameplayState';
+import { validInteractionAction } from './gameplayInteraction';
+import { parseChoicePrompt, validChoiceReply, type ChoicePrompt } from './choiceSelection';
 import {
   CLIENT_NOTIFY,
   CLIENT_REPLY,
@@ -40,6 +45,10 @@ export interface RequestInfo {
   timeout: number;
   receivedAt: number;
   expiresAt: number | null;
+  nativeDialogPrompt?: NativeDialogPrompt | null;
+  choicePrompt?: ChoicePrompt | null;
+  cardSelectionPrompt?: CardSelectionPrompt | null;
+  cardsAndChoicePrompt?: CardsAndChoicePrompt | null;
 }
 
 export interface GameConnectionOptions {
@@ -66,6 +75,15 @@ export type ConnectionStatus =
 
 const textDecoder = new TextDecoder();
 
+function jsonWithin(value: unknown, max: number): boolean {
+  try {
+    const encoded = JSON.stringify(value);
+    return encoded !== undefined && encoded.length <= max;
+  } catch {
+    return false;
+  }
+}
+
 export class GameConnection {
   readonly lua: LuaRuntime;
   private socket: SocketLike | null = null;
@@ -74,14 +92,25 @@ export class GameConnection {
   private authorizedRequest: RequestInfo | null = null;
   private capturedReply: unknown = null;
   private gameplayScene: GameplayScene = emptyGameplay();
+  private gameplaySceneRevision = 0;
   private receivingRequestCommand: string | null = null;
   private initialGeneralPrompt: InitialGeneralPrompt | null = null;
+  private choicePrompt: ChoicePrompt | null = null;
+  private cardSelection: CardSelection | null = null;
+  private nativeDialog: NativeDialog | null = null;
+  private nativeDialogPayload: { command: string; data: unknown } | null = null;
+  private cardsAndChoice: CardsAndChoiceSelection | null = null;
+  private cardSelectionPayload: { command: string; data: unknown } | null = null;
   private expectedReplyHex: string | null = null;
   private completedAuthorizedReply: RequestInfo | null = null;
   private sendingAuthorizedReply = false;
   private status: ConnectionStatus = { kind: 'booting' };
   private luaReady = false;
   private socketGeneration = 0;
+  // Synchronous Lua callbacks can re-enter the connection. Keep the socket
+  // generation that started the current server dispatch so a stale callback
+  // cannot notify a socket opened by a reentrant reconnect.
+  private luaDispatchGeneration: number | null = null;
   private requestGeneration = 0;
   private stopped = false;
 
@@ -108,11 +137,22 @@ export class GameConnection {
     return this.status;
   }
 
+  toggleTrust() {
+    if (this.status.kind !== 'online' || !this.socket) throw new Error('Chưa xác thực với máy chủ');
+    this.lua.call('__web_notify', 'Trust', '');
+  }
+
   private clearRequest() {
     this.pendingRequest = null;
     this.authorizedRequest = null;
     this.capturedReply = null;
     this.initialGeneralPrompt = null;
+    this.choicePrompt = null;
+    this.cardSelection = null;
+    this.cardsAndChoice = null;
+    this.nativeDialog = null;
+    this.nativeDialogPayload = null;
+    this.cardSelectionPayload = null;
     this.expectedReplyHex = null;
     this.completedAuthorizedReply = null;
     this.sendingAuthorizedReply = false;
@@ -122,7 +162,7 @@ export class GameConnection {
 
   /** A UI click changes Lua's scene; only Lua may decide when to reply. */
   updateRequestUI(requestId: number, type: GameplayItemType, id: string | number,
-    action: 'click' | 'finish', data: unknown) {
+    action: 'click' | 'update' | 'finish', data: unknown) {
     const pending = this.pendingRequest;
     if (this.status.kind !== 'online' || !this.socket || !pending ||
         pending.requestId !== requestId || !GAMEPLAY_REQUESTS.has(pending.command)) {
@@ -140,7 +180,9 @@ export class GameConnection {
           (data as { selected?: unknown }).selected !== !item.selected) {
         throw new Error('Trạng thái lựa chọn không hợp lệ');
       }
-      data = { selected: !item.selected };
+      data = type === 'SkillButton'
+        ? { selected: !item.selected, autoTarget: false }
+        : { selected: !item.selected };
     } else if (type === 'Button') {
       if (action !== 'click' || !['OK', 'Cancel', 'End'].includes(String(id)))
         throw new Error('Nút gameplay không hợp lệ');
@@ -149,8 +191,8 @@ export class GameConnection {
       if (action !== 'click' || typeof data !== 'string' || !item.skills?.includes(data))
         throw new Error('Kỹ năng đặc biệt không hợp lệ');
     } else if (type === 'Interaction') {
-      if (action !== 'finish' && action !== 'click') throw new Error('Tương tác không hợp lệ');
-      if (JSON.stringify(data)?.length > 4096) throw new Error('Dữ liệu tương tác quá dài');
+      if (!validInteractionAction(item, action, data))
+        throw new Error('Tương tác không được Lua cho phép');
     }
 
     this.authorizedRequest = pending;
@@ -179,6 +221,32 @@ export class GameConnection {
       this.expectedReplyHex = null;
       this.completedAuthorizedReply = null;
     }
+  }
+
+  /** A direct option finishes its Lua interaction before confirming, as QML does.
+   * Lua may reply, replace the request, or advance to another interaction in
+   * the first call; only confirm an OK that is still valid afterward. */
+  finishDirectInteraction(requestId: number, id: string | number, data: unknown) {
+    const original = this.pendingRequest;
+    const sceneRevision = this.gameplaySceneRevision;
+    try {
+      this.updateRequestUI(requestId, 'Interaction', id, 'finish', data);
+    } catch (error) {
+      // Lua may synchronously cancel/replace the request while handling finish.
+      if (original && this.pendingRequest !== original && error instanceof Error &&
+          error.message === 'Yêu cầu gameplay đã thay đổi trong lúc xử lý') return;
+      throw error;
+    }
+    if (!original || this.pendingRequest !== original) return;
+    // An UpdateRequestUI callback may advance Lua to the next step while
+    // reusing the same interaction ID, spec and refresh_data. Whenever Lua
+    // publishes a scene during finish and leaves any interaction enabled,
+    // require the player to decide what to do next. A finished/disabled
+    // interaction with an enabled OK may still be confirmed automatically.
+    if (this.gameplaySceneRevision !== sceneRevision &&
+        Object.values(this.gameplayScene.items.Interaction).some((item) => item.enabled)) return;
+    if (!getGameplayItem(this.gameplayScene, 'Button', 'OK')?.enabled) return;
+    this.updateRequestUI(requestId, 'Button', 'OK', 'click', null);
   }
 
   /** Only a deliberate button click may send a reply to the active Lua request. */
@@ -275,7 +343,267 @@ export class GameConnection {
     }
   }
 
+  /** Validate the native choice dialog against the active request before Lua encodes it. */
+  respondToChoices(requestId: number, selected: string[]) {
+    const pending = this.pendingRequest;
+    const prompt = this.choicePrompt;
+    if (this.status.kind !== 'online' || !this.socket || !pending || !prompt ||
+        !['AskForChoices', 'AskForOptions'].includes(pending.command) || pending.requestId !== requestId)
+      throw new Error('Yêu cầu lựa chọn không còn hiệu lực');
+    if (pending.expiresAt !== null && Date.now() >= pending.expiresAt) {
+      this.clearRequest();
+      throw new Error('Yêu cầu lựa chọn đã hết thời gian');
+    }
+    if (this.authorizedRequest) throw new Error('Đang xử lý câu trả lời');
+    if (!validChoiceReply(prompt, selected)) throw new Error('Lựa chọn không được máy chủ cho phép');
+    this.authorizedRequest = pending;
+    try {
+      this.expectedReplyHex = this.lua.call<string>('__web_reply_hex', selected).toLowerCase();
+      this.sendingAuthorizedReply = true;
+      try { this.lua.call('__web_reply', selected); }
+      finally { this.sendingAuthorizedReply = false; }
+      if (this.completedAuthorizedReply !== pending) throw new Error('Phản hồi lựa chọn chưa đến máy chủ');
+    } catch (error) {
+      if (this.pendingRequest === pending) this.clearRequest();
+      throw error;
+    } finally {
+      this.authorizedRequest = null;
+      this.expectedReplyHex = null;
+      this.completedAuthorizedReply = null;
+    }
+  }
+
+  private requireCardSelection(requestId: number, clearExpired = true) {
+    const pending = this.pendingRequest;
+    if (this.status.kind !== 'online' || !this.socket || !pending ||
+        pending.requestId !== requestId || !this.cardSelection ||
+        !['AskForCardChosen', 'AskForPoxi'].includes(pending.command))
+      throw new Error('Yêu cầu chọn bài không còn hiệu lực');
+    if (pending.expiresAt !== null && Date.now() >= pending.expiresAt) {
+      if (clearExpired) this.clearRequest();
+      throw new Error('Yêu cầu chọn bài đã hết thời gian');
+    }
+    return { pending, selection: this.cardSelection };
+  }
+
+  /** Only public tokens and eligibility leave the connection; Lua owns Poxi rules. */
+  getCardSelectionView(requestId: number, tokens: string[]): PoxiView {
+    const { selection } = this.requireCardSelection(requestId, false);
+    const selected = selectionIds(selection, tokens);
+    if (!selected) throw new Error('Lựa chọn bài không hợp lệ');
+    if (!selection.poxi) return { prompt: selection.publicPrompt.title,
+      selectable: [...selection.ids.keys()], feasible: selected.length === 1 };
+    const { type, data, extra } = selection.poxi;
+    const candidates = [...selection.ids.values()];
+    const view = this.lua.call<{ allowed: boolean[]; feasible: boolean; prompt: string }>(
+      '__web_poxi_view', type, data, extra, selected, candidates);
+    if (!view || !Array.isArray(view.allowed) || view.allowed.length !== candidates.length ||
+        !view.allowed.every((v) => typeof v === 'boolean') ||
+        typeof view.feasible !== 'boolean' || typeof view.prompt !== 'string')
+      throw new Error('Luật chọn bài chưa sẵn sàng');
+    return { prompt: view.prompt, feasible: view.feasible,
+      selectable: [...selection.ids.keys()].filter((_, i) => view.allowed[i]) };
+  }
+
+  respondToCardSelection(requestId: number, tokens: string[], cancel = false) {
+    const { pending, selection } = this.requireCardSelection(requestId);
+    if (this.authorizedRequest) throw new Error('Đang xử lý câu trả lời');
+    const ids = selectionIds(selection, tokens);
+    if (!ids || (cancel && (!selection.publicPrompt.cancelable || tokens.length)))
+      throw new Error('Lựa chọn bài không hợp lệ');
+    if (!cancel) {
+      // Validate every addition with the installed filter, then final feasibility.
+      for (let i = 0; i < tokens.length; i++) {
+        if (!this.getCardSelectionView(requestId, tokens.slice(0, i)).selectable.includes(tokens[i]))
+          throw new Error('Lá bài không được Lua cho phép');
+      }
+      if (!this.getCardSelectionView(requestId, tokens).feasible)
+        throw new Error('Chưa đủ điều kiện chọn bài');
+    }
+    const response = selection.publicPrompt.mode === 'single' ? ids[0] : ids;
+    this.authorizedRequest = pending;
+    try {
+      this.expectedReplyHex = this.lua.call<string>('__web_reply_hex', response).toLowerCase();
+      this.sendingAuthorizedReply = true;
+      try { this.lua.call('__web_reply', response); }
+      finally { this.sendingAuthorizedReply = false; }
+      if (this.completedAuthorizedReply !== pending) throw new Error('Phản hồi chọn bài chưa đến máy chủ');
+    } catch (error) {
+      if (this.pendingRequest === pending) this.clearRequest();
+      throw error;
+    } finally {
+      this.authorizedRequest = null;
+      this.expectedReplyHex = null;
+      this.completedAuthorizedReply = null;
+    }
+  }
+
+  private requireCardsAndChoice(requestId: number, clearExpired = true) {
+    const pending = this.pendingRequest;
+    if (this.status.kind !== 'online' || !this.socket || !pending ||
+        pending.requestId !== requestId || pending.command !== 'AskForCardsAndChoice' || !this.cardsAndChoice)
+      throw new Error('Yêu cầu xem và chọn bài không còn hiệu lực');
+    if (pending.expiresAt !== null && Date.now() >= pending.expiresAt) {
+      if (clearExpired) this.clearRequest();
+      throw new Error('Yêu cầu xem và chọn bài đã hết thời gian');
+    }
+    return { pending, selection: this.cardsAndChoice };
+  }
+
+  getCardsAndChoiceView(requestId: number, tokens: string[]) {
+    const { selection } = this.requireCardsAndChoice(requestId, false);
+    const ids = cardsAndChoiceIds(selection, tokens);
+    if (!ids) throw new Error('Lựa chọn bài không hợp lệ');
+    const prompt = selection.publicPrompt;
+    const allowed = this.lua.call<boolean[]>('__web_cards_and_choice_view',
+      selection.filter, ids, prompt.choices, prompt.min, prompt.max, selection.extra);
+    if (!Array.isArray(allowed) || allowed.length !== prompt.choices.length ||
+        !allowed.every((value) => typeof value === 'boolean')) throw new Error('Luật chọn phương án chưa sẵn sàng');
+    return { selectable: [...selection.ids].filter(([, id]) => !selection.disabled.has(id)).map(([token]) => token),
+      choices: prompt.choices.filter((_, i) => allowed[i]) };
+  }
+
+  respondToCardsAndChoice(requestId: number, tokens: string[], choice: string, cancel = false) {
+    const { pending, selection } = this.requireCardsAndChoice(requestId);
+    if (this.authorizedRequest) throw new Error('Đang xử lý câu trả lời');
+    const ids = cardsAndChoiceIds(selection, tokens);
+    if (!ids || (cancel ? tokens.length !== 0 || !selection.publicPrompt.cancelChoices.includes(choice) :
+        !this.getCardsAndChoiceView(requestId, tokens).choices.includes(choice)))
+      throw new Error('Phương án không được Lua cho phép');
+    const response = { cards: ids, choice };
+    this.authorizedRequest = pending;
+    try {
+      this.expectedReplyHex = this.lua.call<string>('__web_reply_hex', response).toLowerCase();
+      this.sendingAuthorizedReply = true;
+      try { this.lua.call('__web_reply', response); }
+      finally { this.sendingAuthorizedReply = false; }
+      if (this.completedAuthorizedReply !== pending) throw new Error('Phản hồi xem và chọn bài chưa đến máy chủ');
+    } catch (error) {
+      if (this.pendingRequest === pending) this.clearRequest();
+      throw error;
+    } finally {
+      this.authorizedRequest = null;
+      this.expectedReplyHex = null;
+      this.completedAuthorizedReply = null;
+    }
+  }
+
+  private requireNativeDialog(requestId: number) {
+    const pending = this.pendingRequest;
+    if (!pending || pending.requestId !== requestId || !this.nativeDialog ||
+      this.status.kind !== 'online' || !this.socket) throw new Error('Yêu cầu đã thay đổi');
+    if (pending.expiresAt !== null && Date.now() >= pending.expiresAt) {
+      // Card/gameplay/choice paths clear expired state before throwing. Native
+      // dialogs must do the same so an expired AG/arrange/skill request cannot
+      // remain rendered and later collide with a reused request ID.
+      this.clearRequest();
+      throw new Error('Yêu cầu đã hết thời gian');
+    }
+    return { pending, dialog: this.nativeDialog };
+  }
+
+  getNativeDialogView(requestId: number) {
+    const { dialog } = this.requireNativeDialog(requestId);
+    if (dialog.skills) {
+      const skills = dialog.skills;
+      return { rows: dialog.prompt.rows, feasible: skills.selected.length >= skills.min && skills.selected.length <= skills.max,
+        selectedTokens: dialog.prompt.cards.filter(c => skills.selected.includes(c.name!)).map(c => c.token),
+        selectableTokens: dialog.prompt.cards.filter(c => !skills.disabled?.includes(c.name!) && (dialog.prompt.kind !== 'generalsAndChoice' || !!dialog.prompt.okOptions?.length) && (skills.selected.includes(c.name!) || skills.selected.length < skills.max)).map(c => c.token) };
+    }
+    if (dialog.general) {
+      const general = dialog.general;
+      const state = this.lua.call<{allowed:boolean[];feasible:boolean}>('__web_choose_general_view',
+        general.rule, general.selected, general.names, general.extra, general.count);
+      return {rows:dialog.prompt.rows,feasible:state.feasible,
+        selectedTokens:dialog.prompt.cards.filter(c=>general.selected.includes(c.name!)).map(c=>c.token),
+        selectableTokens:dialog.prompt.cards.filter((_,i)=>state.allowed[i]).map(c=>c.token)};
+    }
+    const tokens = new Map([...dialog.ids].map(([token, id]) => [id, token]));
+    const feasible = dialog.prompt.kind !== 'arrange' || this.lua.call<boolean>('__web_arrange_feasible',
+      dialog.rows, dialog.original, dialog.limits, dialog.capacities, dialog.poxi);
+    return { rows: dialog.rows.map(row => row.map(id => tokens.get(id)!)), feasible };
+  }
+
+  selectNativeGeneral(requestId: number, token: string) {
+    const { dialog } = this.requireNativeDialog(requestId);
+    const card = dialog.prompt.cards.find(c=>c.token===token);
+    if (dialog.skills) {
+      if (!card?.name || !dialog.skills.names.includes(card.name)) throw new Error('Kỹ năng không hợp lệ');
+      if (dialog.skills.selected.includes(card.name)) dialog.skills.selected = dialog.skills.selected.filter(n => n !== card.name);
+      else if (this.getNativeDialogView(requestId).selectableTokens?.includes(token)) dialog.skills.selected.push(card.name);
+      else throw new Error('Đã chọn đủ số kỹ năng');
+      return;
+    }
+    if (!dialog.general || !card?.name) throw new Error('Tướng không hợp lệ');
+    if (dialog.general.selected.includes(card.name)) dialog.general.selected = dialog.general.selected.filter(n=>n!==card.name);
+    else if (this.getNativeDialogView(requestId).selectableTokens?.includes(token)) dialog.general.selected.push(card.name);
+    else throw new Error('Tướng không được Lua cho phép');
+  }
+
+  moveNativeDialogCard(requestId: number, token: string, area: number, index: number) {
+    const { dialog } = this.requireNativeDialog(requestId);
+    const id = dialog.ids.get(token);
+    const rows = movedRows(dialog, token, area, index);
+    const fromArea = dialog.rows.findIndex(row => row.includes(id!));
+    if (!rows || (fromArea !== area && !this.lua.call<boolean>('__web_arrange_allowed', id,
+      dialog.rows, dialog.original, dialog.pattern, dialog.poxi))) throw new Error('Không thể di chuyển lá bài này');
+    dialog.rows = rows;
+  }
+
+  respondToNativeDialog(requestId: number, token?: string, cancel = false) {
+    const { pending, dialog } = this.requireNativeDialog(requestId);
+    if (this.authorizedRequest) throw new Error('Đang xử lý câu trả lời');
+    if (cancel && !dialog.prompt.cancelable) throw new Error('Không thể bỏ qua yêu cầu này');
+    let response: unknown;
+    if (dialog.prompt.kind === 'generalsAndChoice') {
+      const options = cancel ? dialog.prompt.cancelOptions : dialog.prompt.okOptions;
+      if (!token || !options?.includes(token) || (!cancel && !this.getNativeDialogView(requestId).feasible))
+        throw new Error('Phương án chọn tướng không hợp lệ');
+      response = { cards: cancel ? [] : [...dialog.skills!.selected], choice: token };
+    }
+    else if (cancel) response = ['ag', 'skills', 'cardNames'].includes(dialog.prompt.kind) ? '' : [];
+    else if (dialog.prompt.kind === 'ag' || dialog.prompt.kind === 'boardMove') {
+      response = token === undefined ? undefined : dialog.ids.get(token);
+      if (response === undefined) throw new Error('Lá bài không hợp lệ');
+      if (dialog.boardPositions) response = {cardId:response,pos:dialog.boardPositions.get(response as number)};
+    } else if (dialog.prompt.kind === 'generals') response = { cards: [], choice: 'OK' };
+    else if (dialog.skills) {
+      if (!this.getNativeDialogView(requestId).feasible) throw new Error('Số kỹ năng chưa hợp lệ');
+      response = [...dialog.skills.selected];
+    }
+    else if (dialog.general) {
+      if (!this.getNativeDialogView(requestId).feasible) throw new Error('Chọn tướng chưa hợp lệ');
+      response = [...dialog.general.selected];
+    }
+    else {
+      if (!this.getNativeDialogView(requestId).feasible) throw new Error('Cách sắp xếp chưa hợp lệ');
+      response = dialog.rows.map(row => [...row]);
+    }
+    this.authorizedRequest = pending;
+    try {
+      this.expectedReplyHex = this.lua.call<string>('__web_reply_hex', response).toLowerCase();
+      this.sendingAuthorizedReply = true;
+      try { this.lua.call('__web_reply', response); }
+      finally { this.sendingAuthorizedReply = false; }
+      if (this.completedAuthorizedReply !== pending) throw new Error('Phản hồi chưa đến máy chủ');
+    } catch (error) {
+      if (this.pendingRequest === pending) this.clearRequest();
+      throw error;
+    } finally {
+      this.authorizedRequest = null; this.expectedReplyHex = null; this.completedAuthorizedReply = null;
+    }
+  }
+
   private handleLuaUi(command: string, data: unknown) {
+    if (['AskForArrangeCards', 'AskForAG', 'CustomDialog', 'AskForGeneral', 'AskForMoveCardInBoard'].includes(command)) {
+      if (this.receivingRequestCommand === command) this.nativeDialogPayload = { command, data };
+      if (command !== 'CustomDialog') return;
+    }
+
+    if (command === 'AskForCardChosen' || command === 'AskForPoxi' || command === 'AskForCardsAndChoice') {
+      if (this.receivingRequestCommand === command) this.cardSelectionPayload = { command, data };
+      return; // Raw card IDs/visibility never reach the React store or onUi.
+    }
     if (command === 'ReplyToServer') {
       const pending = this.pendingRequest;
       if (pending?.command === 'AskForSkillInvoke' &&
@@ -285,7 +613,7 @@ export class GameConnection {
       } else if (pending && GAMEPLAY_REQUESTS.has(pending.command) &&
           this.authorizedRequest === pending && this.capturedReply === null &&
           (typeof data === 'string' || (data !== null && typeof data === 'object' &&
-            JSON.stringify(data).length <= 16384))) {
+            jsonWithin(data, 16384)))) {
         this.capturedReply = data;
       } else {
         this.opts.log?.('warn', 'Ignored gameplay reply without a matching user action');
@@ -297,10 +625,31 @@ export class GameConnection {
     if (command === 'UpdateRequestUI') {
       const current = this.pendingRequest?.command ?? this.receivingRequestCommand;
       if (!current || !GAMEPLAY_REQUESTS.has(current)) return;
-      this.gameplayScene = reduceGameplay(this.gameplayScene, data);
+      const nextScene = reduceGameplay(this.gameplayScene, data);
+      if (nextScene !== this.gameplayScene) {
+        this.gameplayScene = nextScene;
+        ++this.gameplaySceneRevision;
+      }
     }
     if (command === 'CustomDialog') {
       this.initialGeneralPrompt = parseInitialGeneralPrompt(data);
+    }
+    if (['AskForChoices', 'AskForOptions'].includes(command) && this.receivingRequestCommand === command)
+      this.choicePrompt = parseChoicePrompt(command === 'AskForOptions' && Array.isArray(data)
+        ? [...data.slice(0, 6), false, data[6] ?? false] : data);
+    // C++ broadcasts AddPlayer before inserting the joining player, so the
+    // new socket never receives its own AddPlayer. Lua creates Self during
+    // EnterRoom; publish that occupant to the web UI as native QML does.
+    if (command === 'EnterRoom' && Array.isArray(data) &&
+        !(data[2] as { isObserver?: boolean } | undefined)?.isObserver) {
+      const self = this.lua.eval<unknown[]>(`return {
+        Self.id, Self.player:getScreenName(), Self.player:getAvatar(), Self.ready or false
+      }`);
+      const generation = this.socketGeneration;
+      this.opts.onUi('SelfIdentity', self[0]);
+      if (generation !== this.socketGeneration) return;
+      this.opts.onUi('AddPlayer', self);
+      if (generation !== this.socketGeneration) return;
     }
     this.opts.onUi(command, data);
   }
@@ -344,6 +693,8 @@ export class GameConnection {
       },
     });
   }
+
+  abortTransport(reason: string) { this.disconnect(reason); }
 
   close() {
     this.stopped = true;
@@ -408,24 +759,51 @@ export class GameConnection {
           requestGeneration !== this.requestGeneration) return;
     }
     this.receivingRequestCommand = isRequest ? p.command : null;
+    const previousLuaGeneration = this.luaDispatchGeneration;
+    this.luaDispatchGeneration = socketGeneration;
     try { this.lua.receive(p.command, toHex(p.data), isRequest); }
-    finally { this.receivingRequestCommand = null; }
+    finally {
+      this.luaDispatchGeneration = previousLuaGeneration;
+      this.receivingRequestCommand = null;
+    }
     // UI callbacks can synchronously close the connection or dispatch another
     // request. Never republish a request from an invalidated socket/handler.
     if (socketGeneration !== this.socketGeneration ||
         (isRequest && requestGeneration !== this.requestGeneration)) return;
+    // EmptyRequest is the native animation delay; no user reply is expected.
+    if (isRequest && p.command === 'EmptyRequest') return;
     if (isRequest) {
+      const payload = this.cardSelectionPayload;
+      if (payload) {
+        // The Lua callback has finished; avoid reentering Wasmoon from notifyUI.
+        if (payload.command === 'AskForCardsAndChoice')
+          this.cardsAndChoice = parseCardsAndChoice(payload.data, (id) => this.lua.call('__web_visible_card', id));
+        else this.cardSelection = parseCardSelection(payload.command, payload.data,
+          (id) => this.lua.call('__web_visible_card', id));
+        this.cardSelectionPayload = null;
+      }
+      if (this.nativeDialogPayload) {
+        const payload = this.nativeDialogPayload;
+        this.nativeDialog = parseNativeDialog(payload.command, payload.data,
+          (id) => this.lua.call('__web_visible_card', id));
+        this.nativeDialogPayload = null;
+      }
       const receivedAt = Date.now();
       const timeout = p.timeout ?? 0;
       const startedAt = p.timestamp && p.timestamp > 0 ? p.timestamp : receivedAt;
       this.pendingRequest = {
         requestId: p.requestId, command: p.command, timeout, receivedAt,
         expiresAt: timeout > 0 ? startedAt + timeout * 1000 : null,
+        ...(this.nativeDialog ? { nativeDialogPrompt: this.nativeDialog.prompt } : {}),
+        ...(p.command === 'AskForCardsAndChoice' ? { cardsAndChoicePrompt: this.cardsAndChoice?.publicPrompt ?? null } : {}),
+        ...(['AskForChoices', 'AskForOptions'].includes(p.command) ? { choicePrompt: this.choicePrompt } : {}),
+        ...(['AskForCardChosen', 'AskForPoxi'].includes(p.command) ?
+          { cardSelectionPrompt: this.cardSelection?.publicPrompt ?? null } : {}),
       };
       this.opts.onRequest?.(this.pendingRequest);
     }
     // Only report success after upstream Lua has accepted the lobby packet.
-    if (p.command === 'EnterLobby' && this.status.kind === 'authenticating') {
+    if ((p.command === 'EnterLobby' || p.command === 'Reconnect') && this.status.kind === 'authenticating') {
       this.setStatus({ kind: 'online' });
     }
   }
@@ -474,6 +852,11 @@ export class GameConnection {
         }
       }
     } else {
+      if (this.luaDispatchGeneration !== null &&
+          this.luaDispatchGeneration !== this.socketGeneration) {
+        this.opts.log?.('warn', 'Dropped Lua notification from a stale socket callback');
+        return;
+      }
       this.rawNotify(command, fromHex(hex));
     }
   }

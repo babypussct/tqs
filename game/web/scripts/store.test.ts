@@ -1,8 +1,31 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { connectionProgress } from '../src/engine/connectionMessages';
 import { parseInitialGeneralPrompt } from '../src/engine/generalSelection';
-import { initialSnapshot, reduceUiEvent, useGameStore } from '../src/store/gameStore';
+import { initialSnapshot, reduceUiEvent, useGameStore, type GameSnapshot } from '../src/store/gameStore';
 import { relativeSeatOrder } from '../src/store/boardState';
+import { displayText, localizedGameLog, plainText } from '../src/engine/displayText';
+import { VI_ADDITIONS } from '../src/engine/vietnamese';
+
+test('temporary IP ban remains actionable and transport closed is not displayed as progress', () => {
+  const state = reduceUiEvent(initialSnapshot, 'ErrorDlg', 'you have been temporarily banned!');
+  assert.match(state.error!, /tạm chặn IP/);
+  assert.match(state.error!, /không gửi thời điểm hết hạn/);
+  assert.match(state.error!, /BOT chơi hộ/);
+  assert.equal(connectionProgress({ kind: 'closed', reason: 'backend closed' }), '');
+});
+
+test('BOT control reflects only authoritative NetStateChanged and rejects malformed state', () => {
+  let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [17, 'Bạn', '', true, 0]);
+  state = reduceUiEvent(state, 'NetStateChanged', [17, 'trust']);
+  assert.equal(state.players[0].netState, 'trust');
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', true, 0]);
+  assert.equal(state.players[0].netState, 'trust');
+  assert.equal(reduceUiEvent(state, 'NetStateChanged', [17, 'forged']), state);
+  assert.equal(reduceUiEvent(state, 'NetStateChanged', [17, ['trust']]), state);
+  state = reduceUiEvent(state, 'NetStateChanged', [17, 'online']);
+  assert.equal(state.players[0].netState, 'online');
+});
 
 const generalDialog = (overrides: Record<string, unknown> = {}) => ({
   component: { name: 'ChooseInitialGeneralBox', model: {
@@ -121,6 +144,137 @@ test('StartGame, GameOver, EnterLobby and reset clear lifecycle state', () => {
   assert.equal(useGameStore.getState().phase, 'boot');
 });
 
+test('native GameOver keeps winner names after bot removal and clears on the next game or lobby', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 3 };
+  state = reduceUiEvent(state, 'AddPlayer', [3, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'AddPlayer', [-4, 'Bot Quốc Chiến', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  const won = reduceUiEvent(state, 'GameOver', '3'); // payload observed from the live server
+  assert.deepEqual(won.result, { outcome: 'win', winners: [{ id: 3, name: 'Bạn' }] });
+  const lost = reduceUiEvent(state, 'GameOver', '-4');
+  const removed = reduceUiEvent(lost, 'RemovePlayer', [-4]);
+  assert.deepEqual(removed.result, { outcome: 'loss', winners: [{ id: -4, name: 'Bot Quốc Chiến' }] });
+  assert.deepEqual(reduceUiEvent(state, 'GameOver', '3+-4').result?.winners.map((p) => p.id), [3, -4]);
+  for (const event of ['StartGame', 'EnterLobby']) assert.equal(reduceUiEvent(won, event, null).result, null);
+  assert.equal(reduceUiEvent(won, 'EnterRoom', [2, 30, { gameMode: 'new_heg_mode' }]).result, null);
+});
+
+test('draw, unknown observer and malformed results never invent a winner', () => {
+  const state = { ...initialSnapshot, ownId: 3 };
+  assert.deepEqual(reduceUiEvent(state, 'GameOver', '').result, { outcome: 'draw', winners: [] });
+  for (const payload of [null, {}, '3+', '0', '3x', 'Infinity', '9007199254740992'])
+    assert.deepEqual(reduceUiEvent(state, 'GameOver', payload).result, { outcome: 'unknown', winners: [] });
+  assert.equal(reduceUiEvent(initialSnapshot, 'GameOver', '3').result?.outcome, 'unknown');
+});
+
+test('display text formats native prompts and choices without changing IDs or injecting rich HTML', () => {
+  const translations = { revealMain: 'Lật chủ tướng: %arg', m_heg__dianwei: 'Điển Vi',
+    '#AskForPeaches': '%src đang hấp hối, hãy dùng %arg Đào',
+    slash: '<b>Sát</b>', ':slash': 'Dòng 1<br/>Dòng 2' };
+  assert.equal(displayText('revealMain:::m_heg__dianwei', translations), 'Lật chủ tướng: Điển Vi');
+  assert.equal(displayText('#AskForPeaches:-4::1', translations, [{ id: -4, name: 'Bot' }]),
+    'Bot đang hấp hối, hãy dùng 1 Đào');
+  assert.equal(displayText('slash', translations), 'Sát');
+  assert.equal(displayText(':slash', translations), 'Dòng 1\nDòng 2');
+  assert.equal(displayText('unknown_fixture', translations), 'unknown_fixture');
+});
+
+test('upstream Hegemony translations preserve distinct variants and interpolate all verified prompts', () => {
+  assert.equal(VI_ADDITIONS['liulongcanjia'], VI_ADDITIONS['mobile__liulongcanjia']);
+  assert.match(VI_ADDITIONS[':liulongcanjia'], /\+1/);
+  assert.match(VI_ADDITIONS[':liulongcanjia'], /−1/);
+  assert.match(VI_ADDITIONS[':mobile__liulongcanjia'], /−3/);
+  assert.doesNotMatch(VI_ADDITIONS[':mobile__liulongcanjia'], /\+1/);
+  assert.equal(displayText('#part_ways-give::17', VI_ADDITIONS, [{ id: 17, name: 'Đồng đội' }]),
+    'Hãy giao cho Đồng đội 3 lá bài.');
+  assert.equal(displayText('#hs__shuangxiong:::red', VI_ADDITIONS),
+    'Song Hùng: bạn có thể dùng 1 lá trên tay màu Đỏ như Quyết Đấu.');
+  assert.match(displayText('#hs__shuangxiong-discard:17', VI_ADDITIONS, [{ id: 17, name: 'Đồng đội' }]), /Đồng đội/);
+  assert.match(VI_ADDITIONS['#vanguard_skill&'], /đủ 4 lá/);
+  assert.match(VI_ADDITIONS['#burning_camps_skill'], /người chơi kế tiếp.*cùng đội hình/);
+  assert.match(VI_ADDITIONS['#EnterBattleRoyalMode'], /Sát hay Thiểm/);
+  assert.match(VI_ADDITIONS['#EnterNewBattleRoyalMode'], /như Rượu/);
+  for (const key of ['#ChooseHegInitialKingdom', '#HegPrepareConvertLord', '#WildChooseKingdom']) {
+    assert.notEqual(displayText(key, VI_ADDITIONS), key);
+  }
+});
+
+test('UI-01 live C++ audit: battle events, Chinese cards, English turns and skill identifiers are localized', () => {
+  assert.equal(localizedGameLog('Tướng ẩn/Mi Trúc (bạn) đã phát động kỹ năng〖巨贾〗'),
+    'Tướng ẩn/Mi Trúc (bạn) đã phát động kỹ năng〖Cự Cổ〗');
+  assert.equal(localizedGameLog('巨贾 ngoài nhãn kỹ năng'), '巨贾 ngoài nhãn kỹ năng');
+  assert.match(VI_ADDITIONS[':ofl_heg__jugu'], /khi lật tướng.*rút X.*giới hạn.*tăng X.*máu tối đa/);
+  assert.match(VI_ADDITIONS[':ofl_heg__ziyuan'], /một lần.*tổng điểm bằng 13.*người chơi khác cùng thế lực.*hồi 1 máu/);
+  assert.equal(VI_ADDITIONS['#TargetCancelled'], 'Mục tiêu %to đã bị hủy khỏi lá %arg do %from sử dụng.');
+  assert.equal(VI_ADDITIONS['#new_battle_royal_event&'], 'Quyết chiến');
+  assert.match(VI_ADDITIONS[':battle_royal_fuli'], /rút bài.*bỏ qua.*2 lá Kỳ Trân/);
+  assert.match(VI_ADDITIONS[':battle_royal_shengzheweiwang'], /đến hết trận/);
+  assert.match(VI_ADDITIONS[':battle_royal_bujinzetui'], /chưa gây sát thương/);
+  assert.match(VI_ADDITIONS[':battle_royal_huoqi'], /tăng thêm 1/);
+  assert.match(VI_ADDITIONS[':battle_royal_jili'], /không bị giới hạn/);
+  assert.equal(localizedGameLog('本轮事件：: 赋礼'), 'Sự kiện vòng này: Phú Lễ');
+  assert.equal(localizedGameLog('本轮事件为：祸起：本轮内：所有角色受到的伤害+1。'),
+    'Sự kiện vòng này: Họa Khởi. Trong vòng này, sát thương mọi nhân vật phải chịu tăng thêm 1.');
+  assert.equal(localizedGameLog('本轮事件为：落石：翻开此牌时，所有确定势力的角色依次变更副将。'),
+    'Sự kiện vòng này: Lạc Thạch. Khi lật lá sự kiện này, tất cả nhân vật đã xác định thế lực lần lượt đổi phó tướng.');
+  assert.equal(localizedGameLog('-------------- 2 th Round Start --------------'), 'Bắt đầu vòng 2');
+  assert.equal(localizedGameLog('-------#1(you)\'s Turn Start -------'), 'Bắt đầu lượt của Ghế 1 (bạn)');
+  assert.equal(localizedGameLog('------- Lý Phong/Trương Phi\'s Turn End -------'), 'Kết thúc lượt của Lý Phong/Trương Phi');
+  assert.equal(localizedGameLog('Sắc Lệnh[♣3] is removed from the game'), 'Sắc Lệnh[♣3] bị loại khỏi trận.');
+  assert.equal(localizedGameLog('Lý Phong đã sử dụng 鹦鹉杯[♥9], 咄咄逼人[♣K], Triblade[♦Q]'),
+    'Lý Phong đã sử dụng Anh Vũ Bôi[♥9], Đốt Đốt Bức Nhân[♣K], Tam Tiêm Lưỡng Nhận Đao[♦Q]');
+  assert.equal(localizedGameLog('Đã phát động kỹ năng〖#new_battle_royal_event&〗 và hồi 1 máu (酒)'),
+    'Đã phát động kỹ năng〖Quyết chiến〗 và hồi 1 máu (Tửu)');
+  assert.equal(localizedGameLog('Chúc Dung/Lý Vĩ (bạn) đã sử dụng 图穷匕见[♣2] nhắm vào Hoắc Tuấn/Mã Tắc'),
+    'Chúc Dung/Lý Vĩ (bạn) đã sử dụng Đồ Cùng Chủy Hiện[♣2] nhắm vào Hoắc Tuấn/Mã Tắc');
+  assert.equal(localizedGameLog('Tướng ẩn/Mã Tắc đã bỏ 巧取豪夺[♥A] và trang bị 九州鼎[♥K]'),
+    'Tướng ẩn/Mã Tắc đã bỏ Xảo Thủ Hào Đoạt[♥A] và trang bị Cửu Châu Đỉnh[♥K]');
+  assert.equal(localizedGameLog('Hoắc Tuấn/Mã Tắc 即将对 Chúc Dung/Lý Vĩ (bạn) 造成的 1 点 Thường 伤害变为 2 点'),
+    'Sát thương Thường do Hoắc Tuấn/Mã Tắc gây ra cho Chúc Dung/Lý Vĩ (bạn) thay đổi từ 1 thành 2 điểm.');
+  assert.equal(localizedGameLog('Thông báo khác: 即将对 nhân vật'), 'Thông báo khác: 即将对 nhân vật');
+  assert.match(VI_ADDITIONS[':nine_tripod_cauldrons'], /4 lá Kỳ Trân/);
+  assert.equal(localizedGameLog('Tào Thực/Tướng ẩn (bạn) 观看了 Tướng ẩn/Thành Tế 的 chủ tướng Nhạc Tiến'),
+    'Tào Thực/Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn/Thành Tế: Nhạc Tiến.');
+  assert.equal(localizedGameLog('Tào Thực/Tướng ẩn (bạn) 观看了 Tướng ẩn/Thành Tế 的 chủ tướng'),
+    'Tào Thực/Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn/Thành Tế.');
+  assert.equal(localizedGameLog('Vương Duyệt/Tướng ẩn 使用的 Hỏa Sát[♥4] 取消了目标 Tướng ẩn/Mã Đại (bạn)'),
+    'Mục tiêu Tướng ẩn/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♥4] do Vương Duyệt/Tướng ẩn sử dụng.');
+  assert.equal(localizedGameLog('Vương Duyệt/Lưu Phu Nhân 使用的 Hỏa Sát[♦4] 取消了目标 Phùng Tập/Mã Đại (bạn)'),
+    'Mục tiêu Phùng Tập/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♦4] do Vương Duyệt/Lưu Phu Nhân sử dụng.');
+  assert.equal(localizedGameLog('Thử nghiệm: 使用的 Hỏa Sát 取消了目标'),
+    'Thử nghiệm: 使用的 Hỏa Sát 取消了目标', 'Only rewrite the exact upstream log shape');
+  assert.equal(localizedGameLog('Nhạc Tiến đã sử dụng 狗尾续貂[♦2], Tào Thực đã rút 火浣衣[♦Q]'),
+    'Nhạc Tiến đã sử dụng Cẩu Vĩ Tục Điêu[♦2], Tào Thực đã rút Hỏa Hoán Y[♦Q]');
+  assert.match(VI_ADDITIONS[':amiantus_robe'], /sát thương có thuộc tính/);
+  assert.equal(localizedGameLog('Nhật ký &#34;&lt;img src=x onerror=alert(1)&gt;'),
+    'Nhật ký "<img src=x onerror=alert(1)>');
+});
+
+test('UI-01 nine-variations equipment descriptions and prompts match pinned upstream rules', () => {
+  assert.match(VI_ADDITIONS[':rob__jink'], /vô hiệu hóa Sát.*lấy một lá Kỳ Trân/);
+  assert.match(VI_ADDITIONS[':yangsui_spear'], /tầm đánh 3.*1 sát thương Hỏa không có nguồn/);
+  assert.match(VI_ADDITIONS[':white_kylin'], /\+2.*sát thương Lôi.*máu nhiều hơn bạn/);
+  assert.match(VI_ADDITIONS[':tianlu'], /−3.*Quân chủ cùng thế lực/);
+  assert.match(VI_ADDITIONS[':dunjia_book'], /tối đa hai lần.*đổi phó tướng/);
+  assert.match(VI_ADDITIONS[':serpent_slayer_sword'], /tầm đánh 2.*hồi 1 máu.*Dã tâm gia/);
+  assert.match(VI_ADDITIONS[':rare_treasure'], /Trảm Xà Kiếm.*Cửu Châu Đỉnh/);
+  assert.equal(displayText('#rare_treasure-prey::17', VI_ADDITIONS, [{ id: 17, name: 'Đồng đội' }]),
+    'Bạn có muốn lấy một lá Kỳ Trân trong khu trang bị của Đồng đội không?');
+  for (const key of ['rob__jink', 'yangsui_spear', 'white_kylin', 'tianlu', 'dunjia_book']) {
+    assert.ok(VI_ADDITIONS[`:${key}`]);
+    assert.ok(VI_ADDITIONS[`#${key}_skill`] || VI_ADDITIONS[`${key}_skill&`]);
+  }
+});
+
+test('upstream markup and decimal/hex entities become inert text without decoding markup into HTML', () => {
+  assert.equal(plainText('<font color="red"><b>Song Hùng</b></font><br/>Đỏ &#34; &#x4E2D; &#39;'),
+    'Song Hùng\nĐỏ " 中 \'');
+  assert.equal(plainText('&lt;img src=x onerror=alert(1)&gt;'), '<img src=x onerror=alert(1)>');
+  assert.equal(plainText('&#x110000; &#xD800; &#0;'), '&#x110000; &#xD800; &#0;');
+  assert.equal(plainText('&amp;lt;script&amp;gt;'), '&lt;script&gt;');
+  assert.equal(displayText('raw', { raw: '<b>&#x4E2D;&#34;&lt;script&gt;</b>' }), '中"<script>');
+});
+
 test('skill invoke prompt is visible during request and cleared by CancelRequest', () => {
   const initial = reduceUiEvent(initialSnapshot, 'StartGame', null);
   const prompt = reduceUiEvent(initial, 'AskForSkillInvoke', ['jizhi', 'Có dùng kỹ năng?']);
@@ -179,6 +333,47 @@ test('board ignores private properties and unpublished marks while guarding hidd
   assert.equal(state.board.player[1001], undefined);
 });
 
+test('Self snapshot rejects other seats and equipment strips extra data; negative HP is retained', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  for (const id of [17, -1]) state = reduceUiEvent(state, 'AddPlayer', [id, 'Player', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  const before = state.board;
+  for (const data of [[-1, 'caocao', 'liubei'], [17, ['caocao'], 'liubei'], [99, 'caocao', 'liubei']])
+    assert.equal(reduceUiEvent(state, 'SelfGenerals', data).board, before);
+  state = reduceUiEvent(state, 'SelfGenerals', [17, 'caocao', 'liubei']);
+  assert.equal(state.board.player[17].selfGeneral, 'caocao');
+  assert.equal(state.board.player[17].general, null);
+  state = reduceUiEvent(state, 'EquipmentUpdate', [-1, [{ name: 'spear', suit: 1, number: 12, id: 42, private: 'secret' }]]);
+  assert.deepEqual(state.board.player[-1].equipment, [{ name: 'spear', suit: 1, number: 12 }]);
+  for (const hp of [0, -1, -3]) {
+    state = reduceUiEvent(state, 'PropertyUpdate', [17, 'hp', hp]);
+    assert.equal(state.board.player[17].hp, hp);
+  }
+  assert.equal(reduceUiEvent(state, 'PropertyUpdate', [17, 'maxHp', -1]).board, state.board);
+  assert.equal(reduceUiEvent(state, 'PropertyUpdate', [17, 'hp', NaN]).board, state.board);
+  for (const property of ['chained', 'faceup'])
+    assert.equal(reduceUiEvent(state, 'PropertyUpdate', [17, property, 'true']).board, state.board);
+  assert.deepEqual(reduceUiEvent(state, 'EnterLobby', '').board.player, {});
+});
+
+test('visible kingdom rejects hidden opponents, accepts public state and clears when hidden again', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  for (const id of [17, -1]) state = reduceUiEvent(state, 'AddPlayer', [id, 'Player', '', false, 0]);
+  const before = state.board;
+  for (const data of [[-1, 'heg_chu'], [99, 'heg_qin'], [17, 7]])
+    assert.equal(reduceUiEvent(state, 'VisibleKingdom', data).board, before);
+  state = reduceUiEvent(state, 'VisibleKingdom', [17, 'heg_qin']);
+  assert.equal(state.board.player[17].visibleKingdom, 'heg_qin');
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'role_shown', true]);
+  state = reduceUiEvent(state, 'VisibleKingdom', [-1, 'heg_chu']);
+  assert.equal(state.board.player[-1].visibleKingdom, 'heg_chu');
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'role_shown', false]);
+  assert.equal(state.board.player[-1].visibleKingdom, null);
+  assert.equal(reduceUiEvent(state, 'VisibleKingdom', [-1, 'heg_chu']).board, state.board);
+  state = reduceUiEvent(state, 'EnterLobby', null);
+  assert.deepEqual(state.board.player, {});
+});
+
 test('game logs are bounded and board clears on game/lobby/connection lifecycle', () => {
   let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [1, 'Player', '', false, 0]);
   state = reduceUiEvent(state, 'StartGame', null);
@@ -194,4 +389,76 @@ test('game logs are bounded and board clears on game/lobby/connection lifecycle'
   const lobby = reduceUiEvent(state, 'EnterLobby', '');
   assert.deepEqual(lobby.board.player, {});
   assert.deepEqual(lobby.board.logs, []);
+});
+
+test('UI-03 records only valid public log moments with bounded and increasing IDs', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  for (const bad of ['', 42, null, { text: 'hidden' }, 'x'.repeat(10001)]) {
+    assert.equal(reduceUiEvent(state, 'GameLog', bad).board, state.board);
+  }
+  for (let i = 0; i < 104; i++) {
+    state = reduceUiEvent(state, 'GameLog', `<b>Thông báo ${i}</b>`);
+  }
+  assert.equal(state.board.logs.length, 100);
+  assert.equal(state.board.moments.length, 12);
+  assert.deepEqual(state.board.moments.map(({ id }) => id), Array.from({ length: 12 }, (_, i) => i + 93));
+  assert.deepEqual(state.board.moments[0], { id: 93, kind: 'log', text: '<b>Thông báo 92</b>' });
+  assert.deepEqual(state.board.moments.at(-1), { id: 104, kind: 'log', text: '<b>Thông báo 103</b>' });
+});
+
+test('UI-03 public HP moments include damage/healing but ignore first and unchanged values', () => {
+  let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [-1, 'Máy', '', true, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'hp', 4]);
+  assert.deepEqual(state.board.moments, [], 'initial HP is not a change');
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'hp', 4]);
+  assert.deepEqual(state.board.moments, []);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'hp', 2]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'hp', 3]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'hp', -1]);
+  assert.deepEqual(state.board.moments, [
+    { id: 1, kind: 'hp', playerId: -1, before: 4, after: 2 },
+    { id: 2, kind: 'hp', playerId: -1, before: 2, after: 3 },
+    { id: 3, kind: 'hp', playerId: -1, before: 3, after: -1 },
+  ]);
+  assert.equal(reduceUiEvent(state, 'PropertyUpdate', [900, 'hp', 1]).board, state.board);
+});
+
+test('UI-03 chain moments record true state changes and ignore initialization', () => {
+  let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'chained', false]);
+  assert.deepEqual(state.board.moments, []);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'chained', true]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'chained', true]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'chained', false]);
+  assert.deepEqual(state.board.moments, [
+    { id: 1, kind: 'chain', playerId: 17, chained: true },
+    { id: 2, kind: 'chain', playerId: 17, chained: false },
+  ]);
+});
+
+test('UI-03 never records private properties or opponent hidden data and resets per match', () => {
+  let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'AddPlayer', [-1, 'Máy', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'GameLog', 'Thông báo công khai');
+  const board = state.board;
+  for (const [command, data] of [
+    ['PropertyUpdate', [-1, 'handcards', 'private-card-id']],
+    ['PropertyUpdate', [-1, 'privateGeneral', 'private-general-id']],
+    ['SelfGenerals', [-1, 'private-general-id', 'private-deputy-id']],
+    ['SetPlayerMark', [-1, '_private', 'private-mark-value']],
+  ] as const) {
+    state = reduceUiEvent(state, command, data);
+    assert.equal(state.board, board);
+  }
+  assert.ok(!JSON.stringify(state.board).includes('private-'));
+  assert.deepEqual(reduceUiEvent(state, 'CancelRequest', null).board, board);
+  for (const event of ['GameOver', 'EnterLobby', 'StartGame']) {
+    const reset = reduceUiEvent(state, event, event === 'GameOver' ? '17' : null);
+    assert.deepEqual(reset.board.moments, [], `${event} must clear moments`);
+    assert.deepEqual(reset.board.logs, [], `${event} must clear logs`);
+    assert.deepEqual(reset.board.player, {}, `${event} must clear old player state`);
+  }
 });

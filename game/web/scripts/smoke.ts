@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import forge from 'node-forge';
 import { LuaRuntime } from '../src/engine/luaRuntime';
 import { GameConnection, type SocketHandlers } from '../src/engine/connection';
-import { CLIENT_NOTIFY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../src/engine/packet';
+import { CLIENT_NOTIFY, CLIENT_REPLY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../src/engine/packet';
 import { useGameStore } from '../src/store/gameStore';
 
 const live = process.argv[2] === '--live';
@@ -120,7 +120,7 @@ if (!target) {
   console.log('filesystem and Lua CBOR request/reply smoke: PASS');
 
   // Exercise the browser's actual JSON -> Lua -> CBOR bridge. These packets
-  // are consumed by freekill-asio, which expects binary CBOR strings.
+  // are consumed by native C++ parsers, which require CBOR text strings.
   const settings = {
     gameMode: 'new_heg_mode', roomName: 'Quốc Chiến thử', password: '',
     _game: {}, _mode: {}, disabledPack: [], disabledGenerals: [],
@@ -139,6 +139,14 @@ if (!target) {
   assert.deepEqual(parsed, { name: settings.roomName, capacity: 4, timeout: 30,
     mode: 'new_heg_mode', room: settings.roomName });
   assert.equal(created.hex.slice(0, 2), '84', 'CreateRoom must be CBOR array of 4 items');
+  assert.equal(parseInt(created.hex.slice(2, 4), 16) >> 5, 3,
+    'Native CreateRoom parser only accepts CBOR text for the room name');
+  for (const text of ['gameMode', 'new_heg_mode', 'password']) {
+    const wire = Buffer.concat([Buffer.from([0x60 + Buffer.byteLength(text)]), Buffer.from(text)]).toString('hex');
+    assert.ok(created.hex.includes(wire), `Native room settings must encode ${text} as CBOR text`);
+  }
+  assert.equal(rt.call<string>('__web_reply_hex', '1'), '4131',
+    'Text notifications must restore the byte-string encoder used by gameplay replies');
   console.log('browser CreateRoom Lua bridge smoke: PASS');
 
   // Real Lua callback -> JS RSA Setup -> CBOR wire packet, without a server
@@ -164,6 +172,7 @@ if (!target) {
     },
     onRequest: (request) => useGameStore.getState().update({ pendingRequest: request,
       ...(!request ? { skillInvoke: null, initialGeneral: null } : {}) }),
+    log: (level, message) => { if (level === 'error') console.error(`[connection Lua] ${message}`); },
   });
   await conn.start();
   const serverNotify = (command: string, data: Uint8Array) => socketHandlers.onData(encodePacket({
@@ -206,7 +215,8 @@ if (!target) {
   const serverCbor = (expr: string) => fromHex(rt.eval<string>(
     `return __host_bin2hex(cbor.encode(${expr}))`,
   ));
-  serverNotify('AddPlayer', serverCbor("{17, 'local-test', 'avatar', false, 0}"));
+  // The real C++ server does not echo the joining player's AddPlayer.
+  // EnterRoom creates Self in Lua; the bridge must publish that occupant.
   serverNotify('EnterRoom', serverCbor("{4, 30, {gameMode='new_heg_mode', roomName='Browser room', disabledPack={}, disabledGenerals={}, _game={}, _mode={}}}"));
   assert.equal(useGameStore.getState().phase, 'room');
   assert.equal(useGameStore.getState().roomMode, 'new_heg_mode');
@@ -228,6 +238,80 @@ if (!target) {
     assert.ok(roomUiEvents.includes(event), `upstream Lua must emit ${event} to the web store`);
   }
   console.log('offline Lua room/bot/game lifecycle and Zustand smoke: PASS');
+
+  // Native choice dialogs bypass RequestHandler and reach notifyUI directly.
+  // Exercise their actual callback, request guards and Lua CBOR array reply.
+  const choicePacket = (id: number, timeout = 30, timestamp = Date.now()) => socketHandlers.onData(encodePacket({
+    requestId: id, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+    command: 'AskForChoices', timeout, timestamp,
+    data: serverCbor("{{'main', 'deputy'}, {'main', 'deputy', 'disabled'}, {1, 2}, true, 'reveal', 'Choose generals', false, false}"),
+  }));
+  choicePacket(81);
+  assert.deepEqual(useGameStore.getState().pendingRequest?.choicePrompt?.choices, ['main', 'deputy']);
+  const beforeChoices = sentPackets.length;
+  for (const invalid of [['disabled'], ['main', 'main'], ['main', 'deputy', 'disabled']])
+    assert.throws(() => conn.respondToChoices(81, invalid), /không được máy chủ cho phép/);
+  assert.equal(sentPackets.length, beforeChoices);
+  conn.respondToChoices(81, ['main', 'deputy']);
+  const choiceReply = new PacketStream().push(sentPackets.at(-1)!)[0];
+  assert.equal(choiceReply.requestId, 81);
+  assert.equal(choiceReply.type, CLIENT_REPLY);
+  assert.deepEqual(rt.eval(`return cbor.decode(__host_hex2bin('${toHex(choiceReply.data)}'))`), ['main', 'deputy']);
+  assert.throws(() => conn.respondToChoices(81, ['main']), /không còn hiệu lực/);
+  choicePacket(82);
+  choicePacket(83);
+  assert.throws(() => conn.respondToChoices(82, ['main']), /không còn hiệu lực/);
+  conn.respondToChoices(83, []);
+  assert.equal(toHex(new PacketStream().push(sentPackets.at(-1)!)[0].data), '80', 'Cancel is an empty CBOR array');
+  choicePacket(84, 1, Date.now() - 5000);
+  const beforeExpiredChoice = sentPackets.length;
+  assert.throws(() => conn.respondToChoices(84, ['main']), /hết thời gian/);
+  assert.equal(sentPackets.length, beforeExpiredChoice);
+  console.log('real Lua AskForChoices validation/array reply smoke: PASS');
+
+  // Actual PlayCard handler: native room/draw/move events build the Lua hand,
+  // then user actions select a real Slash and its target before replying.
+  serverNotify('EnterRoom', serverCbor("{2, 30, {gameMode='new_heg_mode', roomName='Card fixture', disabledPack={}, disabledGenerals={}, _game={}, _mode={}}}"));
+  serverNotify('AddPlayer', serverCbor("{-1, 'Bot', 'avatar', true, 0}"));
+  serverNotify('StartGame', Uint8Array.of(0xf6));
+  serverNotify('ArrangeSeats', serverCbor('{17, -1}'));
+  for (const id of [17, -1]) {
+    serverNotify('PropertyUpdate', serverCbor(`{${id}, 'hp', 4}`));
+    serverNotify('PropertyUpdate', serverCbor(`{${id}, 'maxHp', 4}`));
+  }
+  serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.Play}"));
+  serverNotify('PrepareDrawPile', fromHex(conn.lua.eval<string>(
+    'return __host_bin2hex(cbor.encode(Fk.game_modes.new_heg_mode:buildDrawPile()))',
+  )));
+  const slashId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+    return Fk:getCardById(id).trueName == 'slash'
+  end)`);
+  assert.ok(Number.isInteger(slashId), 'The native Hegemony draw-pile list must contain a Slash');
+  serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+    moveInfo={{cardId=${slashId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+  assert.deepEqual(conn.lua.eval('return Self:getCardIds("h")'), [slashId]);
+  assert.equal(useGameStore.getState().board.player[17]?.handcardNum, 1);
+  assert.equal(useGameStore.getState().board.player[-1]?.handcardNum, 0);
+  socketHandlers.onData(encodePacket({
+    requestId: 85, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+    command: 'PlayCard', data: serverCbor('{}'), timeout: 30, timestamp: Date.now(),
+  }));
+  assert.equal(conn['gameplayScene'].items.CardItem[String(slashId)]?.enabled, true);
+  const beforeCard = sentPackets.length;
+  conn.updateRequestUI(85, 'CardItem', slashId, 'click', { selected: true });
+  assert.equal(conn['gameplayScene'].items.Photo['-1']?.enabled, true);
+  assert.throws(() => conn.updateRequestUI(85, 'Button', 'OK', 'click', null), /Lua cho phép/);
+  conn.updateRequestUI(85, 'Photo', -1, 'click', { selected: true });
+  assert.equal(sentPackets.length, beforeCard, 'Selecting a card/target alone cannot reply');
+  conn.updateRequestUI(85, 'Button', 'OK', 'click', null);
+  const played = new PacketStream().push(sentPackets.at(-1)!)[0];
+  assert.equal(played.requestId, 85);
+  assert.equal(played.type, CLIENT_REPLY);
+  assert.deepEqual(rt.eval(`return cbor.decode(__host_hex2bin('${toHex(played.data)}'))`),
+    { card: slashId, targets: [-1] });
+  assert.throws(() => conn.updateRequestUI(85, 'Button', 'OK', 'click', null), /không còn hiệu lực/);
+  serverNotify('EnterLobby', Uint8Array.of(0xf6));
+  console.log('real Lua PlayCard Slash/card/target/OK/CBOR reply smoke: PASS');
 
   // Run the actual FreeKill ReqInvoke handler inside Wasmoon: request packet
   // -> ClientCallback/CancelRequest -> handler -> button -> CBOR CLIENT_REPLY.

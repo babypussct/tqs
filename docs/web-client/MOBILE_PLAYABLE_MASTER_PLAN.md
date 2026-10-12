@@ -305,6 +305,26 @@ interface MobileUiAction {
 
 **Các bất biến phải test:** đúng `requestId`, 1 reply cho mỗi yêu cầu có reply, không reply sau cancel/timeout, không tái sử dụng reply cũ sau reconnect, không hiển thị bài bí mật và không nhận `GameOver` giả từ client.
 
+### Checkpoint 10/10/2026 — tích hợp React/Lua và kiểm thử trên Chrome cục bộ
+
+**Bằng chứng tại checkout `5005d7c` (có thay đổi chưa commit):** Node.js `22.23.2`, npm `10.9.8`, Chrome headless `155.0.8059.39`; chạy trong `game/web` với `npm run test:e2e` đạt **16/16 PASS**. Runner dùng `e2e.html`, `scripts/browser-e2e/{harness.tsx,run.ts}` và Playwright Core, bấm vào DOM của React thật, dùng Zustand, `GameConnection` và CBOR encoder/decoder thật. Gateway socket và phản hồi Lua được **mô phỏng có kiểm soát**; màn khởi động app kiểm tra lỗi manifest HTTP 503 giả lập, không kết nối Gateway thật.
+
+Các luồng browser được xác minh: chọn bài/mục tiêu/kỹ năng, OK/Cancel/End, combo/spin/checkbox/expand/optionbox, direct interaction nhiều bước `Interaction.finish → Button.OK` (kể cả cùng interaction spec), giữ request khi Lua chưa `ReplyToServer`, widget động, request thay thế/hủy/hết hạn, reconnect tái sử dụng ID, disconnect, lỗi Lua và chống gửi packet CBOR trùng. Khi đếm packet, harness tách lịch sử theo kịch bản nhưng vẫn giữ socket cũ trong cùng kịch bản reconnect.
+
+| Tầng xác minh cục bộ | Kết quả 10/10/2026 | Giới hạn |
+|---|---|---|
+| Browser UI integration (Chrome + Lua/socket mock) | **16/16 PASS** | Chưa có Lua VM thật hay FreeKill C++ trong cùng luồng browser |
+| Gameplay unit/integration | **14/14 PASS** | Fixture và callback cục bộ |
+| Connection + Zustand store | **19/19 + 11/11 PASS** | Không cần live server |
+| Protocol + bundle | **4/4 + 4/4 PASS** | Dữ liệu kiểm thử cục bộ |
+| Gateway | **1/1 PASS** | Node test có gateway/socket giả lập cục bộ |
+| TypeScript + production build | **PASS** | Build còn cảnh báo Wasmoon externalized `module` và chunk JS lớn |
+| Lua WASM smoke | **PASS** | 808 file, 6 extension, 353 tướng, 578 kỹ năng, 87 loại bài; có kiểm thử bridge/reply Lua thật nhưng chưa phải trận browser end-to-end |
+
+**Phần chưa nghiệm thu tại báo cáo local phía trên:** browser → Lua VM thật → Gateway → FreeKill C++ trong một phiên, đăng nhập và chơi trọn ván với bot hoặc hai người, kiểm thử Safari/Android thật, kiểm tra public HTTPS/WSS. Báo cáo trước ghi `npm audit` còn **1 high** cho `node-forge@1.4.0` (GHSA-86w9-cpqp-85rv; chưa có bản vá khả dụng khi kiểm tra); chưa kiểm tra lại audit trong mốc live bên dưới. Không tự chạy `npm audit fix --force`.
+
+**Bổ sung GAME-02 — live PASS 10/10/2026:** Chrome 390×844 + React + Wasmoon/Lua thật → Gateway local → FreeKill C++ `168.110.36.224:9527` đã đăng nhập bằng tài khoản test riêng, nhận `Setup` + `EnterLobby`, hiển thị sảnh/online, gửi `RefreshRoomList` và ngắt kết nối sạch. `npm run test:e2e:login` PASS; server chấp nhận snapshot MD5 `a2a4b0af428f971c2642f11bd4aef162` với 808 Lua/JSON files. Đã sửa lỗi sinh hash từ sparse checkout thiếu bốn QML Hegemony bằng cách xuất blob từ commit pin. `test:live-config` 2/2, typecheck runner và build PASS. Hướng dẫn cấu hình tại [`LIVE_TESTING.md`](./LIVE_TESTING.md); credentials ở file private ngoài repository, không ghi giá trị vào tài liệu. G1 login đã có bằng chứng live; G3 room/bot, G4 gameplay, G5 GameOver và G6/G7 vẫn chưa nghiệm thu, nên chưa đạt `PLAYABLE_MOBILE = true`.
+
 ## 5. Kịch bản kiểm thử và tiêu chí pass/fail
 
 | Mã | Kịch bản | Pass khi | Gate |
@@ -475,3 +495,43 @@ tqs/
 ---
 
 **Trạng thái tại lúc lưu kế hoạch:** mới thiết kế roadmap và rà soát source; **chưa thực hiện G0–G8, chưa có Mobile Web Client chơi được hoặc deployment mới**. Việc đầu tiên sau kế hoạch là G0, tiếp theo G1/G2 là đường găng kỹ thuật.
+
+
+### GAME-03 — cập nhật live đêm 10–11/10/2026
+
+Đã chơi **trọn một ván Quốc Chiến với bot qua browser hiển thị → Wasmoon/Lua → Gateway → FreeKill C++ thật**: room 2 ghế, chọn cặp tướng, AskForChoices revealAll, Vô Giải, Sát/card/target/OK, Cường Tập bỏ bài tay và bỏ vũ khí trang bị, qua lượt bot, HP bot 3→2→1→0. GameOver winner `3` = Self.id `3`: tài khoản test thắng; bấm Rời phòng trở về sảnh thành công. Trace 614 packets, replies requestId 4–13 mỗi ID một lần; không console error/warning. Ảnh/trace: `scratch/evidence/live-game-complete-2026-10-11.json`, `live-game-card-target-2026-10-10.png`, `live-game-finished-2026-10-11.png`, `live-game-back-lobby-2026-10-11.png`.
+
+Đã sửa scene ban đầu thiếu _new, counts/phase và min lựa chọn. Sau ván bổ sung result panel vì UI cũ chỉ trở về phòng chờ; store 13/13, browser Lua 14/14 và build PASS. **Result panel mới chưa qua GameOver của một ván live mới.** G4 checkpoint cơ bản và ván bot của G5 có bằng chứng live; T06–T08 còn coverage dùng Thiểm/Đào, view-as, card-chosen/Poxi/AG, và chưa mobile thiết bị thật/hai người/reconnect/public release. Giữ `PLAYABLE_MOBILE = false`; không coi một ván đã thắng là hoàn thành toàn bộ ma trận.
+
+
+### Playtest user 11/10/2026 — chưa nghiệm thu đầy đủ G4/G5
+
+Một ván thắng không chứng minh T06–T08 đã hoàn chỉnh. Audit phản ánh user xác nhận thiếu AskForCardChosen UI (Thuận Thủ Khiên Dương), trạng thái chained và tên tướng Self khi chưa lật; Việt hóa vẫn còn prompt/marks/tên Trung–Anh/raw skill ID. Cứu Đào phải kiểm chứng cả normal rescue và BattleRoyal cấm Đào; lập quốc Tần/Tề/Sở… có trong upstream new_heg_mode, cần Việt hóa/giải thích chứ chưa có bằng chứng sai luật.
+
+Bổ sung nghiệm thu cụ thể trước MVP-B: GAME-03A dialog card-chosen; GAME-03B Self/chained/equipment/HP hấp hối; GAME-03C cứu Đào và rule; UI-01 Việt hóa các luồng user đã gặp; UI-02 chọn bể tướng và bể bài theo GeneralPack/CardPack với disabledPack thật; UI-03 nhật ký bên trái trên màn rộng, diễn biến giữa bàn và phản hồi hành động cơ bản, đánh giá tốc độ bot không trì hoãn protocol. Animation nghệ thuật nâng cao vẫn P2. Ticket chi tiết tại ../CODEX_PLAN.md. PLAYABLE_MOBILE vẫn false.
+
+### UI-02 — checkpoint local 11/10/2026 (chưa live acceptance)
+
+UI cho phép bật/tắt 14 GeneralPack và 4 CardPack từ Lua pin của FreeKill; xem trước bể, ngăn tạo phòng khi số lượng không đủ, tạo `CreateRoom` với `disabledPack`, đọc lại `EnterRoom` trong phòng chờ. Kiểm tra native `Room:makeGeneralPile` + Hegemony draw pile: tắt gói thử cho **241→196 tướng** và **213→109 lá**. Kiểm thử thực tế tại checkout: room-pools 4 nhóm PASS; Chrome mock **17/17**, Chrome + Wasmoon/FreeKill Lua/socket fixture **35/35** với hai ca UI-02 và viewport 390/320 px; strict harness typecheck và Vite production build PASS. Ảnh fixture ở `scratch/evidence/ui-02-mobile-{lobby,waiting}-lua-fixture-2026-10-11.png`; bằng chứng/giới hạn ghi tại `../CODEX_STATE.md`. Cần tạo phòng và kiểm chứng disabled pack trong một ván **FreeKill C++ server thật** trước khi đóng UI-02; chưa có nghiệm thu mobile thiết bị vật lý, `PLAYABLE_MOBILE` vẫn false.
+
+### CP06 — checkpoint và deploy build mới, 11/10/2026
+
+Đã xử lý bước audit còn thiếu: bốn evidence gốc **468 mẫu/0 nghi vấn sau xử lý lại**, hai câu hủy mục tiêu kiểm riêng. Build mới bổ sung Cự Cổ/Tư Viện từ Lua Mi Trúc và favicon; store **26/26**, Chrome mock **17/17**, Chrome + Lua fixture **38/38**, smoke/build/strict typecheck PASS. Build đóng băng được kiểm qua HTTPS/WSS thật bằng `TQS_LIVE_URL`: server Setup/EnterLobby, ván native Trust hoàn tất, server GameOver, panel thắng, Về sảnh và ngắt sạch; không lỗi JS/Lua/console. Toàn bộ 5 dist files tải HTTPS khớp SHA-256. UI-03 đã có thêm live evidence **63 log entries/3 diễn biến**, không tràn ngang Chrome 390px. Bằng chứng và URL/rollback tại `CHECKPOINT_CP06_REPORT.md`, `CHECKPOINT_DEPLOY.md` và `../CODEX_STATE.md`.
+
+UI-01 còn mở: ván cuối có **77 mẫu/3 dòng tên kỹ năng `祸水` và `礼下` chưa dịch**; chưa đủ coverage mọi kỹ năng/Kỳ Trân/lập quốc/Quyết chiến. Snapshot 808 files/MD5 a2a4b0af428f971c2642f11bd4aef162 vẫn được server nhận. Quick Tunnel còn phụ thuộc Mac; SSH mặc định thực tế vẫn bị từ chối publickey. GAME-03A/03C live, thiết bị thật/hai người/reconnect và G7 chưa nghiệm thu; **PLAYABLE_MOBILE=false**. Không coi checkpoint deployment là hoàn tất mobile release.
+
+### Kế hoạch phân công song song sau CP06 · 11/10/2026
+
+Bảng thực thi, checklist hoàn tất và mẫu giao việc ở [PARALLEL_COMPLETION_PLAN.md](./PARALLEL_COMPLETION_PLAN.md). Các gate là điều kiện nghiệm thu; code Việt hóa/dialog/luật/reconnect/mobile/security/hosting có thể phát triển song song từ baseline CP06 đầy đủ. Cần một điều phối viên quản shared bridge/store, candidate tích hợp, account/lịch live và release. Đề xuất 5 worker hoặc tách thành 7 khi đủ tài nguyên. M1 bot/mobile, M2 multiplayer, M3 release ổn định và M4 V1 được phân biệt; các tính năng P2 chỉ đóng theo danh sách hữu hạn đã chốt. Lượt lập kế hoạch chưa tạo agent/worktree hoặc thay deployment.
+
+### Điều chỉnh phân công theo chat độc lập · 11/10/2026
+
+Yêu cầu mới thay đề xuất gộp worker: mỗi gói công việc có một chat riêng do người dùng mở, **không dùng subagent**. C00 giữ nhiệm vụ điều phối R00/Q01, C01–C12 mỗi chat làm một gói theo [CHAT_TASK_PROMPTS.md](./CHAT_TASK_PROMPTS.md). Các chat nhận baseline/workspace/hash thống nhất, bàn giao patch/artifact theo task ID; C00 review và nghiệm thu candidate đã ghép. Lượt này chỉ chỉnh tài liệu, chưa tạo chat hoặc thay deployment.
+
+### CP16 — bridge hardening và deploy candidate · 12/10/2026
+
+CP16 đã hoàn tất ở mức source/fixture: projection public/private, stale socket generation, request/reply, native dialog cleanup, payload bounds, reconnect và `ShowVirtualCard` đều có regression; `npx tsx --test scripts/*.test.ts` **102/102**, gateway **5/5**, Chrome mock **17/17**, Chrome + Lua/Wasmoon **49/49**, smoke/typecheck/build/diff-check PASS. Candidate đã đóng gói/verify **1.047 files**, Render `tqs-mobile-candidate` deploy commit `582df25` và qua health, manifest MD5, foreign-Origin 403, 9 static hashes và Setup→EnterLobby→disconnect canary với FreeKill C++ thật. Đây vẫn là candidate/demo; `PLAYABLE_MOBILE=false`, device/network, full T06–T08 live, cold-start/quota và official rollback/SLA còn mở.
+
+### CP17 — bước kế tiếp
+
+Đối chiếu danh mục request thực tế của các package đang bật với renderer hiện có, rồi ưu tiên đóng các ca chưa có bằng chứng live: card-chosen/Poxi nhiều lá, cứu Đào, quyết chiến/lập quốc, view-as và native dialog. Mỗi ca cần state machine, CBOR reply đúng request ID, cancellation/expiry/cleanup và regression test. Sau đó hoàn tất nhóm Việt hóa còn raw như `祸水`/`礼下` theo ngữ cảnh, loại raw internal ID khỏi UI công khai, và rà prompt/choice/log/result/reconnect/error state ở **320/390/1280 px**. Không mở lại device/network gate trừ khi có yêu cầu hoặc lỗi thực tế.

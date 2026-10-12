@@ -22,10 +22,11 @@ export function parseInitialGeneralPrompt(data: unknown): InitialGeneralPrompt |
   // The server sends player count * generalNum choices. Large valid room
   // settings can exceed 200; keep a generous input-safety limit instead.
   if (!Array.isArray(generals) || generals.length < 2 || generals.length > 1024 ||
-      !generals.every((name) => typeof name === 'string' && name.length > 0 && !name.includes(',')) ||
+      !generals.every((name) => typeof name === 'string' && name.length > 0 && name.length <= 256 && !name.includes(',')) ||
       new Set(generals).size !== generals.length ||
       !Array.isArray(enabledKingdoms) || enabledKingdoms.length === 0 ||
-      !enabledKingdoms.every((k) => typeof k === 'string' && k.length > 0 && !k.includes(',')) ||
+      enabledKingdoms.length > 64 ||
+      !enabledKingdoms.every((k) => typeof k === 'string' && k.length > 0 && k.length <= 128 && !k.includes(',')) ||
       new Set(enabledKingdoms).size !== enabledKingdoms.length) return null;
 
   return { generals: [...generals], choiceNum: 2, enabledKingdoms: [...enabledKingdoms] };

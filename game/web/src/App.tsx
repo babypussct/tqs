@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { GameAdapter } from './engine/gameAdapter';
-import { useGameStore, type LobbyRoom, type SkillInvokePrompt } from './store/gameStore';
+import { GameAdapter, type RoomPack } from './engine/gameAdapter';
+import { useGameStore, type LobbyRoom } from './store/gameStore';
 import type { RequestInfo } from './engine/connection';
 import type { InitialGeneralPrompt } from './engine/generalSelection';
 import GameBoardScreen from './GameBoardScreen';
+import SkillInvokePanel from './SkillInvokePanel';
+import ChoicePanel from './ChoicePanel';
+import CardSelectionPanel from './CardSelectionPanel';
+import CardsAndChoicePanel from './CardsAndChoicePanel';
+import GameResultPanel from './GameResultPanel';
 import { emptyBoard } from './store/boardState';
+import { GAMEPLAY_REQUESTS } from './store/gameplayState';
+import { useDisplayText, plainText } from './engine/displayText';
+import RequestDeadline from './RequestDeadline';
+import NativeDialogPanel from './NativeDialogPanel';
 
 const gateway = (import.meta.env.VITE_GATEWAY_URL ?? '/gateway').replace(/\/$/, '');
 
@@ -35,6 +44,12 @@ function LoginScreen({ adapter, run, busy }: {
         </button>
       </form>
       <small className="muted">Thông tin đăng nhập chỉ được dùng trong phiên kết nối hiện tại.</small>
+      <details className="install-help">
+        <summary>Chơi từ Màn hình chính</summary>
+        <p><strong>iPhone:</strong> Trong Safari, mở Chia sẻ → Thêm vào Màn hình chính. Bật Mở dưới dạng ứng dụng web nếu có, rồi mở biểu tượng TQS để chơi trong cửa sổ riêng.</p>
+        <p><strong>Android:</strong> Mở menu trình duyệt → Cài đặt ứng dụng hoặc Thêm vào màn hình chính, rồi mở biểu tượng TQS.</p>
+        <p className="muted small">Đăng nhập và chơi cần kết nối mạng. Hãy kết thúc ván trước khi chuyển cách mở game.</p>
+      </details>
     </section>
   );
 }
@@ -56,7 +71,7 @@ function LobbyRoomRow({ room, join, busy }: { room: LobbyRoom; join: (id: number
   );
 }
 
-function LobbyScreen({ adapter, run, busy }: {
+export function LobbyScreen({ adapter, run, busy }: {
   adapter: GameAdapter;
   run: (action: () => void | Promise<void>) => void;
   busy: boolean;
@@ -65,9 +80,34 @@ function LobbyScreen({ adapter, run, busy }: {
   const [roomName, setRoomName] = useState('Quốc Chiến Mobile');
   const [capacity, setCapacity] = useState(4);
   const [timeout, setTimeoutSeconds] = useState(30);
+  const [disabledPacks, setDisabledPacks] = useState<string[]>([]);
+  const text = useDisplayText();
+  const packs = useMemo(() => {
+    try { return adapter.getRoomPacks(); } catch { return null; }
+  }, [adapter]);
+  const pool = useMemo(() => {
+    if (!packs) return null;
+    try { return adapter.getRoomPoolSummary(disabledPacks); } catch { return null; }
+  }, [adapter, packs, disabledPacks]);
+  const validPool = !!pool && pool.generals >= capacity * 5 && pool.cards >= capacity * 4;
+  const togglePack = (name: string) => setDisabledPacks((previous) => previous.includes(name)
+    ? previous.filter((id) => id !== name) : [...previous, name]);
+  const packGroup = (title: string, items: RoomPack[], type: string) => (
+    <fieldset className="pool-group" aria-label={title}>
+      <legend>{title} ({items.length})</legend>
+      <div className="pool-options">
+        {items.map((pack) => <label key={pack.id} className="pool-option">
+          <input type="checkbox" data-pack-id={pack.id} data-pack-type={type}
+            checked={!disabledPacks.includes(pack.id)} disabled={busy}
+            onChange={() => togglePack(pack.id)} />
+          <span>{text(pack.id) !== pack.id ? text(pack.id) : pack.label}<small>{pack.count} {type === 'generals' ? 'tướng' : 'lá'}</small></span>
+        </label>)}
+      </div>
+    </fieldset>
+  );
   const create = (event: FormEvent) => {
     event.preventDefault();
-    run(() => adapter.createRoom(roomName, capacity, timeout));
+    run(() => adapter.createRoom(roomName, capacity, timeout, disabledPacks));
   };
   return (
     <div className="screen-stack">
@@ -81,7 +121,18 @@ function LobbyScreen({ adapter, run, busy }: {
             <div><label htmlFor="capacity">Số người</label><select id="capacity" value={capacity} onChange={(e) => setCapacity(Number(e.target.value))}>{Array.from({ length: 9 }, (_, i) => i + 2).map((n) => <option key={n} value={n}>{n} người</option>)}</select></div>
             <div><label htmlFor="timeout">Thời gian lượt</label><select id="timeout" value={timeout} onChange={(e) => setTimeoutSeconds(Number(e.target.value))}>{[10, 15, 20, 30, 45, 60].map((n) => <option key={n} value={n}>{n} giây</option>)}</select></div>
           </div>
-          <button className="button primary" type="submit" disabled={busy}>Tạo phòng Quốc Chiến</button>
+          <details className="pool-editor" open>
+            <summary>Chọn bể tướng và bể bài</summary>
+            <p className="muted small">Bỏ chọn gói để loại toàn bộ tướng hoặc bài thuộc gói đó khỏi ván. Các gói không hỗ trợ Quốc Chiến được FreeKill tự loại.</p>
+            {packs ? <>
+              {packGroup('Bể tướng', packs.generals, 'generals')}
+              {packGroup('Bể bài', packs.cards, 'cards')}
+              <p className={`pool-summary ${validPool ? 'ok' : 'pool-warning'}`} role="status">
+                {pool ? `${pool.generals} tướng khác tên · ${pool.cards} lá bài. Cần tối thiểu ${capacity * 5} tướng và ${capacity * 4} lá cho ${capacity} người.` : 'Không thể kiểm tra bể tướng/bài.'}
+              </p>
+            </> : <p className="notice error-notice">Không tải được danh sách gói từ Lua.</p>}
+          </details>
+          <button className="button primary" type="submit" disabled={busy || !validPool}>Tạo phòng Quốc Chiến</button>
         </form>
       </section>
       <section className="panel" aria-labelledby="list-title">
@@ -92,18 +143,29 @@ function LobbyScreen({ adapter, run, busy }: {
   );
 }
 
-function WaitingRoomScreen({ adapter, run, busy }: {
+export function WaitingRoomScreen({ adapter, run, busy }: {
   adapter: GameAdapter;
   run: (action: () => void | Promise<void>) => void;
   busy: boolean;
 }) {
-  const { roomName, roomMode, players, capacity, ownId } = useGameStore((s) => s);
+  const { roomName, roomMode, roomDisabledPacks, roomDisabledGenerals, players, capacity, ownId } = useGameStore((s) => s);
+  const text = useDisplayText();
+  const packs = useMemo(() => {
+    try { return adapter.getRoomPacks(); } catch { return null; }
+  }, [adapter]);
   const self = players.find((p) => p.id === ownId);
   return (
     <section className="panel" aria-labelledby="waiting-title">
       <span className="section-label">03 / Phòng chờ</span>
       <h2 id="waiting-title">{roomName || 'Phòng Quốc Chiến'}</h2>
       <p className="muted">{roomMode === 'new_heg_mode' ? 'Quốc Chiến' : roomMode} · {players.length}/{capacity} người chơi</p>
+      {roomMode === 'new_heg_mode' && packs && <details className="pool-editor waiting-pools">
+        <summary>Cấu hình bể của phòng (máy chủ xác nhận)</summary>
+        <p className="muted small">Bể tướng: {packs.generals.filter((p) => !roomDisabledPacks.includes(p.id)).length}/{packs.generals.length} gói · Bể bài: {packs.cards.filter((p) => !roomDisabledPacks.includes(p.id)).length}/{packs.cards.length} gói</p>
+        <p className="small">Gói bài đang bật: {packs.cards.filter((p) => !roomDisabledPacks.includes(p.id)).map((p) => text(p.id) !== p.id ? text(p.id) : p.label).join(' · ') || 'Không có'}</p>
+        <p className="small">Gói tướng đang bật: {packs.generals.filter((p) => !roomDisabledPacks.includes(p.id)).map((p) => text(p.id) !== p.id ? text(p.id) : p.label).join(' · ') || 'Không có'}</p>
+        {!!roomDisabledGenerals.length && <p className="muted small">Phòng cũng cấm riêng {roomDisabledGenerals.length} tướng.</p>}
+      </details>}
       <ul className="player-list">
         {players.map((p) => <li key={p.id} className="player-item"><div><strong>{p.name || (p.id < 0 ? 'Bot' : `Người chơi ${p.id}`)}</strong>{p.id === ownId && <span className="you-tag">Bạn</span>}{p.owner && <span className="owner-tag">Chủ phòng</span>}</div><span className={p.ready ? 'ok' : 'muted'}>{p.ready ? 'Sẵn sàng' : 'Chưa sẵn sàng'}</span></li>)}
       </ul>
@@ -116,45 +178,6 @@ function WaitingRoomScreen({ adapter, run, busy }: {
   );
 }
 
-function SkillInvokePanel({ adapter, run, busy, request, prompt }: {
-  adapter: GameAdapter;
-  run: (action: () => void | Promise<void>) => void;
-  busy: boolean;
-  request: RequestInfo;
-  prompt: SkillInvokePrompt | null;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    setNow(Date.now());
-    if (request.expiresAt === null) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(timer);
-  }, [request.requestId, request.expiresAt]);
-
-  const seconds = request.expiresAt === null ? null : Math.max(0, Math.ceil((request.expiresAt - now) / 1000));
-  const expired = seconds === 0;
-  const respond = (choice: 'OK' | 'Cancel') => run(() => adapter.sendUiAction(request.requestId, choice));
-  return (
-    <section className="panel request-panel" aria-labelledby="skill-request-title">
-      <span className="section-label">Yêu cầu trong trận</span>
-      <div className="row-between">
-        <h2 id="skill-request-title">Kích hoạt kỹ năng?</h2>
-        <span className={`countdown ${expired ? 'expired' : ''}`} role="timer">
-          {seconds === null ? 'Không giới hạn' : expired ? 'Hết giờ' : `${seconds}s`}
-        </span>
-      </div>
-      {prompt ? <>
-        <p className="skill-name">{prompt.skill}</p>
-        <p className="muted">{prompt.prompt || `Bạn có muốn kích hoạt ${prompt.skill}?`}</p>
-      </> : <p className="muted">Đang tải thông tin kỹ năng từ Lua…</p>}
-      <div className="request-actions">
-        <button type="button" className="button primary" disabled={busy || expired || !prompt} onClick={() => respond('OK')}>Kích hoạt</button>
-        <button type="button" className="button secondary" disabled={busy || expired || !prompt} onClick={() => respond('Cancel')}>Bỏ qua</button>
-      </div>
-    </section>
-  );
-}
-
 function InitialGeneralPanel({ adapter, run, busy, request, prompt }: {
   adapter: GameAdapter;
   run: (action: () => void | Promise<void>) => void;
@@ -162,6 +185,7 @@ function InitialGeneralPanel({ adapter, run, busy, request, prompt }: {
   request: RequestInfo;
   prompt: InitialGeneralPrompt;
 }) {
+  const text = useDisplayText();
   const [chosen, setChosen] = useState<string[]>([]);
   const [kingdom, setKingdom] = useState('');
   const [warning, setWarning] = useState('');
@@ -227,7 +251,7 @@ function InitialGeneralPanel({ adapter, run, busy, request, prompt }: {
           const pos = chosen.indexOf(name);
           return <button key={`${name}-${index}`} type="button" className={`general-choice ${pos !== -1 ? 'selected' : ''}`}
             aria-pressed={pos !== -1} disabled={busy || expired} onClick={() => choose(name)}>
-            <strong>{labels[index] || name}</strong><small>{name}</small>
+            <strong>{plainText(labels[index] || text(name))}</strong>
             {pos !== -1 && <span className="general-position">{pos === 0 ? 'Chủ tướng' : 'Phó tướng'}</span>}
           </button>;
         })}
@@ -237,9 +261,9 @@ function InitialGeneralPanel({ adapter, run, busy, request, prompt }: {
       {kingdoms.length > 1 && <fieldset className="kingdom-picker">
         <legend>Chọn thế lực</legend>
         {kingdoms.map((k) => <label key={k}><input type="radio" name={`kingdom-${request.requestId}`} value={k}
-          checked={kingdom === k} disabled={busy || expired} onChange={() => setKingdom(k)} />{k}</label>)}
+          checked={kingdom === k} disabled={busy || expired} onChange={() => setKingdom(k)} />{text(k)}</label>)}
       </fieldset>}
-      {kingdoms.length === 1 && <p className="muted">Thế lực: <strong>{kingdoms[0]}</strong></p>}
+      {kingdoms.length === 1 && <p className="muted">Thế lực: <strong>{text(kingdoms[0])}</strong></p>}
       <div className="request-actions">
         <button type="button" className="button secondary" disabled={busy || expired || !chosen.length}
           onClick={() => { setChosen([]); setKingdom(''); setWarning(''); }}>Chọn lại</button>
@@ -254,12 +278,34 @@ export default function App() {
   const adapter = useMemo(() => new GameAdapter(gateway), []);
   const snapshot = useGameStore();
   const [busy, setBusy] = useState(false);
+  const [networkOnline, setNetworkOnline] = useState(navigator.onLine);
+  const [exitAction, setExitAction] = useState<'leave' | 'disconnect' | null>(null);
+  useEffect(() => {
+    const changed = () => setNetworkOnline(navigator.onLine);
+    window.addEventListener('online', changed);
+    window.addEventListener('offline', changed);
+    return () => { window.removeEventListener('online', changed); window.removeEventListener('offline', changed); };
+  }, []);
+  const trusting = snapshot.players.find((player) => player.id === snapshot.ownId)?.netState === 'trust';
 
   useEffect(() => {
     const controller = new AbortController();
     void adapter.boot(controller.signal);
     return () => { controller.abort(); adapter.disconnect(); };
   }, [adapter]);
+
+  useEffect(() => {
+    if (snapshot.phase !== 'playing') {
+      setExitAction(null);
+      return;
+    }
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [snapshot.phase]);
 
   const run = (action: () => void | Promise<void>) => {
     if (busy) return;
@@ -270,27 +316,88 @@ export default function App() {
     }).finally(() => setBusy(false));
   };
 
+  const disconnect = () => {
+    adapter.disconnect();
+    useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], ownId: null, pendingRequest: null, skillInvoke: null, initialGeneral: null, result: null, board: emptyBoard(), progress: '', error: null });
+  };
+
   return (
     <main className={`shell ${snapshot.phase === 'playing' ? 'shell-playing' : ''}`}>
       <header className="app-header">
         <div><span className="eyebrow">TQS · Quốc Chiến</span><h1>Tam Quốc Sát <em>Mobile</em></h1><p className="intro">Trải nghiệm FreeKill trên trình duyệt.</p></div>
         <span className={`status ${snapshot.connection.kind === 'online' ? 'connected' : ''}`}>{snapshot.connection.kind === 'online' ? 'Đã kết nối' : snapshot.connection.kind === 'authenticating' ? 'Đang xác thực' : 'Chưa kết nối'}</span>
       </header>
+      {!networkOnline && <p className="notice" role="status">Bạn đang ngoại tuyến. Kết nối mạng để đăng nhập hoặc tiếp tục ván.</p>}
       {snapshot.progress && <div className="notice" role="status">{snapshot.progress}</div>}
       {snapshot.error && <div className="notice error-notice" role="alert">{snapshot.error}{snapshot.phase === 'boot' && <button className="button small-button" onClick={() => run(() => adapter.boot())}>Thử lại</button>}</div>}
+      {exitAction && snapshot.phase === 'playing' && <section className="panel" role="alertdialog" aria-labelledby="exit-title" aria-describedby="exit-warning">
+        <h2 id="exit-title">Ván vẫn đang chạy</h2>
+        <p id="exit-warning">Rời trận hoặc ngắt kết nối khi còn sống có thể khiến máy chủ tạm chặn IP. Nếu cần tạm nghỉ, hãy bật BOT chơi hộ và giữ trang mở.</p>
+        <div className="inline-controls">
+          <button className="button primary" disabled={busy} onClick={() => setExitAction(null)}>Tiếp tục ván</button>
+          {!trusting && <button className="button secondary" disabled={busy} onClick={() => { setExitAction(null); run(() => adapter.toggleTrust()); }}>BOT chơi hộ</button>}
+          <button className="button ghost" disabled={busy} onClick={() => {
+            const action = exitAction;
+            setExitAction(null);
+            run(() => action === 'leave' ? adapter.leaveRoom() : disconnect());
+          }}>{exitAction === 'leave' ? 'Vẫn rời trận' : 'Vẫn ngắt kết nối'}</button>
+        </div>
+      </section>}
+      {snapshot.phase === 'playing' && !trusting && <RequestDeadline request={snapshot.pendingRequest} />}
       {snapshot.phase === 'boot' && <section className="panel"><h2>Đang chuẩn bị tài nguyên…</h2><p className="muted">Tải và xác minh FreeKill, Utility, Hegemony trước khi đăng nhập.</p></section>}
       {snapshot.phase === 'login' && <LoginScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'lobby' && <LobbyScreen adapter={adapter} run={run} busy={busy} />}
+      {snapshot.phase === 'room' && snapshot.result && <GameResultPanel result={snapshot.result} busy={busy}
+        leave={() => run(() => adapter.leaveRoom())} />}
       {snapshot.phase === 'room' && <WaitingRoomScreen adapter={adapter} run={run} busy={busy} />}
-      {snapshot.phase === 'playing' && <GameBoardScreen busy={busy} leave={() => run(() => adapter.leaveRoom())} />}
-      {snapshot.pendingRequest?.command === 'AskForSkillInvoke' && <SkillInvokePanel adapter={adapter} run={run} busy={busy} request={snapshot.pendingRequest} prompt={snapshot.skillInvoke} />}
-      {snapshot.pendingRequest?.command === 'CustomDialog' && snapshot.initialGeneral &&
+      {snapshot.phase === 'playing' && <GameBoardScreen busy={busy} leave={() => setExitAction('leave')}
+        toggleTrust={() => run(() => adapter.toggleTrust())}
+        direct={(id, data) => {
+          const request = snapshot.pendingRequest;
+          if (request && GAMEPLAY_REQUESTS.has(request.command)) run(() => {
+            adapter.finishDirectInteraction(request.requestId, id, data);
+          });
+        }}
+        dispatch={(type, id, action, data) => {
+          const request = snapshot.pendingRequest;
+          if (request && GAMEPLAY_REQUESTS.has(request.command))
+            run(() => adapter.updateRequestUI(request.requestId, type, id, action, data));
+        }} />}
+      {!trusting && snapshot.pendingRequest?.command === 'AskForSkillInvoke' && <SkillInvokePanel busy={busy} request={snapshot.pendingRequest} prompt={snapshot.skillInvoke}
+        onRespond={(choice) => run(() => adapter.sendUiAction(snapshot.pendingRequest!.requestId, choice))} />}
+      {!trusting && snapshot.pendingRequest && ['AskForChoices', 'AskForOptions'].includes(snapshot.pendingRequest.command) && snapshot.pendingRequest.choicePrompt &&
+        <ChoicePanel key={`${snapshot.pendingRequest.requestId}-${snapshot.pendingRequest.receivedAt}`}
+          busy={busy} request={snapshot.pendingRequest} prompt={snapshot.pendingRequest.choicePrompt}
+          respond={(selected) => run(() => adapter.respondToChoices(snapshot.pendingRequest!.requestId, selected))} />}
+      {!trusting && snapshot.pendingRequest?.cardSelectionPrompt &&
+        <CardSelectionPanel key={`${snapshot.pendingRequest.requestId}-${snapshot.pendingRequest.receivedAt}`}
+          request={snapshot.pendingRequest} prompt={snapshot.pendingRequest.cardSelectionPrompt} busy={busy}
+          view={(selected) => adapter.getCardSelectionView(snapshot.pendingRequest!.requestId, selected)}
+          respond={(selected, cancel) => run(() => adapter.respondToCardSelection(snapshot.pendingRequest!.requestId, selected, cancel))} />}
+      {!trusting && snapshot.pendingRequest?.cardsAndChoicePrompt &&
+        <CardsAndChoicePanel key={`${snapshot.pendingRequest.requestId}-${snapshot.pendingRequest.receivedAt}`}
+          request={snapshot.pendingRequest} prompt={snapshot.pendingRequest.cardsAndChoicePrompt} busy={busy}
+          view={(selected) => adapter.getCardsAndChoiceView(snapshot.pendingRequest!.requestId, selected)}
+          respond={(selected, choice, cancel) => run(() => adapter.respondToCardsAndChoice(snapshot.pendingRequest!.requestId, selected, choice, cancel))} />}
+      {!trusting && snapshot.pendingRequest?.nativeDialogPrompt &&
+        <NativeDialogPanel key={`${snapshot.pendingRequest.requestId}-${snapshot.pendingRequest.receivedAt}`}
+          request={snapshot.pendingRequest} prompt={snapshot.pendingRequest.nativeDialogPrompt} busy={busy}
+          chooseGeneral={(token) => run(() => adapter.selectNativeGeneral(snapshot.pendingRequest!.requestId, token))}
+          view={() => adapter.getNativeDialogView(snapshot.pendingRequest!.requestId)}
+          move={(token, area, index) => run(() => adapter.moveNativeDialogCard(snapshot.pendingRequest!.requestId, token, area, index))}
+          respond={(token, cancel) => run(() => adapter.respondToNativeDialog(snapshot.pendingRequest!.requestId, token, cancel))} />}
+      {!trusting && snapshot.pendingRequest?.command === 'CustomDialog' && snapshot.initialGeneral &&
         <InitialGeneralPanel key={`${snapshot.pendingRequest.requestId}-${snapshot.pendingRequest.receivedAt}`} adapter={adapter} run={run} busy={busy}
           request={snapshot.pendingRequest} prompt={snapshot.initialGeneral} />}
-      {snapshot.pendingRequest && snapshot.pendingRequest.command !== 'AskForSkillInvoke' &&
+      {!trusting && snapshot.pendingRequest && snapshot.pendingRequest.command !== 'AskForSkillInvoke' &&
+        !GAMEPLAY_REQUESTS.has(snapshot.pendingRequest.command) &&
+        !snapshot.pendingRequest.nativeDialogPrompt &&
+        !snapshot.pendingRequest.cardSelectionPrompt &&
+        !snapshot.pendingRequest.cardsAndChoicePrompt &&
         !(snapshot.pendingRequest.command === 'CustomDialog' && snapshot.initialGeneral) &&
+        !(['AskForChoices', 'AskForOptions'].includes(snapshot.pendingRequest.command) && snapshot.pendingRequest.choicePrompt) &&
         <div className="notice error-notice" role="alert">Máy chủ đang chờ phản hồi: {snapshot.pendingRequest.command}. Bộ điều khiển gameplay chưa hỗ trợ yêu cầu này.</div>}
-      {snapshot.connection.kind === 'online' && <footer className="footer"><span>{snapshot.manifest?.fileCount ?? 0} tệp đã xác minh</span><button className="button ghost" onClick={() => { adapter.disconnect(); useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], ownId: null, pendingRequest: null, skillInvoke: null, initialGeneral: null, board: emptyBoard(), progress: '', error: null }); }}>Ngắt kết nối</button></footer>}
+      {snapshot.connection.kind === 'online' && <footer className="footer"><span>{snapshot.manifest?.fileCount ?? 0} tệp đã xác minh</span><button className="button ghost" disabled={busy} onClick={() => snapshot.phase === 'playing' ? setExitAction('disconnect') : run(disconnect)}>Ngắt kết nối</button></footer>}
     </main>
   );
 }

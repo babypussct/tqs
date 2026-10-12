@@ -1,0 +1,71 @@
+name: tqs-mobile
+services:
+  gateway:
+    build:
+      context: ${RELEASE_DIR:?Set absolute verified release directory}
+      dockerfile: Dockerfile.gateway
+    restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1.0
+    environment:
+      FK_ROOT: /runtime
+      FK_HOST: ${FK_HOST:?Set the existing game server host}
+      FK_PORT: ${FK_PORT:-9527}
+      BIND_HOST: 0.0.0.0
+      PORT: 8080
+      ALLOW_ORIGIN: https://${PUBLIC_HOST:?Set the public DNS hostname}
+      TRUSTED_PROXIES: ${PROXY_IP:-172.29.6.10}
+      MAX_WS_PER_IP: ${MAX_WS_PER_IP:-6}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-128}
+      MAX_QUEUE_BYTES: 1048576
+      CONNECT_TIMEOUT_MS: 10000
+    volumes:
+      - ${RELEASE_DIR}/runtime:/runtime:ro
+    networks:
+      game:
+        ipv4_address: ${GATEWAY_IP:-172.29.6.11}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${RELEASE_DIR}/dist:/srv:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      game:
+        ipv4_address: ${PROXY_IP:-172.29.6.10}
+    depends_on:
+      gateway:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+networks:
+  game:
+    ipam:
+      config:
+        - subnet: ${TQS_SUBNET:-172.29.6.0/24}
+volumes:
+  caddy_data:
+  caddy_config:

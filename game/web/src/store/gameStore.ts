@@ -4,6 +4,7 @@ import type { GatewayManifest } from '../engine/bundle';
 import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from '../engine/generalSelection';
 import { emptyBoard, updateBoard, type BoardState } from './boardState';
 import { emptyGameplay, reduceGameplay, type GameplayScene } from './gameplayState';
+import { connectionError } from '../engine/connectionMessages';
 
 export interface LobbyRoom {
   id: number;
@@ -21,6 +22,7 @@ export interface RoomPlayer {
   avatar: string;
   ready: boolean;
   owner: boolean;
+  netState?: 'online' | 'trust' | 'run' | 'robot' | 'offline';
 }
 
 export interface SkillInvokePrompt {
@@ -29,6 +31,21 @@ export interface SkillInvokePrompt {
 }
 
 export type GamePhase = 'boot' | 'login' | 'lobby' | 'room' | 'playing';
+
+export interface GameResult {
+  outcome: 'win' | 'loss' | 'draw' | 'unknown';
+  winners: { id: number; name: string }[];
+}
+
+function gameResult(state: GameSnapshot, data: unknown): GameResult {
+  if (data === '') return { outcome: 'draw', winners: [] };
+  const ids = typeof data === 'string' ? data.split('+') : [];
+  if (!ids.length || ids.some((id) => !/^-?\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) === 0))
+    return { outcome: 'unknown', winners: [] };
+  const winners = [...new Set(ids.map(Number))].map((id) => ({ id,
+    name: state.players.find((p) => p.id === id)?.name || (id < 0 ? `Bot ${id}` : `Người chơi ${id}`) }));
+  return { outcome: state.ownId === null ? 'unknown' : winners.some((p) => p.id === state.ownId) ? 'win' : 'loss', winners };
+}
 
 export interface GameSnapshot {
   phase: GamePhase;
@@ -39,6 +56,8 @@ export interface GameSnapshot {
   rooms: LobbyRoom[];
   roomName: string;
   roomMode: string;
+  roomDisabledPacks: string[];
+  roomDisabledGenerals: string[];
   capacity: number;
   players: RoomPlayer[];
   ownId: number | null;
@@ -47,15 +66,20 @@ export interface GameSnapshot {
   initialGeneral: InitialGeneralPrompt | null;
   board: BoardState;
   gameplay: GameplayScene;
+  result: GameResult | null;
+  translations: Record<string, string>;
 }
 
 export const initialSnapshot: GameSnapshot = {
   phase: 'boot', connection: { kind: 'booting' }, manifest: null,
   progress: '', error: null, rooms: [], roomName: '', roomMode: '',
+  roomDisabledPacks: [], roomDisabledGenerals: [],
   capacity: 0, players: [], ownId: null, pendingRequest: null, skillInvoke: null,
   initialGeneral: null,
   board: emptyBoard(),
   gameplay: emptyGameplay(),
+  result: null,
+  translations: {},
 };
 
 function entries(data: unknown): unknown[] {
@@ -74,10 +98,19 @@ function parseRooms(data: unknown): LobbyRoom[] {
 
 /** Pure reducer: the Lua client has already decoded and handled this event. */
 export function reduceUiEvent(state: GameSnapshot, command: string, data: unknown): GameSnapshot {
+  if (command === 'SelfIdentity') return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
+    ? { ...state, ownId: data } : state;
   const arr = entries(data);
   switch (command) {
+    case 'DisplayTranslations':
+      return data && typeof data === 'object' && !Array.isArray(data)
+        ? { ...state, translations: Object.fromEntries(Object.entries(data).filter(([key, value]) =>
+          key.length <= 300 && typeof value === 'string' && value.length <= 30000)) }
+        : state;
     case 'EnterLobby':
       return { ...state, phase: 'lobby', error: null, roomName: '', roomMode: '',
+        roomDisabledPacks: [], roomDisabledGenerals: [],
+        result: null,
         capacity: 0, players: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
         board: emptyBoard(), gameplay: emptyGameplay() };
     case 'CancelRequest':
@@ -102,11 +135,14 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         return [{ id: p[0], name: String(p[1] ?? ''), avatar: String(p[2] ?? ''),
           ready: p[3] === true, owner: p[5] === true }];
       });
-      // The server broadcasts AddPlayer for the joining player BEFORE
-      // EnterRoom. For regular joins _players is absent, so keep that event.
+      // The bridge publishes Lua Self before EnterRoom. For regular joins
+      // _players is absent, so keep that occupant and prior AddPlayer events.
       return { ...state, phase: 'room', error: null,
+        result: null,
         players: basePlayers.length ? players : state.players,
         roomName: String(settings.roomName ?? ''), roomMode: String(settings.gameMode ?? ''),
+        roomDisabledPacks: Array.isArray(settings.disabledPack) ? settings.disabledPack.filter((p): p is string => typeof p === 'string') : [],
+        roomDisabledGenerals: Array.isArray(settings.disabledGenerals) ? settings.disabledGenerals.filter((p): p is string => typeof p === 'string') : [],
         capacity: Number(arr[0]) || 0, pendingRequest: null, skillInvoke: null, initialGeneral: null,
         board: emptyBoard(), gameplay: emptyGameplay() };
     }
@@ -114,7 +150,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'AddNpc': {
       if (typeof arr[0] !== 'number') return state;
       const previous = state.players.find((p) => p.id === arr[0]);
-      const player: RoomPlayer = { id: arr[0], name: String(arr[1] ?? ''),
+      const player: RoomPlayer = { ...previous, id: arr[0], name: String(arr[1] ?? ''),
         avatar: String(arr[2] ?? ''), ready: arr[3] === true, owner: previous?.owner ?? false };
       return { ...state, players: [...state.players.filter((p) => p.id !== player.id), player] };
     }
@@ -128,19 +164,31 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       return { ...state, players: state.players.map((p) => ({ ...p, owner: p.id === arr[0] })) };
     case 'StartGame':
       return { ...state, phase: 'playing', pendingRequest: null,
+        result: null,
         skillInvoke: null, initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'GameOver':
       return { ...state, phase: 'room', pendingRequest: null, skillInvoke: null,
+        result: gameResult(state, data),
         initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'ArrangeSeats':
     case 'PropertyUpdate':
+    case 'SelfGenerals':
+    case 'VisibleKingdom':
+    case 'EquipmentUpdate':
     case 'SetPlayerMark':
     case 'SetBanner':
     case 'GameLog':
-      return { ...state, board: updateBoard(state.board, command, data, state.players.map((p) => p.id)) };
+      return { ...state, board: updateBoard(state.board, command, data, state.players.map((p) => p.id), state.ownId) };
+    case 'NetStateChanged': {
+      const [id, netState] = entries(data);
+      if (!Number.isInteger(id) || typeof netState !== 'string' ||
+          !['online', 'trust', 'run', 'robot', 'offline'].includes(netState)) return state;
+      return { ...state, players: state.players.map((player) => player.id === id
+        ? { ...player, netState: netState as RoomPlayer['netState'] } : player) };
+    }
     case 'ErrorMsg':
     case 'ErrorDlg':
-      return { ...state, error: typeof data === 'string' ? data : JSON.stringify(data) };
+      return { ...state, error: connectionError(typeof data === 'string' ? data : JSON.stringify(data)) };
     default:
       return state;
   }

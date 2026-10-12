@@ -126,45 +126,54 @@ local FClient = { players = {}, _self = nil }
 FClient.__index = FClient
 
 -- Tolerant serializer for UI payloads (Lua tables -> JSON).
-local function to_json(v, depth, seen)
+local function to_json(v, depth, seen, budget)
   depth = depth or 0
+  budget = budget or {nodes = 0, bytes = 0}
+  budget.nodes = budget.nodes + 1
+  if budget.nodes > 25000 then error("UI JSON exceeds node limit", 0) end
+  local function emit(s)
+    budget.bytes = budget.bytes + #s
+    if budget.bytes > 1024 * 1024 then error("UI JSON exceeds byte limit", 0) end
+    return s
+  end
   local t = type(v)
-  if t == "nil" then return "null"
-  elseif t == "boolean" then return v and "true" or "false"
+  if t == "nil" then return emit("null")
+  elseif t == "boolean" then return emit(v and "true" or "false")
   elseif t == "number" then
-    if v ~= v or v == math.huge or v == -math.huge then return "null" end
-    if math.type(v) == "integer" then return tostring(v) end
-    return string.format("%.14g", v)
+    if v ~= v or v == math.huge or v == -math.huge then return emit("null") end
+    if math.type(v) == "integer" then return emit(tostring(v)) end
+    return emit(string.format("%.14g", v))
   elseif t == "string" then
-    return '"' .. v:gsub('[%c"\\]', function(c)
+    if #v > 1024 * 1024 then error("UI JSON string exceeds byte limit", 0) end
+    return emit('"' .. v:gsub('[%c"\\]', function(c)
       local m = { ['"'] = '\\"', ['\\'] = '\\\\', ['\n'] = '\\n', ['\r'] = '\\r', ['\t'] = '\\t' }
       return m[c] or string.format("\\u%04x", c:byte())
-    end) .. '"'
+    end) .. '"')
   elseif t == "table" then
-    if depth > 24 then return "null" end
+    if depth > 24 then return emit("null") end
     seen = seen or {}
-    if seen[v] then return "null" end
+    if seen[v] then return emit("null") end
     seen[v] = true
     local n = #v
     local count = 0
     for _ in pairs(v) do count = count + 1 end
     local out = {}
     if n > 0 and count == n then
-      for i = 1, n do out[i] = to_json(v[i], depth + 1, seen) end
+      for i = 1, n do out[i] = to_json(v[i], depth + 1, seen, budget) end
       seen[v] = nil
-      return "[" .. table.concat(out, ",") .. "]"
+      return emit("[" .. table.concat(out, ",") .. "]")
     end
-    if count == 0 then seen[v] = nil; return (getmetatable(v) == nil) and "[]" or "{}" end
+    if count == 0 then seen[v] = nil; return emit((getmetatable(v) == nil) and "[]" or "{}") end
     for k, val in pairs(v) do
       local tk = type(k)
       if (tk == "string" or tk == "number") and type(val) ~= "function" and type(val) ~= "userdata" and type(val) ~= "thread" then
-        out[#out + 1] = to_json(tostring(k)) .. ":" .. to_json(val, depth + 1, seen)
+        out[#out + 1] = to_json(tostring(k), depth + 1, seen, budget) .. ":" .. to_json(val, depth + 1, seen, budget)
       end
     end
     seen[v] = nil
-    return "{" .. table.concat(out, ",") .. "}"
+    return emit("{" .. table.concat(out, ",") .. "}")
   end
-  return "null"
+  return emit("null")
 end
 __host_to_json = to_json
 
@@ -183,9 +192,149 @@ function FClient:changeSelf(id) self._self = self.players[id] or self._self end
 function FClient:saveRecord() end
 function FClient:saveGameData() end
 function FClient:installMyAESKey() end
+-- Explain only a prohibition actually returned by an installed native skill.
+-- This metadata never changes card/target validity or the reply payload.
+local function annotate_card_reason(value)
+  value.disabledReason = ''
+  if value.enabled ~= false or not Self or type(value.id) ~= 'number' then return end
+  local card = Fk:getCardById(value.id)
+  if not card or card.trueName ~= 'peach' then return end
+  for _, skill in ipairs(Fk:currentRoom().status_skills[ProhibitSkill] or {}) do
+    local name = skill.skeleton and skill.skeleton.name or skill.name
+    if (name == 'new_battle_royal&' or name == 'battle_royal&') and skill:prohibitUse(Self, card) then
+      value.disabledReason = name == 'new_battle_royal&' and '#web-peach-battle-new' or '#web-peach-battle-old'
+      return
+    end
+  end
+end
+
+local public_properties = {
+  hp = true, maxHp = true, shield = true, handcardNum = true,
+  dead = true, died = true, phase = true,
+  general = true, deputyGeneral = true, kingdom = true,
+  role_shown = true, chained = true, faceup = true,
+}
+
+local function finite_number(value)
+  return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+local function public_scalar(value, max_string)
+  if finite_number(value) or type(value) == 'boolean' then return value end
+  if type(value) == 'string' and #value <= (max_string or 160) then return value end
+  return nil
+end
+
+local function hidden_hegemony_kingdom(id)
+  local client = rawget(_G, 'ClientInstance')
+  if not client or type(client.getSettings) ~= 'function' or type(client.getPlayerById) ~= 'function' then return false end
+  local ok_mode, mode = pcall(client.getSettings, client, 'gameMode')
+  if not ok_mode or mode ~= 'new_heg_mode' then return false end
+  local ok_player, player = pcall(client.getPlayerById, client, id)
+  return ok_player and player ~= nil and player ~= Self and player.role_shown ~= true
+end
+
+-- ClientPlayer:sendDataToUI() iterates every native property, including private
+-- seat/role/general state. Keep the browser-facing shape explicit and copy the
+-- scalar before serialization so private tables/userdata cannot leak through a
+-- future property addition.
+local function project_property(data)
+  if type(data) ~= 'table' or math.type(data[1]) ~= 'integer' or
+      type(data[2]) ~= 'string' or not public_properties[data[2]] then return nil end
+  local id, name, value = data[1], data[2], data[3]
+  if name == 'general' or name == 'deputyGeneral' then
+    if type(value) ~= 'string' or #value > 120 then return nil end
+    if value == 'anjiang' or value == 'hidden' then value = '' end
+  elseif name == 'kingdom' then
+    if type(value) ~= 'string' or #value > 120 then return nil end
+    if hidden_hegemony_kingdom(id) then value = '' end
+  elseif name == 'phase' then
+    if type(value) ~= 'string' and not finite_number(value) then return nil end
+  elseif name == 'dead' or name == 'died' or name == 'role_shown' or
+      name == 'chained' or name == 'faceup' then
+    if type(value) ~= 'boolean' then return nil end
+  else
+    if not finite_number(value) then return nil end
+  end
+  return {id, name, value}
+end
+
+local function project_public_mark(data, banner)
+  if type(data) ~= 'table' then return nil end
+  local name, value = data[1], data[2]
+  local id = data[1]
+  if not banner then id, name, value = data[1], data[2], data[3] end
+  if (not banner and math.type(id) ~= 'integer') or type(name) ~= 'string' or
+      #name > 120 or not name:startsWith('@') then return nil end
+  value = public_scalar(value)
+  if value == nil then return nil end
+  return banner and {name, value} or {id, name, value}
+end
+
+local function project_card(value)
+  if type(value) ~= 'table' then return nil end
+  local card = {}
+  for _, key in ipairs({'name', 'trueName', 'suit', 'number'}) do
+    local field = value[key]
+    if key == 'name' or key == 'trueName' then
+      if type(field) == 'string' and #field <= 120 then card[key] = field end
+    elseif finite_number(field) then
+      card[key] = field
+    end
+  end
+  return next(card) and card or nil
+end
+
 function FClient:notifyUI(command, data)
+  -- ClientBase:reconnect() has already consumed this complete room snapshot
+  -- to rebuild the native/Lua state and then emits the same event for QML.
+  -- React does not use that private snapshot (the individual EnterRoom,
+  -- StartGame, ArrangeSeats, MoveCards and PropertyUpdate events are the web
+  -- projection), so do not serialize and cross the whole object a second
+  -- time. ShowVirtualCard can likewise contain a native Card object with a
+  -- large graph of derived fields; the current web reducer ignores it. Keep
+  -- both event boundaries with a tiny marker instead of creating a peak-sized
+  -- CBOR/JSON copy in the browser or failing the whole Lua dispatch at the
+  -- serializer budget.
+  if command == 'Reconnect' or command == 'ShowVirtualCard' then
+    J.ui(command, '{}')
+    return
+  end
+  -- MoveCards contains raw card IDs and visibility maps. The web projection
+  -- gets hand counts/equipment from __host_recv instead, so preserve only the
+  -- event boundary and never cross the private move graph.
+  if command == 'MoveCards' then
+    J.ui(command, '{}')
+    return
+  end
+  if command == 'PropertyUpdate' then
+    data = project_property(data)
+    if not data then return end
+  elseif command == 'SetPlayerMark' then
+    data = project_public_mark(data, false)
+    if not data then return end
+  elseif command == 'SetBanner' then
+    data = project_public_mark(data, true)
+    if not data then return end
+  elseif command == 'GameLog' and (type(data) ~= 'string' or #data > 10000) then
+    return
+  end
+  if command == 'UpdateRequestUI' and type(data) == 'table' then
+    for _, value in ipairs(data.CardItem or {}) do
+      local h = ClientInstance and ClientInstance.current_request_handler
+      local item = h and h.scene and h.scene:getAllItems('CardItem')[value.id]
+      -- Deltas can omit enabled. Read the current native scene before explaining.
+      local state = {id = value.id, enabled = item and item.enabled}
+      annotate_card_reason(state)
+      value.disabledReason = state.disabledReason
+    end
+    for _, entry in ipairs(data._new or {}) do
+      if entry.type == 'CardItem' then annotate_card_reason(entry.data) end
+    end
+  end
   local ok, s = pcall(to_json, data)
-  J.ui(command, ok and s or "null")
+  if not ok then error("UI serialization failed for " .. tostring(command) .. ": " .. tostring(s), 0) end
+  J.ui(command, s)
 end
 
 __host_client = setmetatable({ players = {} }, FClient)
@@ -204,6 +353,73 @@ end
 function __host_recv(command, hex, is_request)
   local ok, err = xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
   if not ok then error(tostring(err), 0) end
+  -- Lua tracks all hand sizes while MoveCards only forwards visibility data
+  -- to QML. Publish counts for the board without forwarding any card IDs.
+  if command == 'MoveCards' or command == 'Reconnect' then
+    for _, player in ipairs(ClientInstance.players) do
+      J.ui('PropertyUpdate', to_json({player.id, 'handcardNum', player:getHandcardNum()}))
+      local equipment = {}
+      for _, id in ipairs(player:getCardIds('e')) do
+        local card = Fk:getCardById(id)
+        if card then table.insert(equipment, {name = card.name, suit = card.suit, number = card.number}) end
+      end
+      J.ui('EquipmentUpdate', to_json({player.id, equipment}))
+    end
+  end
+  -- Hegemony uses anjiang publicly and private marks for the actual pair.
+  -- Read only Self's two marks, never enumerate another player's marks.
+  if command == 'SetPlayerMark' or command == 'PropertyUpdate' or command == 'ChangeSelf' or command == 'Reconnect' then
+    if Self and ClientInstance and table.contains(ClientInstance.players, Self) then
+      local function own_general(property, mark)
+        local name = Self[property]
+        if name == 'anjiang' then name = Self:getMark(mark) end
+        return type(name) == 'string' and name or ''
+      end
+      J.ui('SelfGenerals', to_json({Self.id, own_general('general', '__heg_general'),
+        own_general('deputyGeneral', '__heg_deputy')}))
+    end
+    if command ~= 'SetPlayerMark' and ClientInstance:getSettings('gameMode') == 'new_heg_mode' then
+      local H = require 'packages.hegemony.util'
+      for _, player in ipairs(ClientInstance.players) do
+        local kingdom = ''
+        if player == Self or player.role_shown then kingdom = H.getKingdom(player) end
+        J.ui('VisibleKingdom', to_json({player.id, type(kingdom) == 'string' and kingdom or ''}))
+      end
+    end
+  end
+  -- Native QML already owns hand cards, photos and action buttons. Lua's
+  -- handler constructor creates these before h.change is initialized, so
+  -- its first delta contains updates without _new. Seed React from the
+  -- actual Lua scene once per supported request; later deltas stay incremental.
+  if is_request and (command == 'PlayCard' or command == 'AskForUseActiveSkill'
+      or command == 'AskForUseCard' or command == 'AskForResponseCard') then
+    local h = ClientInstance and ClientInstance.current_request_handler
+    local scene = h and h.scene
+    if scene then
+      local snapshot = { _type = scene.scene_name, _prompt = h.prompt or '', _new = {} }
+      for _, kind in ipairs({'CardItem', 'Photo', 'Button', 'SkillButton', 'SpecialSkills', 'Interaction'}) do
+        for _, item in pairs(scene:getAllItems(kind)) do
+          local value = item:toData()
+          if kind == 'CardItem' then
+            -- CardItem:toData() returns the native Card object for virtual
+            -- cards. Project it even when present; serializing that object
+            -- would otherwise include subcards/marks/skill graphs.
+            local card = project_card(value.card)
+            if not card then
+              local native_card = Fk:getCardById(item.id)
+              card = project_card(native_card)
+            end
+            value.card = card
+          end
+          if kind == 'CardItem' then annotate_card_reason(value) end
+          table.insert(snapshot._new, {type = kind, data = value})
+        end
+      end
+      local encoded, payload = pcall(to_json, snapshot)
+      if not encoded then error(report(payload), 0) end
+      J.ui('UpdateRequestUI', payload)
+    end
+  end
 end
 
 -- Evaluate a Lua chunk and return its result as JSON. Used by the UI for
@@ -237,7 +453,16 @@ function __web_notify(command, data)
   if type(command) ~= 'string' or command == '' then
     error('invalid command')
   end
-  __host_client:notifyServer(command, cbor.encode(data))
+  -- Native lobby/room parsers require CBOR text for names, passwords and
+  -- settings keys/values. Keep the upstream byte-string default for gameplay
+  -- replies; scope this override to this synchronous notification only.
+  local encoders = cbor.type_encoders
+  local previous = encoders.string
+  encoders.string = encoders.utf8string
+  local ok, payload = pcall(cbor.encode, data)
+  encoders.string = previous
+  if not ok then error(payload) end
+  __host_client:notifyServer(command, payload)
   return true
 end
 
@@ -246,7 +471,10 @@ end
 -- "__cancel"; passing raw UTF-8 would be interpreted as invalid CBOR by
 -- Request:_checkReply on the server.
 function __web_reply(data)
-  if type(data) ~= 'string' and type(data) ~= 'table' then error('invalid reply value') end
+  if type(data) ~= 'string' and type(data) ~= 'table' and
+     not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
+    error('invalid reply value')
+  end
   __host_client:replyToServer('', cbor.encode(data))
   return true
 end
@@ -254,8 +482,86 @@ end
 -- The transport compares the wire representation independently before it
 -- authorizes any reply. Both functions use the same Lua CBOR implementation.
 function __web_reply_hex(data)
-  if type(data) ~= 'string' and type(data) ~= 'table' then error('invalid reply value') end
+  if type(data) ~= 'string' and type(data) ~= 'table' and
+     not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
+    error('invalid reply value')
+  end
   return bin2hex(cbor.encode(data))
+end
+
+-- Query public card faces only for IDs which the bridge has already checked
+-- against the request's visible_data. Hidden cards never cross to React.
+function __web_visible_card(id)
+  if type(id) ~= 'number' or math.type(id) ~= 'integer' or id < 0 then return nil end
+  local card = Fk:getCardById(id)
+  if not card then return nil end
+  return { name = card.name, suit = card.suit, number = card.number }
+end
+
+-- Dispatch against the installed upstream Poxi rules (including expansion
+-- methods); do not reimplement card_filter / feasible in JavaScript.
+function __web_poxi_view(kind, data, extra, selected, candidates)
+  local rule = type(kind) == 'string' and Fk.poxi_methods[kind]
+  if not rule or type(data) ~= 'table' or type(extra) ~= 'table' or
+     type(selected) ~= 'table' or type(candidates) ~= 'table' then
+    error('invalid Poxi rule or arguments')
+  end
+  local allowed = {}
+  for i, id in ipairs(candidates) do
+    allowed[i] = rule.card_filter(id, selected, data, extra) and true or false
+  end
+  local prompt = rule.prompt
+  if type(prompt) == 'function' then prompt = prompt(data, extra, selected) end
+  return { allowed = allowed, feasible = rule.feasible(selected, data, extra) and true or false,
+    prompt = type(prompt) == 'string' and prompt or '' }
+end
+
+-- Match ChooseCardsAndChoiceModel: count limits apply first; the first
+-- regular choice always works, and only later choices use choiceFilter.
+-- Same rule inputs as the pinned ArrangeCardsModel / ArrangeCardsBox.
+function __web_choose_general_view(rule_name, selected, names, extra, count)
+  local rule = Fk.choose_general_rule[rule_name]
+  if not rule then error('unknown general selection rule') end
+  local allowed = {}
+  for i, name in ipairs(names) do
+    allowed[i] = #selected < count and rule.card_filter(name, selected, names, extra) and true or false
+  end
+  return {allowed=allowed,feasible=#selected == count and rule.feasible(selected, names, extra) and true or false}
+end
+
+function __web_arrange_feasible(rows, original, limits, capacities, poxi)
+  for i, row in ipairs(rows) do
+    if #row < (limits[i] or 0) or #row > capacities[i] then return false end
+  end
+  if poxi ~= '' then
+    local rule = Fk.poxi_methods[poxi]
+    return rule and rule.feasible({}, rows, original) and true or false
+  end
+  return true
+end
+function __web_arrange_allowed(id, rows, original, pattern, poxi)
+  if poxi ~= '' then
+    local rule = Fk.poxi_methods[poxi]
+    return rule and rule.card_filter(id, {id}, rows, original) and true or false
+  end
+  return pattern == '.' or Fk:getCardById(id):matchPattern(pattern)
+end
+
+function __web_cards_and_choice_view(filter, selected, choices, min, max, extra)
+  local allowed = {}
+  local enough = #selected >= min and #selected <= max
+  for i, choice in ipairs(choices) do
+    if not enough then
+      allowed[i] = false
+    elseif i == 1 or filter == '' then
+      allowed[i] = true
+    else
+      local skel = Fk.skill_skels[filter]
+      local fn = skel and skel.extra and skel.extra.choiceFilter
+      allowed[i] = type(fn) == 'function' and fn(selected, choice, extra) and true or false
+    end
+  end
+  return allowed
 end
 
 -- Use FreeKill's actual Hegemony rules, including wild/subkingdom handling.
@@ -273,6 +579,31 @@ function __web_general_labels(generals)
   local labels = {}
   for i, name in ipairs(generals) do labels[i] = Fk:translate(name) end
   return labels
+end
+
+function __web_init_display_translations(extra)
+  local vi = Fk.translations.vi_VN or {}
+  local zh = Fk.translations.zh_CN or {}
+  local en = Fk.translations.en_US or {}
+  local by_chinese = {}
+  for key, value in pairs(vi) do
+    if zh[key] and key:sub(1, 1) ~= ':' then by_chinese[zh[key]] = value end
+  end
+  local labels = {}
+  for key, value in pairs(zh) do
+    labels[key] = vi[key] or by_chinese[value] or en[key] or value
+    -- Variant names can share the base name, but their rule descriptions
+    -- and prompts must remain specific to that variant.
+    local base = key:match('__([^:]+)$')
+    if base and not key:match('^[:#$~]') then
+      labels[key] = vi[key] or extra[key] or extra[base] or vi[base] or labels[key]
+    end
+  end
+  for key, value in pairs(vi) do labels[key] = value end
+  for key, value in pairs(extra) do labels[key] = value end
+  Fk:loadTranslationTable(labels, 'vi_VN')
+  J.ui('DisplayTranslations', to_json(labels))
+  return true
 end
 
 local function general_reply_data(main, deputy, kingdom, enabled)
@@ -301,5 +632,80 @@ function __web_room_feasible(mode, player_num, timeout)
   local settings = { playerNum = player_num, timeout = timeout, gameMode = mode,
     _game = {}, _mode = {} }
   return m:feasible(settings)
+end
+
+-- Enumerate installed native packages and apply the mode's own whitelist.
+-- The ids are small package names used by Room.disabled_packs, not extension
+-- directory names such as "hegemony".
+function __web_room_packs(mode)
+  if not Fk.game_modes[mode] then error('unknown game mode') end
+  local locked = {}
+  for _, name in ipairs(Fk.game_mode_disabled[mode] or {}) do locked[name] = true end
+  local packs = { generals = {}, cards = {} }
+  for _, name in ipairs(Fk.package_names) do
+    local pkg = Fk.packages[name]
+    local kind = pkg.type == Package.GeneralPack and 'generals' or
+      (pkg.type == Package.CardPack and 'cards' or nil)
+    if kind and not locked[name] then
+      local count = 0
+      if kind == 'generals' then
+        for _, general in ipairs(pkg.generals) do
+          if not general.hidden and not general.total_hidden then count = count + 1 end
+        end
+      else
+        for _, card in ipairs(pkg.cards) do
+          if not card.is_derived then count = count + 1 end
+        end
+      end
+      if count > 0 then
+        table.insert(packs[kind], {id = name, label = Fk:translate(name), count = count})
+      end
+    end
+  end
+  return packs
+end
+
+-- Count generals like Room:makeGeneralPile and cards through the actual mode's
+-- buildDrawPile. Hegemony removes some converted cards after getAllCardIds;
+-- simply summing package sizes overstates the playable deck.
+function __web_room_pool_summary(mode, disabled)
+  if type(disabled) ~= 'table' then error('invalid disabled packs') end
+  local available = __web_room_packs(mode)
+  local known, chosen = {}, {}
+  for _, kind in ipairs({'generals', 'cards'}) do
+    for _, pkg in ipairs(available[kind]) do known[pkg.id] = true end
+  end
+  for _, name in ipairs(disabled) do
+    if type(name) ~= 'string' or not known[name] or chosen[name] then
+      error('invalid or duplicate disabled package')
+    end
+    chosen[name] = true
+  end
+  local distinct, generalCount = {}, 0
+  for _, pkg in ipairs(available.generals) do
+    if not chosen[pkg.id] then
+      for _, general in ipairs(Fk.packages[pkg.id].generals) do
+        if not general.hidden and not general.total_hidden and not distinct[general.trueName] then
+          distinct[general.trueName] = true
+          generalCount = generalCount + 1
+        end
+      end
+    end
+  end
+  -- Scoped stand-in for server Room:initialize, which adds mode-locked packs.
+  -- Restore RoomInstance even if the upstream mode rejects the configuration.
+  -- This synchronous calculation does not mutate the active ClientInstance.
+  local disabledPacks = {}
+  table.insertTableIfNeed(disabledPacks, Fk.game_mode_disabled[mode] or {})
+  table.insertTableIfNeed(disabledPacks, disabled)
+  local oldRoom = RoomInstance
+  RoomInstance = {disabled_packs = disabledPacks, filtered_cards = {}, printed_cards = {}}
+  local ok, cardsOrError = pcall(function()
+    local draw = Fk.game_modes[mode]:buildDrawPile()
+    return #draw
+  end)
+  RoomInstance = oldRoom
+  if not ok then error(cardsOrError) end
+  return {generals = generalCount, cards = cardsOrError}
 end
 `;

@@ -1,8 +1,10 @@
+import { SessionRecovery } from './recovery';
 import { loadGatewayBundle, type LoadedBundle } from './bundle';
 import { GameConnection, webSocketOpener } from './connection';
 import { useGameStore } from '../store/gameStore';
 import { emptyBoard } from '../store/boardState';
 import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
+import { connectionProgress, connectionError } from './connectionMessages';
 
 export interface GameModeInfo {
   name: string;
@@ -11,10 +13,15 @@ export interface GameModeInfo {
   maxPlayer: number;
 }
 
+export interface RoomPack { id: string; label: string; count: number }
+export interface RoomPacks { generals: RoomPack[]; cards: RoomPack[] }
+export interface PoolSummary { generals: number; cards: number }
+
 export class GameAdapter {
   private loaded: LoadedBundle | null = null;
   private connection: GameConnection | null = null;
   private generation = 0;
+  private recovery: SessionRecovery | null = null;
   private readonly gateway: string;
 
   constructor(gateway: string) {
@@ -45,11 +52,20 @@ export class GameAdapter {
     const generation = ++this.generation;
     const store = useGameStore.getState();
     store.update({ progress: 'Đang khởi tạo Lua WASM…', error: null,
-      phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], ownId: null, board: emptyBoard() });
+      phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], ownId: null, result: null, board: emptyBoard() });
     useGameStore.getState().update({ gameplay: emptyGameplay() });
 
     // Keep credentials in the connection only. Neither Zustand nor browser
     // storage receives them; this server auto-registers unknown usernames.
+    let hadOnline = false;
+    let serverRejected = false;
+    let recovery: SessionRecovery;
+    const endSession = (reason: string) => {
+      recovery.stop();
+      useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, initialGeneral: null,
+        board: emptyBoard(), gameplay: emptyGameplay(), result: null,
+        progress: '', error: useGameStore.getState().error || connectionError(reason) });
+    };
     const connection = new GameConnection({
       files: this.loaded.files, username: name, password,
       md5: this.loaded.manifest.md5,
@@ -62,20 +78,26 @@ export class GameAdapter {
       })()),
       onUi: (command, data) => {
         if (generation !== this.generation) return;
+        if (command === 'ErrorDlg' || command === 'ErrorMsg') { serverRejected = true; recovery.stop(); }
         useGameStore.getState().dispatch(command, data);
       },
       onStatus: (status) => {
         if (generation !== this.generation) return;
-        useGameStore.getState().update({ connection: status, progress: status.kind === 'online' ? '' : status.kind });
+        useGameStore.getState().update({ connection: status, progress: connectionProgress(status) });
         if (status.kind === 'online') {
+          hadOnline = true;
+          recovery.restored();
           // EnterLobby fires before GameConnection commits its online status.
           // The upstream Setup callback has already populated Self by now.
           const ownId = connection.lua.eval<number | null>('return Self and Self.id or nil');
           useGameStore.getState().update({ ownId });
-          this.refreshRooms();
+          if (useGameStore.getState().phase === 'lobby') this.refreshRooms();
         }
-        if (status.kind === 'closed') useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, initialGeneral: null,
-          board: emptyBoard(), gameplay: emptyGameplay(), error: status.reason });
+        if (status.kind === 'closed') {
+          const transportLoss = /^(closed \(\d+\)|backend closed|backend error|connect timeout|recovery timeout)/.test(status.reason);
+          if (hadOnline && !serverRejected && transportLoss) recovery.lost();
+          else endSession(status.reason);
+        }
       },
       onRequest: (request) => {
         if (generation === this.generation) useGameStore.getState().update({ pendingRequest: request,
@@ -85,6 +107,17 @@ export class GameAdapter {
         if (level === 'error') console.error(`[FreeKill Lua] ${msg}`);
       },
     });
+    recovery = new SessionRecovery({
+      waiting: (attempt) => {
+        if (generation !== this.generation) return;
+        useGameStore.getState().update({ progress: `Mất kết nối. Đang thử khôi phục phiên (${attempt}/5)…`,
+          pendingRequest: null, skillInvoke: null, initialGeneral: null, gameplay: emptyGameplay(), board: emptyBoard() });
+      },
+      connect: () => { if (generation === this.generation) connection.connect(); },
+      timeout: () => { if (generation === this.generation) connection.abortTransport('recovery timeout'); },
+      exhausted: () => { if (generation === this.generation) endSession('Không thể khôi phục sau 5 lần thử. Hãy kiểm tra mạng và đăng nhập lại.'); },
+    });
+    this.recovery = recovery;
     this.connection = connection;
     try {
       await connection.start();
@@ -109,14 +142,34 @@ export class GameAdapter {
 
   refreshRooms() { this.notify('RefreshRoomList', ''); }
 
-  createRoom(name: string, capacity: number, timeout = 30) {
+  getRoomPacks(): RoomPacks {
+    return this.requireConnection().lua.call<RoomPacks>('__web_room_packs', 'new_heg_mode');
+  }
+
+  getRoomPoolSummary(disabledPacks: string[]): PoolSummary {
+    return this.requireConnection().lua.call<PoolSummary>('__web_room_pool_summary', 'new_heg_mode', disabledPacks);
+  }
+
+  createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = []) {
     const roomName = name.trim();
     if (!roomName || roomName.length > 80) throw new Error('Tên phòng phải dài từ 1 đến 80 ký tự');
     const conn = this.requireConnection();
     const feasible = conn.lua.call<boolean>('__web_room_feasible', 'new_heg_mode', capacity, timeout);
     if (!feasible) throw new Error('Số người chơi không hợp lệ theo luật Quốc Chiến');
+    const pool = this.getRoomPoolSummary(disabledPacks);
+    if (pool.generals < capacity * 5) {
+      throw new Error(`Bể tướng còn ${pool.generals} tướng khác tên, cần ít nhất ${capacity * 5} cho ${capacity} người.`);
+    }
+    if (pool.cards < capacity * 4) {
+      throw new Error(`Bể bài còn ${pool.cards} lá, cần ít nhất ${capacity * 4} lá chia ban đầu.`);
+    }
+    // Match native _game settings: choosing generals and creating requests
+    // require generalNum/generalTimeout; luckTime controls the opening redraw.
     const settings = { gameMode: 'new_heg_mode', roomName, password: '',
-      _game: {}, _mode: {}, disabledPack: [], disabledGenerals: [] };
+      _game: { generalNum: 5, generalTimeout: timeout, timeoutAsGeneralTimeout: true,
+        luckTime: 0, enableFreeAssign: false, enableDeputy: true,
+        disableSameConvert: false, enableObserverViewCard: false, enableObserverViewFakeSkills: false },
+      _mode: {}, disabledPack: [...disabledPacks], disabledGenerals: [] };
     this.notify('CreateRoom', [roomName, capacity, timeout, settings]);
   }
 
@@ -129,6 +182,10 @@ export class GameAdapter {
   start() { this.notify('StartGame', ''); }
   addBot() { this.notify('AddRobot', ''); }
   leaveRoom() { this.notify('QuitRoom', ''); }
+  toggleTrust() {
+    if (useGameStore.getState().phase !== 'playing') throw new Error('BOT chơi hộ chỉ dùng trong ván đang chạy');
+    this.requireConnection().toggleTrust();
+  }
 
   getModes(): GameModeInfo[] {
     return this.requireConnection().lua.call<GameModeInfo[]>('GetGameModes');
@@ -139,9 +196,42 @@ export class GameAdapter {
     this.requireConnection().respondToSkillInvoke(requestId, choice);
   }
 
+  respondToChoices(requestId: number, selected: string[]) {
+    this.requireConnection().respondToChoices(requestId, selected);
+  }
+
+  getCardSelectionView(requestId: number, selected: string[]) {
+    return this.requireConnection().getCardSelectionView(requestId, selected);
+  }
+
+  respondToCardSelection(requestId: number, selected: string[], cancel = false) {
+    this.requireConnection().respondToCardSelection(requestId, selected, cancel);
+  }
+
+  getCardsAndChoiceView(requestId: number, selected: string[]) {
+    return this.requireConnection().getCardsAndChoiceView(requestId, selected);
+  }
+
+  respondToCardsAndChoice(requestId: number, selected: string[], choice: string, cancel = false) {
+    this.requireConnection().respondToCardsAndChoice(requestId, selected, choice, cancel);
+  }
+
+  getNativeDialogView(requestId: number) { return this.requireConnection().getNativeDialogView(requestId); }
+  selectNativeGeneral(requestId: number, token: string) { this.requireConnection().selectNativeGeneral(requestId, token); }
+  moveNativeDialogCard(requestId: number, token: string, area: number, index: number) {
+    this.requireConnection().moveNativeDialogCard(requestId, token, area, index);
+  }
+  respondToNativeDialog(requestId: number, token?: string, cancel = false) {
+    this.requireConnection().respondToNativeDialog(requestId, token, cancel);
+  }
+
   updateRequestUI(requestId: number, type: GameplayItemType, id: string | number,
-    action: 'click' | 'finish', data: unknown) {
+    action: 'click' | 'update' | 'finish', data: unknown) {
     this.requireConnection().updateRequestUI(requestId, type, id, action, data);
+  }
+
+  finishDirectInteraction(requestId: number, id: string | number, data: unknown) {
+    this.requireConnection().finishDirectInteraction(requestId, id, data);
   }
 
   getInitialGeneralKingdoms(requestId: number, main: string, deputy: string) {
@@ -157,6 +247,8 @@ export class GameAdapter {
   }
 
   disconnect() {
+    this.recovery?.stop();
+    this.recovery = null;
     ++this.generation;
     const old = this.connection;
     this.connection = null;

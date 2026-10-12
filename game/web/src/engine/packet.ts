@@ -42,6 +42,7 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 const MAX_PACKET_BYTES = 4 * 1024 * 1024;
 const MAX_DECOMPRESSED_BYTES = 8 * 1024 * 1024;
+const MAX_COMMAND_BYTES = 256;
 
 // ------------------------------------------------------------ encoding --
 
@@ -212,7 +213,13 @@ export class PacketStream {
         if (major !== 4 || (len !== 4 && len !== 6)) throw new Error('malformed packet header');
         const requestId = r.int();
         let type = r.int();
-        const command = dec.decode(r.bytes());
+        const commandBytes = r.bytes();
+        // freekill-asio replies intentionally carry an empty command; inbound
+        // requests and notifications must name the Lua callback they target.
+        if ((commandBytes.length === 0 && (type & PacketType.REPLY) === 0)
+          || commandBytes.length > MAX_COMMAND_BYTES)
+          throw new Error('packet command exceeds size limit');
+        const command = dec.decode(commandBytes);
         let data = r.bytes().slice();
         let timeout: number | undefined;
         let timestamp: number | undefined;

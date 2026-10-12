@@ -21,6 +21,7 @@
 //   PORT         HTTP/WebSocket listen port, default 8080
 //   ALLOW_ORIGIN CORS origin for HTTP endpoints, default *
 
+import { serveStatic } from './static.mjs';
 import http from 'node:http';
 import net from 'node:net';
 import fs from 'node:fs';
@@ -28,13 +29,21 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { zipSync } from 'fflate';
+import { positiveInteger, normalizedIp, clientIp, originAllowed, consume } from './security.mjs';
 
+const WEB_DIST = process.env.WEB_DIST ? path.resolve(process.env.WEB_DIST) : null;
 const FK_ROOT = path.resolve(process.env.FK_ROOT ?? '/opt/freekill-hegemony/server-root');
 const FK_HOST = process.env.FK_HOST ?? '127.0.0.1';
-const FK_PORT = Number(process.env.FK_PORT ?? 9527);
-const PORT = Number(process.env.PORT ?? 8080);
+const FK_PORT = positiveInteger('FK_PORT', 9527, 65535);
+const PORT = positiveInteger('PORT', 8080, 65535);
+const BIND_HOST = process.env.BIND_HOST ?? '127.0.0.1';
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN ?? '*';
-const MAX_WS_PER_IP = Number(process.env.MAX_WS_PER_IP ?? 6);
+const MAX_WS_PER_IP = positiveInteger('MAX_WS_PER_IP', 6, 1024);
+const MAX_CONNECTIONS = positiveInteger('MAX_CONNECTIONS', 128, 10000);
+const MAX_QUEUE_BYTES = positiveInteger('MAX_QUEUE_BYTES', 1 << 20, 16 << 20);
+const CONNECT_TIMEOUT_MS = positiveInteger('CONNECT_TIMEOUT_MS', 10000, 60000);
+const allowedOrigins = new Set(ALLOW_ORIGIN.split(',').map(x => x.trim()));
+const trustedProxies = new Set((process.env.TRUSTED_PROXIES ?? '').split(',').filter(Boolean).map(normalizedIp));
 
 const PACKAGES_DIR = path.join(FK_ROOT, 'packages');
 const BUNDLE_EXT = new Set(['.lua', '.json']);
@@ -58,7 +67,7 @@ function walk(dir, out = []) {
     if (ent.name === '.git' || ent.name === 'node_modules') continue;
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) walk(full, out);
-    else out.push(full);
+    else if (ent.isFile()) out.push(full);
   }
   return out;
 }
@@ -122,13 +131,20 @@ function getCache() {
 
 // ------------------------------------------------------------------ http --
 
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Origin', ALLOW_ORIGIN);
+function cors(req, res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (allowedOrigins.has('*')) res.setHeader('Access-Control-Allow-Origin', '*');
+  else if (originAllowed(req.headers.origin, allowedOrigins)) {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 }
 
 const server = http.createServer((req, res) => {
-  cors(res);
+  if (WEB_DIST && req.url?.startsWith('/gateway/')) req.url = req.url.slice('/gateway'.length);
+  cors(req, res);
+  if (req.headers.origin && !originAllowed(req.headers.origin, allowedOrigins)) return res.writeHead(403).end();
   if (req.method === 'OPTIONS') return res.writeHead(204).end();
   if (req.method !== 'GET' && req.method !== 'HEAD') return res.writeHead(405).end();
 
@@ -166,6 +182,7 @@ const server = http.createServer((req, res) => {
         })
         .end(zip);
     }
+    if (serveStatic(WEB_DIST, p, req, res)) return;
     if (p.startsWith('/assets/')) {
       const rel = p.slice('/assets/'.length);
       const full = path.resolve(PACKAGES_DIR, rel);
@@ -173,11 +190,16 @@ const server = http.createServer((req, res) => {
       if (!full.startsWith(PACKAGES_DIR + path.sep) || !type || !fs.existsSync(full)) {
         return res.writeHead(404).end();
       }
+      const realRoot = fs.realpathSync(PACKAGES_DIR);
+      const realFile = fs.realpathSync(full);
+      if (!realFile.startsWith(realRoot + path.sep) || !fs.statSync(realFile).isFile()) return res.writeHead(404).end();
       res.writeHead(200, {
         'Content-Type': type,
         'Cache-Control': 'public, max-age=604800',
       });
-      return fs.createReadStream(full).pipe(res);
+      const stream = fs.createReadStream(realFile);
+      stream.on('error', () => res.destroy());
+      return stream.pipe(res);
     }
   } catch (e) {
     log('http error', e);
@@ -189,14 +211,20 @@ const server = http.createServer((req, res) => {
 // ------------------------------------------------------------- websocket --
 
 const perIp = new Map();
-const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1 << 20 });
+const wss = new WebSocketServer({ noServer: true, maxPayload: 1 << 20, perMessageDeflate: false });
+server.on('upgrade', (req, socket, head) => {
+  if (WEB_DIST && req.url === '/gateway/ws') req.url = '/ws';
+  if (req.url !== '/ws' || !originAllowed(req.headers.origin, allowedOrigins)) {
+    socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return;
+  }
+  if (wss.clients.size >= MAX_CONNECTIONS) {
+    socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return;
+  }
+  wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
+});
 
 wss.on('connection', (ws, req) => {
-  const ip =
-    (req.headers['cf-connecting-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? '')
-      .toString()
-      .split(',')[0]
-      .trim();
+  const ip = clientIp(req, trustedProxies);
   const n = (perIp.get(ip) ?? 0) + 1;
   if (n > MAX_WS_PER_IP) {
     ws.close(1008, 'too many connections');
@@ -208,29 +236,50 @@ wss.on('connection', (ws, req) => {
   tcp.setNoDelay(true);
   const pending = [];
   let tcpReady = false;
+  let pendingBytes = 0;
+  let alive = true;
+  const bucket = { messages: 120, messageCapacity: 120, messageRate: 12,
+    bytes: MAX_QUEUE_BYTES, byteCapacity: MAX_QUEUE_BYTES, byteRate: 128 * 1024, updated: Date.now() };
+  const connectTimer = setTimeout(() => closeBoth('backend connection timeout'), CONNECT_TIMEOUT_MS);
+  connectTimer.unref();
+  ws.on('pong', () => { alive = true; });
+  ws.isAlive = () => { const wasAlive = alive; alive = false; return wasAlive; };
 
   tcp.on('connect', () => {
+    clearTimeout(connectTimer);
     tcpReady = true;
     for (const b of pending) tcp.write(b);
-    pending.length = 0;
+    pending.length = 0; pendingBytes = 0;
   });
   tcp.on('data', (buf) => {
-    if (ws.readyState === ws.OPEN) ws.send(buf, { binary: true });
+    if (ws.readyState !== ws.OPEN) return;
+    if (ws.bufferedAmount + buf.length > MAX_QUEUE_BYTES) return closeBoth('client too slow');
+    tcp.pause();
+    ws.send(buf, { binary: true }, error => {
+      if (error) closeBoth('client transport error'); else if (!tcp.destroyed) tcp.resume();
+    });
   });
   const closeBoth = (why) => {
+    clearTimeout(connectTimer);
+    pending.length = 0; pendingBytes = 0;
     if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) ws.close(1000, why);
     tcp.destroy();
   };
   tcp.on('error', (e) => closeBoth(`backend error: ${e.code ?? e.message}`));
   tcp.on('close', () => closeBoth('backend closed'));
+  tcp.on('drain', () => ws.resume());
 
   ws.on('message', (data, isBinary) => {
-    if (!isBinary) return; // protocol is binary CBOR only
+    if (!isBinary) return closeBoth('binary protocol required');
     const buf = Buffer.isBuffer(data) ? data : Buffer.concat(data);
-    if (tcpReady) tcp.write(buf);
-    else pending.push(buf);
+    if (!consume(bucket, buf.length) || pendingBytes + tcp.writableLength + buf.length > MAX_QUEUE_BYTES)
+      return closeBoth('traffic limit exceeded');
+    if (tcpReady) { if (!tcp.write(buf)) ws.pause(); }
+    else { pending.push(buf); pendingBytes += buf.length; }
   });
   ws.on('close', () => {
+    clearTimeout(connectTimer);
+    pending.length = 0; pendingBytes = 0;
     tcp.destroy();
     const left = (perIp.get(ip) ?? 1) - 1;
     if (left <= 0) perIp.delete(ip);
@@ -241,10 +290,12 @@ wss.on('connection', (ws, req) => {
 
 // Keep idle mobile connections alive through proxies (Cloudflare drops ~100s idle).
 setInterval(() => {
-  for (const ws of wss.clients) if (ws.readyState === ws.OPEN) ws.ping();
+  for (const ws of wss.clients) if (ws.readyState === ws.OPEN) {
+    if (!ws.isAlive?.()) ws.terminate(); else ws.ping();
+  }
 }, 30_000).unref();
 
-server.listen(PORT, () => {
+server.listen(PORT, BIND_HOST, () => {
   log(`gateway listening on :${PORT} -> ${FK_HOST}:${FK_PORT}, root=${FK_ROOT}`);
   try {
     getCache();

@@ -38,3 +38,12 @@ test('rejects CBOR integers unsafe for JavaScript and oversized inflate headers'
   const wire = encodePacket({ requestId: -2, type: CLIENT_NOTIFY | PacketType.COMPRESSED, command: 'X', data });
   assert.throws(() => new PacketStream().push(wire), /decompressed packet too large/);
 });
+
+test('rejects empty and oversized command fields before Lua dispatch', () => {
+  assert.throws(() => new PacketStream().push(encodePacket({
+    requestId: -2, type: CLIENT_NOTIFY, command: '', data: new Uint8Array(),
+  })), /command exceeds size limit/);
+  assert.throws(() => new PacketStream().push(encodePacket({
+    requestId: -2, type: CLIENT_NOTIFY, command: 'x'.repeat(257), data: new Uint8Array(),
+  })), /command exceeds size limit/);
+});

@@ -17,6 +17,7 @@ export interface GameplayItem {
   spec?: unknown;
   skill_name?: string;
   refresh_data?: unknown;
+  disabledReason?: string;
 }
 
 export interface GameplayScene {
@@ -49,6 +50,78 @@ function itemId(value: unknown): value is string | number {
     (typeof value === 'number' && Number.isSafeInteger(value));
 }
 
+const MAX_PUBLIC_VALUE_NODES = 4096;
+const MAX_PUBLIC_VALUE_BYTES = 64 * 1024;
+const MAX_PUBLIC_VALUE_DEPTH = 8;
+const MAX_PUBLIC_VALUE_KEYS = 128;
+const MAX_PUBLIC_VALUE_ARRAY = 256;
+const MAX_PUBLIC_VALUE_STRING = 4096;
+
+interface ValueBudget { nodes: number; bytes: number }
+
+/** Keep gameplay metadata useful without retaining arbitrary Lua object graphs. */
+function boundedValue(value: unknown, depth = 0, seen = new Set<object>(), budget: ValueBudget = { nodes: 0, bytes: 0 }): unknown {
+  if (budget.nodes++ >= MAX_PUBLIC_VALUE_NODES || depth > MAX_PUBLIC_VALUE_DEPTH) return undefined;
+  if (value === null || typeof value === 'boolean') {
+    budget.bytes += 5;
+    return budget.bytes <= MAX_PUBLIC_VALUE_BYTES ? value : undefined;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return undefined;
+    budget.bytes += 24;
+    return budget.bytes <= MAX_PUBLIC_VALUE_BYTES ? value : undefined;
+  }
+  if (typeof value === 'string') {
+    if (value.length > MAX_PUBLIC_VALUE_STRING) return undefined;
+    budget.bytes += value.length;
+    return budget.bytes <= MAX_PUBLIC_VALUE_BYTES ? value : undefined;
+  }
+  if (typeof value !== 'object' || seen.has(value)) return undefined;
+  seen.add(value);
+  let result: unknown;
+  if (Array.isArray(value)) {
+    const output: unknown[] = [];
+    for (const entry of value.slice(0, MAX_PUBLIC_VALUE_ARRAY)) {
+      const next = boundedValue(entry, depth + 1, seen, budget);
+      if (next !== undefined) output.push(next);
+    }
+    result = output;
+  } else {
+    const output: Record<string, unknown> = {};
+    const entries = Object.entries(value).slice(0, MAX_PUBLIC_VALUE_KEYS);
+    for (const [key, entry] of entries) {
+      if (key.length > 160) continue;
+      const next = boundedValue(entry, depth + 1, seen, budget);
+      if (next !== undefined) output[key] = next;
+    }
+    // An empty source object is meaningful, but an object whose every field
+    // was rejected should disappear from its parent rather than become a
+    // misleading empty placeholder.
+    result = entries.length > 0 && Object.keys(output).length === 0 ? undefined : output;
+  }
+  seen.delete(value);
+  return result;
+}
+
+/** CardItem.card may be a native Card object; only its public face is useful. */
+function publicCard(value: unknown): unknown {
+  if (value === null) return null;
+  const data = record(value);
+  if (!data) return undefined;
+  const card: Record<string, unknown> = {};
+  for (const key of ['name', 'trueName'] as const) {
+    if (typeof data[key] === 'string' && data[key].length <= 120) card[key] = data[key];
+  }
+  for (const key of ['suit', 'number'] as const) {
+    if (typeof data[key] === 'number' && Number.isFinite(data[key])) card[key] = data[key];
+  }
+  return card;
+}
+
+function boundedMetadata(value: unknown): unknown {
+  return boundedValue(value);
+}
+
 function mergeItem(prior: GameplayItem | undefined, raw: unknown): GameplayItem | null {
   const data = record(raw);
   if (!data || !itemId(data.id)) return null;
@@ -57,17 +130,29 @@ function mergeItem(prior: GameplayItem | undefined, raw: unknown): GameplayItem 
     enabled: typeof data.enabled === 'boolean' ? data.enabled : (prior?.enabled ?? false),
     selected: typeof data.selected === 'boolean' ? data.selected : (prior?.selected ?? false),
   };
-  if ('card' in data) next.card = data.card;
-  else if (prior && 'card' in prior) next.card = prior.card;
-  if (Array.isArray(data.skills) && data.skills.every((s) => typeof s === 'string' && s.length <= 150))
-    next.skills = data.skills.slice(0, 128);
+  if ('card' in data) {
+    const card = publicCard(data.card);
+    if (card !== undefined) next.card = card;
+    else if (prior && 'card' in prior) next.card = prior.card;
+  } else if (prior && 'card' in prior) next.card = prior.card;
+  const skills = Array.isArray(data.skills) ? data.skills.slice(0, 128) : null;
+  if (skills && skills.every((s) => typeof s === 'string' && s.length <= 150))
+    next.skills = skills;
   else if (prior?.skills) next.skills = prior.skills;
-  if ('spec' in data) next.spec = data.spec;
-  else if (prior && 'spec' in prior) next.spec = prior.spec;
-  if (typeof data.skill_name === 'string') next.skill_name = data.skill_name;
+  if ('spec' in data) {
+    const spec = boundedMetadata(data.spec);
+    if (spec !== undefined) next.spec = spec;
+    else if (prior && 'spec' in prior) next.spec = prior.spec;
+  } else if (prior && 'spec' in prior) next.spec = prior.spec;
+  if (typeof data.skill_name === 'string' && data.skill_name.length <= 150) next.skill_name = data.skill_name;
   else if (prior?.skill_name) next.skill_name = prior.skill_name;
-  if ('refresh_data' in data) next.refresh_data = data.refresh_data;
-  else if (prior && 'refresh_data' in prior) next.refresh_data = prior.refresh_data;
+  if ('refresh_data' in data) {
+    const refresh = boundedMetadata(data.refresh_data);
+    if (refresh !== undefined) next.refresh_data = refresh;
+    else if (prior && 'refresh_data' in prior) next.refresh_data = prior.refresh_data;
+  } else if (prior && 'refresh_data' in prior) next.refresh_data = prior.refresh_data;
+  if (typeof data.disabledReason === 'string') next.disabledReason = data.disabledReason.slice(0, 300);
+  else if (prior?.disabledReason) next.disabledReason = prior.disabledReason;
   return next;
 }
 

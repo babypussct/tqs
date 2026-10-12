@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GameConnection, type SocketHandlers } from '../src/engine/connection';
-import { CLIENT_REPLY, PacketStream, PacketType, encodePacket, type Packet } from '../src/engine/packet';
+import { GameConnection, type SocketHandlers, type RequestInfo } from '../src/engine/connection';
+import { CLIENT_NOTIFY, CLIENT_REPLY, PacketStream, PacketType, encodePacket, type Packet } from '../src/engine/packet';
 
 const SERVER_NOTIFY = PacketType.NOTIFICATION | PacketType.SRC_SERVER | PacketType.DEST_CLIENT;
 const SERVER_REQUEST = PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT;
@@ -64,6 +64,26 @@ test('successful Lua EnterLobby transitions to online after callback', () => {
   assert.equal(h.conn.getStatus().kind, 'online');
 });
 
+test('heartbeat replies immediately without Lua dispatch or altering a pending request', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  prepareSkillRequest(h, 1001);
+  h.conn.lua.receive = () => { throw new Error('Heartbeat must not enter Lua'); };
+  for (let i = 0; i < 8; i++) h.sockets[0].handlers.onData(encodePacket(h.packet('Heartbeat')));
+  assert.equal(h.conn['pendingRequest']?.requestId, 1001);
+  assert.equal(h.sockets[0].sent.length, 8);
+  for (const bytes of h.sockets[0].sent) {
+    const [packet] = new PacketStream().push(bytes);
+    assert.equal(packet.command, 'Heartbeat');
+    assert.equal(packet.type, CLIENT_NOTIFY);
+    assert.equal(packet.requestId, -2);
+  }
+  h.conn.close();
+  h.sockets[0].handlers.onData(encodePacket(h.packet('Heartbeat')));
+  assert.equal(h.sockets[0].sent.length, 8);
+});
+
 test('malformed EnterLobby payload closes session without reporting online', () => {
   const h = harness();
   h.conn.connect();
@@ -94,6 +114,31 @@ test('reconnecting isolates delayed close/data from the previous socket', () => 
   h.conn.connect();
   h.sockets[1].handlers.onClose('late close again');
   assert.equal(h.conn.getStatus().kind, 'connecting');
+});
+
+test('a stale Lua notification cannot cross a reentrant reconnect into the new socket', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn['opts'].onUi = (command: string) => {
+    if (command !== 'Reenter') return;
+    h.conn.connect();
+    // Keep the assertion about generation isolation independent from the
+    // normal connecting/online status transition.
+    h.conn['setStatus']({ kind: 'online' });
+  };
+  h.conn.lua.receive = (command) => {
+    if (command !== 'OldEvent') return;
+    h.conn['handleLuaUi']('Reenter', null);
+    h.conn['sendFromLua']('notify', 'StaleNotify', '00');
+  };
+
+  const old = h.sockets[0];
+  old.handlers.onData(encodePacket(h.packet('OldEvent')));
+  assert.equal(old.closed, true);
+  assert.equal(h.sockets.length, 2);
+  assert.equal(h.sockets[1].sent.length, 0);
+  assert.equal(h.conn.getStatus().kind, 'online');
 });
 
 test('explicit close invalidates handlers and clears request state', () => {
@@ -271,7 +316,7 @@ test('request published after Lua callback cannot resurrect a closed or supersed
     }
   };
   h.sockets[1].handlers.onData(encodePacket(h.packet('Second', SERVER_REQUEST, 502)));
-  assert.equal(h.conn['pendingRequest']?.requestId, 503);
+  assert.equal((h.conn['pendingRequest'] as RequestInfo | null)?.requestId, 503);
   assert.equal(h.requests.at(-1), 'Third');
 });
 
@@ -468,4 +513,25 @@ test('game phase boundaries invalidate outstanding gameplay requests', () => {
       /không còn hiệu lực/);
   }
   assert.equal(h.sockets[0].sent.length, 0);
+});
+
+
+test('Reconnect becomes online only after Lua accepts the complete room snapshot', () => {
+  for (const fail of [false, true]) {
+    const h = harness(); h.conn.connect(); h.conn['setStatus']({kind:'authenticating'});
+    h.conn.lua.receive = command => {
+      assert.equal(command,'Reconnect'); assert.equal(h.conn.getStatus().kind,'authenticating');
+      if (fail) throw new Error('Invalid reconnect snapshot');
+    };
+    h.sockets[0].handlers.onData(encodePacket(h.packet('Reconnect')));
+    assert.equal(h.conn.getStatus().kind,fail ? 'closed' : 'online');
+  }
+});
+
+
+test('EmptyRequest is the native animation delay and never exposes a reply control', () => {
+  const h=harness();h.conn.connect();h.conn['setStatus']({kind:'online'});
+  h.sockets[0].handlers.onData(encodePacket({...h.packet('EmptyRequest',SERVER_REQUEST,99),timeout:2,timestamp:Date.now()}));
+  assert.equal(h.conn['pendingRequest'],null);assert.equal(h.sockets[0].sent.length,0);
+  assert.equal(h.conn.getStatus().kind,'online');
 });
