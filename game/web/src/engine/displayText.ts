@@ -3,7 +3,9 @@ import { VI_ADDITIONS } from './vietnamese';
 
 /** Render upstream rich text as plain text; React never receives raw HTML. */
 export function plainText(text: string): string {
-  return text.replace(/<br\s*\/?\s*>/gi, '\n').replace(/<[^>]*>/g, '')
+  const source = typeof text === 'string' ? text.slice(0, 20_000) : String(text).slice(0, 20_000);
+  return source.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/<br\s*\/?\s*>/gi, '\n').replace(/<[^>]*>/g, '')
     .replace(/&(?:lt|gt|amp|quot|apos|nbsp|#(?:x[0-9a-f]{1,6}|[0-9]{1,7}));/gi, (entity) => {
       const numeric = entity.match(/^&#(x[0-9a-f]+|[0-9]+);$/i);
       if (numeric) {
@@ -100,6 +102,11 @@ export function localizedGameLog(raw: string): string {
         `Mục tiêu ${target} đã bị hủy khỏi lá ${card} do ${source} sử dụng.`)
     .replace(/#(\d+)(\(you\))?/g, (_match, seat: string, you?: string) => `Ghế ${seat}${you ? ' (bạn)' : ''}`)
     .replaceAll('(you)', ' (bạn)');
+  // Some old C++ GameLog variants omit the skill marker but keep the phrase
+  // "kỹ năng". Translate only that bounded context; arbitrary Chinese text
+  // remains verbatim so an unknown identifier cannot be mistranslated.
+  result = result.replace(/(kỹ năng\s*(?:〖|「|【)?)(祸水|礼下)(?:〗|」|】)?/gi,
+    (_match, prefix: string, skill: string) => `${prefix}${skill === '祸水' ? VI_ADDITIONS.huoshui : VI_ADDITIONS.ld__lixia}`);
   return result;
 }
 

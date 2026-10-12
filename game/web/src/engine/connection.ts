@@ -15,6 +15,7 @@ import { emptyGameplay, getGameplayItem, reduceGameplay, GAMEPLAY_REQUESTS,
   type GameplayItemType, type GameplayScene } from '../store/gameplayState';
 import { validInteractionAction } from './gameplayInteraction';
 import { parseChoicePrompt, validChoiceReply, type ChoicePrompt } from './choiceSelection';
+import { parseSkillInvokePrompt, type SkillInvokePrompt } from './skillInvoke';
 import {
   CLIENT_NOTIFY,
   CLIENT_REPLY,
@@ -49,6 +50,7 @@ export interface RequestInfo {
   choicePrompt?: ChoicePrompt | null;
   cardSelectionPrompt?: CardSelectionPrompt | null;
   cardsAndChoicePrompt?: CardsAndChoicePrompt | null;
+  skillInvokePrompt?: SkillInvokePrompt | null;
 }
 
 export interface GameConnectionOptions {
@@ -101,6 +103,7 @@ export class GameConnection {
   private nativeDialogPayload: { command: string; data: unknown } | null = null;
   private cardsAndChoice: CardsAndChoiceSelection | null = null;
   private cardSelectionPayload: { command: string; data: unknown } | null = null;
+  private skillInvokePrompt: SkillInvokePrompt | null = null;
   private expectedReplyHex: string | null = null;
   private completedAuthorizedReply: RequestInfo | null = null;
   private sendingAuthorizedReply = false;
@@ -112,6 +115,7 @@ export class GameConnection {
   // cannot notify a socket opened by a reentrant reconnect.
   private luaDispatchGeneration: number | null = null;
   private requestGeneration = 0;
+  private requestExpiryTimer: ReturnType<typeof setTimeout> | null = null;
   private stopped = false;
 
   constructor(private opts: GameConnectionOptions) {
@@ -143,6 +147,10 @@ export class GameConnection {
   }
 
   private clearRequest() {
+    if (this.requestExpiryTimer !== null) {
+      clearTimeout(this.requestExpiryTimer);
+      this.requestExpiryTimer = null;
+    }
     this.pendingRequest = null;
     this.authorizedRequest = null;
     this.capturedReply = null;
@@ -153,11 +161,42 @@ export class GameConnection {
     this.nativeDialog = null;
     this.nativeDialogPayload = null;
     this.cardSelectionPayload = null;
+    this.skillInvokePrompt = null;
     this.expectedReplyHex = null;
     this.completedAuthorizedReply = null;
     this.sendingAuthorizedReply = false;
     this.gameplayScene = emptyGameplay();
     this.opts.onRequest?.(null);
+  }
+
+  /** Expiry is transport state, not just a disabled-button hint. This keeps a
+   * request from surviving indefinitely when the server never sends the next
+   * callback and makes request-id reuse safe after a timeout. */
+  private scheduleRequestExpiry(request: RequestInfo) {
+    if (this.requestExpiryTimer !== null) {
+      clearTimeout(this.requestExpiryTimer);
+      this.requestExpiryTimer = null;
+    }
+    // A packet can arrive after its server timestamp has already elapsed.
+    // Keep that request visible as an expired/disabled prompt so the UI can
+    // explain the state; the next user action or server lifecycle event clears
+    // it. Requests that expire while waiting are cleared by the timer below.
+    if (request.expiresAt === null || request.expiresAt <= Date.now() || this.pendingRequest !== request) return;
+    const expire = () => {
+      if (this.pendingRequest !== request || request.expiresAt === null) return;
+      const remaining = request.expiresAt - Date.now();
+      if (remaining > 0) {
+        this.requestExpiryTimer = setTimeout(expire, Math.min(remaining, 2_147_483_647));
+        (this.requestExpiryTimer as unknown as { unref?: () => void }).unref?.();
+        return;
+      }
+      this.requestExpiryTimer = null;
+      this.opts.log?.('info', `Request expired: ${request.command}`);
+      this.clearRequest();
+    };
+    this.requestExpiryTimer = setTimeout(expire, Math.max(0,
+      Math.min(request.expiresAt - Date.now(), 2_147_483_647)));
+    (this.requestExpiryTimer as unknown as { unref?: () => void }).unref?.();
   }
 
   /** A UI click changes Lua's scene; only Lua may decide when to reply. */
@@ -604,6 +643,12 @@ export class GameConnection {
       if (this.receivingRequestCommand === command) this.cardSelectionPayload = { command, data };
       return; // Raw card IDs/visibility never reach the React store or onUi.
     }
+    if (command === 'AskForSkillInvoke' && this.receivingRequestCommand === command) {
+      this.skillInvokePrompt = parseSkillInvokePrompt(data);
+      if (!this.skillInvokePrompt) {
+        throw new Error('AskForSkillInvoke payload không hợp lệ hoặc thiếu tên kỹ năng');
+      }
+    }
     if (command === 'ReplyToServer') {
       const pending = this.pendingRequest;
       if (pending?.command === 'AskForSkillInvoke' &&
@@ -782,15 +827,37 @@ export class GameConnection {
           (id) => this.lua.call('__web_visible_card', id));
         this.cardSelectionPayload = null;
       }
+      if (p.command === 'AskForCardsAndChoice' && !this.cardsAndChoice) {
+        const data = payloadShape(payload?.data);
+        this.opts.log?.('warn', `AskForCardsAndChoice prompt rejected (${data})`);
+      }
+      if (p.command === 'AskForCardsAndChoice' && !this.cardsAndChoice)
+        throw new Error('AskForCardsAndChoice không tạo được bộ điều khiển chọn bài');
+      if (['AskForCardChosen', 'AskForPoxi'].includes(p.command) && !this.cardSelection)
+        throw new Error(`${p.command} không tạo được bộ điều khiển chọn bài`);
+      if (p.command === 'AskForSkillInvoke' && !this.skillInvokePrompt)
+        throw new Error('AskForSkillInvoke không nhận được dữ liệu hiển thị từ Lua');
+      if (['AskForChoices', 'AskForOptions'].includes(p.command) && !this.choicePrompt)
+        throw new Error(`${p.command} không tạo được bộ điều khiển lựa chọn`);
       if (this.nativeDialogPayload) {
         const payload = this.nativeDialogPayload;
         this.nativeDialog = parseNativeDialog(payload.command, payload.data,
           (id) => this.lua.call('__web_visible_card', id));
         this.nativeDialogPayload = null;
       }
+      const nativeDialogRequired = ['AskForArrangeCards', 'AskForAG', 'AskForGeneral', 'AskForMoveCardInBoard'].includes(p.command) ||
+        (p.command === 'CustomDialog' && !this.initialGeneralPrompt);
+      if (nativeDialogRequired && !this.nativeDialog)
+        throw new Error(`${p.command} không tạo được hộp thoại native`);
       const receivedAt = Date.now();
-      const timeout = p.timeout ?? 0;
-      const startedAt = p.timestamp && p.timestamp > 0 ? p.timestamp : receivedAt;
+      const rawTimeout = typeof p.timeout === 'number' && Number.isFinite(p.timeout) ? p.timeout : 0;
+      // A malformed peer must not create an effectively immortal timer or an
+      // overflowing setTimeout handle. FreeKill request timeouts are seconds;
+      // one day is already far beyond any interactive request in the client.
+      const timeout = Math.max(0, Math.min(rawTimeout, 86_400));
+      const rawTimestamp = typeof p.timestamp === 'number' && Number.isFinite(p.timestamp) && p.timestamp > 0
+        ? p.timestamp : receivedAt;
+      const startedAt = Math.min(rawTimestamp, receivedAt + 86_400_000);
       this.pendingRequest = {
         requestId: p.requestId, command: p.command, timeout, receivedAt,
         expiresAt: timeout > 0 ? startedAt + timeout * 1000 : null,
@@ -799,7 +866,9 @@ export class GameConnection {
         ...(['AskForChoices', 'AskForOptions'].includes(p.command) ? { choicePrompt: this.choicePrompt } : {}),
         ...(['AskForCardChosen', 'AskForPoxi'].includes(p.command) ?
           { cardSelectionPrompt: this.cardSelection?.publicPrompt ?? null } : {}),
+        ...(p.command === 'AskForSkillInvoke' ? { skillInvokePrompt: this.skillInvokePrompt } : {}),
       };
+      this.scheduleRequestExpiry(this.pendingRequest);
       this.opts.onRequest?.(this.pendingRequest);
     }
     // Only report success after upstream Lua has accepted the lobby packet.
@@ -882,6 +951,31 @@ export class GameConnection {
     ]);
     this.rawNotify('Setup', payload);
   }
+}
+
+/** Return only bounded structural metadata for a rejected native prompt. */
+function payloadShape(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return 'not-object';
+  const record = value as Record<string, unknown>;
+  const list = (key: string, kind: 'card' | 'choice') => {
+    const value = record[key];
+    if (!Array.isArray(value)) return 'not-array';
+    const valid = kind === 'card'
+      ? value.every((item) => Number.isSafeInteger(item) && item >= 0 && item <= 2147483647)
+      : value.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 1000);
+    const unique = new Set(value).size === value.length;
+    return `${value.length}/${valid ? 'valid' : 'invalid'}/${unique ? 'unique' : 'duplicate'}`;
+  };
+  const scalar = (key: string) => {
+    const v = record[key];
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : 'non-integer';
+    return typeof v;
+  };
+  const disabled = record.disabled;
+  const cards = record.cards;
+  const disabledSubset = Array.isArray(cards) && Array.isArray(disabled) &&
+    disabled.every((id) => cards.includes(id));
+  return `cards=${list('cards', 'card')},choices=${list('choices', 'choice')},cancel=${list('cancel_choices', 'choice')},disabled=${list('disabled', 'card')},disabledSubset=${disabledSubset},min=${scalar('min')},max=${scalar('max')},filter=${typeof record.filter_skel},extra=${record.extra_data && typeof record.extra_data === 'object' && !Array.isArray(record.extra_data) ? 'object' : typeof record.extra_data},prompt=${typeof record.prompt}`;
 }
 
 /** Browser WebSocket transport. */

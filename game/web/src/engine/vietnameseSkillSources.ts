@@ -1,0 +1,13105 @@
+/** Generated from the pinned FreeKill runtime's explicit zh_CN translation table. */
+export const ZH_SKILL_SOURCES = {
+  "aocai": {
+    "zhName": "傲才",
+    "zhDescription": "当你于回合外需要使用或打出一张基本牌时，你可以观看牌堆顶的两张牌，使用或打出其中你需要的牌。",
+    "currentVietnameseName": "Áo Cái",
+    "currentVietnameseDescription": "Khi bạn cần sử dụng hoặc chơi một lá bài cơ bản ngoài lượt, bạn có thể nhìn vào hai lá bài trên cùng của bộ bài và sử dụng hoặc chơi lá bài bạn cần.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugeke",
+        "trueName": "zhugeke",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/aocai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "baoling": {
+    "zhName": "暴凌",
+    "zhDescription": "主将技，锁定技，出牌阶段结束时，若你有副将，则你移除副将，加3点体力上限并回复3点体力，然后获得〖崩坏〗。",
+    "currentVietnameseName": "bắt nạt",
+    "currentVietnameseDescription": "Kỹ năng chính, kỹ năng khóa. Khi kết thúc giai đoạn chơi bài, nếu bạn có trung úy, bạn sẽ loại bỏ trung úy, cộng 3 điểm vào giới hạn thể lực trên và khôi phục 3 điểm thể lực, sau đó nhận được [Thu gọn].",
+    "declarations": [
+      {
+        "general": "ld__dongzhuo",
+        "trueName": "dongzhuo",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/baoling.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "bazhen": {
+    "zhName": "八阵",
+    "zhDescription": "锁定技，若你没有装备防具，视为你装备着【八卦阵】。",
+    "currentVietnameseName": "Tám đội hình",
+    "currentVietnameseDescription": "Đối với kỹ năng khóa, nếu bạn không được trang bị áo giáp, nó sẽ được coi là bạn được trang bị [Bagua Array].",
+    "declarations": [
+      {
+        "general": "hs__wolong",
+        "trueName": "wolong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/bazhen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "beige": {
+    "zhName": "悲歌",
+    "zhDescription": "当一名角色受到【杀】造成的伤害后，你可以弃置一张牌，然后令其进行判定，若结果为：<font color='red'>♥</font>，其回复1点体力；<font color='red'>♦</font>，其摸两张牌；♣，伤害来源弃置两张牌；♠，伤害来源翻面。",
+    "currentVietnameseName": "bi kịch",
+    "currentVietnameseDescription": "Khi một nhân vật bị [Giết] gây sát thương, bạn có thể loại bỏ một lá bài và yêu cầu nhân vật đó đưa ra phán quyết. Nếu kết quả là: <font color='red'>♥</font> thì hồi phục 1 điểm thể lực; <font color='red'>♦</font>, nó rút được hai lá bài; ♣, nguồn gây sát thương loại bỏ hai lá bài; ♠, nguồn gốc của thiệt hại đã bị lật tẩy.",
+    "declarations": [
+      {
+        "general": "hs__caiwenji",
+        "trueName": "caiwenji",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/beige.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "beizhu": {
+    "zhName": "备诛",
+    "zhDescription": "出牌阶段限一次，你可以观看一名其他角色的手牌。若其中有【杀】，则其对你依次使用这些【杀】（当你受到因此使用的【杀】造成的伤害后，你摸一张牌），否则你弃置其一张牌并可以令其从牌堆中获得一张【杀】。",
+    "currentVietnameseName": "Chuẩn bị thực hiện",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể xem bài của nhân vật khác. Nếu có [Kill] trong đó, thì nó sẽ lần lượt sử dụng [Kill] này lên bạn (sau khi bạn bị sát thương bởi [Kill] đã sử dụng, bạn rút một lá bài), nếu không, bạn loại bỏ một trong các lá bài của nó và bạn có thể để nó nhận được một [Kill] từ chồng bài.",
+    "declarations": [
+      {
+        "general": "os_heg__dingyuan",
+        "trueName": "dingyuan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/beizhu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "benyu": {
+    "zhName": "贲育",
+    "zhDescription": "当你受到伤害后，若你的手牌数不大于伤害来源手牌数，你可以将手牌摸至与伤害来源手牌数相同（最多摸至5张）；否则你可以弃置大于伤害来源手牌数的手牌，然后对其造成1点伤害。",
+    "currentVietnameseName": "Benyu",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, nếu số lá bài trên tay của bạn không lớn hơn số lá bài trên tay của nguồn gây sát thương, bạn có thể rút số lá bài bằng với số lá bài trên tay của nguồn gây sát thương (tối đa 5 lá bài); nếu không, bạn có thể loại bỏ những lá bài trên tay lớn hơn số lá bài trên tay của nguồn gây sát thương, sau đó gây ra 1 điểm sát thương cho chúng.",
+    "declarations": [
+      {
+        "general": "os_heg__chengyu",
+        "trueName": "chengyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/benyu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "bingqing": {
+    "zhName": "秉清",
+    "zhDescription": "当你于出牌阶段内使用牌时，若此牌与你此阶段使用过的牌花色均不相同，则你记录此花色。此牌结算结束后，根据此阶段记录的花色数，你可以执行对应效果：<br>两种，令一名角色摸两张牌；<br>三种，弃置一名角色区域内的一张牌；<br>四种，对一名其他角色造成1点伤害。",
+    "currentVietnameseName": "Băng Thanh",
+    "currentVietnameseDescription": "Khi bạn sử dụng một lá bài trong giai đoạn chơi bài để giải quyết, nếu chất của lá bài này khác với chất của lá bài bạn đã sử dụng và giải quyết trong giai đoạn này thì bạn ghi lại chất của lá bài này cho đến hết giai đoạn này và sau đó bạn có thể thực hiện hiệu ứng tương ứng theo số lượng chất đã ghi: <br>Hai, để một nhân vật rút hai lá bài; <br>Ba, bỏ một lá bài vào khu vực của nhân vật; <br>Bốn, gây 1 điểm sát thương cho nhân vật.",
+    "declarations": [
+      {
+        "general": "os_heg__maojie",
+        "trueName": "maojie",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/bingqing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "bingzheng": {
+    "zhName": "秉正",
+    "zhDescription": "出牌阶段结束时，你可以令手牌数不等于体力值的一名角色弃置一张手牌或摸一张牌。然后若其手牌数等于体力值，你摸一张牌，且可以交给该角色一张牌。",
+    "currentVietnameseName": "Bingzheng",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn chơi bài, bạn có thể yêu cầu nhân vật có số quân bài trên tay không bằng giá trị vật lý bỏ quân bài trên tay hoặc rút một quân bài. Sau đó nếu số quân bài trên tay anh ta bằng giá trị vật lý thì bạn rút một quân bài và có thể đưa quân bài đó cho nhân vật.",
+    "declarations": [
+      {
+        "general": "os_heg__dongyun",
+        "trueName": "dongyun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/bingzheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "biyue": {
+    "zhName": "闭月",
+    "zhDescription": "结束阶段，你可以摸一张牌。",
+    "currentVietnameseName": "Bế Nguyệt",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn kết thúc, bạn có thể rút 1 lá.",
+    "declarations": [
+      {
+        "general": "hs__diaochan",
+        "trueName": "diaochan",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "diaochan",
+        "trueName": "diaochan",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/biyue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "bushi": {
+    "zhName": "布施",
+    "zhDescription": "当你受到1点伤害，或当一名角色受到你造成的1点伤害后，受到伤害的角色可以获得一张“米”。",
+    "currentVietnameseName": "bố thí",
+    "currentVietnameseDescription": "Khi bạn nhận 1 điểm sát thương hoặc khi nhân vật nhận 1 điểm sát thương từ bạn, nhân vật bị sát thương có thể nhận được \"đồng hồ đo\".",
+    "declarations": [
+      {
+        "general": "os_heg__zhanglu",
+        "trueName": "zhanglu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/bushi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "buyi": {
+    "zhName": "补益",
+    "zhDescription": "当一名角色进入濒死状态时，你可以展示该角色一张手牌，若不为基本牌，则其弃置此牌并回复1点体力。",
+    "currentVietnameseName": "cải thiện",
+    "currentVietnameseDescription": "Khi một anh hùng sắp chết, bạn có thể đưa ra một trong những lá bài của anh ta. Nếu đó không phải là lá bài cơ bản, anh ta sẽ loại bỏ nó và hồi máu cho 1.",
+    "declarations": [
+      {
+        "general": "os_heg__wuguotai",
+        "trueName": "wuguotai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2011/skills/buyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "caiyuan": {
+    "zhName": "才媛",
+    "zhDescription": "锁定技，回合结束时，若你于上回合结束至今未扣减过体力，你摸两张牌。",
+    "currentVietnameseName": "Thái Nguyên",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi kết thúc vòng đấu, nếu thể lực của bạn chưa bị trừ kể từ khi kết thúc vòng trước, bạn sẽ rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "ol_heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/caiyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "choufa": {
+    "zhName": "筹伐",
+    "zhDescription": "出牌阶段限一次，你可展示一名其他角色的一张手牌，其当前手牌中与此牌类别不同的牌均视为【杀】直到其回合结束。",
+    "currentVietnameseName": "lập kế hoạch",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể tiết lộ lá bài trên tay của nhân vật khác. Những lá bài thuộc loại khác với lá bài này trong tay hiện tại của anh ta sẽ được coi là [giết] cho đến hết lượt của anh ta.",
+    "declarations": [
+      {
+        "general": "ol_heg__simazhao",
+        "trueName": "simazhao",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/choufa.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "choutao": {
+    "zhName": "仇讨",
+    "zhDescription": "当你使用【杀】指定目标后，或当你成为【杀】的目标后，你可以弃置此【杀】使用者的一张牌，令此【杀】不能被抵消。若使用者为你，此【杀】不计入次数。",
+    "currentVietnameseName": "Cầu xin",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu hoặc khi bạn trở thành mục tiêu của [Giết], bạn có thể loại bỏ lá bài của người sử dụng [Giết] này để [Giết] này không thể bị bù đắp. Nếu người dùng là bạn, [Giết] này sẽ không được tính vào số lần đếm.",
+    "declarations": [
+      {
+        "general": "os_heg__yanrou",
+        "trueName": "yanrou",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/choutao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "chuanxin": {
+    "zhName": "穿心",
+    "zhDescription": "当你于出牌阶段内使用【杀】或【决斗】对目标角色造成伤害时，若其与你势力不同且有副将，你可以防止此伤害。若如此做，该角色选择一项：1.弃置装备区里的所有牌，失去1点体力；2.移除副将。",
+    "currentVietnameseName": "Đi xuyên qua trái tim",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] hoặc [Trận đấu] để gây sát thương cho nhân vật mục tiêu trong giai đoạn chơi bài, nếu nhân vật đó có sức mạnh khác với sức mạnh của bạn và có phó tướng, bạn có thể ngăn chặn sát thương này. Nếu làm như vậy, nhân vật sẽ chọn một: 1. Loại bỏ tất cả các thẻ trong khu vực trang bị và mất 1 điểm máu; 2. Loại bỏ trung úy.",
+    "declarations": [
+      {
+        "general": "nos_heg__zhangren",
+        "trueName": "zhangren",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/chuanxin.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ciwei": {
+    "zhName": "慈威",
+    "zhDescription": "其他角色于其回合内使用第二张牌时，若此牌为基本牌或普通锦囊牌，你可弃置一张牌令此牌无效（取消所有目标）。",
+    "currentVietnameseName": "Từ Vi",
+    "currentVietnameseDescription": "Khi một nhân vật khác sử dụng thẻ thứ hai trong lượt của họ, nếu thẻ đó là thẻ cơ bản hoặc thẻ kit thông thường, bạn có thể loại bỏ thẻ để vô hiệu thẻ (hủy tất cả mục tiêu).",
+    "declarations": [
+      {
+        "general": "ol_heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/ciwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "congjian": {
+    "zhName": "从谏",
+    "zhDescription": "当你成为锦囊牌的目标后，若此牌的目标数大于1，则你可以交给其中一名其他目标角色一张牌，然后摸一张牌，若你给出的是装备牌，改为摸两张牌。",
+    "currentVietnameseName": "Khuyên răn",
+    "currentVietnameseDescription": "Khi bạn trở thành mục tiêu của thẻ mưu kế, nếu thẻ đó có hơn 1 mục tiêu, bạn có thể giao thẻ cho một nhân vật mục tiêu khác, sau đó rút 1 lá. Nếu bạn giao một lá trang bị, thay vào đó rút 2 lá.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangxiu",
+        "trueName": "zhangxiu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/thunder/skills/congjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "cunsi": {
+    "zhName": "存嗣",
+    "zhDescription": "出牌阶段，你可移除此武将牌并选择一名角色，其获得〖勇决〗。若其不为你，其摸两张牌。",
+    "currentVietnameseName": "người thừa kế còn sống",
+    "currentVietnameseDescription": "Trong giai đoạn đánh bài, bạn có thể bỏ lá bài chung này và chọn một nhân vật nhận [Quyết Đấu Dũng Cảm]. Nếu mục tiêu không phải là bạn, mục tiêu rút 2 lá.",
+    "declarations": [
+      {
+        "general": "ld__mifuren",
+        "trueName": "mifuren",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/cunsi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "dangxian": {
+    "zhName": "当先",
+    "zhDescription": "锁定技，回合开始时，你执行一个额外的出牌阶段。",
+    "currentVietnameseName": "tiền tuyến",
+    "currentVietnameseDescription": "(bắt buộc) Khi bắt đầu lượt, thực hiện thêm một Giai đoạn hành động.",
+    "declarations": [
+      {
+        "general": "os_heg__liaohua",
+        "trueName": "liaohua",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2012/skills/dangxian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "danlao": {
+    "zhName": "啖酪",
+    "zhDescription": "当一个锦囊指定了包括你在内的多个目标，你可以摸一张牌，若如此做，该锦囊对你无效。",
+    "currentVietnameseName": "Có bánh của bạn",
+    "currentVietnameseDescription": "Sau khi bạn trở thành mục tiêu của một thủ thuật ảnh hưởng đến bạn và (các) anh hùng khác, bạn có thể rút 1 → thủ thuật này sẽ không còn hiệu quả đối với bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__yangxiu",
+        "trueName": "yangxiu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/danlao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "dengli": {
+    "zhName": "等力",
+    "zhDescription": "当你使用【杀】指定其他角色为目标后，或当你成为其他角色使用【杀】的目标后，若你与其体力值相等，你可以摸一张牌。",
+    "currentVietnameseName": "todoroki",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] để chỉ định một nhân vật khác làm mục tiêu hoặc khi bạn trở thành mục tiêu của một nhân vật khác bằng cách sử dụng [Giết], bạn có thể rút một lá bài nếu giá trị sức khỏe của bạn bằng với anh ta.",
+    "declarations": [
+      {
+        "general": "os_heg__gaolan",
+        "trueName": "gaolan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/dengli.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "diancai": {
+    "zhName": "典财",
+    "zhDescription": "其他角色的出牌阶段结束时，若你于此阶段失去过不少于X张牌（X为你的体力值），则你可将手牌摸至你体力上限，然后你可变更副将。",
+    "currentVietnameseName": "diacai",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn đánh bài của các nhân vật khác nếu thua ít nhất",
+    "declarations": [
+      {
+        "general": "nos_heg__lvfan",
+        "trueName": "lvfan",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "ld__lvfan",
+        "trueName": "lvfan",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/diancai.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "diaodu": {
+    "zhName": "调度",
+    "zhDescription": "当每回合首次与你势力相同的角色使用装备牌时，其可以摸一张牌。出牌阶段开始时，你可以获得一名与你势力相同的角色装备区里的一张牌，然后你可以将此牌交给另一名角色。",
+    "currentVietnameseName": "Lên lịch",
+    "currentVietnameseDescription": "Khi một nhân vật có cùng sức mạnh với bạn sử dụng thẻ trang bị lần đầu tiên trong mỗi vòng, người đó có thể rút thẻ. Khi bắt đầu giai đoạn chơi bài, bạn có thể lấy một lá bài từ khu vực trang bị của một nhân vật có sức mạnh tương đương với mình, sau đó bạn có thể đưa lá bài này cho một nhân vật khác.",
+    "declarations": [
+      {
+        "general": "ld__lvfan",
+        "trueName": "lvfan",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/diaodu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "difei": {
+    "zhName": "抵诽",
+    "zhDescription": "锁定技，每回合限一次，当你受到伤害后，你摸一张牌或弃置一张手牌，然后你展示所有手牌，若对你造成伤害的牌无花色或你的手牌中没有与对你造成伤害的牌花色相同的牌，你回复1点体力。",
+    "currentVietnameseName": "bác bỏ lời vu khống",
+    "currentVietnameseDescription": "Khóa kỹ năng, chỉ một lần mỗi vòng. Sau khi nhận sát thương, bạn rút một lá bài hoặc bỏ lá bài trên tay, sau đó bạn sẽ lộ tất cả các lá bài trên tay mình. Nếu quân bài gây sát thương cho bạn không có chất hoặc trên tay không có quân bài cùng chất với quân bài gây sát thương cho bạn thì bạn hồi phục 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangchangpu",
+        "trueName": "zhangchangpu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/difei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "dimeng": {
+    "zhName": "缔盟",
+    "zhDescription": "出牌阶段限一次，你可以选择两名其他角色并弃置X张牌（X为这些角色手牌数差），令这两名角色交换手牌。",
+    "currentVietnameseName": "thành lập một liên minh",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn 2 nhân vật khác và bỏ lá bài X (X là chênh lệch về số lá bài trên tay của những nhân vật này) để hai nhân vật đổi tay.",
+    "declarations": [
+      {
+        "general": "hs__lusu",
+        "trueName": "lusu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/dimeng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "duanbing": {
+    "zhName": "短兵",
+    "zhDescription": "你使用【杀】可以多选择一名距离为1的角色为目标。",
+    "currentVietnameseName": "Vũ khí ngắn",
+    "currentVietnameseDescription": "Khi bạn sử dụng Chém, bạn có thể chọn một anh hùng khác ở khoảng cách 1 cũng trở thành mục tiêu.",
+    "declarations": [
+      {
+        "general": "hs__dingfeng",
+        "trueName": "dingfeng",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "m_heg__dingfeng",
+        "trueName": "dingfeng",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/duanbing.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "duanfa": {
+    "zhName": "断发",
+    "zhDescription": "出牌阶段，你可以弃置任意张黑色牌，然后摸等量的牌（你每阶段以此法弃置的牌数总和不能大于体力上限）。",
+    "currentVietnameseName": "Cắt tóc",
+    "currentVietnameseDescription": "Ngoài Giai đoạn Đang hành động, bạn có thể loại bỏ bất kỳ quân bài đen nào, sau đó rút cùng số lượng quân bài (tổng số quân bài bạn loại bỏ theo cách này trong mỗi giai đoạn không được lớn hơn HP tối đa của bạn).",
+    "declarations": [
+      {
+        "general": "m_heg__zhoufang",
+        "trueName": "zhoufang",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/duanfa.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "duanxie": {
+    "zhName": "断绁",
+    "zhDescription": "出牌阶段限一次，你可以令至多四名其他角色横置，然后你横置，若你因此横置的其他角色数大于X，你受到1点无来源伤害（X为你已损失的体力值）。",
+    "currentVietnameseName": "cắt bỏ nhà tù",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi, bạn có thể khiến tối đa bốn nhân vật khác bị kiệt sức, và sau đó bạn phải làm họ kiệt sức. Nếu số lượng nhân vật khác mà bạn đã tiêu hao lớn hơn X, bạn sẽ phải chịu 1 điểm sát thương không nguồn (X là thể lực đã mất của bạn).",
+    "declarations": [
+      {
+        "general": "ld__chenwudongxi",
+        "trueName": "chenwudongxi",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/duanxie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "dujin": {
+    "zhName": "独进",
+    "zhDescription": "摸牌阶段，你可以多摸X+1张牌（X为你装备区里的牌数的一半，向下取整）。",
+    "currentVietnameseName": "Tiến lên một mình",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể rút thêm X+1 lá bài, X bằng một nửa số lá bài trong khu vực trang bị của bạn (làm tròn xuống)",
+    "declarations": [
+      {
+        "general": "os_heg__lingcao",
+        "trueName": "lingcao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_rare/skills/dujin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "duoshi": {
+    "zhName": "度势",
+    "zhDescription": "出牌阶段开始时，你可以视为使用一张【以逸待劳】。",
+    "currentVietnameseName": "đo tiềm năng",
+    "currentVietnameseDescription": "4x mỗi đợt: có thể sử dụng thẻ đỏ một cách nhàn nhã và chờ đợi công việc",
+    "declarations": [
+      {
+        "general": "hs__luxun",
+        "trueName": "luxun",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/duoshi.lua",
+        "line": 4
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "duwu": {
+    "zhName": "黩武",
+    "zhDescription": "出牌阶段，你可以弃置X张牌，对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。若其因此进入濒死状态，则濒死状态结算后你失去1点体力，且此技能本回合失效。",
+    "currentVietnameseName": "quân sự",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, bạn có thể loại bỏ lá bài X và gây 1 điểm sát thương cho nhân vật khác trong phạm vi tấn công của bạn (X là sức mạnh vật lý của nhân vật). Nếu kết quả là nó rơi vào trạng thái hấp hối, bạn sẽ mất 1 điểm thể lực sau khi trạng thái hấp hối được giải quyết và kỹ năng này sẽ không có hiệu lực ở vòng này.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugeke",
+        "trueName": "zhugeke",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/duwu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ex__fanjian": {
+    "zhName": "反间",
+    "zhDescription": "出牌阶段限一次，你可以展示一张手牌并交给一名其他角色，然后其选择：1.展示所有手牌，弃置所有与你以展示的牌花色相同的牌；2.失去1点体力。",
+    "currentVietnameseName": "Phản Gián",
+    "currentVietnameseDescription": "1x Giai đoạn Hành động, có thể đưa thẻ bài trên tay và đưa nó cho một anh hùng khác. Sau đó, anh ta phải mất 1 HP hoặc lộ toàn bộ ván bài của mình và loại bỏ lá bài bạn vừa đưa cho anh ta và tất cả các lá bài cùng chất.",
+    "declarations": [
+      {
+        "general": "hs__zhouyu",
+        "trueName": "zhouyu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/fanjian.lua",
+        "line": 14
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ex__guicai": {
+    "zhName": "鬼才",
+    "zhDescription": "当判定结果确定前，你可打出一张牌代替之。",
+    "currentVietnameseName": "Quỷ Tài",
+    "currentVietnameseDescription": "Trước khi lá bài kết quả phán quyết có hiệu lực, bạn có thể đánh lá bài trở thành kết quả.",
+    "declarations": [
+      {
+        "general": "hs__simayi",
+        "trueName": "simayi",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/guicai.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ex__rende": {
+    "zhName": "仁德",
+    "zhDescription": "出牌阶段每名角色限一次，你可以将任意张手牌交给一名其他角色，每阶段你以此法给出第二张牌时，你可以视为使用一张基本牌。",
+    "currentVietnameseName": "Nhân Đức",
+    "currentVietnameseDescription": "1 x Giai đoạn hành động x anh hùng, có thể đưa (các) lá bài bất kỳ cho các anh hùng khác. Khi đưa thẻ thứ 2 theo cách này, bạn có thể xem như sử dụng thẻ cơ bản bất kỳ.",
+    "declarations": [
+      {
+        "general": "hs__liubei",
+        "trueName": "liubei",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/rende.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ex__tuxi": {
+    "zhName": "突袭",
+    "zhDescription": "摸牌阶段，你可以少摸任意张牌并获得等量其他角色各一张手牌。",
+    "currentVietnameseName": "Đột Tập",
+    "currentVietnameseDescription": "Ở Giai đoạn Rút bài, bạn có thể rút ít hơn X lá bài. Sau đó chọn X anh hùng và lấy một lá bài từ mỗi người trong số họ.",
+    "declarations": [
+      {
+        "general": "hs__zhangliao",
+        "trueName": "zhangliao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/tuxi.lua",
+        "line": 12
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ex__yingzi": {
+    "zhName": "英姿",
+    "zhDescription": "锁定技，摸牌阶段，你多摸一张牌；你的手牌上限等同于你的体力上限。",
+    "currentVietnameseName": "Anh Tư",
+    "currentVietnameseDescription": "(bắt buộc) Trong Giai đoạn Rút bài rút thêm một lá bài. Giới hạn bài của bạn = HP tối đa của bạn.",
+    "declarations": [
+      {
+        "general": "hs__zhouyu",
+        "trueName": "zhouyu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/yingzi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fangquan": {
+    "zhName": "放权",
+    "zhDescription": "你可以跳过你的出牌阶段，然后此回合结束时，你可以弃置一张手牌并选择一名其他角色，然后其获得一个额外回合。",
+    "currentVietnameseName": "Quyền đại biểu",
+    "currentVietnameseDescription": "Bạn có thể bỏ qua giai đoạn chơi bài của mình và sau đó khi kết thúc lượt, bạn có thể loại bỏ một lá bài trên tay và chọn một nhân vật khác, sau đó nhân vật này sẽ có thêm một lượt.",
+    "declarations": [
+      {
+        "general": "hs__liushan",
+        "trueName": "liushan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/fangquan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fanjian": {
+    "zhName": "反间",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色选择一种花色，然后正面朝上获得你的一张手牌。若此牌花色与其所选花色不同，你对其造成1点伤害。",
+    "currentVietnameseName": "Phản Gián",
+    "currentVietnameseDescription": "Một lần trong giai đoạn ra bài, bạn có thể lệnh 1 người khác chọn 1 chất, sau đó họ thu lấy 1 lá trên tay bạn và mở lá đó. Nếu chất của lá này khác chất mà họ đã chọn, bạn gây 1 sát thương cho họ.",
+    "declarations": [
+      {
+        "general": "zhouyu",
+        "trueName": "zhouyu",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/fanjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fankui": {
+    "zhName": "反馈",
+    "zhDescription": "当你受到伤害后，你可以获得伤害来源的一张牌。",
+    "currentVietnameseName": "Phản Quỹ",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, bạn có thể thu lấy 1 lá của nguồn sát thương.",
+    "declarations": [
+      {
+        "general": "hs__simayi",
+        "trueName": "simayi",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "simayi",
+        "trueName": "simayi",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/fankui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fengpo": {
+    "zhName": "凤魄",
+    "zhDescription": "当你于回合内首次使用【杀】或【决斗】指定目标后，你可以选择一项：1.摸X张牌；2.此牌伤害+X（X为其<font color='red'>♦</font>手牌数）。",
+    "currentVietnameseName": "Linh hồn phượng hoàng",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] hoặc [Trận đấu] để chỉ định mục tiêu lần đầu tiên trong một vòng, bạn có thể chọn một trong các tùy chọn sau: 1. Rút thẻ X; 2. Thiệt hại của lá bài này +X (X là số lá bài trên tay bạn).",
+    "declarations": [
+      {
+        "general": "ol_heg__mayunlu",
+        "trueName": "mayunlu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/fengpo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fengshi": {
+    "zhName": "锋矢",
+    "zhDescription": "阵法技，若你是围攻角色且处于<a href='heg_formation_href'>队列</a>，你对被围攻角色使用的【杀】伤害+X（X为你队列的角色数）。",
+    "currentVietnameseName": "Mũi tên phía trước",
+    "currentVietnameseDescription": "Kỹ năng đội hình, nếu bạn là nhân vật vây hãm và đang ở trong <a href='heg_formation_href'>hàng đợi</a>, sát thương [tiêu diệt] bạn sử dụng lên nhân vật bị bao vây sẽ là +X (X là số lượng nhân vật trong hàng đợi của bạn).",
+    "declarations": [
+      {
+        "general": "ld__zhangren",
+        "trueName": "zhangren",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/fengshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fengzi": {
+    "zhName": "丰姿",
+    "zhDescription": "每阶段限一次，当你于出牌阶段内使用基本牌或普通锦囊牌时，你可以弃置一张类型相同的手牌令此牌额外结算一次。",
+    "currentVietnameseName": "Lộng lẫy",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi giai đoạn, khi bạn sử dụng lá bài cơ bản hoặc lá bài kit thông thường trong giai đoạn chơi bài, bạn có thể loại bỏ lá bài cùng loại để khiến lá bài này được giải thêm một lần.",
+    "declarations": [
+      {
+        "general": "ol_heg__wangrongh",
+        "trueName": "wangrongh",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/fengzi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fenli": {
+    "zhName": "奋励",
+    "zhDescription": "若你的手牌数为全场最多，你可以跳过摸牌阶段；若你的体力值为全场最多，你可以跳过出牌阶段；若你的装备区里有牌且数量为全场最多，你可以跳过弃牌阶段。",
+    "currentVietnameseName": "Khuyến khích",
+    "currentVietnameseDescription": "Nếu bạn có nhiều nhất: <br/>▪ bài trên tay, có thể bỏ qua Giai đoạn Rút bài; <br/>▪ HP, có thể bỏ qua Giai đoạn Hành động; <br/>▪ thẻ được trang bị, có thể bỏ qua Giai đoạn Loại bỏ.",
+    "declarations": [
+      {
+        "general": "os_heg__zhuhuan",
+        "trueName": "zhuhuan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2014/skills/fenli.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fenming": {
+    "zhName": "奋命",
+    "zhDescription": "当你受到伤害后，若你处于横置状态，你可以弃置所有处于横置状态角色的各一张牌。",
+    "currentVietnameseName": "Làm việc chăm chỉ cho cuộc sống của bạn",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, nếu bạn bị chạm, bạn có thể loại bỏ một thẻ từ mỗi nhân vật đã chạm của mình.",
+    "declarations": [
+      {
+        "general": "ld__chenwudongxi",
+        "trueName": "chenwudongxi",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/fenming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fenwei": {
+    "zhName": "奋威",
+    "zhDescription": "限定技，当一张锦囊牌指定多个目标后，你可令此牌对其中任意个目标无效。",
+    "currentVietnameseName": "Uy tín",
+    "currentVietnameseDescription": "(có giới hạn) khi một anh hùng sử dụng thủ thuật nhắm vào > 1 anh hùng, bạn có thể ngăn lá bài đó nhắm mục tiêu vào bất kỳ # anh hùng nào được nhắm mục tiêu.",
+    "declarations": [
+      {
+        "general": "hs__ganning",
+        "trueName": "ganning",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/fenwei.lua",
+        "line": 12
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fenxun": {
+    "zhName": "奋迅",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张牌并选择一名其他角色，令你与其的距离视为1，直到回合结束。",
+    "currentVietnameseName": "Nhanh chóng và chết người",
+    "currentVietnameseDescription": "1x Giai đoạn hành động, bạn có thể loại bỏ một lá bài và chọn một anh hùng khác. Khoảng cách của bạn với anh hùng đó được coi là 1 trong phần còn lại của lượt chơi.",
+    "declarations": [
+      {
+        "general": "hs__dingfeng",
+        "trueName": "dingfeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/fenxun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fenyin": {
+    "zhName": "奋音",
+    "zhDescription": "你的回合内，当你使用和上一张牌颜色不同的牌时，你可以摸一张牌。",
+    "currentVietnameseName": "Fenyin",
+    "currentVietnameseDescription": "Trong lượt của bạn, khi bạn chơi một lá bài có màu khác với lá bài cuối cùng, bạn có thể rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__liuzan",
+        "trueName": "liuzan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_rare/skills/fenyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fuji": {
+    "zhName": "伏骑",
+    "zhDescription": "锁定技，当你使用【杀】或普通锦囊牌时，你令所有至你距离为1的角色不能响应此牌。",
+    "currentVietnameseName": "phục kích",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn sử dụng [Giết] hoặc thẻ mẹo thông thường, bạn sẽ khiến tất cả các nhân vật cách bạn 1 khoảng cách không thể phản ứng với thẻ này.",
+    "declarations": [
+      {
+        "general": "ofl_heg__quyi",
+        "trueName": "quyi",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/fuji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fusong": {
+    "zhName": "赋颂",
+    "zhDescription": "当你死亡时，你可以令一名体力上限大于你的角色选择获得〖丰姿〗或〖吉占〗。",
+    "currentVietnameseName": "ca ngợi",
+    "currentVietnameseDescription": "Khi bạn chết, bạn có thể khiến một nhân vật có giới hạn vật lý lớn hơn bạn chọn lấy [Fengzi] hoặc [Jizhan].",
+    "declarations": [
+      {
+        "general": "ol_heg__wangrongh",
+        "trueName": "wangrongh",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/fusong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "fuyin": {
+    "zhName": "父荫",
+    "zhDescription": "锁定技，你每回合第一次成为【杀】或【决斗】的目标后，若你的手牌数不大于使用者，此牌对你无效。",
+    "currentVietnameseName": "bóng mát của cha",
+    "currentVietnameseDescription": "Khóa kỹ năng, sau khi bạn trở thành mục tiêu của [Giết] hoặc [Trận đấu] lần đầu tiên trong mỗi vòng đấu, nếu số lá bài trên tay bạn không lớn hơn số lá bài của người dùng, lá bài này sẽ không có tác dụng với bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugezhan",
+        "trueName": "zhugezhan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/thunder/skills/fuyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ganglie": {
+    "zhName": "刚烈",
+    "zhDescription": "当你受到伤害后，你可以进行判定：若结果不为<font color='red'>♥</font>，则伤害来源选择一项：弃置两张手牌，或受到1点伤害。",
+    "currentVietnameseName": "Cương Liệt",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, bạn có thẻ tiến hành phán xét: Nếu kết quả phán xét không phải chất <font color='red'>♥</font>, nguồn sát thương chọn 1 mục: Bỏ 2 lá trên tay, hoặc nhận 1 sát thương.",
+    "declarations": [
+      {
+        "general": "m_heg__xiahoudun",
+        "trueName": "xiahoudun",
+        "package": "mobile_heg"
+      },
+      {
+        "general": "xiahoudun",
+        "trueName": "xiahoudun",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/ganglie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ganlu": {
+    "zhName": "甘露",
+    "zhDescription": "出牌阶段限一次，你可以选择装备区内牌数之差不大于X的两名角色（X为你已损失体力值），交换其装备区内的牌。",
+    "currentVietnameseName": "Tinh chất thiên đường",
+    "currentVietnameseDescription": "Một lần trong mỗi giai đoạn hành động, bạn có thể chọn 2 anh hùng để trao đổi tất cả các thẻ được trang bị của họ nếu chênh lệch về số lượng thẻ được trang bị ≤ #wounds của bạn",
+    "declarations": [
+      {
+        "general": "ld__wuguotai",
+        "trueName": "wuguotai",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2011/skills/ganlu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "gongqing": {
+    "zhName": "公清",
+    "zhDescription": "锁定技，当你受到伤害时，若伤害来源的攻击范围小于3，将伤害值改为1；当你受到伤害时，若伤害来源的攻击范围大于3，你令此伤害值+1。",
+    "currentVietnameseName": "Khá đáng kính",
+    "currentVietnameseDescription": "Khóa định: Khi bạn chịu sát thương, nếu X < 3, bạn chỉ chịu 1 sát thương; nếu X > 3, sát thương tăng 1. X là khoảng cách của nguồn gây sát thương.",
+    "declarations": [
+      {
+        "general": "ld__panjun",
+        "trueName": "panjun",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/gongqing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guanchao": {
+    "zhName": "观潮",
+    "zhDescription": "出牌阶段开始时，你可以选择“递增”或“递减”，本阶段当你使用牌时，若你此阶段使用过的所有牌点数均为严格递增或严格递减，你摸一张牌。",
+    "currentVietnameseName": "Tide Watching",
+    "currentVietnameseDescription": "Khi bắt đầu Giai đoạn hành động, bạn có thể chọn một để lấp đầy khoảng trống: a) Tăng(++); b) Giảm(--). Khi bạn sử dụng một lá bài, nếu giá trị của tất cả các lá bài bạn đã sử dụng ở lượt này theo thứ tự ____ thì bạn rút 1.",
+    "declarations": [
+      {
+        "general": "os_heg__yanjun",
+        "trueName": "yanjun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/guanchao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guanxing": {
+    "zhName": "观星",
+    "zhDescription": "准备阶段，你可以观看牌堆顶的X张牌，然后将任意数量的牌置于牌堆顶，将其余的牌置于牌堆底。（X为存活角色数且至多为5）",
+    "currentVietnameseName": "Quan Tinh",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chuẩn bị, bạn có thể xem X lá đầu chồng bài, sau đó đặt số lượng tùy ý bài lên đỉnh chồng bài rút, đặt những lá còn lại xuống đáy chồng bài rút. （X là số người còn sống, tối đa 5）",
+    "declarations": [
+      {
+        "general": "zhugeliang",
+        "trueName": "zhugeliang",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/guanxing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guicai": {
+    "zhName": "鬼才",
+    "zhDescription": "当一名角色的判定牌生效前，你可以打出一张手牌代替之。",
+    "currentVietnameseName": "Quỷ Tài",
+    "currentVietnameseDescription": "Trước khi kết quả phán xét của 1 người có hiệu lực, bạn có thể đánh ra 1 lá trên tay để thay thế.",
+    "declarations": [
+      {
+        "general": "simayi",
+        "trueName": "simayi",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/guicai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guidao": {
+    "zhName": "鬼道",
+    "zhDescription": "当一名角色的判定牌生效前，你可以打出一张黑色牌替换之。",
+    "currentVietnameseName": "Con đường ma",
+    "currentVietnameseDescription": "Trước khi thẻ phán xét của nhân vật có hiệu lực, bạn có thể đánh thẻ đen để thay thế.",
+    "declarations": [
+      {
+        "general": "hs__zhangjiao",
+        "trueName": "zhangjiao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/wind/skills/guidao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guishu": {
+    "zhName": "鬼术",
+    "zhDescription": "出牌阶段，你可将一张♠手牌当【远交近攻】或【知己知彼】使用（不可与你此回合上一次以此法使用的牌相同）。",
+    "currentVietnameseName": "ảo thuật",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, bạn có thể sử dụng lá bài ♠ trên tay làm [Tình bạn xa và tấn công cận chiến] hoặc [Biết chính mình và biết kẻ thù] (không thể giống với lá bài bạn đã sử dụng theo cách này lần trước trong vòng này).",
+    "declarations": [
+      {
+        "general": "ofl_heg__himiko",
+        "trueName": "himiko",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/guishu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guixiu": {
+    "zhName": "闺秀",
+    "zhDescription": "当你：1.明置此武将牌后，你可摸两张牌：2.移除此武将牌后，你回复1点体力。",
+    "currentVietnameseName": "quý bà",
+    "currentVietnameseDescription": "Khi bạn: 1. Sau khi đặt thẻ tướng này, bạn có thể rút hai thẻ: 2. Sau khi loại bỏ thẻ tướng này, bạn sẽ phục hồi 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "ld__mifuren",
+        "trueName": "mifuren",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/guixiu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guose": {
+    "zhName": "国色",
+    "zhDescription": "你可以将一张<font color='red'>♦</font>牌当【乐不思蜀】使用。",
+    "currentVietnameseName": "Quốc Sắc",
+    "currentVietnameseDescription": "Bạn có thể chuyển hóa sử dụng 1 lá chất rô -> 【Lạc Bất Tư Thục】.",
+    "declarations": [
+      {
+        "general": "hs__daqiao",
+        "trueName": "daqiao",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "daqiao",
+        "trueName": "daqiao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/guose.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "guzheng": {
+    "zhName": "固政",
+    "zhDescription": "其他角色的弃牌阶段结束时，你可以将此阶段中其弃置的一张手牌交给该角色，然后你可以获得其余此阶段内弃置的牌。",
+    "currentVietnameseName": "chính phủ vững chắc",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn loại bỏ của một nhân vật khác, bạn có thể đưa một trong các thẻ đã loại bỏ trong giai đoạn này cho nhân vật đó và sau đó bạn có thể lấy phần còn lại của các thẻ đã loại bỏ trong giai đoạn này.",
+    "declarations": [
+      {
+        "general": "hs__zhangzhaozhanghong",
+        "trueName": "zhangzhaozhanghong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/guzheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hanzhan": {
+    "zhName": "酣战",
+    "zhDescription": "当你与其他角色拼点，或其他角色与你拼点时，你可令其改为用随机一张手牌拼点，你拼点后，你可获得其中点数最大的【杀】。",
+    "currentVietnameseName": "chiến đấu khốc liệt",
+    "currentVietnameseDescription": "Khi bạn và các nhân vật khác cạnh tranh điểm hoặc khi các nhân vật khác cạnh tranh điểm với bạn, bạn có thể yêu cầu họ sử dụng một lá bài ngẫu nhiên trên tay để cạnh tranh điểm. Sau khi tranh giành điểm, bạn có thể nhận được [Giết] với số điểm lớn nhất trong số đó.",
+    "declarations": [
+      {
+        "general": "ol_ex_heg__taishici",
+        "trueName": "taishici",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/ol_ex/skills/hanzhan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "haoshi": {
+    "zhName": "好施",
+    "zhDescription": "摸牌阶段，你可以多摸两张牌，然后若你的手牌数大于5，你将半数（向下取整）手牌交给手牌牌最少的一名其他角色。",
+    "currentVietnameseName": "từ thiện tốt",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể rút thêm hai lá bài, sau đó nếu số lá bài trên tay bạn lớn hơn 5 thì bạn đưa một nửa số lá bài trên tay (làm tròn xuống) cho nhân vật còn lại có số lá bài trên tay ít nhất.",
+    "declarations": [
+      {
+        "general": "hs__lusu",
+        "trueName": "lusu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/haoshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__beiluan": {
+    "zhName": "备乱",
+    "zhDescription": "当你受到伤害后，你可以令伤害来源所有非装备手牌视为【杀】直到当前回合结束。",
+    "currentVietnameseName": "Chuẩn bị cho sự hỗn loạn",
+    "currentVietnameseDescription": "Khi bạn nhận sát thương, bạn có thể khiến tất cả lá bài không được trang bị trên tay vốn là nguồn gây sát thương được coi là [Giết] cho đến khi kết thúc vòng hiện tại.",
+    "declarations": [
+      {
+        "general": "heg__simazhao",
+        "trueName": "simazhao",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/beiluan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__bingxin": {
+    "zhName": "冰心",
+    "zhDescription": "若你手牌的数量等于体力值且颜色相同，你可以展示手牌（无则跳过）并摸一张牌，视为使用一张本回合未以此法使用过牌名的基本牌。",
+    "currentVietnameseName": "Bing Xin",
+    "currentVietnameseDescription": "Nếu số quân bài trên tay bạn bằng giá trị vật lý và cùng màu thì bạn có thể lộ các quân bài trên tay mình (bỏ qua nếu không có) và rút một quân bài, việc này được coi là sử dụng một quân bài cơ bản chưa có tên trong vòng này.",
+    "declarations": [
+      {
+        "general": "heg__wangxiang",
+        "trueName": "wangxiang",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/bingxin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__caiyuan": {
+    "zhName": "才媛",
+    "zhDescription": "锁定技，若你的武将牌均明置：回合开始时，你摸两张牌；当你受到伤害时，你令此伤害-1并暗置此武将牌。",
+    "currentVietnameseName": "Thái Nguyên",
+    "currentVietnameseDescription": "Kỹ năng khóa, nếu tất cả các quân bài chung của bạn bị lộ: Khi bắt đầu vòng chơi, bạn rút hai quân bài; khi nhận sát thương, bạn giảm sát thương đi -1 và giấu lá tướng này đi.",
+    "declarations": [
+      {
+        "general": "heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/caiyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__chengguan": {
+    "zhName": "承冠",
+    "zhDescription": "当你受到伤害后，若此次为你本回合首次受到的伤害，你可以与一名其他角色交换手牌；若不为首次，伤害来源可以与你交换手牌。",
+    "currentVietnameseName": "Thành Quan",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, nếu đây là lần đầu tiên bạn nhận sát thương trong vòng này, bạn có thể đổi tay với nhân vật khác; nếu không phải lần đầu, nguồn gây thiệt hại có thể đổi tay với bạn.",
+    "declarations": [
+      {
+        "general": "heg__simaying",
+        "trueName": "simaying",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/chengguan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__chengliu": {
+    "zhName": "乘流",
+    "zhDescription": "出牌阶段限一次，你可以对一名装备区牌数小于你的角色造成1点伤害，然后你可以与其交换装备区的所有牌并重复此流程。",
+    "currentVietnameseName": "đi theo dòng suối",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể gây 1 điểm sát thương cho nhân vật có ít thẻ trong vùng trang bị hơn bạn, sau đó bạn có thể trao đổi tất cả các thẻ trong vùng trang bị với anh ta và lặp lại quá trình này.",
+    "declarations": [
+      {
+        "general": "heg__wangjun",
+        "trueName": "wangjun",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/chengliu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__chengxi": {
+    "zhName": "乘隙",
+    "zhDescription": "准备阶段，你可以令一名角色视为使用一张【以逸待劳】，结算结束后，若因此【以逸待劳】弃置的牌中包含非基本牌，此【以逸待劳】的使用者对目标各造成1点伤害。",
+    "currentVietnameseName": "Tận dụng khoảng trống",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chiêu đãi nhân vật bằng cách sử dụng [Đang chờ công việc]. Sau khi giải quyết xong, nếu các thẻ bị loại bỏ bởi [Chờ công việc] bao gồm các thẻ không cơ bản, người sử dụng [Chờ công việc] này sẽ gây ra 1 điểm sát thương cho mỗi mục tiêu.",
+    "declarations": [
+      {
+        "general": "heg__weiguan",
+        "trueName": "weiguan",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/chengxi.lua",
+        "line": 4
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__chuchong": {
+    "zhName": "除虫",
+    "zhDescription": "你杀死同势力角色的奖惩改为所有同势力角色依次：回复所有体力、手牌摸至五张、可以变更一次副将。",
+    "currentVietnameseName": "Loại bỏ sâu bệnh",
+    "currentVietnameseDescription": "Phần thưởng và hình phạt khi giết các nhân vật của cùng một lực lượng được thay đổi cho tất cả các nhân vật của cùng một lực lượng theo thứ tự: toàn bộ thể lực được phục hồi, năm lá bài được rút trên tay và trung úy có thể được thay đổi một lần.",
+    "declarations": [
+      {
+        "general": "heg__simajiong",
+        "trueName": "simajiong",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/chuchong.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__chujue": {
+    "zhName": "除绝",
+    "zhDescription": "锁定技，你对有角色死亡的势力的角色使用牌无次数限制且不能被这些角色响应。",
+    "currentVietnameseName": "loại bỏ",
+    "currentVietnameseDescription": "Khóa kỹ năng, bạn có thể sử dụng thẻ lên những nhân vật bị lực lượng đã chết, không giới hạn số lần và những nhân vật này không thể phản ứng lại.",
+    "declarations": [
+      {
+        "general": "heg__jiachong",
+        "trueName": "jiachong",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/chujue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__ciwei": {
+    "zhName": "慈威",
+    "zhDescription": "你的回合内，当其他角色使用牌时，若场上有本回合使用或打出过牌且不与其势力相同的其他角色，你可以弃置一张牌令此牌无效（取消所有目标）。",
+    "currentVietnameseName": "Từ Vi",
+    "currentVietnameseDescription": "Trong lượt của bạn, khi một nhân vật khác sử dụng một lá bài, nếu có một nhân vật khác trên sân đã sử dụng hoặc chơi một lá bài ở lượt này và không có sức mạnh tương đương với anh ta, bạn có thể loại bỏ một lá bài để vô hiệu hóa lá bài (hủy tất cả các mục tiêu).",
+    "declarations": [
+      {
+        "general": "heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/ciwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__duanqiu": {
+    "zhName": "断虬",
+    "zhDescription": "准备阶段，你可以选择一个其他势力，视为对该势力的所有角色使用一张【决斗】，此牌结算后，你令所有角色本回合内至多共计再使用X张手牌（X为此【决斗】结算过程中打出的【杀】数量）。",
+    "currentVietnameseName": "Đoạn Thu",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chọn một lực lượng khác, được coi là sử dụng [Trận đấu] cho tất cả các nhân vật của lực lượng này. Sau khi lá bài này được giải quyết, bạn có thể khiến tất cả các nhân vật sử dụng thêm tối đa X lá bài trong vòng này (X là số [Giết] được chơi trong quá trình giải quyết [Trận đấu]).",
+    "declarations": [
+      {
+        "general": "heg__wenyang",
+        "trueName": "wenyang",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/duanqiu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__dufu": {
+    "zhName": "独夫",
+    "zhDescription": "锁定技，若场上没有与你势力相同的其他角色，你造成的伤害+1且摸牌阶段多摸两张牌。",
+    "currentVietnameseName": "chồng đơn thân",
+    "currentVietnameseDescription": "Kỹ năng khóa, nếu trên sân không có nhân vật nào khác có sức mạnh tương đương với bạn, sát thương bạn gây ra sẽ là +1 và bạn sẽ rút thêm hai lá bài trong giai đoạn rút bài.",
+    "declarations": [
+      {
+        "general": "heg__simajiong",
+        "trueName": "simajiong",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/dufu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__ejue": {
+    "zhName": "扼绝",
+    "zhDescription": "锁定技，当你使用【杀】对未确定势力的角色造成伤害时，此伤害+1。",
+    "currentVietnameseName": "làm ngạt thở",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn sử dụng [Giết] để gây sát thương cho nhân vật có sức mạnh không xác định, sát thương sẽ là +1.",
+    "declarations": [
+      {
+        "general": "heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/ejue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__fangzi": {
+    "zhName": "放恣",
+    "zhDescription": "结束阶段，你可以变更副将并获得与被变更的副将势力相同的所有角色各一张手牌。",
+    "currentVietnameseName": "Buông ra",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể thay đổi trung úy của mình và nhận thẻ tay từ mỗi nhân vật có sức mạnh tương đương với trung úy đã thay đổi.",
+    "declarations": [
+      {
+        "general": "heg__jiananfeng",
+        "trueName": "jiananfeng",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/fangzi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__fengguo": {
+    "zhName": "奉国",
+    "zhDescription": "准备阶段，你可以选择一名确定势力的角色，直到你下回合开始或死亡：其不可回复体力；若其存活，防止与其势力相同的其余角色受到的伤害。",
+    "currentVietnameseName": "phong quốc",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chọn một nhân vật có sức mạnh nhất định cho đến khi bắt đầu lượt tiếp theo hoặc khi chết: nhân vật đó không thể phục hồi thể lực; nếu nó sống sót, nó sẽ giúp các nhân vật khác có cùng sức mạnh không bị tổn hại.",
+    "declarations": [
+      {
+        "general": "heg__simayij",
+        "trueName": "simayij",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/fengguo.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__fushou": {
+    "zhName": "付授",
+    "zhDescription": "锁定技，与你势力相同的角色无视主副将条件拥有其武将牌上的所有主将技和副将技（计算阴阳鱼的效果除外）。",
+    "currentVietnameseName": "Phù Trí",
+    "currentVietnameseDescription": "Kỹ năng bị khóa, nhân vật có sức mạnh ngang bằng với bạn sở hữu tất cả các kỹ năng chính và phụ trên thẻ tướng của mình bất kể điều kiện chính và phụ chung (ngoại trừ tác dụng của Cá Âm Dương).",
+    "declarations": [
+      {
+        "general": "heg__yanghu",
+        "trueName": "yanghu",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/fushou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__gongzhi": {
+    "zhName": "共执",
+    "zhDescription": "你可以跳过摸牌阶段，令势力与你相同的角色依次摸一张牌，直到共计摸四张牌。",
+    "currentVietnameseName": "Thực thi được chia sẻ",
+    "currentVietnameseDescription": "Bạn có thể bỏ qua giai đoạn rút thẻ và lần lượt có các nhân vật có sức mạnh tương đương với lần lượt bạn rút thẻ cho đến khi rút được tổng cộng 4 thẻ.",
+    "declarations": [
+      {
+        "general": "heg__simaliang",
+        "trueName": "simaliang",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/gongzhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__gouni": {
+    "zhName": "构逆",
+    "zhDescription": "限定技，出牌阶段，你可以选择一名与你势力相同的其他角色，本局游戏除计算胜利外，其视为势力与你不同。",
+    "currentVietnameseName": "Đảo ngược mang tính xây dựng",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể chọn một nhân vật khác có sức mạnh tương đương với mình. Ngoại trừ việc tính toán chiến thắng trong trò chơi này, sức mạnh của họ được coi là khác với bạn.",
+    "declarations": [
+      {
+        "general": "heg__simayong",
+        "trueName": "simayong",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/gouni.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__guorui": {
+    "zhName": "果锐",
+    "zhDescription": "一张【决斗】结算后，你可以选择一项：1.对一名角色依次使用弃牌堆中此过程中打出的【杀】；2.变更副将牌。",
+    "currentVietnameseName": "Quách Thụy",
+    "currentVietnameseDescription": "Sau khi một [Trận đấu] được giải quyết, bạn có thể chọn một: 1. Lần lượt sử dụng [Giết] được chơi trong chồng bài bỏ lên một nhân vật; 2. Đổi thẻ phó tướng.",
+    "declarations": [
+      {
+        "general": "heg__simawei",
+        "trueName": "simawei",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/guorui.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__huaiyuan": {
+    "zhName": "怀远",
+    "zhDescription": "与你势力相同角色的准备阶段，你可以令其以下项于本回合数值+1: 1.攻击范围；2.手牌上限；3.使用【杀】的次数上限。",
+    "currentVietnameseName": "Hoài Viễn",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị của một nhân vật có cùng sức mạnh với bạn, bạn có thể tăng giá trị của các vật phẩm sau lên +1 cho vòng này: 1. Phạm vi tấn công; 2. Giới hạn tay; 3. Số lần tối đa bạn có thể sử dụng [Giết].",
+    "declarations": [
+      {
+        "general": "heg__yanghu",
+        "trueName": "yanghu",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/huaiyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__huluan": {
+    "zhName": "怙乱",
+    "zhDescription": "准备阶段，你可以观看至多三名角色各一张暗置的武将牌，若这些牌势力均相同，你对这些角色各造成1点伤害或令这些角色各摸两张牌。",
+    "currentVietnameseName": "Sự hỗn loạn",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể xem tối đa ba nhân vật, mỗi nhân vật có một thẻ tướng ẩn. Nếu các lá bài này có sức mạnh như nhau, bạn sẽ gây 1 sát thương cho mỗi nhân vật này hoặc để mỗi nhân vật này rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "heg__simayue",
+        "trueName": "simayue",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/huluan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__jiantong": {
+    "zhName": "监统",
+    "zhDescription": "当你受到伤害后，你可以观看一名角色的手牌，然后你可以用装备区内的一张牌交换其中至多两张牌。",
+    "currentVietnameseName": "giám sát",
+    "currentVietnameseDescription": "Khi bạn nhận sát thương, bạn có thể nhìn vào tay của nhân vật và sau đó bạn có thể trao đổi tối đa hai thẻ đó với một thẻ từ vùng trang bị của bạn.",
+    "declarations": [
+      {
+        "general": "heg__weiguan",
+        "trueName": "weiguan",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/jiantong.lua",
+        "line": 2
+      },
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/jiantong.lua",
+        "line": 17
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__jianzhi": {
+    "zhName": "奸志",
+    "zhDescription": "当你造成致命伤害时，你可以弃置所有手牌（至少一张），然后本回合下次击杀奖励改为三倍。",
+    "currentVietnameseName": "sự phản bội",
+    "currentVietnameseDescription": "Khi bạn gây sát thương chí mạng, bạn có thể loại bỏ tất cả lá bài trên tay của mình (ít nhất một lá bài), và khi đó phần thưởng cho lần tiêu diệt tiếp theo của bạn ở lượt này sẽ tăng gấp ba lần.",
+    "declarations": [
+      {
+        "general": "heg__jiachong",
+        "trueName": "jiachong",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/jianzhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__liaoye": {
+    "zhName": "燎野",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色选择任意名角色，然后你对所有其本次选择或未选择的其他角色依次造成1点伤害。",
+    "currentVietnameseName": "Liêu Nghiệp",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn đánh bài, bạn có thể để nhân vật khác chọn bất kỳ nhân vật nào, sau đó bạn sẽ gây 1 điểm sát thương cho tất cả các nhân vật khác được chọn hoặc không được chọn lần này.",
+    "declarations": [
+      {
+        "general": "heg__jiananfeng",
+        "trueName": "jiananfeng",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/liaoye.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__limeng": {
+    "zhName": "离梦",
+    "zhDescription": "结束阶段，你可以弃置一张非基本牌并选择场上两张珠联璧合的武将牌，若不为同一名角色的武将，则这些角色分别对另一名角色造成1点伤害。",
+    "currentVietnameseName": "Lý Mộng",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể loại bỏ một thẻ không cơ bản và chọn hai thẻ chung phù hợp trên sân. Nếu không phải tướng của cùng một nhân vật thì mỗi nhân vật này sẽ gây 1 điểm sát thương cho nhân vật kia.",
+    "declarations": [
+      {
+        "general": "heg__bailingyun",
+        "trueName": "bailingyun",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/limeng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__liudu": {
+    "zhName": "流毒",
+    "zhDescription": "锁定技，当你死亡后，进入鏖战。",
+    "currentVietnameseName": "ảnh hưởng có hại",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi chết bước vào trận chiến khốc liệt.",
+    "declarations": [
+      {
+        "general": "heg__jiananfeng",
+        "trueName": "jiananfeng",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/liudu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__luanchang": {
+    "zhName": "乱常",
+    "zhDescription": "限定技，与你势力相同的角色受到过伤害的回合结束时，你可以令当前回合角色将所有手牌（至少一张）当【万箭齐发】使用。",
+    "currentVietnameseName": "Sự hỗn loạn",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, ở cuối vòng mà một nhân vật có cùng sức mạnh với bạn bị tổn thương, bạn có thể yêu cầu nhân vật trong vòng hiện tại sử dụng tất cả các lá bài trên tay của bạn (ít nhất một) dưới dạng [A Volley of Ten Thousand Arrows].",
+    "declarations": [
+      {
+        "general": "heg__simalun",
+        "trueName": "simalun",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/luanchang.lua",
+        "line": 4
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__lvxian": {
+    "zhName": "履险",
+    "zhDescription": "主将技，当你每回合首次受到伤害后，若执行上回合的角色不为你，你可以摸X张牌（X为你上回合失去的牌数）。",
+    "currentVietnameseName": "Tuân thủ bảo hiểm",
+    "currentVietnameseDescription": "Kỹ năng chính, khi bạn nhận sát thương lần đầu tiên trong mỗi vòng đấu, nếu nhân vật thực hiện vòng trước không phải là bạn thì bạn có thể rút X lá bài (X là số lá bài bạn đã thua ở vòng trước).",
+    "declarations": [
+      {
+        "general": "heg__zhanghuyuechen",
+        "trueName": "zhanghuyuechen",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/lvxian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__mieyi": {
+    "zhName": "灭翼",
+    "zhDescription": "当你受到伤害后，你可以展示所有手牌并将其中所有伤害类牌当一张【远交近攻】使用。",
+    "currentVietnameseName": "Phá hủy cánh",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, bạn có thể tiết lộ tất cả các lá bài trên tay của mình và sử dụng tất cả các lá bài sát thương trong đó làm [Tấn công xa và gần].",
+    "declarations": [
+      {
+        "general": "heg__simayong",
+        "trueName": "simayong",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/mieyi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__neiji": {
+    "zhName": "内忌",
+    "zhDescription": "出牌阶段开始时，你可以选择一名其他势力角色，与其同时展示两张手牌，若如此做，你与其依次弃置以此法展示的【杀】，若以此法弃置【杀】的数量：大于1，你与其各摸三张牌；为1，以此法未弃置【杀】的角色视为对以此法弃置【杀】的角色使用一张【决斗】。",
+    "currentVietnameseName": "Điều cấm kỵ nội bộ",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể chọn một nhân vật từ các thế lực khác và hiển thị cùng lúc hai lá bài trên tay. Nếu bạn làm như vậy, bạn sẽ lần lượt loại bỏ [Giết] được hiển thị theo cách này. Nếu số [Giết] bị loại bỏ theo cách này lớn hơn 1, bạn và anh ta mỗi người sẽ rút ba lá bài; nếu là 1, nhân vật không loại bỏ [Giết] theo cách này được coi là đã sử dụng [Trận đấu] với nhân vật đã loại bỏ [Giết] theo cách này.",
+    "declarations": [
+      {
+        "general": "heg__yangjun",
+        "trueName": "yangjun",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/neiji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__pojing": {
+    "zhName": "迫境",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色选择一项：1.令你获得其区域内的一张牌；2.所有与你势力相同的角色可以明置任意张武将牌，对其造成等量的伤害。",
+    "currentVietnameseName": "Tình thế tuyệt vọng",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể yêu cầu một nhân vật khác chọn một tùy chọn: 1. Để bạn lấy một thẻ trong khu vực của anh ta; 2. Tất cả các nhân vật có sức mạnh tương đương với bạn có thể đặt bất kỳ lá bài chung nào, gây ra lượng sát thương như nhau cho họ.",
+    "declarations": [
+      {
+        "general": "heg__simazhou",
+        "trueName": "simazhou",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/pojing.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__pozhu": {
+    "zhName": "破竹",
+    "zhDescription": "主将技，你计算体力上限时减少1个单独的阴阳鱼。准备阶段，你可以将一张牌当【杀】使用，结算后你展示唯一目标一张手牌，若两张牌花色不同，你可以重复此流程。",
+    "currentVietnameseName": "tre gãy",
+    "currentVietnameseDescription": "Kỹ năng chính là giảm giới hạn thời gian của sức mạnh thể chất của bạn bằng 1 Cá Âm Dương riêng biệt. Trong giai đoạn chuẩn bị, bạn có thể sử dụng thẻ làm [Giết]. Sau khi giải quyết, bạn sẽ tiết lộ lá bài mục tiêu duy nhất trên tay mình. Nếu hai lá bài khác chất, bạn có thể lặp lại quá trình này.",
+    "declarations": [
+      {
+        "general": "heg__duyu",
+        "trueName": "duyu",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/pozhu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__ruilve": {
+    "zhName": "睿略",
+    "zhDescription": "未确定势力的其他角色回合结束时，你可以获得弃牌堆内本回合进入的所有伤害牌，然后令其摸等量的牌。",
+    "currentVietnameseName": "Rui Lue",
+    "currentVietnameseDescription": "Khi kết thúc lượt của các nhân vật khác với lực lượng không xác định, bạn có thể lấy tất cả các thẻ sát thương đã nhập vào chồng bài bỏ ở vòng này, sau đó cho họ rút số lượng thẻ tương tự.",
+    "declarations": [
+      {
+        "general": "heg__simashi",
+        "trueName": "simashi",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/ruilve.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__sanchen": {
+    "zhName": "三陈",
+    "zhDescription": "出牌阶段，对每名角色限一次，若你的武将牌均明置，你可令一名角色摸三张牌然后弃置三张牌，若其因此弃置了类别相同的牌，你暗置此武将牌。",
+    "currentVietnameseName": "Tam Thần",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, mỗi nhân vật chỉ được chơi một lần. Nếu tất cả các lá bài chung của bạn bị lộ, bạn có thể yêu cầu một nhân vật rút ba lá bài và sau đó loại bỏ ba lá bài. Nếu anh ta loại bỏ các quân bài cùng loại, bạn có thể ẩn quân bài chung này.",
+    "declarations": [
+      {
+        "general": "heg__duyu",
+        "trueName": "duyu",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/sanchen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__shangshi": {
+    "zhName": "伤逝",
+    "zhDescription": "每名角色的回合结束时，你可以将手牌摸至已损失体力值。",
+    "currentVietnameseName": "Buồn và chết",
+    "currentVietnameseDescription": "Khi kết thúc lượt của mỗi nhân vật, bạn có thể rút bài từ tay mình cho đến khi hết sức chịu đựng.",
+    "declarations": [
+      {
+        "general": "heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/shangshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__shejus": {
+    "zhName": "慑惧",
+    "zhDescription": "锁定技，当其他角色明置武将牌后，若其势力与你相同，你回复1点体力，然后弃置所有手牌。",
+    "currentVietnameseName": "sợ sệt",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi nhân vật khác đặt một lá bài chung, nếu sức mạnh của nó giống với của bạn, bạn hồi phục 1 điểm thể lực, sau đó bỏ tất cả lá bài trên tay.",
+    "declarations": [
+      {
+        "general": "heg__simaliang",
+        "trueName": "simaliang",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/sheju.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__shiren": {
+    "zhName": "识人",
+    "zhDescription": "每回合限一次，当一名未确定势力的其他角色受到伤害后，你可以交给其两张牌并摸两张牌。",
+    "currentVietnameseName": "Biết mọi người",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, khi một nhân vật khác có sức mạnh không xác định bị tổn thương, bạn có thể đưa cho anh ta hai lá bài và rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "heg__wangyuanji",
+        "trueName": "wangyuanji",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/shiren.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__shunfu": {
+    "zhName": "瞬覆",
+    "zhDescription": "限定技，出牌阶段，你可以令至多三名未确定势力的其他角色各摸两张牌，然后这些角色依次可以使用一张【杀】（无距离限制且不可被响应）。",
+    "currentVietnameseName": "tức thời",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể khiến tối đa ba nhân vật khác có sức mạnh không xác định rút mỗi nhân vật hai lá bài, sau đó những nhân vật này có thể lần lượt sử dụng một [Giết] (không giới hạn khoảng cách và không thể phản hồi).",
+    "declarations": [
+      {
+        "general": "heg__simayi",
+        "trueName": "simayi",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/shunfu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__xiace": {
+    "zhName": "黠策",
+    "zhDescription": "若当前回合角色有【杀】的剩余使用次数，你可以将一张牌当【无懈可击】使用，并令当前回合角色【杀】的剩余使用次数-1，然后你可以变更副将。",
+    "currentVietnameseName": "chính sách thông minh",
+    "currentVietnameseDescription": "Nếu nhân vật còn số lần sử dụng [Giết] trong vòng hiện tại, bạn có thể sử dụng một thẻ làm [Bất khả xâm phạm] và giảm số lần sử dụng [Giết] còn lại trong vòng hiện tại xuống -1, sau đó bạn có thể thay đổi trung úy.",
+    "declarations": [
+      {
+        "general": "heg__bailingyun",
+        "trueName": "bailingyun",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/xiace.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__xiejian": {
+    "zhName": "挟奸",
+    "zhDescription": "出牌阶段限一次，你可以对一名其他角色发起“军令”，且你以此法抽取的备选“军令”对其他角色不可见，若其不执行，其强制执行你抽取的备选“军令”。",
+    "currentVietnameseName": "bắt cóc",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể ban hành \"lệnh quân sự\" cho nhân vật khác và \"lệnh quân sự\" thay thế mà bạn rút ra theo cách này sẽ vô hình đối với các nhân vật khác. Nếu họ không thực hiện thì họ sẽ buộc phải thực hiện “mệnh lệnh quân sự” thay thế mà bạn đã vạch ra.",
+    "declarations": [
+      {
+        "general": "heg__sunxiuj",
+        "trueName": "sunxiuj",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/xiejian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__xijue": {
+    "zhName": "袭爵",
+    "zhDescription": "你可以弃置一张牌以发动〖突袭〗或〖骁果〗。",
+    "currentVietnameseName": "Tây Quyết",
+    "currentVietnameseDescription": "Bạn có thể loại bỏ một lá bài để kích hoạt [Tấn công] hoặc [Trái cây].",
+    "declarations": [
+      {
+        "general": "heg__zhanghuyuechen",
+        "trueName": "zhanghuyuechen",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/xijue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__xunjim": {
+    "zhName": "勋济",
+    "zhDescription": "你使用【杀】可以多选择至多两名角色为目标，此【杀】结算结束后，若对所有目标角色均造成伤害，此【杀】不计次数。",
+    "currentVietnameseName": "Huân Cơ",
+    "currentVietnameseDescription": "Bạn có thể sử dụng [Giết] để chọn tối đa hai nhân vật nữa làm mục tiêu. Sau khi [Giết] này được giải quyết, nếu gây sát thương cho tất cả các nhân vật mục tiêu, [Giết] này sẽ không được tính.",
+    "declarations": [
+      {
+        "general": "heg__malong",
+        "trueName": "malong",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/xunji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yanxi": {
+    "zhName": "宴戏",
+    "zhDescription": "准备阶段，你可以选择至多三名其他势力的角色各一张手牌，这些角色依次声明一个牌名，然后你展示并获得其中一张牌，若获得的牌与其声明的牌名不同，你再获得其余被选择的牌。",
+    "currentVietnameseName": "chơi tiệc",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chọn tối đa ba nhân vật từ các lực lượng khác, mỗi nhân vật có một lá bài trên tay. Các nhân vật này lần lượt khai báo tên một lá bài, sau đó bạn tiết lộ và nhận được một trong các lá bài đó. Nếu thẻ bạn nhận được khác với tên thẻ đã khai báo thì bạn sẽ nhận được các thẻ đã chọn còn lại.",
+    "declarations": [
+      {
+        "general": "heg__wangyuanji",
+        "trueName": "wangyuanji",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/yanxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yidu": {
+    "zhName": "遗毒",
+    "zhDescription": "当你使用伤害类牌后，你可以展示一名未受到此牌伤害的目标角色至多两张手牌，若颜色均相同，你弃置这些牌。",
+    "currentVietnameseName": "di sản",
+    "currentVietnameseDescription": "Sau khi sử dụng thẻ sát thương, bạn có thể tiết lộ tối đa hai thẻ trên tay của nhân vật mục tiêu chưa bị thẻ này gây sát thương. Nếu tất cả chúng đều có cùng màu, bạn loại bỏ các thẻ này.",
+    "declarations": [
+      {
+        "general": "heg__guohuaij",
+        "trueName": "guohuaij",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/yidu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yimie": {
+    "zhName": "夷灭",
+    "zhDescription": "锁定技，你的回合内，与处于濒死状态角色势力相同/势力不同的角色不能使用【桃】/可将一张<font color='red'>♥</font>手牌当【桃】对处于濒死状态的角色使用。",
+    "currentVietnameseName": "tiêu diệt",
+    "currentVietnameseDescription": "Khóa định: Trong lượt của bạn, nhân vật cùng hoặc khác thế lực với nhân vật đang hấp hối không thể dùng [Đào]; bạn có thể dùng lá cơ bản màu ♥ trên tay như [Đào] để cứu nhân vật đang hấp hối.",
+    "declarations": [
+      {
+        "general": "heg__simashi",
+        "trueName": "simashi",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/yimie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yinfu": {
+    "zhName": "隐伏",
+    "zhDescription": "主将技，你计算体力时减少1点单独的阴阳鱼。每回合限一次，你可以暗置你的副将牌以视为使用一张【决斗】或【无懈可击】。",
+    "currentVietnameseName": "Ẩn giấu",
+    "currentVietnameseDescription": "Kỹ năng chính là giảm số lượng cá Âm Dương riêng lẻ đi 1 điểm khi tính sức mạnh thể chất của bạn. Chỉ một lần trong mỗi vòng, bạn có thể giấu thẻ trung úy của mình để coi nó như sử dụng [Trận đấu] hoặc [Bất khả xâm phạm].",
+    "declarations": [
+      {
+        "general": "heg__simayue",
+        "trueName": "simayue",
+        "package": "zfxp"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zfxp/skills/yinfu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yingshis": {
+    "zhName": "鹰视",
+    "zhDescription": "出牌阶段开始时，你可以令一名角色视为对你指定的另一名角色使用一张【知己知彼】，然后若使用者不为你，你摸一张牌。",
+    "currentVietnameseName": "Tầm nhìn đại bàng",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể khiến một nhân vật sử dụng [Biết chính mình, biết kẻ thù] lên một nhân vật khác mà bạn chỉ định, sau đó nếu người dùng đó không phải là bạn, bạn sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "heg__simayi",
+        "trueName": "simayi",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/yingshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yingwei": {
+    "zhName": "盈威",
+    "zhDescription": "副将技，结束阶段，若你本回合造成伤害数等于摸牌数，你可以重铸至多两张牌。",
+    "currentVietnameseName": "Anh Vệ",
+    "currentVietnameseDescription": "Kỹ năng phụ, ở giai đoạn cuối, nếu lượng sát thương bạn gây ra ở vòng này bằng với số lá bài được rút, bạn có thể sử dụng lại tối đa hai lá bài.",
+    "declarations": [
+      {
+        "general": "heg__zhanghuyuechen",
+        "trueName": "zhanghuyuechen",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/yingwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__yinsha": {
+    "zhName": "引杀",
+    "zhDescription": "你可以将所有手牌当【借刀杀人】使用，此牌目标必须使用【杀】或将所有手牌当【杀】使用以响应此牌。",
+    "currentVietnameseName": "Dẫn đến giết người",
+    "currentVietnameseDescription": "Bạn có thể sử dụng tất cả lá bài trên tay mình làm [Giết bằng dao mượn]. Mục tiêu của lá bài này phải sử dụng [Giết] hoặc sử dụng tất cả lá bài trên tay bạn làm [Giết] để đáp trả lá bài này.",
+    "declarations": [
+      {
+        "general": "heg__sunxiuj",
+        "trueName": "sunxiuj",
+        "package": "jyzs"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_jyzs/skills/yinsha.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__zhaoran": {
+    "zhName": "昭然",
+    "zhDescription": "出牌阶段开始前，你可以摸X张牌（X为4-场上势力数），然后未确定势力的角色可以明置一张武将牌，令你结束此回合。",
+    "currentVietnameseName": "Rõ ràng",
+    "currentVietnameseDescription": "Trước khi giai đoạn chơi bài bắt đầu, bạn có thể rút",
+    "declarations": [
+      {
+        "general": "heg__simazhao",
+        "trueName": "simazhao",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhaoran.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__zhefu": {
+    "zhName": "哲妇",
+    "zhDescription": "当你于回合外使用或打出基本牌后，你可以观看一名同势力角色数不小于你的角色的手牌，然后你可以弃置其中一张基本牌。",
+    "currentVietnameseName": "người phụ nữ khôn ngoan",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng hoặc chơi một lá bài cơ bản ngoài lượt của mình, bạn có thể nhìn vào tay của một nhân vật có lực tương đương với bạn hoặc hơn, sau đó bạn có thể loại bỏ một trong các lá bài cơ bản.",
+    "declarations": [
+      {
+        "general": "heg__guohuaij",
+        "trueName": "guohuaij",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhefu.lua",
+        "line": 2
+      },
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhefu.lua",
+        "line": 19
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__zhuanzhan": {
+    "zhName": "转战",
+    "zhDescription": "锁定技，若场上有未确定势力的角色，你使用【杀】无距离限制且不能指定已确定势力的角色为目标。",
+    "currentVietnameseName": "Chuyển sang chiến tranh",
+    "currentVietnameseDescription": "Kỹ năng khóa, nếu có một nhân vật có ảnh hưởng không xác định trên sân, bạn có thể sử dụng [Giết] mà không có bất kỳ giới hạn khoảng cách nào và không thể nhắm mục tiêu vào nhân vật có ảnh hưởng xác định.",
+    "declarations": [
+      {
+        "general": "heg__malong",
+        "trueName": "malong",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhuanzhan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__zhulan": {
+    "zhName": "助澜",
+    "zhDescription": "当一名其他角色受到伤害时，若伤害来源与其势力相同，你可以弃置一张牌令此伤害+1。",
+    "currentVietnameseName": "Đổ thêm dầu vào lửa",
+    "currentVietnameseDescription": "Khi một nhân vật khác bị sát thương, nếu nguồn sát thương giống với sức mạnh của nhân vật đó, bạn có thể loại bỏ một lá bài để tăng sát thương thêm 1.",
+    "declarations": [
+      {
+        "general": "heg__simalun",
+        "trueName": "simalun",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhulan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg__zhuosheng": {
+    "zhName": "擢升",
+    "zhDescription": "当你得到牌后，你可以令你本回合使用的下一张牌的伤害值基数+1（不能叠加）。",
+    "currentVietnameseName": "khuyến khích",
+    "currentVietnameseDescription": "Sau khi nhận được thẻ, bạn có thể tăng giá trị sát thương cơ bản của thẻ tiếp theo mà bạn sử dụng trong vòng này lên +1 (không thể chồng lên nhau).",
+    "declarations": [
+      {
+        "general": "heg__shibao",
+        "trueName": "shibao",
+        "package": "zqdl"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/jin_zqdl/skills/zhuosheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heg_madai__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "ld__madai",
+        "trueName": "madai",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/mashu_madai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hengjiang": {
+    "zhName": "横江",
+    "zhDescription": "当你受到1点伤害后，若当前回合角色手牌上限大于0，你可以令其本回合手牌上限-X（X为其装备区内牌数且至少为1）。然后本回合结束时，若其本回合弃牌阶段内没有弃置过其牌，你将手牌摸至体力上限。",
+    "currentVietnameseName": "Hành Giang",
+    "currentVietnameseDescription": "Sau khi nhận được 1 điểm sát thương, nếu giới hạn thẻ bài trên tay hiện tại của nhân vật lớn hơn 0, bạn có thể đặt giới hạn thẻ bài trên tay của nhân vật cho vòng này -X (X là số thẻ trong khu vực trang bị và ít nhất là 1). Sau đó, khi kết thúc vòng này, nếu nó chưa bỏ bài trong giai đoạn loại bỏ của vòng này, bạn sẽ rút các lá bài trên tay lên đến giới hạn trên của thể lực.",
+    "declarations": [
+      {
+        "general": "ld__zangba",
+        "trueName": "zangba",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/hengjiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hengzheng": {
+    "zhName": "横征",
+    "zhDescription": "摸牌阶段，若你体力值为1或者没有手牌，你可以改为获得所有其他角色区域内各一张牌。",
+    "currentVietnameseName": "Heng Zheng",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, nếu sức mạnh thể chất của bạn là 1 hoặc bạn không có lá bài nào trên tay, thay vào đó, bạn có thể lấy một lá bài từ mỗi khu vực nhân vật khác.",
+    "declarations": [
+      {
+        "general": "ld__dongzhuo",
+        "trueName": "dongzhuo",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/hengzheng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "heyi": {
+    "zhName": "鹤翼",
+    "zhDescription": "阵法技，与你处于同一<a href='heg_formation_href'>队列</a>的角色拥有〖慷慨〗。",
+    "currentVietnameseName": "Cánh hạc",
+    "currentVietnameseDescription": "Kỹ năng tạo đội hình, các nhân vật trong cùng <a href='heg_formation_href'>hàng đợi</a> giống như bạn có [Sự hào phóng].",
+    "declarations": [
+      {
+        "general": "ld__caohong",
+        "trueName": "caohong",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/heyi.lua",
+        "line": 4
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hongyi": {
+    "zhName": "弘仪",
+    "zhDescription": "出牌阶段限一次，你可以指定一名其他角色，当其于你的下个回合开始之前造成伤害时，其判定，若结果为：红色，受伤角色摸一张牌；黑色，令伤害值-1。",
+    "currentVietnameseName": "Hồng Nghị",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chỉ định một nhân vật khác. Khi nó gây sát thương trước khi bắt đầu lượt tiếp theo của bạn, nó sẽ phán xét. Nếu kết quả: đỏ, nhân vật bị thương sẽ rút bài; màu đen, giá trị thiệt hại là -1.",
+    "declarations": [
+      {
+        "general": "os_heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/hongyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hongyuan": {
+    "zhName": "弘援",
+    "zhDescription": "摸牌阶段，你可以少摸一张牌，令至多两名其他角色各摸一张牌。",
+    "currentVietnameseName": "Viện trợ tuyệt vời",
+    "currentVietnameseDescription": "Ở Giai đoạn Rút bài, bạn có thể rút -1 lá bài và để tối đa 2 anh hùng khác rút 1 lá.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugejin",
+        "trueName": "zhugejin",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/hongyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__buqu": {
+    "zhName": "不屈",
+    "zhDescription": "锁定技，当你处于濒死状态时，你将牌堆顶的一张牌置于你的武将牌上，称为“创”，若此牌的点数与已有的“创”点数：均不同，你将体力回复至1点；存在相同，你移去此牌。",
+    "currentVietnameseName": "kiên cường",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn đang ở trạng thái hấp hối, bạn đặt lá bài trên cùng của bộ bài vào lá bài chung của mình, được gọi là \"Sáng tạo\". Nếu điểm của thẻ này khác với điểm \"Sáng tạo\" hiện có, bạn sẽ khôi phục thể lực của mình về 1 điểm. Nếu có số điểm giống nhau thì lá bài đó sẽ được bỏ vào chồng bài bỏ.",
+    "declarations": [
+      {
+        "general": "hs__zhoutai",
+        "trueName": "zhoutai",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/buqu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__chuli": {
+    "zhName": "除疠",
+    "zhDescription": "出牌阶段限一次，你可选择至多三名势力各不相同或未确定势力的其他角色，然后你弃置你和这些角色的各一张牌。被弃置♠牌的角色各摸一张牌。",
+    "currentVietnameseName": "Loại bỏ ghẻ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn tối đa ba nhân vật khác có sức mạnh khác nhau hoặc sức mạnh không xác định, sau đó bạn loại bỏ một thẻ cho mỗi người trong số bạn và những nhân vật này. Những nhân vật có ♠ lá bài bị loại bỏ sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "hs__huatuo",
+        "trueName": "huatuo",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/chuli.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__duanchang": {
+    "zhName": "断肠",
+    "zhDescription": "锁定技，当你死亡时，你令杀死你的角色失去一张武将牌上的所有技能。",
+    "currentVietnameseName": "Vỡ ruột",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi bạn chết, bạn khiến nhân vật đã giết bạn mất hết kỹ năng trên thẻ tướng.",
+    "declarations": [
+      {
+        "general": "hs__caiwenji",
+        "trueName": "caiwenji",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/duanchang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__duanliang": {
+    "zhName": "断粮",
+    "zhDescription": "出牌阶段，你可以将一张黑色基本牌或黑色装备牌当一张无距离限制的【兵粮寸断】使用；若你至目标角色的距离大于2，此技能本回合失效。",
+    "currentVietnameseName": "Không có thức ăn",
+    "currentVietnameseDescription": "Bạn có thể sử dụng thẻ đen không phải là thẻ mẹo làm [Người lính] (không giới hạn khoảng cách). Nếu khoảng cách giữa bạn và nhân vật tương ứng với mục tiêu lớn hơn 2, kỹ năng này sẽ không hợp lệ trong giai đoạn này.",
+    "declarations": [
+      {
+        "general": "hs__xuhuang",
+        "trueName": "xuhuang",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/duanliang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__fangzhu": {
+    "zhName": "放逐",
+    "zhDescription": "当你受到伤害后，你可以令一名其他角色选择一项：1.摸X张牌并叠置；2.弃置X张牌并失去1点体力（X为你已损失的体力值）。",
+    "currentVietnameseName": "lưu đày",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, bạn có thể yêu cầu nhân vật khác chọn một phương án: 1. Rút thẻ X và xếp chồng lên nhau (X là thể lực đã mất của bạn); 2. Bỏ một lá bài và mất 1 điểm vật lý.",
+    "declarations": [
+      {
+        "general": "hs__caopi",
+        "trueName": "caopi",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/fangzhu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__fenji": {
+    "zhName": "奋激",
+    "zhDescription": "一名角色的结束阶段，若其没有手牌，你可以令其摸两张牌，然后你失去1点体力。",
+    "currentVietnameseName": "hào hứng",
+    "currentVietnameseDescription": "Ở giai đoạn cuối của một nhân vật, nếu nhân vật đó không có lá bài nào trên tay, bạn có thể yêu cầu nhân vật đó rút hai lá bài, khi đó bạn sẽ bị mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "hs__zhoutai",
+        "trueName": "zhoutai",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/fenji.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__ganglie": {
+    "zhName": "刚烈",
+    "zhDescription": "当你受到伤害后，你可判定，若结果为：红色，你对来源造成1点伤害；黑色，你弃置来源的一张牌。",
+    "currentVietnameseName": "Cương Liệt",
+    "currentVietnameseDescription": "Khi nhận sát thương có thể xác định kết quả là: màu đỏ, bạn gây 1 sát thương vào nguồn; màu đen, bạn loại bỏ một thẻ từ nguồn.",
+    "declarations": [
+      {
+        "general": "hs__xiahoudun",
+        "trueName": "xiahoudun",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/ganglie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__guanxing": {
+    "zhName": "观星",
+    "zhDescription": "准备阶段，你可以观看牌堆顶的X张牌，以任意顺序置于牌堆顶或牌堆底（X为存活角色数且至多为5）。",
+    "currentVietnameseName": "Quan Tinh",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể đặt lên trên",
+    "declarations": [
+      {
+        "general": "hs__zhugeliang",
+        "trueName": "zhugeliang",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/guanxing.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__hongyan": {
+    "zhName": "红颜",
+    "zhDescription": "锁定技，你的♠牌视为<font color='red'>♥</font>牌；若你的装备区内有<font color='red'>♥</font>牌，你的手牌上限+1。",
+    "currentVietnameseName": "sắc đẹp",
+    "currentVietnameseDescription": "Đối với các kỹ năng bị khóa, thẻ ♠ của bạn được coi là thẻ <font color='red'>♥</font>; nếu có thẻ <font color='red'>♥</font> trong khu vực trang bị của bạn, giới hạn trên của ván bài của bạn là +1.",
+    "declarations": [
+      {
+        "general": "hs__xiaoqiao",
+        "trueName": "xiaoqiao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/hongyan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__jianxiong": {
+    "zhName": "奸雄",
+    "zhDescription": "当你受到伤害后，你可以选择一项：1.获得对你造成伤害的牌；2.摸一张牌。",
+    "currentVietnameseName": "Gian Hùng",
+    "currentVietnameseDescription": "Khi nhận sát thương, bạn có thể chọn một: 1. Lấy lá bài gây sát thương cho bạn; 2. Rút một lá bài.",
+    "declarations": [
+      {
+        "general": "hs__caocao",
+        "trueName": "caocao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/jianxiong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__jieming": {
+    "zhName": "节命",
+    "zhDescription": "当你受到伤害后，你可以令一名角色将手牌补至X张（X为其体力上限且最多为5）。",
+    "currentVietnameseName": "Cứu mạng",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, bạn có thể yêu cầu nhân vật bổ sung thẻ X vào tay mình (X là giới hạn trên của sức mạnh thể chất và tối đa là 5).",
+    "declarations": [
+      {
+        "general": "hs__xunyu",
+        "trueName": "xunyu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/jieming.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__jizhi": {
+    "zhName": "集智",
+    "zhDescription": "当你使用非转化的普通锦囊牌时，你可以摸一张牌。",
+    "currentVietnameseName": "Tập Trí",
+    "currentVietnameseDescription": "Khi bạn chơi một lá bài chung không biến đổi, bạn có thể rút một lá bài.",
+    "declarations": [
+      {
+        "general": "hs__huangyueying",
+        "trueName": "huangyueying",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/jizhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__jushou": {
+    "zhName": "据守",
+    "zhDescription": "结束阶段，你可摸X张牌（X为势力数），然后弃置一张手牌，若以此法弃置的牌为装备牌，则改为你使用之。若X大于3，则你将武将牌叠置。",
+    "currentVietnameseName": "phòng vệ",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể rút X lá bài (X là số lực), sau đó bỏ lá bài trên tay. Nếu thẻ bị loại bỏ theo cách này là thẻ trang bị, bạn sẽ sử dụng thẻ đó để thay thế. Nếu X lớn hơn 2, bạn xếp các quân bài chung.",
+    "declarations": [
+      {
+        "general": "hs__caoren",
+        "trueName": "caoren",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/jushou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__keji": {
+    "zhName": "克己",
+    "zhDescription": "锁定技，弃牌阶段开始时，若你未于出牌阶段内使用过颜色不同的牌，则你于此回合内手牌上限+4。",
+    "currentVietnameseName": "Khắc Kỷ",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bắt đầu giai đoạn loại bỏ, nếu bạn chưa sử dụng bất kỳ quân bài màu nào trong giai đoạn chơi bài hoặc tất cả các quân bài được sử dụng trong giai đoạn chơi bài đều có cùng màu, giới hạn trên của ván bài của bạn sẽ là +4 trong vòng này.",
+    "declarations": [
+      {
+        "general": "hs__lvmeng",
+        "trueName": "lvmeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/keji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__kongcheng": {
+    "zhName": "空城",
+    "zhDescription": "锁定技，若你没有手牌：1.当你成为【杀】或【决斗】的目标时，取消此目标；2.你的回合外，其他角色交给你的牌改为置于你的武将牌上，摸牌阶段开始时，你获得这些牌。",
+    "currentVietnameseName": "Không Thành",
+    "currentVietnameseDescription": "Khóa kỹ năng, nếu bạn không có bài trên tay: 1. Khi bạn trở thành mục tiêu của [Giết] hoặc [Trận đấu], hãy hủy nó; 2. Ngoài lượt của bạn, khi lá bài được chuyển đến vùng tay của bạn do chuyển giao, bạn thay đổi vùng mục tiêu của nước đi này thành lá bài chung của bạn (cả hai đều được gọi là \"Qin\"). Khi bắt đầu giai đoạn rút bài, bạn sẽ nhận được tất cả \"Qin\".",
+    "declarations": [
+      {
+        "general": "hs__zhugeliang",
+        "trueName": "zhugeliang",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/kongcheng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__kuanggu": {
+    "zhName": "狂骨",
+    "zhDescription": "当你对距离1以内的角色造成1点伤害后，你可以摸一张牌或回复1点体力。",
+    "currentVietnameseName": "Xương điên",
+    "currentVietnameseDescription": "Sau khi gây 1 điểm sát thương cho nhân vật trong phạm vi 1 khoảng cách, bạn có thể rút bài hoặc phục hồi 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "hs__weiyan",
+        "trueName": "weiyan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/kuanggu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__kurou": {
+    "zhName": "苦肉",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张牌，然后你失去1点体力，摸三张牌，于此阶段内使用【杀】的次数上限+1。",
+    "currentVietnameseName": "Khổ Nhục",
+    "currentVietnameseDescription": "Pha hành động 1x: bỏ 1 và mất 1 HP -> hòa 3, có thể dùng thêm +1 Chém ở pha này.",
+    "declarations": [
+      {
+        "general": "hs__huanggai",
+        "trueName": "huanggai",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/kurou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__liegong": {
+    "zhName": "烈弓",
+    "zhDescription": "你对手牌数不大于你的角色使用【杀】无距离限制。当你使用【杀】指定目标后，若目标角色的体力值不小于你，则你可以选择一项：1.令其不能使用【闪】响应此【杀】；2.令此【杀】造成的伤害+1。",
+    "currentVietnameseName": "cung dữ dội",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] để chỉ định mục tiêu trong giai đoạn chơi bài, nếu số lượng lá bài trên tay nó không ít hơn sức mạnh thể chất của bạn hoặc không lớn hơn phạm vi tấn công của bạn, bạn có thể ngăn nó sử dụng [Dodge] để đáp trả [Giết] này.",
+    "declarations": [
+      {
+        "general": "hs__huangzhong",
+        "trueName": "huangzhong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/liegong.lua",
+        "line": 5
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__lijian": {
+    "zhName": "离间",
+    "zhDescription": "出牌阶段限一次，你可弃置一张牌并选择两名其他男性角色，后选择的角色视为对先选择的角色使用一张【决斗】。",
+    "currentVietnameseName": "Ly Gián",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể bỏ một lá bài và chọn hai nhân vật nam khác. Nhân vật được chọn sau được coi là sử dụng [Trận đấu] với nhân vật được chọn trước.",
+    "declarations": [
+      {
+        "general": "hs__diaochan",
+        "trueName": "diaochan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/lijian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__longdan": {
+    "zhName": "龙胆",
+    "zhDescription": "你可以将【闪】当【杀】使用或打出，当此【杀】被一名角色使用的【闪】抵消后，你可以对另一名角色造成1点伤害。你可以将【杀】当【闪】使用或打出，当一名角色使用的【杀】被此【闪】抵消后，你可以令另一名其他角色回复1点体力。",
+    "currentVietnameseName": "Long Đảm",
+    "currentVietnameseDescription": "Bạn có thể sử dụng [Flash] làm [Kill] hoặc chơi nó. Khi [Kill] này được bù đắp bằng [Flash] được sử dụng bởi một nhân vật, bạn có thể gây 1 điểm sát thương cho nhân vật khác. Bạn có thể sử dụng [Giết] như [Né tránh] hoặc chơi nó. Khi [Kill] được sử dụng bởi một nhân vật bị bù đắp bởi [Flash] này, bạn có thể khiến nhân vật khác phục hồi 1 điểm sức mạnh thể chất.",
+    "declarations": [
+      {
+        "general": "hs__zhaoyun",
+        "trueName": "zhaoyun",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/longdan.lua",
+        "line": 5
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__luanji": {
+    "zhName": "乱击",
+    "zhDescription": "你可将两张手牌当【万箭齐发】使用（不能使用此回合以此法使用过的花色），当与你势力相同的角色打出【闪】响应此牌结算结束后，其可摸一张牌。",
+    "currentVietnameseName": "tấn công ngẫu nhiên",
+    "currentVietnameseDescription": "Bạn có thể sử dụng hai lá bài trên tay của mình làm [Thousands of Arrows] (bạn không thể sử dụng bộ đồ được sử dụng theo cách này trong vòng này). Một nhân vật có sức mạnh tương đương với bạn chơi [Flash] để đáp lại việc xử lý lá bài này và anh ta có thể rút một lá bài.",
+    "declarations": [
+      {
+        "general": "hs__yuanshao",
+        "trueName": "yuanshao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/luanji.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__luoshen": {
+    "zhName": "洛神",
+    "zhDescription": "准备阶段，你可以进行判定，你可以重复此流程，直到判定结果为红色，然后你获得所有黑色的判定牌。",
+    "currentVietnameseName": "Lạc Thần",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể đưa ra phán quyết và bạn có thể lặp lại quá trình này cho đến khi kết quả phán đoán là màu đỏ, sau đó bạn nhận được tất cả các thẻ phán đoán màu đen.",
+    "declarations": [
+      {
+        "general": "hs__zhenji",
+        "trueName": "zhenji",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/luoshen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__luoyi": {
+    "zhName": "裸衣",
+    "zhDescription": "摸牌阶段结束时，你可弃置一张牌，令你于此回合内执行【杀】或【决斗】的效果造成伤害时，此伤害+1。",
+    "currentVietnameseName": "Lỏa Y",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn rút thẻ, bạn có thể loại bỏ thẻ. Nếu bạn làm như vậy, khi bạn thực hiện hiệu ứng [Giết] hoặc [Trận đấu] trong vòng này để gây sát thương, sát thương sẽ là +1.",
+    "declarations": [
+      {
+        "general": "hs__xuchu",
+        "trueName": "xuchu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/luoyi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__mouduan": {
+    "zhName": "谋断",
+    "zhDescription": "结束阶段，若你于出牌阶段内使用过四种花色或三种类别的牌，你可移动场上的一张牌。",
+    "currentVietnameseName": "Đưa ra quyết định",
+    "currentVietnameseDescription": "Trong giai đoạn kết thúc, nếu bạn đã sử dụng các quân bài thuộc bốn bộ hoặc ba loại trong giai đoạn chơi bài, bạn có thể di chuyển một quân bài trên sân.",
+    "declarations": [
+      {
+        "general": "hs__lvmeng",
+        "trueName": "lvmeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/mouduan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__paoxiao": {
+    "zhName": "咆哮",
+    "zhDescription": "锁定技，你使用【杀】无次数限制。当你于一个回合内使用第二张【杀】时，你摸一张牌。",
+    "currentVietnameseName": "Bào Hao",
+    "currentVietnameseDescription": "Đối với kỹ năng khóa, không có giới hạn về số lần bạn có thể sử dụng [Giết]. Khi bạn sử dụng [Giết] thứ hai trong giai đoạn chơi bài, bạn sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "hs__zhangfei",
+        "trueName": "zhangfei",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/paoxiao.lua",
+        "line": 16
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__qiangxi": {
+    "zhName": "强袭",
+    "zhDescription": "出牌阶段限一次，你可以失去1点体力或弃置一张武器牌，并选择一名其他角色，对其造成1点伤害。",
+    "currentVietnameseName": "Cường Tập",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể mất 1 điểm thể lực hoặc vứt bỏ thẻ vũ khí và chọn một nhân vật khác để gây 1 điểm sát thương cho nó.",
+    "declarations": [
+      {
+        "general": "hs__dianwei",
+        "trueName": "dianwei",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/qiangxi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__qianxun": {
+    "zhName": "谦逊",
+    "zhDescription": "锁定技，当你成为【顺手牵羊】或【乐不思蜀】的目标时，你取消此目标。",
+    "currentVietnameseName": "Khiêm Tốn",
+    "currentVietnameseDescription": "(bắt buộc) Khi trở thành mục tiêu của Cướp bóc hoặc Nuông chiều: hủy bỏ mục tiêu.",
+    "declarations": [
+      {
+        "general": "nos_heg__luxun",
+        "trueName": "luxun",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "hs__luxun",
+        "trueName": "luxun",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/qianxun.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__shensu": {
+    "zhName": "神速",
+    "zhDescription": "你可以作出如下选择：<br>1.跳过判定阶段和摸牌阶段；<br>2.跳过出牌阶段并弃置一张装备牌；<br>3.跳过弃牌阶段并失去1点体力。<br>你每执行一项，视为使用一张无距离限制的【杀】。",
+    "currentVietnameseName": "Cực kỳ nhanh",
+    "currentVietnameseDescription": "① Trước khi giai đoạn phán xét bắt đầu, bạn có thể bỏ qua giai đoạn này và giai đoạn rút bài và coi nó như sử dụng [Giết] thông thường. ②Trước khi giai đoạn chơi bài bắt đầu, bạn có thể bỏ qua giai đoạn này và loại bỏ một thẻ trang bị để coi nó như một [Giết] bình thường. ③Trước khi giai đoạn loại bỏ bắt đầu, bạn có thể bỏ qua giai đoạn này và mất 1 điểm thể lực như một lần [Giết] thông thường.",
+    "declarations": [
+      {
+        "general": "hs__xiahouyuan",
+        "trueName": "xiahouyuan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/shensu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__shenzhi": {
+    "zhName": "神智",
+    "zhDescription": "准备阶段，你可以弃置一名角色一个区域内的最后一张牌，然后其回复1点体力。",
+    "currentVietnameseName": "sự tỉnh táo",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể loại bỏ lá bài cuối cùng của nhân vật trong một khu vực, sau đó nhân vật đó sẽ hồi phục 1 điểm máu.",
+    "declarations": [
+      {
+        "general": "hs__ganfuren",
+        "trueName": "ganfuren",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/shenzhi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__shuangxiong": {
+    "zhName": "双雄",
+    "zhDescription": "出牌阶段开始时，你可以令一名角色弃置一张牌，本回合你可以将一张与弃置牌颜色不同的手牌当【决斗】使用。",
+    "currentVietnameseName": "Song Hùng",
+    "currentVietnameseDescription": "Đầu giai đoạn đánh bài, bạn có thể cho một người chơi bỏ 1 lá. Trong lượt này, bạn có thể dùng 1 lá trên tay khác màu với lá vừa bỏ như Quyết Đấu.",
+    "declarations": [
+      {
+        "general": "hs__yanliangwenchou",
+        "trueName": "yanliangwenchou",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/shuangxiong.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__shushen": {
+    "zhName": "淑慎",
+    "zhDescription": "每回合各限一次，当你回复体力后，你可以令一名其他角色摸两张牌；当你一次获得两张或更多牌时，你可以令一名其他角色回复1点体力。",
+    "currentVietnameseName": "Shushen",
+    "currentVietnameseDescription": "Sau khi hồi phục 1 điểm thể lực, bạn có thể khiến nhân vật khác rút thẻ.",
+    "declarations": [
+      {
+        "general": "hs__ganfuren",
+        "trueName": "ganfuren",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/shushen.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__tianxiang": {
+    "zhName": "天香",
+    "zhDescription": "当你受到伤害时，你可弃置一张<font color='red'>♥</font>手牌并选择一名其他角色。你防止此伤害，选择本回合未选择过的一项：1.令来源对其造成1点伤害，其摸X张牌（X为其已损失的体力值且至多为5）；2.令其失去1点体力，其获得牌堆或弃牌堆中你以此法弃置的牌。",
+    "currentVietnameseName": "Thiên Tường",
+    "currentVietnameseDescription": "Khi bạn chịu sát thương, bạn có thể bỏ một lá ♥ trên tay và chọn một nhân vật khác. Để ngăn sát thương này, chọn một: 1. Khiến nguồn sát thương chịu 1 sát thương và rút X lá, với X là lượng máu đã mất, tối đa 5; hoặc 2. Khiến mục tiêu mất 1 máu và nhận các lá bạn đã bỏ theo cách này từ chồng bài rút hoặc chồng bài bỏ.",
+    "declarations": [
+      {
+        "general": "hs__xiaoqiao",
+        "trueName": "xiaoqiao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/tianxiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__tieqi": {
+    "zhName": "铁骑",
+    "zhDescription": "当你使用【杀】指定目标后，你可判定，令其本回合一张明置的武将牌非锁定技失效，其需弃置一张与判定结果花色相同的牌，否则其不能使用【闪】抵消此【杀】。",
+    "currentVietnameseName": "Thiết Kỵ",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu, bạn có thể xác định vô hiệu hóa kỹ năng không bị khóa của thẻ chung bị lộ ở vòng này. Nó cần phải loại bỏ một lá bài cùng chất do kết quả của việc xác định, nếu không nó không thể sử dụng [Flash] để bù lại [Kill] này.",
+    "declarations": [
+      {
+        "general": "hs__machao",
+        "trueName": "machao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/tieqi.lua",
+        "line": 5
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__wangxi": {
+    "zhName": "忘隙",
+    "zhDescription": "当你对其他角色造成1点伤害后，或当你受到其他角色造成的1点伤害后，你可以与其各摸一张牌。",
+    "currentVietnameseName": "Hãy quên đi khoảng cách",
+    "currentVietnameseDescription": "Sau khi bạn gây 1 điểm sát thương cho nhân vật khác hoặc sau khi bạn nhận 1 điểm sát thương từ nhân vật khác, bạn có thể rút mỗi lá bài.",
+    "declarations": [
+      {
+        "general": "ld__lidian",
+        "trueName": "lidian",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/wangxi.lua",
+        "line": 12
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__weimu": {
+    "zhName": "帷幕",
+    "zhDescription": "锁定技，当你成为黑色锦囊牌的目标时，取消之。",
+    "currentVietnameseName": "tấm màn",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn trở thành mục tiêu của thẻ túi đen, hãy hủy nó.",
+    "declarations": [
+      {
+        "general": "hs__jiaxu",
+        "trueName": "jiaxu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/weimu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__wusheng": {
+    "zhName": "武圣",
+    "zhDescription": "你可以将一张红色牌当【杀】使用或打出。你使用的<font color='red'>♦</font>【杀】无距离限制。",
+    "currentVietnameseName": "Võ Thánh",
+    "currentVietnameseDescription": "Bạn có thể sử dụng hoặc chơi thẻ đỏ với tư cách [Giết].",
+    "declarations": [
+      {
+        "general": "hs__guanyu",
+        "trueName": "guanyu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/wusheng.lua",
+        "line": 4
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__wushuang": {
+    "zhName": "无双",
+    "zhDescription": "锁定技，当你使用【杀】指定目标后，其使用【闪】抵消此【杀】的方式改为需连续使用两张【闪】；当你使用【决斗】指定目标后，或当你成为【决斗】的目标后，你令其打出【杀】响应此【决斗】的方式改为需连续打出两张【杀】；你使用的非转化【决斗】能额外选择至多两名角色为目标。",
+    "currentVietnameseName": "Vô Song",
+    "currentVietnameseDescription": "Đối với kỹ năng khóa, khi bạn sử dụng [Kill] để chỉ định mục tiêu, cách nó sử dụng [Flash] để bù lại [Kill] này sẽ được thay đổi thành yêu cầu hai lần sử dụng [Flash] liên tiếp; khi bạn sử dụng [Trận đấu] để chỉ định mục tiêu hoặc khi bạn trở thành mục tiêu của [Trận đấu], cách bạn yêu cầu nó chơi [Giết] để đáp lại [Trận đấu] này được thay đổi để yêu cầu hai lần bắn [Giết] liên tiếp; [Trận đấu] không chuyển đổi mà bạn sử dụng có thể chọn tối đa hai nhân vật bổ sung làm mục tiêu.",
+    "declarations": [
+      {
+        "general": "hs__lvbu",
+        "trueName": "lvbu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/wushuang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__xiaoguo": {
+    "zhName": "骁果",
+    "zhDescription": "其他角色的结束阶段，你可以弃置一张手牌对其造成1点伤害，然后其可以弃置一张装备区内的牌并回复1点体力。",
+    "currentVietnameseName": "Tiểu Quốc",
+    "currentVietnameseDescription": "Ở giai đoạn kết thúc của các nhân vật khác, bạn có thể loại bỏ một thẻ cơ bản, sau đó họ có thể chọn một trong những cách sau: 1. Loại bỏ một thẻ trang bị, sau đó bạn rút một thẻ; 2. Bạn gây 1 điểm sát thương cho nó.",
+    "declarations": [
+      {
+        "general": "hs__yuejin",
+        "trueName": "yuejin",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/xiaoguo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__xiaoji": {
+    "zhName": "枭姬",
+    "zhDescription": "当你失去装备区的装备牌后，若此时是你的回合内，你摸一张牌，否则你摸三张牌。",
+    "currentVietnameseName": "Kiêu Cơ",
+    "currentVietnameseDescription": "Sau khi mất lá bài đã trang bị: có thể rút 2.",
+    "declarations": [
+      {
+        "general": "hs__sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/xiaoji.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__xunxun": {
+    "zhName": "恂恂",
+    "zhDescription": "摸牌阶段开始时，你可以观看牌堆顶的四张牌，将其中两张牌以任意顺序置于牌堆顶，其余以任意顺序置于牌堆底。",
+    "currentVietnameseName": "Tấn Tấn",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn rút bài, bạn có thể xem bốn lá bài trên cùng của bộ bài, đặt hai trong số chúng lên trên cùng của bộ bài theo bất kỳ thứ tự nào và phần còn lại ở dưới cùng của bộ bài theo bất kỳ thứ tự nào.",
+    "declarations": [
+      {
+        "general": "ld__lidian",
+        "trueName": "lidian",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/xunxun.lua",
+        "line": 12
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__yiji": {
+    "zhName": "遗计",
+    "zhDescription": "当你受到伤害后，你可以观看牌堆顶的两张牌，然后将分配给任意角色。",
+    "currentVietnameseName": "Di Kế",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, bạn có thể nhìn vào hai lá bài trên cùng của bộ bài và phân phát chúng.",
+    "declarations": [
+      {
+        "general": "hs__guojia",
+        "trueName": "guojia",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/yiji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__yinghun": {
+    "zhName": "英魂",
+    "zhDescription": "准备阶段，你可选择一名其他角色并选择一项：1.令其摸X张牌，然后弃置一张牌；2.令其摸一张牌，然后弃置X张牌（X为你已损失的体力值）。",
+    "currentVietnameseName": "yinghun",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chọn một nhân vật khác và chọn một tùy chọn: 1. Yêu cầu anh ta rút thẻ X, sau đó loại bỏ một thẻ; 2. Yêu cầu anh ta rút một lá bài, sau đó loại bỏ những lá bài X (X là sức mạnh thể chất đã mất của bạn).",
+    "declarations": [
+      {
+        "general": "hs__sunjian",
+        "trueName": "sunjian",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/yinghun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__zaiqi": {
+    "zhName": "再起",
+    "zhDescription": "弃牌阶段结束时，你可以令至多X名与你势力相同的角色依次选择一项（X为本回合进入弃牌堆的<font color='red'>♥</font>牌数）：1.摸一张牌；2.令你回复1点体力。",
+    "currentVietnameseName": "tăng trở lại",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn loại bỏ, bạn có thể có tối đa",
+    "declarations": [
+      {
+        "general": "hs__menghuo",
+        "trueName": "menghuo",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/zaiqi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs__zhiheng": {
+    "zhName": "制衡",
+    "zhDescription": "出牌阶段限一次，你可弃置至多X张牌（X为你的体力上限），然后你摸等量的牌。",
+    "currentVietnameseName": "Chế Hành",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể loại bỏ tối đa X thẻ (X là giới hạn trên của sức mạnh thể chất của bạn) và sau đó bạn rút cùng số lượng thẻ.",
+    "declarations": [
+      {
+        "general": "hs__sunquan",
+        "trueName": "sunquan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/zhiheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs_machao__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "hs__machao",
+        "trueName": "machao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/machao_mashu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs_mateng__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "hs__mateng",
+        "trueName": "mateng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/mateng_mashu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hs_pangde__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "hs__pangde",
+        "trueName": "pangde",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/pangde_mashu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huanshi": {
+    "zhName": "缓释",
+    "zhDescription": "当一名角色的判定牌生效前，你可以令该角色观看你的手牌并选择你的一张牌，你打出此牌代替之。",
+    "currentVietnameseName": "Phát hành bị trì hoãn",
+    "currentVietnameseDescription": "Trước khi kết quả phán quyết có hiệu lực, bạn có thể bắt anh ta xem bài của bạn và chọn bất kỳ lá bài nào của bạn. Sau đó bạn chơi nó và nó sẽ trở thành kết quả mới.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugejin",
+        "trueName": "zhugejin",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/huanshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huituo": {
+    "zhName": "恢拓",
+    "zhDescription": "当你受到伤害后，你可以令一名角色进行判定，若结果为：红色，其回复1点体力；黑色，其摸X张牌（X为伤害值）。",
+    "currentVietnameseName": "Khôi phục và mở rộng",
+    "currentVietnameseDescription": "Sau khi bạn chịu thiệt hại, có thể khiến anh hùng bị phán xét, nếu đó là: ▪ đỏ, anh ta hồi 1; ▪ đen, anh ta rút X (X = số DMG này).",
+    "declarations": [
+      {
+        "general": "os_heg__caorui",
+        "trueName": "caorui",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2015/skills/huituo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hujia": {
+    "zhName": "护驾",
+    "zhDescription": "主公技，当你需要使用或打出【闪】时，你可以令其他魏势力角色选择是否打出一张【闪】（视为由你使用或打出）。",
+    "currentVietnameseName": "Hộ Giá",
+    "currentVietnameseDescription": "Chủ công kỹ, khi bạn cần sử dụng/đánh ra 【Thiểm】, bạn có thể lệnh người thuộc thế lực Ngụy khác chọn xem có đánh ra 1 lá 【Thiểm】 hay không （tính là bạn đã sử dụng/đánh ra lá đó）.",
+    "declarations": [
+      {
+        "general": "caocao",
+        "trueName": "caocao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/hujia.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "hunshang": {
+    "zhName": "魂殇",
+    "zhDescription": "副将技，锁定技，此武将牌减少半个阴阳鱼；准备阶段，若你的体力值为1，你拥有技能〖英姿〗和〖英魂〗至本回合结束。",
+    "currentVietnameseName": "Nỗi buồn",
+    "currentVietnameseDescription": "Tướng kỹ phụ, kỹ năng khóa, thẻ tướng này giảm một nửa số cá Âm Dương; trong giai đoạn chuẩn bị, nếu thể lực của bạn là 1, bạn có kỹ năng [tư thế anh hùng] và [linh hồn anh hùng] cho đến hết vòng này.",
+    "declarations": [
+      {
+        "general": "ld__sunce",
+        "trueName": "sunce",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/hunshang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huoji": {
+    "zhName": "火计",
+    "zhDescription": "你可以将一张红色手牌当【火攻】使用。",
+    "currentVietnameseName": "Phương án chữa cháy",
+    "currentVietnameseDescription": "Bạn có thể sử dụng thẻ đỏ trên tay làm [Fire Attack].",
+    "declarations": [
+      {
+        "general": "hs__wolong",
+        "trueName": "wolong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/huoji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huomo": {
+    "zhName": "活墨",
+    "zhDescription": "当你需要使用基本牌时（你本回合使用过的基本牌除外），你可以将一张黑色非基本牌置于牌堆顶，视为使用此基本牌。",
+    "currentVietnameseName": "Mực sống",
+    "currentVietnameseDescription": "Khi bạn muốn sử dụng một lá bài cơ bản mà bạn chưa sử dụng trong lượt này, bạn có thể đặt một lá bài không phải cơ bản màu đen lên trên bộ bài, điều này được xem là sử dụng lá bài cơ bản.",
+    "declarations": [
+      {
+        "general": "os_heg__zhongyao",
+        "trueName": "zhongyao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2015/skills/huomo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huoshou": {
+    "zhName": "祸首",
+    "zhDescription": "锁定技，【南蛮入侵】对你无效；当其他角色使用【南蛮入侵】指定目标后，你代替其成为此牌造成的伤害的来源。",
+    "currentVietnameseName": "thủ phạm",
+    "currentVietnameseDescription": "Kỹ năng khóa, [Cuộc xâm lược phương Nam] không hợp lệ đối với bạn; khi các nhân vật khác sử dụng [Cuộc xâm lược phương Nam] để chỉ định mục tiêu, bạn sẽ trở thành nguồn gây sát thương do lá bài này gây ra thay vì họ.",
+    "declarations": [
+      {
+        "general": "hs__menghuo",
+        "trueName": "menghuo",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/huoshou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "huoshui": {
+    "zhName": "祸水",
+    "zhDescription": "锁定技，你的回合内：其他角色不能明置其武将牌；势力与你不同且有暗置武将牌的角色不能使用或打出【闪】响应你使用的牌。",
+    "currentVietnameseName": "Họa Thủy",
+    "currentVietnameseDescription": "Khóa định: Trong lượt của bạn, các nhân vật khác không thể lật tướng; nhân vật khác thế lực với bạn mà còn tướng úp không thể dùng hoặc đánh ra Thiểm để đáp lại lá bài do bạn sử dụng.",
+    "declarations": [
+      {
+        "general": "hs__zoushi",
+        "trueName": "zoushi",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/huoshui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jianchu": {
+    "zhName": "鞬出",
+    "zhDescription": "当你使用【杀】指定目标后，你可以弃置目标角色一张牌，若此牌：为装备牌，其不能使用【闪】响应此【杀】；不为装备牌，其获得此【杀】。",
+    "currentVietnameseName": "Lấy ra",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu, bạn có thể loại bỏ lá bài của nhân vật đó. Nếu thẻ này: là thẻ trang bị, nó không thể sử dụng [Flash] để bù lại [Giết] này; nếu nó không phải là thẻ thiết bị, nó sẽ nhận được [Giết] này.",
+    "declarations": [
+      {
+        "general": "hs__pangde",
+        "trueName": "pangde",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/jianchu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jiang": {
+    "zhName": "激昂",
+    "zhDescription": "当你使用【决斗】或红色【杀】指定目标后，或成为【决斗】或红色【杀】的目标后，你可以摸一张牌。",
+    "currentVietnameseName": "Say đắm",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Trận đấu] hoặc [Giết] màu đỏ để chỉ định mục tiêu hoặc trở thành mục tiêu của [Trận đấu] hoặc [Giết] màu đỏ, bạn có thể rút bài.",
+    "declarations": [
+      {
+        "general": "ld__sunce",
+        "trueName": "sunce",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/jiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jianglue": {
+    "zhName": "将略",
+    "zhDescription": "限定技，出牌阶段，你可选择一个“军令”，然后发动势力召唤。你对所有与你势力相同的角色发起此“军令”。你和所有执行“军令”的角色各加1点体力上限，回复1点体力。然后你摸X张牌（X为以此法回复体力的角色数）。",
+    "currentVietnameseName": "Tổng quan",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể chọn “lệnh quân sự” rồi kích hoạt triệu hồi lực lượng. Bạn bắt đầu \"Quân lệnh\" này trên tất cả các nhân vật có cùng sức mạnh với bạn. Bạn và tất cả các nhân vật thực hiện “lệnh quân sự” mỗi người cộng thêm 1 điểm vào giới hạn trên của thể lực và hồi phục 1 điểm thể lực. Sau đó bạn rút X thẻ (X là số nhân vật có thể phục hồi thể lực bằng cách này).",
+    "declarations": [
+      {
+        "general": "ld__wangping",
+        "trueName": "wangping",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/jianglue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jianxiong": {
+    "zhName": "奸雄",
+    "zhDescription": "当你受到伤害后，你可以获得对你造成伤害的牌。",
+    "currentVietnameseName": "Gian Hùng",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, bạn có thể thu lấy lá đã gây sát thương cho bạn.",
+    "declarations": [
+      {
+        "general": "caocao",
+        "trueName": "caocao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jianxiong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jianzhengq": {
+    "zhName": "谏征",
+    "zhDescription": "当其他角色使用【杀】指定目标时，若你在其攻击范围内且你不是目标，你可以将一张手牌置于牌堆顶，取消所有目标，然后若此【杀】不为黑色，你成为目标。",
+    "currentVietnameseName": "Bản nháp được nhắc nhở",
+    "currentVietnameseDescription": "Khi một anh hùng khác có thể tiếp cận bạn và anh ta sử dụng Chém lên (các) anh hùng khác, bạn có thể hiển thị và đặt một lá bài trên tay bộ bài → hủy tất cả các mục tiêu. Nếu Vết chém này không phải màu đen, bạn sẽ trở thành mục tiêu.",
+    "declarations": [
+      {
+        "general": "os_heg__qinmi",
+        "trueName": "qinmi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2017/skills/jianzheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jiaojin": {
+    "zhName": "骄矜",
+    "zhDescription": "当你受到男性角色造成的伤害时，你可以弃置一张装备牌，令此伤害-1。",
+    "currentVietnameseName": "Kiêu hãnh",
+    "currentVietnameseDescription": "Khi một nam anh hùng DMG bạn, bạn có thể vứt bỏ trang bị để chịu -1 DMG.",
+    "declarations": [
+      {
+        "general": "os_heg__sunluban",
+        "trueName": "sunluban",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2014/skills/jiaojin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jiaozi": {
+    "zhName": "骄恣",
+    "zhDescription": "锁定技，当你造成或受到伤害时，若你的手牌为全场唯一最多，则此伤害+1。",
+    "currentVietnameseName": "Kiêu ngạo",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn gây hoặc nhận sát thương, nếu tay bạn là người duy nhất có nhiều lá bài nhất trên sân thì sát thương sẽ là +1.",
+    "declarations": [
+      {
+        "general": "ofl_heg__quyi",
+        "trueName": "quyi",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/jiaozi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jieyin": {
+    "zhName": "结姻",
+    "zhDescription": "出牌阶段限一次，你可以弃置两张手牌并选择一名已受伤的男性角色，然后你与其各回复1点体力。",
+    "currentVietnameseName": "Kết Nhân",
+    "currentVietnameseDescription": "Một lần trong giai đoạn ra bài, bạn có thể bỏ 2 lá trên tay và chọn 1 người nam đang bị thương, sau đó bạn và họ hồi 1 máu.",
+    "declarations": [
+      {
+        "general": "nos_heg__sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "hs__sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jieyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jijiang": {
+    "zhName": "激将",
+    "zhDescription": "主公技，当你需要使用或打出【杀】时，你可以令其他蜀势力角色选择是否打出一张【杀】（视为由你使用或打出）。",
+    "currentVietnameseName": "Kích Tướng",
+    "currentVietnameseDescription": "Chủ công kỹ, khi bạn cần sử dụng/đánh ra 【Sát】, bạn có thể lệnh người thuộc thế lực Thục khác chọn xem có đánh ra 1 lá 【Sát】 hay không（tính là bạn đã sử dụng/đánh ra lá đó）.",
+    "declarations": [
+      {
+        "general": "liubei",
+        "trueName": "liubei",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jijiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jijiu": {
+    "zhName": "急救",
+    "zhDescription": "你的回合外，你可以将一张红色牌当【桃】使用。",
+    "currentVietnameseName": "Cấp Cứu",
+    "currentVietnameseDescription": "Ngoài lượt của bạn, bạn có thể chuyển hóa sử dụng 1 lá đỏ -> 【Đào】.",
+    "declarations": [
+      {
+        "general": "hs__huatuo",
+        "trueName": "huatuo",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "huatuo",
+        "trueName": "huatuo",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jijiu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jilei": {
+    "zhName": "鸡肋",
+    "zhDescription": "当你受到伤害后，你可以声明一种牌的类别（基本牌、锦囊牌、装备牌），伤害来源不能使用、打出或弃置该类别的手牌直到回合结束。",
+    "currentVietnameseName": "Xương ước nguyện",
+    "currentVietnameseDescription": "Sau khi chịu thiệt hại, bạn có thể nói ra loại thẻ (cơ bản, thủ thuật hoặc trang bị). Anh hùng đã gây DMG cho bạn không thể sử dụng, chơi hoặc loại bỏ các lá bài thuộc loại đó cho đến khi Kết thúc Lượt đó.",
+    "declarations": [
+      {
+        "general": "os_heg__yangxiu",
+        "trueName": "yangxiu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/jilei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jishe": {
+    "zhName": "极奢",
+    "zhDescription": "出牌阶段，若你的手牌上限大于0，你可以摸一张牌，然后本回合你的手牌上限-1；结束阶段，若你没有手牌，你可以横置至多X名角色（X为你的体力值）。",
+    "currentVietnameseName": "Cực kỳ xa hoa",
+    "currentVietnameseDescription": "Trong Giai đoạn Hành động, nếu giới hạn bài > 0, có thể rút giới hạn bài 1 → -1 ở lượt này. ⁞ Ở Giai đoạn Kết thúc, nếu bạn không có bài, có thể xâu chuỗi tối đa X anh hùng (X = HP).",
+    "declarations": [
+      {
+        "general": "os_heg__cenhun",
+        "trueName": "cenhun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2016/skills/jishe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jiuyuan": {
+    "zhName": "救援",
+    "zhDescription": "主公技，其他吴势力角色使用【桃】令你回复体力时，回复值+1。",
+    "currentVietnameseName": "Cứu Viện",
+    "currentVietnameseDescription": "Chủ công kỹ, khi bạn hồi máu do 1 người thế lực Ngô khác sử dụng 【Đào】 với bạn, số máu hồi +1.",
+    "declarations": [
+      {
+        "general": "sunquan",
+        "trueName": "sunquan",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jiuyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jizhan": {
+    "zhName": "吉占",
+    "zhDescription": "摸牌阶段，你可以改为展示牌堆顶的一张牌，猜测牌堆顶下一张牌点数大于或小于此牌，然后展示之，若猜对则可以继续猜测。最后你获得所有展示的牌。",
+    "currentVietnameseName": "Kỷ Chiến",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, thay vào đó, bạn có thể hiển thị lá bài trên đầu cọc, đoán giá trị của lá bài tiếp theo ở đầu cọc lớn hơn hoặc nhỏ hơn lá bài này, sau đó tiết lộ nó. Nếu dự đoán của bạn đúng, bạn có thể tiếp tục đoán. Cuối cùng bạn nhận được tất cả các thẻ được tiết lộ.",
+    "declarations": [
+      {
+        "general": "ol_heg__wangrongh",
+        "trueName": "wangrongh",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/jizhan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jizhi": {
+    "zhName": "集智",
+    "zhDescription": "当你使用非转化的普通锦囊牌时，你可以摸一张牌。",
+    "currentVietnameseName": "Tập Trí",
+    "currentVietnameseDescription": "Khi bạn sử dụng 1 lá công cụ phổ thông không phải chuyển hóa, bạn có thể rút 1 lá.",
+    "declarations": [
+      {
+        "general": "huangyueying",
+        "trueName": "huangyueying",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/jizhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "juedi": {
+    "zhName": "绝地",
+    "zhDescription": "锁定技，准备阶段，你选择一项：1.移去“引兵”牌，然后将手牌摸至体力上限；2.令一名体力值不大于你的其他角色获得“引兵”牌，然后回复1点体力并摸等量的牌。",
+    "currentVietnameseName": "Điểm nguy hiểm",
+    "currentVietnameseDescription": "(bắt buộc) Ở Giai đoạn Bắt đầu, bạn phải chọn: <br>a) Loại bỏ tất cả Đội quân dẫn đầu và rút về #maxHP.<br>b) Đưa tất cả Đội quân dẫn đầu(=X) cho một anh hùng khác có HP< HP của bạn, sau đó anh ta hồi 1 máu và rút X thẻ.",
+    "declarations": [
+      {
+        "general": "os_heg__zumao",
+        "trueName": "zumao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/juedi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jueqing": {
+    "zhName": "绝情",
+    "zhDescription": "锁定技，你造成的伤害均视为体力流失。",
+    "currentVietnameseName": "tàn nhẫn",
+    "currentVietnameseDescription": "(bắt buộc) Trước khi bạn gây ra DMG, nó sẽ được chuyển thành \"mất máu\".",
+    "declarations": [
+      {
+        "general": "os_heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2011/skills/jueqing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jueyong": {
+    "zhName": "绝勇",
+    "zhDescription": "锁定技，当你成为一张非因〖绝勇〗使用的、非转化且非虚拟的牌（【桃】和【酒】除外）指定的目标时，若你是此牌的唯一目标，且此时“绝”的数量小于你的体力值，你取消之。然后将此牌置于你的武将牌上，称为“绝”。结束阶段，若你有“绝”，则按照置入顺序从前到后依次结算“绝”，令其原使用者对你使用（若此牌使用者不在场，则将此牌置入弃牌堆）。",
+    "currentVietnameseName": "Vô cùng dũng cảm",
+    "currentVietnameseDescription": "(bắt buộc) Khi bạn trở thành mục tiêu được chỉ định bởi một thẻ không biến hình và không ảo (ngoại trừ [Peach] và [Wine]) không được sử dụng cho \"Jue Yong\", nếu bạn là mục tiêu duy nhất của thẻ này và số \"Ze\" tại thời điểm này nhỏ hơn giá trị vật lý của bạn, bạn sẽ hủy nó. Sau đó đặt lá bài này lên lá bài chung của bạn và gọi nó là \"Jue\". Vào cuối giai đoạn, nếu bạn có \"Jue\", bạn sẽ giải quyết \"Jue\" từ trước ra sau theo thứ tự vị trí và để người dùng ban đầu của nó sử dụng nó cho bạn (nếu người dùng thẻ này không có mặt, hãy đặt thẻ này vào chồng bài bỏ).",
+    "declarations": [
+      {
+        "general": "os_heg__fuqian",
+        "trueName": "fuqian",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/jueyong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "jungong": {
+    "zhName": "峻攻",
+    "zhDescription": "出牌阶段，你可以弃置X+1张牌或失去X+1点体力（X为你于本回合内发动过本技能的次数），并视为使用一张无距离次数限制的【杀】。若此【杀】对目标角色造成伤害，本技能于本回合内失效。",
+    "currentVietnameseName": "tấn công mạnh mẽ",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, bạn có thể loại bỏ các lá bài X+1 hoặc mất X+1 điểm sức mạnh thể chất (X là số lần bạn kích hoạt kỹ năng này trong vòng này) và nó được coi là sử dụng [Giết] không giới hạn khoảng cách. Nếu [Giết] này gây sát thương cho nhân vật mục tiêu, kỹ năng này sẽ không còn hiệu lực trong vòng này.",
+    "declarations": [
+      {
+        "general": "os_heg__gaolan",
+        "trueName": "gaolan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/jungong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "juxiang": {
+    "zhName": "巨象",
+    "zhDescription": "锁定技，【南蛮入侵】对你无效；其他角色使用的【南蛮入侵】结算结束后，你获得之。",
+    "currentVietnameseName": "con voi khổng lồ",
+    "currentVietnameseDescription": "Kỹ năng khóa, [Cuộc xâm lược phương Nam] không hợp lệ đối với bạn; sau khi [Cuộc xâm lược phương Nam] được các nhân vật khác sử dụng được giải quyết, bạn sẽ nhận được nó.",
+    "declarations": [
+      {
+        "general": "hs__zhurong",
+        "trueName": "zhurong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/juxiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kanpo": {
+    "zhName": "看破",
+    "zhDescription": "你可以将一张黑色手牌当【无懈可击】使用。",
+    "currentVietnameseName": "nhìn xuyên qua",
+    "currentVietnameseDescription": "Bạn có thể sử dụng thẻ bài màu đen làm [Bất khả xâm phạm].",
+    "declarations": [
+      {
+        "general": "hs__wolong",
+        "trueName": "wolong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/kanpo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "keji": {
+    "zhName": "克己",
+    "zhDescription": "若你未于出牌阶段内使用或打出【杀】，你可以跳过弃牌阶段。",
+    "currentVietnameseName": "Khắc Kỷ",
+    "currentVietnameseDescription": "Nếu bạn không sử dụng/đánh ra 【Sát】 trong giai đoạn ra bài, bạn có thể bỏ qua giai đoạn bỏ bài.",
+    "declarations": [
+      {
+        "general": "lvmeng",
+        "trueName": "lvmeng",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/keji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kongcheng": {
+    "zhName": "空城",
+    "zhDescription": "锁定技，若你没有手牌，你不能被选择为【杀】或【决斗】的目标。",
+    "currentVietnameseName": "Không Thành",
+    "currentVietnameseDescription": "Tỏa định kỹ, nếu bạn không có bài trên tay, bạn không thể bị chọn làm mục tiêu của 【Sát】/【Quyết Đấu】.",
+    "declarations": [
+      {
+        "general": "zhugeliang",
+        "trueName": "zhugeliang",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/kongcheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kuangbi": {
+    "zhName": "匡弼",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色将一至三张牌扣置于你的武将牌上。若如此做，你的下回合开始时，你获得武将牌上所有牌，其摸等量的牌。",
+    "currentVietnameseName": "Khắc phục và hỗ trợ",
+    "currentVietnameseDescription": "Một lần trong mỗi giai đoạn hành động, có thể chọn một anh hùng khác có thẻ, sau đó anh ta phải chọn từ 1 đến 3 thẻ của mình để đặt bên cạnh anh hùng của bạn (“Eminence”). Nếu bạn làm như vậy, khi bắt đầu lượt tiếp theo, bạn sẽ nhận được tất cả “Eminence” (=X) và anh ta rút X.",
+    "declarations": [
+      {
+        "general": "os_heg__sundeng",
+        "trueName": "sundeng",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2016/skills/kuangbi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kuangfu": {
+    "zhName": "狂斧",
+    "zhDescription": "出牌阶段内限一次，当你使用【杀】指定目标后，你可以获得目标角色装备区里的一张牌，然后若此【杀】未造成伤害，你弃置两张牌。",
+    "currentVietnameseName": "Mad Axe",
+    "currentVietnameseDescription": "Sau khi tấn công mục tiêu bằng Chém, bạn có thể chọn: a) di chuyển một trang bị từ khu vực trang bị của anh ta sang khu vực trang bị của bạn. b) vứt bỏ 1 thiết bị của mình.",
+    "declarations": [
+      {
+        "general": "hs__panfeng",
+        "trueName": "panfeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/kuangfu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kuangli": {
+    "zhName": "狂戾",
+    "zhDescription": "锁定技，出牌阶段开始时，令随机数量（至少为一）名其他角色获得“狂戾”标记直到回合结束；每阶段限两次（若为斗地主，则改为限一次），当你于出牌阶段内使用牌指定一名拥有“狂戾”标记的角色为目标后，你随机弃置你与其各一张牌，然后你摸两张牌。",
+    "currentVietnameseName": "Hung bạo",
+    "currentVietnameseDescription": "Kỹ năng khóa: Khi bắt đầu giai đoạn chơi bài, một số ngẫu nhiên (ít nhất một) nhân vật khác sẽ nhận được dấu \"Rage\" cho đến hết vòng chơi; mỗi giai đoạn được giới hạn hai lần (nếu là Chủ nhà thì giới hạn một lần). Khi bạn sử dụng một lá bài để chỉ định một nhân vật có dấu \"Rage\" làm mục tiêu trong giai đoạn chơi bài, bạn loại bỏ ngẫu nhiên một trong các lá bài của mình và một trong số chúng, sau đó bạn rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__chengjiw",
+        "trueName": "chengjiw",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_lxxh/skills/kuangli.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "kurou": {
+    "zhName": "苦肉",
+    "zhDescription": "出牌阶段，你可以失去1点体力，然后摸两张牌。",
+    "currentVietnameseName": "Khổ Nhục",
+    "currentVietnameseDescription": "Giai đoạn ra bài, bạn có thể mất 1 máu, sau đó rút 2 lá.",
+    "declarations": [
+      {
+        "general": "huanggai",
+        "trueName": "huanggai",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/kurou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__aocai": {
+    "zhName": "傲才",
+    "zhDescription": "当你于回合外需要使用或打出一张基本牌时，你可以观看牌堆顶的两张牌，若你观看的牌中有相同牌名的牌，你可以使用或打出之。",
+    "currentVietnameseName": "Áo Cái",
+    "currentVietnameseDescription": "Khi bạn cần sử dụng hoặc chơi một lá bài cơ bản ngoài lượt, bạn có thể nhìn vào hai lá bài trên cùng của bộ bài. Nếu có một lá bài có cùng tên trong số các lá bài bạn xem, bạn có thể sử dụng hoặc chơi nó.",
+    "declarations": [
+      {
+        "general": "ld__zhugeke",
+        "trueName": "zhugeke",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/aocai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__baolie": {
+    "zhName": "豹烈",
+    "zhDescription": "锁定技，①出牌阶段开始时，你令所有与你势力不同且攻击范围内含有你的角色依次对你使用一张【杀】，否则你弃置其一张牌。②你对体力值不小于你的角色使用【杀】无距离与次数限制。",
+    "currentVietnameseName": "mạnh mẽ",
+    "currentVietnameseDescription": "Khóa kỹ năng, ① Khi bắt đầu giai đoạn chơi bài, bạn yêu cầu tất cả các nhân vật có lực lượng khác với bạn và bao gồm cả bạn trong phạm vi tấn công lần lượt sử dụng [Giết] lên bạn, nếu không, bạn sẽ loại bỏ một trong các lá bài của họ. ② Không có giới hạn về khoảng cách hoặc số lần bạn có thể sử dụng [Giết] đối với nhân vật có sức mạnh thể chất không kém bạn.",
+    "declarations": [
+      {
+        "general": "ld__xiahouba",
+        "trueName": "xiahouba",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/baolie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__biluan": {
+    "zhName": "避乱",
+    "zhDescription": "锁定技，其他角色计算与你的距离+X（X为你装备区内的牌数）。",
+    "currentVietnameseName": "Tị Loạn",
+    "currentVietnameseDescription": "Khóa định: khoảng cách từ các nhân vật khác đến bạn +X, với X là số lá bài trong khu trang bị của bạn.",
+    "declarations": [
+      {
+        "general": "ld__shixie",
+        "trueName": "shixie",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/biluan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__bushi": {
+    "zhName": "布施",
+    "zhDescription": "当你受到1点伤害后，你可以令势力与你相同的一名角色摸一张牌；当你对其他角色造成伤害后，你令势力与其相同的一名角色摸一张牌。",
+    "currentVietnameseName": "bố thí",
+    "currentVietnameseDescription": "Sau khi nhận được 1 điểm sát thương, bạn có thể tạo nhân vật có sức mạnh tương đương với việc bạn rút bài; sau khi gây sát thương cho nhân vật khác, bạn có thể khiến nhân vật có sức mạnh tương đương rút thẻ.",
+    "declarations": [
+      {
+        "general": "ld__zhanglu",
+        "trueName": "zhanglu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/bushi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__buyi": {
+    "zhName": "补益",
+    "zhDescription": "每回合限一次，当与你势力相同的角色的濒死结算后，若其存活，你可对伤害来源发起“军令”。若来源不执行，则你令该角色回复1点体力。",
+    "currentVietnameseName": "lợi ích",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, sau khi cái chết của một nhân vật có sức mạnh tương tự như bạn được giải quyết, nếu anh ta sống sót, bạn có thể bắt đầu \"lệnh quân sự\" chống lại nguồn gây thiệt hại. Nếu nguồn không thực thi, bạn khôi phục 1 điểm thể lực cho nhân vật.",
+    "declarations": [
+      {
+        "general": "ld__wuguotai",
+        "trueName": "wuguotai",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/buyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__chenglue": {
+    "zhName": "成略",
+    "zhDescription": "当与你势力相同的角色使用的牌结算结束后，若此牌目标数大于1，你可以令其摸一张牌，然后若你受到过此牌造成的伤害，你可以选择一名与你势力相同、武将牌均明置且没有国战标记的角色，令其获得一枚“阴阳鱼”标记。",
+    "currentVietnameseName": "Thành Lộ",
+    "currentVietnameseDescription": "Sau khi các lá bài được sử dụng bởi nhân vật có cùng sức mạnh với bạn đã được giải quyết, nếu số mục tiêu của lá bài này lớn hơn 1, bạn có thể yêu cầu anh ta rút một lá bài. Sau đó, nếu bạn đã bị lá bài này làm tổn hại, bạn có thể chọn một nhân vật có sức mạnh tương đương với bạn, với tất cả các lá bài tướng được đặt rõ ràng và không có dấu hiệu chiến tranh quốc gia, và để anh ta nhận được dấu ấn \"Cá Âm Dương\".",
+    "declarations": [
+      {
+        "general": "ld__xuyou",
+        "trueName": "xuyou",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/chenglue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__congcha": {
+    "zhName": "聪察",
+    "zhDescription": "准备阶段，你可以选择一名未确定势力的角色，然后直到你的下回合开始，当其首次明置武将牌后，若其确定的势力与你的势力：相同，你与其各摸两张牌；不同，其失去1点体力。摸牌阶段，若所有角色均已确定势力，你可以多摸两张牌。",
+    "currentVietnameseName": "Thông minh",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể chọn một nhân vật có sức mạnh không xác định và cho đến đầu lượt tiếp theo, khi anh ta đặt một lá bài chung lần đầu tiên, nếu sức mạnh xác định của anh ta giống với sức mạnh của bạn, bạn sẽ rút mỗi người hai lá bài; nếu chúng khác nhau, anh ta sẽ mất 1 điểm thể lực. Trong giai đoạn rút bài, nếu tất cả các nhân vật đã xác định được sức mạnh của mình thì bạn có thể rút thêm hai lá bài.",
+    "declarations": [
+      {
+        "general": "ld__panjun",
+        "trueName": "panjun",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/congcha.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__congjian": {
+    "zhName": "从谏",
+    "zhDescription": "锁定技，当你于回合外造成伤害时或于回合内受到伤害时，伤害值+1。",
+    "currentVietnameseName": "Khuyên răn",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn gây sát thương bên ngoài vòng đấu hoặc nhận sát thương trong vòng đấu, giá trị sát thương là +1.",
+    "declarations": [
+      {
+        "general": "ld__zhangxiu",
+        "trueName": "zhangxiu",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/congjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__diaogui": {
+    "zhName": "调归",
+    "zhDescription": "出牌阶段限一次，你可将一张装备牌当【调虎离山】使用，然后若你的势力形成<a href='heg_formation_href'>队列</a>，则你摸X张牌（X为此队列中的角色数）。",
+    "currentVietnameseName": "chuyển lại",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể sử dụng thẻ trang bị làm [Điều chỉnh hổ từ trên núi], sau đó nếu lực lượng của bạn tạo thành một <a href='heg_formation_href'>hàng đợi</a>, bạn sẽ rút X thẻ (X là số ký tự trong hàng đợi).",
+    "declarations": [
+      {
+        "general": "ld__wujing",
+        "trueName": "wujing",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/diaogui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__duwu": {
+    "zhName": "黩武",
+    "zhDescription": "限定技，出牌阶段，你可以选择一个“军令”，你对你攻击范围内所有与你势力不同或未确定势力的角色发起此“军令”，若其不执行，你对其造成1点伤害并摸一张牌。此“军令”结算后，若存在进入濒死状态被救回的角色，你失去1点体力。",
+    "currentVietnameseName": "quân sự",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn đánh bài có thể chọn “quân lệnh”. Bạn bắt đầu \"mệnh lệnh quân sự\" này đối với tất cả các nhân vật trong phạm vi tấn công của bạn khác với nhân vật của bạn hoặc có lực lượng không xác định. Nếu chúng không được thực hiện, bạn sẽ gây 1 điểm sát thương cho chúng và rút một lá bài. Sau khi “Quân lệnh” này được giải quyết, nếu có nhân vật được cứu khỏi trạng thái hấp hối, bạn sẽ bị mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "ld__zhugeke",
+        "trueName": "zhugeke",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/duwu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__enyuan": {
+    "zhName": "恩怨",
+    "zhDescription": "锁定技，当你成为【桃】的目标后，若使用者不为你，其摸一张牌；当你受到伤害后，伤害来源需交给你一张手牌，否则失去1点体力。",
+    "currentVietnameseName": "oán giận",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn trở thành mục tiêu của [Peach], nếu người dùng không phải là bạn, anh ta sẽ rút một lá bài; khi bạn bị tổn thương, nguồn gây sát thương phải đưa cho bạn một lá bài trên tay, nếu không bạn sẽ mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "ld__fazheng",
+        "trueName": "fazheng",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/enyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__fangyuan": {
+    "zhName": "方圆",
+    "zhDescription": "阵法技，①若你是围攻角色，此围攻关系中围攻角色手牌上限+1，被围攻角色手牌上限-1。②结束阶段，若你是被围攻角色，你视为对此围攻关系中一名围攻角色使用一张无距离限制的【杀】。",
+    "currentVietnameseName": "bán kính",
+    "currentVietnameseDescription": "Kỹ năng hình thành, ① Nếu bạn là nhân vật bị bao vây, trong mối quan hệ vây hãm này, giới hạn trên của quân bài của nhân vật bị bao vây là +1, và giới hạn trên của quân bài của nhân vật bị bao vây là -1. ② Ở giai đoạn cuối, nếu bạn là nhân vật bị bao vây, bạn được coi là đã sử dụng [Giết] không giới hạn khoảng cách đối với nhân vật bị bao vây trong mối quan hệ bao vây này.",
+    "declarations": [
+      {
+        "general": "ld__zhuling",
+        "trueName": "zhuling",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/fangyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__fengshih": {
+    "zhName": "锋势",
+    "zhDescription": "①当你使用牌指定其他角色为唯一目标后，若其手牌数小于你且你与其均有牌，你可以弃置你与其各一张牌，然后此牌造成伤害值+1；②当你成为其他角色使用牌的唯一目标后，若你手牌数小于其且你与其均有牌，其可以令你弃置你与其各一张牌，然后此牌造成伤害值+1。",
+    "currentVietnameseName": "đà",
+    "currentVietnameseDescription": "① Sau khi bạn sử dụng một lá bài để chỉ định một nhân vật khác làm mục tiêu duy nhất, nếu số lá bài trên tay anh ta ít hơn của bạn và bạn và anh ta đều có lá bài, bạn có thể loại bỏ một lá bài của bạn và anh ta, sau đó lá bài đó sẽ gây sát thương +1; ② Sau khi bạn trở thành mục tiêu duy nhất của nhân vật khác sử dụng thẻ, nếu số lượng thẻ trên tay của bạn ít hơn họ và bạn và anh ta đều có thẻ, bạn có thể loại bỏ một thẻ của bạn và anh ta, sau đó thẻ đó sẽ gây sát thương +1.",
+    "declarations": [
+      {
+        "general": "ld__mifangfushiren",
+        "trueName": "mifangfushiren",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/fengshih.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__fengyang": {
+    "zhName": "风扬",
+    "zhDescription": "阵法技，势力与你不同的角色不能弃置或获得与你处于同一<a href='heg_formation_href'>队列</a>角色装备区里的牌。",
+    "currentVietnameseName": "Phong Dương",
+    "currentVietnameseDescription": "Kỹ năng đội hình, những nhân vật có sức mạnh khác với bạn không thể loại bỏ hoặc lấy thẻ trong cùng khu vực trang bị của nhân vật <a href='heg_formation_href'>queue</a> như của bạn.",
+    "declarations": [
+      {
+        "general": "ld__wujing",
+        "trueName": "wujing",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/fengyang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__fengying": {
+    "zhName": "奉迎",
+    "zhDescription": "限定技，出牌阶段，你可将所有手牌当【挟天子以令诸侯】（无视大势力限制）使用，然后所有与你势力相同的角色将手牌补至其体力上限。",
+    "currentVietnameseName": "Chào mừng",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể sử dụng tất cả các quân bài trên tay của mình dưới dạng [Giữ Hoàng đế chỉ huy các hoàng tử] (bỏ qua các hạn chế của lực lượng lớn), sau đó tất cả các nhân vật có cùng sức mạnh với bạn sẽ bổ sung các quân bài trên tay của họ đến sức mạnh thể chất tối đa.",
+    "declarations": [
+      {
+        "general": "ld__cuiyanmaojie",
+        "trueName": "cuiyanmaojie",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/fengying.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__fudi": {
+    "zhName": "附敌",
+    "zhDescription": "当你受到伤害后，你可以交给伤害来源一张手牌，若如此做，你对与其势力相同的角色中体力值最大且不小于你的一名角色造成1点伤害。",
+    "currentVietnameseName": "Gắn kẻ thù",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, bạn có thể đưa cho nguồn gây sát thương một lá bài trên tay. Nếu làm như vậy, bạn sẽ gây 1 điểm sát thương cho nhân vật có thể lực cao nhất và không kém gì nhân vật của bạn trong số những nhân vật có cùng sức mạnh.",
+    "declarations": [
+      {
+        "general": "ld__zhangxiu",
+        "trueName": "zhangxiu",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/fudi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__huaiyi": {
+    "zhName": "怀异",
+    "zhDescription": "出牌阶段限一次，你可展示所有手牌，若其中包含两种颜色，则你弃置其中一种颜色的牌，然后获得至多X名角色的各一张牌（X为你以此法弃置的手牌数）。你将以此法获得的装备牌置于武将牌上，称为“异”。",
+    "currentVietnameseName": "Hãy nghi ngờ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể tiết lộ tất cả các thẻ trong tay của bạn. Nếu nó có hai màu, bạn loại bỏ các quân bài của một trong các màu, sau đó lấy một quân bài từ mỗi màu có tối đa X ký tự (X là số quân bài trên tay bạn bị loại bỏ theo cách này). Bạn đặt thẻ thiết bị thu được theo cách này vào thẻ chung, được gọi là \"khác biệt\".",
+    "declarations": [
+      {
+        "general": "ld__gongsunyuan",
+        "trueName": "gongsunyuan",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/huaiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__huyuan": {
+    "zhName": "护援",
+    "zhDescription": "当与你势力相同的角色成为【杀】的目标时，你可以将一张牌当【调虎离山】对其他势力角色使用（不能为当前回合角色）。",
+    "currentVietnameseName": "hộ tống",
+    "currentVietnameseDescription": "Khi một nhân vật cùng thế lực với bạn trở thành mục tiêu của [Sát], bạn có thể dùng [Điệu Hổ Ly Sơn] để chuyển mục tiêu sang các nhân vật khác (không thể là nhân vật của vòng hiện tại).",
+    "declarations": [
+      {
+        "general": "ld__caohong",
+        "trueName": "caohong",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/huyuan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jieyue": {
+    "zhName": "节钺",
+    "zhDescription": "准备阶段，你可以将一张手牌交给一名不是魏势力的其他角色，对其发起“军令”。若其执行，你摸一张牌，否则你本回合摸牌阶段额定摸三张牌。",
+    "currentVietnameseName": "Giải Nhạc",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể đưa lá bài trên tay cho một nhân vật khác không phải quân Ngụy và ra “lệnh quân sự” cho người đó. Nếu nó được thực hiện, bạn rút một lá bài, nếu không bạn sẽ rút thêm ba lá bài trong giai đoạn rút bài của vòng này.",
+    "declarations": [
+      {
+        "general": "ld__yujin",
+        "trueName": "yujin",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/jieyue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jilis": {
+    "zhName": "蒺藜",
+    "zhDescription": "当你于一回合内使用或打出第X张牌时，你可以摸X张牌（X为你的攻击范围）。",
+    "currentVietnameseName": "bạch tật lê",
+    "currentVietnameseDescription": "Khi bạn sử dụng hoặc chơi lá bài X trong một vòng, bạn có thể rút lá bài X (X là phạm vi tấn công của bạn).",
+    "declarations": [
+      {
+        "general": "ld__shamoke",
+        "trueName": "shamoke",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/jilis.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jilix": {
+    "zhName": "寄篱",
+    "zhDescription": "锁定技，当你成为红色基本牌或红色普通锦囊牌的唯一目标后，你令此牌额外结算一次；当你于一个阶段内第二次受到伤害时，你防止此伤害，然后移除此武将牌。",
+    "currentVietnameseName": "hàng rào",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn trở thành mục tiêu duy nhất của thẻ cơ bản màu đỏ hoặc thẻ kit chung màu đỏ, bạn sẽ thực hiện quyết định của thẻ này thêm một lần nữa; khi bạn nhận sát thương lần thứ hai trong một pha, bạn ngăn chặn sát thương này và sau đó loại bỏ lá bài chung này.",
+    "declarations": [
+      {
+        "general": "ld__yanbaihu",
+        "trueName": "yanbaihu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/jilix.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jinfa": {
+    "zhName": "矜伐",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张牌并选择一名其他角色，令其选择一项：1.令你获得其一张牌；2.交给你一张装备牌，若此装备牌为♠，其视为对你使用一张【杀】。",
+    "currentVietnameseName": "tự phụ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể bỏ một lá bài và chọn một nhân vật khác để chọn một trong các nhân vật sau: 1. Để bạn lấy một trong các lá bài của họ; 2. Đưa cho bạn thẻ thiết bị. Nếu thẻ trang bị là ♠, nó được coi là dùng [Giết] lên bạn.",
+    "declarations": [
+      {
+        "general": "ld__wenqin",
+        "trueName": "wenqin",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/jinfa.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jinxian": {
+    "zhName": "近陷",
+    "zhDescription": "当你明置此武将牌后，你令所有你计算距离不大于1的角色执行：若其武将牌均明置，暗置一张武将牌；否则其弃置两张牌。",
+    "currentVietnameseName": "gần bồn rửa",
+    "currentVietnameseDescription": "Sau khi đặt thẻ tướng này một cách công khai, bạn yêu cầu tất cả các nhân vật có khoảng cách mà bạn tính toán không lớn hơn 1 thực hiện: Nếu tất cả các thẻ tướng của họ bị lộ, hãy bí mật đặt một thẻ tướng; nếu không, họ sẽ bỏ hai lá bài.",
+    "declarations": [
+      {
+        "general": "ld__pengyang",
+        "trueName": "pengyang",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/jinxian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jixi": {
+    "zhName": "急袭",
+    "zhDescription": "主将技，你计算体力上限时减少一个单独的阴阳鱼。你可以将一张“田”当【顺手牵羊】使用。",
+    "currentVietnameseName": "tấn công bất ngờ",
+    "currentVietnameseDescription": "Kỹ năng chính là giảm giới hạn thời gian của sức mạnh thể chất của bạn chỉ bằng một con cá Âm Dương. Bạn có thể sử dụng một \"cánh đồng\" như một \"tay trong tay\".",
+    "declarations": [
+      {
+        "general": "ld__dengai",
+        "trueName": "dengai",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/jixi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__juejue": {
+    "zhName": "决绝",
+    "zhDescription": "你杀死与你势力相同的角色不执行奖惩。<br>弃牌阶段开始时，你可以失去1点体力，若如此做，此阶段结束时，若你于此阶段内弃置过手牌，你令所有其他角色依次选择一项：1.将X张手牌置入弃牌堆；2.受到你造成的1点伤害（X为你于此阶段内弃置的牌数）。",
+    "currentVietnameseName": "quyết định",
+    "currentVietnameseDescription": "Sẽ không có phần thưởng hay hình phạt nào được thực hiện nếu bạn giết một nhân vật có sức mạnh tương đương với bạn. <br>Khi bắt đầu giai đoạn loại bỏ, bạn có thể mất 1 điểm thể lực. Nếu bạn làm như vậy, khi kết thúc giai đoạn này, nếu bạn loại bỏ các lá bài trên tay của mình trong giai đoạn này, bạn yêu cầu tất cả các nhân vật khác lần lượt chọn một lá bài: 1. Đặt X lá bài trên tay bạn vào chồng bài bỏ; 2. Nhận 1 điểm sát thương từ bạn (X là số lá bài bạn loại bỏ trong giai đoạn này).",
+    "declarations": [
+      {
+        "general": "ld__zhuling",
+        "trueName": "zhuling",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/juejue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__jujian": {
+    "zhName": "举荐",
+    "zhDescription": "副将技，锁定技，此武将牌上单独的阴阳鱼个数-1。当与你势力相同的角色进入濒死阶段时，你令其将体力回复至1点，然后你变更副将。",
+    "currentVietnameseName": "Gợi ý",
+    "currentVietnameseDescription": "Kỹ năng chung phụ, kỹ năng khóa, số lượng cá Âm Dương riêng lẻ trên thẻ tướng này là -1. Khi một nhân vật có sức mạnh tương đương với bạn bước vào giai đoạn hấp hối, bạn yêu cầu anh ta phục hồi thể lực về 1 điểm, sau đó bạn thay đổi trung úy của anh ta.",
+    "declarations": [
+      {
+        "general": "ld__xushu",
+        "trueName": "xushu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/jujian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__keshou": {
+    "zhName": "恪守",
+    "zhDescription": "当你一次失去两张牌后，你可以令一名与你势力相同的角色下回合受到的伤害-1。",
+    "currentVietnameseName": "tuân theo",
+    "currentVietnameseDescription": "Khi bạn mất hai lá bài cùng một lúc, bạn có thể khiến nhân vật có cùng sức mạnh với bạn nhận -1 sát thương trong lượt tiếp theo.",
+    "declarations": [
+      {
+        "general": "ld__lukang",
+        "trueName": "lukang",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/keshou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__liangfan": {
+    "zhName": "量反",
+    "zhDescription": "准备阶段，若你的武将牌上有“函”，则你获得所有的“函”，然后失去1点体力。当使用本回合获得的“函”造成伤害后，你可以获得受伤角色的一张牌。",
+    "currentVietnameseName": "Biện pháp đối phó",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, nếu thẻ tướng của bạn có một “chữ cái” trên đó, bạn sẽ nhận được tất cả các “chữ cái” và sau đó mất 1 điểm thể lực. Khi sử dụng “lá thư” thu được ở vòng này để gây sát thương, bạn có thể nhận được lá bài của nhân vật bị thương.",
+    "declarations": [
+      {
+        "general": "ld__mengda",
+        "trueName": "mengda",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/liangfan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__lianpian": {
+    "zhName": "联翩",
+    "zhDescription": "结束阶段，若你于此回合内弃置任意角色牌的总数大于你的体力值，你可以令一名与你势力相同的角色将手牌摸至体力上限。其他角色的结束阶段，若其于此回合内弃置任意角色牌的总数大于你的体力值，其可以弃置你的一张牌或令你回复1点体力。",
+    "currentVietnameseName": "Liên Liên",
+    "currentVietnameseDescription": "Ở giai đoạn cuối, nếu tổng số thẻ nhân vật bạn loại bỏ trong vòng này lớn hơn sức mạnh thể chất của bạn, bạn có thể có một nhân vật có sức mạnh tương đương với việc bạn rút thẻ từ tay lên đến giới hạn trên của sức mạnh thể chất. Trong giai đoạn kết thúc của các nhân vật khác, nếu tổng số thẻ nhân vật bị họ loại bỏ trong vòng này lớn hơn sức mạnh thể chất của bạn, họ có thể loại bỏ một trong các thẻ của bạn hoặc khôi phục 1 điểm vật lý cho bạn.",
+    "declarations": [
+      {
+        "general": "ld__sufei",
+        "trueName": "sufei",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/lianpian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__lixia": {
+    "zhName": "礼下",
+    "zhDescription": "锁定技，其他势力角色的准备阶段，若你不在其攻击范围内，该角色须选择一项：1.令你摸一张牌；2.弃置你装备区内的一张牌，该角色失去1点体力。",
+    "currentVietnameseName": "Lễ Hạ",
+    "currentVietnameseDescription": "Khóa định: Đầu giai đoạn chuẩn bị của nhân vật khác thế lực với bạn, nếu bạn nằm ngoài phạm vi tấn công của người đó, họ phải chọn một: cho bạn rút 1 lá; hoặc bỏ 1 lá trong khu trang bị của bạn rồi họ mất 1 máu.",
+    "declarations": [
+      {
+        "general": "ld__shixie",
+        "trueName": "shixie",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/lixia.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__midao": {
+    "zhName": "米道",
+    "zhDescription": "势力与你相同的角色于其出牌阶段内限一次，当其使用【杀】或伤害类锦囊牌指定目标时，其可以交给你一张手牌，令你声明一种花色和一种属性，其此次使用牌的花色和造成伤害的属性改为你声明的花色和属性。",
+    "currentVietnameseName": "Midao",
+    "currentVietnameseDescription": "Một nhân vật có sức mạnh tương đương với bạn chỉ có thể sử dụng nó một lần trong giai đoạn chơi bài. Khi nó sử dụng thẻ mẹo [tiêu diệt] hoặc loại sát thương để chỉ định mục tiêu, nó có thể đưa cho bạn một thẻ và cho phép bạn khai báo một bộ đồ và một thuộc tính. Thuộc tính chất và gây sát thương của lá bài mà nó sử dụng lần này sẽ được thay đổi thành chất và thuộc tính mà bạn đã khai báo.",
+    "declarations": [
+      {
+        "general": "ld__zhanglu",
+        "trueName": "zhanglu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/midao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__paiyi": {
+    "zhName": "排异",
+    "zhDescription": "出牌阶段限一次，你可将一张“权”置入弃牌堆并选择一名角色，其摸X张牌，若其手牌数大于你，你对其造成1点伤害（X为“权”的数量且至多为7）。",
+    "currentVietnameseName": "sự từ chối",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể đặt một quân \"Quan\" vào đống bỏ đi và chọn một nhân vật. Anh ấy sẽ vẽ",
+    "declarations": [
+      {
+        "general": "ld__zhonghui",
+        "trueName": "zhonghui",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/paiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__qiance": {
+    "zhName": "谦策",
+    "zhDescription": "与你势力相同的角色使用锦囊牌指定目标后，其可令其中的大势力角色不能响应此牌。",
+    "currentVietnameseName": "Khiêm tốn",
+    "currentVietnameseDescription": "Sau khi một nhân vật có sức mạnh tương đương với bạn sử dụng thẻ mẹo để chỉ định mục tiêu, điều đó có thể khiến nhân vật có quyền lực lớn trong số họ không thể phản ứng với thẻ này.",
+    "declarations": [
+      {
+        "general": "ld__xushu",
+        "trueName": "xushu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/qiance.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__qice": {
+    "zhName": "奇策",
+    "zhDescription": "出牌阶段限一次，你可将所有手牌当任意一张普通锦囊牌使用，你不能以此法使用目标数大于X的牌（X为你的手牌数），然后你可变更副将。",
+    "currentVietnameseName": "Chiến lược tuyệt vời",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể sử dụng tất cả các lá bài trên tay như bất kỳ lá bài kit thông thường nào. Bạn không thể sử dụng các quân bài có số mục tiêu lớn hơn X theo cách này (X là số quân bài trên tay bạn). Sau đó bạn có thể thay đổi trung úy của bạn.",
+    "declarations": [
+      {
+        "general": "ld__xunyou",
+        "trueName": "xunyou",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/qice.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__qingyin": {
+    "zhName": "清隐",
+    "zhDescription": "限定技，出牌阶段，你可以令所有与你势力相同的角色将体力回复至体力上限，然后你移除此武将牌。",
+    "currentVietnameseName": "thanh âm",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể khiến tất cả các nhân vật có cùng sức mạnh khi bạn khôi phục thể lực của họ về giới hạn trên của thể lực, sau đó bạn loại bỏ lá bài chung này.",
+    "declarations": [
+      {
+        "general": "ld__liuba",
+        "trueName": "liuba",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/qingyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__qiuan": {
+    "zhName": "求安",
+    "zhDescription": "当你受到伤害时，若没有“函”，你可将造成此伤害的牌置于武将牌上，称为“函”，然后防止此伤害。",
+    "currentVietnameseName": "Tìm kiếm hòa bình",
+    "currentVietnameseDescription": "Khi nhận sát thương, nếu không có “chữ”, bạn có thể đặt lá bài gây sát thương lên lá bài chung, gọi là “chữ”, sau đó ngăn chặn thiệt hại.",
+    "declarations": [
+      {
+        "general": "ld__mengda",
+        "trueName": "mengda",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/qiuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__quanji": {
+    "zhName": "权计",
+    "zhDescription": "每回合各限一次，当你受到伤害或造成伤害后，你可摸一张牌，然后将一张牌置于武将牌上，称为“权”；你的手牌上限+X（X为“权”的数量）。",
+    "currentVietnameseName": "Kế hoạch điện",
+    "currentVietnameseDescription": "Mỗi lượt được giới hạn một lần. Khi nhận sát thương hoặc gây sát thương, bạn có thể rút bài, sau đó đặt một lá bài vào lá bài chung, gọi là “Quan”; giới hạn trên của lá bài trên tay của bạn + X (X là số “Quan”).",
+    "declarations": [
+      {
+        "general": "ld__zhonghui",
+        "trueName": "zhonghui",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/quanji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__sanyao": {
+    "zhName": "散谣",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张牌并选择一名体力值最大的角色，你对其造成1点伤害。",
+    "currentVietnameseName": "lan truyền tin đồn",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể loại bỏ một lá bài và chọn một nhân vật có giá trị máu cao nhất và gây 1 điểm sát thương cho nhân vật đó.",
+    "declarations": [
+      {
+        "general": "ld__masu",
+        "trueName": "masu",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/sanyao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__shicai": {
+    "zhName": "恃才",
+    "zhDescription": "锁定技，当你受到伤害后，若此伤害为1点，你摸一张牌，否则你弃置两张牌。",
+    "currentVietnameseName": "Dựa vào tài năng",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi nhận sát thương, nếu sát thương là 1 điểm thì bạn rút một lá bài, nếu không thì bỏ hai lá bài.",
+    "declarations": [
+      {
+        "general": "ld__xuyou",
+        "trueName": "xuyou",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/shicai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__suzhi": {
+    "zhName": "夙智",
+    "zhDescription": "锁定技，你的回合内：1.你执行【杀】或【决斗】的效果而造成伤害时，此伤害+1；2.你使用非转化锦囊牌时摸一张牌且无距离限制；3.其他角色的牌被弃置后，你获得其一张牌。当你于一回合内触发上述效果三次后，此技能于此回合内失效。回合结束时，你获得〖反馈〗直至回合开始。",
+    "currentVietnameseName": "Suzhi",
+    "currentVietnameseDescription": "Khóa các kỹ năng trong lượt của bạn: 1. Khi bạn thực hiện hiệu ứng [Giết] hoặc [Trận đấu] và gây sát thương, sát thương là +1; 2. Khi bạn sử dụng thẻ kit không chuyển đổi, bạn rút thẻ và không giới hạn khoảng cách; 3. Sau khi loại bỏ thẻ của các nhân vật khác, bạn sẽ nhận được một trong các thẻ của họ. Khi bạn kích hoạt hiệu ứng trên ba lần trong một vòng, kỹ năng này sẽ không còn hiệu lực trong vòng này. Khi kết thúc vòng đấu, bạn nhận được [Phản hồi] cho đến khi vòng đấu bắt đầu.",
+    "declarations": [
+      {
+        "general": "ld__simazhao",
+        "trueName": "simazhao",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/suzhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__tongdu": {
+    "zhName": "统度",
+    "zhDescription": "与你势力相同的角色的结束阶段，其可以摸X张牌（X为其本回合弃牌阶段弃置的牌数且至多为3）。",
+    "currentVietnameseName": "bằng cấp thống nhất",
+    "currentVietnameseDescription": "Ở giai đoạn cuối, nhân vật có sức mạnh ngang bằng với bạn, người đó có thể rút X lá bài (X là số lá bài bỏ trong giai đoạn loại bỏ của vòng này và tối đa là 3).",
+    "declarations": [
+      {
+        "general": "ld__liuba",
+        "trueName": "liuba",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/tongdu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__tongling": {
+    "zhName": "通令",
+    "zhDescription": "每阶段限一次，当你于出牌阶段内对其它势力角色造成伤害后，你可令一名与你势力相同的角色对其使用一张牌，然后若此牌：造成伤害，你与其各摸两张牌；未造成伤害，其获得你对其造成伤害的牌。",
+    "currentVietnameseName": "trật tự chung",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi màn, sau khi bạn gây sát thương cho một nhân vật từ một thế lực khác trong giai đoạn chơi bài, bạn có thể yêu cầu một nhân vật có cùng sức mạnh với bạn sử dụng một lá bài trên đó. Sau đó, nếu lá bài: gây sát thương, bạn và người kia mỗi người rút hai lá bài; nếu nó không gây thiệt hại, nó sẽ nhận được thẻ mà bạn đã gây ra thiệt hại.",
+    "declarations": [
+      {
+        "general": "ld__pengyang",
+        "trueName": "pengyang",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/tongling.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__tunjiang": {
+    "zhName": "屯江",
+    "zhDescription": "结束阶段，若你于此回合的出牌阶段内使用过牌且未指定过其他角色为目标，你可摸X张牌（X为场上势力数）。",
+    "currentVietnameseName": "đôn giang",
+    "currentVietnameseDescription": "Ở giai đoạn cuối, nếu bạn sử dụng thẻ chuyền trong giai đoạn đánh bài của vòng này và chưa chỉ định nhân vật khác làm mục tiêu, bạn có thể rút thẻ X (X là số lực trên sân).",
+    "declarations": [
+      {
+        "general": "ld__liuqi",
+        "trueName": "liuqi",
+        "package": "lord_ex"
+      },
+      {
+        "general": "os_heg__liuqi",
+        "trueName": "liuqi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/tunjiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__tuntian": {
+    "zhName": "屯田",
+    "zhDescription": "当你于回合外失去牌后，你可以进行判定，若结果不为<font color='red'>♥</font>，你可以将弃牌堆里的此判定牌置于武将牌上，称为“田”。你计算与其他角色的距离-X（X为“田”数）。",
+    "currentVietnameseName": "tuntian",
+    "currentVietnameseDescription": "Sau khi bạn bị mất lá bài ngoài vòng đấu, bạn có thể đưa ra phán quyết. Nếu kết quả không phải là <font color='red'>♥</font>, bạn có thể đặt thẻ phán đoán vào chồng bài bỏ trên thẻ chung, gọi là \"trường\". Bạn tính khoảng cách tới các ký tự khác -X (X là số “trường”).",
+    "declarations": [
+      {
+        "general": "ld__dengai",
+        "trueName": "dengai",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/tuntian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__wanwei": {
+    "zhName": "挽危",
+    "zhDescription": "每回合限一次，与你势力相同的其他角色进入濒死阶段后，你可以交给其至多三张牌，然后其脱离濒死阶段后，你摸等量的牌。",
+    "currentVietnameseName": "Cứu nguy khủng hoảng",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, sau khi một nhân vật khác có cùng sức mạnh với bạn bước vào giai đoạn hấp hối, bạn có thể chia tối đa ba lá bài cho nhân vật đó, và sau khi nhân vật đó thoát khỏi giai đoạn hấp hối, bạn rút cùng số lượng thẻ.",
+    "declarations": [
+      {
+        "general": "ld__bianfuren",
+        "trueName": "bianfuren",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/wanwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__weidi": {
+    "zhName": "伪帝",
+    "zhDescription": "出牌阶段限一次，你可以选择一名本回合从牌堆获得过牌的其他角色，对其发起“军令”。若其不执行，你获得其所有手牌，然后交给其等量的牌。",
+    "currentVietnameseName": "hoàng đế giả",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật khác đã nhận được một lá bài từ bộ bài ở vòng này và ra \"lệnh quân sự\" cho nhân vật đó. Nếu anh ta không làm, bạn lấy tất cả quân bài trên tay anh ta rồi đưa cho anh ta số quân bài bằng nhau.",
+    "declarations": [
+      {
+        "general": "ld__yuanshu",
+        "trueName": "yuanshu",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/weidi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__wenji": {
+    "zhName": "问计",
+    "zhDescription": "出牌阶段开始时，你可以令一名其他角色交给你一张牌，然后若其势力与你相同或未确定势力，你于此回合内使用此牌无距离与次数限制且不能被响应，否则你交给其另一张牌。",
+    "currentVietnameseName": "Xin lời khuyên",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể nhờ nhân vật khác đưa cho mình một lá bài, sau đó nếu sức mạnh của nó bằng sức mạnh của bạn hoặc sức mạnh của nó không xác định được thì bạn có thể sử dụng lá bài này trong vòng này không giới hạn khoảng cách, số lần và không thể phản hồi được, nếu không bạn sẽ đưa cho nó một lá bài khác.",
+    "declarations": [
+      {
+        "general": "ld__liuqi",
+        "trueName": "liuqi",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/wenji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__xingzhao": {
+    "zhName": "兴棹",
+    "zhDescription": "锁定技，若场上受伤角色的势力数为：1个或以上，你拥有〖恂恂〗；2个或以上，你受到伤害后，你与伤害来源手牌数较少的角色摸一张牌；3个或以上，你的手牌上限+4；4个或以上，你失去装备区内的牌时，摸一张牌。",
+    "currentVietnameseName": "Tinh Sở",
+    "currentVietnameseDescription": "Khóa kỹ năng, nếu số nhân vật bị thương trên sân là: 1 trở lên, bạn có [Xunxun]; 2 trở lên, sau khi bị thương, bạn và nhân vật có số lá bài trên tay của nguồn gây sát thương nhỏ hơn sẽ rút một lá bài; 3 trở lên, giới hạn bài trên tay của bạn +4; 4 trở lên, khi bị mất bài ở khu vực trang bị thì rút bài.",
+    "declarations": [
+      {
+        "general": "ld__tangzi",
+        "trueName": "tangzi",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/xingzhao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__xishe": {
+    "zhName": "袭射",
+    "zhDescription": "其他角色的准备阶段，你可以弃置一张装备区内的牌，视为对其使用一张【杀】（体力值小于你的角色不能响应），然后你可以重复此流程。此回合结束时，若你以此法杀死了一名角色，你可以变更副将且变更后的副将处于暗置状态。",
+    "currentVietnameseName": "tấn công",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị của các nhân vật khác, bạn có thể loại bỏ một thẻ trong khu vực thiết bị, được coi là sử dụng [Giết] trên đó (các ký tự có giá trị vật lý nhỏ hơn giá trị vật lý của bạn không thể phản hồi), sau đó bạn có thể lặp lại quá trình này. Khi kết thúc vòng này, nếu bạn giết một nhân vật theo cách này, bạn có thể thay đổi trung úy của mình và trung úy đã thay đổi sẽ ở trạng thái ẩn.",
+    "declarations": [
+      {
+        "general": "ld__huangzu",
+        "trueName": "huangzu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/xishe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__xuanhuo": {
+    "zhName": "眩惑",
+    "zhDescription": "势力与你相同的其他角色的出牌阶段限一次，其可以交给你一张手牌，然后其弃置一张牌，选择并获得下列技能中当前场上没有的一个直到回合结束：〖武圣〗〖咆哮〗〖龙胆〗〖铁骑〗〖烈弓〗〖狂骨〗。",
+    "currentVietnameseName": "lóa mắt",
+    "currentVietnameseDescription": "Những nhân vật khác có sức mạnh tương tự như bạn chỉ được chơi bài một lần trong giai đoạn chơi của họ. Họ có thể đưa cho bạn một lá bài trên tay, sau đó họ loại bỏ một lá bài và chọn và nhận được một trong những kỹ năng sau mà hiện không có trên sân cho đến cuối vòng: [Võ Thánh] [Gầm] [Rgentan] [Kỵ binh sắt] [Cung lửa] [Crazy Bone].",
+    "declarations": [
+      {
+        "general": "ld__fazheng",
+        "trueName": "fazheng",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/xuanhuo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__xue": {
+    "zhName": "蓄锷",
+    "zhDescription": "准备阶段，你可以视为对一个队列或围攻关系的所有其他角色使用一张【调虎离山】，然后你将手牌摸至与这些角色数相同。",
+    "currentVietnameseName": "cửa hàng điện tử",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể coi tất cả các nhân vật khác trong mối quan hệ xếp hàng hoặc vây hãm như sử dụng một [Di chuyển hổ khỏi núi], sau đó rút cùng số lượng bài trên tay của bạn như những nhân vật này.",
+    "declarations": [
+      {
+        "general": "ld__zhangren",
+        "trueName": "zhangren",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/xue.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__yongsi": {
+    "zhName": "庸肆",
+    "zhDescription": "锁定技，①若所有角色的装备区里均没有【玉玺】，你视为装备着【玉玺】；②当你成为【知己知彼】的目标后，展示所有手牌。",
+    "currentVietnameseName": "tầm thường",
+    "currentVietnameseDescription": "Khóa kỹ năng, ① Nếu không có [Dấu ngọc] trong khu vực trang bị của tất cả các nhân vật, bạn được coi là được trang bị [Dấu ngọc]; ② Khi bạn trở thành mục tiêu của [Biết mình và biết kẻ thù], hãy hiển thị tất cả lá bài trên tay bạn.",
+    "declarations": [
+      {
+        "general": "ld__yuanshu",
+        "trueName": "yuanshu",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/yongsi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__yuejian": {
+    "zhName": "约俭",
+    "zhDescription": "锁定技，所有与你势力相同的角色的手牌上限+X（X为其已损失的体力值）。",
+    "currentVietnameseName": "tằn tiện",
+    "currentVietnameseDescription": "Khóa kỹ năng, giới hạn tay của tất cả nhân vật có cùng sức mạnh với bạn là +X (X là giá trị vật lý bị mất).",
+    "declarations": [
+      {
+        "general": "ld__bianfuren",
+        "trueName": "bianfuren",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/yuejian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhaoxin": {
+    "zhName": "昭心",
+    "zhDescription": "当你受到伤害后，你可展示所有手牌，然后与一名手牌数不大于你的角色交换手牌。",
+    "currentVietnameseName": "Triệu Tân",
+    "currentVietnameseDescription": "Sau khi nhận sát thương, bạn có thể tiết lộ tất cả quân bài trên tay rồi trao đổi quân bài với nhân vật không có nhiều quân bài hơn bạn.",
+    "declarations": [
+      {
+        "general": "ld__simazhao",
+        "trueName": "simazhao",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/zhaoxin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhengbi": {
+    "zhName": "征辟",
+    "zhDescription": "出牌阶段开始时，你可选择一项：1.选择一名没有势力的角色，直至其确定势力或此回合结束，你对其使用牌无距离与次数限制；2.将一张基本牌交给一名已确定势力的角色，然后其交给你一张非基本牌或两张基本牌。",
+    "currentVietnameseName": "chinh phục",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn đánh bài, bạn có thể chọn một trong các cách sau: 1. Chọn nhân vật không có sức mạnh. Cho đến khi nó xác định được sức mạnh của mình hoặc kết thúc vòng này, bạn không bị giới hạn về khoảng cách hoặc số lần sử dụng thẻ; 2. Đưa một lá bài cơ bản cho nhân vật đã được xác định sức mạnh, sau đó người đó sẽ đưa cho bạn một lá bài không cơ bản hoặc hai lá bài cơ bản.",
+    "declarations": [
+      {
+        "general": "ld__cuiyanmaojie",
+        "trueName": "cuiyanmaojie",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/zhengbi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhidao": {
+    "zhName": "雉盗",
+    "zhDescription": "锁定技，出牌阶段开始时，你选择一名其他角色，直到回合结束：你与其距离视为1，你不能使用牌指定除你与其以外的角色为目标，然后当你于出牌阶段内第一次对其造成伤害后，你获得其区域内的一张牌。",
+    "currentVietnameseName": "tên cướp gà lôi",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bắt đầu giai đoạn chơi bài, bạn chọn một nhân vật khác cho đến khi kết thúc vòng chơi: khoảng cách giữa bạn và nhân vật đó được coi là 1, bạn không thể dùng bài để nhắm vào các nhân vật khác ngoài bạn và nhân vật đó, sau đó khi bạn gây sát thương cho nhân vật đó lần đầu tiên trong giai đoạn chơi bài, bạn sẽ nhận được một lá bài trong khu vực của nó.",
+    "declarations": [
+      {
+        "general": "ld__yanbaihu",
+        "trueName": "yanbaihu",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/zhidao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhiman": {
+    "zhName": "制蛮",
+    "zhDescription": "当你对其他角色造成伤害时，你可防止此伤害，你获得其装备区或判定区里的一张牌。若其与你势力相同，你可令其选择是否变更副将。",
+    "currentVietnameseName": "kiểm soát những kẻ man rợ",
+    "currentVietnameseDescription": "Khi bạn gây sát thương cho một nhân vật khác, bạn ngăn chặn thiệt hại đó bằng cách nhận được một thẻ từ vùng trang bị hoặc vùng phán đoán của họ. Nếu nó có sức mạnh tương đương với bạn, bạn có thể để nó lựa chọn có thay đổi trung úy hay không.",
+    "declarations": [
+      {
+        "general": "ld__masu",
+        "trueName": "masu",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/zhiman.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhiyu": {
+    "zhName": "智愚",
+    "zhDescription": "当你受到伤害后，你可以摸一张牌，然后展示所有手牌，若颜色均相同，伤害来源弃置一张手牌。",
+    "currentVietnameseName": "Sự khôn ngoan và sự ngu ngốc",
+    "currentVietnameseDescription": "Khi nhận sát thương, bạn có thể rút một lá bài và sau đó tiết lộ tất cả các lá bài trên tay. Nếu tất cả chúng đều có cùng màu, nguồn gây sát thương sẽ loại bỏ lá bài trên tay bạn.",
+    "declarations": [
+      {
+        "general": "ld__xunyou",
+        "trueName": "xunyou",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/zhiyu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zhuwei": {
+    "zhName": "筑围",
+    "zhDescription": "出牌阶段限一次，你可以弃置两张牌并选择一名角色，若该角色死亡可以令场上形成新的围攻关系，你对其造成2点伤害，否则你摸一张牌。",
+    "currentVietnameseName": "xây dựng một cuộc bao vây",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể loại bỏ hai thẻ và chọn một nhân vật. Nếu nhân vật chết, mối quan hệ vây hãm mới sẽ được hình thành trên sân. Bạn sẽ gây ra 2 điểm sát thương cho nó, nếu không bạn sẽ rút bài.",
+    "declarations": [
+      {
+        "general": "ld__lukang",
+        "trueName": "lukang",
+        "package": "power"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/zhuwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ld__zisui": {
+    "zhName": "恣睢",
+    "zhDescription": "锁定技，①摸牌阶段，你多摸X张牌；②结束阶段，若X大于你的体力上限，你死亡（X为“异”的数量）。",
+    "currentVietnameseName": "tùy tiện",
+    "currentVietnameseDescription": "Kỹ năng khóa: ① Trong giai đoạn rút bài, bạn rút thêm X lá bài; ② Khi kết thúc giai đoạn, nếu X lớn hơn giới hạn thể lực trên của bạn, bạn sẽ chết (X là số lá bài “phi thường”).",
+    "declarations": [
+      {
+        "general": "ld__gongsunyuan",
+        "trueName": "gongsunyuan",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/zisui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "leiji": {
+    "zhName": "雷击",
+    "zhDescription": "当你使用或打出【闪】时，你可以令一名角色进行判定，若结果为♠，你对其造成2点雷电伤害。",
+    "currentVietnameseName": "sét đánh",
+    "currentVietnameseDescription": "Khi bạn sử dụng hoặc chơi [Dodge], bạn có thể khiến nhân vật đưa ra phán đoán. Nếu kết quả là ♠, bạn sẽ gây ra 2 điểm sát thương sét cho nó.",
+    "declarations": [
+      {
+        "general": "hs__zhangjiao",
+        "trueName": "zhangjiao",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/wind/skills/leiji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lianhuan": {
+    "zhName": "连环",
+    "zhDescription": "你可以将一张♣手牌当【铁索连环】使用或重铸。",
+    "currentVietnameseName": "nối tiếp",
+    "currentVietnameseDescription": "Bạn có thể sử dụng lá bài ♣ trên tay làm [Iron Chain] hoặc sử dụng lại nó.",
+    "declarations": [
+      {
+        "general": "hs__pangtong",
+        "trueName": "pangtong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/lianhuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lianhuo": {
+    "zhName": "链祸",
+    "zhDescription": "锁定技，当你受到火焰伤害时，若你处于连环状态且你是传导伤害的起点，则此伤害+1。",
+    "currentVietnameseName": "Chuỗi thảm họa",
+    "currentVietnameseDescription": "(bắt buộc) Khi bạn chịu DMG lửa, nếu bạn bị xích và bạn là nạn nhân đầu tiên chịu sát thương này, +1 DMG.",
+    "declarations": [
+      {
+        "general": "os_heg__cenhun",
+        "trueName": "cenhun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2016/skills/lianhuo.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lianying": {
+    "zhName": "连营",
+    "zhDescription": "当你失去手牌后，若你没有手牌，你可以摸一张牌。",
+    "currentVietnameseName": "Liên Doanh",
+    "currentVietnameseDescription": "Sau khi bạn mất bài trên tay, nếu bạn không có bài trên tay, bạn có thể rút 1 lá.",
+    "declarations": [
+      {
+        "general": "luxun",
+        "trueName": "luxun",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/lianying.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lieren": {
+    "zhName": "烈刃",
+    "zhDescription": "当你使用【杀】对目标角色造成伤害后，你可以与其拼点，若你赢，你获得其一张牌。",
+    "currentVietnameseName": "Lưỡi dao dữ dội",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để gây sát thương cho nhân vật mục tiêu, bạn có thể chiến đấu với anh ta để lấy điểm. Nếu bạn thắng, bạn sẽ nhận được một trong những lá bài của anh ấy.",
+    "declarations": [
+      {
+        "general": "hs__zhurong",
+        "trueName": "zhurong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/lieren.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lijian": {
+    "zhName": "离间",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张牌并选择两名其他男性角色，后选择的角色视为对先选择的角色使用了一张不能被【无懈可击】的【决斗】。",
+    "currentVietnameseName": "Ly Gián",
+    "currentVietnameseDescription": "Một lần trong giai đoạn ra bài, bạn có thể bỏ 1 lá và chọn 2 người nam khác, người được chọn sau xem như sử dụng 1 lá 【Vô Giải Khả Kích】2 lên người được chọn trước mà không thể bị 【Quyết Đấu】.",
+    "declarations": [
+      {
+        "general": "diaochan",
+        "trueName": "diaochan",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/lijian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lirang": {
+    "zhName": "礼让",
+    "zhDescription": "当你的牌因弃置而移至弃牌堆后，你可以将其中的至少一张牌交给其他角色。",
+    "currentVietnameseName": "tính hài hước",
+    "currentVietnameseDescription": "Sau khi các lá bài của bạn được chuyển đến đống bỏ bằng cách loại bỏ, bạn có thể đưa ít nhất một trong các lá bài của mình cho một nhân vật khác.",
+    "declarations": [
+      {
+        "general": "hs__kongrong",
+        "trueName": "kongrong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/lirang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "liuli": {
+    "zhName": "流离",
+    "zhDescription": "当你成为【杀】的目标时，你可以弃置一张牌并选择你攻击范围内为此【杀】合法目标（无距离限制）的一名角色：若如此做，该角色代替你成为此【杀】的目标。",
+    "currentVietnameseName": "Lưu Ly",
+    "currentVietnameseDescription": "Khi bạn trở thành mục tiêu của 【Sát】, bạn có thể bỏ 1 lá, chọn 1 người trong phạm vi công kích của bạn và có thể là mục tiêu hợp lệ của 【Sát】 này（không giới hạn khoảng cách）: Nếu làm vậy, họ trở thành mục tiêu của 【Sát】 này thay cho bạn.",
+    "declarations": [
+      {
+        "general": "hs__daqiao",
+        "trueName": "daqiao",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "daqiao",
+        "trueName": "daqiao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/liuli.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "liyu": {
+    "zhName": "利驭",
+    "zhDescription": "当你使用【杀】对一名其他角色造成伤害后，你可获得其区域里的一张牌。然后若获得的牌不是装备牌，其摸一张牌；若获得的牌是装备牌，则视为你对由其指定的另一名其他角色使用一张【决斗】。",
+    "currentVietnameseName": "Kiểm soát vì lợi nhuận",
+    "currentVietnameseDescription": "Sau khi bạn DMG một anh hùng khác bằng Sha, bạn có thể lấy một lá bài trong khu vực của anh ta → nếu đó là: ▪ không phải trang bị, anh ta rút 1; ▪ trang bị, hãy xem nó khi bạn đấu tay đôi với một anh hùng khác do anh ta chọn.",
+    "declarations": [
+      {
+        "general": "ol_ex_heg__lvbu",
+        "trueName": "lvbu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "standard_ex",
+        "commit": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+        "file": "pkg/general/skills/liyu.lua",
+        "line": 14
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "longdan": {
+    "zhName": "龙胆",
+    "zhDescription": "你可以将一张【杀】当【闪】使用或打出，或将一张【闪】当普通【杀】使用或打出。",
+    "currentVietnameseName": "Long Đảm",
+    "currentVietnameseDescription": "Bạn có thể chuyển hóa sử dụng/đánh ra 【Sát】 -> 【Thiểm】, hoặc bạn có thể chuyển hóa sử dụng/đánh ra 【Thiểm】 -> 【Sát】 phổ thông.",
+    "declarations": [
+      {
+        "general": "zhaoyun",
+        "trueName": "zhaoyun",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/longdan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "longyin": {
+    "zhName": "龙吟",
+    "zhDescription": "当一名角色于其出牌阶段使用【杀】时，你可以弃置一张牌令此【杀】不计入出牌阶段使用次数，若此【杀】为红色，你摸一张牌。",
+    "currentVietnameseName": "Tiếng rồng gầm",
+    "currentVietnameseDescription": "Khi một anh hùng sử dụng Chém trong Giai đoạn Hành động của mình, bạn có thể loại bỏ một lá bài để Chém này không được tính. Nếu bạn kích hoạt kỹ năng này để đáp lại Dấu gạch chéo màu đỏ, bạn sẽ rút được 1.",
+    "declarations": [
+      {
+        "general": "os_heg__guanping",
+        "trueName": "guanping",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2013/skills/longyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "longyuan": {
+    "zhName": "龙渊",
+    "zhDescription": "觉醒技，准备阶段，若你本局游戏内发动过至少三次〖翊赞〗，你修改〖翊赞〗为只需一张牌。",
+    "currentVietnameseName": "Long Nguyên",
+    "currentVietnameseDescription": "Kỹ năng thức tỉnh, trong giai đoạn chuẩn bị, nếu bạn đã kích hoạt [Yi Zan] ít nhất ba lần trong trò chơi này, bạn có thể sửa đổi [Yi Zan] để chỉ cần một thẻ.",
+    "declarations": [
+      {
+        "general": "os_heg__zhaotongzhaoguang",
+        "trueName": "zhaotongzhaoguang",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/longyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "luanwu": {
+    "zhName": "乱武",
+    "zhDescription": "限定技，出牌阶段，你可选择所有其他角色，这些角色各需对包括距离最小的另一名角色在内的角色使用【杀】，否则失去1点体力。",
+    "currentVietnameseName": "Bạo lực bừa bãi",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài bạn có thể chọn tất cả các nhân vật khác. Mỗi nhân vật này phải sử dụng [Giết] lên nhân vật kể cả nhân vật còn lại ở khoảng cách nhỏ nhất, nếu không sẽ mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "hs__jiaxu",
+        "trueName": "jiaxu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/luanwu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "lulue": {
+    "zhName": "掳掠",
+    "zhDescription": "出牌阶段开始时，你可以令一名有手牌且手牌数小于你的其他角色选择：1.将所有手牌交给你，你翻面；2.翻面，视为对你使用【杀】。",
+    "currentVietnameseName": "cướp bóc",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể bắt một nhân vật khác có bài trên tay và có ít bài trên tay hơn chọn: 1. Đưa tất cả các lá bài trên tay anh ta cho bạn và bạn lật chúng lại; 2. Lật chúng lại và nó được coi là sử dụng [Giết] lên bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__liangxing",
+        "trueName": "liangxing",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/lulue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "luoshen": {
+    "zhName": "洛神",
+    "zhDescription": "准备阶段，你可以进行判定：若结果为黑色，判定牌生效后你获得之，然后你可以重复此流程。",
+    "currentVietnameseName": "Lạc Thần",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chuẩn bị, bạn có thẻ tiến hành phán xét: Nếu kết quả là đen, sau khi phán xét có hiệu lực, bạn thu lấy lá đó, sau đó bạn có thể lặp lại quá trình này.",
+    "declarations": [
+      {
+        "general": "zhenji",
+        "trueName": "zhenji",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/luoshen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "luoyi": {
+    "zhName": "裸衣",
+    "zhDescription": "摸牌阶段，你可以少摸一张牌，然后本回合你使用【杀】或【决斗】对目标角色造成伤害时，此伤害+1。",
+    "currentVietnameseName": "Lỏa Y",
+    "currentVietnameseDescription": "Giai đoạn rút bài, bạn có thể rút ít đi 1 lá, sau đó trong lượt này, khi bạn gây sát thương cho mục tiêu của 【Sát】/【Quyết Đấu】, sát thương này +1.",
+    "declarations": [
+      {
+        "general": "xuchu",
+        "trueName": "xuchu",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/luoyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_ex__anxu": {
+    "zhName": "安恤",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色获得另一名其他角色的一张牌。若其获得的不是来自装备区里的牌，你摸一张牌。当其以此法获得牌后，你可以令两者手牌较少的角色摸一张牌。",
+    "currentVietnameseName": "Một chiếc áo sơ mi",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể khiến một nhân vật khác lấy được thẻ từ một nhân vật khác. Nếu thẻ nó nhận được không phải từ khu vực trang bị thì bạn rút thẻ. Sau khi họ nhận được thẻ theo cách này, bạn có thể để hai nhân vật có ít thẻ hơn rút thẻ.",
+    "declarations": [
+      {
+        "general": "os_heg__bulianshi",
+        "trueName": "bulianshi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/yj_ex/skills/anxu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_ex__danshou": {
+    "zhName": "胆守",
+    "zhDescription": "其他角色的结束阶段，若你本回合未成为过其使用牌的目标，你摸一张牌；否则你可以弃置X张牌，对其造成1点伤害（X为你本回合成为其使用牌的目标的次数）。",
+    "currentVietnameseName": "can đảm",
+    "currentVietnameseDescription": "Ở giai đoạn kết thúc của các nhân vật khác, nếu vòng này bạn chưa là mục tiêu đánh bài của họ thì bạn rút một lá bài; nếu không, bạn có thể loại bỏ các lá bài X và gây 1 điểm sát thương cho chúng (X là số lần bạn trở thành mục tiêu của các lá bài của họ trong vòng này).",
+    "declarations": [
+      {
+        "general": "os_heg__zhuran",
+        "trueName": "zhuran",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/yj_ex/skills/danshou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_ex__ganlu": {
+    "zhName": "甘露",
+    "zhDescription": "出牌阶段限一次，你可以选择两名装备区里的牌数之差不大于你已损失的体力值的角色，交换他们装备区里的牌；若你选择的角色中含有你，则不受牌数之差的限制。",
+    "currentVietnameseName": "dịch ngọt",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể chọn hai nhân vật có chênh lệch về số lượng thẻ trong vùng trang bị của họ không lớn hơn giá trị vật lý đã mất của bạn và đổi thẻ trong vùng trang bị của họ; nếu nhân vật bạn chọn bao gồm cả bạn thì không có hạn chế về chênh lệch số lượng thẻ.",
+    "declarations": [
+      {
+        "general": "os_heg__wuguotai",
+        "trueName": "wuguotai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/yj_ex/skills/ganlu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_ex__pingkou": {
+    "zhName": "平寇",
+    "zhDescription": "回合结束时，你可以对至多X名其他角色各造成1点伤害（X为你本回合跳过的阶段数），若如此做，你从牌堆中随机获得一张装备牌。",
+    "currentVietnameseName": "Bình Khẩu",
+    "currentVietnameseDescription": "Khi kết thúc vòng đấu, bạn có thể gây 1 điểm sát thương cho mỗi người trong số tối đa X nhân vật khác (X là số màn bạn đã bỏ qua vòng này). Nếu làm như vậy, bạn sẽ ngẫu nhiên nhận được một thẻ trang bị từ bộ bài.",
+    "declarations": [
+      {
+        "general": "os_heg__zhuhuan",
+        "trueName": "zhuhuan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/yj_ex/skills/pingkou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_ex__yaoming": {
+    "zhName": "邀名",
+    "zhDescription": "蓄力技（2/4），出牌阶段或当你受到伤害后，你可以减少1点蓄力点并选择一项：1.弃置手牌数不小于你的一名其他角色的一张牌；2.令手牌数不大于你的一名角色摸一张牌。若与你上次选择的选项不同，你获得1点蓄力点并清除已记录的选项。当你受到1点伤害后，你获得1点蓄力点。",
+    "currentVietnameseName": "Tên mời",
+    "currentVietnameseDescription": "Kỹ năng Sạc (2/4), trong giai đoạn chơi bài hoặc sau khi nhận sát thương, bạn có thể giảm 1 điểm sạc và chọn một: 1. Bỏ một lá bài của nhân vật khác có số lá bài trên tay không ít hơn của bạn; 2. Yêu cầu một nhân vật có số quân bài trên tay không lớn hơn nhân vật của bạn rút một quân bài. Nếu tùy chọn khác với tùy chọn cuối cùng bạn đã chọn, bạn sẽ nhận được 1 điểm sạc và xóa tùy chọn đã ghi. Khi bạn nhận 1 điểm sát thương, bạn sẽ nhận được 1 điểm tích lũy.",
+    "declarations": [
+      {
+        "general": "os_heg__quancong",
+        "trueName": "quancong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/yj_ex/skills/yaoming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__chengzhao": {
+    "zhName": "承诏",
+    "zhDescription": "一名角色的结束阶段，若你本回合获得过至少两张牌，你可以与一名其他角色拼点，若你赢，视为你对其使用一张无视防具的【杀】。",
+    "currentVietnameseName": "Chấp nhận chiếu chỉ của triều đình",
+    "currentVietnameseDescription": "Ở giai đoạn kết thúc của một nhân vật, nếu bạn thu được ít nhất hai lá bài trong vòng này, bạn có thể cạnh tranh với một nhân vật khác. Nếu bạn thắng, bạn sẽ được coi là đã sử dụng [Kill] lên nó mà bỏ qua áo giáp.",
+    "declarations": [
+      {
+        "general": "m_heg__dongcheng",
+        "trueName": "dongcheng",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/chengzhao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__chuanxin": {
+    "zhName": "穿心",
+    "zhDescription": "锁定技，你使用【杀】或【决斗】对一名角色造成伤害后，其每满足一项便弃置一张牌：<br>1.与你势力不同；<br>2.副将与你状态相同。<br>乘势：移除其副将，然后失去乘势效果。",
+    "currentVietnameseName": "Đi xuyên qua trái tim",
+    "currentVietnameseDescription": "Khóa kỹ năng, sau khi bạn sử dụng [Giết] hoặc [Trận đấu] để gây sát thương cho nhân vật, nhân vật sẽ loại bỏ một lá bài theo từng điều kiện sau:<br>1. Khác với sức mạnh của bạn;<br>2. Phó tướng có địa vị giống như bạn. <br>Đi theo đà: Loại bỏ trung úy của nó và sau đó mất hiệu ứng đà.",
+    "declarations": [
+      {
+        "general": "m_heg__zhangren",
+        "trueName": "zhangren",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/chuanxin.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__dangxian": {
+    "zhName": "当先",
+    "zhDescription": "锁定技，当你首次明置此武将牌后，摸一张牌并获得一个“先驱”标记；回合开始时，你执行一个额外的出牌阶段。",
+    "currentVietnameseName": "ở đầu",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi đặt thẻ tướng này lần đầu tiên, bạn rút thẻ và nhận dấu \"Tiên phong\"; khi bắt đầu vòng chơi, bạn thực hiện thêm một giai đoạn đánh bài.",
+    "declarations": [
+      {
+        "general": "m_heg__liaohua",
+        "trueName": "liaohua",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/dangxian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__duoshi": {
+    "zhName": "度势",
+    "zhDescription": "出牌阶段限一次，你可以选择一项：1.将一张红色手牌当【以逸待劳】使用；2.将三张“节”置入弃牌堆，视为使用一张造成火焰伤害的牌。",
+    "currentVietnameseName": "đo tiềm năng",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một trong các cách sau: 1. Dùng thẻ đỏ trên tay làm [chờ làm việc]; 2. Đặt ba lá bài \"Phần\" vào chồng bài bỏ, coi như sử dụng lá bài gây sát thương lửa.",
+    "declarations": [
+      {
+        "general": "m_heg__luxun",
+        "trueName": "luxun",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/duoshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__fengshi": {
+    "zhName": "锋矢",
+    "zhDescription": "<a href='m_heg_summon'>阵法技</a>，锁定技，你你每回合使用的第一张牌无距离限制。若你围攻一名角色或被围攻，改为不可响应。",
+    "currentVietnameseName": "Mũi tên phía trước",
+    "currentVietnameseDescription": "<a href='m_heg_summon'>Kỹ năng dàn trận</a>, một kỹ năng khóa, không có giới hạn khoảng cách cho lá bài đầu tiên bạn sử dụng mỗi vòng. Nếu bạn bao vây một nhân vật hoặc bị bao vây, bạn sẽ không thể phản ứng được nữa.",
+    "declarations": [
+      {
+        "general": "m_heg__zhangren",
+        "trueName": "zhangren",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/fengshi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__fenwei": {
+    "zhName": "奋威",
+    "zhDescription": "锁定技，你首次明置此武将牌后，令所有同势力角色各获得一个“阴阳鱼”标记。",
+    "currentVietnameseName": "phân vi",
+    "currentVietnameseDescription": "Kỹ năng khóa, sau khi bạn đặt thẻ tướng này lần đầu tiên, tất cả các nhân vật cùng thế lực sẽ nhận được dấu ấn \"Cá Âm Dương\".",
+    "declarations": [
+      {
+        "general": "m_heg__ganning",
+        "trueName": "ganning",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/fenwei.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__fenxun": {
+    "zhName": "奋迅",
+    "zhDescription": "出牌阶段开始时，你可以选择一名其他角色，本回合你计算与其的距离视为1。",
+    "currentVietnameseName": "FenXun",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể chọn một nhân vật khác và khoảng cách tới nhân vật đó được coi là 1 cho vòng này.",
+    "declarations": [
+      {
+        "general": "m_heg__dingfeng",
+        "trueName": "dingfeng",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/fenxun.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__henge": {
+    "zhName": "衡轭",
+    "zhDescription": "<a href='m_heg_summon'>阵法技</a>，锁定技，与你处于同一<a href='heg_formation_href'>队列</a>的其他角色获得你“义从”距离修正的相同效果（每项至多为2）。",
+    "currentVietnameseName": "cái ách",
+    "currentVietnameseDescription": "<a href='m_heg_summon'>Kỹ năng hình thành</a>, Kỹ năng khóa, các nhân vật khác trong cùng <a href='heg_formation_href'>hàng đợi</a> khi bạn nhận được hiệu ứng tương tự của công cụ sửa đổi khoảng cách \"Người theo dõi\" (tối đa 2 cho mỗi vật phẩm).",
+    "declarations": [
+      {
+        "general": "m_heg__gongsunzan",
+        "trueName": "gongsunzan",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/henge.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__heyi": {
+    "zhName": "鹤翼",
+    "zhDescription": "<a href='m_heg_summon'>阵法技</a>，锁定技，你视为拥有〖飞影〗；你处于队列时，改为与你处于同一队列的其他角色视为拥有〖飞影〗。",
+    "currentVietnameseName": "Cánh hạc",
+    "currentVietnameseDescription": "<a href='m_heg_summon'>Kỹ năng tạo đội hình</a>, kỹ năng khóa, bạn được coi là có [Phi ảnh]; khi bạn ở trong hàng đợi, các nhân vật khác trong cùng hàng đợi với bạn được coi là có [Phi ảnh].",
+    "declarations": [
+      {
+        "general": "m_heg__caohong",
+        "trueName": "caohong",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/heyi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__kuangfu": {
+    "zhName": "狂斧",
+    "zhDescription": "当你使用【杀】对目标角色造成伤害后，你可以弃置或获得其一张牌。",
+    "currentVietnameseName": "Rìu điên",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để gây sát thương cho nhân vật mục tiêu, bạn có thể loại bỏ hoặc lấy một trong các lá bài của nhân vật đó.",
+    "declarations": [
+      {
+        "general": "m_heg__panfeng",
+        "trueName": "panfeng",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/kuangfu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__miewu": {
+    "zhName": "灭吴",
+    "zhDescription": "每回合限一次，你可以弃置1个“武库”，将一张牌当做任意一张基本牌或锦囊牌使用或打出；若如此做，你摸一张牌。",
+    "currentVietnameseName": "Tiêu diệt Ngô",
+    "currentVietnameseDescription": "Chỉ một lần trong lượt, bạn có thể loại bỏ 1 \"Arsenal\" và sử dụng hoặc chơi một lá bài như bất kỳ lá bài cơ bản hoặc thẻ kit nào; nếu bạn làm như vậy, bạn sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "m_heg__duyu",
+        "trueName": "duyu",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/miewu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__niaoxiang": {
+    "zhName": "鸟翔",
+    "zhDescription": "<a href='m_heg_summon'>阵法技</a>，锁定技，你使用的红色【杀】需两张【闪】才能抵消；你围攻一名角色时，改为【杀】均可触发此效果。",
+    "currentVietnameseName": "chim bay",
+    "currentVietnameseDescription": "<a href='m_heg_summon'>Kỹ năng tạo đội hình</a>, kỹ năng khóa, [Kill] màu đỏ mà bạn sử dụng cần có hai [Flash] để bù đắp nó; khi bạn bao vây một nhân vật, việc chuyển sang [Giết] có thể kích hoạt hiệu ứng này.",
+    "declarations": [
+      {
+        "general": "m_heg__jiangqin",
+        "trueName": "jiangqin",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/niaoxiang.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__qiangxi": {
+    "zhName": "强袭",
+    "zhDescription": "出牌阶段限一次，你可以对自己造成1点伤害或弃置一张武器牌，对你攻击范围内的一名其他角色造成1点伤害。",
+    "currentVietnameseName": "Cường Tập",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể gây 1 điểm sát thương cho bản thân hoặc vứt bỏ thẻ vũ khí để gây 1 điểm sát thương cho nhân vật khác trong phạm vi tấn công của bạn.",
+    "declarations": [
+      {
+        "general": "m_heg__dianwei",
+        "trueName": "dianwei",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/qiangxi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__qianxun": {
+    "zhName": "谦逊",
+    "zhDescription": "锁定技，当你成为其他角色使用的锦囊牌的唯一目标时，若你的“节”数小于3，你取消之并将此牌置于你的武将牌上，称为“节”。",
+    "currentVietnameseName": "Khiêm Tốn",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn trở thành mục tiêu duy nhất của thẻ mẹo được các nhân vật khác sử dụng, nếu số \"nút thắt\" của bạn nhỏ hơn 3, bạn sẽ hủy nó và đặt thẻ này vào thẻ chung của bạn, được gọi là \"nút thắt\".",
+    "declarations": [
+      {
+        "general": "m_heg__luxun",
+        "trueName": "luxun",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/qianxun.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__shensu": {
+    "zhName": "神速",
+    "zhDescription": "你可以做出如下选择：1.跳过判定阶段和摸牌阶段；2.跳过出牌阶段。每选择一项，你视为使用一张无距离限制的普通【杀】。",
+    "currentVietnameseName": "Cực kỳ nhanh",
+    "currentVietnameseDescription": "Bạn có thể đưa ra các lựa chọn sau: 1. Bỏ qua giai đoạn phán đoán và giai đoạn rút bài; 2. Bỏ qua giai đoạn đánh bài. Mỗi lần bạn chọn một, bạn được coi là đang sử dụng [Giết] bình thường không giới hạn khoảng cách.",
+    "declarations": [
+      {
+        "general": "m_heg__xiahouyuan",
+        "trueName": "xiahouyuan",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/shensu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__shiyong": {
+    "zhName": "恃勇",
+    "zhDescription": "锁定技，你受到伤害后，若：你未发动过〖耀武〗且造成伤害的牌不为红色你摸一张牌；你发动过〖耀武〗且造成伤害的牌不为黑色，伤害来源摸一张牌。",
+    "currentVietnameseName": "Dựa vào lòng dũng cảm",
+    "currentVietnameseDescription": "Khóa kỹ năng, sau khi bạn nhận sát thương, nếu: bạn chưa kích hoạt [Yao Wu] và lá bài gây sát thương không có màu đỏ, bạn rút một lá bài; bạn đã kích hoạt [Yao Wu] và lá bài gây sát thương không có màu đen, nguồn gây sát thương sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "m_heg__huaxiong",
+        "trueName": "huaxiong",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/shiyong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__shushen": {
+    "zhName": "淑慎",
+    "zhDescription": "当你回复1点体力后，或一次失去大于X张牌后（X为你当前体力值），你可以令一名势力与你相同的其他角色摸一张牌。",
+    "currentVietnameseName": "Shushen",
+    "currentVietnameseDescription": "Sau khi bạn phục hồi 1 điểm thể lực hoặc sau khi mất nhiều hơn X thẻ cùng một lúc (X là sức mạnh thể chất hiện tại của bạn), bạn có thể tạo một nhân vật khác có sức mạnh tương tự như khi bạn rút thẻ.",
+    "declarations": [
+      {
+        "general": "m_heg__ganfuren",
+        "trueName": "ganfuren",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/shushen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__tanfeng": {
+    "zhName": "探锋",
+    "zhDescription": "准备阶段，你可以弃置一名未确定势力或其他势力角色区域里的一张牌，然后该角色可令你对其造成1点火焰伤害并跳过本回合的一个阶段。",
+    "currentVietnameseName": "Đàm Phong",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể vứt một lá bài vào khu vực có một thế lực không xác định hoặc nhân vật có thế lực khác, sau đó nhân vật đó có thể khiến bạn gây 1 điểm sát thương lửa cho nó và bỏ qua một giai đoạn của vòng này.",
+    "declarations": [
+      {
+        "general": "m_heg__xiahoushang",
+        "trueName": "xiahoushang",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/tanfeng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__tianfu": {
+    "zhName": "天覆",
+    "zhDescription": "主将技，<a href='m_heg_summon'>阵法技</a>，你的回合内，你可以将一张♠手牌当【无懈可击】使用；当你处于队列时，改为与你处于同一队列的角色的回合内，你可以将一张黑色手牌当【无懈可击】使用。",
+    "currentVietnameseName": "Bầu trời bị đảo lộn",
+    "currentVietnameseDescription": "Kỹ năng chung chính, <a href='m_heg_summon'>Kỹ năng dàn trận</a>, trong lượt của mình, bạn có thể sử dụng lá bài ♠ trên tay làm [Bất khả xâm phạm]; khi bạn đang xếp hàng, trong lượt của nhân vật trong cùng hàng với bạn, bạn có thể sử dụng thẻ đen trên tay làm [Bất khả xâm phạm].",
+    "declarations": [
+      {
+        "general": "m_heg__jiangwei",
+        "trueName": "jiangwei",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/tianfu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__wuku": {
+    "zhName": "武库",
+    "zhDescription": "锁定技，当一名势力与你不同的角色使用装备牌时，你获得1个“武库”标记。（“武库”数量至多为2）",
+    "currentVietnameseName": "kho vũ khí",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi nhân vật có sức mạnh khác bạn sử dụng thẻ trang bị, bạn sẽ nhận được 1 điểm \"Arsenal\". (Số lượng \"kho vũ khí\" nhiều nhất là 2)",
+    "declarations": [
+      {
+        "general": "m_heg__duyu",
+        "trueName": "duyu",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/wuku.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__yaowu": {
+    "zhName": "耀武",
+    "zhDescription": "限定技，当你造成伤害后，你可以明置此武将牌，加2点体力上限，回复2点体力，修改〖恃勇〗，且当你死亡后，与你势力相同的角色各失去1点体力。",
+    "currentVietnameseName": "Yaowu",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, sau khi gây sát thương, bạn có thể đặt thẻ tướng này, cộng 2 điểm vào giới hạn trên của thể lực, khôi phục 2 điểm thể lực, sửa đổi \"Dựa vào lòng dũng cảm\", và khi bạn chết, những nhân vật có cùng sức mạnh với bạn sẽ mất đi 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "m_heg__huaxiong",
+        "trueName": "huaxiong",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/yaowu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "m_heg__yicong": {
+    "zhName": "义从",
+    "zhDescription": "锁定技，你造成/受到伤害后，直到本轮结束，你计算与其他角色的距离-1/其他角色计算与你的距离+1。然后若因此技能调整的对应值达到3，你从牌堆中获得一张【杀】或【闪】。",
+    "currentVietnameseName": "Dịch Công",
+    "currentVietnameseDescription": "Đối với khóa kỹ năng, sau khi bạn gây/nhận sát thương, cho đến hết vòng này, bạn tính khoảng cách với các nhân vật khác -1/các nhân vật khác tính khoảng cách với bạn +1. Sau đó, nếu giá trị tương ứng của điều chỉnh kỹ năng này đạt đến 3, bạn sẽ nhận được [Giết] hoặc [Tia chớp] từ bộ bài.",
+    "declarations": [
+      {
+        "general": "m_heg__gongsunzan",
+        "trueName": "gongsunzan",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/mobile_heg/skills/yicong.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Tỏa định kỹ, khoảng cách từ bạn đến người khác -1.",
+    "declarations": [
+      {
+        "general": "machao",
+        "trueName": "machao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/mashu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "midao": {
+    "zhName": "米道",
+    "zhDescription": "当一张判定牌生效前，你可以打出一张“米”代替之。",
+    "currentVietnameseName": "Midao",
+    "currentVietnameseDescription": "Trước khi lá bài phán xét có hiệu lực, bạn có thể đánh “cơm” để thay thế.",
+    "declarations": [
+      {
+        "general": "os_heg__zhanglu",
+        "trueName": "zhanglu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/midao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mingjian": {
+    "zhName": "明鉴",
+    "zhDescription": "出牌阶段限一次，你可以将所有手牌交给一名其他角色，然后该角色下回合的手牌上限+1，且出牌阶段内可以多使用一张【杀】。",
+    "currentVietnameseName": "Ý tưởng tuyệt vời",
+    "currentVietnameseDescription": "Một lần trong mỗi giai đoạn hành động, có thể đưa toàn bộ tay cho anh hùng khác → lượt tiếp theo, anh ta sẽ có giới hạn +1 tay và có thể sử dụng +1 Chém.",
+    "declarations": [
+      {
+        "general": "os_heg__caorui",
+        "trueName": "caorui",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2015/skills/mingjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mingshi": {
+    "zhName": "名士",
+    "zhDescription": "锁定技，当你受到伤害时，若来源有暗置的武将牌，你令伤害值-1。",
+    "currentVietnameseName": "người nổi tiếng",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn nhận sát thương, nếu nguồn có thẻ tướng ẩn, giá trị sát thương của bạn sẽ là -1.",
+    "declarations": [
+      {
+        "general": "hs__kongrong",
+        "trueName": "kongrong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/mingshi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mingzhe": {
+    "zhName": "明哲",
+    "zhDescription": "当你于回合外因使用、打出或弃置而失去一张红色牌时，你可以摸一张牌。",
+    "currentVietnameseName": "Sự khôn ngoan",
+    "currentVietnameseDescription": "Khi bạn sử dụng, chơi hoặc loại bỏ thẻ đỏ ngoài lượt của mình, bạn có thể rút 1.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugejin",
+        "trueName": "zhugejin",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/mingzhe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mizhao": {
+    "zhName": "密诏",
+    "zhDescription": "出牌阶段限一次，你可以将所有手牌（至少一张）交给一名其他角色。若如此做，你令该角色与你指定的另一名有手牌的其他角色拼点，视为拼点赢的角色对没赢的角色使用一张【杀】。",
+    "currentVietnameseName": "Sắc lệnh bí mật",
+    "currentVietnameseDescription": "1x Giai đoạn hành động, có thể giao toàn bộ bài cho tướng (A) và chọn tướng thứ 2 (B). Điểm A Đấu B, người chiến thắng được coi là sử dụng Chém vào kẻ thua cuộc.",
+    "declarations": [
+      {
+        "general": "os_heg__liuxie",
+        "trueName": "liuxie",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/mizhao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mobile__jiaohua": {
+    "zhName": "教化",
+    "zhDescription": "出牌阶段限两次，你可以令一名角色从牌堆获得一张未以此法选择过的类别的牌；所有类别均被选择后，重置选择过的类别。",
+    "currentVietnameseName": "sự giác ngộ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn hai lần. Bạn có thể yêu cầu một nhân vật nhận được một lá bài thuộc danh mục chưa được chọn theo cách này từ bộ bài; sau khi tất cả các danh mục được chọn, các danh mục đã chọn sẽ được đặt lại.",
+    "declarations": [
+      {
+        "general": "m_heg__liwei",
+        "trueName": "liwei",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/jiaohua.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "mobile__yanjiao": {
+    "zhName": "严教",
+    "zhDescription": "出牌阶段限一次，你可以将手牌中一种花色的所有牌交给一名其他角色，然后对其造成1点伤害，若如此做，你的下个回合开始时，你摸X张牌（X为你以此法给出的牌数）。",
+    "currentVietnameseName": "Giảng dạy nghiêm khắc",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể đưa tất cả quân bài của bộ đồ trên tay cho nhân vật khác, sau đó gây 1 điểm sát thương cho nhân vật đó. Nếu làm như vậy thì khi bắt đầu lượt tiếp theo, bạn sẽ rút X lá bài (X là số lá bài bạn đưa ra theo cách này).",
+    "declarations": [
+      {
+        "general": "os_heg__zhangchangpu",
+        "trueName": "zhangchangpu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/yanjiao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "naxiang": {
+    "zhName": "纳降",
+    "zhDescription": "锁定技，当其他角色对你造成伤害或受到你的伤害后，你对其发动〖才望〗的“弃置”修改为“获得”直到你的回合开始。",
+    "currentVietnameseName": "Chấp nhận",
+    "currentVietnameseDescription": "Đó là một kỹ năng khóa. Khi các nhân vật khác gây sát thương cho bạn hoặc nhận sát thương từ bạn, khả năng \"xử lý\" \"Zai Wang\" mà bạn kích hoạt trên họ sẽ thay đổi thành \"có được\" cho đến khi bắt đầu lượt của bạn.",
+    "declarations": [
+      {
+        "general": "ol_heg__simazhou",
+        "trueName": "simazhou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/naxiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "niaoxiang": {
+    "zhName": "鸟翔",
+    "zhDescription": "阵法技，若你是围攻角色，此围攻关系中的围攻角色使用【杀】指定被围攻角色为目标后，你令被围攻角色响应此【杀】的方式改为依次使用两张【闪】。",
+    "currentVietnameseName": "chim bay",
+    "currentVietnameseDescription": "Kỹ năng đội hình, nếu bạn là nhân vật công thành, sau khi nhân vật công thành trong mối quan hệ công thành này sử dụng [Giết] để chỉ định nhân vật bị bao vây làm mục tiêu, cách bạn khiến nhân vật bị bao vây phản ứng với [Giết] này là sử dụng hai [Tia chớp] theo trình tự.",
+    "declarations": [
+      {
+        "general": "ld__jiangqin",
+        "trueName": "jiangqin",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/niaoxiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "niepan": {
+    "zhName": "涅槃",
+    "zhDescription": "限定技，当你处于濒死状态时，你可以弃置区域里的所有牌，复原你的武将牌，然后摸三张牌并将体力回复至3点。",
+    "currentVietnameseName": "niết bàn",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, khi bạn sắp chết, bạn có thể vứt bỏ tất cả các lá bài trong khu vực, khôi phục các lá bài chung của mình, sau đó rút ba lá bài và phục hồi sức khỏe của bạn về 3 điểm.",
+    "declarations": [
+      {
+        "general": "hs__pangtong",
+        "trueName": "pangtong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/niepan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos__yaowu": {
+    "zhName": "耀武",
+    "zhDescription": "锁定技，当一名角色使用红色【杀】对你造成伤害时，其回复1点体力或摸一张牌。",
+    "currentVietnameseName": "Yaowu",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi nhân vật sử dụng [Kill] màu đỏ để gây sát thương cho bạn sẽ hồi phục 1 điểm thể lực hoặc rút bài.",
+    "declarations": [
+      {
+        "general": "os_heg__huaxiong",
+        "trueName": "huaxiong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/ol_other/skills/yaowu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__diaodu": {
+    "zhName": "调度",
+    "zhDescription": "与你势力相同的角色使用装备牌时，该角色可以摸一张牌。出牌阶段开始时，你可以获得一名与你势力相同的角色装备区里的一张牌，然后你可以将此牌交给另一名角色。",
+    "currentVietnameseName": "Lên lịch",
+    "currentVietnameseDescription": "Khi một nhân vật có cùng sức mạnh với bạn sử dụng thẻ trang bị, nhân vật đó có thể rút thẻ. Khi bắt đầu giai đoạn chơi bài, bạn có thể lấy một lá bài từ khu vực trang bị của một nhân vật có sức mạnh tương đương với mình, sau đó bạn có thể đưa lá bài này cho một nhân vật khác.",
+    "declarations": [
+      {
+        "general": "nos_heg__lvfan",
+        "trueName": "lvfan",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/diaodu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__duoshi": {
+    "zhName": "度势",
+    "zhDescription": "出牌阶段限四次，你可以将一张红色手牌当【以逸待劳】使用。",
+    "currentVietnameseName": "đo tiềm năng",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn trong bốn lần. Bạn có thể dùng thẻ đỏ trên tay để \"chờ làm việc\".",
+    "declarations": [
+      {
+        "general": "nos_heg__luxun",
+        "trueName": "luxun",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/duoshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__fengshi": {
+    "zhName": "锋矢",
+    "zhDescription": "阵法技，若你是围攻角色，则此围攻角色使用【杀】指定被围攻角色为目标后，你令被围攻角色角色弃置装备区里的一张牌。",
+    "currentVietnameseName": "Mũi tên phía trước",
+    "currentVietnameseDescription": "Kỹ năng hình thành, nếu bạn là nhân vật bị bao vây, thì sau khi nhân vật bị bao vây sử dụng [Giết] để chỉ định nhân vật bị bao vây làm mục tiêu, bạn khiến nhân vật bị bao vây vứt bỏ một lá bài trong vùng trang bị.",
+    "declarations": [
+      {
+        "general": "nos_heg__zhangren",
+        "trueName": "zhangren",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/fengshi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__heyi": {
+    "zhName": "鹤翼",
+    "zhDescription": "阵法技，与你处于同一<a href='heg_formation_href'>队列</a>的其他角色视为拥有〖飞影〗。",
+    "currentVietnameseName": "Cánh hạc",
+    "currentVietnameseDescription": "Kỹ năng tạo đội hình, các nhân vật khác trong cùng <a href='heg_formation_href'>hàng</a> mà bạn được coi là có \"Flying Shadow\".",
+    "declarations": [
+      {
+        "general": "nos_heg__caohong",
+        "trueName": "caohong",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/heyi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__huyuan": {
+    "zhName": "护援",
+    "zhDescription": "结束阶段，你可以将一张装备牌置入一名角色的装备区，然后你可以弃置该角色距离为1的一名角色的一张牌。",
+    "currentVietnameseName": "hộ tống",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể đặt thẻ trang bị vào khu vực trang bị của nhân vật, sau đó bạn có thể loại bỏ thẻ khỏi nhân vật có khoảng cách là 1.",
+    "declarations": [
+      {
+        "general": "nos_heg__caohong",
+        "trueName": "caohong",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "m_heg__caohong",
+        "trueName": "caohong",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/huyuan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__keshou": {
+    "zhName": "恪守",
+    "zhDescription": "当你受到伤害时，你可以弃置两张颜色相同的手牌，令此伤害-1。然后若没有与你势力相同的其他角色，你进行一次判定，若结果为红色，你摸一张牌。",
+    "currentVietnameseName": "tuân theo",
+    "currentVietnameseDescription": "Khi bạn nhận sát thương, bạn có thể loại bỏ hai lá bài cùng màu trên tay để giảm sát thương đi 1. Sau đó, nếu không có nhân vật nào khác có sức mạnh tương tự như bạn, bạn sẽ đưa ra phán đoán. Nếu kết quả là màu đỏ thì bạn rút bài.",
+    "declarations": [
+      {
+        "general": "nos_heg__lukang",
+        "trueName": "lukang",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/keshou.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__kuangfu": {
+    "zhName": "狂斧",
+    "zhDescription": "当你使用【杀】对目标角色造成伤害后，你可以选择一项：1.弃置其装备区里的一张牌；2.将其装备区里的一张牌移至你的装备区。",
+    "currentVietnameseName": "Rìu điên",
+    "currentVietnameseDescription": "Sau khi sử dụng [Giết] để gây sát thương cho nhân vật mục tiêu, bạn có thể chọn một: 1. Vứt bỏ một lá bài trong khu vực trang bị của nó; 2. Di chuyển thẻ trong khu vực thiết bị của nó sang khu vực thiết bị của bạn.",
+    "declarations": [
+      {
+        "general": "nos_heg__panfeng",
+        "trueName": "panfeng",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/kuangfu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__shenzhi": {
+    "zhName": "神智",
+    "zhDescription": "准备阶段，你可以弃置所有手牌，若你以此法弃置的手牌数不小于X，你回复1点体力（X为你当前的体力值）。",
+    "currentVietnameseName": "sự tỉnh táo",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể loại bỏ tất cả các lá bài trên tay. Nếu số quân bài bạn bỏ theo cách này không ít hơn X thì bạn sẽ hồi phục được 1 điểm thể lực (X là thể lực hiện tại của bạn).",
+    "declarations": [
+      {
+        "general": "nos_heg__ganfuren",
+        "trueName": "ganfuren",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "m_heg__ganfuren",
+        "trueName": "ganfuren",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/shenzhi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__shushen": {
+    "zhName": "淑慎",
+    "zhDescription": "当你回复1点体力后，你可以令一名其他角色摸一张牌。",
+    "currentVietnameseName": "Shushen",
+    "currentVietnameseDescription": "Sau khi hồi phục 1 điểm thể lực, bạn có thể khiến nhân vật khác rút thẻ.",
+    "declarations": [
+      {
+        "general": "nos_heg__ganfuren",
+        "trueName": "ganfuren",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/shushen.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__wanwei": {
+    "zhName": "挽危",
+    "zhDescription": "当你的牌被其他角色获得或弃置时，你可以改为自己选择失去的牌。",
+    "currentVietnameseName": "Cứu nguy khủng hoảng",
+    "currentVietnameseDescription": "Khi các lá bài của bạn được nhân vật khác mua hoặc loại bỏ, bạn có thể tự mình chọn những lá bài bị mất.",
+    "declarations": [
+      {
+        "general": "nos_heg__bianfuren",
+        "trueName": "bianfuren",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/wanwei.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__xiaoguo": {
+    "zhName": "骁果",
+    "zhDescription": "其他角色的结束阶段，你可以弃置一张基本牌，令其选择一项：1.弃置一张装备牌，你摸一张牌；2.受到你造成的1点伤害。",
+    "currentVietnameseName": "Tiểu Quốc",
+    "currentVietnameseDescription": "Ở giai đoạn kết thúc của các nhân vật khác, bạn có thể loại bỏ một thẻ cơ bản và để họ chọn một thẻ: 1. Bỏ một thẻ trang bị và bạn rút một thẻ; 2. Nhận 1 điểm sát thương từ bạn.",
+    "declarations": [
+      {
+        "general": "nos_heg__yuejin",
+        "trueName": "yuejin",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/xiaoguo.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__yicheng": {
+    "zhName": "疑城",
+    "zhDescription": "当与你势力相同的角色成为【杀】的目标后，你可以令其摸一张牌，然后其弃置一张牌。",
+    "currentVietnameseName": "thành phố đáng ngờ",
+    "currentVietnameseDescription": "Khi một nhân vật có cùng sức mạnh với bạn trở thành mục tiêu của [Giết], bạn có thể yêu cầu anh ta rút một lá bài, và sau đó anh ta sẽ loại bỏ một lá bài.",
+    "declarations": [
+      {
+        "general": "nos_heg__xusheng",
+        "trueName": "xusheng",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/yicheng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__yuejian": {
+    "zhName": "约俭",
+    "zhDescription": "锁定技，与你势力相同的角色弃牌阶段开始时，若其本回合处于与你势力相同状态时未使用牌指定过其他势力的角色为目标，则该角色本回合手牌上限等同于其体力上限。",
+    "currentVietnameseName": "tằn tiện",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bắt đầu giai đoạn loại bỏ nhân vật có cùng sức mạnh với bạn, nếu anh ta chưa sử dụng thẻ để nhắm mục tiêu vào nhân vật có sức mạnh khác khi anh ta ở trạng thái sức mạnh giống như của bạn ở vòng này, giới hạn trên của các lá bài trên tay của nhân vật ở vòng này bằng với giới hạn trên của sức mạnh thể chất của anh ta.",
+    "declarations": [
+      {
+        "general": "nos_heg__bianfuren",
+        "trueName": "bianfuren",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "ol_heg__bianfuren",
+        "trueName": "bianfuren",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/yuejian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "nos_heg__zhuwei": {
+    "zhName": "筑围",
+    "zhDescription": "当你的判定结果确定后，若为【杀】或伤害类锦囊牌，你可以获得之，然后你可以令当前回合角色本回合使用【杀】的次数上限+1、手牌上限+1。",
+    "currentVietnameseName": "xây dựng một cuộc bao vây",
+    "currentVietnameseDescription": "Sau khi kết quả phán đoán của bạn được xác định, nếu đó là thẻ mẹo [tiêu diệt] hoặc loại sát thương, bạn có thể nhận được nó. Sau đó, bạn có thể tăng số lần tối đa mà nhân vật có thể sử dụng [kill] trong vòng này lên +1 và số lượng bài tối đa trên tay +1.",
+    "declarations": [
+      {
+        "general": "nos_heg__lukang",
+        "trueName": "lukang",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/hegemony_nos/skills/zhuwei.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__caishi": {
+    "zhName": "才识",
+    "zhDescription": "摸牌阶段结束时，你可以选择一项：1.本回合手牌上限+2；2.回复1点体力，本回合不能对其他角色使用牌。",
+    "currentVietnameseName": "khả năng và hiểu biết sâu sắc",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn rút bài, bạn có thể chọn một trong các cách sau: 1. Số lá bài tối đa trên tay của bạn trong vòng này là +2; 2. Phục hồi 1 điểm thể lực và không thể sử dụng bài lên các nhân vật khác trong vòng này.",
+    "declarations": [
+      {
+        "general": "ofl_heg__xinxianying",
+        "trueName": "xinxianying",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/caishi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__dianhu": {
+    "zhName": "点虎",
+    "zhDescription": "锁定技，当你首次明置此武将牌后，你指定一名其他角色；与你势力相同的角色对其造成伤害后，伤害来源摸一张牌。",
+    "currentVietnameseName": "Dianhu",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi đặt thẻ tướng này lần đầu tiên, bạn chỉ định một nhân vật khác; sau khi một nhân vật có cùng sức mạnh với bạn gây sát thương cho nhân vật đó, nguồn gây sát thương sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "ofl_heg__huangquan",
+        "trueName": "huangquan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/dianhu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__duanshi": {
+    "zhName": "断势",
+    "zhDescription": "主将技，锁定技，你计算体力上限时减少1个单独的阴阳鱼。一名角色因杀死与你势力相同的其他角色执行奖惩而摸牌时，其少摸一张牌，然后你摸一张牌。",
+    "currentVietnameseName": "phá vỡ đà",
+    "currentVietnameseDescription": "Kỹ năng chính, kỹ năng khóa, giảm thời gian tính toán sức mạnh thể chất của bạn bằng 1 Cá Âm Dương riêng biệt. Khi một nhân vật rút một lá bài để giết một nhân vật khác có sức mạnh tương đương với bạn để thực hiện khen thưởng hoặc trừng phạt, người đó sẽ rút bớt một lá bài, sau đó bạn rút một lá bài.",
+    "declarations": [
+      {
+        "general": "ofl_heg__guohuai",
+        "trueName": "guohuai",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/duanshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__dujin": {
+    "zhName": "独进",
+    "zhDescription": "摸牌阶段，你可以多摸X张牌（X为你装备区牌数的一半，向上取整）。当你首次明置此武将牌后，若没有与你势力相同的其他角色和与你势力相同的已死亡角色，你获得1枚“先驱”标记。",
+    "currentVietnameseName": "Tiến lên một mình",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể rút thêm X lá bài (X bằng một nửa số lá bài trong khu vực trang bị của bạn, làm tròn lên). Khi bạn đặt lá tướng này lần đầu tiên, nếu không có nhân vật nào khác có lực lượng tương đương với bạn hoặc nhân vật chết có lực lượng tương đương với bạn, bạn sẽ nhận được 1 dấu \"Tiên phong\".",
+    "declarations": [
+      {
+        "general": "ofl_heg__lingcao",
+        "trueName": "lingcao",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/dujin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__gongao": {
+    "zhName": "功獒",
+    "zhDescription": "锁定技，当其他角色死亡时，你加1点体力上限，回复1点体力；准备阶段，你将手牌摸至体力上限。",
+    "currentVietnameseName": "Chó Ngao",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi nhân vật khác chết, bạn cộng thêm 1 điểm giới hạn thể lực và hồi phục 1 điểm thể lực; trong giai đoạn chuẩn bị, bạn rút bài từ tay mình đến giới hạn trên của thể lực.",
+    "declarations": [
+      {
+        "general": "ofl_heg__zhugedan",
+        "trueName": "zhugedan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/gongao.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__hongju": {
+    "zhName": "鸿举",
+    "zhDescription": "限定技，出牌阶段，你可以选择一名其他角色，然后你对除其以外的角色依次发起一次“军令”（你必须执行）。不执行的角色本回合移出游戏。",
+    "currentVietnameseName": "Hồng Cư",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể chọn một nhân vật khác, sau đó bạn thực hiện “lệnh quân sự” cho các nhân vật khác theo trình tự (bạn phải thực hiện nó). Những nhân vật không thực hiện sẽ bị loại khỏi trò chơi ở vòng này.",
+    "declarations": [
+      {
+        "general": "ofl_heg__guanqiujian",
+        "trueName": "guanqiujian",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/hongju.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__huxiao": {
+    "zhName": "虎啸",
+    "zhDescription": "锁定技，当你造成火焰伤害后，受伤角色摸一张牌，本回合你对其使用的下三张牌不计入次数。",
+    "currentVietnameseName": "hổ gầm",
+    "currentVietnameseDescription": "Kỹ năng khóa, sau khi bạn gây sát thương lửa, nhân vật bị thương sẽ rút một lá bài và ba lá bài tiếp theo bạn sử dụng cho vòng này sẽ không được tính.",
+    "declarations": [
+      {
+        "general": "ofl_heg__guanyinping",
+        "trueName": "guanyinping",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/huxiao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__jianji": {
+    "zhName": "谏计",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色摸一张牌并展示之，然后其可以使用此牌（可转化）。",
+    "currentVietnameseName": "Khuyên bảo",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể cho nhân vật khác rút lá bài và tiết lộ nó, sau đó anh ta mới có thể sử dụng lá bài này (có thể biến hình).",
+    "declarations": [
+      {
+        "general": "ofl_heg__huangquan",
+        "trueName": "huangquan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/jianji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__jianxiong": {
+    "zhName": "奸雄",
+    "zhDescription": "当你受到伤害后，你可以选择一项：1.获得对造成伤害的牌；2.摸一张牌。",
+    "currentVietnameseName": "Gian Hùng",
+    "currentVietnameseDescription": "Khi bị sát thương, bạn có thể chọn một: 1. Lấy lá bài gây ra sát thương; 2. Rút một lá bài.",
+    "declarations": [
+      {
+        "general": "ofl_heg__caocao",
+        "trueName": "caocao",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/jianxiong.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__jingce": {
+    "zhName": "精策",
+    "zhDescription": "回合结束时，若本回合进入弃牌堆的牌数不小于X，你可以执行一个额外的摸牌阶段；若你本回合使用过的牌数不小于X，你可以执行一个额外的出牌阶段（X为你的体力值）。",
+    "currentVietnameseName": "lập kế hoạch cẩn thận",
+    "currentVietnameseDescription": "Khi kết thúc vòng chơi, nếu số lá bài bỏ vào chồng bài ở vòng này không nhỏ hơn X thì có thể thực hiện thêm giai đoạn rút bài; nếu số lượng thẻ bạn đã sử dụng trong vòng này không ít hơn",
+    "declarations": [
+      {
+        "general": "ofl_heg__guohuai",
+        "trueName": "guohuai",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/jingce.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__jugu": {
+    "zhName": "巨贾",
+    "zhDescription": "锁定技，当你明置此武将牌后，你摸X张牌，手牌上限+X（X为你的体力上限）。",
+    "currentVietnameseName": "Cự Cổ",
+    "currentVietnameseDescription": "Khóa định: khi lật tướng này, bạn rút X lá bài và giới hạn bài trên tay tăng X, với X bằng máu tối đa của bạn.",
+    "declarations": [
+      {
+        "general": "ofl_heg__mizhu",
+        "trueName": "mizhu",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/jugu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__kangkai": {
+    "zhName": "慷忾",
+    "zhDescription": "你与其距离不大于1的角色成为【杀】的目标后，若该角色：为你，你可以摸一张牌；不为你，你可以展示一张牌并交给该角色，若为装备牌，其可以使用之。",
+    "currentVietnameseName": "bị kích thích",
+    "currentVietnameseDescription": "Sau khi bạn trở thành mục tiêu [Giết] với một nhân vật có khoảng cách không lớn hơn 1, nếu nhân vật đó: là bạn, bạn có thể rút bài; nếu không phải là bạn, bạn có thể tiết lộ một lá bài và đưa nó cho nhân vật. Nếu là thẻ thiết bị thì anh ta có thể sử dụng nó.",
+    "declarations": [
+      {
+        "general": "ofl_heg__caoang",
+        "trueName": "caoang",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/kangkai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__kuanggu": {
+    "zhName": "狂骨",
+    "zhDescription": "当造成或受到1点伤害时，你可以摸一张牌；你使用仅指定唯一目标的伤害牌可以额外指定至多X个目标（X为你已损失体力值+1）。",
+    "currentVietnameseName": "Xương điên",
+    "currentVietnameseDescription": "Khi gây hoặc nhận 1 điểm sát thương, bạn có thể rút bài; bạn có thể sử dụng thẻ sát thương chỉ chỉ định một mục tiêu duy nhất để chỉ định tối đa X mục tiêu bổ sung (X là sức mạnh thể chất đã mất của bạn + 1).",
+    "declarations": [
+      {
+        "general": "ofl_heg__weiyan",
+        "trueName": "weiyan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/kuanggu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__limu": {
+    "zhName": "立牧",
+    "zhDescription": "出牌阶段限一次，你可以将一张<font color='red'>♦</font>牌当【乐不思蜀】对你使用，然后你回复1点体力，本回合可以多使用此牌点数张【杀】。",
+    "currentVietnameseName": "Lý Mục",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể sử dụng thẻ <font color='red'>♦</font> làm [Hạnh phúc] cho mình và sau đó bạn sẽ phục hồi 1 điểm thể lực. Bạn có thể sử dụng thẻ này để nhận thêm điểm [Giết] trong vòng này.",
+    "declarations": [
+      {
+        "general": "ofl_heg__liuyan",
+        "trueName": "liuyan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/limu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__qiangwu": {
+    "zhName": "枪舞",
+    "zhDescription": "出牌阶段限一次，你可以进行判定，本回合你使用的下一张点数大于判定牌的【杀】无次数限制，下一张点数小于判定牌的【杀】无距离限制。",
+    "currentVietnameseName": "múa súng",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể đưa ra phán xét. Trong vòng này, không có giới hạn về số lần bạn sử dụng lá bài tiếp theo có điểm lớn hơn [Kill] của lá bài phán xét. Không có giới hạn về khoảng cách của lá bài tiếp theo có điểm nhỏ hơn [Tiêu diệt] của lá bài phán xét.",
+    "declarations": [
+      {
+        "general": "ofl_heg__xingcai",
+        "trueName": "xingcai",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/qiangwu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__shanjia": {
+    "zhName": "缮甲",
+    "zhDescription": "出牌阶段开始时，你可以摸X张牌（X为与你势力相同的角色数），然后弃置一张牌，若此牌为装备牌，你可以视为使用一张不计入次数的【杀】。",
+    "currentVietnameseName": "sửa chữa áo giáp",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể rút X lá bài (X là số nhân vật có cùng sức mạnh với mình), sau đó bỏ một lá bài. Nếu thẻ này là thẻ trang bị, bạn có thể coi nó như sử dụng một [Giết] không được tính.",
+    "declarations": [
+      {
+        "general": "ofl_heg__caochun",
+        "trueName": "caochun",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/shanjia.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__shuliang": {
+    "zhName": "输粮",
+    "zhDescription": "一名与你势力相同角色的结束阶段，若你与其距离不大于“粮”数，你可以移去一张“粮”，然后该角色摸两张牌。",
+    "currentVietnameseName": "vận chuyển thực phẩm",
+    "currentVietnameseDescription": "Ở giai đoạn cuối của một nhân vật có sức mạnh tương đương với bạn, nếu khoảng cách của bạn với anh ta không lớn hơn số lượng \"thức ăn\", bạn có thể loại bỏ một \"thức ăn\", sau đó nhân vật đó sẽ rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "ofl_heg__lifeng",
+        "trueName": "lifeng",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/shuliang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__tunchu": {
+    "zhName": "屯储",
+    "zhDescription": "摸牌阶段，你可以多摸两张牌，然后将至多两张手牌置于你的武将牌上，称为“粮”，若如此做，本回合你不能使用【杀】。",
+    "currentVietnameseName": "Tunchu",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể rút thêm hai lá bài, sau đó đặt tối đa hai lá bài trên các lá bài chung của mình, được gọi là \"thức ăn\". Nếu bạn làm điều này, bạn không thể sử dụng [Giết] ở vòng này.",
+    "declarations": [
+      {
+        "general": "ofl_heg__lifeng",
+        "trueName": "lifeng",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/tunchu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__tushe": {
+    "zhName": "图射",
+    "zhDescription": "当你使用牌指定其他角色为目标时，你可以摸X张牌（X为大势力的存活角色数）。",
+    "currentVietnameseName": "váy xòe",
+    "currentVietnameseDescription": "Khi sử dụng thẻ để chỉ định nhân vật khác làm mục tiêu, bạn có thể rút thẻ X (X là số lượng nhân vật còn sống sót của lực lượng chính).",
+    "declarations": [
+      {
+        "general": "ofl_heg__liuyan",
+        "trueName": "liuyan",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/tushe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__xionghuo": {
+    "zhName": "凶镬",
+    "zhDescription": "当你首次明置此武将牌后，你获得三枚“暴戾”标记。<br>出牌阶段，你可以交给一名与你势力不同的角色一枚“暴戾”标记。<br>每回合每名角色限一次，当你使用牌对拥有“暴戾”标记的其他角色造成伤害时，此伤害+1。<br>拥有“暴戾”标记的其他角色出牌阶段开始时，其移去“暴戾”标记并随机执行一项：<br>1.你对其造成1点火焰伤害，其本回合不能对你使用【杀】；<br>2.其失去1点体力且本回合手牌上限-1；<br>3.你依次获得其装备区和手牌区各一张牌。",
+    "currentVietnameseName": "chảo dữ dội",
+    "currentVietnameseDescription": "Khi đặt thẻ tướng này lần đầu tiên, bạn sẽ nhận được ba mã thông báo \"bạo lực\". <br>Trong giai đoạn chơi bài, bạn có thể chấm điểm \"bạo lực\" cho nhân vật có sức mạnh khác với nhân vật của bạn. <br>Mỗi nhân vật chỉ có thể làm điều này một lần mỗi vòng. Khi bạn sử dụng lá bài để gây sát thương cho nhân vật khác có dấu \"bạo lực\", sát thương là +1. <br>Khi bắt đầu giai đoạn chơi, các nhân vật khác có dấu \"bạo lực\" sẽ xóa dấu \"bạo lực\" và thực hiện ngẫu nhiên một trong các thao tác sau:<br>1. Bạn gây ra 1 điểm sát thương lửa cho họ và họ không thể sử dụng [Giết] lên bạn trong vòng này;<br>2. Họ mất 1 điểm thể lực và giới hạn trên của lá bài trên tay của họ ở vòng này là -1;<br>3. Bạn nhận được một thẻ cho mỗi người trong khu vực thiết bị và khu vực tay của họ.",
+    "declarations": [
+      {
+        "general": "ofl_heg__xurong",
+        "trueName": "xurong",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/xionghuo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__zhengnan": {
+    "zhName": "征南",
+    "zhDescription": "当其他角色死亡后，你可以摸三张牌，并获得〖武圣〗〖当先〗〖制蛮〗中一个你没有的技能。",
+    "currentVietnameseName": "Chinh phục miền Nam",
+    "currentVietnameseDescription": "Khi các nhân vật khác chết, bạn có thể rút ba lá bài và nhận được một kỹ năng mà bạn không có trong [Võ Thánh], [Dẫn đầu] và [Điều khiển man rợ].",
+    "declarations": [
+      {
+        "general": "ofl_heg__guansuo",
+        "trueName": "guansuo",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/zhengnan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__zhengrong": {
+    "zhName": "征荣",
+    "zhDescription": "锁定技，当你造成/受到伤害时，若场上没有与受伤角色/伤害来源势力相同的其他角色，此伤害+1。",
+    "currentVietnameseName": "Chính Dung",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn gây/nhận sát thương, nếu không có nhân vật nào khác trên sân có lực tương đương với nhân vật/nguồn sát thương bị thương, sát thương này +1.",
+    "declarations": [
+      {
+        "general": "ofl_heg__guanqiujian",
+        "trueName": "guanqiujian",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/zhengrong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ofl_heg__ziyuan": {
+    "zhName": "资援",
+    "zhDescription": "出牌阶段限一次，你可以将任意张点数之和为13的手牌交给一名同势力角色，然后其回复1点体力。",
+    "currentVietnameseName": "Tư Viện",
+    "currentVietnameseDescription": "Giai đoạn đánh bài, một lần: bạn có thể giao các lá trên tay có tổng điểm bằng 13 cho một người chơi khác cùng thế lực; họ hồi 1 máu.",
+    "declarations": [
+      {
+        "general": "ofl_heg__mizhu",
+        "trueName": "mizhu",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/ziyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__huishi": {
+    "zhName": "慧识",
+    "zhDescription": "摸牌阶段，你可以放弃摸牌，改为观看牌堆顶的X张牌，获得其中的一半（向下取整），然后将其余牌置于牌堆底。（X为牌堆牌数的个位数）",
+    "currentVietnameseName": "Khôn ngoan",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể từ bỏ việc rút bài mà thay vào đó nhìn vào những lá bài X ở trên cùng bộ bài, lấy một nửa trong số đó (làm tròn xuống), sau đó đặt những lá bài còn lại xuống đáy bộ bài. (X là chữ số duy nhất của số lá bài trong bộ bài)",
+    "declarations": [
+      {
+        "general": "ol_heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/huishi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__qiluan": {
+    "zhName": "戚乱",
+    "zhDescription": "一名角色回合结束时，你可以摸X张牌（X为本回合死亡的角色数，其中每有一名角色是你杀死的，你多摸两张牌）。",
+    "currentVietnameseName": "Kỳ Luân",
+    "currentVietnameseDescription": "Khi kết thúc lượt của một nhân vật, bạn có thể rút X lá bài (X là số nhân vật chết ở vòng này và cứ mỗi nhân vật bạn giết được rút thêm hai lá bài).",
+    "declarations": [
+      {
+        "general": "ol_heg__hetaihou",
+        "trueName": "hetaihou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/qiluan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__shenxian": {
+    "zhName": "甚贤",
+    "zhDescription": "每回合限一次，当其他角色在你的回合外因弃置而失去基本牌后，你可以摸一张牌。",
+    "currentVietnameseName": "Rất khôn ngoan",
+    "currentVietnameseDescription": "Chỉ một lần trong lượt, bạn có thể rút bài sau khi nhân vật khác mất lá bài cơ bản bằng cách vứt nó ra ngoài lượt của bạn.",
+    "declarations": [
+      {
+        "general": "ofl_heg__xingcai",
+        "trueName": "xingcai",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/shenxian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__wanwei": {
+    "zhName": "挽危",
+    "zhDescription": "每回合限一次，当你的牌被其他角色弃置或获得后，你可以从牌堆获得一张同名牌（无同名牌则改为摸一张牌）。",
+    "currentVietnameseName": "Cứu nguy khủng hoảng",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi vòng, khi lá bài của bạn bị loại bỏ hoặc được nhân vật khác lấy lại, bạn có thể nhận được một lá bài có cùng tên từ bộ bài (nếu không có lá bài cùng tên, bạn có thể rút một lá bài thay thế).",
+    "declarations": [
+      {
+        "general": "ol_heg__bianfuren",
+        "trueName": "bianfuren",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/wanwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__xuehen": {
+    "zhName": "雪恨",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张红色牌并选择至多X名角色（X为你已损失的体力值且至少为1），你横置这些角色，然后对其中一名角色造成1点火焰伤害。",
+    "currentVietnameseName": "trả thù",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể loại bỏ thẻ đỏ và chọn tối đa X nhân vật (X là thể lực đã mất của bạn và ít nhất là 1), bạn làm cạn kiệt những nhân vật này và sau đó gây ra 1 điểm sát thương lửa cho một trong số họ.",
+    "declarations": [
+      {
+        "general": "ofl_heg__guanyinping",
+        "trueName": "guanyinping",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/xuehen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol__zhendu": {
+    "zhName": "鸩毒",
+    "zhDescription": "一名角色的出牌阶段开始时，你可以弃置一张手牌。若如此做，该角色视为使用一张【酒】，然后若该角色不为你，你对其造成1点伤害。",
+    "currentVietnameseName": "tai ương",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài của nhân vật, bạn có thể loại bỏ một lá bài trên tay của mình. Nếu bạn làm điều này, nhân vật được coi là sử dụng [Rượu] và nếu nhân vật đó không phải là bạn, bạn sẽ gây 1 điểm sát thương cho anh ta.",
+    "declarations": [
+      {
+        "general": "ol_heg__hetaihou",
+        "trueName": "hetaihou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/zhendu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_ex__pojun": {
+    "zhName": "破军",
+    "zhDescription": "当你使用【杀】指定一个目标后，你可以将其至多X张牌移出游戏直到当前回合结束（X为其体力值）。你使用的【杀】对手牌数与装备区牌数均不大于你的角色造成的伤害+1。",
+    "currentVietnameseName": "Phổ Quân",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] để chỉ định một mục tiêu, bạn có thể loại bỏ tối đa X lá bài khỏi mục tiêu đó ra khỏi trò chơi cho đến khi kết thúc vòng hiện tại (X là giá trị máu của nó). Số lượng thẻ [Tiêu diệt] đối thủ và số lượng thẻ trong khu vực trang bị bạn sử dụng không lớn hơn sát thương do nhân vật của bạn gây ra +1.",
+    "declarations": [
+      {
+        "general": "ol_ex_heg__xusheng",
+        "trueName": "xusheng",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/ol_exyj/skills/pojun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__benxi": {
+    "zhName": "奔袭",
+    "zhDescription": "锁定技，当你于回合内使用牌时，本回合你计算与其他角色的距离-1。",
+    "currentVietnameseName": "cây bấc",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn sử dụng thẻ trong một vòng, khoảng cách giữa bạn và các nhân vật khác trong vòng này là -1.",
+    "declarations": [
+      {
+        "general": "ol_heg__wuyi",
+        "trueName": "wuyi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/benxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__caiwang": {
+    "zhName": "才望",
+    "zhDescription": "当你使用/打出牌响应其他角色使用的牌后，或其他角色使用/打出牌响应你使用的牌后，若两张牌颜色相同，你可以弃置其一张牌。",
+    "currentVietnameseName": "Chỉ hy vọng",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng/chơi bài để đáp lại lá bài do nhân vật khác đánh ra, hoặc sau khi một nhân vật khác sử dụng/đánh bài để đáp lại lá bài bạn đã đánh, nếu hai lá bài đó cùng màu, bạn có thể loại bỏ một trong các lá bài đó.",
+    "declarations": [
+      {
+        "general": "ol_heg__simazhou",
+        "trueName": "simazhou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/caiwang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__chenglue": {
+    "zhName": "成略",
+    "zhDescription": "与你势力相同的角色出牌阶段开始时，你可以将一张牌置于牌堆顶，令其选择一项：1.弃置两张牌，本回合其使用这些花色的牌无距离和次数限制；2.其可与你<a href='heg__yiwei'>易位</a>，然后控制此武将牌的角色摸一张牌。",
+    "currentVietnameseName": "Thành Lộ",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn đánh bài của nhân vật có sức mạnh ngang bằng với mình, bạn có thể đặt một lá bài lên trên bộ bài và để anh ta chọn một trong những lá bài sau: 1. Bỏ hai lá bài. Không có giới hạn về khoảng cách hoặc số lần anh ta có thể sử dụng những thẻ này trong vòng này; 2. Anh ta có thể <a href='heg__yiwei'>xây lâu đài</a> với bạn, sau đó nhân vật điều khiển lá bài chung này sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "ol_heg__xuyou",
+        "trueName": "xuyou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/chenglue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__chunlao": {
+    "zhName": "醇醪",
+    "zhDescription": "与你势力相同的角色可以移去一枚“阴阳鱼”或“珠联璧合”标记，视为使用一张【酒】。",
+    "currentVietnameseName": "rượu mạnh",
+    "currentVietnameseDescription": "Một nhân vật có cùng sức mạnh với bạn có thể loại bỏ mã thông báo \"Cá Âm Dương\" hoặc \"Trận đẹp\", được coi là sử dụng [Rượu].",
+    "declarations": [
+      {
+        "general": "ol_heg__chengpu",
+        "trueName": "chengpu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/chunlao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__daohuo": {
+    "zhName": "蹈火",
+    "zhDescription": "出牌阶段限一次，你可以将两张颜色不同的牌当火【杀】使用。此【杀】指定唯一目标后，其选择一项：1.令你将“阴阳鱼”标记补至1；2.你选择另一名与目标势力相同的角色，其与目标角色副将<a href='heg__yiwei'>易位</a>。",
+    "currentVietnameseName": "Đi qua lửa",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể sử dụng hai lá bài có màu khác nhau làm lửa [giết]. Sau [Giết] này chỉ định mục tiêu duy nhất, nó sẽ chọn một: 1. Cho bạn tăng dấu \"Cá Âm Dương\" lên 1; 2. Bạn chọn một nhân vật khác có cùng sức mạnh với nhân vật mục tiêu và sử dụng anh ta cùng với cấp phó <a href='heg__yiwei'></a> của nhân vật mục tiêu.",
+    "declarations": [
+      {
+        "general": "ol_heg__chengpu",
+        "trueName": "chengpu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/daohuo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__fushi": {
+    "zhName": "附势",
+    "zhDescription": "锁定技，若你的上家为群势力角色，你视为拥有〖择主〗；若你的下家为魏势力角色，你视为拥有〖逞功〗。",
+    "currentVietnameseName": "Bắt kịp xu hướng",
+    "currentVietnameseDescription": "Đối với kỹ năng khóa, nếu cấp trên của bạn là nhân vật thuộc lực lượng nhóm, bạn được coi là có [Chọn Master]; nếu cấp dưới của bạn là nhân vật của quân Ngụy, bạn được coi là có [Hiển thị công].",
+    "declarations": [
+      {
+        "general": "ol_heg__xuyou",
+        "trueName": "xuyou",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/fushi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__jiushi": {
+    "zhName": "酒诗",
+    "zhDescription": "你明置一张武将牌后，若当前回合角色能使用【酒】，你可以令其视为使用之。当你受到伤害后，若你的武将牌均明置，你可以重铸任意张♣牌并暗置此武将牌。",
+    "currentVietnameseName": "bài thơ về rượu",
+    "currentVietnameseDescription": "Sau khi bạn đặt một lá bài chung, nếu nhân vật có thể sử dụng [Rượu] trong vòng hiện tại, bạn có thể coi đó là sử dụng nó. Sau khi bạn nhận sát thương, nếu tất cả các thẻ tướng của bạn bị lộ, bạn có thể sử dụng lại bất kỳ thẻ ♣ nào và giấu thẻ tướng này.",
+    "declarations": [
+      {
+        "general": "ol_heg__caozhi",
+        "trueName": "caozhi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/jiushi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__mayunlu__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "ol_heg__mayunlu",
+        "trueName": "mayunlu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/ol_heg__mayunlu__mashu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__paiyi": {
+    "zhName": "排异",
+    "zhDescription": "主将技，你计算体力上限时减少1个单独的阴阳鱼。弃牌阶段结束时，若你此阶段未弃置牌，你可以将任意张“权”交给一名角色，然后若其手牌数大于你，你对其造成1点伤害。",
+    "currentVietnameseName": "sự từ chối",
+    "currentVietnameseDescription": "Kỹ năng chính là giảm giới hạn thời gian của sức mạnh thể chất của bạn bằng 1 Cá Âm Dương riêng biệt. Khi kết thúc giai đoạn loại bỏ, nếu bạn chưa loại bỏ quân bài trong giai đoạn này, bạn có thể trao “quyền” bất kỳ cho một nhân vật, sau đó nếu số quân bài trên tay anh ta lớn hơn của bạn, bạn sẽ gây 1 điểm sát thương cho anh ta.",
+    "declarations": [
+      {
+        "general": "ol_heg__zhonghui",
+        "trueName": "zhonghui",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/paiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__quanji": {
+    "zhName": "权计",
+    "zhDescription": "当你受到伤害后，你可以摸一张牌，然后将一张牌置于武将牌上，称为“权”。",
+    "currentVietnameseName": "Kế hoạch điện",
+    "currentVietnameseDescription": "Khi nhận sát thương, bạn có thể rút bài, sau đó đặt quân bài đó vào quân bài chung, gọi là “Quan”.",
+    "declarations": [
+      {
+        "general": "ol_heg__zhonghui",
+        "trueName": "zhonghui",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/quanji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__qunchou": {
+    "zhName": "群仇",
+    "zhDescription": "锁定技，你杀死一名角色，或同势力角色杀死你的奖惩改为变更暗置的副将。",
+    "currentVietnameseName": "mối thù nhóm",
+    "currentVietnameseDescription": "Đối với kỹ năng khóa, phần thưởng và hình phạt khi giết một nhân vật hoặc một nhân vật cùng lực lượng giết bạn sẽ được đổi thành trung úy ẩn danh.",
+    "declarations": [
+      {
+        "general": "ol_heg__jianshuo",
+        "trueName": "jianshuo",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/qunchou.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__sanchen": {
+    "zhName": "三陈",
+    "zhDescription": "出牌阶段限一次，你可以令一名角色摸三张牌然后弃置三张牌。若其未因此次效果而弃置类别相同的牌，则其摸一张牌，且本技能视为未发动过（本回合不能再指定其为目标），然后你本回合获得〖破竹〗。",
+    "currentVietnameseName": "Tam Thần",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể yêu cầu một nhân vật rút ba lá bài và sau đó loại bỏ ba lá bài. Nếu nó không loại bỏ các lá bài cùng loại do hiệu ứng này, nó sẽ rút một lá bài và kỹ năng này sẽ được coi là chưa kích hoạt (nó không thể được chỉ định làm mục tiêu ở vòng này), và sau đó bạn sẽ nhận được [Tre gãy] ở vòng này.",
+    "declarations": [
+      {
+        "general": "ol_heg__duyu",
+        "trueName": "duyu",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/sanchen.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__shantong": {
+    "zhName": "擅统",
+    "zhDescription": "同势力角色的准备阶段，若其武将牌均明置，其可以暗置一张武将牌，令其此回合使用的下一张牌无距离和次数限制。若如此做，此回合其明置该武将牌后，你对其造成1点伤害并获得其所有手牌。",
+    "currentVietnameseName": "Giỏi thống nhất",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị cho các nhân vật cùng thế lực, nếu tất cả các quân bài tướng của họ được đặt công khai thì họ có thể đặt bí mật một quân bài tướng, để quân bài tiếp theo họ sử dụng ở vòng này không bị giới hạn về khoảng cách hoặc số lần. Nếu bạn làm điều này, bạn sẽ gây 1 điểm sát thương cho anh ta và nhận được tất cả các quân bài trên tay anh ta sau khi anh ta đặt quân bài chung ở vòng này một cách rõ ràng.",
+    "declarations": [
+      {
+        "general": "ol_heg__jianshuo",
+        "trueName": "jianshuo",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/shantong.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__suchao": {
+    "zhName": "肃朝",
+    "zhDescription": "出牌阶段限一次，你可以对至多三名手牌数大于你的角色各造成1点伤害。若如此做，此阶段结束时，这些角色各回复1点体力且可以对你使用一张【杀】。",
+    "currentVietnameseName": "Tô Siêu",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể gây 1 điểm sát thương cho mỗi nhân vật trong số tối đa ba nhân vật có nhiều lá bài trên tay hơn bạn. Nếu bạn làm điều này, khi kết thúc giai đoạn này, mỗi nhân vật này sẽ phục hồi 1 điểm thể lực và có thể sử dụng [Giết] lên bạn.",
+    "declarations": [
+      {
+        "general": "ol_heg__sunjun",
+        "trueName": "sunjun",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/suchao.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__xijue": {
+    "zhName": "袭爵",
+    "zhDescription": "当你首次明置此武将牌时，你获得4个“爵”标记；回合结束时，你获得X个“爵”标记（X为你本回合造成的伤害值）。你可以移去1个“爵”标记发动〖突袭〗或〖骁果〗。",
+    "currentVietnameseName": "Tây Quyết",
+    "currentVietnameseDescription": "Khi bạn đặt thẻ tướng này lần đầu tiên, bạn sẽ nhận được 4 điểm \"Jeux\"; khi kết thúc vòng đấu, bạn nhận được dấu X \"Jeux\" (X là sát thương bạn gây ra ở vòng này). Bạn có thể xóa 1 dấu \"Jue\" để khởi động [Tấn công] hoặc [Xiaoguo].",
+    "declarations": [
+      {
+        "general": "ol_heg__zhanghuyuechen",
+        "trueName": "zhanghuyuechen",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/xijue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__yaopan": {
+    "zhName": "邀叛",
+    "zhDescription": "副将技，你杀死过角色的回合结束时，你可以指定一名同势力角色，其可以与你副将<a href='heg__yiwei'>易位</a>。然后控制此武将牌的角色获得所有“权”，执行一个额外出牌阶段。",
+    "currentVietnameseName": "Mời nổi dậy",
+    "currentVietnameseDescription": "Kỹ năng trung tướng: khi kết thúc vòng mà bạn đã giết một nhân vật, bạn có thể chỉ định một nhân vật cùng lực lượng, người có thể <a href='heg__yiwei'>lâu đài</a> với trung tướng của bạn. Sau đó, nhân vật điều khiển lá bài chung này sẽ nhận được tất cả các “quyền” và thực hiện thêm một giai đoạn đánh bài.",
+    "declarations": [
+      {
+        "general": "ol_heg__zhonghui",
+        "trueName": "zhonghui",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/yaopan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__zhengxian": {
+    "zhName": "争先",
+    "zhDescription": "锁定技，当你首次明置此武将牌后，你获得一枚“先驱”标记。同势力角色的回合开始时，若其有“先驱”标记，你令其执行一个额外的出牌阶段。",
+    "currentVietnameseName": "Chạy đua đến đỉnh cao",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi đặt thẻ tướng này lần đầu tiên, bạn sẽ nhận được dấu \"Tiên phong\". Khi bắt đầu lượt nhân vật cùng thế lực nếu có dấu “Tiên phong” thì bạn yêu cầu nhân vật đó thực hiện thêm một pha đánh bài.",
+    "declarations": [
+      {
+        "general": "ol_heg__liaohua",
+        "trueName": "liaohua",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/zhengxian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__zhuanzheng": {
+    "zhName": "转征",
+    "zhDescription": "每轮限两次，出牌阶段，你可以选择一名距离1以内的与你势力相同的角色，你摸X张牌，然后其可与你副将<a href='heg__yiwei'>易位</a> (X为你与其之间的角色数且至少为1)。",
+    "currentVietnameseName": "chuyển sang thu phí",
+    "currentVietnameseDescription": "Mỗi vòng được giới hạn hai lần. Trong giai đoạn chơi bài, bạn có thể chọn nhân vật có sức mạnh tương đương với mình trong phạm vi 1 khoảng cách. Bạn vẽ",
+    "declarations": [
+      {
+        "general": "ol_heg__wuyi",
+        "trueName": "wuyi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/zhuanzheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__zhulian": {
+    "zhName": "诛连",
+    "zhDescription": "锁定技，你的回合内，于本回合使用过【桃】，或成为过【桃】目标的角色受到的伤害+1。",
+    "currentVietnameseName": "Trúc Liên",
+    "currentVietnameseDescription": "Kỹ năng khóa, trong lượt của bạn, nhân vật đã sử dụng [Peach] hoặc bị [Peach] nhắm mục tiêu trong vòng này sẽ nhận +1 sát thương.",
+    "declarations": [
+      {
+        "general": "ol_heg__sunjun",
+        "trueName": "sunjun",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/zhulian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__zhuosheng": {
+    "zhName": "擢升",
+    "zhDescription": "当与你势力相同的角色受到伤害后，你可以令其摸一张牌，直到其下个结束阶段，其使用此牌根据类型执行效果：<br>基本牌：无距离次数限制；<br>普通锦囊牌，可以令此牌目标+1或-1；<br>装备牌，其可以摸一张牌。",
+    "currentVietnameseName": "khuyến khích",
+    "currentVietnameseDescription": "Khi một nhân vật có cùng sức mạnh với bạn bị tổn thương, bạn có thể yêu cầu nhân vật đó rút một lá bài cho đến giai đoạn kết thúc tiếp theo. Nó có thể sử dụng thẻ này để thực hiện các hiệu ứng tùy theo loại:<br>Thẻ cơ bản: không giới hạn số lần;<br>Thẻ kit thông thường, có thể khiến mục tiêu của thẻ này +1 hoặc -1;<br>Thẻ trang bị, nó có thể rút một thẻ.",
+    "declarations": [
+      {
+        "general": "ol_heg__shibao",
+        "trueName": "shibao",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/zhuosheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ol_heg__zongpei": {
+    "zhName": "纵辔",
+    "zhDescription": "每回合限一次，当其他角色的牌不因使用而置入弃牌堆后，你可以获得其中的锦囊牌和坐骑牌。",
+    "currentVietnameseName": "dây cương dọc",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, khi thẻ của các nhân vật khác không được sử dụng và bỏ vào đống bỏ, bạn có thể lấy thẻ kit và gắn thẻ giữa chúng.",
+    "declarations": [
+      {
+        "general": "ol_heg__caozhi",
+        "trueName": "caozhi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/online_heg/skills/zongpei.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__baiyi": {
+    "zhName": "败移",
+    "zhDescription": "限定技，出牌阶段，若你已受伤，你可选择其他两名角色，令这两名角色交换座次。",
+    "currentVietnameseName": "bị đánh bại",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, nếu bị thương, bạn có thể chọn hai nhân vật khác và để họ đổi chỗ cho nhau.",
+    "declarations": [
+      {
+        "general": "os_heg__simashi",
+        "trueName": "simashi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_baiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__beini": {
+    "zhName": "悖逆",
+    "zhDescription": "出牌阶段限一次，你可以选择一名体力值不小于你的角色，令你或其摸两张牌，然后未摸牌的角色视为对摸牌的角色使用一张【杀】。",
+    "currentVietnameseName": "sự bất tuân",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật có thể lực không kém mình và để bạn hoặc anh ta rút hai lá bài. Sau đó, nhân vật không rút bài được coi là sử dụng [Giết] đối với nhân vật đã rút bài.",
+    "declarations": [
+      {
+        "general": "os_heg__jiachong",
+        "trueName": "jiachong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/beini.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__chengxi": {
+    "zhName": "承袭",
+    "zhDescription": "出牌阶段对每名角色限一次，你可以摸一张牌并与一名角色拼点，若你：赢，你使用的下一张基本牌或普通锦囊牌额外结算一次；没赢，其视为对你使用一张无距离限制的【杀】，你使用的下一张基本牌或普通锦囊牌可以额外指定其为目标。",
+    "currentVietnameseName": "kế thừa",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần cho mỗi nhân vật. Bạn có thể rút bài và chiến đấu với một nhân vật. Nếu bạn: thắng, lá bài cơ bản hoặc lá bài thông thường tiếp theo mà bạn sử dụng sẽ được chia thêm một lần nữa; nếu bạn không thắng, nó sẽ được coi là sử dụng [Giết] không giới hạn khoảng cách đối với bạn và thẻ cơ bản tiếp theo hoặc thẻ mẹo thông thường mà bạn sử dụng có thể chỉ định thêm thẻ đó làm mục tiêu.",
+    "declarations": [
+      {
+        "general": "os_heg__xiahouzieh",
+        "trueName": "xiahouzieh",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/chengxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__chuhai": {
+    "zhName": "除害",
+    "zhDescription": "<a href='os__quest'>使命技</a>，令两名其他角色进入濒死状态。<br>⬤　成功：当前回合结束时，废除你的判定区，然后每名其他角色依次交给你一张牌。<br>⬤　完成前：其他角色交给你牌后，你将其中一张置入弃牌堆。",
+    "currentVietnameseName": "Thoát khỏi sự tổn hại",
+    "currentVietnameseDescription": "<a href='os__quest'>Kỹ năng làm nhiệm vụ</a> khiến hai nhân vật khác rơi vào trạng thái hấp hối. <br>⬤ Thành công: Khi kết thúc vòng hiện tại, khu vực phán đoán của bạn bị bãi bỏ và sau đó lần lượt mỗi nhân vật sẽ đưa cho bạn một lá bài. <br>⬤ Trước khi hoàn thành: Sau khi các nhân vật khác đưa thẻ cho bạn, bạn đặt một trong số chúng vào chồng bài bỏ.",
+    "declarations": [
+      {
+        "general": "os_heg__zhouchu",
+        "trueName": "zhouchu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/chuhai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__congji": {
+    "zhName": "从击",
+    "zhDescription": "当你于回合外弃置牌后，你可将其中的所有红色牌交给一名其他角色。",
+    "currentVietnameseName": "Từ cuộc tấn công",
+    "currentVietnameseDescription": "Khi bạn loại bỏ một lá bài ngoài lượt của mình, bạn có thể đưa tất cả các lá bài màu đỏ trong đó cho một nhân vật khác.",
+    "declarations": [
+      {
+        "general": "os_heg__wujing",
+        "trueName": "wujing",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/congji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__dengjian": {
+    "zhName": "登剑",
+    "zhDescription": "其他角色的弃牌阶段结束时，你可从弃牌堆随机获得一张其本回合使用造成过伤害的非转化的【杀】（每轮每种颜色限一次），此【杀】标记为“剑法”（使用时无次数限制）。",
+    "currentVietnameseName": "Đặng Kiên",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn loại bỏ các nhân vật khác, bạn có thể ngẫu nhiên nhận được [Giết] không chuyển đổi từ đống loại bỏ đã gây sát thương ở vòng này (giới hạn một lần cho mỗi màu trong mỗi vòng). [Giết] này được đánh dấu là \"Kỹ thuật kiếm\" (không có giới hạn về số lần nó có thể được sử dụng).",
+    "declarations": [
+      {
+        "general": "os_heg__shie",
+        "trueName": "shie",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/dengjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__dingfa": {
+    "zhName": "定法",
+    "zhDescription": "弃牌阶段结束时，若本回合你失去的牌数不小于你的体力值，你可以选择一项：1. 回复1点体力；2. 对一名其他角色造成1点伤害。",
+    "currentVietnameseName": "luật thành lập",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn loại bỏ, nếu số lá bài bạn bị mất ở vòng này không ít hơn thể lực của bạn thì bạn có thể chọn một: 1. Phục hồi 1 điểm thể lực; 2. Gây 1 điểm sát thương cho nhân vật khác.",
+    "declarations": [
+      {
+        "general": "os_heg__jiachong",
+        "trueName": "jiachong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/dingfa.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__fenghan": {
+    "zhName": "锋悍",
+    "zhDescription": "每回合限一次，当你使用【杀】或伤害锦囊牌指定目标后，你可以令至多X名角色摸一张牌（X为目标数）。",
+    "currentVietnameseName": "Hung dữ",
+    "currentVietnameseDescription": "Mỗi vòng một lần, khi bạn dùng [Sát] hoặc mưu kế gây sát thương để chọn mục tiêu, bạn có thể yêu cầu tối đa X nhân vật rút 1 lá, với X là số mục tiêu.",
+    "declarations": [
+      {
+        "general": "os_heg__wujing",
+        "trueName": "wujing",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/fenghan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__fengpo": {
+    "zhName": "凤魄",
+    "zhDescription": "当你使用【杀】或【决斗】仅指定一名角色为目标后，你可观看其手牌然后选择一项：1.摸X张牌；2.令此牌的伤害值基数+X（X为其<font color='red'>♦</font>手牌数，若你于本局游戏内杀死过角色，则修改为“其红色手牌数”）。",
+    "currentVietnameseName": "Linh hồn phượng hoàng",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] hoặc [Trận đấu] để chỉ chỉ định một nhân vật làm mục tiêu, bạn có thể nhìn vào bàn tay của nhân vật đó và chọn một: 1. Rút thẻ X; 2. Tính giá trị sát thương cơ bản của lá bài này +",
+    "declarations": [
+      {
+        "general": "os_heg__mayunlu",
+        "trueName": "mayunlu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_fengpo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__guoyi": {
+    "zhName": "果毅",
+    "zhDescription": "当你使用【杀】或普通锦囊牌指定仅一名其他角色为目标后，若其体力值或手牌数为全场最高，或你的手牌数不大于X（X为你已损失体力值+1），你可以令其选择一项：1.本回合不能使用或打出手牌；2.弃置X张牌。若条件均满足，或其本回合两个选项均已选择，则此牌结算两次。",
+    "currentVietnameseName": "Quách Nghị",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] hoặc một lá bài thông thường để chỉ định một nhân vật khác làm mục tiêu, nếu giá trị máu hoặc số lá bài trên tay của nhân vật đó cao nhất trong trò chơi hoặc số lá bài trên tay bạn không lớn hơn Nếu các điều kiện được đáp ứng hoặc cả hai lựa chọn của vòng này đều được chọn, lá bài này sẽ được giải quyết hai lần.",
+    "declarations": [
+      {
+        "general": "os_heg__zhouchu",
+        "trueName": "zhouchu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/guoyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__hongju": {
+    "zhName": "鸿举",
+    "zhDescription": "觉醒技，准备阶段，若“荣”的数量不小于3，则你摸等于“荣”数量的牌，然后用任意张手牌替换等量的“荣”，然后获得〖清侧〗并选择是否减1点体力上限获得技能〖扫讨〗。",
+    "currentVietnameseName": "Hồng Cư",
+    "currentVietnameseDescription": "Kỹ năng thức tỉnh, trong giai đoạn chuẩn bị, nếu số \"Vinh quang\" không nhỏ hơn 3, bạn rút các lá bài bằng số \"Vinh quang\", sau đó thay thế cùng số lượng \"Vinh quang\" bằng bất kỳ lá bài nào trên tay của bạn, sau đó nhận được [Clear Side] và chọn có giảm giới hạn trên của sức mạnh thể chất đi 1 điểm để nhận được kỹ năng [Quét hay không].",
+    "declarations": [
+      {
+        "general": "os_heg__guanqiujian",
+        "trueName": "guanqiujian",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_hongju.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__huiyuan": {
+    "zhName": "回援",
+    "zhDescription": "当你于出牌阶段使用牌结算结束后，若此阶段你未获得过此类型的牌，你可选择一名角色并展示其一张手牌，若与你使用的牌类型：相同，你获得此牌，不同：你弃置其此牌，其摸一张牌。若<a href='os__guerrilla'>游击</a>：你对其造成1点伤害。",
+    "currentVietnameseName": "Viện trợ hoàn trả",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng các lá bài trong giai đoạn chơi bài để giải quyết, nếu bạn chưa lấy được loại bài này trong giai đoạn này, bạn có thể chọn một nhân vật và lộ lá bài trên tay mình. Nếu cùng loại với thẻ bạn đã sử dụng thì bạn sẽ nhận được thẻ này. Nếu khác: bạn bỏ lá bài này và anh ta rút một lá bài. Nếu <a href='os__guerrilla'>du kích</a>: Bạn gây 1 sát thương cho nó.",
+    "declarations": [
+      {
+        "general": "os_heg__gongsunfan",
+        "trueName": "gongsunfan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_huiyuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jiange": {
+    "zhName": "剑歌",
+    "zhDescription": "每回合限一次，你可以将一张非基本牌当【杀】使用或打出（无距离与次数限制且不计入次数）。若此时为你的回合外，你摸一张牌。",
+    "currentVietnameseName": "Bài hát kiếm",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi vòng, bạn có thể sử dụng hoặc chơi một lá bài không cơ bản là [Giết] (không có giới hạn về khoảng cách hoặc số lần và nó không được tính vào số lần). Nếu nó nằm ngoài lượt của bạn, bạn sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__xushu",
+        "trueName": "xushu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/jiange.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jianming": {
+    "zhName": "剑鸣",
+    "zhDescription": "锁定技，每回合每种花色限一次，当你使用或打出【杀】时，或当你因拼点失去牌时，你摸一张牌。",
+    "currentVietnameseName": "tiếng kêu của thanh kiếm",
+    "currentVietnameseDescription": "Kỹ năng khóa được giới hạn một lần cho mỗi bộ đồ trong mỗi vòng. Khi bạn sử dụng hoặc chơi [Giết] hoặc khi bạn bị mất một lá bài do đấu điểm, bạn sẽ rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__wangyue",
+        "trueName": "wangyue",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/jianming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jiaohua": {
+    "zhName": "教化",
+    "zhDescription": "当你或体力值最小的角色摸牌后，你可选择一种其本次摸牌未获得的类别（每种类别每回合限一次），令其从牌堆中或弃牌堆中获得一张该类别的牌。",
+    "currentVietnameseName": "sự giác ngộ",
+    "currentVietnameseDescription": "Sau khi bạn hoặc nhân vật có sức mạnh thể chất nhỏ nhất rút được một lá bài, bạn có thể chọn một danh mục mà nhân vật đó chưa đạt được lần này (mỗi danh mục được giới hạn một lần trong mỗi vòng) và để nhân vật đó lấy một thẻ thuộc loại đó từ chồng thẻ hoặc chồng bài bỏ.",
+    "declarations": [
+      {
+        "general": "os_heg__liwei",
+        "trueName": "liwei",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_jiaohua.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jieyu": {
+    "zhName": "竭御",
+    "zhDescription": "每轮限一次，结束阶段或每轮第一次受到伤害后，你可以弃置所有手牌，然后从弃牌堆中获得不同牌名的基本牌各一张。",
+    "currentVietnameseName": "kiệt sức",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, vào cuối giai đoạn hoặc sau khi nhận sát thương lần đầu tiên trong mỗi vòng, bạn có thể loại bỏ tất cả các lá bài trên tay của mình và sau đó nhận được một lá bài cơ bản có tên các lá bài khác nhau từ chồng bài bị loại bỏ.",
+    "declarations": [
+      {
+        "general": "os_heg__huojun",
+        "trueName": "huojun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/jieyu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jiezhan": {
+    "zhName": "竭战",
+    "zhDescription": "其他角色的出牌阶段开始时，若其在你攻击范围内，你可以摸一张牌，然后其视为对你使用一张无距离限制且计入次数限制的【杀】。",
+    "currentVietnameseName": "trận đánh",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn đánh bài của các nhân vật khác, nếu họ nằm trong phạm vi tấn công của bạn, bạn có thể rút một lá bài, khi đó coi như dùng [Giết] chống lại bạn mà không giới hạn khoảng cách và được tính vào giới hạn số lượng.",
+    "declarations": [
+      {
+        "general": "os_heg__zhaoyun",
+        "trueName": "zhaoyun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_if/skills/jiezhan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jinglue": {
+    "zhName": "景略",
+    "zhDescription": "出牌阶段限一次，若场上没有“死士”牌，你可观看一名其他角色的手牌，将其中一张牌标记为“死士”。当“死士”牌被其使用时，你令此牌无效；其回合结束时，若“死士”牌在牌堆、弃牌堆或任意角色的区域内，你获得之。",
+    "currentVietnameseName": "tinh keo",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Nếu không có lá bài \"Dead Soldier\" trên sân, bạn có thể xem các lá bài trên tay của nhân vật khác và đánh dấu một trong các lá bài là \"Dead Soldier\". Khi lá bài \"Death Soldier\" được nó sử dụng, bạn vô hiệu hóa lá bài này; vào cuối lượt của nó, nếu lá bài \"Death Soldier\" nằm trong chồng bài, chồng bài bị loại bỏ hoặc bất kỳ khu vực nào của nhân vật, bạn sẽ nhận được nó.",
+    "declarations": [
+      {
+        "general": "os_heg__simashi",
+        "trueName": "simashi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_jinglue.lua",
+        "line": 2
+      },
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_jinglue.lua",
+        "line": 19
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__jintao": {
+    "zhName": "进讨",
+    "zhDescription": "锁定技，你使用【杀】无距离限制且次数+1。你出牌阶段使用的第一张【杀】伤害值基数+1，第二张【杀】不可响应。",
+    "currentVietnameseName": "bàn luận",
+    "currentVietnameseDescription": "Để khóa kỹ năng, bạn có thể sử dụng [Giết] không giới hạn khoảng cách và số lần +1. Giá trị sát thương cơ bản của [Giết] đầu tiên bạn sử dụng trong giai đoạn chơi bài là +1 và [Giết] thứ hai không thể phản hồi.",
+    "declarations": [
+      {
+        "general": "os_heg__wuban",
+        "trueName": "wuban",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_jintao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__kuanji": {
+    "zhName": "宽济",
+    "zhDescription": "每回合限一次，当你的牌非因使用而置入弃牌堆后，你可以令一名其他角色获得其中的任意张牌。",
+    "currentVietnameseName": "Quan Tế",
+    "currentVietnameseDescription": "Chỉ một lần trong lượt, sau khi thẻ của bạn được bỏ vào đống bỏ mà không được sử dụng, bạn có thể khiến nhân vật khác lấy được bất kỳ thẻ nào.",
+    "declarations": [
+      {
+        "general": "os_heg__feiyi",
+        "trueName": "feiyi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/kuanji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__liechi": {
+    "zhName": "烈斥",
+    "zhDescription": "锁定技，当你受到伤害后，若你的体力值不大于伤害来源，你选择一项：1.令其将手牌弃至与你手牌数相同；2.弃置其一张牌；若本回合你进入过濒死状态，则你可背水：弃置一张装备牌。",
+    "currentVietnameseName": "khiển trách kịch liệt",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn nhận sát thương, nếu thể lực của bạn không lớn hơn nguồn gây sát thương, bạn có thể chọn một: 1. Yêu cầu họ bỏ bài trên tay cho đến khi số lá bài trên tay bạn bằng số của bạn; 2. Loại bỏ một trong các thẻ của họ; nếu bạn đã rơi vào trạng thái cận kề cái chết ở vòng này, bạn có thể loại bỏ thẻ thiết bị.",
+    "declarations": [
+      {
+        "general": "os_heg__furong",
+        "trueName": "furong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_liechi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__longjin": {
+    "zhName": "龙烬",
+    "zhDescription": "觉醒技，当你进入濒死状态时，你将体力回复至2点，然后于此回合与之后的五个回合内，你视为拥有〖龙胆〗和〖冲阵〗，且你至其他角色的距离视为1。",
+    "currentVietnameseName": "than hồng rồng",
+    "currentVietnameseDescription": "Kỹ năng thức tỉnh, khi bước vào trạng thái hấp hối, bạn sẽ hồi phục thể lực lên 2 điểm. Sau đó, trong vòng này và năm vòng tiếp theo, bạn được coi là có [gentian] và [Charge], đồng thời khoảng cách giữa bạn và các nhân vật khác được coi là 1.",
+    "declarations": [
+      {
+        "general": "os_heg__zhaoyun",
+        "trueName": "zhaoyun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_if/skills/longjin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__mibei": {
+    "zhName": "秘备",
+    "zhDescription": "<a href='os__quest'>使命技</a>，使用每种类别的牌各至少两张。<br>⬤　成功：你获得〖谋立〗。<br>⬤　完成前：出牌阶段结束时，若你本回合未使用过牌，则你此回合手牌上限-1并重置〖秘备〗。",
+    "currentVietnameseName": "Sự chuẩn bị bí mật",
+    "currentVietnameseDescription": "<a href='os__quest'>Nhiệm vụ</a> sử dụng ít nhất hai thẻ mỗi loại. <br>⬤Thành công: Bạn nhận được 〖Tìm kiếm Thành lập〗. <br>⬤ Trước khi hoàn thành: Khi kết thúc giai đoạn chơi bài, nếu bạn chưa sử dụng thẻ kiểm tra ở vòng này, giới hạn trên của các lá bài trên tay của bạn trong vòng này sẽ là -1 và [Thiết bị bí mật] sẽ được đặt lại.",
+    "declarations": [
+      {
+        "general": "os_heg__wangling",
+        "trueName": "wangling",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/mibei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__moukui": {
+    "zhName": "谋溃",
+    "zhDescription": "当你使用【杀】指定目标后，你可选择一项：1.摸一张牌；2.弃置其一张手牌；背水：此【杀】结算后，若此【杀】未令其进入濒死状态，其弃置你一张牌。",
+    "currentVietnameseName": "âm mưu đánh bại",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu, bạn có thể chọn một trong các cách sau: 1. Rút một lá bài; 2. Bỏ một lá bài trên tay anh ta; Phản bội: Sau khi [Giết] này được giải quyết, nếu [Giết] này không đưa nó vào trạng thái hấp hối, nó sẽ loại bỏ một trong các lá bài của bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__fuwan",
+        "trueName": "fuwan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_moukui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__qingkou": {
+    "zhName": "轻寇",
+    "zhDescription": "准备阶段，你可视为使用一张【决斗】。此【决斗】结算结束后，造成伤害的角色摸一张牌，若为你，你跳过此回合的判定阶段和弃牌阶段。",
+    "currentVietnameseName": "tên cướp ánh sáng",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể coi nó như một trận [Trận đấu]. Sau khi [Trận đấu] này được giải quyết, nhân vật gây sát thương sẽ rút một lá bài. Nếu là bạn, bạn sẽ bỏ qua giai đoạn phán xét và loại bỏ của vòng này.",
+    "declarations": [
+      {
+        "general": "os_heg__fengxi",
+        "trueName": "fengxi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_qingkou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__shengxi": {
+    "zhName": "生息",
+    "zhDescription": "准备阶段，你可以获得一张<a href=':redistribute'>【调剂盐梅】</a>。结束阶段，若你于此回合内使用过牌且没有造成过伤害，你可以从牌堆中获得一张你指定的<a href='bag_of_tricks'>智囊</a>并摸一张牌。",
+    "currentVietnameseName": "sống",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể nhận được <a href=':redistribute'>[Phân phối lại mận muối]</a>. Vào cuối giai đoạn, nếu bạn đã sử dụng các lá bài vượt qua trong vòng này và không gây ra bất kỳ thiệt hại nào, bạn có thể nhận được <a href='bag_of_tricks'>Thủ thuật</a> mà bạn đã chỉ định từ bộ bài và rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__feiyi",
+        "trueName": "feiyi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/shengxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__shenyi": {
+    "zhName": "伸义",
+    "zhDescription": "每回合限一次，当你或你攻击范围内的角色此回合首次受到其他角色造成的伤害后，你可选择一种基本牌或锦囊牌的牌名（每种限一次），然后将牌堆中一张此牌名的牌置于你的武将牌上（没有则改为该类别的一张牌），称为“侠义”，然后你可以将任意张手牌交给其，当其失去一张你以此法交给其的牌时，你摸一张牌。",
+    "currentVietnameseName": "Thẩm Nghĩa",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng. Khi bạn hoặc một nhân vật trong phạm vi tấn công của bạn bị nhân vật khác gây sát thương lần đầu tiên trong vòng này, bạn có thể chọn tên của thẻ cơ bản hoặc thẻ kit (giới hạn một lần cho mỗi loại), sau đó đặt thẻ có tên này vào bộ bài trên thẻ chung của bạn (nếu không, hãy đổi nó thành thẻ loại này), được gọi là \"Chivalry\", và sau đó bạn có thể đưa cho nó bất kỳ thẻ nào trên tay. Khi nó mất lá bài bạn đưa cho nó theo cách này, bạn rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__liubei",
+        "trueName": "liubei",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/os_shenyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__shigong": {
+    "zhName": "示恭",
+    "zhDescription": "限定技，当你于回合外进入濒死状态时，你可令当前回合者选择一项：1. 增加1点体力上限，回复1点体力，摸一张牌，令你体力回复至体力上限；2. 弃置X张手牌（X为其当前体力值），令你体力回复至1点。",
+    "currentVietnameseName": "thể hiện sự tôn trọng",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, khi bạn rơi vào trạng thái hấp hối ngoài vòng đấu, bạn có thể yêu cầu người trong vòng hiện tại chọn một: 1. Tăng giới hạn thể lực trên lên 1 điểm, khôi phục 1 điểm thể lực và rút một lá bài để khôi phục thể lực của bạn đến giới hạn thể lực trên; 2. Bỏ thẻ X trên tay (X là giá trị thể lực hiện tại) để khôi phục thể lực về 1 điểm.",
+    "declarations": [
+      {
+        "general": "os_heg__liufuren",
+        "trueName": "liufuren",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_shigong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__shoushou": {
+    "zhName": "收绶",
+    "zhDescription": "①当你获得其他角色的牌后，若你在一名角色的攻击范围内，其他角色至你距离+1。②当你造成或受到伤害后，若你不在一名角色的攻击范围内，其他角色至你距离-1。",
+    "currentVietnameseName": "Lấy đi dải ruy băng",
+    "currentVietnameseDescription": "①Sau khi bạn nhận được thẻ của các nhân vật khác, nếu bạn ở trong phạm vi tấn công của một nhân vật, khoảng cách từ các nhân vật khác đến bạn sẽ là +1. ②Sau khi bạn gây hoặc nhận sát thương, nếu bạn không ở trong phạm vi tấn công của nhân vật, khoảng cách từ các nhân vật khác đến bạn sẽ là -1.",
+    "declarations": [
+      {
+        "general": "os_heg__gongsunfan",
+        "trueName": "gongsunfan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_shoushou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__sidai": {
+    "zhName": "伺怠",
+    "zhDescription": "限定技，出牌阶段，你可以将所有基本牌当一张【杀】使用（无距离次数限制）。若这些牌中有：【酒】，此【杀】造成伤害时，伤害翻倍；【桃】，此【杀】造成伤害后，受到伤害角色减1点体力上限；【闪】，此【杀】的目标需弃置一张基本牌，否则不能响应。",
+    "currentVietnameseName": "chờ nhàn rỗi",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể sử dụng tất cả các lá bài cơ bản làm [Giết] (không giới hạn khoảng cách). Nếu có bất kỳ lá bài nào sau đây: [Rượu], khi [Giết] này gây sát thương, sát thương sẽ tăng gấp đôi; [Peach], sau khi [Kill] này gây sát thương, giới hạn vật lý của nhân vật bị sát thương giảm đi 1 điểm; [Flash], mục tiêu của [Kill] này cần loại bỏ một lá bài cơ bản, nếu không nó không thể phản hồi.",
+    "declarations": [
+      {
+        "general": "os_heg__huojun",
+        "trueName": "huojun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/sidai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__tanfeng": {
+    "zhName": "探锋",
+    "zhDescription": "准备阶段，你可弃置一名其他角色区域内的一张牌，然后其可选择一项：1. 受到你造成的1点火焰伤害，其令你跳过一个阶段；2. 将一张牌当【杀】对你使用。",
+    "currentVietnameseName": "Đàm Phong",
+    "currentVietnameseDescription": "Trong giai đoạn chuẩn bị, bạn có thể vứt một lá bài vào khu vực của một nhân vật khác, sau đó anh ta có thể chọn một trong những cách sau: 1. Lấy 1 điểm sát thương lửa từ bạn, điều này sẽ khiến bạn bỏ qua một giai đoạn; 2. Sử dụng một lá bài làm [Giết] để chống lại bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__xiahoushang",
+        "trueName": "xiahoushang",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_tanfeng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__tujue": {
+    "zhName": "途绝",
+    "zhDescription": "限定技，当你处于濒死状态时，你可以将所有牌交给一名其他角色，你回复X点体力并摸X张牌（X为你以此法交给其的牌数，至少为5）。",
+    "currentVietnameseName": "Không đời nào",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, khi bạn sắp chết, bạn có thể đưa tất cả các lá bài cho một nhân vật khác. Bạn sẽ phục hồi X điểm thể lực và rút X thẻ (X là số thẻ bạn đưa cho anh ta theo cách này, ít nhất là 5).",
+    "declarations": [
+      {
+        "general": "os_heg__huangquan",
+        "trueName": "huangquan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/tujue.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__xiawang": {
+    "zhName": "侠望",
+    "zhDescription": "当与你距离不大于1的角色受到黑色牌造成的伤害后，你可以对伤害来源使用【杀】，若此【杀】造成伤害，则结束当前阶段。",
+    "currentVietnameseName": "Hạ Vương",
+    "currentVietnameseDescription": "Khi một nhân vật cách bạn không quá 1 bị thẻ đen gây sát thương, bạn có thể sử dụng [Giết] vào nguồn gây sát thương. Nếu [Giết] này gây sát thương, giai đoạn hiện tại sẽ kết thúc.",
+    "declarations": [
+      {
+        "general": "os_heg__xushu",
+        "trueName": "xushu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/xiawang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__xinghan": {
+    "zhName": "兴汉",
+    "zhDescription": "你的回合外或当你处于濒死状态时，你可如手牌般使用或打出“侠义”牌。准备阶段，若“侠义”牌的数量大于存活角色数，你可依次使用“侠义”牌，然后此回合结束时，你弃置所有手牌并失去X点体力（X为你的体力值-1且至少为1）。",
+    "currentVietnameseName": "Tinh Hàn",
+    "currentVietnameseDescription": "Ngoài lượt của bạn hoặc khi bạn cận kề cái chết, bạn có thể sử dụng hoặc chơi những lá bài \"Hiệp sĩ\" như thể chúng là những lá bài trên tay bạn. Trong giai đoạn chuẩn bị, nếu số lượng thẻ \"Hiệp sĩ\" lớn hơn số lượng nhân vật còn sống, bạn có thể sử dụng các thẻ \"Hiệp sĩ\" theo trình tự, sau đó khi kết thúc vòng này, bạn loại bỏ tất cả các thẻ trên tay và mất X điểm thể lực (X là giá trị vật lý của bạn -1 và ít nhất là 1).",
+    "declarations": [
+      {
+        "general": "os_heg__liubei",
+        "trueName": "liubei",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/os_xinghan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__xingqi": {
+    "zhName": "星启",
+    "zhDescription": "觉醒技，准备阶段，若场上的牌数大于你的体力值，你回复1点体力，然后若〖秘备〗未完成，你从牌堆中获得每种类别的牌各一张；若〖秘备〗已完成，本局游戏你使用牌无距离限制。",
+    "currentVietnameseName": "Tinh Khí",
+    "currentVietnameseDescription": "Kỹ năng thức tỉnh, trong giai đoạn chuẩn bị, nếu số lượng thẻ trên sân lớn hơn thể lực của bạn, bạn sẽ hồi phục 1 điểm thể lực, sau đó nếu \"Chuẩn bị bí mật\" chưa hoàn thành, bạn sẽ nhận được mỗi loại một thẻ từ bộ bài; nếu hoàn thành \"Chuẩn bị bí mật\", sẽ không có giới hạn khoảng cách đối với các thẻ bạn sử dụng trong trò chơi này.",
+    "declarations": [
+      {
+        "general": "os_heg__wangling",
+        "trueName": "wangling",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/xingqi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__xinshou": {
+    "zhName": "心授",
+    "zhDescription": "当你于出牌阶段内使用【杀】时，若此【杀】颜色与你本回合使用过的【杀】颜色均不同，你可选择一项本回合未执行过的效果：1.摸一张牌；2.交给一名其他角色一张牌。当你使用【杀】时，若你本回合执行过〖心授〗的所有效果，你可令〖登剑〗失效并选择一名其他角色，其视为拥有〖登剑〗直到你的下回合开始。若其拥有〖登剑〗时使用【杀】造成过伤害，则你的下回合开始时，你的〖登剑〗生效。",
+    "currentVietnameseName": "Dạy về trái tim",
+    "currentVietnameseDescription": "Khi bạn sử dụng [Giết] trong giai đoạn chơi bài, nếu màu của [Giết] này khác với màu [Giết] bạn đã sử dụng trong vòng này, bạn có thể chọn một hiệu ứng chưa được thực hiện trong vòng này: 1. Rút một lá bài; 2. Đưa thẻ cho nhân vật khác. Khi bạn sử dụng [Giết], nếu bạn đã thực hiện tất cả hiệu ứng của [Heart Grant] ở vòng này, bạn có thể vô hiệu hóa [Sword Ascend] và chọn một nhân vật khác, người được coi là có [Sword Ascend] cho đến khi bắt đầu lượt tiếp theo. Nếu nó đã sử dụng [Giết] để gây sát thương khi có [Kiếm tăng dần], [Kiếm tăng dần] của bạn sẽ có hiệu lực vào đầu lượt tiếp theo của bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__shie",
+        "trueName": "shie",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/os_xinshou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__xuewei": {
+    "zhName": "血卫",
+    "zhDescription": "每轮限一次，其他角色的出牌阶段开始时，你可以选择另一名其他角色并令当前回合角色选择一项：1.直到本回合结束，其不能对你选择的角色使用【杀】且手牌上限-2；2.视为你对其使用一张【决斗】。",
+    "currentVietnameseName": "Bảo vệ máu",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng. Khi bắt đầu giai đoạn đánh bài của các nhân vật khác, bạn có thể chọn một nhân vật khác và yêu cầu nhân vật của vòng hiện tại chọn một tùy chọn: 1. Cho đến cuối vòng này, anh ta không thể sử dụng [Giết] lên nhân vật bạn đã chọn và giới hạn lá bài trên là -2; 2. Được coi là bạn đã sử dụng [Trận đấu] với anh ta.",
+    "declarations": [
+      {
+        "general": "os_heg__furong",
+        "trueName": "furong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_xuewei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__yangshi": {
+    "zhName": "扬师",
+    "zhDescription": "锁定技，当你受到伤害后，你的攻击范围+1，若所有其他角色均在你的攻击范围内，则改为从牌堆获得一张【杀】。",
+    "currentVietnameseName": "Dương Thạch",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi bạn nhận sát thương, phạm vi tấn công của bạn là +1. Nếu tất cả các nhân vật khác nằm trong phạm vi tấn công của bạn, thay vào đó bạn sẽ nhận được [Giết] từ bộ bài.",
+    "declarations": [
+      {
+        "general": "os_heg__tianyu",
+        "trueName": "tianyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_yangshi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__yulong": {
+    "zhName": "驭龙",
+    "zhDescription": "当你使用【杀】指定第一个目标后，你可以与其中一名目标拼点。若你此次拼点牌的颜色为：黑色，此【杀】伤害基数+1；红色，此【杀】不可被响应。然后若你：赢，则此【杀】不计入次数；没赢，你获得此【杀】。",
+    "currentVietnameseName": "Ngọc Long",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu đầu tiên, bạn có thể chiến đấu để giành điểm với một trong các mục tiêu. Nếu màu thẻ của bạn lần này là: đen, mức sát thương của [Giết] này là +1; màu đỏ, [Giết] này không thể phản hồi. Sau đó, nếu bạn: thắng, [kill] này sẽ không được tính; nếu bạn không thắng, bạn sẽ nhận được [giết] này.",
+    "declarations": [
+      {
+        "general": "os_heg__wangyue",
+        "trueName": "wangyue",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_wuxia/skills/yulong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__zaoli": {
+    "zhName": "躁厉",
+    "zhDescription": "锁定技，出牌阶段，你只能使用或打出本回合获得的手牌。出牌阶段开始时，你弃置你所有装备牌和任意张非装备牌，然后摸X张牌，并从牌堆中将你弃置牌中相同子类别的装备牌置入装备区，若你以此法置入装备区的牌数大于2，你失去1点体力。（X为你以此法弃置的牌的总数）",
+    "currentVietnameseName": "cáu kỉnh",
+    "currentVietnameseDescription": "Khóa kỹ năng, trong giai đoạn đánh bài bạn chỉ được sử dụng hoặc chơi những lá bài mình có được ở vòng này. Khi bắt đầu giai đoạn chơi bài, bạn loại bỏ tất cả các thẻ thiết bị và bất kỳ thẻ không phải thiết bị nào, sau đó rút thẻ X và đặt các thẻ thiết bị cùng loại vào các thẻ đã loại bỏ của bạn từ bộ bài vào khu vực thiết bị. Nếu số lượng thẻ bạn đưa vào khu vực trang bị theo cách này lớn hơn 2, bạn sẽ mất 1 điểm thể lực. (X là tổng số bài bạn bỏ theo cách này)",
+    "declarations": [
+      {
+        "general": "os_heg__sunyi",
+        "trueName": "sunyi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_strategizing/skills/zaoli.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__zhengrong": {
+    "zhName": "征荣",
+    "zhDescription": "当你于你的出牌阶段对其他角色使用（此局游戏）累计偶数张牌结算结束后，或当你于出牌阶段第一次造成伤害后，你可选择一名其他角色，将其一张牌扣置于你的武将牌上，称为“荣”。",
+    "currentVietnameseName": "Chính Dung",
+    "currentVietnameseDescription": "Sau khi bạn đã sử dụng số lượng quân bài chẵn cho các nhân vật khác (trong trò chơi này) trong giai đoạn chơi bài của mình hoặc sau khi bạn gây sát thương lần đầu tiên trong giai đoạn chơi bài của mình, bạn có thể chọn một nhân vật khác và đặt một trong các quân bài của họ lên quân bài chung của bạn, được gọi là \"Vinh quang\".",
+    "declarations": [
+      {
+        "general": "os_heg__guanqiujian",
+        "trueName": "guanqiujian",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_sp/skills/os_zhengrong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__zhenxi": {
+    "zhName": "震袭",
+    "zhDescription": "每回合限一次，当你使用【杀】指定目标后，你可选择一项：1.弃置其X张手牌（X为你至其的距离，不足则全弃）；2.移动其场上的一张牌。若其体力值大于你或为全场最高，则你可背水。",
+    "currentVietnameseName": "tấn công động đất",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi vòng, khi bạn sử dụng [Giết] để chỉ định mục tiêu, bạn có thể chọn một: 1. Bỏ X lá bài trên tay nó (X là khoảng cách từ bạn đến mục tiêu, nếu không đủ thì loại bỏ tất cả); 2. Di chuyển một lá bài trên sân của nó. Nếu thể lực của nó lớn hơn bạn hoặc cao nhất ruộng thì bạn có thể gánh nước.",
+    "declarations": [
+      {
+        "general": "os_heg__tianyu",
+        "trueName": "tianyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/os_zhenxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os__zhuidu": {
+    "zhName": "追妒",
+    "zhDescription": "出牌阶段限一次，你可选择一名受伤的其他角色并选择一项：1.你对其造成1点伤害；2.你弃置其装备区的一张牌。若其为女性角色，则你可背水：（在其执行完所有可执行的选项后）弃置一张牌。",
+    "currentVietnameseName": "Đuổi theo sự ghen tuông",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể chọn một nhân vật bị thương khác và chọn một trong những điều sau: 1. Bạn gây 1 điểm sát thương cho nhân vật đó; 2. Bạn bỏ một lá bài vào vùng trang bị của nó. Nếu cô ấy là nhân vật nữ, bạn có thể loại bỏ một lá bài (sau khi cô ấy đã thực hiện tất cả các lựa chọn có sẵn).",
+    "declarations": [
+      {
+        "general": "os_heg__liufuren",
+        "trueName": "liufuren",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_yizhu/skills/zhuidu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_ex__bingyi": {
+    "zhName": "秉壹",
+    "zhDescription": "结束阶段，你可展示所有手牌，若颜色均相同或类型均相同，你令至多X名角色各摸一张牌（X为你的手牌数）。若你展示的牌数大于1且这些牌颜色和类型均相同，则〖慎行〗的X修改为0。",
+    "currentVietnameseName": "Băng Nghi",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể tiết lộ tất cả các lá bài trên tay của mình. Nếu tất cả đều cùng màu hoặc cùng loại, bạn có thể sắp xếp tối đa X ký tự cho mỗi người rút một lá bài (X là số lá bài trên tay bạn). Nếu số lượng quân bài bạn hiển thị lớn hơn 1 và các quân bài có cùng màu và cùng loại thì dấu X của “Thận trọng” sẽ đổi thành 0.",
+    "declarations": [
+      {
+        "general": "os_heg__guyong",
+        "trueName": "guyong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_ex/skills/os_ex_bingyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_ex__jingce": {
+    "zhName": "精策",
+    "zhDescription": "当你出牌阶段使用的第X张牌结算结束后（X为你的体力值），你可摸两张牌，然后若这不是你此阶段第一次摸牌或此回合你已造成过伤害，你获得1枚“策”。",
+    "currentVietnameseName": "lập kế hoạch cẩn thận",
+    "currentVietnameseDescription": "Sau khi quân bài X bạn sử dụng trong giai đoạn đánh bài đã được giải quyết (X là thể lực của bạn), bạn có thể rút hai lá bài. Sau đó, nếu đây không phải là lần đầu tiên bạn rút bài trong giai đoạn này hoặc bạn đã gây sát thương ở vòng này, bạn sẽ nhận được 1 \"chiến thuật\".",
+    "declarations": [
+      {
+        "general": "os_heg__guohuai",
+        "trueName": "guohuai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_ex/skills/os_ex_jingce.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_ex__shenxing": {
+    "zhName": "慎行",
+    "zhDescription": "出牌阶段，你可弃置X张牌，摸一张牌（X为你发动过〖慎行〗的次数且至多为2）。",
+    "currentVietnameseName": "Tiến hành thận trọng",
+    "currentVietnameseDescription": "Trong giai đoạn đánh bài, bạn có thể bỏ X lá bài và rút một lá bài (X là số lần bạn đã kích hoạt [Caution] và tối đa là 2).",
+    "declarations": [
+      {
+        "general": "os_heg__guyong",
+        "trueName": "guyong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_ex/skills/os_ex_shenxing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_ex__yuzhang": {
+    "zhName": "御嶂",
+    "zhDescription": "①你可弃1枚“策”，跳过一个阶段。②当你受到伤害后，你可弃1枚“策”并选择一项，令伤害来源执行：1.本回合不能使用或打出手牌；2.弃置两张牌（不足则全弃）。",
+    "currentVietnameseName": "Ngọc Chương",
+    "currentVietnameseDescription": "① Bạn có thể loại bỏ 1 \"chiến lược\" và bỏ qua một màn. ②Sau khi nhận sát thương, bạn có thể loại bỏ 1 \"chiến lược\" và chọn một \"chiến lược\" khiến nguồn sát thương thực hiện: 1. Bạn không thể sử dụng hoặc chơi bài trên tay trong vòng này; 2. Bỏ hai thẻ (bỏ tất cả nếu không đủ).",
+    "declarations": [
+      {
+        "general": "os_heg__guohuai",
+        "trueName": "guohuai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "overseas",
+        "commit": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+        "file": "pkg/overseas_ex/skills/os_ex_yuzhang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_heg__fuli": {
+    "zhName": "伏枥",
+    "zhDescription": "限定技，当你处于濒死状态时，你可以将体力值回复至X点（X为全场势力数）。若如此做，你翻面。",
+    "currentVietnameseName": "Phù Phong",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, khi bạn đang trong trạng thái hấp hối, bạn có thể khôi phục thể lực của mình về X điểm (X là số lực trên chiến trường). Nếu bạn làm vậy, bạn lật nó lại.",
+    "declarations": [
+      {
+        "general": "os_heg__liaohua",
+        "trueName": "liaohua",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/overseas_heg/skills/fuli.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "os_heg_mayunlu__mashu": {
+    "zhName": "马术",
+    "zhDescription": "锁定技，你与其他角色的距离-1。",
+    "currentVietnameseName": "Mã Thuật",
+    "currentVietnameseDescription": "Khóa kỹ năng, khoảng cách giữa bạn và các nhân vật khác là -1.",
+    "declarations": [
+      {
+        "general": "os_heg__mayunlu",
+        "trueName": "mayunlu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/overseas_heg/skills/os_heg_mayunlu__mashu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "paoxiao": {
+    "zhName": "咆哮",
+    "zhDescription": "锁定技，出牌阶段，你使用【杀】无次数限制。",
+    "currentVietnameseName": "Bào Hao",
+    "currentVietnameseDescription": "Tỏa định kỹ, giai đoạn ra bài, bạn sử dụng 【Sát】 không hạn chế cự ly và số lần.",
+    "declarations": [
+      {
+        "general": "zhangfei",
+        "trueName": "zhangfei",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/paoxiao.lua",
+        "line": 2
+      },
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/power/skills/paoxiao.lua",
+        "line": 46
+      },
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/paoxiao.lua",
+        "line": 59
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "poxiang": {
+    "zhName": "破降",
+    "zhDescription": "出牌阶段限一次，你可以交给一名其他角色一张牌，然后你摸三张牌，移去所有“绝”并失去1点体力，你以此法获得的牌本回合不计入手牌上限。",
+    "currentVietnameseName": "phá vỡ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể đưa một lá bài cho nhân vật khác, sau đó rút ba lá bài, loại bỏ toàn bộ \"Jue\" và mất 1 điểm thể lực. Các lá bài bạn nhận được theo cách này không được tính vào giới hạn trên của các lá bài trên tay bạn trong vòng này.",
+    "declarations": [
+      {
+        "general": "os_heg__fuqian",
+        "trueName": "fuqian",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/poxiang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qiangwu": {
+    "zhName": "枪舞",
+    "zhDescription": "出牌阶段限一次，你可以进行一次判定，若如此做，直到回合结束，你使用点数小于判定牌的【杀】无距离限制，你使用点数大于判定牌的【杀】无次数限制。",
+    "currentVietnameseName": "Vũ điệu giáo",
+    "currentVietnameseDescription": "1x Giai đoạn hành động, bạn có thể bị phán xét. Cho đến hết lượt, Chém của bạn có giá trị _ kết quả là: <, rangeless; >, vô số.",
+    "declarations": [
+      {
+        "general": "os_heg__xingcai",
+        "trueName": "xingcai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/qiangwu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qiangzhi": {
+    "zhName": "强识",
+    "zhDescription": "出牌阶段开始时，你可以展示一名其他角色的一张手牌，当你于此阶段内使用与此牌类别相同的牌时，你可以摸一张牌。",
+    "currentVietnameseName": "Trí nhớ tuyệt vời",
+    "currentVietnameseDescription": "Khi bắt đầu Giai đoạn Hành động, có thể hiển thị lá bài trên tay của một anh hùng khác. Khi bạn sử dụng một lá bài cùng loại trong lượt của mình, bạn có thể rút 1.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangsong",
+        "trueName": "zhangsong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2014/skills/qiangzhi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qianhuan": {
+    "zhName": "千幻",
+    "zhDescription": "①当与你势力相同的角色受到伤害后，你可将一张与你武将牌上花色均不同的牌置于你的武将牌上（称为“幻”）。②当与你势力相同的角色成为基本牌或锦囊牌的唯一目标时，你可将一张“幻”置入弃牌堆，取消此目标。",
+    "currentVietnameseName": "Thiên Hoàn",
+    "currentVietnameseDescription": "①Khi nhân vật có cùng sức mạnh với bạn bị hư hỏng, bạn có thể đặt một lá bài có chất và màu khác với lá bài chung của bạn trên lá bài chung của bạn (được gọi là \"ma\"). ② Khi nhân vật có cùng sức mạnh với bạn trở thành mục tiêu duy nhất của thẻ cơ bản hoặc thẻ kit, bạn có thể đặt một \"bóng ma\" vào đống loại bỏ để hủy mục tiêu này.",
+    "declarations": [
+      {
+        "general": "ld__yuji",
+        "trueName": "yuji",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/qianhuan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qianxun": {
+    "zhName": "谦逊",
+    "zhDescription": "锁定技，你不能被选择为【顺手牵羊】与【乐不思蜀】的目标。",
+    "currentVietnameseName": "Khiêm Tốn",
+    "currentVietnameseDescription": "Tỏa định kỹ, bạn không thể bị chọn làm mục tiêu của 【Thuận Thủ Khiên Dương】/【Lạc Bất Tư Thục】.",
+    "declarations": [
+      {
+        "general": "luxun",
+        "trueName": "luxun",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/qianxun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qiaobian": {
+    "zhName": "巧变",
+    "zhDescription": "你的阶段开始前（准备阶段和结束阶段除外），你可以弃置一张手牌跳过该阶段。若以此法跳过摸牌阶段，你可以获得至多两名其他角色的各一张手牌；若以此法跳过出牌阶段，你可以将场上的一张牌移动至另一名角色相应的区域内。",
+    "currentVietnameseName": "thay đổi thông minh",
+    "currentVietnameseDescription": "Trước khi giai đoạn của bạn bắt đầu (ngoại trừ giai đoạn chuẩn bị và giai đoạn kết thúc), bạn có thể loại bỏ một lá bài trên tay để bỏ qua giai đoạn đó. Nếu bỏ qua giai đoạn rút thẻ theo cách này, bạn có thể nhận được một thẻ từ mỗi nhân vật trong số tối đa hai nhân vật khác; nếu bỏ qua giai đoạn chơi bài theo cách này, bạn có thể di chuyển một lá bài trên sân đến khu vực tương ứng của nhân vật khác.",
+    "declarations": [
+      {
+        "general": "hs__zhanghe",
+        "trueName": "zhanghe",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/qiaobian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qicai": {
+    "zhName": "奇才",
+    "zhDescription": "锁定技，你使用锦囊牌无距离限制。",
+    "currentVietnameseName": "Kỳ Tài",
+    "currentVietnameseDescription": "Tỏa định kỹ, bạn sử dụng lá công cụ không giới hạn khoảng cách.",
+    "declarations": [
+      {
+        "general": "hs__huangyueying",
+        "trueName": "huangyueying",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "huangyueying",
+        "trueName": "huangyueying",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/qicai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qiluan": {
+    "zhName": "戚乱",
+    "zhDescription": "一名角色的回合结束时，若你于此回合内杀死过角色，你可以摸三张牌。",
+    "currentVietnameseName": "Sự hỗn loạn của người thân",
+    "currentVietnameseDescription": "Vào cuối lượt của mỗi anh hùng, rút ​​3 lá bài nếu bạn giết anh hùng trong lượt.",
+    "declarations": [
+      {
+        "general": "ld__hetaihou",
+        "trueName": "hetaihou",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/qiluan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qingcheng": {
+    "zhName": "倾城",
+    "zhDescription": "出牌阶段，你可以弃置一张黑色牌并选择一名武将牌均明置的其他角色，然后你暗置其一张武将牌。然后若你以此法弃置的牌是黑色装备牌，则你可以再选择另一名武将牌均明置的其他角色，暗置其一张武将牌。",
+    "currentVietnameseName": "Khuynh Thành",
+    "currentVietnameseDescription": "Giai đoạn đánh bài: bạn có thể bỏ 1 lá màu Đen và chọn một nhân vật khác đã lật cả hai tướng để úp một tướng của họ. Nếu lá bỏ là bài trang bị màu Đen, bạn có thể chọn thêm một nhân vật khác đã lật cả hai tướng để úp một tướng của họ.",
+    "declarations": [
+      {
+        "general": "hs__zoushi",
+        "trueName": "zoushi",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/qingcheng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qingguo": {
+    "zhName": "倾国",
+    "zhDescription": "你可以将一张黑色手牌当【闪】使用或打出。",
+    "currentVietnameseName": "Khuynh Quốc",
+    "currentVietnameseDescription": "Bạn có thể chuyển hóa sử dụng/đánh ra lá đen trên tay ->【Thiểm】.",
+    "declarations": [
+      {
+        "general": "hs__zhenji",
+        "trueName": "zhenji",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "zhenji",
+        "trueName": "zhenji",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/qingguo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qingleng": {
+    "zhName": "清冷",
+    "zhDescription": "其他角色回合结束时，若其体力值与手牌数之和不小于X，你可将一张牌当无距离限制的冰【杀】对其使用。你对一名没有成为过〖清冷〗目标的角色发动〖清冷〗时，摸一张牌。（X为牌堆数量的个位数）",
+    "currentVietnameseName": "mát mẻ",
+    "currentVietnameseDescription": "Khi kết thúc lượt của các nhân vật khác, nếu tổng sức mạnh thể chất và số lá bài trên tay của họ không nhỏ hơn X, bạn có thể sử dụng lá bài làm băng [tiêu diệt] mà không giới hạn khoảng cách đối với họ. Khi bạn kích hoạt [Coldness] trên một nhân vật chưa phải là mục tiêu của [Coldness], hãy rút một lá bài. (X là số chữ số đơn trong chồng thẻ)",
+    "declarations": [
+      {
+        "general": "ol_heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/qingleng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qingnang": {
+    "zhName": "青囊",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张手牌并选择一名已受伤的角色，然后其回复1点体力。",
+    "currentVietnameseName": "Thanh Nang",
+    "currentVietnameseDescription": "Một lần trong giai đoạn ra bài, bạn có thể bỏ 1 lá trên tay và chọn 1 người đang bị thương, sau đó họ hồi 1 máu.",
+    "declarations": [
+      {
+        "general": "huatuo",
+        "trueName": "huatuo",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/qingnang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qinguo": {
+    "zhName": "勤国",
+    "zhDescription": "当你于回合内使用装备牌结算结束后，你可以视为使用【杀】；当你的装备区里的牌数变化后，若你装备区里的牌数与你的体力值相等，你回复1点体力。",
+    "currentVietnameseName": "Đất nước cần cù",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng trang bị trong lượt của mình, bạn có thể xem là đang sử dụng Chém. Sau khi số thẻ trong khu vực trang bị của bạn thay đổi, nếu số thẻ được trang bị của bạn = HP, bạn sẽ hồi 1.",
+    "declarations": [
+      {
+        "general": "os_heg__lvdai",
+        "trueName": "lvdai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/qinguo.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qingzhong": {
+    "zhName": "清忠",
+    "zhDescription": "出牌阶段开始时，你可以摸两张牌，然后本阶段结束时，你与一名手牌数最少的角色交换手牌。",
+    "currentVietnameseName": "Thanh Trung",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể rút hai lá bài, sau đó khi kết thúc giai đoạn, bạn đổi tay với nhân vật có số lá bài thấp nhất.",
+    "declarations": [
+      {
+        "general": "ol_heg__luzhiw",
+        "trueName": "luzhiw",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/qingzhong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "qixi": {
+    "zhName": "奇袭",
+    "zhDescription": "你可以将一张黑色牌当【过河拆桥】使用。",
+    "currentVietnameseName": "Kỳ Tập",
+    "currentVietnameseDescription": "Bạn có thể chuyển hóa sử dụng 1 lá Đen -> 【Quá Hà Sách Kiều】.",
+    "declarations": [
+      {
+        "general": "hs__ganning",
+        "trueName": "ganning",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "m_heg__ganning",
+        "trueName": "ganning",
+        "package": "mobile_heg"
+      },
+      {
+        "general": "ganning",
+        "trueName": "ganning",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/qixi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "quanbian": {
+    "zhName": "权变",
+    "zhDescription": "当你于出牌阶段首次使用或打出一种花色的手牌时，你可以从牌堆顶X张牌中获得一张与此牌花色不同的牌，将其余牌以任意顺序置于牌堆顶。出牌阶段，你至多使用X张非装备手牌。（X为你的体力上限）",
+    "currentVietnameseName": "sự ngẫu nhiên",
+    "currentVietnameseDescription": "Khi bạn sử dụng hoặc chơi một lá bài trên tay của một bộ lần đầu tiên trong giai đoạn chơi bài, bạn có thể lấy một lá bài thuộc bộ khác với các lá bài X trên cùng của bộ bài và đặt các lá bài còn lại lên trên cùng của bộ bài theo bất kỳ thứ tự nào. Trong giai đoạn chơi bài, bạn có thể sử dụng tối đa X lá bài không phải trang bị trên tay. (X là giới hạn trên của sức mạnh thể chất của bạn)",
+    "declarations": [
+      {
+        "general": "ol_heg__simayi",
+        "trueName": "simayi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/quanbian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "quanfeng": {
+    "zhName": "劝封",
+    "zhDescription": "限定技，当一名其他角色死亡后，你可以<a href='memorialize'>追思</a>该角色，失去〖弘仪〗，获得其武将牌上的所有技能（主公技除外），加1点体力上限，回复1点体力；当你处于濒死状态时，你可以加2点体力上限，回复4点体力。",
+    "currentVietnameseName": "thuyết phục niêm phong",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, khi một nhân vật khác chết, bạn có thể <a href='memorialize'>tưởng nhớ</a> nhân vật đó, mất [Hongyi], đạt được tất cả các kỹ năng trên thẻ tướng của anh ta (ngoại trừ kỹ năng chính), cộng 1 điểm vào giới hạn trên của thể lực và khôi phục 1 điểm thể lực; khi lâm vào trạng thái hấp hối, có thể tăng thêm 2 điểm thể lực giới hạn trên, đồng thời khôi phục 4 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "os_heg__yanghuiyu",
+        "trueName": "yanghuiyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/quanfeng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "quanjian": {
+    "zhName": "劝谏",
+    "zhDescription": "出牌阶段每项限一次，你选择一项令一名其他角色选择是否执行：1.对一名其攻击范围内你指定的角色造成1点伤害；2.将手牌调整至手牌上限（最多摸到5张），其不能使用手牌直到回合结束。若其不执行，则其本回合下次受到的伤害+1。",
+    "currentVietnameseName": "khiển trách",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, mỗi vật phẩm được giới hạn một lần. Bạn chọn một vật phẩm và để nhân vật khác chọn có thực hiện nó hay không: 1. Gây 1 điểm sát thương cho nhân vật mà bạn chỉ định trong phạm vi tấn công của nhân vật đó; 2. Điều chỉnh các lá bài trên tay đến giới hạn trên của ván bài (rút tối đa 5 lá bài) và anh ta không thể sử dụng các lá bài trên tay cho đến khi kết thúc vòng chơi. Nếu nó không thực hiện, sát thương mà nó nhận được ở vòng tiếp theo sẽ là +1.",
+    "declarations": [
+      {
+        "general": "os_heg__huangquan",
+        "trueName": "huangquan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/quanjian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "quanjin": {
+    "zhName": "劝进",
+    "zhDescription": "出牌阶段限一次，你可以将一张手牌交给一名此阶段受到过伤害的角色，对其发起“军令”。若其执行，你摸一张牌；若其不执行，你将手牌摸至与手牌最多的角色相同（最多摸五张）。",
+    "currentVietnameseName": "thuyết phục tiến lên",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể đưa lá bài trên tay của mình cho nhân vật đã bị hư hại trong giai đoạn này và ra \"lệnh quân sự\" cho nhân vật đó. Nếu nó được thực hiện, bạn rút một lá bài; nếu nó không được thực hiện, bạn rút cùng số lượng thẻ với nhân vật có nhiều thẻ nhất (tối đa năm thẻ).",
+    "declarations": [
+      {
+        "general": "ld__dongzhao",
+        "trueName": "dongzhao",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/quanjin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "quhu": {
+    "zhName": "驱虎",
+    "zhDescription": "出牌阶段限一次，你可以与一名体力值大于你的角色拼点。若你赢，该角色对其攻击范围内你指定的另一名角色造成1点伤害；若你没赢，其对你造成1点伤害。",
+    "currentVietnameseName": "đuổi hổ đi",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể cạnh tranh với một nhân vật có sức mạnh thể chất lớn hơn bạn. Nếu bạn thắng, nhân vật này sẽ gây 1 điểm sát thương cho nhân vật khác mà bạn chỉ định trong phạm vi tấn công của nhân vật đó; nếu bạn không thắng, nó sẽ gây ra 1 điểm thiệt hại cho bạn.",
+    "declarations": [
+      {
+        "general": "hs__xunyu",
+        "trueName": "xunyu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/quhu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "re__qianxi": {
+    "zhName": "潜袭",
+    "zhDescription": "准备阶段，你可以摸一张牌然后弃置一张牌。若如此做，你选择距离为1的一名角色，然后直到回合结束，该角色不能使用或打出与你以此法弃置的牌颜色相同的手牌。",
+    "currentVietnameseName": "Tấn công lén lút",
+    "currentVietnameseDescription": "Ở Giai đoạn Bắt đầu, bạn có thể rút 1, loại bỏ một lá bài và sau đó chọn một anh hùng ở khoảng cách 1. Cho đến Cuối lượt, anh ta không thể sử dụng/chơi các lá bài cùng màu mà bạn đã loại bỏ.",
+    "declarations": [
+      {
+        "general": "ld__madai",
+        "trueName": "madai",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp_re/skills/qianxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "rende": {
+    "zhName": "仁德",
+    "zhDescription": "出牌阶段，你可以将至少一张手牌任意分配给其他角色。你于本阶段内以此法给出的手牌首次达到两张或更多后，你回复1点体力。",
+    "currentVietnameseName": "Nhân Đức",
+    "currentVietnameseDescription": "Giai đoạn ra bài, bạn có thể phân phát ít nhất 1 lá trên tay cho những người khác. Trong giai đoạn này, khi bạn lần đầu tiên giao 2 lá hoặc nhiều hơn bằng cách này, bạn hồi 1 máu.",
+    "declarations": [
+      {
+        "general": "liubei",
+        "trueName": "liubei",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/rende.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shangshi": {
+    "zhName": "伤逝",
+    "zhDescription": "当你的手牌数小于你已损失的体力值时，你可以将手牌补至已损失体力值。",
+    "currentVietnameseName": "tang chế",
+    "currentVietnameseDescription": "Khi #hand < #wounds, bạn có thể bổ sung bài trên tay đến #wounds.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangchunhua",
+        "trueName": "zhangchunhua",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2011/skills/shangshi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shangyi": {
+    "zhName": "尚义",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色观看你的手牌，然后你选择一项：1.观看其手牌，然后可以弃置其中一张黑色牌；2.观看其所有暗置的武将牌。",
+    "currentVietnameseName": "Thượng Nghĩa",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể yêu cầu một nhân vật khác canh bài của mình và sau đó bạn có thể chọn một: 1. Xem bài của họ, sau đó loại bỏ một trong các quân bài đen; 2. Xem tất cả các thẻ chung ẩn của họ.",
+    "declarations": [
+      {
+        "general": "ld__jiangqin",
+        "trueName": "jiangqin",
+        "package": "formation"
+      },
+      {
+        "general": "m_heg__jiangqin",
+        "trueName": "jiangqin",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/shangyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shefu": {
+    "zhName": "设伏",
+    "zhDescription": "结束阶段，你可以将一张手牌扣置于武将牌上，称为“伏兵”。若如此做，你为“伏兵”记录一个基本牌或锦囊牌的名称（须与其他“伏兵”记录的名称均不同）。当其他角色于你的回合外使用手牌时，你可以将记录的牌名与此牌相同的一张“伏兵”置入弃牌堆，然后此牌无效。",
+    "currentVietnameseName": "thiết lập một cuộc phục kích",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể đặt quân bài trên tay lên quân bài chung, gọi là “phục kích”. Nếu bạn làm điều này, bạn ghi lại tên thẻ cơ bản hoặc thẻ kit cho Phục kích (phải khác với tên được ghi cho các Phục kích khác). Khi một nhân vật khác sử dụng một lá bài trên tay ngoài lượt của bạn, bạn có thể đặt một lá \"Phục kích\" có cùng tên lá bài đã ghi với lá bài này vào chồng bài bỏ, và khi đó lá bài này sẽ không hợp lệ.",
+    "declarations": [
+      {
+        "general": "os_heg__chengyu",
+        "trueName": "chengyu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/shefu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shengxi": {
+    "zhName": "生息",
+    "zhDescription": "弃牌阶段开始时，若你于此回合内未造成过伤害，你可以摸两张牌。",
+    "currentVietnameseName": "sống",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn loại bỏ, nếu bạn chưa gây sát thương ở vòng này, bạn có thể rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "ld__jiangwanfeiyi",
+        "trueName": "jiangwanfeiyi",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/shengxi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shenxian": {
+    "zhName": "甚贤",
+    "zhDescription": "你的回合外，当有其他角色因弃置而失去牌时，若其中有基本牌，你可以摸一张牌。",
+    "currentVietnameseName": "Đức hạnh và có khả năng",
+    "currentVietnameseDescription": "khi anh hùng khác loại bỏ một lá bài cơ bản ngoài lượt của bạn, bạn có thể rút 1.",
+    "declarations": [
+      {
+        "general": "os_heg__xingcai",
+        "trueName": "xingcai",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/shenxian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "sheyan": {
+    "zhName": "舍宴",
+    "zhDescription": "当你成为一张普通锦囊牌的目标时，你可以为此牌增加一个目标或减少一个目标（目标数至少为一）。",
+    "currentVietnameseName": "bữa tiệc",
+    "currentVietnameseDescription": "Khi bạn là mục tiêu của thẻ mẹo thông thường, bạn có thể thêm một mục tiêu vào thẻ hoặc trừ một mục tiêu khỏi thẻ (số lượng mục tiêu ít nhất phải là một).",
+    "declarations": [
+      {
+        "general": "os_heg__dongyun",
+        "trueName": "dongyun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/sheyan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "sheyi": {
+    "zhName": "舍裔",
+    "zhDescription": "每轮限一次，当一名其他角色受到伤害时，若其体力值小于你，你可以交给其至少X张牌，防止此伤害（X为你的体力值）。",
+    "currentVietnameseName": "She Yi",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi hiệp, khi nhân vật khác bị sát thương, nếu thể lực của nhân vật đó thấp hơn của bạn, bạn có thể đưa cho nhân vật đó ít nhất X thẻ để ngăn chặn sát thương này (X là thể lực của bạn).",
+    "declarations": [
+      {
+        "general": "os_heg__caizhenji",
+        "trueName": "caizhenji",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/sheyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shidu": {
+    "zhName": "识度",
+    "zhDescription": "出牌阶段限一次，你可以与一名角色拼点，若你赢，你获得其所有手牌，然后你交给其你的一半手牌（向下取整）。",
+    "currentVietnameseName": "nhận thức",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể cạnh tranh với một nhân vật. Nếu bạn thắng, bạn sẽ nhận được tất cả bài trên tay họ, sau đó bạn đưa cho họ một nửa ván bài của mình (làm tròn xuống).",
+    "declarations": [
+      {
+        "general": "ol_heg__xiahouhui",
+        "trueName": "xiahouhui",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/shidu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shilus": {
+    "zhName": "嗜戮",
+    "zhDescription": "当一名角色死亡时，你可将其所有武将牌置于你的武将牌旁（称为“戮”），若你为来源，你从剩余武将牌堆额外获得两张“戮”。准备阶段，你可以弃置至多X张牌（X为“戮”数），摸等量的牌。",
+    "currentVietnameseName": "khát máu",
+    "currentVietnameseDescription": "Khi một nhân vật chết, bạn có thể đặt tất cả các thẻ tướng của anh ta bên cạnh các thẻ tướng của bạn (gọi là \"kill\"). Nếu bạn là nguồn, bạn nhận thêm hai lá bài \"tiêu diệt\" từ chồng thẻ chung còn lại. Trong giai đoạn chuẩn bị, bạn có thể loại bỏ tối đa X thẻ (X là số lần \"tiêu diệt\") và rút cùng số lượng thẻ.",
+    "declarations": [
+      {
+        "general": "ld__sunchen",
+        "trueName": "sunchen",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/shilus.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shishoul": {
+    "zhName": "侍守",
+    "zhDescription": "锁定技，当其他角色执行了“佐佑”的一项后，你执行“佐佑”的另一项。",
+    "currentVietnameseName": "canh gác",
+    "currentVietnameseDescription": "Kỹ năng khóa: khi các nhân vật khác thực hiện một trong hai kỹ năng “Tả Hữu”, bạn thực hiện kỹ năng còn lại trong “Tả Hữu”.",
+    "declarations": [
+      {
+        "general": "os_heg__lizhaojiaobo",
+        "trueName": "lizhaojiaobo",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_lxxh/skills/shishou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shoucheng": {
+    "zhName": "守成",
+    "zhDescription": "一名势力与你相同的角色于其回合外失去手牌后，若其没有手牌，你可以令其摸一张牌。",
+    "currentVietnameseName": "Giữ nó nguyên vẹn",
+    "currentVietnameseDescription": "Sau khi nhân vật có sức mạnh ngang bằng với bạn bị mất lá bài ngoài lượt của mình, nếu anh ta không có lá bài nào trên tay, bạn có thể bắt anh ta rút một lá bài.",
+    "declarations": [
+      {
+        "general": "ld__jiangwanfeiyi",
+        "trueName": "jiangwanfeiyi",
+        "package": "formation"
+      },
+      {
+        "general": "m_heg__jiangwanfeiyi",
+        "trueName": "jiangwanfeiyi",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/shoucheng.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "shuangren": {
+    "zhName": "双刃",
+    "zhDescription": "出牌阶段开始时，你可以与一名角色拼点。若你：赢，你视为对任意名与其势力相同的角色使用【杀】；没赢，其他角色于此回合内不是你使用牌的合法目标。",
+    "currentVietnameseName": "cạnh đôi",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể ghép điểm với một nhân vật. Nếu bạn: thắng, bạn được coi là đã sử dụng [Giết] lên một nhân vật có cùng sức mạnh; nếu không thắng thì kết thúc giai đoạn chơi bài.",
+    "declarations": [
+      {
+        "general": "hs__jiling",
+        "trueName": "jiling",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/shuangren.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "sijian": {
+    "zhName": "死谏",
+    "zhDescription": "当你失去手牌后，若你没有手牌，你可以弃置一名其他角色的一张牌。",
+    "currentVietnameseName": "Lời khuyên chết người",
+    "currentVietnameseDescription": "Khi bạn bị mất lá bài trên tay, nếu không có lá bài nào trên tay, bạn có thể loại bỏ lá bài của nhân vật khác.",
+    "declarations": [
+      {
+        "general": "hs__tianfeng",
+        "trueName": "tianfeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/sijian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "sp__youdi": {
+    "zhName": "诱敌",
+    "zhDescription": "结束阶段，你可以令一名其他角色弃置你一张手牌，若弃置的牌不是【杀】，则你获得其一张牌；若弃置的牌不是黑色，则你摸一张牌。",
+    "currentVietnameseName": "Thu hút kẻ thù",
+    "currentVietnameseDescription": "Ở giai đoạn kết thúc, bạn có thể khiến một nhân vật khác bỏ 1 lá trên tay của bạn. Nếu lá bị bỏ không phải [Sát], bạn lấy 1 lá của họ; nếu lá bị bỏ không phải màu Đen, bạn rút 1 lá.",
+    "declarations": [
+      {
+        "general": "m_heg__zhoufang",
+        "trueName": "zhoufang",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/youdi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "suishi": {
+    "zhName": "随势",
+    "zhDescription": "锁定技，当其他角色因受到伤害而进入濒死状态时，若来源与你势力相同，你摸一张牌；当其他角色死亡时，若其与你势力相同，你失去1点体力。",
+    "currentVietnameseName": "Theo xu hướng",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi các nhân vật khác đang trong tình trạng sắp chết do bị sát thương, nếu nguồn giống của bạn thì bạn rút bài; khi các nhân vật khác chết, nếu họ giống bạn, bạn sẽ mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "hs__tianfeng",
+        "trueName": "tianfeng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/suishi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tairan": {
+    "zhName": "泰然",
+    "zhDescription": "锁定技，结束阶段，你回复体力至体力上限，将手牌摸至体力上限；出牌阶段开始时，你失去上次以此法回复的体力值，弃置以此法获得的手牌。",
+    "currentVietnameseName": "điềm tĩnh",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi kết thúc giai đoạn, bạn khôi phục thể lực của mình đến giới hạn thể lực trên, đồng thời rút bài trên tay đến giới hạn thể lực trên; Khi bắt đầu giai đoạn chơi bài, bạn sẽ mất đi thể lực mà bạn đã phục hồi lần cuối theo cách này và loại bỏ các lá bài trên tay thu được theo cách này.",
+    "declarations": [
+      {
+        "general": "ol_heg__simashi",
+        "trueName": "simashi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/tairan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tianbian": {
+    "zhName": "天辩",
+    "zhDescription": "当你拼点时，你可以改为用牌堆顶的一张牌进行拼点；当你的拼点牌亮出后，若此牌花色为<font color='red'>♥</font>，则点数视为K。",
+    "currentVietnameseName": "Cuộc tranh luận về thiên đường",
+    "currentVietnameseDescription": "Khi Đấu điểm, bạn có thể dùng lá trên cùng chồng bài thay thế. Khi dùng lá ♥ trong Đấu điểm, lá đó luôn được xem là K.",
+    "declarations": [
+      {
+        "general": "os_heg__qinmi",
+        "trueName": "qinmi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2017/skills/tianbian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tiandu": {
+    "zhName": "天妒",
+    "zhDescription": "当你的判定牌生效后，你可以获得之。",
+    "currentVietnameseName": "Thiên Đố",
+    "currentVietnameseDescription": "Sau khi lá phán xét của bạn có hiệu lực, bạn có thể thu lấy lá đó.",
+    "declarations": [
+      {
+        "general": "hs__guojia",
+        "trueName": "guojia",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "guojia",
+        "trueName": "guojia",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/tiandu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tianfu": {
+    "zhName": "天覆",
+    "zhDescription": "主将技，阵法技，若当前回合角色与你处于同一<a href='heg_formation_href'>队列</a>，你拥有技能〖看破〗。",
+    "currentVietnameseName": "Bầu trời bị đảo lộn",
+    "currentVietnameseDescription": "Kỹ năng chính là kỹ năng hình thành. Nếu nhân vật trong vòng hiện tại ở cùng <a href='heg_formation_href'>hàng đợi</a> với bạn, bạn có kỹ năng \"Nhìn xuyên thấu\".",
+    "declarations": [
+      {
+        "general": "ld__jiangwei",
+        "trueName": "jiangwei",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/tianfu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tianming": {
+    "zhName": "天命",
+    "zhDescription": "当你成为【杀】的目标时，你可以弃置两张牌（不足则全弃，无牌则不弃），然后摸两张牌；然后若场上体力唯一最多的角色不为你，该角色也可以如此做。",
+    "currentVietnameseName": "Thiên Mệnh",
+    "currentVietnameseDescription": "Sau khi trở thành mục tiêu của Chém, bạn có thể: loại bỏ 2, hòa 2. Nếu có một anh hùng có HP > tất cả các anh hùng khác, anh ta có thể chọn thực hiện hiệu ứng này.",
+    "declarations": [
+      {
+        "general": "os_heg__liuxie",
+        "trueName": "liuxie",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/tianming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tianyi": {
+    "zhName": "天义",
+    "zhDescription": "出牌阶段限一次，你可以与一名角色拼点：若你赢，在本回合结束之前，你可以多使用一张【杀】、使用【杀】无距离限制且可以多选择一个目标；若你没赢，本回合你不能使用【杀】。",
+    "currentVietnameseName": "Thiên Nhất",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể thi đấu với một nhân vật: nếu bạn thắng, trước khi kết thúc vòng này, bạn có thể sử dụng thêm một [Giết], sử dụng [Giết] không giới hạn khoảng cách và có thể chọn thêm một mục tiêu; nếu bạn không thắng, bạn không thể sử dụng [Giết] ở vòng này.",
+    "declarations": [
+      {
+        "general": "hs__taishici",
+        "trueName": "taishici",
+        "package": "hegemony_standard"
+      },
+      {
+        "general": "ol_ex_heg__taishici",
+        "trueName": "taishici",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/fire/skills/tianyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tianyin": {
+    "zhName": "天音",
+    "zhDescription": "锁定技，结束阶段，你从牌堆中获得你本回合未使用过类型的牌各一张。",
+    "currentVietnameseName": "Thiên âm",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi kết thúc giai đoạn, bạn nhận được một lá bài thuộc mỗi loại mà bạn chưa sử dụng trong vòng này từ bộ bài.",
+    "declarations": [
+      {
+        "general": "os_heg__caizhenji",
+        "trueName": "caizhenji",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_shiji/skills/tianyin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tiaoxin": {
+    "zhName": "挑衅",
+    "zhDescription": "出牌阶段限一次，你可以指定一名你在其攻击范围内的角色，其需包括你在内的角色使用一张【杀】，否则你弃置其一张牌。",
+    "currentVietnameseName": "khiêu khích",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chỉ định một nhân vật mà bạn nằm trong phạm vi tấn công của nó. Nhân vật bao gồm cả bạn cần sử dụng [Giết], nếu không bạn sẽ loại bỏ một trong các lá bài của nhân vật đó.",
+    "declarations": [
+      {
+        "general": "ld__jiangwei",
+        "trueName": "jiangwei",
+        "package": "formation"
+      },
+      {
+        "general": "m_heg__jiangwei",
+        "trueName": "jiangwei",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/tiaoxin.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tieqi": {
+    "zhName": "铁骑",
+    "zhDescription": "当你指定【杀】的目标后，你可以进行判定：若结果为红色，该角色不能使用【闪】响应此【杀】。",
+    "currentVietnameseName": "Thiết Kỵ",
+    "currentVietnameseDescription": "Sau khi bạn xác định mục tiêu của 【Sát】, ứng với mỗi mục tiêu, bạn có thẻ tiến hành phán xét: Nếu kết quả có màu đỏ, họ không thể sử dụng 【Thiểm】 để hưởng ứng 【Sát】 này.",
+    "declarations": [
+      {
+        "general": "machao",
+        "trueName": "machao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/tieqi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "tuxi": {
+    "zhName": "突袭",
+    "zhDescription": "摸牌阶段，你可以改为获得至多两名其他角色的各一张手牌。",
+    "currentVietnameseName": "Đột Tập",
+    "currentVietnameseDescription": "Giai đoạn rút bài, bạn có thể thu lấy từ tối đa 2 người khác, mỗi người 1 lá trên tay.",
+    "declarations": [
+      {
+        "general": "zhangliao",
+        "trueName": "zhangliao",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/tuxi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty__duanxie": {
+    "zhName": "断绁",
+    "zhDescription": "出牌阶段限一次，你可以令一名其他角色横置，然后你横置。",
+    "currentVietnameseName": "cắt bỏ nhà tù",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể làm cho một nhân vật khác kiệt sức, và sau đó bạn cũng kiệt sức.",
+    "declarations": [
+      {
+        "general": "nos_heg__chenwudongxi",
+        "trueName": "chenwudongxi",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/duanxie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty__fenming": {
+    "zhName": "奋命",
+    "zhDescription": "结束阶段，若你处于横置状态，你可以弃置所有处于横置状态角色的各一张牌。",
+    "currentVietnameseName": "Làm việc chăm chỉ cho cuộc sống của bạn",
+    "currentVietnameseDescription": "Vào cuối giai đoạn, nếu bạn bị chạm, bạn có thể loại bỏ một thẻ từ mỗi ký tự được chạm.",
+    "declarations": [
+      {
+        "general": "nos_heg__chenwudongxi",
+        "trueName": "chenwudongxi",
+        "package": "hegemony_nos"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/fenming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty__langmie": {
+    "zhName": "狼灭",
+    "zhDescription": "其他角色出牌阶段结束时，若其本阶段使用过至少两张相同类别的牌，你可以摸一张牌；其他角色的结束阶段，若其本回合造成过至少2点伤害，你可以弃置一张牌，对其造成1点伤害。",
+    "currentVietnameseName": "Giết sói",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn đánh bài của các nhân vật khác, nếu họ đã sử dụng ít nhất hai lá bài cùng loại trong giai đoạn này thì bạn có thể rút một lá bài; khi kết thúc giai đoạn chơi của nhân vật khác, nếu họ đã gây ra ít nhất 2 điểm sát thương trong vòng này, bạn có thể loại bỏ một lá bài và gây 1 điểm sát thương cho họ.",
+    "declarations": [
+      {
+        "general": "os_heg__duanwei",
+        "trueName": "duanwei",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/langmie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty__shengxi": {
+    "zhName": "生息",
+    "zhDescription": "结束阶段，若你于此回合内未造成过伤害，你可以摸两张牌。",
+    "currentVietnameseName": "sống",
+    "currentVietnameseDescription": "Ở giai đoạn cuối, nếu bạn không gây ra bất kỳ thiệt hại nào trong vòng này, bạn có thể rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "m_heg__jiangwanfeiyi",
+        "trueName": "jiangwanfeiyi",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/shengxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__anyong": {
+    "zhName": "暗涌",
+    "zhDescription": "每回合限一次，当与你势力相同的一名角色对另一名其他角色造成伤害时，你可令此伤害翻倍，然后若受到伤害的角色：武将牌均明置，你失去1点体力并失去此技能；只明置了一张武将牌，你弃置两张手牌。",
+    "currentVietnameseName": "dòng chảy ngầm",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi hiệp, khi một nhân vật có cùng sức mạnh với bạn gây sát thương cho một nhân vật khác, bạn có thể nhân đôi sát thương. Sau đó nếu nhân vật bị hư hỏng: toàn bộ quân bài tướng bị lộ, bạn sẽ mất 1 điểm thể lực và mất kỹ năng này; chỉ có một lá bài chung được lộ ra và bạn loại bỏ hai lá bài trên tay.",
+    "declarations": [
+      {
+        "general": "ty_heg__xunchen",
+        "trueName": "xunchen",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/anyong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__boyan": {
+    "zhName": "驳言",
+    "zhDescription": "出牌阶段限一次，你可以选择一名其他角色，其将手牌摸至其体力上限，其本回合不能使用或打出手牌。<br><a href='ty_heg_zongheng'>纵横</a>：删去〖驳言〗描述中的“其将手牌摸至体力上限”。",
+    "currentVietnameseName": "bác bỏ",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật khác, và anh ta sẽ rút những lá bài trên tay đến giới hạn trên của sức mạnh thể chất của mình. Anh ta không thể sử dụng hoặc chơi các lá bài trên tay trong vòng này. <br><a href='ty_heg_zongheng'>Zongheng</a>: Xóa \"anh ta rút bài từ tay mình đến giới hạn trên của sức mạnh thể chất\" trong phần mô tả \"Phác bỏ\".",
+    "declarations": [
+      {
+        "general": "ty_heg__fengxiw",
+        "trueName": "fengxiw",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/boyan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__chengshang": {
+    "zhName": "承赏",
+    "zhDescription": "每阶段限一次，当你于出牌阶段内使用指定有与你势力不同或未确定势力角色为目标的牌结算后，若此牌未造成伤害，你可获得牌堆中所有与此牌花色点数相同的牌。若你没有因此获得牌，此技能视为此阶段未发动过。",
+    "currentVietnameseName": "Chấp nhận phần thưởng",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi giai đoạn, khi bạn sử dụng lá bài nhắm vào nhân vật có sức mạnh khác với mình hoặc sức mạnh không xác định trong giai đoạn chơi bài để giải quyết, nếu lá bài này không gây sát thương, bạn có thể nhận được tất cả các lá bài trong bộ bài có cùng chất và điểm màu như lá bài này. Nếu bạn không nhận được thẻ cho việc này, kỹ năng này được coi là chưa được kích hoạt trong giai đoạn này.",
+    "declarations": [
+      {
+        "general": "ty_heg__zongyu",
+        "trueName": "zongyu",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/chengshang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__daoshu": {
+    "zhName": "盗书",
+    "zhDescription": "出牌阶段限一次，你可以选择一名其他角色并选择一种花色，然后获得其一张手牌。若此牌与你选择的花色：相同，你对其造成1点伤害且此技能视为未发动过；不同，你交给其一张其他花色的手牌（若没有需展示所有手牌）。",
+    "currentVietnameseName": "Trộm sách",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật khác và một bộ đồ, sau đó nhận một trong những lá bài của họ trên tay. Nếu lá bài này giống với bộ đồ bạn đã chọn: bạn gây 1 điểm sát thương cho nó và kỹ năng này được coi là chưa được kích hoạt; nếu khác thì bạn đưa cho nó một lá bài của bộ khác (nếu không thì phải lật hết quân bài trên tay).",
+    "declarations": [
+      {
+        "general": "ty_heg__jianggan",
+        "trueName": "jianggan",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/daoshu.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__deshao": {
+    "zhName": "德劭",
+    "zhDescription": "每回合限X次（X为你的体力值），当其他角色使用黑色牌指定你为唯一目标后，若其已明置的武将牌数不大于你，你可弃置其一张牌。",
+    "currentVietnameseName": "Đức Thiệu",
+    "currentVietnameseDescription": "Mỗi hiệp được giới hạn X lần (X là thể lực của bạn). Khi các nhân vật khác sử dụng thẻ đen để chỉ định bạn là mục tiêu duy nhất, nếu số lượng thẻ tướng họ đặt không lớn hơn của bạn, bạn có thể loại bỏ một trong các thẻ của họ.",
+    "declarations": [
+      {
+        "general": "ty_heg__yanghu",
+        "trueName": "yanghu",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/deshao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__duannian": {
+    "zhName": "断念",
+    "zhDescription": "出牌阶段结束时，你可弃置所有手牌，然后将手牌摸至体力上限。",
+    "currentVietnameseName": "từ bỏ suy nghĩ",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn chơi bài, bạn có thể loại bỏ tất cả các quân bài trên tay, sau đó rút các quân bài trên tay lên đến giới hạn trên của thể lực.",
+    "declarations": [
+      {
+        "general": "ty_heg__zhouyi",
+        "trueName": "zhouyi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/duannian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__fenglve": {
+    "zhName": "锋略",
+    "zhDescription": "出牌阶段限一次，你可和一名其他角色拼点，若你赢，该角色交给你其区域内的两张牌；若其赢，你交给其一张牌。<br><a href='ty_heg_zongheng'>纵横</a>：交换〖锋略〗描述中的“一张牌”和“两张牌”。",
+    "currentVietnameseName": "Phong Lue",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể cạnh tranh với một nhân vật khác. Nếu bạn thắng, nhân vật sẽ đưa cho bạn hai lá bài trong khu vực của anh ta; nếu anh ta thắng, bạn sẽ đưa cho anh ta một lá bài. <br><a href='ty_heg_zongheng'>Zongheng</a>: Trao đổi \"một thẻ\" và \"hai thẻ\" trong mô tả của \"Feng Lue\".",
+    "declarations": [
+      {
+        "general": "ty_heg__xunchen",
+        "trueName": "xunchen",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/fenglve.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__gongxiu": {
+    "zhName": "共修",
+    "zhDescription": "摸牌阶段，你可少摸一张牌，然后选择一项：1.令至多X名角色各摸一张牌；2.令至多X名角色各弃置一张牌。（X为你的体力上限，不能连续选择同一项）",
+    "currentVietnameseName": "Cùng nhau luyện tập",
+    "currentVietnameseDescription": "Trong giai đoạn rút bài, bạn có thể rút bớt một lá bài, sau đó chọn một lá bài: 1. Mỗi người có tối đa X nhân vật rút một lá bài; 2. Mỗi người có tối đa X ký tự loại bỏ một lá bài. (X là giới hạn thể lực trên của bạn, bạn không thể chọn cùng một mục liên tiếp)",
+    "declarations": [
+      {
+        "general": "ty_heg__nanhualaoxian",
+        "trueName": "nanhualaoxian",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/gongxiu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__guowu": {
+    "zhName": "帼武",
+    "zhDescription": "出牌阶段开始时，你可以展示所有手牌，若包含的类别数：不小于1，你从弃牌堆中获得一张【杀】；不小于2，你本阶段使用牌无距离限制；不小于3，你本阶段使用【杀】或普通锦囊牌可以多指定两个目标（每阶段限一次）。",
+    "currentVietnameseName": "Quốc Vũ",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể trưng bày tất cả các quân bài trên tay của mình. Nếu số lượng danh mục được đưa vào là: không ít hơn 1, bạn nhận được [Giết] từ đống đồ bỏ; không ít hơn 2, không có giới hạn khoảng cách đối với các thẻ bạn sử dụng trong giai đoạn này; không ít hơn 3, bạn có thể sử dụng thẻ [Giết] hoặc thẻ mẹo thông thường trong giai đoạn này để chỉ định thêm hai mục tiêu (giới hạn một lần trong mỗi giai đoạn).",
+    "declarations": [
+      {
+        "general": "ty_heg__lvlingqi",
+        "trueName": "lvlingqi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/guowu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__jianliang": {
+    "zhName": "简亮",
+    "zhDescription": "摸牌阶段开始时，若你的手牌数为全场最少，你可令与你势力相同的所有角色各摸一张牌。",
+    "currentVietnameseName": "Kiến Lương",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn rút bài, nếu trên tay bạn có số lá bài thấp nhất trong game, bạn có thể tạo ra tất cả các nhân vật có sức mạnh tương đương với việc bạn rút mỗi lá bài.",
+    "declarations": [
+      {
+        "general": "ty_heg__dengzhi",
+        "trueName": "dengzhi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/jianliang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__jinghe": {
+    "zhName": "经合",
+    "zhDescription": "出牌阶段限一次，你可以展示至多X张牌名各不同的手牌并选择等量有明置武将牌的角色，从“写满技能的天书”随机展示X个技能，这些角色依次选择并获得其中一个技能，直到你下回合开始（X为你的体力上限）。",
+    "currentVietnameseName": "hợp tác kinh tế",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể hiển thị tối đa",
+    "declarations": [
+      {
+        "general": "ty_heg__nanhualaoxian",
+        "trueName": "nanhualaoxian",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/jinghe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__kuangcai": {
+    "zhName": "狂才",
+    "zhDescription": "锁定技，①你的回合内，你使用牌无距离和次数限制。②弃牌阶段开始时，若你本回合：没有使用过牌，你的手牌上限+1；使用过牌且没有造成伤害，你手牌上限-1。",
+    "currentVietnameseName": "Tài năng điên rồ",
+    "currentVietnameseDescription": "Khóa kỹ năng, ① Trong lượt của bạn, không có giới hạn về khoảng cách hoặc số lần bạn có thể sử dụng thẻ. ② Khi bắt đầu giai đoạn loại bỏ, nếu bạn: không sử dụng quân bài trong vòng này, giới hạn trên của quân bài trên tay của bạn là +1; nếu bạn sử dụng quân bài séc và không gây thiệt hại thì giới hạn trên của quân bài trên tay của bạn là -1.",
+    "declarations": [
+      {
+        "general": "ty_heg__miheng",
+        "trueName": "miheng",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/kuangcai.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__lianyou": {
+    "zhName": "莲佑",
+    "zhDescription": "当你死亡时，你可以令一名其他角色获得〖兴火〗。",
+    "currentVietnameseName": "Liên Du",
+    "currentVietnameseDescription": "Khi bạn chết, bạn có thể khiến nhân vật khác nhận được \"Resurge\".",
+    "declarations": [
+      {
+        "general": "ty_heg__zhouyi",
+        "trueName": "zhouyi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/lianyou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__mingfa": {
+    "zhName": "明伐",
+    "zhDescription": "出牌阶段限一次，你可以选择与你势力不同或未确定势力的一名其他角色，其下个回合结束时，若其手牌数：小于你，你对其造成1点伤害并获得其一张手牌；不小于你，你摸至与其手牌数相同（最多摸五张）。",
+    "currentVietnameseName": "cắt rõ ràng",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật khác có sức mạnh khác với bạn hoặc sức mạnh không xác định. Kết thúc lượt tiếp theo, nếu số lá bài trên tay anh ta: ít hơn của bạn, bạn gây cho anh ta 1 điểm sát thương và nhận được một lá bài từ tay anh ta; nếu không ít hơn của bạn, bạn rút được số quân bài tương đương trên tay anh ta (tối đa năm quân bài).",
+    "declarations": [
+      {
+        "general": "ty_heg__yanghu",
+        "trueName": "yanghu",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/mingfa.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__qiao": {
+    "zhName": "气傲",
+    "zhDescription": "每回合限两次，当你成为与你势力不同或未确定势力角色使用牌的目标后，你可弃置其一张牌，然后你弃置一张牌。",
+    "currentVietnameseName": "Kiêu ngạo",
+    "currentVietnameseDescription": "Bạn bị giới hạn hai lần mỗi vòng. Khi bạn trở thành mục tiêu của một lá bài được sử dụng bởi một nhân vật có sức mạnh khác với sức mạnh của bạn hoặc sức mạnh không xác định, bạn có thể loại bỏ một trong các lá bài của họ, sau đó bạn loại bỏ một lá bài.",
+    "declarations": [
+      {
+        "general": "ty_heg__zongyu",
+        "trueName": "zongyu",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/qiao.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__shejian": {
+    "zhName": "舌剑",
+    "zhDescription": "当你成为其他角色使用牌的唯一目标后，你可弃置所有手牌。若如此做，你选择一项：1.弃置其等量的牌；2.对其造成1点伤害。",
+    "currentVietnameseName": "thanh kiếm lưỡi",
+    "currentVietnameseDescription": "Khi bạn trở thành mục tiêu duy nhất để các nhân vật khác sử dụng bài, bạn có thể loại bỏ tất cả các lá bài trên tay của mình. Nếu làm như vậy, bạn chọn một: 1. Bỏ số thẻ bằng nhau; 2. Gây 1 sát thương cho nó.",
+    "declarations": [
+      {
+        "general": "ty_heg__miheng",
+        "trueName": "miheng",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/shejian.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__shenwei": {
+    "zhName": "神威",
+    "zhDescription": "主将技，此武将牌上单独的阴阳鱼个数-1。摸牌阶段，你额外摸两张牌，你的手牌上限+2。",
+    "currentVietnameseName": "sức mạnh thần thánh",
+    "currentVietnameseDescription": "Kỹ năng tướng chính, số lượng cá Âm Dương riêng lẻ trên lá tướng này là -1. Trong giai đoạn rút bài, bạn rút thêm hai lá bài, và giới hạn trên của ván bài của bạn là +2.",
+    "declarations": [
+      {
+        "general": "ty_heg__lvlingqi",
+        "trueName": "lvlingqi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/shenwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__wanggui": {
+    "zhName": "望归",
+    "zhDescription": "每回合限一次，当你造成或受到伤害后，若你：仅明置此武将牌，你可对与你势力不同的一名角色造成1点伤害；武将牌均明置，你可令所有与你势力相同的角色各摸一张牌。",
+    "currentVietnameseName": "Rất mong được trở lại",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, sau khi bạn gây hoặc nhận sát thương, nếu bạn: Chỉ lộ lá bài chung này, bạn có thể gây 1 điểm sát thương cho nhân vật có sức mạnh khác với bạn; nếu cả hai lá bài chung đều lộ ra, bạn có thể tạo ra tất cả các nhân vật có cùng sức mạnh khi bạn rút mỗi lá bài.",
+    "declarations": [
+      {
+        "general": "ty_heg__huaxin",
+        "trueName": "huaxin",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/wangui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__weicheng": {
+    "zhName": "伪诚",
+    "zhDescription": "你交给其他角色手牌，或你的手牌被其他角色获得后，若你的手牌数小于体力值，你可以摸一张牌。",
+    "currentVietnameseName": "đạo đức giả",
+    "currentVietnameseDescription": "Sau khi bạn đưa bài cho nhân vật khác hoặc được nhân vật khác lấy bài, nếu số bài trên tay ít hơn thể lực thì bạn có thể rút bài.",
+    "declarations": [
+      {
+        "general": "ty_heg__jianggan",
+        "trueName": "jianggan",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/weicheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__weimeng": {
+    "zhName": "危盟",
+    "zhDescription": "出牌阶段限一次，你可选择一名其他角色，获得其至多X张手牌，然后交给其等量的牌（X为你的体力值）。<br><a href='ty_heg_zongheng'>纵横</a>：〖危盟〗描述中的X改为1。",
+    "currentVietnameseName": "Liên minh nguy hiểm",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể chọn một nhân vật khác, lấy tối đa X thẻ trên tay anh ta, sau đó đưa cho anh ta số lượng thẻ tương ứng (X là sức mạnh thể chất của bạn). <br><a href='ty_heg_zongheng'>Zongheng</a>: Chữ X trong phần mô tả \"Liên minh nguy hiểm\" được đổi thành 1.",
+    "declarations": [
+      {
+        "general": "ty_heg__dengzhi",
+        "trueName": "dengzhi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/weimeng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__xibing": {
+    "zhName": "息兵",
+    "zhDescription": "当其他角色于其出牌阶段内使用黑色【杀】或黑色普通锦囊牌指定唯一目标后，若其于此回合内未使用过黑色【杀】或黑色普通锦囊牌，你可令其将手牌摸至体力值（至多摸至五张），然后若你与其均明置了所有武将牌，则你可暗置你与其各一张武将牌且本回合不能明置以此法暗置的武将牌。若其因此摸牌，其本回合不能使用手牌。",
+    "currentVietnameseName": "ngừng quân",
+    "currentVietnameseDescription": "Khi các nhân vật khác sử dụng lá bài mẹo chung màu đen [Giết] hoặc màu đen để chỉ định mục tiêu duy nhất trong giai đoạn chơi bài, nếu họ chưa sử dụng lá bài mẹo chung màu đen [kill] hoặc màu đen trong vòng này, bạn có thể yêu cầu họ rút bài từ tay họ đến giá trị vật lý (tối đa năm lá bài), sau đó nếu bạn và họ đã bày hết tất cả các lá bài chung, bạn có thể bí mật đặt một lá bài chung cho bạn và một trong số họ, và bạn không thể đặt các lá bài chung ẩn theo cách này một cách công khai ở vòng này. Nếu kết quả là nó rút được một lá bài, nó sẽ không thể sử dụng các lá bài trên tay ở vòng này.",
+    "declarations": [
+      {
+        "general": "ty_heg__huaxin",
+        "trueName": "huaxin",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/xibing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__youyan": {
+    "zhName": "诱言",
+    "zhDescription": "每回合限一次，当你的牌于你回合内因弃置而置入弃牌堆后，你可亮出牌堆顶四张牌，获得其中与此置入弃牌堆花色均不相同的牌。",
+    "currentVietnameseName": "sự xúi giục",
+    "currentVietnameseDescription": "Chỉ một lần trong lượt, sau khi lá bài của bạn được đưa vào chồng bài bỏ do bị loại bỏ trong lượt của bạn, bạn có thể tiết lộ bốn lá bài trên cùng của chồng bài rút và nhận được những lá bài có chất khác với những lá bài được đặt trong chồng bài bỏ.",
+    "declarations": [
+      {
+        "general": "ty_heg__yangwan",
+        "trueName": "yangwan",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/youyan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__yusui": {
+    "zhName": "玉碎",
+    "zhDescription": "每回合限一次，当你成为其他角色使用黑色牌的目标后，若你与其势力不同，你可失去1点体力，然后选择一项：1.令其弃置X张手牌（X为其体力上限）；2.令其失去体力值至与你相同。",
+    "currentVietnameseName": "ngọc vỡ",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi hiệp, khi bạn trở thành mục tiêu của nhân vật khác sử dụng thẻ đen, nếu bạn thuộc thế lực khác với họ, bạn có thể mất 1 điểm thể lực, sau đó chọn một: 1. Bắt họ bỏ lá bài X trên tay (X là giới hạn trên của sức mạnh thể chất của họ); 2. Làm cho họ mất đi thể lực cho đến khi họ bằng bạn.",
+    "declarations": [
+      {
+        "general": "ty_heg__fengxiw",
+        "trueName": "fengxiw",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/yusui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__zhente": {
+    "zhName": "贞特",
+    "zhDescription": "每回合限一次，当你成为其他角色使用黑色基本牌或黑色普通锦囊牌的目标后，你可以令使用者选择一项：1.本回合不能使用黑色牌；2.此牌对你无效。",
+    "currentVietnameseName": "Jeante",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi vòng, khi bạn trở thành mục tiêu của các nhân vật khác sử dụng thẻ cơ bản màu đen hoặc thẻ mẹo thông thường màu đen, bạn có thể yêu cầu người dùng chọn một: 1. Không thể sử dụng thẻ đen trong vòng này; 2. Thẻ này không hợp lệ đối với bạn.",
+    "declarations": [
+      {
+        "general": "ty_heg__luyusheng",
+        "trueName": "luyusheng",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/zhente.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__zhiwei": {
+    "zhName": "至微",
+    "zhDescription": "当你明置此武将牌后，你可选择一名其他角色：当该角色造成伤害后，你摸一张牌；当该角色受到伤害后，你随机弃置一张手牌；你弃牌阶段弃置的牌均被该角色获得；当该角色死亡时，若你武将牌均明置，你暗置此武将牌。",
+    "currentVietnameseName": "đến vi mô",
+    "currentVietnameseDescription": "Sau khi lật bài tướng này ra, bạn có thể chọn nhân vật khác: sau khi nhân vật gây sát thương thì bạn rút bài; khi nhân vật nhận sát thương, bạn ngẫu nhiên bỏ một lá bài trên tay; tất cả các lá bài bị loại bỏ trong giai đoạn loại bỏ của bạn đều được nhân vật này lấy được; Khi nhân vật chết, nếu toàn bộ quân bài tướng của bạn bị lộ thì bạn bí mật đặt quân bài tướng này vào.",
+    "declarations": [
+      {
+        "general": "ty_heg__luyusheng",
+        "trueName": "luyusheng",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/zhiwei.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__zhuangrong": {
+    "zhName": "妆戎",
+    "zhDescription": "出牌阶段限一次，你可以弃置一张锦囊牌，然后你本阶段获得技能〖无双〗。",
+    "currentVietnameseName": "Trúc Dung",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn có thể loại bỏ một thẻ mẹo và sau đó bạn sẽ nhận được kỹ năng \"Vô song\" trong giai đoạn này.",
+    "declarations": [
+      {
+        "general": "ty_heg__lvlingqi",
+        "trueName": "lvlingqi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/zhuangrong.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__zhuihuan": {
+    "zhName": "追还",
+    "zhDescription": "结束阶段，你可选择分配以下效果给至多两名角色直至你下回合开始（各限触发一次）：1.受到伤害后，伤害来源弃置两张手牌；2.受到伤害后，对伤害来源造成1点伤害。",
+    "currentVietnameseName": "hồi phục",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, bạn có thể chọn gán các hiệu ứng sau cho tối đa hai nhân vật cho đến khi bắt đầu lượt tiếp theo (mỗi nhân vật chỉ có thể được kích hoạt một lần): 1. Sau khi nhận sát thương, nguồn gây sát thương sẽ loại bỏ hai lá bài khỏi tay anh ta; 2. Sau khi nhận sát thương, gây 1 điểm sát thương cho nguồn sát thương.",
+    "declarations": [
+      {
+        "general": "ty_heg__yangwan",
+        "trueName": "yangwan",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/zhuihuan.lua",
+        "line": 12
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ty_heg__zhukou": {
+    "zhName": "逐寇",
+    "zhDescription": "当你于每回合的出牌阶段首次造成伤害后，你可摸X张牌（X为本回合你已使用的牌数且至多为5）。",
+    "currentVietnameseName": "Đuổi quân xâm lược",
+    "currentVietnameseDescription": "Sau khi gây sát thương lần đầu trong giai đoạn đánh bài của mỗi vòng, bạn có thể rút X lá bài (X là số lá bài bạn đã sử dụng ở vòng này và tối đa là 5).",
+    "declarations": [
+      {
+        "general": "ty_heg__zhouyi",
+        "trueName": "zhouyi",
+        "package": "tenyear_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/tenyear_heg/skills/zhukou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "wangliec": {
+    "zhName": "往烈",
+    "zhDescription": "出牌阶段，你使用的第一张牌无距离限制。你于出牌阶段使用【杀】或普通锦囊牌时，你可以令此牌无法响应，然后本阶段你不能再使用牌。",
+    "currentVietnameseName": "Đi nói dối",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, lá bài đầu tiên bạn sử dụng không bị giới hạn khoảng cách. Khi bạn sử dụng [Giết] hoặc một lá bài mẹo thông thường trong giai đoạn chơi bài, bạn có thể khiến lá bài này không phản hồi và sau đó bạn không thể sử dụng lá bài đó trong giai đoạn này nữa.",
+    "declarations": [
+      {
+        "general": "os_heg__chendao",
+        "trueName": "chendao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/thunder/skills/wanglie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "wansha": {
+    "zhName": "完杀",
+    "zhDescription": "锁定技，除进行濒死流程的角色以外的其他角色于你的回合内不能使用【桃】。",
+    "currentVietnameseName": "Tiêu diệt hoàn toàn",
+    "currentVietnameseDescription": "Kỹ năng khóa, các nhân vật không phải là nhân vật đang trong quá trình cận kề cái chết không thể sử dụng [Peach] trong lượt của bạn.",
+    "declarations": [
+      {
+        "general": "hs__jiaxu",
+        "trueName": "jiaxu",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/wansha.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "weijing": {
+    "zhName": "卫境",
+    "zhDescription": "每轮限一次，当你需要使用【杀】或【闪】时，你可以视为使用之。",
+    "currentVietnameseName": "Ngụy Kinh",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng. Khi bạn cần sử dụng [Giết] hoặc [Né tránh], bạn có thể sử dụng nó.",
+    "declarations": [
+      {
+        "general": "ol_heg__luzhiw",
+        "trueName": "luzhiw",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/weijing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "weiming": {
+    "zhName": "威命",
+    "zhDescription": "使命技，出牌阶段开始时，你标记一名未标记过的其他角色。<br>⬤　成功：当你杀死一名未标记的角色后，你将〖血途〗修改至<a href=':xuetu_v2'>二级</a>；<br>⬤　失败：当一名已被标记的角色死亡后，你将〖血途〗修改至<a href=':xuetu_v3'>三级</a>。",
+    "currentVietnameseName": "thẩm quyền",
+    "currentVietnameseDescription": "Là một kỹ năng nhiệm vụ, khi bắt đầu giai đoạn chơi bài, bạn đánh dấu một nhân vật khác chưa được đánh dấu. <br>⬤ Thành công: Khi bạn giết một nhân vật không bị đánh dấu, bạn thay đổi [Đường máu] thành <a href=':xuetu_v2'>Cấp 2</a>; <br>⬤ Thất bại: Khi nhân vật bị đánh dấu chết, bạn thay đổi [Đường máu] thành <a href=':xuetu_v3'>Cấp 3</a>.",
+    "declarations": [
+      {
+        "general": "os_heg__yangfeng",
+        "trueName": "yangfeng",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/weiming.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "wenji": {
+    "zhName": "问计",
+    "zhDescription": "出牌阶段开始时，你可以令一名其他角色交给你一张牌，你于本回合内使用与该牌同名的牌不能被其他角色响应。",
+    "currentVietnameseName": "Xin lời khuyên",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể nhờ một nhân vật khác đưa cho mình một lá bài. Việc bạn sử dụng thẻ có cùng tên với thẻ trong vòng này sẽ không được các nhân vật khác phản hồi.",
+    "declarations": [
+      {
+        "general": "os_heg__liuqi",
+        "trueName": "liuqi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/wenji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "wusheng": {
+    "zhName": "武圣",
+    "zhDescription": "你可以将一张红色牌当【杀】使用或打出。",
+    "currentVietnameseName": "Võ Thánh",
+    "currentVietnameseDescription": "Bạn có thể chuyển hóa sử dụng/đánh ra 1 lá màu đỏ → 【Sát】.",
+    "declarations": [
+      {
+        "general": "guanyu",
+        "trueName": "guanyu",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/wusheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "wushuang": {
+    "zhName": "无双",
+    "zhDescription": "锁定技，当你使用【杀】指定目标后，其使用【闪】抵消此【杀】的方式改为需连续使用两张【闪】；当你使用【决斗】指定目标后，或当你成为【决斗】的目标后，你令其打出【杀】响应此【决斗】的方式改为需连续打出两张【杀】。",
+    "currentVietnameseName": "Vô Song",
+    "currentVietnameseDescription": "Tỏa định kỹ, sau khi bạn xác định mục tiêu của 【Sát】, ứng với mỗi mục tiêu, việc sử dụng 【Thiểm】 để triệt tiêu 【Sát】 này đổi thành phải sử dụng liên tiếp 2 【Thiểm】; sau khi bạn xác định mục tiêu của 【Quyết Đấu】, ứng với mỗi mục tiêu, hoặc sau khi bạn trở thành mục tiêu của 【Quyết Đấu】, bạn lệnh việc họ đánh ra 【Sát】 hưởng ứng 【Quyết Đấu】 này đổi thành phải đánh ra liên tiếp 2 【Sát】.",
+    "declarations": [
+      {
+        "general": "nos_heg__lvbu",
+        "trueName": "lvbu",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "ol_ex_heg__lvbu",
+        "trueName": "lvbu",
+        "package": "online_heg"
+      },
+      {
+        "general": "lvbu",
+        "trueName": "lvbu",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/wushuang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiangle": {
+    "zhName": "享乐",
+    "zhDescription": "锁定技，当你成为【杀】的目标后，你令使用者选择：1.弃置一张基本牌；2.此【杀】对你无效。",
+    "currentVietnameseName": "sự hưởng thụ",
+    "currentVietnameseDescription": "Kỹ năng khóa, khi bạn trở thành mục tiêu của [Giết], bạn yêu cầu người dùng lựa chọn: 1. Loại bỏ một thẻ cơ bản; 2. [Giết] này không hợp lệ đối với bạn.",
+    "declarations": [
+      {
+        "general": "hs__liushan",
+        "trueName": "liushan",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/xiangle.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiangshu": {
+    "zhName": "襄戍",
+    "zhDescription": "限定技，结束阶段，若你本回合造成过伤害，你可以令一名已受伤角色回复X点体力并摸X张牌（X为你本回合造成的伤害值且最多为5）。",
+    "currentVietnameseName": "Tương Thục",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, ở giai đoạn cuối, nếu bạn đã gây sát thương ở vòng này, bạn có thể khôi phục X điểm thể lực cho nhân vật bị thương và rút X lá bài (X là sát thương bạn gây ra ở vòng này và có thể lên tới 5).",
+    "declarations": [
+      {
+        "general": "os_heg__yanrou",
+        "trueName": "yanrou",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/xiangshu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiantu": {
+    "zhName": "献图",
+    "zhDescription": "其他角色的出牌阶段开始时，你可以摸两张牌，然后交给其两张牌，然后此阶段结束时，若其于此阶段内未杀死过角色，则你失去1点体力。",
+    "currentVietnameseName": "Dành bản đồ",
+    "currentVietnameseDescription": "Khi bắt đầu Giai đoạn Hành động của các anh hùng khác, bạn có thể rút 2 → đưa cho mục tiêu 2 lá bài, nếu anh ta kết thúc giai đoạn này mà không giết chết một anh hùng khác, bạn sẽ mất 1 HP.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangsong",
+        "trueName": "zhangsong",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2014/skills/xiantu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiaoji": {
+    "zhName": "枭姬",
+    "zhDescription": "当你失去一张装备区的装备牌后，你可以摸两张牌。",
+    "currentVietnameseName": "Kiêu Cơ",
+    "currentVietnameseDescription": "Sau khi bạn mất bài trong vùng trang bị, bạn có thể rút 2 lá.",
+    "declarations": [
+      {
+        "general": "nos_heg__sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "hegemony_nos"
+      },
+      {
+        "general": "sunshangxiang",
+        "trueName": "sunshangxiang",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/xiaoji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xingshang": {
+    "zhName": "行殇",
+    "zhDescription": "当其他角色死亡时，你可以获得其所有牌。",
+    "currentVietnameseName": "tang tóc",
+    "currentVietnameseDescription": "Khi một nhân vật khác chết, bạn sẽ nhận được tất cả các thẻ của họ.",
+    "declarations": [
+      {
+        "general": "hs__caopi",
+        "trueName": "caopi",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/forest/skills/xingshang.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongluan": {
+    "zhName": "雄乱",
+    "zhDescription": "限定技，出牌阶段，你可以废除你的判定区和装备区，然后指定一名其他角色。直到回合结束，你对其使用牌无距离和次数限制，其不能使用和打出手牌。",
+    "currentVietnameseName": "Hỗn loạn anh hùng",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể bãi bỏ khu vực phán đoán và khu vực trang bị của mình, sau đó chỉ định một nhân vật khác. Cho đến khi kết thúc vòng chơi, bạn không bị giới hạn về khoảng cách hoặc số lần sử dụng bài trên đó và nó không thể sử dụng hoặc đánh bài từ tay bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangxiu",
+        "trueName": "zhangxiu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/thunder/skills/xiongluan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongnve": {
+    "zhName": "凶虐",
+    "zhDescription": "出牌阶段开始时，你可以移去一张“戮”，令你本回合对此“戮”势力角色获得下列效果中的一项：1.对其造成伤害时，令此伤害+1；2.对其造成伤害时，你获得其一张牌；3.对其使用牌无次数限制。出牌阶段结束时，你可以移去两张“戮”，然后直到你的下回合，当你受到其他角色造成的伤害时，此伤害-1。",
+    "currentVietnameseName": "tàn bạo",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể loại bỏ một \"Kill\", điều này sẽ mang lại cho bạn một trong những hiệu ứng sau đối với nhân vật lực lượng \"Kill\" này trong vòng này: 1. Khi bạn gây sát thương cho nó, sát thương sẽ là +1; 2. Khi bạn gây sát thương cho nó, bạn sẽ nhận được một trong các lá bài của nó; 3. Không có giới hạn về số lần bạn có thể sử dụng thẻ của mình. Khi kết thúc giai đoạn chơi bài, bạn có thể loại bỏ hai \"Slaughters\" và cho đến lượt tiếp theo, khi bạn nhận sát thương từ các nhân vật khác, sát thương này sẽ là -1.",
+    "declarations": [
+      {
+        "general": "ld__sunchen",
+        "trueName": "sunchen",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/xiongnve.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongsi": {
+    "zhName": "凶肆",
+    "zhDescription": "限定技，出牌阶段，若你的手牌不少于三张，你可以弃置所有手牌，然后令所有其他角色各失去1点体力。",
+    "currentVietnameseName": "hung dữ",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn đánh bài, nếu trên tay có không dưới ba lá bài, bạn có thể bỏ hết lá bài trên tay, sau đó khiến tất cả các nhân vật khác mất đi 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "os_heg__chengjiw",
+        "trueName": "chengjiw",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_lxxh/skills/xiongsi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongsuan": {
+    "zhName": "凶算",
+    "zhDescription": "限定技，出牌阶段，你可以弃置一张手牌并选择与你势力相同的一名角色，你对其造成1点伤害，然后你摸三张牌，选择其一个已发动过的限定技，令该技能于此回合结束后视为未发动过。",
+    "currentVietnameseName": "Tính toán ác độc",
+    "currentVietnameseDescription": "Kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể bỏ lá bài trên tay và chọn một nhân vật có sức mạnh tương đương với mình. Bạn gây 1 điểm sát thương cho nó, sau đó bạn rút ba lá bài và chọn một trong các kỹ năng giới hạn đã được kích hoạt, để kỹ năng đó được coi là chưa được kích hoạt sau khi kết thúc vòng này.",
+    "declarations": [
+      {
+        "general": "ld__lijueguosi",
+        "trueName": "lijueguosi",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/xiongsuan.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongyi": {
+    "zhName": "雄异",
+    "zhDescription": "限定技，出牌阶段，你可令与你势力相同的所有角色各摸三张牌，然后若你的势力角色数为全场最少，你回复1点体力。",
+    "currentVietnameseName": "rắn rỏi",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể khiến tất cả các nhân vật có sức mạnh giống mình rút ra mỗi nhân vật ba lá bài, sau đó nếu sức mạnh của bạn là sức mạnh có số lượng nhân vật ít nhất, bạn sẽ phục hồi 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "hs__mateng",
+        "trueName": "mateng",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/standard/skills/xiongyi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xiongzhi": {
+    "zhName": "雄志",
+    "zhDescription": "限定技，出牌阶段，你可以观看牌堆顶的牌并使用之，重复至不能被使用（使用【杀】有次数限制）。",
+    "currentVietnameseName": "Tham vọng",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể nhìn vào lá bài trên cùng của bộ bài và sử dụng nó, lặp lại cho đến khi không thể sử dụng được (có giới hạn về số lần bạn có thể sử dụng [Giết]).",
+    "declarations": [
+      {
+        "general": "ol_heg__simayi",
+        "trueName": "simayi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/xiongzhi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xuanlve": {
+    "zhName": "旋略",
+    "zhDescription": "当你失去装备区的牌后或于弃牌阶段内弃置过至少两张牌后，你可以弃置一名其他角色的一张牌。",
+    "currentVietnameseName": "Huyền Lộ",
+    "currentVietnameseDescription": "Sau khi bạn mất thẻ trong vùng trang bị hoặc sau khi bạn đã loại bỏ ít nhất hai thẻ trong giai đoạn loại bỏ, bạn có thể loại bỏ thẻ của nhân vật khác.",
+    "declarations": [
+      {
+        "general": "ld__lingtong",
+        "trueName": "lingtong",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/xuanlve.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xuetu": {
+    "zhName": "血途",
+    "zhDescription": "转换技，出牌阶段限一次，你可以：阳，令一名角色回复1点体力；阴，令一名角色摸两张牌。",
+    "currentVietnameseName": "Con đường đẫm máu",
+    "currentVietnameseDescription": "Kỹ năng chuyển đổi được giới hạn một lần trong giai đoạn chơi bài. Bạn có thể: Dương, khiến nhân vật hồi phục 1 điểm thể lực; Yin, bắt một nhân vật rút hai lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__yangfeng",
+        "trueName": "yangfeng",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/xuetu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "xunxian": {
+    "zhName": "逊贤",
+    "zhDescription": "每回合限一次，你使用或打出的牌置入弃牌堆时，你可以将之交给一名手牌数或体力值大于你的角色。",
+    "currentVietnameseName": "Mời người tài",
+    "currentVietnameseDescription": "1x mỗi lượt, khi lá bài đã sử dụng/đã chơi của bạn đi vào đống bỏ, bạn có thể đưa nó cho một anh hùng có lá bài trên tay > của bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__yanjun",
+        "trueName": "yanjun",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_xinghuo/skills/xunxian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yanxi": {
+    "zhName": "宴戏",
+    "zhDescription": "出牌阶段限一次，你将一名其他角色的随机一张手牌与牌堆顶的两张牌混合后展示，你猜测哪张牌来自其手牌。若猜对，你获得三张牌；若猜错，你获得选中的牌。你以此法获得的牌本回合不计入手牌上限。",
+    "currentVietnameseName": "chơi tiệc",
+    "currentVietnameseDescription": "Giai đoạn chơi bài được giới hạn một lần. Bạn trộn một lá bài ngẫu nhiên từ tay nhân vật khác với hai lá bài trên cùng của bộ bài và tiết lộ nó. Bạn đoán lá bài nào đến từ tay anh ấy. Nếu đoán đúng, bạn sẽ nhận được ba lá bài; nếu đoán sai, bạn sẽ nhận được thẻ đã chọn. Các lá bài bạn nhận được theo cách này không được tính vào giới hạn bài trên trong vòng này.",
+    "declarations": [
+      {
+        "general": "ol_heg__wangyuanji",
+        "trueName": "wangyuanji",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/yanxi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yicheng": {
+    "zhName": "疑城",
+    "zhDescription": "当你使用【杀】指定目标后，或与你势力相同的角色成为【杀】的目标后，你可以选择目标X张牌移出游戏直到本回合结束（X为其体力值，不足全选），若此【杀】未造成伤害，你摸一张牌。",
+    "currentVietnameseName": "thành phố đáng ngờ",
+    "currentVietnameseDescription": "Sau khi bạn sử dụng [Giết] để chỉ định mục tiêu hoặc sau khi một nhân vật có cùng sức mạnh với bạn trở thành mục tiêu của [Giết], bạn có thể chọn mục tiêu",
+    "declarations": [
+      {
+        "general": "ld__xusheng",
+        "trueName": "xusheng",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/yicheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yiji": {
+    "zhName": "遗计",
+    "zhDescription": "当你受到1点伤害后，你可以观看牌堆顶的两张牌并任意分配它们。",
+    "currentVietnameseName": "Di Kế",
+    "currentVietnameseDescription": "Sau khi bạn nhận sát thương, ứng với mỗi sát thương, bạn có thể xem 2 lá trên đỉnh chồng bài rút và phân phát tùy ý.",
+    "declarations": [
+      {
+        "general": "guojia",
+        "trueName": "guojia",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/yiji.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yimie": {
+    "zhName": "夷灭",
+    "zhDescription": "每回合限一次，当你对其他角色造成伤害时，你可以失去1点体力，令此伤害值+X（X为其体力值减去伤害值）。伤害结算后，其回复X点体力。",
+    "currentVietnameseName": "tiêu diệt",
+    "currentVietnameseDescription": "Chỉ một lần trong mỗi hiệp, khi gây sát thương cho nhân vật khác, bạn có thể bị mất 1 điểm thể lực, khiến giá trị sát thương + X (X là giá trị vật lý trừ đi giá trị sát thương). Sau khi giải quyết xong tổn thương sẽ hồi phục X điểm thể lực.",
+    "declarations": [
+      {
+        "general": "ol_heg__simashi",
+        "trueName": "simashi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/yimie.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yinbing": {
+    "zhName": "引兵",
+    "zhDescription": "结束阶段，你可以将任意张非基本牌置于你的武将牌上。当你受到【杀】或【决斗】造成的伤害后，你移去你武将牌上的一张牌。",
+    "currentVietnameseName": "Đội quân dẫn đầu",
+    "currentVietnameseDescription": "Ở Giai đoạn Kết thúc, bạn có thể đặt bất kỳ số lá bài không cơ bản nào lên trên anh hùng của mình (\"Đội quân dẫn đầu\"). Khi bạn chịu thiệt hại từ Chém hoặc Đấu tay đôi, bạn phải loại bỏ một trong số chúng.",
+    "declarations": [
+      {
+        "general": "os_heg__zumao",
+        "trueName": "zumao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "sp",
+        "commit": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+        "file": "pkg/sp/skills/yinbing.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yingshis": {
+    "zhName": "鹰视",
+    "zhDescription": "锁定技，出牌阶段，牌堆顶X张牌始终对你可见（X为你的体力上限）。",
+    "currentVietnameseName": "Tầm nhìn đại bàng",
+    "currentVietnameseDescription": "Kỹ năng khóa, trong giai đoạn chơi bài, bạn luôn nhìn thấy những lá bài X trên cùng của bộ bài (X là giới hạn thể lực trên của bạn).",
+    "declarations": [
+      {
+        "general": "ol_heg__simayi",
+        "trueName": "simayi",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/yingshi.lua",
+        "line": 2
+      },
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/yingshi.lua",
+        "line": 20
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yingyang": {
+    "zhName": "鹰扬",
+    "zhDescription": "当你的拼点牌亮出后，你可令其点数+3或-3。",
+    "currentVietnameseName": "Ying Yang",
+    "currentVietnameseDescription": "Khi thẻ điểm của bạn được tiết lộ, bạn có thể tăng điểm của nó lên +3 hoặc -3.",
+    "declarations": [
+      {
+        "general": "ld__sunce",
+        "trueName": "sunce",
+        "package": "momentum"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/momentum/skills/yingyang.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yingzi": {
+    "zhName": "英姿",
+    "zhDescription": "摸牌阶段，你可以多摸一张牌。",
+    "currentVietnameseName": "Anh Tư",
+    "currentVietnameseDescription": "Giai đoạn rút bài, bạn có thể rút thêm 1 lá.",
+    "declarations": [
+      {
+        "general": "zhouyu",
+        "trueName": "zhouyu",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/yingzi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yishe": {
+    "zhName": "义舍",
+    "zhDescription": "结束阶段，若你没有“米”，你可以摸两张牌，然后将两张牌置于武将牌上，称为“米”。当最后一张“米”移至其他区域后，你回复1点体力。",
+    "currentVietnameseName": "Yishe",
+    "currentVietnameseDescription": "Khi kết thúc giai đoạn, nếu không có “cơm”, bạn có thể rút hai lá bài, sau đó đặt hai lá bài đó vào lá bài chung, gọi là “mét”. Khi “mét” cuối cùng được chuyển sang khu vực khác, bạn sẽ hồi phục được 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "os_heg__zhanglu",
+        "trueName": "zhanglu",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/xinghe/skills/yishe.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yishi": {
+    "zhName": "宜室",
+    "zhDescription": "每回合限一次，当一名其他角色于其出牌阶段弃置手牌后，你可以令其获得其中的一张牌，然后你获得其余的牌。",
+    "currentVietnameseName": "Yishi",
+    "currentVietnameseDescription": "Chỉ một lần mỗi vòng, khi một nhân vật khác vứt bỏ các lá bài trên tay của họ trong giai đoạn chơi bài, bạn có thể khiến họ lấy một trong các lá bài, sau đó bạn lấy phần còn lại của lá bài.",
+    "declarations": [
+      {
+        "general": "ol_heg__xiahouhui",
+        "trueName": "xiahouhui",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/yishi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yizan": {
+    "zhName": "翊赞",
+    "zhDescription": "你可以将两张牌（其中至少一张是基本牌）当任意基本牌使用或打出。",
+    "currentVietnameseName": "Diệc Sơn",
+    "currentVietnameseDescription": "Bạn có thể sử dụng hoặc chơi hai lá bài (ít nhất một trong số đó là lá bài cơ bản) như bất kỳ lá bài cơ bản nào.",
+    "declarations": [
+      {
+        "general": "os_heg__zhaotongzhaoguang",
+        "trueName": "zhaotongzhaoguang",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/yizan.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yizhi": {
+    "zhName": "遗志",
+    "zhDescription": "副将技，你计算体力上限时减少一个单独的阴阳鱼。若你的主将的武将牌处于明置状态且拥有〖观星〗，则将此〖观星〗描述中的X改为5，否则你视为拥有〖观星〗。",
+    "currentVietnameseName": "di sản",
+    "currentVietnameseDescription": "Là một phó tướng kỹ năng, khi tính toán giới hạn thể lực trên, bạn sẽ mất đi một con cá Âm Dương. Nếu thẻ tướng của tướng chính của bạn ở trạng thái mở và có [Star Gazing], hãy thay đổi X trong mô tả [Star Gazing] thành 5, nếu không bạn được coi là có [Star Gazing].",
+    "declarations": [
+      {
+        "general": "ld__jiangwei",
+        "trueName": "jiangwei",
+        "package": "formation"
+      },
+      {
+        "general": "m_heg__jiangwei",
+        "trueName": "jiangwei",
+        "package": "mobile_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/yizhi.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yongjin": {
+    "zhName": "勇进",
+    "zhDescription": "限定技，出牌阶段，你可以将场上至多三张装备牌移至不同角色的装备区内。",
+    "currentVietnameseName": "dũng cảm tiến lên",
+    "currentVietnameseDescription": "Một kỹ năng hạn chế, trong giai đoạn chơi bài, bạn có thể di chuyển tối đa ba thẻ trang bị trên sân đến khu vực trang bị của các nhân vật khác nhau.",
+    "declarations": [
+      {
+        "general": "ld__lingtong",
+        "trueName": "lingtong",
+        "package": "transformation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/transformation/skills/yongjin.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "yuanyuk": {
+    "zhName": "远域",
+    "zhDescription": "锁定技，当你受到伤害时，若有伤害来源且你不在伤害来源的攻击范围内，此伤害-1。",
+    "currentVietnameseName": "Vùng xa",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi nhận sát thương, nếu có nguồn sát thương và bạn không ở trong tầm tấn công của nguồn sát thương thì sát thương sẽ là -1.",
+    "declarations": [
+      {
+        "general": "ofl_heg__himiko",
+        "trueName": "himiko",
+        "package": "offline_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/offline_heg/skills/yuanyuk.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zaoyun": {
+    "zhName": "凿运",
+    "zhDescription": "出牌阶段限一次，你可选择一名与你势力不同且你至其距离大于1的角色并弃置X张手牌（X为你至其的距离-1），令你至其的距离此回合视为1，然后你对其造成1点伤害。",
+    "currentVietnameseName": "đục khoét",
+    "currentVietnameseDescription": "Chỉ một lần trong giai đoạn chơi bài, bạn có thể chọn một nhân vật có sức mạnh khác với bạn và có khoảng cách với bạn lớn hơn 1, đồng thời bỏ X lá bài trên tay bạn (X là khoảng cách từ bạn đến nó - 1), sao cho khoảng cách của bạn với nó sẽ được coi là 1 trong vòng này, và khi đó bạn sẽ gây ra 1 điểm sát thương cho nó.",
+    "declarations": [
+      {
+        "general": "ld__dongzhao",
+        "trueName": "dongzhao",
+        "package": "lord_ex"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/lord_ex/skills/zaoyun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zenhui": {
+    "zhName": "谮毁",
+    "zhDescription": "你的出牌阶段内限一次，当你使用【杀】或黑色普通锦囊牌指定唯一目标时，你令可以成为此牌目标的另一名其他角色选择一项：1.交给你一张牌并成为此牌的使用者；2.成为此牌的额外目标。",
+    "currentVietnameseName": "Hủy hoại với sự vu khống",
+    "currentVietnameseDescription": "Một lần trong mỗi giai đoạn hành động, khi bạn sử dụng Chém hoặc thủ thuật thông thường màu đen lên một mục tiêu đơn lẻ, bạn có thể chọn một anh hùng khác có thể là mục tiêu hợp pháp cho lá bài này. Anh ta phải quyết định: a) trở thành mục tiêu, hoặc b) đưa cho bạn một thẻ và sau đó trở thành người sử dụng thẻ đã sử dụng.",
+    "declarations": [
+      {
+        "general": "os_heg__sunluban",
+        "trueName": "sunluban",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2014/skills/zenhui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhaoran": {
+    "zhName": "昭然",
+    "zhDescription": "出牌阶段开始时，你可以令你的手牌本阶段对所有角色可见。若如此做，当你于本阶段失去任意花色的最后一张手牌后（每种花色限一次），你摸一张牌或弃置一名其他角色的一张牌。",
+    "currentVietnameseName": "Rõ ràng",
+    "currentVietnameseDescription": "Khi bắt đầu giai đoạn chơi bài, bạn có thể hiển thị các lá bài trên tay của mình cho tất cả các nhân vật trong giai đoạn này. Nếu bạn làm điều này, sau khi bạn mất lá bài cuối cùng của bất kỳ bộ nào trên tay trong giai đoạn này (giới hạn một lần cho mỗi bộ), bạn sẽ rút một lá bài hoặc loại bỏ một lá bài của nhân vật khác.",
+    "declarations": [
+      {
+        "general": "ol_heg__simazhao",
+        "trueName": "simazhao",
+        "package": "online_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "ol",
+        "commit": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413",
+        "file": "pkg/wende/skills/zhaoran.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhendu": {
+    "zhName": "鸩毒",
+    "zhDescription": "其他角色的出牌阶段开始时，你可弃置一张手牌，其视为使用一张【酒】，然后你对其造成1点伤害。",
+    "currentVietnameseName": "Rượu độc",
+    "currentVietnameseDescription": "Khi bắt đầu Giai đoạn Hành động của anh hùng khác, bạn có thể loại bỏ một lá bài trên tay, nếu làm như vậy, hãy xem đó là anh hùng đó sử dụng Rượu, sau đó bạn gây cho anh ta 1 DMG.",
+    "declarations": [
+      {
+        "general": "ld__hetaihou",
+        "trueName": "hetaihou",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/zhendu.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhiheng": {
+    "zhName": "制衡",
+    "zhDescription": "出牌阶段限一次，你可以弃置任意张牌，然后摸等量的牌。",
+    "currentVietnameseName": "Chế Hành",
+    "currentVietnameseDescription": "Một lần trong giai đoạn ra bài, bạn có thể bỏ tùy ý bài, sau đó rút số lượng bài tương ứng.",
+    "declarations": [
+      {
+        "general": "sunquan",
+        "trueName": "sunquan",
+        "package": "standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "freekill-core",
+        "commit": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+        "file": "standard/pkg/skills/zhiheng.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhijian": {
+    "zhName": "直谏",
+    "zhDescription": "出牌阶段，你可以将手牌中的一张装备牌置于其他角色的装备区里，然后摸一张牌。",
+    "currentVietnameseName": "khiển trách trực tiếp",
+    "currentVietnameseDescription": "Trong giai đoạn chơi bài, bạn có thể đặt một thẻ trang bị trên tay vào khu vực trang bị của nhân vật khác, sau đó rút thẻ.",
+    "declarations": [
+      {
+        "general": "hs__zhangzhaozhanghong",
+        "trueName": "zhangzhaozhanghong",
+        "package": "hegemony_standard"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/mountain/skills/zhijian.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhiyi": {
+    "zhName": "执义",
+    "zhDescription": "锁定技，一名角色的结束阶段，若你本回合使用或打出过基本牌，你选择一项：1.视为使用任意一张你本回合使用或打出过的基本牌；2.摸一张牌。",
+    "currentVietnameseName": "ủng hộ công lý",
+    "currentVietnameseDescription": "(bắt buộc) Ở giai đoạn kết thúc của một nhân vật, nếu bạn đã sử dụng hoặc chơi một lá bài cơ bản trong vòng này, bạn chọn một: 1. Nó được coi là sử dụng bất kỳ lá bài cơ bản nào bạn đã sử dụng hoặc chơi trong vòng này; 2. Rút một lá bài.",
+    "declarations": [
+      {
+        "general": "os_heg__zhangyiy",
+        "trueName": "zhangyiy",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_sp/skills/zhiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhuandui": {
+    "zhName": "专对",
+    "zhDescription": "当你使用【杀】指定目标后，你可以与目标拼点：若你赢，其不能响应此【杀】。当你成为【杀】的目标后，你可以与使用者拼点：若你赢，此【杀】对你无效。",
+    "currentVietnameseName": "Trả lời đặc biệt",
+    "currentVietnameseDescription": "Sau khi bạn nhắm mục tiêu vào một anh hùng bằng Chém / bạn trở thành mục tiêu của Chém, bạn có thể Đấu điểm với anh ta. Nếu bạn thắng, anh ta không thể đáp lại Chém này / Chém này không có tác dụng với bạn.",
+    "declarations": [
+      {
+        "general": "os_heg__qinmi",
+        "trueName": "qinmi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2017/skills/zhuandui.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhuixi": {
+    "zhName": "追袭",
+    "zhDescription": "锁定技，当你对其他角色造成伤害时，或当你受到其他角色造成的伤害时，若你与其翻面状态不同，此伤害+1。",
+    "currentVietnameseName": "Đuổi",
+    "currentVietnameseDescription": "Khóa kỹ năng, khi bạn gây sát thương cho nhân vật khác hoặc khi bạn bị nhân vật khác gây sát thương, nếu bạn ở trạng thái khác với trạng thái bị lật, sát thương này +1.",
+    "declarations": [
+      {
+        "general": "os_heg__liangxing",
+        "trueName": "liangxing",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "tenyear",
+        "commit": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+        "file": "pkg/tenyear_huicui/skills/zhuixi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zhuiyi": {
+    "zhName": "追忆",
+    "zhDescription": "你死亡时，可以令一名其他角色（杀死你的角色除外）摸三张牌并回复1点体力。",
+    "currentVietnameseName": "Nhớ lại",
+    "currentVietnameseDescription": "Khi bạn chết, có thể chọn một anh hùng khác (không phải người đã giết bạn) để rút 3 lá bài và hồi máu cho 1.",
+    "declarations": [
+      {
+        "general": "os_heg__bulianshi",
+        "trueName": "bulianshi",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2012/skills/zhuiyi.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "ziliang": {
+    "zhName": "资粮",
+    "zhDescription": "副将技，当一名势力与你相同的角色受到伤害后，你可以将一张“田”交给其。",
+    "currentVietnameseName": "khẩu phần ăn",
+    "currentVietnameseDescription": "Là một kỹ năng phó tướng, khi một nhân vật có sức mạnh tương đương với bạn bị sát thương, bạn có thể giao một “trường” cho anh ta.",
+    "declarations": [
+      {
+        "general": "ld__dengai",
+        "trueName": "dengai",
+        "package": "formation"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "hegemony",
+        "commit": "d616978ad2a53055f5815f3ae19f2d2b239862e0",
+        "file": "pkg/formation/skills/ziliang.lua",
+        "line": 3
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zuilun": {
+    "zhName": "罪论",
+    "zhDescription": "结束阶段，你可以观看牌堆顶三张牌，你每满足以下一项便获得其中的一张，然后以任意顺序放回其余的牌：1.你于此回合内造成过伤害；2.你于此回合内未弃置过牌；3.手牌数为全场最少。若均不满足，你与一名其他角色失去1点体力。",
+    "currentVietnameseName": "lý thuyết tội phạm",
+    "currentVietnameseDescription": "Trong giai đoạn cuối, bạn có thể xem ba lá bài trên cùng của bộ bài và bạn sẽ nhận được một trong số chúng cho mỗi điều kiện sau đây, sau đó đặt những lá bài còn lại trở lại theo bất kỳ thứ tự nào: 1. Bạn đã gây ra thiệt hại trong vòng này; 2. Bạn chưa bỏ bài trong vòng này; 3. Số lá bài trên tay bạn là ít nhất trong trò chơi. Nếu cả hai đều không hài lòng, bạn và một nhân vật khác sẽ mất 1 điểm thể lực.",
+    "declarations": [
+      {
+        "general": "os_heg__zhugezhan",
+        "trueName": "zhugezhan",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "shzl",
+        "commit": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+        "file": "pkg/thunder/skills/zuilun.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zuoding": {
+    "zhName": "佐定",
+    "zhDescription": "当其他角色于其出牌阶段内使用♠牌指定目标后，若本阶段没有角色受到过伤害，你可以令其中一名目标角色摸一张牌。",
+    "currentVietnameseName": "Phụ trợ và ổn định",
+    "currentVietnameseDescription": "Trong giai đoạn hành động của anh hùng khác, sau khi anh ta nhắm vào một anh hùng bằng cách sử dụng ♠, nếu không có ai chịu thiệt hại ở lượt này, có thể khiến 1 trong các mục tiêu hòa 1.",
+    "declarations": [
+      {
+        "general": "os_heg__zhongyao",
+        "trueName": "zhongyao",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "yj",
+        "commit": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+        "file": "pkg/yj2015/skills/zuoding.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  },
+  "zuoyou": {
+    "zhName": "佐佑",
+    "zhDescription": "转换技，出牌阶段限一次，阳：你可以令一名角色摸三张牌，然后其弃置两张手牌；阴：你可以令一名角色弃置一张手牌，然后其获得1点护甲（若为2v2模式，则改为令一名角色获得1点护甲）。",
+    "currentVietnameseName": "Sasuke",
+    "currentVietnameseDescription": "Kỹ năng chuyển đổi, giới hạn một lần trong giai đoạn chơi bài. Yang: Bạn có thể bắt một nhân vật rút ba lá bài, sau đó anh ta bỏ hai lá bài trên tay mình; Yin: Bạn có thể khiến nhân vật loại bỏ một lá bài trên tay và sau đó anh ta nhận được 1 điểm giáp (nếu ở chế độ 2v2, thay vào đó, nhân vật sẽ nhận được 1 điểm giáp).",
+    "declarations": [
+      {
+        "general": "os_heg__lizhaojiaobo",
+        "trueName": "lizhaojiaobo",
+        "package": "overseas_heg"
+      }
+    ],
+    "implementations": [
+      {
+        "upstreamPackage": "mobile",
+        "commit": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+        "file": "pkg/mobile_lxxh/skills/zuoyou.lua",
+        "line": 2
+      }
+    ],
+    "hasOriginalName": true,
+    "hasOriginalDescription": true
+  }
+} as const;

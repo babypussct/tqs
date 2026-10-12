@@ -35,7 +35,14 @@ export function parseCardsAndChoice(payload: unknown,
   const min = payload.min ?? 1;
   const max = payload.max ?? 1;
   const filter = payload.filter_skel ?? '';
-  const extra = boundedPrivateRecord(payload.extra_data ?? {});
+  // Lua's empty table has no array/map distinction in the upstream CBOR
+  // encoder. Native callers such as shangyi therefore arrive with
+  // `extra_data = []` even though the native model treats it as an empty
+  // property map. Accept only that unambiguous empty form; non-empty arrays
+  // remain invalid private metadata.
+  const rawExtra = payload.extra_data;
+  const extra = Array.isArray(rawExtra) && rawExtra.length === 0
+    ? {} : boundedPrivateRecord(rawExtra ?? {});
   const title = payload.prompt ?? '';
   if (!cardIds(cards) || !cardIds(disabled) || !disabled.every((id) => cards.includes(id)) ||
       !choices(options) || !choices(cancel) || (!options.length && !cancel.length) ||

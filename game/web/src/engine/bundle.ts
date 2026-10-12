@@ -69,7 +69,7 @@ export async function loadGatewayBundle(baseUrl: string, signal?: AbortSignal, p
   const files = new Map<string, Uint8Array>();
   let total = 0;
   for (const [name, data] of Object.entries(unzipped)) {
-    if (!/^packages\/[\w-]+\/(?:[\w.-]+\/)*[\w.-]+\.(?:lua|json)$/i.test(name) || name.includes('..')) {
+    if (!/^packages\/[\w-]+\/(?:[\w.-]+\/)*[\w.-]+\.(?:lua|json|md)$/i.test(name) || name.includes('..')) {
       throw new Error(`Đường dẫn package không an toàn: ${name}`);
     }
     const pkg = name.split('/')[1];

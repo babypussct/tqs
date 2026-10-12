@@ -6,8 +6,6 @@
 // <upstream-dir> must contain freekill-core/, utility/, hegemony/ checkouts.
 // Live networking is opt-in. Use an existing test account: the upstream server
 // automatically registers unknown usernames during authentication.
-import fs from 'node:fs';
-import path from 'node:path';
 import net from 'node:net';
 import assert from 'node:assert/strict';
 import forge from 'node-forge';
@@ -15,6 +13,7 @@ import { LuaRuntime } from '../src/engine/luaRuntime';
 import { GameConnection, type SocketHandlers } from '../src/engine/connection';
 import { CLIENT_NOTIFY, CLIENT_REPLY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../src/engine/packet';
 import { useGameStore } from '../src/store/gameStore';
+import { loadUpstreamFiles } from './upstream-packages';
 
 const live = process.argv[2] === '--live';
 const target = live ? process.argv[3] : undefined;
@@ -23,21 +22,7 @@ if (live && (!target || !process.env.FK_TEST_USERNAME || !process.env.FK_TEST_PA
   throw new Error('Live test requires host:port and FK_TEST_USERNAME, FK_TEST_PASSWORD, FK_MD5 environment variables');
 }
 
-const files = new Map<string, Uint8Array>();
-for (const pkg of ['freekill-core', 'utility', 'hegemony']) {
-  const root = path.join(upstream, pkg);
-  const walk = (d: string) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      if (e.name === '.git') continue;
-      const f = path.join(d, e.name);
-      if (e.isDirectory()) walk(f);
-      else if (/\.(lua|json)$/i.test(e.name)) {
-        files.set(`packages/${pkg}/${path.relative(root, f).split(path.sep).join('/')}`, fs.readFileSync(f));
-      }
-    }
-  };
-  walk(root);
-}
+const files = loadUpstreamFiles(upstream);
 console.log(`mounted ${files.size} files`);
 
 const t0 = Date.now();

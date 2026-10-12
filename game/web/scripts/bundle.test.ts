@@ -9,6 +9,7 @@ const defaultFiles = {
   'packages/freekill-core/init.lua': encoder.encode('-- core'),
   'packages/utility/init.lua': encoder.encode('-- utility'),
   'packages/hegemony/init.lua': encoder.encode('-- hegemony'),
+  'packages/hegemony/description.md': encoder.encode('loaded by dofile'),
 };
 
 function fixture(files: Record<string, Uint8Array> = defaultFiles) {
@@ -42,7 +43,7 @@ async function withFixture<T>(data: ReturnType<typeof fixture>, run: () => Promi
 test('bundle loader verifies manifest, checksum, paths and entrypoints', async () => {
   await withFixture(fixture(), async () => {
     const loaded = await loadGatewayBundle('/gateway');
-    assert.equal(loaded.files.size, 3);
+    assert.equal(loaded.files.size, 4);
     assert.deepEqual(loaded.files.get('packages/hegemony/init.lua'), defaultFiles['packages/hegemony/init.lua']);
   });
 });

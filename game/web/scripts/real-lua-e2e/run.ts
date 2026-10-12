@@ -2,13 +2,15 @@
  * controls; server packets use a deterministic local socket fixture. */
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { zipSync } from 'fflate';
 import { chromium, type Page } from 'playwright-core';
 import { createServer } from 'vite';
 import { CLIENT_NOTIFY } from '../../src/engine/packet';
+import { loadUpstreamFiles } from '../upstream-packages';
+import { QA_SCENARIOS, type QaScenarioId } from './qa-scenarios';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const upstream = fileURLToPath(new URL('../../../../scratch/upstream/', import.meta.url));
@@ -18,22 +20,7 @@ const executablePath = [process.env.TQS_CHROME_PATH,
 ].find((p): p is string => !!p && existsSync(p));
 if (!executablePath) throw new Error('Chrome missing: set TQS_CHROME_PATH');
 
-const files: Record<string, Uint8Array> = {};
-for (const pkg of ['freekill-core', 'utility', 'hegemony']) {
-  const pkgRoot = path.join(upstream, pkg);
-  const visit = (directory: string) => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      if (entry.name === '.git') continue;
-      const absolute = path.join(directory, entry.name);
-      if (entry.isDirectory()) visit(absolute);
-      else if (entry.isFile() && /\.(lua|json)$/i.test(entry.name)) {
-        const relative = path.relative(pkgRoot, absolute).split(path.sep).join('/');
-        files[`packages/${pkg}/${relative}`] = readFileSync(absolute);
-      }
-    }
-  };
-  visit(pkgRoot);
-}
+const files = Object.fromEntries(loadUpstreamFiles(upstream));
 const zipped = Buffer.from(zipSync(files, { level: 1 }));
 const { publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 1024, publicExponent: 0x10001,
@@ -119,6 +106,31 @@ try {
       assert.equal(s.requestId, null);
       await p.waitForTimeout(75);
       assert.equal((await snapshot(p)).replies.length, 1);
+    }],
+    ['ex__fankui optional invoke prompt stays actionable and reaches card choice', async (p) => {
+      const { id, cardId } = await p.evaluate(() => window.__tqsRealLuaE2e.beginFankui());
+      const first = await snapshot(p);
+      assert.equal(first.requestId, id);
+      assert.deepEqual(first.skill, { skill: 'ex__fankui', prompt: '' });
+      assert.equal(await p.getByRole('heading', { name: 'Kích hoạt kỹ năng?' }).count(), 1);
+      assert.equal(await p.getByRole('button', { name: 'Kích hoạt', exact: true }).isEnabled(), true);
+      await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+      const invoked = await reply(p);
+      assert.equal(invoked.replies.at(-1)?.requestId, id);
+      assert.equal(invoked.replies.at(-1)?.hex, '4131');
+
+      const cardRequestId = await p.evaluate(() => window.__tqsRealLuaE2e.continueFankui());
+      const panel = p.getByRole('region', { name: 'Chọn bài đối thủ' });
+      await panel.waitFor();
+      const prompt = await p.evaluate(() => window.__tqsRealLuaE2e.cardPrompt());
+      assert.ok(prompt);
+      assert.equal(prompt.mode, 'single');
+      assert.equal(prompt.groups.flatMap((group) => group.cards).filter((card) => card.hidden).length, 1);
+      await panel.getByRole('button', { name: 'Bài úp', exact: true }).click();
+      const chosen = await reply(p, 2);
+      assert.equal(chosen.replies.at(-1)?.requestId, cardRequestId);
+      assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), cardId);
+      assert.deepEqual(chosen.luaErrors, []);
     }],
     ['Real Lua Cancel emits exact 485f5f63616e63656c reply', async (p) => {
       const id = await start(p);
@@ -250,6 +262,23 @@ try {
       assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), { card: cardId, targets: [-1] });
       assert.deepEqual(s.luaErrors, []);
       assert.equal(s.error, null);
+    }],
+    ['Real Lua AskForResponseCard renders a legal Jink and replies once', async (p) => {
+      const { id, cardId } = await p.evaluate(() => window.__tqsRealLuaE2e.beginResponseCard());
+      await p.getByText('Hãy đánh ra lá Thiểm', { exact: false }).waitFor();
+      const card = p.locator(`button[data-card-id="${cardId}"]`);
+      await card.waitFor();
+      assert.equal(await card.isEnabled(), true);
+      assert.equal(await p.getByRole('button', { name: 'Xác nhận', exact: true }).isDisabled(), true);
+      await card.click();
+      assert.equal((await snapshot(p)).replies.length, 0);
+      await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const s = await reply(p);
+      assert.equal(s.replies.length, 1);
+      assert.equal(s.replies[0].requestId, id);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), { card: cardId, targets: [] });
+      assert.equal(s.requestId, null);
+      assert.deepEqual(s.luaErrors, []);
     }],
     ['Native Lua GameOver shows the winner, sends QuitRoom and clears result in lobby', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
@@ -745,6 +774,33 @@ try {
       }
       await p.setViewportSize({ width: 390, height: 844 });
     }],
+    ['QA caller pool uses native disabledGenerals without exposing internal IDs', async (p) => {
+      await p.evaluate(() => history.replaceState(null, '', '/?tqs-qa-general=hs__pangde&tqs-qa-pack=hegemony_standard'));
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks());
+      await p.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
+      await p.getByLabel('Số người', { exact: true }).selectOption('2');
+      assert.match(await p.locator('.pool-summary').innerText(), /10 tướng khác tên/);
+      await p.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((item) => item.command === 'CreateRoom'));
+      const created = await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeCreatedRoom());
+      assert.equal(created.disabledGenerals.includes('hs__pangde'), false);
+      assert.ok(created.disabledGenerals.length > 0);
+      await p.evaluate(() => history.replaceState(null, '', '/'));
+    }],
+    ['QA founding pool keeps the unmapped wild caller and a compatible native pair', async (p) => {
+      await p.evaluate(() => history.replaceState(null, '', '/?tqs-qa-general=heg__jiananfeng&tqs-qa-pack=zfxp&tqs-qa-kingdom=same'));
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks());
+      await p.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
+      await p.getByLabel('Số người', { exact: true }).selectOption('2');
+      assert.equal(await p.locator('.pool-warning').count(), 0);
+      assert.match(await p.locator('.pool-summary').innerText(), /10 tướng khác tên/);
+      assert.doesNotMatch(await p.locator('body').innerText(), /heg__jiananfeng/);
+      await p.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((item) => item.command === 'CreateRoom'));
+      const created = await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeCreatedRoom());
+      assert.equal(created.disabledGenerals.includes('heg__jiananfeng'), false);
+      await p.evaluate(() => history.replaceState(null, '', '/'));
+    }],
     ['UI-02 disables room creation when all native GeneralPacks are off', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks());
       const all = p.locator('input[data-pack-type="generals"]');
@@ -936,7 +992,10 @@ try {
     ['AskForOptions uses the native seven-field payload and sends one unchanged option', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginNative('options'));
       const panel = p.getByRole('region', { name: 'Lựa chọn trong trận' });
-      await panel.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      // The seventh native field is FreeKill's `single` flag. AskForOptions
+      // therefore confirms by clicking the offered option itself; it is not
+      // the eight-field AskForChoices contract with a separate OK button.
+      await panel.getByRole('button', { name: 'OK', exact: true }).click();
       await reply(p); assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), ['OK']);
     }],
   );
@@ -987,9 +1046,80 @@ try {
       assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {cardId:data.cardIds[1],pos:1});
     }],
   );
+  tests.push(
+    ['QA Scenario Mode resolves deterministic draws and reaches every required native caller', async (p) => {
+      const startScenario = async (scenario: QaScenarioId) => {
+        const result = await p.evaluate((id) => window.__tqsRealLuaE2e.beginQaScenario(id), scenario);
+        assert.equal(result.expectedCommand, QA_SCENARIOS[scenario].expectedCommand);
+        assert.equal((await snapshot(p)).requestId, result.requestId);
+        return result;
+      };
+
+      const draw = await startScenario('draw-sequence');
+      assert.deepEqual(draw.drawPile.slice(0, 3), [
+        draw.slotCards.slash, draw.slotCards.peach, draw.slotCards.nullification,
+      ]);
+      assert.equal(await p.locator(`button[data-card-id="${draw.slotCards.slash}"]`).count(), 1);
+
+      const chosen = await startScenario('card-chosen');
+      const chosenPanel = p.getByRole('region', { name: 'Chọn bài đối thủ' });
+      await chosenPanel.getByRole('button', { name: 'Bài úp', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, chosen.requestId);
+      assert.equal(typeof await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), 'number');
+
+      const poxi = await startScenario('poxi');
+      const poxiPanel = p.getByRole('region', { name: 'Chọn bài đối thủ' });
+      await poxiPanel.getByRole('button', { name: 'Bài úp', exact: true }).click();
+      await poxiPanel.getByRole('group').nth(1).getByRole('button').click();
+      await poxiPanel.getByRole('button', { name: 'Xác nhận chọn bài', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, poxi.requestId);
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply())).length, 2);
+
+      const cardsAndChoice = await startScenario('cards-and-choice');
+      const cardsPanel = p.getByRole('region', { name: 'Xem bài và chọn phương án' });
+      await cardsPanel.getByRole('group').getByRole('button').nth(0).click();
+      await cardsPanel.getByRole('button', { name: 'Dùng Sát', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, cardsAndChoice.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        cards: [cardsAndChoice.slotCards.slash], choice: 'use',
+      });
+
+      const normalRescue = await startScenario('rescue-normal');
+      await p.locator(`button[data-card-id="${normalRescue.slotCards.peach}"]`).click();
+      await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, normalRescue.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: normalRescue.slotCards.peach, targets: [],
+      });
+
+      const battleRescue = await startScenario('rescue-battle');
+      await p.getByRole('button', { name: 'Quyết chiến', exact: true }).click();
+      await p.locator(`button[data-card-id="${battleRescue.slotCards.peach}"]`).click();
+      await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, battleRescue.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: { skill: 'new_battle_royal&', subcards: [battleRescue.slotCards.peach] }, targets: [],
+      });
+
+      const founding = await startScenario('founding');
+      await p.getByText('Dã tâm gia lập quốc: chọn quốc hiệu của bạn.', { exact: true }).waitFor();
+      await p.getByRole('button', { name: 'Tần', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, founding.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), ['heg_qin']);
+    }],
+  );
+  const testsToRun = process.argv.includes('--qa-scenarios')
+    ? tests.filter(([name]) => name.startsWith('QA Scenario Mode'))
+    : tests;
   let passed = 0;
   const failures: string[] = [];
-  for (const [name, test] of tests) {
+  for (const [name, test] of testsToRun) {
     try {
       await test(page);
       console.log(`PASS ${name}`);
@@ -1000,7 +1130,7 @@ try {
       console.error('Snapshot:', JSON.stringify(await snapshot(page)).slice(0, 1300));
     }
   }
-  console.log(`Real Lua Browser E2E: ${passed}/${tests.length} PASS`);
+  console.log(`Real Lua Browser E2E${testsToRun.length === 1 ? ' QA Scenario Mode' : ''}: ${passed}/${testsToRun.length} PASS`);
   assert.equal(failures.length, 0, `Failed scenarios: ${failures.join(', ')}`);
   assert.deepEqual(errors, [], 'Browser runtime errors');
 } finally {

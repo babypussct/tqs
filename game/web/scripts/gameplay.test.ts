@@ -68,6 +68,24 @@ test('gameplay metadata is public-projected and bounded before entering React st
   assert.ok(JSON.stringify(scene).length < 10_000, 'private oversized metadata must not be retained');
 });
 
+test('gameplay state rejects prototype keys and caps retained public items', () => {
+  const forged = reduceGameplay(emptyGameplay(), {
+    _type: 'RoomScene',
+    _new: [{ type: 'CardItem', data: { id: '__proto__', enabled: true, selected: false } },
+      { type: 'Interaction', data: { id: 'constructor', enabled: true, selected: false } }],
+  });
+  assert.equal(Object.keys(forged.items.CardItem).length, 0);
+  assert.equal(Object.keys(forged.items.Interaction).length, 0);
+  const many = reduceGameplay(emptyGameplay(), {
+    _type: 'RoomScene',
+    _new: Array.from({ length: 700 }, (_, id) => ({ type: 'Button', data: {
+      id: `button-${id}`, enabled: true, selected: false,
+    } })),
+  });
+  assert.equal(Object.keys(many.items.Button).length, 512);
+  assert.equal(many.items.Button['button-699']?.enabled, true);
+});
+
 test('standard Lua interactions validate action, choice, range, and direct send', () => {
   assert.equal(validInteractionAction(item({ type: 'combo', choices: ['a', 'b'] }), 'update', 'b'), true);
   assert.equal(validInteractionAction(item({ type: 'combo', choices: ['a'] }), 'update', 'wrong'), false);

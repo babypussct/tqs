@@ -16,6 +16,12 @@ CP12 final artifact `scratch/deployments/cp12-render/release`: 1043 files verify
 4. Rollback qua Deploys → bản đã xác minh → Rollback; kiểm source SHA/Live/hashes thực tế. Sau đó quay lại CP12 bằng exact SHA hoặc rollback deployment CP12. Kiểm login/ván sau khôi phục. Mỗi thao tác cần timestamp/deployID/hash evidence. Kết quả thực tế được ghi ở CODEX_STATE khi quan sát.
 5. Chờ không có HTTP/WebSocket activity đủ thời gian để đo Free cold-start; không ping keepalive nhằm che idle behavior. Runner remote health bounded120s, local10s, timeout riêng từng fetch. Không gọi một lần chậm là cold-start nếu chưa chứng minh khoảng idle.
 
+Với native FreeKill, chạy `deploy/freekill-native/scripts/verify-backup.sh`
+trên archive trước mọi restore rehearsal; chỉ giải nén vào thư mục test mới,
+kiểm tra `verify-install.sh` và service ở đó, rồi mới lập kế hoạch cutover.
+Verifier chỉ bảo vệ tính toàn vẹn cơ bản của archive và quyền truy cập; chưa
+được coi là bằng chứng rollback host thật hay drain người chơi.
+
 ## Quota và giới hạn
 
 Gateway exact canonical HTTPS Origin, không tin XFF tùy ý. MAX_CONNECTIONS=128 và MAX_WS_PER_IP=128 là admission caps; Render proxy có thể gom client IP nên không diễn giải cap per-IP là 128 cho mỗi người. Local test thực tế global3/4th503 và traffic burst200 đóng sender, peer khác vẫn mở PASS. Chưa benchmark128 phiên production. Render metrics quan sát tháng8MB outbound; Free giới hạn512MB/0.15CPU, số CPU/memory thực tế cần paid UI để xem. Không tự nâng gói, không giả định metrics không hiện là usage0.

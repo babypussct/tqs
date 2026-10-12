@@ -22,7 +22,8 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
   if (!expired) { try { ({ rows, feasible, selectedTokens, selectableTokens } = view()); } catch (e) { error = (e as Error).message; } }
   const disabled = busy || expired || !!error;
   const cardLabel = (token: string) => {
-    const card = prompt.cards.find(c => c.token === token)!;
+    const card = prompt.cards.find(c => c.token === token);
+    if (!card) return 'Lá bài';
     return `${text(card.name || 'Lá bài')}${card.number !== undefined ? ` ${({ 1: '♠', 2: '♣', 3: '♥', 4: '♦' } as Record<string, string>)[String(card.suit)] || ''}${card.number}` : ''}`;
   };
   const chooseName = (token: string) => {
@@ -42,24 +43,24 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
       {prompt.kind === 'arrange' && <h3>{text(prompt.names[area] ?? '') || `Nhóm ${area + 1}`}</h3>}
       <div className="gameplay-options">
         {row.map((token, index) => <div key={token}>
-          {prompt.kind === 'arrange' && selected && <button className="button small-button" disabled={disabled}
+          {prompt.kind === 'arrange' && selected && <button type="button" className="button small-button" disabled={disabled}
             onClick={() => performMove(area, index)} aria-label={`Đặt trước ${cardLabel(token)}`}>Đặt trước</button>}
-          <button className="gameplay-choice" disabled={disabled || (['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) && !selectedTokens?.includes(token) && !selectableTokens?.includes(token))} aria-pressed={['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? selectedTokens?.includes(token) : selected === token}
+          <button type="button" className="gameplay-choice" disabled={disabled || (['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) && !selectedTokens?.includes(token) && !selectableTokens?.includes(token))} aria-pressed={['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? selectedTokens?.includes(token) : selected === token}
             onClick={() => prompt.kind === 'ag' || prompt.kind === 'boardMove' ? respond(token) : ['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? chooseName(token) : select(selected === token ? null : token)}>{cardLabel(token)}</button>
         </div>)}
-        {prompt.kind === 'arrange' && <button className="button secondary" disabled={disabled || !selected}
+        {prompt.kind === 'arrange' && <button type="button" className="button secondary" disabled={disabled || !selected}
           onClick={() => performMove(area, row.length)}>Đặt cuối nhóm {area + 1}</button>}
       </div>
     </div>)}
     {prompt.kind === 'arrange' && <p className="muted">Chọn một lá, rồi chọn vị trí đặt. Nhóm đầy sẽ đổi chỗ hai lá.</p>}
     <div className="request-actions">
       {prompt.kind === 'generalsAndChoice' && <>
-        {prompt.okOptions?.map(choice => <button className="button primary" key={choice} disabled={disabled || !feasible} onClick={() => respond(choice)}>{choice === 'OK' ? 'Xác nhận' : text(choice)}</button>)}
-        {prompt.cancelOptions?.map(choice => <button className="button secondary" key={choice} disabled={disabled} onClick={() => respond(choice, true)}>{text(choice)}</button>)}
+        {prompt.okOptions?.map(choice => <button type="button" className="button primary" key={choice} disabled={disabled || !feasible} onClick={() => respond(choice)}>{choice === 'OK' ? 'Xác nhận' : text(choice)}</button>)}
+        {prompt.cancelOptions?.map(choice => <button type="button" className="button secondary" key={choice} disabled={disabled} onClick={() => respond(choice, true)}>{text(choice)}</button>)}
       </>}
-      {!['ag','boardMove','generalsAndChoice'].includes(prompt.kind) && <button className="button primary" disabled={disabled || !feasible}
+      {!['ag','boardMove','generalsAndChoice'].includes(prompt.kind) && <button type="button" className="button primary" disabled={disabled || !feasible}
         onClick={() => respond()}>Xác nhận</button>}
-      {prompt.cancelable && prompt.kind !== 'generalsAndChoice' && <button className="button secondary" disabled={disabled} onClick={() => respond(undefined, true)}>Bỏ qua</button>}
+      {prompt.cancelable && prompt.kind !== 'generalsAndChoice' && <button type="button" className="button secondary" disabled={disabled} onClick={() => respond(undefined, true)}>Bỏ qua</button>}
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}
     {error && <p role="alert">{error}</p>}

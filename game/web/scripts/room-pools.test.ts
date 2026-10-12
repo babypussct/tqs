@@ -7,25 +7,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { GameAdapter, type RoomPack, type RoomPacks, type PoolSummary } from '../src/engine/gameAdapter';
+import { GameAdapter, type RoomGeneral, type RoomPack, type RoomPacks, type PoolSummary } from '../src/engine/gameAdapter';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
+import { loadUpstreamFiles } from './upstream-packages';
 
 const upstream = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
-const files = new Map<string, Uint8Array>();
-for (const pkg of ['freekill-core', 'utility', 'hegemony']) {
-  const base = path.join(upstream, pkg);
-  function walk(dir: string) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === '.git') continue;
-      const absolute = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(absolute);
-      else if (entry.isFile() && /\.(lua|json)$/i.test(entry.name)) {
-        files.set(`packages/${pkg}/${path.relative(base, absolute).split(path.sep).join('/')}`, fs.readFileSync(absolute));
-      }
-    }
-  }
-  walk(base);
-}
+const files = loadUpstreamFiles(upstream);
 
 const notifications: { kind: string; command: string; hex: string }[] = [];
 const errors: string[] = [];
@@ -107,6 +94,24 @@ async function main() {
     const excluded = rt.eval<string[]>(`return Fk.game_mode_disabled.new_heg_mode or {}`);
     if (excluded.length) assert.throws(() => rt.call('__web_room_pool_summary', 'new_heg_mode', [excluded[0]]), /invalid or duplicate/);
 
+    const roomGenerals = rt.call<RoomGeneral[]>('__web_room_generals', 'new_heg_mode', []);
+    assert.ok(roomGenerals.length >= baseline.generals, 'general QA listing must cover the native visible pool');
+    const keepNames = new Set<string>();
+    const keepGenerals: RoomGeneral[] = [];
+    for (const candidate of roomGenerals) {
+      if (!keepNames.has(candidate.trueName)) {
+        keepNames.add(candidate.trueName);
+        keepGenerals.push(candidate);
+      }
+      if (keepGenerals.length === 10) break;
+    }
+    assert.equal(keepGenerals.length, 10, 'native runtime must provide ten distinct generals for a two-seat QA room');
+    const qaDisabledGenerals = roomGenerals.filter((candidate) => !keepGenerals.some((kept) => kept.id === candidate.id)).map((candidate) => candidate.id);
+    const qaSummary = rt.call<PoolSummary>('__web_room_pool_summary', 'new_heg_mode', [], qaDisabledGenerals);
+    assert.deepEqual(qaSummary, { generals: 10, cards: baseline.cards }, 'disabledGenerals must leave the native ten-general QA pool');
+    assert.throws(() => rt.call('__web_room_pool_summary', 'new_heg_mode', [], ['missing_general']), /invalid or duplicate disabled general/);
+    if (qaDisabledGenerals.length) assert.throws(() => rt.call('__web_room_pool_summary', 'new_heg_mode', [], [qaDisabledGenerals[0], qaDisabledGenerals[0]]), /invalid or duplicate disabled general/);
+
     // Evaluate the exact upstream makeGeneralPile body. In both cases, the
     // upstream Engine:canUseGeneral and Hegemony mode:build_draw_pile run live.
     const nativeCode = `local Room = {}\n${makeGeneralPile}\n`;
@@ -185,6 +190,23 @@ async function main() {
     assert.equal(packet.settings.gameMode, 'new_heg_mode');
     assert.equal((packet.settings._game as Record<string, unknown>).generalNum, 5);
 
+    adapter.createRoom(' Caller QA ', 2, 30, [], qaDisabledGenerals);
+    assert.equal(notifications.length, 2);
+    const qaCreated = rt.eval<{settings: Record<string, unknown>}>(`
+      local data = cbor.decode(__host_hex2bin('${notifications[1].hex}'))
+      return {settings = data[4]}
+    `);
+    assert.deepEqual(qaCreated.settings.disabledGenerals, qaDisabledGenerals, 'CBOR must preserve deterministic native caller exclusions');
+
+    adapter.createRoom(' Battle Royal QA ', 2, 30, [], [], { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false, ignored: true });
+    assert.equal(notifications.length, 3);
+    const modeCreated = rt.eval<{settings: Record<string, unknown>}>(`
+      local data = cbor.decode(__host_hex2bin('${notifications[2].hex}'))
+      return {settings = data[4]}
+    `);
+    assert.deepEqual(modeCreated.settings._mode, { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false },
+      'QA mode settings must preserve only the bounded native Battle Royal keys');
+
     // EnterRoom settings are server-owned. Verify client renders the echoed
     // package state and resets it when leaving / entering another room.
     let state = reduceUiEvent(initialSnapshot, 'EnterRoom', [2, 30, packet.settings]);
@@ -193,7 +215,7 @@ async function main() {
     assert.deepEqual(state.roomDisabledPacks, []);
     state = reduceUiEvent(state, 'EnterRoom', [2, 30, { gameMode: 'new_heg_mode', disabledPack: [card.id] }]);
     assert.deepEqual(state.roomDisabledPacks, [card.id]);
-    assert.ok(errors.every((message) => /unknown game mode|invalid or duplicate disabled package/.test(message)),
+    assert.ok(errors.every((message) => /unknown game mode|invalid or duplicate disabled package|invalid or duplicate disabled general/.test(message)),
       `unexpected Lua runtime errors: ${errors.join(' | ')}`);
 
     console.log(`PASS room packs: ${packs.generals.length} general + ${packs.cards.length} card packages`);

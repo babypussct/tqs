@@ -180,6 +180,49 @@ function prepareSkillRequest(h: ReturnType<typeof harness>, id: number, timestam
   }));
 }
 
+test('optional native skill prompts remain actionable instead of waiting for Lua', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.receive = (command) => {
+    if (command !== 'AskForSkillInvoke') return;
+    h.conn['handleLuaUi']('CancelRequest', null);
+    h.conn['handleLuaUi']('AskForSkillInvoke', ['luoshen', null]);
+  };
+  h.sockets[0].handlers.onData(encodePacket({
+    ...h.packet('AskForSkillInvoke', SERVER_REQUEST, 100), timeout: 30, timestamp: Date.now(),
+  }));
+  assert.deepEqual(h.conn['pendingRequest']?.skillInvokePrompt, { skill: 'luoshen', prompt: '' });
+  assert.equal(h.requests.at(-1), 'AskForSkillInvoke');
+});
+
+test('malformed skill invoke payload fails fast instead of leaving a timeout-only request', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.receive = (command) => {
+    if (command !== 'AskForSkillInvoke') return;
+    h.conn['handleLuaUi']('CancelRequest', null);
+    h.conn['handleLuaUi']('AskForSkillInvoke', { prompt: 'missing skill' });
+  };
+  h.sockets[0].handlers.onData(encodePacket({
+    ...h.packet('AskForSkillInvoke', SERVER_REQUEST, 101), timeout: 30, timestamp: Date.now(),
+  }));
+  assert.equal(h.conn.getStatus().kind, 'closed');
+  assert.equal(h.conn['pendingRequest'], null);
+});
+
+test('skill invoke without a Lua UI callback fails fast instead of rendering a dead wait state', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.sockets[0].handlers.onData(encodePacket({
+    ...h.packet('AskForSkillInvoke', SERVER_REQUEST, 102), timeout: 30, timestamp: Date.now(),
+  }));
+  assert.equal(h.conn.getStatus().kind, 'closed');
+  assert.equal(h.conn['pendingRequest'], null);
+});
+
 test('CancelRequest emitted by Lua cannot erase a newly arrived request', () => {
   const h = harness();
   h.conn.connect();
@@ -230,6 +273,19 @@ test('replaced, canceled, expired, and disconnected requests cannot send replies
   h.conn.close();
   assert.throws(() => h.conn.respondToSkillInvoke(205, 'OK'), /không còn hiệu lực/);
   assert.equal(h.sockets.flatMap((socket) => socket.sent).length, 0);
+});
+
+test('server expiry clears an untouched request without waiting for a user click', async () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  prepareSkillRequest(h, 206, Date.now(), 1);
+  assert.equal(h.conn['pendingRequest']?.requestId, 206);
+  h.conn['pendingRequest']!.expiresAt = Date.now() + 10;
+  h.conn['scheduleRequestExpiry'](h.conn['pendingRequest']!);
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(h.conn['pendingRequest'], null);
+  assert.equal(h.requests.at(-1), null);
 });
 
 test('Lua handler failure and missing ReplyToServer do not leave an actionable request', () => {

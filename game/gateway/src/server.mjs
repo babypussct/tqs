@@ -10,8 +10,10 @@
 //      are self-delimiting so no re-framing is needed);
 //   2. serves /manifest.json (server MD5 + package list) so the web client
 //      can build a valid Setup packet;
-//   3. serves /bundle.zip containing every Lua/JSON file the client-side Lua
-//      engine needs, built from the exact packages the server is running;
+//   3. serves /bundle.zip containing every Lua/JSON/Markdown file the
+//      client-side Lua engine needs, built from the exact packages the server
+//      is running (some upstream game-mode descriptions are loaded with
+//      dofile at startup);
 //   4. serves package media (images/audio) under /assets/.
 //
 // Configuration (environment variables):
@@ -46,7 +48,11 @@ const allowedOrigins = new Set(ALLOW_ORIGIN.split(',').map(x => x.trim()));
 const trustedProxies = new Set((process.env.TRUSTED_PROXIES ?? '').split(',').filter(Boolean).map(normalizedIp));
 
 const PACKAGES_DIR = path.join(FK_ROOT, 'packages');
-const BUNDLE_EXT = new Set(['.lua', '.json']);
+const BUNDLE_EXT = new Set(['.lua', '.json', '.md']);
+// fflate serializes ZIP dates with local Date getters. Construct the frozen
+// calendar value in local time so its DOS timestamp is identical in UTC and
+// non-UTC deployments.
+const ZIP_MTIME = new Date(2000, 0, 1, 0, 0, 0);
 const MEDIA_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -57,13 +63,16 @@ const MEDIA_TYPES = {
   '.ogg': 'audio/ogg',
   '.wav': 'audio/wav',
 };
+const compareEntryNames = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 // ---------------------------------------------------------------- bundle --
 
 function walk(dir, out = []) {
-  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+  // Keep bundle member order stable across cold starts so the cache-busting
+  // hash is reproducible for one pinned runtime.
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true }).sort(compareEntryNames)) {
     if (ent.name === '.git' || ent.name === 'node_modules') continue;
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) walk(full, out);
@@ -93,7 +102,10 @@ function buildCache() {
       files[rel] = fs.readFileSync(full);
     }
   }
-  const zip = Buffer.from(zipSync(files, { level: 9 }));
+  // fflate defaults ZIP entry timestamps to the current time. Pin the
+  // timestamp so identical runtime bytes produce the same cache-busting hash
+  // after every cold start.
+  const zip = Buffer.from(zipSync(files, { level: 9, mtime: ZIP_MTIME }));
   const bundleHash = crypto.createHash('sha1').update(zip).digest('hex').slice(0, 16);
 
   // freekill-asio validates the client-supplied MD5 against md5(flist.txt).

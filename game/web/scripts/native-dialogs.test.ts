@@ -74,6 +74,16 @@ test('ChooseSkill accepts only the pinned component, bounded distinct options an
   assert.equal(parseNativeDialog('CustomDialog',payload({},'untrusted.qml'),()=>null),null);
 });
 
+test('native parser rejects duplicate KnownBoth options and contains face-provider failures', () => {
+  const duplicate = { component: { url: 'packages/hegemony/qml/KnownBothBox.qml',
+    model: { url: 'packages/utility/qml/models/ChooseGeneralsAndChoiceModel.qml',
+      prop: { cards: ['zoushi', 'zoushi'], min: 0, max: 0, prompt: '', ok_options: ['OK'], cancel_options: [] } } } };
+  assert.equal(parseNativeDialog('CustomDialog', duplicate, () => null), null);
+  const dialog = parseNativeDialog('AskForAG', [[1, 2], false, ''], () => { throw new Error('malformed face'); });
+  assert.ok(dialog);
+  assert.equal(dialog.prompt.cards[0].name, undefined);
+});
+
 test('native private dialog metadata stays bounded before Lua rule callbacks', () => {
   const base: unknown[] = [['general-a', 'general-b'], 1, null, null, 'rule', 'Choose', { ok: true }];
   assert.ok(parseNativeDialog('AskForGeneral', base, () => null));

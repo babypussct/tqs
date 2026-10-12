@@ -1,16 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-const files = new Map<string,Uint8Array>();
-for(const pkg of ['freekill-core','utility','hegemony']) {
-  const base=path.resolve('../../scratch/upstream',pkg);
-  const walk=(dir:string)=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})) {
-    if(e.name==='.git')continue;const f=path.join(dir,e.name);
-    if(e.isDirectory())walk(f);else if(/\.(lua|json)$/.test(e.name))files.set(`packages/${pkg}/${path.relative(base,f)}`,fs.readFileSync(f));
-  }};walk(base);
-}
+import { loadUpstreamFiles } from './upstream-packages';
+
+const files = loadUpstreamFiles(fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url)));
 test('protected Lua bridge balances stacks across repeated calls, nested UI callbacks and errors', async () => {
   let nested=0;let runtime:LuaRuntime;
   runtime=new LuaRuntime({files,telemetry:true,callbacks:{send:()=>{},setup:()=>{},log:()=>{},ui:command=>{

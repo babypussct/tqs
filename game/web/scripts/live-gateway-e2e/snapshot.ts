@@ -2,8 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { UPSTREAM_PACKAGE_NAMES, packageSpec } from '../upstream-packages';
 
-export const PACKAGES = ['freekill-core', 'hegemony', 'utility'];
+// The native package database returns enabled packages by name. Keep the
+// gateway snapshot in that same deterministic order, while packageSpec maps
+// the runtime name to a checkout whose directory has a historical spelling
+// such as SP or OL.
+export const PACKAGES = [...UPSTREAM_PACKAGE_NAMES].sort();
 
 /** Match freekill-asio core/util.cpp: sorted recursive traversal, then
  * concatenate Lua, QML, JS hashes, with CRLF normalized within each file. */
@@ -34,7 +39,7 @@ export function buildSnapshot(source: string, destination: string) {
   for (const pkg of PACKAGES) {
     const target = path.join(destination, 'packages', pkg);
     mkdirSync(target, { recursive: true });
-    const cwd = path.join(source, pkg);
+    const cwd = path.join(source, packageSpec(pkg).sourceDirectory);
     // The development checkout may be sparse (e.g. omit QML). Export the
     // complete pinned Git tree, including files absent from its working tree.
     const entries = execFileSync('git', ['ls-tree', '-rz', 'HEAD'], { cwd })

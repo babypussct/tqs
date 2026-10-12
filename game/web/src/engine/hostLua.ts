@@ -320,6 +320,16 @@ function FClient:notifyUI(command, data)
     return
   end
   if command == 'UpdateRequestUI' and type(data) == 'table' then
+    -- RoomModel.qml keeps the native fallback prompt when a card request
+    -- arrives without an explicit prompt. The browser reducer receives the
+    -- scene delta instead of the QML callback, so project that fallback on
+    -- every delta (including the first selection update) to avoid replacing
+    -- it with an empty/raw request key.
+    local current_handler = ClientInstance and ClientInstance.current_request_handler
+    local fallback_prompt = current_handler and current_handler._web_prompt_fallback
+    if (data._prompt == nil or data._prompt == '') and type(fallback_prompt) == 'string' then
+      data._prompt = fallback_prompt
+    end
     for _, value in ipairs(data.CardItem or {}) do
       local h = ClientInstance and ClientInstance.current_request_handler
       local item = h and h.scene and h.scene:getAllItems('CardItem')[value.id]
@@ -353,6 +363,24 @@ end
 function __host_recv(command, hex, is_request)
   local ok, err = xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
   if not ok then error(tostring(err), 0) end
+  -- The native RoomModel.qml derives these prompts from the first request
+  -- field when the server sends nil/empty prompt. Preserve that behavior in
+  -- the browser projection; otherwise the scene reaches React with an empty
+  -- prompt and later deltas can expose the raw #AskFor* identifier.
+  if is_request and (command == 'AskForUseActiveSkill' or command == 'AskForUseCard'
+      or command == 'AskForResponseCard') then
+    local decoded_ok, request_data = pcall(cbor.decode, hex2bin(hex))
+    local handler = ClientInstance and ClientInstance.current_request_handler
+    if decoded_ok and type(request_data) == 'table' and handler and
+        (handler.prompt == nil or handler.prompt == '') then
+      local prefix = command == 'AskForUseActiveSkill' and '#AskForUseActiveSkill'
+        or (command == 'AskForUseCard' and '#AskForUseCard' or '#AskForResponseCard')
+      local name = request_data[1]
+      if type(name) == 'string' and name ~= '' then
+        handler._web_prompt_fallback = prefix .. ':::' .. name
+      end
+    end
+  end
   -- Lua tracks all hand sizes while MoveCards only forwards visibility data
   -- to QML. Publish counts for the board without forwarding any card IDs.
   if command == 'MoveCards' or command == 'Reconnect' then
@@ -396,7 +424,11 @@ function __host_recv(command, hex, is_request)
     local h = ClientInstance and ClientInstance.current_request_handler
     local scene = h and h.scene
     if scene then
-      local snapshot = { _type = scene.scene_name, _prompt = h.prompt or '', _new = {} }
+      local snapshot_prompt = h.prompt
+      if snapshot_prompt == nil or snapshot_prompt == '' then
+        snapshot_prompt = h._web_prompt_fallback or ''
+      end
+      local snapshot = { _type = scene.scene_name, _prompt = snapshot_prompt, _new = {} }
       for _, kind in ipairs({'CardItem', 'Photo', 'Button', 'SkillButton', 'SpecialSkills', 'Interaction'}) do
         for _, item in pairs(scene:getAllItems(kind)) do
           local value = item:toData()
@@ -601,8 +633,74 @@ function __web_init_display_translations(extra)
   end
   for key, value in pairs(vi) do labels[key] = value end
   for key, value in pairs(extra) do labels[key] = value end
+
+  -- Keep the complete table in Lua so Translate()/game rules still see every
+  -- upstream key, but do not serialize every installed expansion to React.
+  -- The dependency-complete runtime has substantially more translations than
+  -- the original three-package snapshot and would otherwise hit the bounded
+  -- UI JSON node budget during boot.  The browser only needs names/descriptions
+  -- belonging to visible generals and their declared skills, plus the small
+  -- application-owned additions passed in by the host.
   Fk:loadTranslationTable(labels, 'vi_VN')
-  J.ui('DisplayTranslations', to_json(labels))
+  local visible = {}
+  local included = {}
+  local visible_count = 0
+  local visible_bytes = 0
+  local function flush()
+    if next(visible) ~= nil then J.ui('DisplayTranslations', to_json(visible)) end
+    visible = {}
+    visible_count = 0
+    visible_bytes = 0
+  end
+  local function keep(key)
+    if type(key) ~= 'string' or included[key] then return end
+    local value = labels[key]
+    if type(value) ~= 'string' then
+      local ok, translated = pcall(Fk.translate, Fk, key)
+      if ok and type(translated) == 'string' then value = translated end
+    end
+    if type(value) ~= 'string' or #value > 30000 then return end
+    -- Flush before the generic serializer budget is reached. The reducer
+    -- merges DisplayTranslations chunks, so a large dependency-complete
+    -- runtime never drops a valid label merely because it came later in a
+    -- Lua table iteration.
+    if visible_count >= 1800 or visible_bytes + 2 * (#key + #value) > 180000 then flush() end
+    included[key] = true
+    visible[key] = value
+    visible_count = visible_count + 1
+    visible_bytes = visible_bytes + #key + #value
+  end
+  -- Keep common card names and all visible general identities before the
+  -- overlay. The overlay owns the baseline skill descriptions, while these
+  -- keys cover card-name dialogs and prefixed general identities such as
+  -- ld__bianfuren. Lua table iteration order is unspecified, so neither set
+  -- may depend on where an expansion happens to appear in Fk.generals.
+  for _, key in ipairs({'slash', 'jink', 'peach', 'analeptic', 'nullification',
+      'fire_slash', 'fire__slash', 'thunder_slash', 'thunder__slash', 'duel', 'snatch', 'dismantlement',
+      'indulgence', 'supply_shortage', 'collateral', 'amazing_grace',
+      'ex_nihilo', 'god_salvation', 'savage_assault', 'archery_attack',
+      'iron_chain', 'lightning'}) do
+    keep(key); keep(':' .. key); keep('#' .. key)
+  end
+  for name, general in pairs(Fk.generals or {}) do
+    if not general.hidden then keep(name) end
+  end
+  for key in pairs(extra) do keep(key) end
+  for name, general in pairs(Fk.generals or {}) do
+    if not general.hidden then
+      keep(name); keep('#' .. name); keep('~' .. name); keep('illustrator:' .. name)
+      local ok, skills = pcall(general.getSkillNameList, general)
+      if ok and type(skills) == 'table' then
+        for _, skill in ipairs(skills) do
+          if type(skill) == 'string' then
+            keep(skill); keep(':' .. skill); keep('#' .. skill)
+            keep('$' .. skill .. '1'); keep('$' .. skill .. '2')
+          end
+        end
+      end
+    end
+  end
+  flush()
   return true
 end
 
@@ -665,11 +763,43 @@ function __web_room_packs(mode)
   return packs
 end
 
+-- Enumerate the visible general identities which the native room can use.
+-- This is consumed only by the browser's explicit QA-room setup; normal lobby
+-- rendering continues to show package labels, not internal general IDs.
+function __web_room_generals(mode, disabled)
+  if type(disabled) ~= 'table' then error('invalid disabled packs') end
+  local available = __web_room_packs(mode)
+  local known, chosen = {}, {}
+  for _, pkg in ipairs(available.generals) do known[pkg.id] = true end
+  for _, name in ipairs(disabled) do
+    if type(name) ~= 'string' or not known[name] or chosen[name] then
+      error('invalid or duplicate disabled package')
+    end
+    chosen[name] = true
+  end
+  local result = {}
+  for _, packageName in ipairs(Fk.package_names) do
+    local pkg = Fk.packages[packageName]
+    if pkg and pkg.generals and known[packageName] and not chosen[packageName] then
+      for _, general in ipairs(pkg.generals) do
+        if not general.hidden and not general.total_hidden and type(general.name) == 'string' then
+          result[#result + 1] = {id = general.name, trueName = general.trueName,
+            kingdom = general.kingdom, subkingdom = general.subkingdom,
+            package = packageName, label = Fk:translate(general.name)}
+        end
+      end
+    end
+  end
+  return result
+end
+
 -- Count generals like Room:makeGeneralPile and cards through the actual mode's
 -- buildDrawPile. Hegemony removes some converted cards after getAllCardIds;
 -- simply summing package sizes overstates the playable deck.
-function __web_room_pool_summary(mode, disabled)
+function __web_room_pool_summary(mode, disabled, disabled_generals)
   if type(disabled) ~= 'table' then error('invalid disabled packs') end
+  if disabled_generals == nil then disabled_generals = {} end
+  if type(disabled_generals) ~= 'table' then error('invalid disabled generals') end
   local available = __web_room_packs(mode)
   local known, chosen = {}, {}
   for _, kind in ipairs({'generals', 'cards'}) do
@@ -681,11 +811,21 @@ function __web_room_pool_summary(mode, disabled)
     end
     chosen[name] = true
   end
+  local allGenerals = __web_room_generals(mode, {})
+  local generalKnown, generalChosen = {}, {}
+  for _, general in ipairs(allGenerals) do generalKnown[general.id] = true end
+  for _, name in ipairs(disabled_generals) do
+    if type(name) ~= 'string' or not generalKnown[name] or generalChosen[name] then
+      error('invalid or duplicate disabled general')
+    end
+    generalChosen[name] = true
+  end
   local distinct, generalCount = {}, 0
   for _, pkg in ipairs(available.generals) do
     if not chosen[pkg.id] then
       for _, general in ipairs(Fk.packages[pkg.id].generals) do
-        if not general.hidden and not general.total_hidden and not distinct[general.trueName] then
+        if not general.hidden and not general.total_hidden and not generalChosen[general.name] and
+            not distinct[general.trueName] then
           distinct[general.trueName] = true
           generalCount = generalCount + 1
         end

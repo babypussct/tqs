@@ -46,9 +46,12 @@ function itemType(value: unknown): value is GameplayItemType {
 }
 
 function itemId(value: unknown): value is string | number {
-  return (typeof value === 'string' && value.length > 0 && value.length <= 150) ||
+  return (typeof value === 'string' && value.length > 0 && value.length <= 150 &&
+    !['__proto__', 'prototype', 'constructor'].includes(value)) ||
     (typeof value === 'number' && Number.isSafeInteger(value));
 }
+
+const dangerousKeys = new Set(['__proto__', 'prototype', 'constructor']);
 
 const MAX_PUBLIC_VALUE_NODES = 4096;
 const MAX_PUBLIC_VALUE_BYTES = 64 * 1024;
@@ -90,7 +93,7 @@ function boundedValue(value: unknown, depth = 0, seen = new Set<object>(), budge
     const output: Record<string, unknown> = {};
     const entries = Object.entries(value).slice(0, MAX_PUBLIC_VALUE_KEYS);
     for (const [key, entry] of entries) {
-      if (key.length > 160) continue;
+      if (key.length > 160 || dangerousKeys.has(key)) continue;
       const next = boundedValue(entry, depth + 1, seen, budget);
       if (next !== undefined) output[key] = next;
     }
@@ -110,11 +113,13 @@ function publicCard(value: unknown): unknown {
   if (!data) return undefined;
   const card: Record<string, unknown> = {};
   for (const key of ['name', 'trueName'] as const) {
-    if (typeof data[key] === 'string' && data[key].length <= 120) card[key] = data[key];
+    if (typeof data[key] === 'string' && data[key].length <= 120 &&
+        !/[\u0000-\u001F\u007F]/.test(data[key])) card[key] = data[key];
   }
-  for (const key of ['suit', 'number'] as const) {
-    if (typeof data[key] === 'number' && Number.isFinite(data[key])) card[key] = data[key];
-  }
+  if (typeof data.suit === 'number' && Number.isInteger(data.suit) && data.suit >= 0 && data.suit <= 4)
+    card.suit = data.suit;
+  if (typeof data.number === 'number' && Number.isInteger(data.number) && data.number >= 0 && data.number <= 13)
+    card.number = data.number;
   return card;
 }
 
@@ -189,6 +194,10 @@ export function reduceGameplay(scene: GameplayScene, raw: unknown): GameplayScen
       const next = mergeItem(prior, value);
       if (next) items[type][String(next.id)] = next;
     }
+  }
+  for (const type of GAMEPLAY_ITEMS) {
+    const entries = Object.entries(items[type]);
+    if (entries.length > 512) items[type] = Object.fromEntries(entries.slice(-512));
   }
   return {
     sceneType: delta._type,

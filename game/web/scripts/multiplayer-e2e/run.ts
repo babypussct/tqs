@@ -14,6 +14,18 @@ import { preview } from 'vite';
 import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 
+type LiveScenario = '' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding';
+const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
+assert.ok(testScenario === '' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
+  testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding',
+  'TQS_LIVE_SCENARIO must be empty, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle or founding');
+// These scenarios deliberately require an explicit opt-in: an interrupted
+// active room can create a server-side runner and trigger the upstream IP
+// temporary-ban policy. Local fixtures remain enabled independently.
+const experimentalScenariosEnabled = process.env.TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS === '1';
+assert.ok(!testScenario || experimentalScenariosEnabled,
+  'Experimental live scenarios are temporarily locked; set TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 only after broad deployment');
+
 const web = fileURLToPath(new URL('../../',import.meta.url));
 const repo = path.resolve(web,'../..');
 const config = process.env.TQS_LIVE_CONFIG ?? path.join(os.homedir(),'.codex/secrets/tqs-live-test.env');
@@ -51,6 +63,9 @@ const errors:string[]=[];let gameStarted=false;let finished=false;
 const testRecovery = process.argv.includes('--reconnect') || testGatewayRestart;
 const testManual = process.argv.includes('--manual');
 let manualCardReply = false;
+const manualDeadlineMs = Number(process.env.TQS_LIVE_DEADLINE_MS ?? '180000');
+assert.ok(Number.isSafeInteger(manualDeadlineMs) && manualDeadlineMs >= 30000 && manualDeadlineMs <= 900000,
+  'TQS_LIVE_DEADLINE_MS must be a bounded integer between 30000 and 900000');
 const candidateId = process.env.TQS_CANDIDATE_ID ?? 'cp08';
 assert.match(candidateId,/^cp[0-9]{2}$/);
 const errorContexts: unknown[] = [];
@@ -58,32 +73,269 @@ let recovered = false;
 const pages:Page[]=[];
 const currentSockets: unknown[] = [];
 const transportOpen = [false,false];
+let scenarioClient = 0;
 const progressTimer = setInterval(() => console.log(JSON.stringify({stage:finished?'finished':gameStarted?'playing':'login',recovered,
   packets:traces.map(t=>t.length),lastIncoming:traces.map(t=>t.filter(p=>p.direction==='incoming').at(-1)?.command ?? null),errors:errors.length})),60000);
 progressTimer.unref();
-const testScenario = process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '');
-assert.ok(testScenario === '' || testScenario === 'card-chosen', 'TQS_LIVE_SCENARIO must be empty or card-chosen');
+const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
+  general: RegExp; generalId: string; skill: RegExp | null; pack: RegExp; packId: string; requiredCommand: string;
+  qaMode?: 'battle-royal-new' | 'battle-royal-old'; sameKingdom?: boolean; capacity?: 2 | 4; requiresGeneral?: boolean;
+}> = {
+  'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
+  'cards-and-choice': { general: /Tưởng Khâm|蒋钦|Jiang\s*Qin/i, generalId: 'ld__jiangqin', skill: /shangyi|尚义|Thượng nghĩa/i, pack: /^formation$/i, packId: 'formation', requiredCommand: 'AskForCardsAndChoice' },
+  'poxi': { general: /Đặng Chi|邓芝|Deng\s*Zhi/i, generalId: 'ty_heg__dengzhi', skill: /weimeng|危盟|Nguy minh/i, pack: /^tenyear_heg$/i, packId: 'tenyear_heg', requiredCommand: 'AskForPoxi' },
+  'rescue-normal': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', sameKingdom: true, capacity: 4, requiresGeneral: false },
+  'rescue-battle': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /new_battle_royal|Quyết chiến|鏖战|Rượu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', qaMode: 'battle-royal-new', requiresGeneral: true },
+  // Jianan Feng is an unmapped wild caller. Keep this as an explicit probe of
+  // the server's real reveal/founding path; it is not evidence until the
+  // native rule actually emits and accepts the expected kingdom choice.
+  'founding': { general: /Giả Nam Phong|Gia Nam Phong|贾南风|Jianan\s*Feng|Jianan/i, generalId: 'heg__jiananfeng', skill: null, pack: /^zfxp$/i, packId: 'zfxp', requiredCommand: 'AskForChoices', sameKingdom: true },
+};
+const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
+const pageUrl = selectedScenario ? (() => {
+  const url = new URL(base);
+  url.searchParams.set('tqs-qa-general', selectedScenario.generalId);
+  url.searchParams.set('tqs-qa-pack', selectedScenario.packId);
+  if (selectedScenario.qaMode) url.searchParams.set('tqs-qa-mode', selectedScenario.qaMode);
+  if (selectedScenario.sameKingdom) url.searchParams.set('tqs-qa-kingdom', 'same');
+  if (selectedScenario.capacity && selectedScenario.capacity !== 2) url.searchParams.set('tqs-qa-capacity', String(selectedScenario.capacity));
+  return url.href;
+})() : base;
 let scenarioCardChosenReply = false;
+let scenarioCardChosenHidden = false;
+let scenarioPoxiReply = false;
+let scenarioPoxiMultiple = false;
+let scenarioCardsAndChoiceReply = false;
+let scenarioActiveSkillReply = false;
+let scenarioRescueReply = false;
+let scenarioRescuePeach = false;
+let scenarioRescueBlocked = false;
+let scenarioViewAsReply = false;
+let scenarioBattleRoyalObserved = false;
+let scenarioFoundingReply = false;
+const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
+
+function hasReply(client: number, requestId: number) {
+  return traces[client].some((packet) => packet.direction === 'outgoing' &&
+    packet.type === CLIENT_REPLY && packet.requestId === requestId);
+}
+
+function pendingRequest(client: number) {
+  return [...traces[client]]
+    .reverse()
+    .find((packet) => packet.direction === 'incoming' && (packet.type & 0x100) !== 0 &&
+      !hasReply(client, packet.requestId));
+}
+
+async function waitForReply(client: number, requestId: number, timeout = 5000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline && !hasReply(client, requestId)) await new Promise((resolve) => setTimeout(resolve, 100));
+  return hasReply(client, requestId);
+}
+
+const requestAttempts = new Map<number, { count: number; lastAt: number }>();
+function shouldAttempt(requestId: number) {
+  const now = Date.now();
+  const previous = requestAttempts.get(requestId);
+  if (previous && (previous.count >= 3 || now - previous.lastAt < 500)) return false;
+  requestAttempts.set(requestId, { count: (previous?.count ?? 0) + 1, lastAt: now });
+  return true;
+}
+
+async function chooseTargetIfNeeded(page: Page) {
+  const target = page.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+  if (await target.count() && await target.getAttribute('aria-pressed') !== 'true') await target.click();
+}
+
+async function observeBattleRoyal(page: Page) {
+  const banner = await page.locator('.board-banners').innerText().catch(() => '');
+  if (/Quyết chiến|BattleRoyal|鏖战/i.test(banner)) scenarioBattleRoyalObserved = true;
+}
+
+/** Complete the real Lua active-skill scene without inspecting private payloads. */
+async function completeActiveSkill(page: Page, client: number, requestId: number, prefer: RegExp | null) {
+  const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
+  const skillHeading = controls.locator('h3').filter({ hasText: 'Kỹ năng' });
+  const skillButtons = skillHeading.locator('..').getByRole('button');
+  const count = await skillButtons.count();
+  let clicked = false;
+  for (let i = 0; i < count; i++) {
+    const button = skillButtons.nth(i);
+    if (!await button.isEnabled()) continue;
+    const label = await button.innerText();
+    if (prefer?.test(label)) { await button.click(); clicked = true; break; }
+  }
+  // A non-scenario active request must still be completed so that later
+  // caller requests are not starved by an unrelated skill scene. Cancel it;
+  // selecting an arbitrary SkillButton would change the caller under test.
+  if (clicked) {
+    // New Battle Royal exposes Peach -> Wine as a view-as skill inside the
+    // same AskForUseActiveSkill scene. Selecting the skill alone is not a
+    // complete native reply: the scene then enables the eligible Peach card
+    // and expects the normal card/target/OK flow.
+    if (testScenario === 'rescue-battle' && prefer) {
+      const hand = controls.locator('.gameplay-hand button:enabled');
+      let selected = false;
+      for (let i = 0; i < await hand.count(); i++) {
+        if (/Đào|Peach|桃/i.test(await hand.nth(i).innerText())) {
+          await hand.nth(i).click();
+          selected = true;
+          break;
+        }
+      }
+      if (!selected && await hand.count()) await hand.first().click();
+    }
+    await chooseTargetIfNeeded(page);
+    const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+    if (await ok.count() && await ok.isEnabled()) await ok.click();
+  } else {
+    const cancel = controls.getByRole('button', { name: 'Hủy', exact: true });
+    if (await cancel.count() && await cancel.isEnabled()) await cancel.click();
+    else {
+      const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+      if (await end.count() && await end.isEnabled()) await end.click();
+    }
+  }
+  const replied = await waitForReply(client, requestId);
+  if (replied && prefer) scenarioActiveSkillReply = true;
+  return replied;
+}
+
+async function completeUseCard(page: Page, client: number, requestId: number) {
+  const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
+  const sceneText = await controls.innerText().catch(() => '');
+  const rescue = /hấp hối|cần hồi|#AskForPeaches|peach|đào/i.test(sceneText);
+  let peach = false;
+  let viewAs = false;
+  let blocked = false;
+  if (rescue && testScenario === 'rescue-battle') {
+    const skills = controls.locator('h3').filter({ hasText: 'Kỹ năng' }).locator('..').getByRole('button');
+    for (let i = 0; i < await skills.count(); i++) {
+      const button = skills.nth(i);
+      if (await button.isEnabled() && /Quyết chiến|new_battle_royal|鏖战/i.test(await button.innerText())) {
+        await button.click();
+        viewAs = true;
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        break;
+      }
+    }
+  }
+  const hand = controls.locator('.gameplay-hand button');
+  const candidates: number[] = [];
+  for (let i = 0; i < await hand.count(); i++) {
+    const label = await hand.nth(i).innerText();
+    if (/Đào|Peach|桃/i.test(label)) candidates.push(i);
+  }
+  if (rescue) {
+    // Playwright's Locator.isEnabled() is async; keep the selection loop
+    // explicit so a battle-royal Peach remains observable while disabled.
+    let selected = -1;
+    for (const index of candidates) {
+      if (await hand.nth(index).isEnabled()) { selected = index; break; }
+    }
+    if (selected >= 0) {
+      await hand.nth(selected).click();
+      peach = true;
+    } else {
+      blocked = candidates.length > 0;
+    }
+  } else if (await hand.locator(':enabled').count()) {
+    await hand.locator(':enabled').first().click();
+  }
+  if (rescue && !peach && !blocked) blocked = candidates.length === 0;
+  if (!rescue) await chooseTargetIfNeeded(page);
+  const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+  if (await ok.count() && await ok.isEnabled()) await ok.click();
+  else {
+    const cancel = controls.getByRole('button', { name: 'Hủy', exact: true });
+    if (await cancel.count() && await cancel.isEnabled()) await cancel.click();
+  }
+  const replied = await waitForReply(client, requestId);
+  return { replied, rescue, peach, viewAs, blocked };
+}
+
+async function completeNativeDialog(page: Page, client: number, requestId: number) {
+  const panel = page.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' });
+  if (!await panel.count()) return false;
+  const heading = await panel.locator('h2').innerText().catch(() => '');
+  if (heading === 'Sắp xếp bài') {
+    // ArrangeCards normally starts with one full group and a required top
+    // group. Move the first two cards to the last group until OK is feasible.
+    for (let n = 0; n < 2; n++) {
+      const source = panel.locator('[role="group"]').first().locator('button.gameplay-choice:enabled').first();
+      if (!await source.count()) break;
+      await source.click();
+      const destination = panel.getByRole('button', { name: /Đặt cuối nhóm 3/ });
+      if (await destination.count() && await destination.isEnabled()) await destination.click();
+    }
+  } else if (heading === 'Xem tướng') {
+    // KnownBoth is view-only and has only the OK action.
+  } else {
+    const choices = panel.locator('button.gameplay-choice:enabled');
+    if (await choices.count()) await choices.first().click();
+  }
+  const ok = panel.getByRole('button', { name: 'Xác nhận', exact: true });
+  if (await ok.count() && await ok.isEnabled()) await ok.click();
+  else {
+    const cancel = panel.getByRole('button', { name: /Bỏ qua|Hủy/ }).first();
+    if (await cancel.count() && await cancel.isEnabled()) await cancel.click();
+  }
+  const replied = await waitForReply(client, requestId);
+  if (replied) scenarioObservations.push({ command: 'native-dialog', requestId, reply: true, detail: heading });
+  return replied;
+}
 async function selectPair(page:Page, preferredLabel?:RegExp){
   const group=page.getByRole('group',{name:'Danh sách võ tướng'});await group.waitFor({timeout:60000});
   const buttons=group.getByRole('button');const n=await buttons.count();
   const order:number[]=[];
+  let preferredCount=0;
   for(let i=0;i<n;i++) {
     const label=await buttons.nth(i).innerText();
-    if (preferredLabel?.test(label)) order.unshift(i); else order.push(i);
+    if (preferredLabel?.test(label)) { preferredCount++; order.unshift(i); } else order.push(i);
+  }
+  if (preferredLabel && preferredCount === 0) {
+    throw new Error('Scenario caller general was not offered by the real server');
   }
   for(const a of order){
     const reset=page.getByRole('button',{name:'Chọn lại'});
     if(await reset.isEnabled())await reset.click();
     await buttons.nth(a).click();
     for(const b of order){
-      if(a===b)continue;await buttons.nth(b).click();
+      if(a===b)continue;
+      await buttons.nth(b).click();
       if(await page.getByRole('button',{name:'Xác nhận tướng'}).isEnabled()){
+        console.log(`Native pair candidate: ${await buttons.nth(a).innerText()} + ${await buttons.nth(b).innerText()}`);
         await page.getByRole('button',{name:'Xác nhận tướng'}).click();return;
       }
     }
   }
   throw new Error('No valid native general pair');
+}
+
+async function offersGeneral(page: Page, preferredLabel: RegExp) {
+  const group = page.getByRole('group', { name: 'Danh sách võ tướng' });
+  await group.waitFor({ timeout: 60000 });
+  const labels = await group.getByRole('button').allTextContents();
+  return labels.some((label) => preferredLabel.test(label));
+}
+
+/** The URL QA plan leaves exactly ten distinct native generals. Both clients
+ * still receive the server's normal random five-card offer; the target caller
+ * is guaranteed to be offered by one of the two clients, so the runner can
+ * drive the actual caller instead of falling back to a random general. */
+async function configureScenarioPool(page: Page) {
+  if (!selectedScenario) return;
+  const checkboxes = page.locator('input[type="checkbox"][data-pack-type="generals"]');
+  await checkboxes.first().waitFor({ timeout: 60000 });
+  await page.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).waitFor({ state: 'attached' });
+  const warning = page.locator('.pool-warning');
+  if (await warning.count() && await warning.isVisible()) {
+    throw new Error(`Scenario ${testScenario} deterministic caller pool is invalid: ${await warning.innerText()}`);
+  }
+  const summary = await page.locator('.pool-summary').innerText();
+  const expected = (selectedScenario?.capacity ?? 2) * 5;
+  assert.match(summary, new RegExp(`${expected} tướng khác tên`), `Scenario ${testScenario} must leave exactly ${expected} distinct caller-pool generals: ${summary}`);
+  console.log(`Scenario ${testScenario}: native caller pool prepared with exactly ${expected} distinct generals`);
 }
 try{
   const healthDeadline = Date.now() + (deploymentUrl ? 120000 : 10000);
@@ -126,6 +378,8 @@ try{
       let detail=m.text();for(const value of [first.username,second.username,first.password,second.password])detail=detail.split(value).join('[redacted]');
       errors.push(`client-${i+1}: ${detail.slice(0,1200)}`);
       errorContexts.push({client:i+1,lastIncoming:traces[i].filter(t=>t.direction==='incoming').at(-1)?.command ?? null,location:m.location()});
+    } else if (m.type() === 'warning' && m.text().includes('AskForCardsAndChoice')) {
+      console.warn(`client-${i+1}: ${m.text().slice(0, 400)}`);
     }});
     p.on('websocket',ws=>{
       currentSockets[i] = ws; transportOpen[i] = true;
@@ -138,75 +392,235 @@ try{
       ws.on('framereceived',({payload})=>record('incoming',payload));
       ws.on('framesent',({payload})=>record('outgoing',payload));
     });
-    await p.goto(base);await p.getByLabel('Tên tài khoản',{exact:true}).waitFor({timeout:90000});
+    await p.goto(pageUrl);await p.getByLabel('Tên tài khoản',{exact:true}).waitFor({timeout:90000});
     const account=i===0?first:second;await p.getByLabel('Tên tài khoản',{exact:true}).fill(account.username);
     await p.getByLabel('Mật khẩu',{exact:true}).fill(account.password);await p.getByRole('button',{name:'Vào sảnh',exact:true}).click();
     await p.getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor({timeout:60000});
     console.log(`PASS client ${i+1}: distinct account authenticated in real lobby`);
   }
   const roomName=`${candidateId.toUpperCase()} multiplayer ${Date.now()}`;const [a,b]=pages;
-  await a.getByLabel('Tên phòng',{exact:true}).fill(roomName);await a.getByLabel('Số người',{exact:true}).selectOption('2');
+  const playerCapacity = selectedScenario?.capacity ?? 2;
+  await a.getByLabel('Tên phòng',{exact:true}).fill(roomName);await a.getByLabel('Số người',{exact:true}).selectOption(String(playerCapacity));
+  await configureScenarioPool(a);
   await a.getByLabel('Thời gian lượt',{exact:true}).selectOption('60');await a.getByRole('button',{name:'Tạo phòng Quốc Chiến'}).click();
   await a.getByRole('heading',{name:roomName,exact:true}).waitFor();await b.getByRole('button',{name:'Làm mới',exact:true}).click();
   await b.locator('.room-item').filter({hasText:roomName}).getByRole('button',{name:'Vào phòng',exact:true}).click();
   await b.getByRole('heading',{name:roomName,exact:true}).waitFor();
-  await Promise.all(pages.map(p=>p.waitForFunction(()=>document.querySelectorAll('.player-item').length===2,null,{timeout:30000})));
-  assert.equal(await a.locator('.player-item').count(),2);assert.equal(await b.locator('.player-item').count(),2);
+  if (playerCapacity > 2) {
+    for (let n = 2; n < playerCapacity; n++) {
+      await a.getByRole('button',{name:'+ Thêm bot',exact:true}).click();
+      await a.waitForFunction((expected) => document.querySelectorAll('.player-item').length === expected, n + 1, { timeout: 30000 });
+    }
+  }
+  await Promise.all(pages.map(p=>p.waitForFunction((expected)=>document.querySelectorAll('.player-item').length===expected, playerCapacity,{timeout:30000})));
+  assert.equal(await a.locator('.player-item').count(),playerCapacity);assert.equal(await b.locator('.player-item').count(),playerCapacity);
   await b.getByRole('button',{name:'Sẵn sàng',exact:true}).click();await a.getByRole('button',{name:'Bắt đầu',exact:true}).click();gameStarted=true;
+  if (selectedScenario) {
+    if (selectedScenario.requiresGeneral !== false) {
+      const offered = await Promise.all(pages.map((page) => offersGeneral(page, selectedScenario.general)));
+      assert.ok(offered.some(Boolean), 'Scenario caller general was not offered to either real client');
+      scenarioClient = offered[0] ? 0 : 1;
+      console.log(`Scenario ${testScenario}: real server offered the caller to client ${scenarioClient + 1}`);
+    } else {
+      console.log(`Scenario ${testScenario}: no caller general is required; actor remains client 1`);
+    }
+  }
   await Promise.all(pages.map((page, index) => selectPair(page,
-    testScenario === 'card-chosen' && index === 0 ? /Bàng Đức|庞德|Pangde/i : undefined)));
+    selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
   for(const p of pages){await p.locator('.game-board').waitFor({timeout:90000});
-    await p.waitForFunction(()=>document.querySelectorAll('.board-player').length===2,null,{timeout:30000});
-    const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),1);
+    await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
+    const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
     assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
+  if (selectedScenario) {
+    const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
+    console.log(`Scenario ${testScenario}: selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
+  }
   console.log('PASS both clients: room/join/ready/StartGame/native general pairs; no opponent card IDs in board DOM');
   if (testManual) {
-    await b.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
-    const deadline=Date.now()+180000;
-    while(Date.now()<deadline && (!manualCardReply || (testScenario === 'card-chosen' && !scenarioCardChosenReply))) {
-      const latest=traces[0].filter(t=>t.direction==='incoming' && (t.type & 0x100)!==0).at(-1);
-      if(latest && traces[0].some(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY && t.requestId===latest.requestId)) {
+    let actor = pages[scenarioClient];
+    let actorTrace = traces[scenarioClient];
+    const botPage = pages[1 - scenarioClient];
+    await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
+    const deadline=Date.now()+manualDeadlineMs;
+    let printedScenarioSkills = false;
+    const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
+    const selectActiveClient = async () => {
+      if (!rescueScenario) return scenarioClient;
+      for (const client of [scenarioClient, 1 - scenarioClient]) {
+        const request = pendingRequest(client);
+        if (!request || !['AskForUseCard', 'AskForResponseCard'].includes(request.command ?? '')) continue;
+        const controlsText = await pages[client].getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+        if (/hấp hối|cần hồi|#AskForPeaches|peach|đào/i.test(controlsText)) return client;
+      }
+      return scenarioClient;
+    };
+    const scenarioDone = () => testScenario === '' ||
+      (testScenario === 'card-chosen' && scenarioCardChosenHidden) ||
+      (testScenario === 'cards-and-choice' && scenarioCardsAndChoiceReply) ||
+      (testScenario === 'poxi' && scenarioPoxiMultiple) ||
+      (testScenario === 'rescue-normal' && scenarioRescueReply && scenarioRescuePeach) ||
+      (testScenario === 'rescue-battle' && scenarioRescueReply && scenarioRescuePeach && scenarioViewAsReply && scenarioBattleRoyalObserved) ||
+      (testScenario === 'founding' && scenarioFoundingReply);
+    while(Date.now()<deadline && (!manualCardReply || !scenarioDone())) {
+      const activeClient = await selectActiveClient();
+      actor = pages[activeClient];
+      actorTrace = traces[activeClient];
+      await observeBattleRoyal(actor);
+      const latest=actorTrace.filter(t=>t.direction==='incoming' && (t.type & 0x100)!==0).at(-1);
+      if(latest && actorTrace.some(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY && t.requestId===latest.requestId)) {
         await new Promise(r=>setTimeout(r,250));continue;
       }
+      if (latest && !shouldAttempt(latest.requestId)) {
+        await new Promise(r=>setTimeout(r,250));
+        continue;
+      }
       if(latest?.command==='AskForChoices') {
-        const choices=a.getByRole('region',{name:'Lựa chọn trong trận'});
+        const choices=actor.getByRole('region',{name:'Lựa chọn trong trận'});
+        const choiceText = await choices.innerText().catch(() => '');
         if(await choices.count()) {
-          const option=choices.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
+          const preferred = (selectedScenario && !(testScenario === 'cards-and-choice' && scenarioActiveSkillReply))
+            ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /revealMain|Lật chủ tướng|主将|main/i }).first()
+            : testScenario === 'cards-and-choice'
+            ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /shangyi_card|观看手牌|Xem bài.*tay|bài trên tay/i }).first()
+            : choices.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
+          const option = await preferred.count() ? preferred : choices.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
           if(await option.count())await option.click();
           const confirm=choices.getByRole('button',{name:'Xác nhận lựa chọn',exact:true});
-          if(await confirm.count() && await confirm.isEnabled())await confirm.click();
+          if(await confirm.count() && await confirm.isEnabled()) {
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied && /lập quốc|quốc hiệu|founding|wild-choose|建国/i.test(choiceText)) scenarioFoundingReply = true;
+            scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
+              detail: /lập quốc|quốc hiệu|founding|wild-choose|建国/i.test(choiceText) ? 'founding-kingdom' :
+                testScenario === 'cards-and-choice' ? 'shangyi_card choice' : 'choice'});
+          }
         }
       } else if(latest?.command==='AskForSkillInvoke') {
-        const choice=a.locator('.request-panel').getByRole('button',{name:testScenario === 'card-chosen' ? 'Kích hoạt' : 'Hủy',exact:true});
+        const invokeText = await actor.locator('.request-panel').innerText().catch(() => '');
+        const isCardChosenInvoke = /jianchu|鞬出|Kiền xuất/i.test(invokeText);
+        const isScenarioSkillInvoke = !!selectedScenario?.skill && selectedScenario.skill.test(invokeText);
+        // A manual run may encounter unrelated optional skills while the
+        // target prompt is still pending. Only invoke the requested caller
+        // skill; cancel everything else so it cannot starve a native choice.
+        const shouldInvoke = testScenario === 'card-chosen'
+          ? isCardChosenInvoke
+          : isScenarioSkillInvoke;
+        const choice = shouldInvoke
+          ? actor.locator('.request-panel').getByRole('button', { name: 'Kích hoạt', exact: true })
+          : actor.locator('.request-panel').getByRole('button', { name: /^(Bỏ qua|Hủy)$/ });
         if(await choice.count() && await choice.isEnabled())await choice.click();
+        const replied = await waitForReply(activeClient, latest.requestId);
+        scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
+          detail: shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
+      } else if(latest?.command==='AskForUseActiveSkill') {
+        const activeSkill = testScenario === 'rescue-battle'
+          ? selectedScenario?.skill ?? null
+          : testScenario === 'cards-and-choice' || testScenario === 'poxi'
+            ? selectedScenario?.skill ?? null : null;
+        const replied = await completeActiveSkill(actor, activeClient, latest.requestId, activeSkill);
+        if (replied && testScenario === 'rescue-battle' && activeSkill) scenarioViewAsReply = true;
+        scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
+          detail: activeSkill?.source ?? 'cancel'});
+      } else if(latest?.command==='AskForUseCard' || latest?.command==='AskForResponseCard') {
+        const result = await completeUseCard(actor, activeClient, latest.requestId);
+        if (result.rescue && result.replied) scenarioRescueReply = true;
+        if (result.rescue && result.peach && result.replied) scenarioRescuePeach = true;
+        if (result.rescue && result.blocked) scenarioRescueBlocked = true;
+        if (result.viewAs && result.replied) scenarioViewAsReply = true;
+        scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: result.replied,
+          detail: result.rescue ? result.viewAs ? 'rescue-peach-view-as' : result.peach ? 'rescue-peach' : result.blocked ? 'rescue-peach-blocked' : 'rescue-no-peach' : undefined});
       } else if(latest?.command==='AskForCardChosen') {
-        const panel=a.getByRole('region',{name:'Chọn bài đối thủ'});
-        const option=panel.locator('button.gameplay-choice:enabled').first();
+        const panel=actor.getByRole('region',{name:'Chọn bài đối thủ'});
+        const options=panel.locator('button.gameplay-choice:enabled');
+        const labels=await options.allTextContents();
+        const hiddenIndex=labels.findIndex((label)=>/Bài úp/i.test(label.trim()));
+        const option=options.nth(hiddenIndex >= 0 ? hiddenIndex : 0);
         if(await option.count())await option.click();
-        for(let n=0;n<30;n++) {
-          if(traces[0].some(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY && t.requestId===latest.requestId)) {
-            scenarioCardChosenReply=true;break;
-          }
-          await new Promise(r=>setTimeout(r,100));
+        const replied = await waitForReply(activeClient, latest.requestId);
+        if (replied) {
+          scenarioCardChosenReply=true;
+          if (hiddenIndex >= 0) scenarioCardChosenHidden=true;
+          scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
+            detail: hiddenIndex >= 0 ? 'hidden-card' : 'public-card'});
         }
       } else if(latest?.command==='AskForPoxi') {
-        const panel=a.getByRole('region',{name:'Chọn bài đối thủ'});
-        const options=panel.locator('button.gameplay-choice:enabled');
-        if(await options.count()) {
-          await options.first().click();
-          const second=panel.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
-          if(await second.count())await second.click();
+        const panel=actor.getByRole('region',{name:'Chọn bài đối thủ'});
+        const cards=panel.locator('[role="group"] button.gameplay-choice:enabled');
+        let selectedCount=0;
+        for(let n=0;n<2;n++) {
+          const count=await cards.count(); let clicked=false;
+          for(let i=0;i<count;i++) {
+            const candidate=cards.nth(i);
+            if(await candidate.getAttribute('aria-pressed') !== 'true') { await candidate.click(); clicked=true; selectedCount++; break; }
+          }
+          if(!clicked)break;
+          await new Promise(r=>setTimeout(r,100));
+        }
+        if(selectedCount>0) {
           const confirm=panel.getByRole('button',{name:'Xác nhận chọn bài',exact:true});
-          if(await confirm.count() && await confirm.isEnabled())await confirm.click();
+          if(await confirm.count() && await confirm.isEnabled()) {
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) {
+              scenarioPoxiReply=true;
+              if (selectedCount >= 2) scenarioPoxiMultiple=true;
+              scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
+                detail: `selected-${selectedCount}`});
+            }
+          }
         }
       } else if(latest?.command==='AskForCardsAndChoice') {
-        const panel=a.getByRole('region',{name:'Xem bài và chọn phương án'});
-        const option=panel.locator('button.gameplay-choice:enabled').first();
-        if(await option.count())await option.click();
-        const confirm=panel.locator('button.button.primary:enabled').first();
-        if(await confirm.count())await confirm.click();
+        const panel=actor.getByRole('region',{name:'Xem bài và chọn phương án'});
+        let ready = true;
+        try { await panel.waitFor({ state: 'visible', timeout: 3000 }); }
+        catch { ready = false; }
+        if (!ready) {
+          scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: false,
+            detail: 'panel-missing'});
+        } else {
+          const cards=panel.locator('[role="group"] button.gameplay-choice:enabled');
+          if(await cards.count())await cards.first().click();
+          const enabledChoices=panel.locator('.request-actions button.button.primary:enabled').first();
+          if(await enabledChoices.count()) {
+            await enabledChoices.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
+              detail: replied ? `cards-${await panel.locator('[role="group"] .gameplay-choice').count()}` : 'reply-missing'});
+            if (replied) scenarioCardsAndChoiceReply=true;
+          } else {
+            const cancel=panel.locator('.request-actions button.button.secondary:enabled').first();
+            if(await cancel.count())await cancel.click();
+            scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: false,
+              detail: `no-enabled-choice cards-${await panel.locator('[role="group"] .gameplay-choice').count()}`});
+          }
+        }
+      } else if(['AskForArrangeCards','AskForAG','CustomDialog','AskForGeneral','AskForMoveCardInBoard'].includes(latest?.command ?? '')) {
+        await completeNativeDialog(actor, activeClient, latest.requestId);
       } else if(latest?.command==='PlayCard') {
-        const hand=a.locator('.gameplay-hand button:enabled');
+        const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
+        const skillHeading=controls.locator('h3').filter({hasText:'Kỹ năng'});
+        if (selectedScenario && !printedScenarioSkills) {
+          printedScenarioSkills = true;
+          console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillHeading.locator('..').getByRole('button').allTextContents()).join(' | ') || '(none)'}`);
+        }
+        const activeScenario = testScenario === 'card-chosen' ? null : selectedScenario;
+        const desiredSkill=activeScenario?.skill ? skillHeading.locator('..').getByRole('button').filter({hasText:activeScenario.skill}).first() : null;
+        if(desiredSkill && await desiredSkill.count() && await desiredSkill.isEnabled()) {
+          await desiredSkill.click();
+          await chooseTargetIfNeeded(actor);
+          const confirm=controls.getByRole('button',{name:'Xác nhận',exact:true});
+          if(await confirm.count() && await confirm.isEnabled())await confirm.click();
+          const replied = await waitForReply(scenarioClient, latest.requestId);
+          if(replied) {
+            scenarioActiveSkillReply=true;
+            scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'active-skill'});
+          }
+          manualCardReply=manualCardReply || replied;
+          await new Promise(r=>setTimeout(r,250));
+          continue;
+        }
+        const hand=controls.locator('.gameplay-hand button:enabled');
         const preferred:number[]=[];const fallback:number[]=[];
         for(let i=0;i<await hand.count();i++) {
           const label=await hand.nth(i).innerText();
@@ -214,21 +628,18 @@ try{
         }
         for(const i of [...preferred,...fallback]) {
           const card=hand.nth(i);await card.click();
-          const target=a.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          const target=actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
           if(await target.count() && await target.first().getAttribute('aria-pressed')!=='true')await target.first().click();
-          const confirm=a.getByRole('region',{name:'Điều khiển lượt chơi'}).getByRole('button',{name:'Xác nhận',exact:true});
+          const confirm=actor.getByRole('region',{name:'Điều khiển lượt chơi'}).getByRole('button',{name:'Xác nhận',exact:true});
           if(await confirm.count() && await confirm.isEnabled()) {
             await confirm.click();
-            for(let n=0;n<30;n++) {
-              if(traces[0].some(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY && t.requestId===latest.requestId)){manualCardReply=true;break;}
-              await new Promise(r=>setTimeout(r,100));
-            }
+            manualCardReply=await waitForReply(scenarioClient, latest.requestId);
             if(manualCardReply)break;
           }
           if(await card.count() && await card.getAttribute('aria-pressed')==='true')await card.click();
         }
         if(!manualCardReply) {
-          const end=a.getByRole('region',{name:'Điều khiển lượt chơi'}).getByRole('button',{name:'Kết thúc lượt',exact:true});
+          const end=actor.getByRole('region',{name:'Điều khiển lượt chơi'}).getByRole('button',{name:'Kết thúc lượt',exact:true});
           if(await end.count() && await end.isEnabled())await end.click();
         }
       }
@@ -237,10 +648,28 @@ try{
     assert.ok(manualCardReply,'A native PlayCard must receive one user-selected card/target/OK reply');
     console.log('PASS manual native PlayCard: offered card, Lua-enabled target/OK and one exact client reply');
     if (testScenario === 'card-chosen') {
-      assert.ok(scenarioCardChosenReply,'card-chosen scenario must receive and answer AskForCardChosen on the real server');
-      console.log('PASS card-chosen scenario: Bàng Đức/jianchu reached AskForCardChosen and received one exact reply');
+      assert.ok(scenarioCardChosenHidden,'card-chosen scenario must receive and answer hidden AskForCardChosen on the real server');
+      console.log('PASS card-chosen scenario: Bàng Đức/jianchu reached hidden AskForCardChosen and received one exact reply');
+    } else if (testScenario === 'cards-and-choice') {
+      assert.ok(scenarioCardsAndChoiceReply,'cards-and-choice scenario must receive and answer AskForCardsAndChoice on the real server');
+      console.log('PASS cards-and-choice scenario: Tưởng Khâm/shangyi reached AskForCardsAndChoice and received one exact reply');
+    } else if (testScenario === 'poxi') {
+      assert.ok(scenarioPoxiReply && scenarioPoxiMultiple,'poxi scenario must receive and answer AskForPoxi with multiple selected cards on the real server');
+      console.log('PASS Poxi scenario: Đặng Chi/weimeng reached AskForPoxi and received a multi-card reply');
+    } else if (testScenario === 'rescue-normal') {
+      assert.ok(scenarioRescueReply && scenarioRescuePeach,
+        'normal rescue scenario must receive AskForPeaches and answer with an enabled Peach');
+      assert.equal(scenarioBattleRoyalObserved, false, 'normal rescue QA room must not enter Battle Royal');
+      console.log('PASS normal rescue scenario: native Peach rescued the dying player outside Battle Royal');
+    } else if (testScenario === 'rescue-battle') {
+      assert.ok(scenarioRescueReply && scenarioRescuePeach && scenarioViewAsReply && scenarioBattleRoyalObserved,
+        'Battle Royal rescue scenario must observe the mode, convert Peach through the native view-as skill and reply');
+      console.log('PASS Battle Royal rescue scenario: ordinary Peach was blocked and native Quyết chiến converted Peach to Wine for rescue');
+    } else if (testScenario === 'founding') {
+      assert.ok(scenarioFoundingReply, 'founding scenario must receive and answer the native kingdom choice');
+      console.log('PASS founding scenario: real wild general reached the native Vietnamese kingdom choice');
     }
-    const trust=a.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
+    const trust=actor.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
   } else await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
   if (testRecovery) {
     const recovering = [a];
@@ -258,8 +687,8 @@ try{
         await new Promise(resolve=>setTimeout(resolve,500));
       assert.ok(traces[client].some(t=>t.direction==='incoming' && t.command==='Reconnect'),'server must send native Reconnect after transport loss');
       await p.locator('.board-self').waitFor({timeout:30000});
-      await p.waitForFunction(()=>document.querySelectorAll('.board-player').length===2,null,{timeout:30000});
-      assert.equal(await p.locator('.board-player').count(),2);
+      await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
+      assert.equal(await p.locator('.board-player').count(),playerCapacity);
       assert.equal(await p.locator('.board-player:not(.board-self) [data-card-id]').count(),0);
       const trust=p.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
     }
@@ -277,7 +706,7 @@ try{
     await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioCardChosenReply,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
@@ -294,7 +723,7 @@ try{
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,recovered,traces,errors,
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,traces,errors,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));

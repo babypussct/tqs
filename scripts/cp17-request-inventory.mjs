@@ -39,7 +39,7 @@ const inventory = [
     pattern: /\baskToChooseCard\s*\(/g,
     command: 'AskForCardChosen',
     renderer: 'CardSelectionPanel · single',
-    status: 'partial live: public equipment/Bàng Đức-jianchu; hidden-hand cases open',
+    status: 'prior targeted hosted PASS: Bàng Đức/jianchu hidden-card; CP19 broad caller matrix remains open',
     priority: 'P0',
   },
   {
@@ -47,7 +47,7 @@ const inventory = [
     pattern: /\baskToChooseCards\s*\(/g,
     command: 'AskForPoxi',
     renderer: 'CardSelectionPanel · multi',
-    status: 'renderer + fixture PASS; no current hosted multi-card evidence',
+    status: 'prior targeted hosted PASS: Đặng Chi/weimeng selected-2; CP19 broad caller matrix remains open',
     priority: 'P0',
   },
   {
@@ -55,7 +55,7 @@ const inventory = [
     pattern: /\baskToChooseCardsAndChoice\s*\(/g,
     command: 'AskForCardsAndChoice',
     renderer: 'CardsAndChoicePanel',
-    status: 'renderer + fixture PASS; no current hosted evidence',
+    status: 'prior targeted hosted PASS: Tưởng Khâm/shangyi cards-0 + choice; CP19 broad caller matrix remains open',
     priority: 'P0',
   },
   {

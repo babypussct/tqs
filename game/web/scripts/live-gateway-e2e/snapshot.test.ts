@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { buildSnapshot, fileList, PACKAGES } from './snapshot';
+import { packageSpec } from '../upstream-packages';
 
 const md5 = (data: string) => createHash('md5').update(data).digest('hex');
 test('Native flist orders packages/files by name, groups extensions and normalizes CRLF only', () => {
@@ -36,7 +37,7 @@ test('Pinned snapshot includes QML omitted by a clean sparse checkout', () => {
   const destination = path.join(root, 'snapshot');
   try {
     for (const pkg of PACKAGES) {
-      const cwd = path.join(source, pkg);
+      const cwd = path.join(source, packageSpec(pkg).sourceDirectory);
       mkdirSync(path.join(cwd, 'qml'), { recursive: true });
       writeFileSync(path.join(cwd, 'init.lua'), `return '${pkg}'\n`);
       writeFileSync(path.join(cwd, 'data.json'), '{}');
@@ -54,7 +55,7 @@ test('Pinned snapshot includes QML omitted by a clean sparse checkout', () => {
       assert.equal(readFileSync(path.join(destination, 'packages', pkg, 'qml/box.qml'), 'utf8'),
         `Item { /* ${pkg} */ }\n`);
       assert.equal(existsSync(path.join(destination, 'packages', pkg, '.git')), false);
-      assert.equal(existsSync(path.join(source, pkg, 'qml/box.qml')), false, 'Preserve source sparse checkout');
+      assert.equal(existsSync(path.join(source, packageSpec(pkg).sourceDirectory, 'qml/box.qml')), false, 'Preserve source sparse checkout');
     }
     const flist = readFileSync(path.join(destination, 'flist.txt'), 'utf8');
     assert.equal(digest, md5(flist));

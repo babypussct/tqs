@@ -15,6 +15,14 @@ export interface GameModeInfo {
 
 export interface RoomPack { id: string; label: string; count: number }
 export interface RoomPacks { generals: RoomPack[]; cards: RoomPack[] }
+export interface RoomGeneral {
+  id: string;
+  trueName: string;
+  kingdom?: string;
+  subkingdom?: string;
+  package: string;
+  label: string;
+}
 export interface PoolSummary { generals: number; cards: number }
 
 export class GameAdapter {
@@ -101,10 +109,13 @@ export class GameAdapter {
       },
       onRequest: (request) => {
         if (generation === this.generation) useGameStore.getState().update({ pendingRequest: request,
+          ...(request?.command === 'AskForSkillInvoke' ? { skillInvoke: request.skillInvokePrompt ?? null } : {}),
           ...(!request ? { skillInvoke: null, initialGeneral: null, gameplay: emptyGameplay() } : {}) });
       },
       log: (level, msg) => {
         if (level === 'error') console.error(`[FreeKill Lua] ${msg}`);
+        else if (level === 'warn' && msg.startsWith('AskForCardsAndChoice prompt rejected'))
+          console.warn(`[FreeKill Lua] ${msg}`);
       },
     });
     recovery = new SessionRecovery({
@@ -146,17 +157,21 @@ export class GameAdapter {
     return this.requireConnection().lua.call<RoomPacks>('__web_room_packs', 'new_heg_mode');
   }
 
-  getRoomPoolSummary(disabledPacks: string[]): PoolSummary {
-    return this.requireConnection().lua.call<PoolSummary>('__web_room_pool_summary', 'new_heg_mode', disabledPacks);
+  getRoomGenerals(disabledPacks: string[] = []): RoomGeneral[] {
+    return this.requireConnection().lua.call<RoomGeneral[]>('__web_room_generals', 'new_heg_mode', disabledPacks);
   }
 
-  createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = []) {
+  getRoomPoolSummary(disabledPacks: string[], disabledGenerals: string[] = []): PoolSummary {
+    return this.requireConnection().lua.call<PoolSummary>('__web_room_pool_summary', 'new_heg_mode', disabledPacks, disabledGenerals);
+  }
+
+  createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = [], disabledGenerals: string[] = [], modeSettings: Record<string, boolean> = {}) {
     const roomName = name.trim();
     if (!roomName || roomName.length > 80) throw new Error('Tên phòng phải dài từ 1 đến 80 ký tự');
     const conn = this.requireConnection();
     const feasible = conn.lua.call<boolean>('__web_room_feasible', 'new_heg_mode', capacity, timeout);
     if (!feasible) throw new Error('Số người chơi không hợp lệ theo luật Quốc Chiến');
-    const pool = this.getRoomPoolSummary(disabledPacks);
+    const pool = this.getRoomPoolSummary(disabledPacks, disabledGenerals);
     if (pool.generals < capacity * 5) {
       throw new Error(`Bể tướng còn ${pool.generals} tướng khác tên, cần ít nhất ${capacity * 5} cho ${capacity} người.`);
     }
@@ -169,7 +184,9 @@ export class GameAdapter {
       _game: { generalNum: 5, generalTimeout: timeout, timeoutAsGeneralTimeout: true,
         luckTime: 0, enableFreeAssign: false, enableDeputy: true,
         disableSameConvert: false, enableObserverViewCard: false, enableObserverViewFakeSkills: false },
-      _mode: {}, disabledPack: [...disabledPacks], disabledGenerals: [] };
+      _mode: Object.fromEntries(Object.entries(modeSettings).filter(([key, value]) =>
+        ['old_battle_royal', 'enterBattleRoyalOnFirstShuffle', 'revealAllOnStart'].includes(key) && typeof value === 'boolean')),
+      disabledPack: [...disabledPacks], disabledGenerals: [...disabledGenerals] };
     this.notify('CreateRoom', [roomName, capacity, timeout, settings]);
   }
 

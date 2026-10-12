@@ -5,6 +5,8 @@ import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from '../engine/
 import { emptyBoard, updateBoard, type BoardState } from './boardState';
 import { emptyGameplay, reduceGameplay, type GameplayScene } from './gameplayState';
 import { connectionError } from '../engine/connectionMessages';
+import { parseSkillInvokePrompt, type SkillInvokePrompt } from '../engine/skillInvoke';
+export type { SkillInvokePrompt } from '../engine/skillInvoke';
 
 export interface LobbyRoom {
   id: number;
@@ -23,11 +25,6 @@ export interface RoomPlayer {
   ready: boolean;
   owner: boolean;
   netState?: 'online' | 'trust' | 'run' | 'robot' | 'offline';
-}
-
-export interface SkillInvokePrompt {
-  skill: string;
-  prompt: string;
 }
 
 export type GamePhase = 'boot' | 'login' | 'lobby' | 'room' | 'playing';
@@ -104,8 +101,11 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
   switch (command) {
     case 'DisplayTranslations':
       return data && typeof data === 'object' && !Array.isArray(data)
-        ? { ...state, translations: Object.fromEntries(Object.entries(data).filter(([key, value]) =>
-          key.length <= 300 && typeof value === 'string' && value.length <= 30000)) }
+        ? { ...state, translations: {
+          ...state.translations,
+          ...Object.fromEntries(Object.entries(data).filter(([key, value]) =>
+            key.length <= 300 && typeof value === 'string' && value.length <= 30000)),
+        } }
         : state;
     case 'EnterLobby':
       return { ...state, phase: 'lobby', error: null, roomName: '', roomMode: '',
@@ -120,10 +120,10 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       return { ...state, gameplay: reduceGameplay(state.gameplay, data) };
     case 'CustomDialog':
       return { ...state, initialGeneral: parseInitialGeneralPrompt(data) };
-    case 'AskForSkillInvoke':
-      return Array.isArray(data) && typeof data[0] === 'string' && typeof data[1] === 'string'
-        ? { ...state, skillInvoke: { skill: data[0], prompt: data[1] } }
-        : state;
+    case 'AskForSkillInvoke': {
+      const prompt = parseSkillInvokePrompt(data);
+      return prompt ? { ...state, skillInvoke: prompt } : state;
+    }
     case 'UpdateRoomList':
       return { ...state, rooms: parseRooms(data) };
     case 'EnterRoom': {

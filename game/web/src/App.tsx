@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { GameAdapter, type RoomPack } from './engine/gameAdapter';
+import { GameAdapter, type RoomGeneral, type RoomPack } from './engine/gameAdapter';
 import { useGameStore, type LobbyRoom } from './store/gameStore';
 import type { RequestInfo } from './engine/connection';
 import type { InitialGeneralPrompt } from './engine/generalSelection';
@@ -71,6 +71,94 @@ function LobbyRoomRow({ room, join, busy }: { room: LobbyRoom; join: (id: number
   );
 }
 
+interface QaGeneralScenario {
+  generalId: string;
+  packId: string;
+  sameKingdom: boolean;
+  capacity: number;
+  modeSettings: Record<string, boolean>;
+}
+
+interface QaGeneralPlan {
+  disabledGenerals: string[];
+  kept: RoomGeneral[];
+  error?: string;
+}
+
+/**
+ * The live scenario runner can ask for a bounded native general pool via the
+ * URL. This is intentionally not part of the normal lobby controls: it only
+ * changes the native disabledGenerals setting when both bounded query
+ * parameters are present, and never renders the internal IDs.
+ */
+function readQaGeneralScenario(): QaGeneralScenario | null {
+  const params = new URLSearchParams(window.location.search);
+  const generalId = params.get('tqs-qa-general') ?? '';
+  const packId = params.get('tqs-qa-pack') ?? '';
+  if (!/^[A-Za-z0-9_:-]{1,160}$/.test(generalId) || !/^[A-Za-z0-9_:-]{1,160}$/.test(packId)) return null;
+  const mode = params.get('tqs-qa-mode') ?? '';
+  const sameKingdom = params.get('tqs-qa-kingdom') === 'same';
+  const capacityValue = Number(params.get('tqs-qa-capacity') ?? '2');
+  const capacity = capacityValue === 2 || capacityValue === 4 ? capacityValue : 0;
+  if (!capacity) return null;
+  if (mode && mode !== 'battle-royal-new' && mode !== 'battle-royal-old') return null;
+  return { generalId, packId, sameKingdom,
+    capacity,
+    modeSettings: mode === 'battle-royal-new'
+      ? { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false }
+      : mode === 'battle-royal-old'
+      ? { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: true }
+      : sameKingdom ? { revealAllOnStart: true } : {} };
+}
+
+function buildQaGeneralPlan(adapter: GameAdapter, scenario: QaGeneralScenario): QaGeneralPlan {
+  const candidates = adapter.getRoomGenerals([]);
+  const target = candidates.find((general) => general.id === scenario.generalId && general.package === scenario.packId);
+  if (!target) return { disabledGenerals: [], kept: [], error: 'Caller QA không có trong package native đã cài.' };
+
+  const requiredGenerals = scenario.capacity * 5;
+  const kept: RoomGeneral[] = [target];
+  const trueNames = new Set([target.trueName]);
+  const targetKingdoms = new Set([target.kingdom, target.subkingdom].filter((value): value is string => !!value));
+  const sharesTargetKingdom = (general: RoomGeneral) => targetKingdoms.has(general.kingdom ?? '') ||
+    targetKingdoms.has(general.subkingdom ?? '');
+  let kingdomCandidates = candidates;
+  if (scenario.sameKingdom) {
+    // Wild generals choose a Hegemony country after reveal and therefore do
+    // not share the literal `wild` kingdom with ordinary generals in the
+    // pre-game pool. For that QA shape, use the largest ordinary kingdom
+    // group so the other real client still has a valid pair.
+    let fallbackKingdom = '';
+    if (target.kingdom === 'wild') {
+      const counts = new Map<string, number>();
+      for (const general of candidates) {
+        if (general.id === target.id || !general.kingdom || general.kingdom === 'wild') continue;
+        counts.set(general.kingdom, (counts.get(general.kingdom) ?? 0) + 1);
+      }
+      fallbackKingdom = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    }
+    kingdomCandidates = candidates.filter((general) => general.id === target.id ||
+      (fallbackKingdom ? general.kingdom === fallbackKingdom : sharesTargetKingdom(general)));
+  }
+  const ordered = kingdomCandidates.filter((general) => general.id !== target.id).sort((a, b) => {
+    const aSame = targetKingdoms.has(a.kingdom ?? '') || targetKingdoms.has(a.subkingdom ?? '');
+    const bSame = targetKingdoms.has(b.kingdom ?? '') || targetKingdoms.has(b.subkingdom ?? '');
+    return Number(bSame) - Number(aSame);
+  });
+  for (const general of ordered) {
+    if (kept.length >= requiredGenerals) break;
+    if (!trueNames.has(general.trueName)) {
+      trueNames.add(general.trueName);
+      kept.push(general);
+    }
+  }
+  if (kept.length < requiredGenerals) return { disabledGenerals: [], kept, error: scenario.sameKingdom
+    ? `Caller QA không tạo được bể ${requiredGenerals} tướng cùng thế lực khác tên.`
+    : `Caller QA không tạo được bể ${requiredGenerals} tướng khác tên.` };
+  const keptIds = new Set(kept.map((general) => general.id));
+  return { disabledGenerals: candidates.filter((general) => !keptIds.has(general.id)).map((general) => general.id), kept };
+}
+
 export function LobbyScreen({ adapter, run, busy }: {
   adapter: GameAdapter;
   run: (action: () => void | Promise<void>) => void;
@@ -81,15 +169,22 @@ export function LobbyScreen({ adapter, run, busy }: {
   const [capacity, setCapacity] = useState(4);
   const [timeout, setTimeoutSeconds] = useState(30);
   const [disabledPacks, setDisabledPacks] = useState<string[]>([]);
+  const qaScenario = useMemo(readQaGeneralScenario, []);
   const text = useDisplayText();
   const packs = useMemo(() => {
     try { return adapter.getRoomPacks(); } catch { return null; }
   }, [adapter]);
+  const qaPlan = useMemo<QaGeneralPlan | null>(() => {
+    if (!qaScenario) return null;
+    try { return buildQaGeneralPlan(adapter, qaScenario); }
+    catch { return { disabledGenerals: [], kept: [], error: 'Không đọc được bể caller QA từ Lua.' }; }
+  }, [adapter, qaScenario]);
+  const disabledGenerals = qaPlan?.disabledGenerals ?? [];
   const pool = useMemo(() => {
     if (!packs) return null;
-    try { return adapter.getRoomPoolSummary(disabledPacks); } catch { return null; }
-  }, [adapter, packs, disabledPacks]);
-  const validPool = !!pool && pool.generals >= capacity * 5 && pool.cards >= capacity * 4;
+    try { return adapter.getRoomPoolSummary(disabledPacks, disabledGenerals); } catch { return null; }
+  }, [adapter, packs, disabledPacks, disabledGenerals]);
+  const validPool = !qaPlan?.error && !!pool && pool.generals >= capacity * 5 && pool.cards >= capacity * 4;
   const togglePack = (name: string) => setDisabledPacks((previous) => previous.includes(name)
     ? previous.filter((id) => id !== name) : [...previous, name]);
   const packGroup = (title: string, items: RoomPack[], type: string) => (
@@ -107,7 +202,7 @@ export function LobbyScreen({ adapter, run, busy }: {
   );
   const create = (event: FormEvent) => {
     event.preventDefault();
-    run(() => adapter.createRoom(roomName, capacity, timeout, disabledPacks));
+    run(() => adapter.createRoom(roomName, capacity, timeout, disabledPacks, disabledGenerals, qaScenario?.modeSettings));
   };
   return (
     <div className="screen-stack">
@@ -127,6 +222,8 @@ export function LobbyScreen({ adapter, run, busy }: {
             {packs ? <>
               {packGroup('Bể tướng', packs.generals, 'generals')}
               {packGroup('Bể bài', packs.cards, 'cards')}
+              {qaScenario && qaPlan && !qaPlan.error && <p className="muted small">Đã chuẩn bị caller QA native và giữ {qaPlan.kept.length} tướng khác tên cho {qaScenario.capacity} ghế.</p>}
+              {qaPlan?.error && <p className="notice error-notice">{qaPlan.error}</p>}
               <p className={`pool-summary ${validPool ? 'ok' : 'pool-warning'}`} role="status">
                 {pool ? `${pool.generals} tướng khác tên · ${pool.cards} lá bài. Cần tối thiểu ${capacity * 5} tướng và ${capacity * 4} lá cho ${capacity} người.` : 'Không thể kiểm tra bể tướng/bài.'}
               </p>

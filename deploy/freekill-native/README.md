@@ -30,10 +30,12 @@ domain, a CDN or a web gateway during the first phase.
   Linux, which is the path for Oracle A1/ARM64.
 - `scripts/install-packages.sh`: idempotently checks out the exact package
   commits and records them in `packages/packages.db`.
-- `scripts/verify-install.sh`: validates executable, JSON, package commits and
-  package database.
+- `scripts/verify-install.sh`: validates executable, JSON, all 13 pinned
+  package commits, enabled flags and package database hashes.
 - `scripts/run-server.sh`: starts the server with the interactive admin shell.
 - `scripts/backup.sh`: archives server state, packages and configuration.
+- `scripts/verify-backup.sh`: checks backup permissions, archive paths and the
+  required configuration/package/server roots before any restore rehearsal.
 - `server/freekill-native.service`: keeps the server and game firewall rules
   available after a VM reboot.
 
@@ -211,6 +213,18 @@ sudo ./scripts/backup.sh
 Backups contain the package checkouts, package database, server database and
 configuration. Keep at least one copy outside the VM.
 
+Before any restore rehearsal, verify the archive without extracting it:
+
+```sh
+sudo ./scripts/verify-backup.sh /path/to/freekill-hegemony-<timestamp>.tar.gz
+```
+
+The verifier requires an owner-only `0600` archive, rejects absolute and
+parent-directory paths, and requires the configuration, package and server
+roots. It is a safety check, not a restore operation. Extract only into a
+new, isolated test directory first; never overwrite the live runtime as the
+first restore step.
+
 ## Acceptance checklist before inviting the group
 
 1. `verify-install.sh` passes.
@@ -222,7 +236,8 @@ configuration. Keep at least one copy outside the VM.
 5. The administrator can inspect, kick, mute or ban according to the server
    shell capabilities.
 6. Port 9000 is not reachable from the public Internet.
-7. A backup can be created and restored on a test directory.
+7. A backup can be created, passes `verify-backup.sh`, and can be restored on
+   a new test directory without overwriting the live runtime.
 8. The exact server and package version inputs in `versions.env` are recorded
    with the test result.
 

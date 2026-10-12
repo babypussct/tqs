@@ -177,6 +177,7 @@ test('display text formats native prompts and choices without changing IDs or in
   assert.equal(displayText('slash', translations), 'Sát');
   assert.equal(displayText(':slash', translations), 'Dòng 1\nDòng 2');
   assert.equal(displayText('unknown_fixture', translations), 'unknown_fixture');
+  assert.equal(localizedGameLog('Nhân vật đã phát động kỹ năng 祸水'), 'Nhân vật đã phát động kỹ năng Họa Thủy');
 });
 
 test('upstream Hegemony translations preserve distinct variants and interpolate all verified prompts', () => {
@@ -283,6 +284,14 @@ test('skill invoke prompt is visible during request and cleared by CancelRequest
   const cleared = reduceUiEvent(prompt, 'CancelRequest', null);
   assert.equal(cleared.skillInvoke, null);
   assert.equal(cleared.pendingRequest, null);
+});
+
+test('skill invoke accepts optional prompts and numeric-key Lua bridge records', () => {
+  let state = reduceUiEvent(initialSnapshot, 'AskForSkillInvoke', ['luoshen', null]);
+  assert.deepEqual(state.skillInvoke, { skill: 'luoshen', prompt: '' });
+  state = reduceUiEvent(state, 'AskForSkillInvoke', { '1': 'ex__fankui', '2': '#ex__fankui-invoke::9' });
+  assert.deepEqual(state.skillInvoke, { skill: 'ex__fankui', prompt: '#ex__fankui-invoke::9' });
+  assert.equal(reduceUiEvent(state, 'AskForSkillInvoke', { prompt: 'broken' }).skillInvoke?.skill, 'ex__fankui');
 });
 
 test('board follows Lua seat order, preserves relative self position, and updates public stats', () => {

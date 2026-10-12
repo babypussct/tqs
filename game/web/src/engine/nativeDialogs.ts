@@ -50,12 +50,16 @@ export function parseNativeDialog(command: string, raw: unknown,
           !(prop.ok_options.length + prop.cancel_options.length) || !Number.isInteger(prop.min) || !Number.isInteger(prop.max) ||
           (prop.min as number) < 0 || (prop.max as number) < (prop.min as number) || (prop.max as number) > 1024) return null;
       const names = [...new Set([...prop.cards, ...prop.all_cards])];
+      const options = [...prop.ok_options, ...prop.cancel_options];
+      const disabledCards = prop.disable_cards as string[];
+      if (options.length > 32 || new Set(options).size !== options.length ||
+          !disabledCards.every((name: string) => names.includes(name))) return null;
       const cards = names.map(name => ({ token: `general-option-${++serial}`, hidden: false, name }));
       return { prompt: { kind: 'generalsAndChoice', title: typeof prop.prompt === 'string' && prop.prompt.length <= 10000 ? prop.prompt : '',
         cards, rows: [cards.map(c => c.token)], names: [], cancelable: prop.cancel_options.length > 0,
         okOptions: [...prop.ok_options], cancelOptions: [...prop.cancel_options] },
         ids: new Map(), rows: [], original: [], capacities: [], limits: [], free: false, pattern: '.', poxi: '',
-        skills: { names, selected: [], min: prop.min as number, max: prop.max as number, disabled: prop.disable_cards as string[] ?? [] } };
+        skills: { names, selected: [], min: prop.min as number, max: prop.max as number, disabled: disabledCards } };
     }
     const cardNames = component?.url === 'packages/utility/qml/ChooseCardNamesBox.qml' &&
       model?.url === 'packages/utility/qml/models/ChooseCardNamesModel.qml';
@@ -78,8 +82,9 @@ export function parseNativeDialog(command: string, raw: unknown,
     // This component only authorizes viewing a pair; never treat arbitrary QML as executable UI.
     if (component?.url !== 'packages/hegemony/qml/KnownBothBox.qml' ||
       model?.url !== 'packages/utility/qml/models/ChooseGeneralsAndChoiceModel.qml' ||
-      !prop || prop.min !== 0 || prop.max !== 0 || !Array.isArray(prop.cards) || prop.cards.length > 2 ||
+      !prop || prop.min !== 0 || prop.max !== 0 || !Array.isArray(prop.cards) || prop.cards.length < 1 || prop.cards.length > 2 ||
       !prop.cards.every(x => typeof x === 'string' && x.length > 0 && x.length <= 256) ||
+      new Set(prop.cards).size !== prop.cards.length ||
       !Array.isArray(prop.ok_options) || prop.ok_options.length !== 1 || prop.ok_options[0] !== 'OK' ||
       (prop.cancel_options !== undefined && (!Array.isArray(prop.cancel_options) || prop.cancel_options.length))) return null;
     return { prompt: { kind: 'generals', title: typeof prop.prompt === 'string' && prop.prompt.length <= 10000 ? prop.prompt : '',
@@ -121,9 +126,12 @@ export function parseNativeDialog(command: string, raw: unknown,
     else if (data.names !== undefined) return null;
   } else return null;
   const map = new Map<string, number>(); const tokens = new Map<number, string>();
+  const safeFace = (id: number) => {
+    try { return face(id); } catch { return null; }
+  };
   const cards = rows.flat().map(id => {
     const token = `dialog-${++serial}`; map.set(token, id); tokens.set(id, token);
-    return { token, hidden: false, ...visibleCardFace(face(id)) };
+    return { token, hidden: false, ...visibleCardFace(safeFace(id)) };
   });
   return { prompt: { kind, title, cards, rows: rows.map(row => row.map(id => tokens.get(id)!)), names, cancelable },
     ids: map, boardPositions, rows, original: rows.map(row => [...row]), capacities, limits, free, pattern, poxi };

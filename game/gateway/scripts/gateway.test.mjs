@@ -46,6 +46,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     mkdirSync(dir, { recursive: true });
     writeFileSync(path.join(dir, 'init.lua'), content);
   }
+  writeFileSync(path.join(root, 'packages', 'hegemony', 'description.md'), 'loaded by dofile');
   writeFileSync(path.join(root, 'flist.txt'), 'test-only flist\n');
   const secret = path.join(root, 'outside.png');
   writeFileSync(secret, 'NOT_PUBLIC');
@@ -102,7 +103,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     assert.equal(manifestResponse.headers.get('cache-control'), 'no-cache');
     const manifest = await manifestResponse.json();
     assert.equal(manifest.md5, createHash('md5').update('test-only flist\n').digest('hex'));
-    assert.equal(manifest.fileCount, 3);
+    assert.equal(manifest.fileCount, 4);
     assert.deepEqual(manifest.packages, ['freekill-core', 'hegemony', 'utility']);
 
     const versioned = await fetch(new URL(manifest.bundle, `${baseUrl}/`));
@@ -111,8 +112,9 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     const zip = Buffer.from(await versioned.arrayBuffer());
     assert.equal(createHash('sha1').update(zip).digest('hex').slice(0, 16), manifest.bundleHash);
     const unpacked = unzipSync(zip);
-    assert.equal(Object.keys(unpacked).length, 3);
+    assert.equal(Object.keys(unpacked).length, 4);
     assert.ok(unpacked['packages/hegemony/init.lua']);
+    assert.ok(unpacked['packages/hegemony/description.md']);
 
     const oldVersion = await fetch(`${baseUrl}/bundle.zip?v=0000000000000000`);
     assert.equal(oldVersion.status, 404);

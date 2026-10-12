@@ -1,7 +1,7 @@
 /** C01/L01 regression: pinned Hegemony keys, public log text and React/Wasmoon fixture. */
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import { createServer } from 'vite';
 import { validChoiceReply, parseChoicePrompt } from '../src/engine/choiceSelection';
 import { displayText, localizedGameLog } from '../src/engine/displayText';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
+import { loadUpstreamFiles } from './upstream-packages';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
 const pinnedPackages = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
@@ -78,6 +79,7 @@ test('C01 public log is localized only in exact skill markers', () => {
       'Trâu Thị/Sĩ Nhiếp đã phát động kỹ năng〖Khuynh Thành〗 và〖Tị Loạn〗'],
   ] as const;
   for (const [source, expected] of examples) assert.equal(localizedGameLog(source), expected);
+  assert.equal(localizedGameLog('Trâu Thị đã phát động kỹ năng 礼下'), 'Trâu Thị đã phát động kỹ năng Lễ Hạ');
   assert.equal(localizedGameLog('Không đổi nguyên văn: 祸水 / 礼下'), 'Không đổi nguyên văn: 祸水 / 礼下');
   assert.equal(localizedGameLog('〖祸水-unknown〗'), '〖祸水-unknown〗');
   assert.equal(localizedGameLog('〖&lt;script&gt;祸水&lt;/script&gt;〗'),
@@ -91,21 +93,7 @@ test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden 
       '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
     ].find((item): item is string => !!item && existsSync(item));
     assert.ok(chrome, 'Chrome executable required for real React DOM check');
-    const files: Record<string, Uint8Array> = {};
-    for (const pkg of ['freekill-core', 'utility', 'hegemony']) {
-      const root = path.join(pinnedPackages, pkg);
-      const walk = (dir: string) => {
-        for (const entry of readdirSync(dir, { withFileTypes: true })) {
-          if (entry.name === '.git') continue;
-          const abs = path.join(dir, entry.name);
-          if (entry.isDirectory()) walk(abs);
-          else if (entry.isFile() && /\.(?:lua|json)$/i.test(entry.name)) {
-            files[`packages/${pkg}/${path.relative(root, abs).split(path.sep).join('/')}`] = readFileSync(abs);
-          }
-        }
-      };
-      walk(root);
-    }
+    const files = Object.fromEntries(loadUpstreamFiles(pinnedPackages));
     const zipped = Buffer.from(zipSync(files, { level: 1 }));
     const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 1024,
       publicKeyEncoding: { type: 'pkcs1', format: 'pem' },

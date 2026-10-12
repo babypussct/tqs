@@ -266,6 +266,26 @@ async function runSuite(page: Page) {
       assert.equal((await p.evaluate(() => window.__tqsE2e.appActions())).at(-1), 'disconnect');
       await p.goto('/e2e.html');
     }],
+    ['Responsive layout stays within the viewport on phone and desktop widths', async (p) => {
+      for (const viewport of [
+        { width: 320, height: 844 }, { width: 390, height: 844 },
+        { width: 844, height: 390 }, { width: 1280, height: 800 },
+      ]) {
+        await p.setViewportSize(viewport);
+        await p.goto('/e2e.html');
+        await p.getByRole('heading', { name: 'TQS browser E2E cục bộ' }).waitFor();
+        const metrics = await p.evaluate(() => ({
+          width: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          bodyScrollWidth: document.body.scrollWidth,
+        }));
+        assert.ok(metrics.scrollWidth <= metrics.width + 1,
+          `document overflows ${viewport.width}px: ${JSON.stringify(metrics)}`);
+        assert.ok(metrics.bodyScrollWidth <= metrics.width + 1,
+          `body overflows ${viewport.width}px: ${JSON.stringify(metrics)}`);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
   ];
 
   let passed = 0;

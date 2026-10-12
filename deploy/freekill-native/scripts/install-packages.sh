@@ -59,16 +59,57 @@ clone_at_commit() {
 clone_at_commit "freekill-core" "$FREEKILL_CORE_URL" "$FREEKILL_CORE_COMMIT"
 clone_at_commit "utility" "$UTILITY_URL" "$UTILITY_COMMIT"
 clone_at_commit "hegemony" "$HEGEMONY_URL" "$HEGEMONY_COMMIT"
+clone_at_commit "standard_ex" "$STANDARD_EX_URL" "$STANDARD_EX_COMMIT"
+clone_at_commit "shzl" "$SHZL_URL" "$SHZL_COMMIT"
+clone_at_commit "yj" "$YJ_URL" "$YJ_COMMIT"
+clone_at_commit "mobile" "$MOBILE_URL" "$MOBILE_COMMIT"
+clone_at_commit "sp" "$SP_URL" "$SP_COMMIT"
+clone_at_commit "tenyear" "$TENYEAR_URL" "$TENYEAR_COMMIT"
+clone_at_commit "overseas" "$OVERSEAS_URL" "$OVERSEAS_COMMIT"
+clone_at_commit "mougong" "$MOUGONG_URL" "$MOUGONG_COMMIT"
+clone_at_commit "jsrg" "$JSRG_URL" "$JSRG_COMMIT"
+clone_at_commit "ol" "$OL_URL" "$OL_COMMIT"
+
+# Evidence-backed compatibility repair.  The pinned Hegemony declaration for
+# overseas Duan Wei uses the unqualified `langmie`, while the exact upstream
+# implementation is tenyear's `ty__langmie`.  Keep the package commit pin
+# unchanged and repair only this declaration after checkout.
+HEGEMONY_OVERSEAS_INIT="$PACKAGES_DIR/hegemony/pkg/overseas_heg/init.lua"
+if grep -Fq 'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "langmie" }' "$HEGEMONY_OVERSEAS_INIT"; then
+  perl -0pi -e 's/General:new\(extension, "os_heg__duanwei", "qun", 4\):addSkills \{ "langmie" \}/General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }/' "$HEGEMONY_OVERSEAS_INIT"
+fi
+grep -Fq 'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }' "$HEGEMONY_OVERSEAS_INIT" ||
+  die "Pinned overseas Duan Wei declaration repair did not apply"
 
 sqlite3 "$PACKAGE_DB" < "$PACKAGES_DIR/init.sql"
 sqlite3 "$PACKAGE_DB" <<SQL
-DELETE FROM packages WHERE name IN ('freekill-core', 'utility', 'hegemony');
+DELETE FROM packages WHERE name IN ('freekill-core', 'utility', 'hegemony', 'standard_ex', 'shzl', 'yj', 'mobile', 'sp', 'tenyear', 'overseas', 'mougong', 'jsrg', 'ol');
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('freekill-core', '$FREEKILL_CORE_URL', '$FREEKILL_CORE_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('utility', '$UTILITY_URL', '$UTILITY_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('hegemony', '$HEGEMONY_URL', '$HEGEMONY_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('standard_ex', '$STANDARD_EX_URL', '$STANDARD_EX_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('shzl', '$SHZL_URL', '$SHZL_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('yj', '$YJ_URL', '$YJ_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('mobile', '$MOBILE_URL', '$MOBILE_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('sp', '$SP_URL', '$SP_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('tenyear', '$TENYEAR_URL', '$TENYEAR_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('overseas', '$OVERSEAS_URL', '$OVERSEAS_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('mougong', '$MOUGONG_URL', '$MOUGONG_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('jsrg', '$JSRG_URL', '$JSRG_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('ol', '$OL_URL', '$OL_COMMIT', 1);
 SQL
 
 CONFIG_DEST="$RUNTIME_DIR/freekill.server.config.json"

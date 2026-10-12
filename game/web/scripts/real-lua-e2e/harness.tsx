@@ -17,6 +17,12 @@ import { GameConnection, type SocketHandlers } from '../../src/engine/connection
 import { CLIENT_REPLY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../../src/engine/packet';
 import { useGameStore } from '../../src/store/gameStore';
 import { GAMEPLAY_REQUESTS } from '../../src/store/gameplayState';
+import {
+  getQaScenario,
+  resolveQaScenario,
+  type QaCardDescriptor,
+  type QaScenarioId,
+} from './qa-scenarios';
 import './harness.css';
 
 interface FixtureSocket { handlers: SocketHandlers; sent: Uint8Array[]; closed: boolean }
@@ -31,6 +37,14 @@ let publicKeyPem = '';
 let ready = false;
 let bootError: string | null = null;
 const roomAdapter = new GameAdapter('/gateway');
+
+interface FixtureBeginPlayOptions {
+  /** Optional explicit pile; used only by the QA scenario director. */
+  drawPile?: number[];
+  /** An empty list means "do not seed the regular PlayCard hand". */
+  initialCards?: number[];
+  playCardRequest?: boolean;
+}
 
 function currentSocket() {
   const socket = sockets.at(-1);
@@ -48,6 +62,20 @@ function serverCbor(source: string) {
   return fromHex(conn.lua.eval<string>(`return __host_bin2hex(cbor.encode(${source}))`));
 }
 
+function fixtureRequest(
+  requestId: number,
+  command: string,
+  data: Uint8Array,
+  timeout = 30,
+  timestamp = Date.now(),
+  socket = currentSocket(),
+) {
+  socket.handlers.onData(encodePacket({
+    requestId, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+    command, data, timestamp, timeout,
+  }));
+}
+
 function setUpSocket() {
   conn.lua.call('__web_init_display_translations', VI_ADDITIONS);
   conn.connect();
@@ -61,12 +89,8 @@ function setUpSocket() {
 }
 
 function request(id: number, timeout = 30, timestamp = Date.now(), socket = currentSocket()) {
-  socket.handlers.onData(encodePacket({
-    requestId: id, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
-    command: 'AskForSkillInvoke',
-    data: serverCbor("{'web_test_skill', 'Kích hoạt kỹ năng thử?'}"),
-    timestamp, timeout,
-  }));
+  fixtureRequest(id, 'AskForSkillInvoke', serverCbor("{'web_test_skill', 'Kích hoạt kỹ năng thử?'}"),
+    timeout, timestamp, socket);
 }
 
 function begin(expired = false) {
@@ -110,10 +134,11 @@ const api = {
     const packet = sentPackets().find((p) => p.command === 'CreateRoom');
     if (!packet) throw new Error('No CreateRoom packet was sent');
     const parsed = conn.lua.eval<{ roomName: string; capacity: number; timeout: number;
-      disabledPack: string[]; mode: string }>(`
+      disabledPack: string[]; disabledGenerals: string[]; mode: string }>(`
       local data = cbor.decode(__host_hex2bin('${packet.hex}'))
       return {roomName = data[1], capacity = data[2], timeout = data[3],
-        disabledPack = data[4].disabledPack, mode = data[4].gameMode}
+        disabledPack = data[4].disabledPack, disabledGenerals = data[4].disabledGenerals,
+        mode = data[4].gameMode}
     `);
     const enterRoom = conn.lua.eval<string>(`
       local data = cbor.decode(__host_hex2bin('${packet.hex}'))
@@ -147,7 +172,7 @@ const api = {
     }));
     return id;
   },
-  beginPlay: (withSkill = false) => {
+  beginPlay: (withSkill = false, options: FixtureBeginPlayOptions = {}) => {
     begin();
     serverNotify('EnterRoom', serverCbor("{2, 30, {gameMode='new_heg_mode', roomName='Lua card fixture', disabledPack={}, disabledGenerals={}, _game={}, _mode={}}}"));
     serverNotify('AddPlayer', serverCbor("{-1, 'Bot fixture', 'avatar', true, 0}"));
@@ -167,12 +192,18 @@ const api = {
     }
     serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.Play}"));
     serverNotify('PropertyUpdate', serverCbor("{-1, 'phase', Player.NotActive}"));
-    serverNotify('PrepareDrawPile', serverCbor('Fk.game_modes.new_heg_mode:buildDrawPile()'));
-    const cardId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
-      return Fk:getCardById(id).trueName == 'slash'
-    end)`);
-    serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
-      moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+    serverNotify('PrepareDrawPile', options.drawPile
+      ? serverCbor(`{${options.drawPile.join(',')}}`)
+      : serverCbor('Fk.game_modes.new_heg_mode:buildDrawPile()'));
+    const cardId = options.initialCards === undefined
+      ? conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+        return Fk:getCardById(id).trueName == 'slash'
+      end)`)
+      : (options.initialCards[0] ?? -1);
+    if (cardId > 0) {
+      serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+        moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+    }
     if (withSkill) {
       const nullification = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
         return Fk:getCardById(id).name == 'heg__nullification'
@@ -181,11 +212,129 @@ const api = {
         moveInfo={{cardId=${nullification}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
     }
     const id = ++nextId;
-    currentSocket().handlers.onData(encodePacket({
-      requestId: id, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
-      command: 'PlayCard', data: serverCbor('{}'), timestamp: Date.now(), timeout: 30,
+    if (options.playCardRequest !== false) {
+      currentSocket().handlers.onData(encodePacket({
+        requestId: id, type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+        command: 'PlayCard', data: serverCbor('{}'), timestamp: Date.now(), timeout: 30,
+      }));
+    }
+    return { id, cardId };
+  },
+  /** Exercise the native response-card request separately from normal play. */
+  beginResponseCard: () => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cardId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+      return Fk:getCardById(id).trueName == 'jink' end)`);
+    if (!Number.isInteger(cardId) || cardId <= 0) throw new Error('Lua fixture has no Jink response card');
+    serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+      moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+    const id = ++nextId;
+    currentSocket().handlers.onData(encodePacket({ requestId: id,
+      type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+      command: 'AskForResponseCard', data: serverCbor("{'jink', 'jink', nil, true, {}, {}}"),
+      timestamp: Date.now(), timeout: 30,
     }));
     return { id, cardId };
+  },
+  /**
+   * Start one named QA scenario against the same production React/Lua bridge
+   * used by the rest of this fixture. The first native pile is inspected only
+   * to resolve requirements; the second PrepareDrawPile notification is the
+   * deterministic server fixture that makes the selected cards reproducible.
+   */
+  beginQaScenario: (scenarioId: QaScenarioId) => {
+    const plan = getQaScenario(scenarioId);
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const nativeCards = conn.lua.eval<QaCardDescriptor[]>(`return table.map(ClientInstance.draw_pile, function(id)
+      local card = Fk:getCardById(id)
+      return {id=id, name=card.name, trueName=card.trueName,
+        type=card.type == Card.TypeEquip and 'equip' or 'other'}
+    end)`);
+    const resolved = resolveQaScenario(plan, nativeCards);
+    serverNotify('PrepareDrawPile', serverCbor(`{${resolved.drawPile.join(',')}}`));
+
+    const moves = plan.slots.map((item) => {
+      const cardId = resolved.slotCards[item.key];
+      const owner = item.owner === 'self' ? 17 : -1;
+      const area = item.area === 'hand' ? 'Card.PlayerHand' : 'Card.PlayerEquip';
+      const reason = item.area === 'hand' ? 'fk.ReasonDraw' : 'fk.ReasonPut';
+      return `{to=${owner}, toArea=${area}, moveReason=${reason},
+        moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=${item.visible ? 'true' : 'false'}}`;
+    });
+    if (moves.length) serverNotify('MoveCards', serverCbor(`{{${moves.join(',')}}, 1}`));
+
+    const sendRequest = (command: string, data: string) => {
+      const requestId = ++nextId;
+      currentSocket().handlers.onData(encodePacket({ requestId,
+        type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+        command, data: serverCbor(data), timestamp: Date.now(), timeout: 30,
+      }));
+      return requestId;
+    };
+
+    let requestId: number;
+    switch (plan.trigger) {
+      case 'play-card':
+        requestId = sendRequest('PlayCard', '{}');
+        break;
+      case 'card-chosen': {
+        requestId = sendRequest('AskForCardChosen',
+          `{ClientInstance:getPlayerById(-1), 'he', '#AskForChooseCard:-1::snatch'}`);
+        break;
+      }
+      case 'poxi': {
+        const handId = resolved.slotCards['hidden-hand'];
+        const equipId = resolved.slotCards['public-equip'];
+        requestId = sendRequest('AskForPoxi',
+          `{type='AskForCardsChosen', data={{'$Hand', {${handId}}}, {'$Equip', {${equipId}}}},
+            extra_data={min=1, max=2, to=-1, skillName='snatch',
+              visible_data={['${handId}']=false}}, cancelable=true}`);
+        break;
+      }
+      case 'cards-and-choice': {
+        const slashId = resolved.slotCards.slash;
+        const equipId = resolved.slotCards.equip;
+        const peachId = resolved.slotCards.peach;
+        useGameStore.getState().update({ translations: { ...useGameStore.getState().translations,
+          default: 'Giữ bài', use: 'Dùng Sát', cancel: 'Bỏ qua' } });
+        conn.lua.eval(`Fk.skill_skels.web_choice_fixture = {extra={choiceFilter=function(cards, choice, extra)
+          return #cards == 1 and Fk:getCardById(cards[1]).trueName == 'slash' and extra.allowSlash
+            and choice == 'use' end}}; return true`);
+        requestId = sendRequest('AskForCardsAndChoice',
+          `{cards={${slashId},${equipId},${peachId}}, choices={'default','use'},
+            prompt='$ViewCards', cancel_choices={'cancel'}, min=1, max=1,
+            disabled={${peachId}}, filter_skel='web_choice_fixture', extra_data={allowSlash=true}}`);
+        break;
+      }
+      case 'rescue-normal': {
+        serverNotify('PropertyUpdate', serverCbor("{-1, 'hp', 0}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.NotActive}"));
+        requestId = api.requestRescue(-1, 0);
+        break;
+      }
+      case 'rescue-battle': {
+        serverNotify('PropertyUpdate', serverCbor("{17, 'hp', 0}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.NotActive}"));
+        serverNotify('SetBanner', serverCbor("{'@[:]BattleRoyalDummy', 'NewBattleRoyalMode'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'new_battle_royal&'}"));
+        requestId = api.requestRescue(17, 0);
+        break;
+      }
+      case 'founding':
+        serverNotify('PropertyUpdate', serverCbor("{17, 'kingdom', 'wild'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'role_shown', true}"));
+        requestId = sendRequest('AskForChoices',
+          `{table.filter(require('packages.hegemony.util').wildKingdoms,
+            function(k) return k ~= 'heg_han' end), require('packages.hegemony.util').wildKingdoms,
+            {1,1}, false, 'game_rule', '#wild-choose', false, true}`);
+        break;
+      default: {
+        const unreachable: never = plan.trigger;
+        throw new Error(`Unsupported QA trigger: ${unreachable}`);
+      }
+    }
+    return { scenario: scenarioId, expectedCommand: plan.expectedCommand, requestId,
+      drawPile: resolved.drawPile, slotCards: resolved.slotCards };
   },
   reconnectSummary: () => {
     api.beginPlay();
@@ -309,6 +458,30 @@ const api = {
         `{ClientInstance:getPlayerById(-1), 'he', '#AskForChooseCard:-1::snatch'}`),
     }));
     return { id, handId, equipId };
+  },
+  beginFankui: () => {
+    // This follows the native ex__fankui request shape: the prompt is
+    // optional in FreeKill and the next request asks for one card from the
+    // damage source. The card remains hidden to the client just like a real
+    // opponent hand card.
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cardId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+      return Fk:getCardById(id).trueName == 'peach' end)`);
+    if (!Number.isSafeInteger(cardId) || cardId <= 0) throw new Error('Lua fixture has no card for ex__fankui');
+    serverNotify('MoveCards', serverCbor(`{{{to=-1, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+      moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=false}}, 1}`));
+    const id = ++nextId;
+    // The native Client:askForSkillInvoke accepts {skill_name, nil}; this is
+    // the exact case that previously left the web button waiting for Lua.
+    fixtureRequest(id, 'AskForSkillInvoke', serverCbor("{'ex__fankui', nil}"));
+    return { id, cardId };
+  },
+  continueFankui: () => {
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForCardChosen', serverCbor(
+      `{ClientInstance:getPlayerById(-1), 'he', '#ex__fankui-invoke::-1'}`,
+    ));
+    return id;
   },
   beginCardsAndChoice: (mode: 'view' | 'empty' | 'select' | 'cancel-only' | 'missing-filter' = 'view', expired = false) => {
     const { cardId } = api.beginPlay();

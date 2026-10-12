@@ -7,9 +7,12 @@
     "predev": "node scripts/prepare-wasm.mjs",
     "dev": "vite --host 0.0.0.0 --port 5174",
     "prebuild": "node scripts/prepare-wasm.mjs",
-    "build": "tsc --noEmit && vite build && node scripts/build-service-worker.mjs",
+    "build": "npm run audit:skills && npm run audit:native-callers && tsc --noEmit && vite build && node scripts/build-service-worker.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 5174",
     "typecheck": "tsc --noEmit",
+    "audit:skills": "tsx scripts/skill-audit.ts",
+    "audit:native-callers": "tsx scripts/native-caller-audit.ts",
+    "extract:skills:zh": "tsx scripts/skill-zh-source.ts --markdown",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:live": "tsx scripts/smoke.ts --live",
     "test:recovery": "tsx --test scripts/recovery.test.ts",
@@ -21,6 +24,7 @@
     "test:bundle": "tsx --test scripts/bundle.test.ts",
     "test:e2e": "tsx scripts/browser-e2e/run.ts",
     "test:e2e:lua": "tsx scripts/real-lua-e2e/run.ts",
+    "test:e2e:qa": "tsx scripts/real-lua-e2e/run.ts --qa-scenarios",
     "test:e2e:live": "tsx scripts/live-gateway-e2e/run.ts",
     "configure:live": "tsx scripts/live-gateway-e2e/configure.ts",
     "test:live-config": "tsx --test scripts/live-gateway-e2e/snapshot.test.ts",
@@ -32,7 +36,8 @@
     "test:vietnamese": "tsx --test scripts/vietnamese-l01.test.ts",
     "test:e2e:multiplayer": "tsx scripts/multiplayer-e2e/run.ts",
     "test:e2e:pwa": "tsx scripts/pwa-e2e/run.ts",
-    "test:lua-lifecycle": "tsx --test scripts/lua-lifecycle.test.ts"
+    "test:lua-lifecycle": "tsx --test scripts/lua-lifecycle.test.ts",
+    "test:release": "node --test ../../deploy/mobile/release.test.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",

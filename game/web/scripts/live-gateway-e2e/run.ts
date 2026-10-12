@@ -22,10 +22,28 @@ import { chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { CLIENT_NOTIFY, PacketStream, PacketType, toHex, type Packet } from '../../src/engine/packet';
 import { LuaRuntime } from '../../src/engine/luaRuntime';
+import { packageSpec } from '../upstream-packages';
+import { PACKAGES } from './snapshot';
 
 const roomPools = process.argv.includes('--room-pools');
 const uiTranslations = process.argv.includes('--ui-translations');
 const login = process.argv.includes('--login') || roomPools || uiTranslations;
+function vietnamDate(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+const evidenceDate = process.env.TQS_LIVE_EVIDENCE_DATE ?? vietnamDate();
+assert.match(evidenceDate, /^\d{4}-\d{2}-\d{2}$/,
+  'TQS_LIVE_EVIDENCE_DATE must be YYYY-MM-DD');
+// Every run gets a unique default tag so a later probe cannot overwrite an
+// older sanitized evidence file. A caller may supply a stable tag when it is
+// intentionally writing into a fresh evidence directory.
+const evidenceTag = process.env.TQS_LIVE_EVIDENCE_TAG ?? `${evidenceDate}-${Date.now()}`;
+assert.match(evidenceTag, /^[A-Za-z0-9._-]{1,100}$/,
+  'TQS_LIVE_EVIDENCE_TAG contains unsupported filename characters');
 // Verify the actual frozen deployment through HTTPS/WSS, without starting a
 // second gateway or serving source through Vite.
 const deploymentUrl = process.env.TQS_LIVE_URL;
@@ -130,7 +148,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
   await lua.start();
   const evidenceDir = path.join(repoRoot, 'scratch/evidence');
   mkdirSync(evidenceDir, { recursive: true });
-  const evidencePath = path.join(evidenceDir, 'ui-02-live-cpp-2026-10-11.json');
+  const evidencePath = path.join(evidenceDir, `ui-02-live-cpp-${evidenceTag}.json`);
   const capture = async () => {
     const frames = await page.evaluate(() => (window as unknown as { __tqsLiveCapture: {
       incoming: number[][]; outgoing: number[][];
@@ -153,7 +171,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     await generalCheckbox.uncheck();
     await cardCheckbox.uncheck();
     assert.match(await page.locator('.pool-summary').innerText(), new RegExp(`${filtered.generals} tướng.*${filtered.cards} lá`));
-    await page.screenshot({ path: path.join(evidenceDir, 'ui-02-live-lobby-2026-10-11.png'), fullPage: true });
+    await page.screenshot({ path: path.join(evidenceDir, `ui-02-live-lobby-${evidenceTag}.png`), fullPage: true });
     await page.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
     await page.getByRole('heading', { name: 'UI02 FreeKill CPP pack acceptance' }).waitFor({ timeout: 30_000 });
     await page.locator('.waiting-pools > summary').click();
@@ -170,7 +188,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     assert.equal(entered[2].gameMode, 'new_heg_mode');
     assert.ok(disabled.every((id) => entered[2].disabledPack.includes(id)), 'Server settings omitted disabled packages');
     assert.deepEqual(entered[2].disabledGenerals, []);
-    await page.screenshot({ path: path.join(evidenceDir, 'ui-02-live-room-2026-10-11.png'), fullPage: true });
+    await page.screenshot({ path: path.join(evidenceDir, `ui-02-live-room-${evidenceTag}.png`), fullPage: true });
     console.log(`PASS C++ EnterRoom echoed disabledPack ${disabled.join(' + ')}; pool preview ${original.generals}/${original.cards} -> ${filtered.generals}/${filtered.cards}`);
 
     await page.getByRole('button', { name: '+ Thêm bot' }).click();
@@ -234,10 +252,10 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     end; return packs`);
     assert.equal(cardPacks.length, cards.length);
     assert.ok(cardPacks.every((pack) => pack !== cardPack && pack !== 'MISSING'), 'C++ draw pile includes disabled CardPack');
-    await page.screenshot({ path: path.join(evidenceDir, 'ui-02-live-board-2026-10-11.png'), fullPage: true });
+    await page.screenshot({ path: path.join(evidenceDir, `ui-02-live-board-${evidenceTag}.png`), fullPage: true });
     console.log(`PASS C++ PrepareDrawPile: ${cards.length} unique card IDs, 0 from disabled ${cardPack}`);
     const evidence = {
-      date: '2026-10-11', server: `${host}:${tcpPort}`, mode: entered[2].gameMode,
+      date: evidenceDate, observedAt: new Date().toISOString(), server: `${host}:${tcpPort}`, mode: entered[2].gameMode,
       disabledPacks: disabled, disabledGenerals: entered[2].disabledGenerals,
       preview: { original, filtered }, actual: {
         serverEnterRoom: true, serverEnterRoomDisabledPacks: entered[2].disabledPack,
@@ -260,7 +278,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     evidence.status = 'full-live-game-pass';
     writeFileSync(evidencePath, JSON.stringify(evidence, null, 2) + '\n');
     completed = true;
-    await page.screenshot({ path: path.join(evidenceDir, 'ui-02-live-finished-2026-10-11.png'), fullPage: true });
+    await page.screenshot({ path: path.join(evidenceDir, `ui-02-live-finished-${evidenceTag}.png`), fullPage: true });
     await page.getByRole('button', { name: 'Về sảnh' }).click();
     await page.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
     console.log('PASS full C++ bot game / GameOver / return to lobby; sanitized evidence saved');
@@ -303,7 +321,7 @@ async function verifyUiTranslations(page: Page) {
     await page.getByRole('heading', { name: 'Chọn chủ tướng và phó tướng' }).waitFor({ timeout: 60_000 });
     const choices = page.getByRole('group', { name: 'Danh sách võ tướng' }).getByRole('button');
     observedNames.push(...await choices.allTextContents());
-    await screenshot('ui-01-live-generals-2026-10-11.png');
+    await screenshot(`ui-01-live-generals-${evidenceTag}.png`);
     let pairChosen = false;
     const generalCount = await choices.count();
     // Each server offer can include several incompatible kingdoms. An invalid
@@ -352,7 +370,7 @@ async function verifyUiTranslations(page: Page) {
       window.__tqsDisplayAudit = () => [...observed];
       window.__tqsLayoutAudit = () => layout;
     })()`);
-    await screenshot('ui-01-live-board-2026-10-11.png');
+    await screenshot(`ui-01-live-board-${evidenceTag}.png`);
     await page.getByRole('button', { name: 'BOT chơi hộ' }).click();
     await page.getByRole('button', { name: 'Tự chơi lại' }).waitFor({ timeout: 15_000 });
     console.log('UI-01: server accepted native Trust; recording live visible logs until GameOver');
@@ -371,8 +389,8 @@ async function verifyUiTranslations(page: Page) {
     const samples = visible.map(censor);
     const translatedNames = observedNames.map(censor);
     const unresolved = samples.filter((value) => /&#(?:x[0-9a-f]+|\d+);|(?:[a-z]+__)[a-z_]+|#[A-Za-z_]+|[\u3400-\u9fff]/iu.test(value));
-    writeFileSync(path.join(evidenceDir, 'ui-01-live-cpp-2026-10-11.json'), JSON.stringify({
-      date: '2026-10-11', mode: 'new_heg_mode', server: `${host}:${tcpPort}`,
+    writeFileSync(path.join(evidenceDir, `ui-01-live-cpp-${evidenceTag}.json`), JSON.stringify({
+      date: evidenceDate, observedAt: new Date().toISOString(), mode: 'new_heg_mode', server: `${host}:${tcpPort}`,
       context: 'Chrome 390px + React/Wasmoon/Lua + Gateway + real FreeKill C++',
       deploymentUrl: deploymentUrl ?? null,
       presentation,
@@ -380,7 +398,7 @@ async function verifyUiTranslations(page: Page) {
       gameOver, status: unresolved.length ? 'live-audit-found-untranslated' : 'live-audit-no-untranslated-in-observed-text',
       note: 'Only DOM text publicly rendered to this test player; snapshot, passwords, hand data and frames are excluded.',
     }, null, 2) + '\n');
-    await screenshot('ui-01-live-finished-2026-10-11.png');
+    await screenshot(`ui-01-live-finished-${evidenceTag}.png`);
     await page.getByRole('button', { name: 'Về sảnh' }).click();
     await page.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
     console.log(`PASS UI-01 live C++ GameOver + lobby; ${samples.length} unique visible texts, ${unresolved.length} possible untranslated strings`);
@@ -408,15 +426,16 @@ let logs = '';
 try {
   // Login uses the snapshot generated after checking live package revisions.
   // Pre-auth keeps its deliberately invalid, test-only file-list marker.
-  for (const pkg of ['freekill-core', 'utility', 'hegemony']) {
-    const src = path.join(snapshotRoot ? path.join(snapshotRoot, 'packages') : upstream, pkg);
+  for (const pkg of PACKAGES) {
+    const sourceRoot = snapshotRoot ? path.join(snapshotRoot, 'packages') : upstream;
+    const src = path.join(sourceRoot, snapshotRoot ? pkg : packageSpec(pkg).sourceDirectory);
     assert.ok(existsSync(path.join(src, 'init.lua')) || existsSync(path.join(src, 'lua/freekill.lua')),
       `Missing pinned package ${pkg}`);
     const dst = path.join(root, 'packages', pkg);
     mkdirSync(path.dirname(dst), { recursive: true });
     cpSync(src, dst, { recursive: true, filter: (source) => {
       if (path.basename(source) === '.git') return false;
-      return statSync(source).isDirectory() || /\.(lua|json)$/i.test(source);
+      return statSync(source).isDirectory() || /\.(lua|json|md)$/i.test(source);
     } });
   }
   if (snapshotRoot) cpSync(path.join(snapshotRoot, 'flist.txt'), path.join(root, 'flist.txt'));
@@ -451,7 +470,14 @@ try {
     md5: string; fileCount: number; packages: string[];
   };
   assert.ok(manifest.fileCount > 100);
-  assert.deepEqual(manifest.packages, ['freekill-core', 'hegemony', 'utility']);
+  // The current hosted candidate fronts the existing native server, whose
+  // package database predates the optional jsrg/mougong extension packs. Keep
+  // the local Lua snapshot complete for decoding, but require the hosted
+  // manifest to match the server-compatible package set exactly.
+  const expectedHostedPackages = deploymentUrl
+    ? PACKAGES.filter((name) => name !== 'jsrg' && name !== 'mougong')
+    : PACKAGES;
+  assert.deepEqual(manifest.packages, expectedHostedPackages);
   if (!deploymentUrl) {
     process.env.VITE_GATEWAY_URL = gatewayUrl;
     vite = await createServer({ root: webRoot,

@@ -31,10 +31,11 @@ export interface CardSelection {
 export function visibleCardFace(face: { name?: string; suit?: string | number; number?: number } | null) {
   if (!face) return {};
   const result: { name?: string; suit?: string | number; number?: number } = {};
-  if (typeof face.name === 'string' && face.name.length <= 120) result.name = face.name;
-  if ((typeof face.suit === 'string' && face.suit.length <= 32) ||
-      (typeof face.suit === 'number' && Number.isFinite(face.suit))) result.suit = face.suit;
-  if (typeof face.number === 'number' && Number.isFinite(face.number)) result.number = face.number;
+  if (typeof face.name === 'string' && face.name.length <= 120 &&
+      !/[\u0000-\u001F\u007F]/.test(face.name)) result.name = face.name;
+  if ((typeof face.suit === 'string' && face.suit.length <= 32 && !/[\u0000-\u001F\u007F]/.test(face.suit)) ||
+      (typeof face.suit === 'number' && Number.isInteger(face.suit) && face.suit >= 0 && face.suit <= 4)) result.suit = face.suit;
+  if (typeof face.number === 'number' && Number.isInteger(face.number) && face.number >= 0 && face.number <= 13) result.number = face.number;
   return result;
 }
 

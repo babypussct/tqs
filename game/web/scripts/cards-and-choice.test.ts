@@ -20,8 +20,10 @@ test('native card-and-choice parser accepts empty views and guards allowed cards
   for (const patch of [{ cards: [11, 11] }, { cards: [-1] }, { disabled: [13] },
     { choices: ['default', 'default'] }, { cancel_choices: ['default'] },
     { min: -1 }, { min: 3, max: 2 }, { max: 513 }, { filter_skel: {} },
-    { extra_data: [] }, { extra_data: { blob: 'x'.repeat(70_000) } }, { prompt: 42 }])
+    { extra_data: ['unexpected'] }, { extra_data: { blob: 'x'.repeat(70_000) } }, { prompt: 42 }])
     assert.equal(parseCardsAndChoice({ ...payload, ...patch }, () => null), null);
+  assert.ok(parseCardsAndChoice({ ...payload, extra_data: [] }, () => null),
+    'an empty Lua table may be CBOR-decoded as an empty array');
   assert.equal(parseCardsAndChoice({ ...empty, min: 1, max: 1 }, () => null), null);
 });
 

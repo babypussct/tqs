@@ -3,6 +3,7 @@
   color: #f8f2de; background: #101e1a; font-synthesis: none;
 }
 * { box-sizing: border-box; }
+html, body { overflow-x: hidden; }
 body { margin: 0; min-height: 100dvh; background: radial-gradient(circle at 80% 5%, #2a4434 0, #101e1a 42%); }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
@@ -10,7 +11,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 input, select { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #6d7c6c; border-radius: 11px; background: #172820; color: #fff9e9; outline-offset: 3px; }
 input:focus, select:focus { border-color: #e7c888; }
 label { display: block; color: #e9deb9; font-size: .9rem; font-weight: 600; }
-.shell { max-width: 720px; margin: auto; padding: max(30px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
+.shell { width: 100%; max-width: 720px; min-width: 0; margin: auto; padding: max(30px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 .shell-playing { max-width: 1400px; }
 .shell-playing .app-header { margin-bottom: 18px; }
 .shell-playing .app-header h1 { font-size: clamp(1.5rem, 3vw, 2.4rem); }
@@ -57,7 +58,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .room-item-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
 .room-count { color: #f0d5a0; }
 .inline-controls { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 12px; }
-.inline-controls input { max-width: 220px; }
+.inline-controls { flex-wrap: wrap; }
+.inline-controls input { max-width: 220px; flex: 1 1 180px; }
 .player-list { margin: 19px 0; }
 .player-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .9rem; }
 .you-tag, .owner-tag { display: inline-block; margin: 3px 0 0 8px; border-radius: 7px; padding: 3px 5px; font-size: .68rem; background: #466348; color: #ecf1dd; }
@@ -146,6 +148,32 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .gameplay-actions .button { flex: 1 1 130px; }
 .gameplay-target { width: 100%; margin-top: 12px; min-height: 44px; border: 1px solid #bbab7f; background: #384d30; border-radius: 9px; color: #ffedb7; font-weight: 600; }
 @media (orientation: landscape) and (max-height: 600px) { .board-table { min-height: 430px; } .shell-playing { padding-top: max(10px, env(safe-area-inset-top)); } }
+@media (max-width: 600px) {
+  .shell { padding-top: max(18px, env(safe-area-inset-top)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .panel { border-radius: 14px; padding: 15px; }
+  .app-header, .row-between { align-items: stretch; }
+  .app-header { flex-wrap: wrap; gap: 9px; margin-bottom: 18px; }
+  .app-header > * { min-width: 0; }
+  .status { margin-left: auto; }
+  .field-pair, .chosen-generals, .request-actions { grid-template-columns: 1fr; }
+  .room-item-header, .board-toolbar, .board-log-heading { align-items: flex-start; }
+  .room-item-header > *, .board-toolbar > * { min-width: 0; }
+  .room-item-header .button, .board-toolbar .button { max-width: 100%; }
+  .player-item { flex-direction: column; align-items: flex-start; }
+  .room-actions { grid-template-columns: 1fr; }
+  .general-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .board-table { min-height: 480px; border-radius: 16px; }
+  .board-opponents .board-player { flex-basis: min(100%, 155px); }
+  .gameplay-options { min-width: 0; }
+  .gameplay-choice { width: 100%; }
+  .gameplay-options > div { min-width: 0; flex: 1 1 130px; }
+}
+@media (max-width: 350px) {
+  .general-grid { grid-template-columns: 1fr; }
+  h1 { font-size: clamp(1.55rem, 9vw, 2.15rem); }
+  .button { padding-left: 11px; padding-right: 11px; }
+  .board-table { min-height: 430px; padding: 10px; }
+}
 @media (max-width: 410px) { .app-header { flex-wrap: wrap; } .player-item { flex-direction: column; align-items: flex-start; } .room-actions { grid-template-columns: 1fr; } }
 
 /* Keep landscape scrolling inside the app instead of the browser document.

@@ -1,3 +1,7 @@
+import { VI_SKILL_TRANSLATIONS } from './vietnameseSkills';
+import { VI_SKILL_REFINEMENTS } from './vietnameseSkillRefinements';
+import { VI_SKILL_REVIEWED } from './vietnameseSkillReviewed';
+
 /** Web display additions for the pinned Hegemony package, which has no vi_VN table.
  * Names and common UI prompts only: variant skill rules are never copied from another version. */
 const names = `
@@ -252,7 +256,16 @@ zuoci=Tả Từ
 `;
 export const VI_NAMES: Record<string, string> = Object.fromEntries(names.trim().split('\n').map((line) => line.split('=')));
 export const VI_ADDITIONS: Record<string, string> = {
+  // Generated from the effective CP19 skill inventory; the precise hand-written
+  // entries below intentionally override this broad translation baseline.
+  ...VI_SKILL_TRANSLATIONS,
+  ...VI_SKILL_REFINEMENTS,
+  ...VI_SKILL_REVIEWED,
   '#TargetCancelled': 'Mục tiêu %to đã bị hủy khỏi lá %arg do %from sử dụng.',
+  '#AskForSkillInvoke': 'Bạn có muốn kích hoạt %arg?',
+  '#AskForUseActiveSkill': 'Hãy phát động kỹ năng %arg',
+  '#AskForUseCard': 'Hãy sử dụng lá %arg',
+  '#AskForResponseCard': 'Hãy đánh ra lá %arg',
   '#AskForPeaches': '%src đang hấp hối, cần hồi %arg máu. Dùng Đào để cứu hoặc bấm Hủy để bỏ qua.',
   '#AskForPeachesSelf': 'Bạn đang hấp hối, cần hồi %arg máu. Dùng Đào hoặc Rượu để tự cứu, hoặc bấm Hủy để bỏ qua.',
   '#peach_dying': 'Dùng Đào cứu %dest. Mục tiêu đã được khóa; bấm Xác nhận để dùng bài.',

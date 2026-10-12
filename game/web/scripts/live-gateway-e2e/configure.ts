@@ -13,6 +13,7 @@ import forge from 'node-forge';
 import { LuaRuntime } from '../../src/engine/luaRuntime';
 import { CLIENT_NOTIFY, PacketStream, encodePacket, encodeTextArray, toHex } from '../../src/engine/packet';
 import { buildSnapshot, PACKAGES } from './snapshot';
+import { packageSpec } from '../upstream-packages';
 
 const repo = fileURLToPath(new URL('../../../../', import.meta.url));
 const host = process.env.TQS_LIVE_HOST ?? '168.110.36.224';
@@ -35,7 +36,7 @@ function load(dir: string, relative: string) {
       files.set(`${relative}/${entry.name}`, readFileSync(full));
   }
 }
-for (const pkg of PACKAGES) load(path.join(source, pkg), `packages/${pkg}`);
+for (const pkg of PACKAGES) load(path.join(source, packageSpec(pkg).sourceDirectory), `packages/${pkg}`);
 const lua = new LuaRuntime({ files, callbacks: { send() {}, ui() {}, setup() {} } });
 await lua.start();
 type Package = { name: string; hash: string; url: string };
@@ -76,7 +77,7 @@ try {
 assert.deepEqual(summary.map((pkg) => pkg.name).sort(), PACKAGES, 'Unexpected enabled server packages');
 for (const pkg of summary) {
   assert.match(pkg.hash, /^[a-f0-9]{40}$/);
-  const cwd = path.join(source, pkg.name);
+  const cwd = path.join(source, packageSpec(pkg.name).sourceDirectory);
   const local = execFileSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).trim();
   assert.equal(local, pkg.hash, `${pkg.name}: local revision differs from live server; supply a matching TQS_PACKAGE_SOURCE`);
   assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' }).trim(), '',
