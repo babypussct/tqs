@@ -69,10 +69,14 @@ type RuntimeContractAudit = {
   equipmentSmokeCount: number;
   dynamicEquipmentCount: number;
   dynamicEquipmentSmokeCount: number;
+  dynamicAttackRangeCount: number;
+  dynamicAttackRangeSmokeCount: number;
   invalidEquipmentSmokeTotal: number;
   invalidEquipmentSmoke: string[];
   invalidDynamicEquipmentSmokeTotal: number;
   invalidDynamicEquipmentSmoke: string[];
+  invalidDynamicAttackRangeSmokeTotal: number;
+  invalidDynamicAttackRangeSmoke: string[];
   cardSkillReferenceCount: number;
   invalidGeneralSkillsTotal: number;
   invalidGeneralSkills: string[];
@@ -180,6 +184,8 @@ local result = { generals = {}, skillExists = {}, skillCount = 0, skeletonCount 
     invalidEquipmentSmokeTotal = 0, invalidEquipmentSmoke = {},
     dynamicEquipmentCount = 0, dynamicEquipmentSmokeCount = 0,
     invalidDynamicEquipmentSmokeTotal = 0, invalidDynamicEquipmentSmoke = {},
+    dynamicAttackRangeCount = 0, dynamicAttackRangeSmokeCount = 0,
+    invalidDynamicAttackRangeSmokeTotal = 0, invalidDynamicAttackRangeSmoke = {},
     cardSkillReferenceCount = 0, invalidGeneralSkillsTotal = 0, invalidGeneralSkills = {},
     activeInvalidGeneralSkillsTotal = 0, activeInvalidGeneralSkills = {},
     inactiveInvalidGeneralSkillsTotal = 0, inactiveInvalidGeneralSkills = {},
@@ -449,6 +455,17 @@ for _, package in pairs(Fk.packages) do
         end
         if card.equip_skill ~= nil or type(card.dynamicEquipSkills) == "function" then
           contracts.equipmentSkillCount = contracts.equipmentSkillCount + 1
+        end
+        if type(card.dynamicAttackRange) == "function" then
+          contracts.dynamicAttackRangeCount = contracts.dynamicAttackRangeCount + 1
+          contracts.dynamicAttackRangeSmokeCount = contracts.dynamicAttackRangeSmokeCount + 1
+          local rangeOk, attackRange = pcall(function() return card:getAttackRange(dynamicEquipmentProbe) end)
+          local rangeValid = rangeOk and type(attackRange) == "number" and
+            attackRange == attackRange and attackRange < math.huge and attackRange > -math.huge
+          if not rangeValid then
+            contracts.invalidDynamicAttackRangeSmokeTotal = contracts.invalidDynamicAttackRangeSmokeTotal + 1
+            sample(contracts.invalidDynamicAttackRangeSmoke, tostring(card.name) .. ".dynamicAttackRange()")
+          end
         end
         if type(card.dynamicEquipSkills) == "function" then
           contracts.dynamicEquipmentCount = contracts.dynamicEquipmentCount + 1
@@ -750,15 +767,17 @@ function printReport(report: AuditReport): void {
     `visible unresolved ${visible.missingIds.length}`);
   const invalidContractCount = contracts.activeInvalidGeneralSkillsTotal + contracts.invalidSkillsTotal +
     contracts.invalidSkillSmokeTotal + contracts.invalidCardsTotal + contracts.invalidCardSmokeTotal +
-    contracts.invalidEquipmentSmokeTotal + contracts.invalidDynamicEquipmentSmokeTotal + contracts.invalidCardSkillsTotal;
+    contracts.invalidEquipmentSmokeTotal + contracts.invalidDynamicEquipmentSmokeTotal +
+    contracts.invalidDynamicAttackRangeSmokeTotal + contracts.invalidCardSkillsTotal;
   console.log(`Runtime contract audit: ${contracts.generalCount} generals (${contracts.visibleGeneralCount} visible; ` +
     `${contracts.activeGeneralCount} active in new_heg_mode; ${contracts.generalSkillReferenceCount} declared skill refs), ` +
     `${contracts.skillCount} skills / ${contracts.skillSmokeCount} no-side-effect skill smoke calls, ` +
     `${contracts.cardCount} playable cards + ${contracts.derivedCardCount} derived cards / ${contracts.cardSmokeCount} card smoke calls, ` +
-    `${contracts.equipmentCount} equipment cards / ${contracts.equipmentSmokeCount + contracts.dynamicEquipmentSmokeCount} equipment smoke calls ` +
+    `${contracts.equipmentCount} equipment cards / ${contracts.equipmentSmokeCount + contracts.dynamicEquipmentSmokeCount} equipment skill smoke calls ` +
     `(${contracts.equipmentSmokeCount} static + ${contracts.dynamicEquipmentSmokeCount} dynamic), ` +
+    `${contracts.dynamicAttackRangeSmokeCount} dynamic attack-range smoke calls, ` +
     `${contracts.cardSkillReferenceCount} card-skill refs; ` +
-    `${invalidContractCount} active-mode invalid contracts (${contracts.invalidGeneralSkillsTotal + contracts.invalidSkillsTotal + contracts.invalidSkillSmokeTotal + contracts.invalidCardsTotal + contracts.invalidCardSmokeTotal + contracts.invalidEquipmentSmokeTotal + contracts.invalidDynamicEquipmentSmokeTotal + contracts.invalidCardSkillsTotal} across all loaded packages)`);
+    `${invalidContractCount} active-mode invalid contracts (${contracts.invalidGeneralSkillsTotal + contracts.invalidSkillsTotal + contracts.invalidSkillSmokeTotal + contracts.invalidCardsTotal + contracts.invalidCardSmokeTotal + contracts.invalidEquipmentSmokeTotal + contracts.invalidDynamicEquipmentSmokeTotal + contracts.invalidDynamicAttackRangeSmokeTotal + contracts.invalidCardSkillsTotal} across all loaded packages)`);
   console.log(`Skill classes: ${Object.entries(contracts.skillClassCounts).sort(([a], [b]) => a.localeCompare(b))
     .map(([name, count]) => `${name || '<unknown>'}=${count}`).join(', ')}`);
   console.log(`Packages: ${report.packages.map((spec) => `${spec.name}@${spec.commit.slice(0, 12)}`).join(', ')}`);
@@ -786,6 +805,7 @@ function printReport(report: AuditReport): void {
       `skillSmoke=${contracts.invalidSkillSmokeTotal}, cards=${contracts.invalidCardsTotal}, ` +
       `cardSmoke=${contracts.invalidCardSmokeTotal}, equipmentSmoke=${contracts.invalidEquipmentSmokeTotal}, ` +
       `dynamicEquipmentSmoke=${contracts.invalidDynamicEquipmentSmokeTotal}, ` +
+      `dynamicAttackRangeSmoke=${contracts.invalidDynamicAttackRangeSmokeTotal}, ` +
       `cardSkills=${contracts.invalidCardSkillsTotal}`);
   } else {
     console.log('PASS runtime contracts: generals, skills, equipment and cards are structurally executable');
@@ -801,9 +821,9 @@ function renderMarkdown(report: AuditReport): string {
     `- Baseline: ${report.baseline.generalCount} identities / ${report.baseline.visibleGeneralCount} visible / ${report.baseline.directReferenceIds} unique direct IDs / ${report.baseline.missingIds.length} missing IDs (${report.baseline.missingOccurrences} occurrences).`,
     `- Dependency-complete scoped runtime: ${report.dependencyCompleteSkillCount} registered skills; ${report.dependencyComplete.missingIds.length} unresolved direct IDs across the original ${report.dependencyComplete.generalCount} generals.`,
     `- Visible invariant: ${report.dependencyCompleteVisible.missingIds.length === 0 ? 'PASS' : 'FAIL'}; unresolved visible IDs: ${report.dependencyCompleteVisible.missingIds.length ? report.dependencyCompleteVisible.missingIds.join(', ') : 'none'}.`,
-    `- Runtime contract audit: ${report.runtimeContracts.generalCount} generals / ${report.runtimeContracts.skillCount} skills / ${report.runtimeContracts.cardCount} playable cards / ${report.runtimeContracts.derivedCardCount} derived cards / ${report.runtimeContracts.equipmentCount} equipment cards; invalid contracts: ${report.runtimeContracts.invalidGeneralSkillsTotal + report.runtimeContracts.invalidSkillsTotal + report.runtimeContracts.invalidSkillSmokeTotal + report.runtimeContracts.invalidCardsTotal + report.runtimeContracts.invalidCardSmokeTotal + report.runtimeContracts.invalidEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicEquipmentSmokeTotal + report.runtimeContracts.invalidCardSkillsTotal}.`,
+    `- Runtime contract audit: ${report.runtimeContracts.generalCount} generals / ${report.runtimeContracts.skillCount} skills / ${report.runtimeContracts.cardCount} playable cards / ${report.runtimeContracts.derivedCardCount} derived cards / ${report.runtimeContracts.equipmentCount} equipment cards; invalid contracts: ${report.runtimeContracts.invalidGeneralSkillsTotal + report.runtimeContracts.invalidSkillsTotal + report.runtimeContracts.invalidSkillSmokeTotal + report.runtimeContracts.invalidCardsTotal + report.runtimeContracts.invalidCardSmokeTotal + report.runtimeContracts.invalidEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicAttackRangeSmokeTotal + report.runtimeContracts.invalidCardSkillsTotal}.`,
     `- Skill smoke: ${report.runtimeContracts.skillSmokeCount} no-side-effect calls; failures: ${report.runtimeContracts.invalidSkillSmokeTotal}.`,
-    `- Card/equipment smoke: ${report.runtimeContracts.cardSmokeCount} card calls and ${report.runtimeContracts.equipmentSmokeCount + report.runtimeContracts.dynamicEquipmentSmokeCount} equipment calls (${report.runtimeContracts.equipmentSmokeCount} static + ${report.runtimeContracts.dynamicEquipmentSmokeCount} dynamic); failures: ${report.runtimeContracts.invalidCardSmokeTotal + report.runtimeContracts.invalidEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicEquipmentSmokeTotal}.`,
+    `- Card/equipment smoke: ${report.runtimeContracts.cardSmokeCount} card calls, ${report.runtimeContracts.equipmentSmokeCount + report.runtimeContracts.dynamicEquipmentSmokeCount} equipment skill calls (${report.runtimeContracts.equipmentSmokeCount} static + ${report.runtimeContracts.dynamicEquipmentSmokeCount} dynamic), and ${report.runtimeContracts.dynamicAttackRangeSmokeCount} dynamic attack-range calls; failures: ${report.runtimeContracts.invalidCardSmokeTotal + report.runtimeContracts.invalidEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicEquipmentSmokeTotal + report.runtimeContracts.invalidDynamicAttackRangeSmokeTotal}.`,
     `- Translation re-audit: ${report.translation.referencedIds} visible direct IDs; CJK heuristic remains ${report.translation.cjkNames.length} names and ${report.translation.cjkDescriptions.length} descriptions.`,
     '',
     '## Pinned upstream versions',
@@ -869,6 +889,8 @@ async function main(): Promise<AuditReport> {
       `Runtime equipment smoke failures: ${runtimeContracts.invalidEquipmentSmoke.join(', ')}`);
     assert.equal(runtimeContracts.invalidDynamicEquipmentSmokeTotal, 0,
       `Runtime dynamic equipment smoke failures: ${runtimeContracts.invalidDynamicEquipmentSmoke.join(', ')}`);
+    assert.equal(runtimeContracts.invalidDynamicAttackRangeSmokeTotal, 0,
+      `Runtime dynamic attack-range smoke failures: ${runtimeContracts.invalidDynamicAttackRangeSmoke.join(', ')}`);
     assert.equal(runtimeContracts.invalidCardsTotal, 0,
       `Runtime card contract failures: ${runtimeContracts.invalidCards.join(', ')}`);
     assert.equal(runtimeContracts.invalidCardSkillsTotal, 0,
@@ -876,7 +898,8 @@ async function main(): Promise<AuditReport> {
   }
   const invalidContractCount = runtimeContracts.activeInvalidGeneralSkillsTotal + runtimeContracts.invalidSkillsTotal +
     runtimeContracts.invalidSkillSmokeTotal + runtimeContracts.invalidCardsTotal + runtimeContracts.invalidCardSmokeTotal +
-    runtimeContracts.invalidEquipmentSmokeTotal + runtimeContracts.invalidDynamicEquipmentSmokeTotal + runtimeContracts.invalidCardSkillsTotal;
+    runtimeContracts.invalidEquipmentSmokeTotal + runtimeContracts.invalidDynamicEquipmentSmokeTotal +
+    runtimeContracts.invalidDynamicAttackRangeSmokeTotal + runtimeContracts.invalidCardSkillsTotal;
   return {
     generatedAt: new Date().toISOString(),
     upstreamRoot: UPSTREAM_ROOT,
