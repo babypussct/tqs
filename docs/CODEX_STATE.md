@@ -588,6 +588,13 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Đã tạo source snapshot sạch [`cp38-dynamic-attack-range-clean-20261013/release`](../scratch/deployments/cp38-dynamic-attack-range-clean-20261013/release) từ HEAD `b98b248`, verify **13.333 files / manifest v2 PASS**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`. So với CP36: inventory giống nhau và **0 file hash thay đổi**; hash manifest mới `4267bbe071f025c375ebd07bdfca589a3841442f1229fa90860bc907e7b999ec`. Thay đổi chỉ nằm trong QA audit, không vào `dist/runtime/gateway`; candidate đang live nên không redeploy. Evidence: [`cp38-dynamic-attack-range-20261013.json`](../scratch/evidence/cp38-dynamic-attack-range-20261013.json) và [`cp38-dynamic-attack-range-clean-20261013.json`](../scratch/evidence/cp38-dynamic-attack-range-clean-20261013.json). Đây đóng thêm executable contract cho trang bị động, không thay thế semantic gameplay trên C++ live.
 - `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native rules semantic, quota/rollback/SLA/monitoring, `node-forge` review vẫn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
 
+## CP39 — smoke lifecycle toàn bộ trang bị và release candidate sạch · 13/10/2026
+
+- Mở rộng [`skill-audit.ts`](../game/web/scripts/skill-audit.ts) để thực thi thật `onInstall` và `onUninstall` của từng trang bị đã load, thay vì chỉ kiểm tra callback có đúng kiểu function. Mỗi callback chạy với Room/ServerPlayer probe bất biến, không chạm room/player thật và fail-closed khi exception. Kết quả quan sát: **160/160 equipment**, **320/320 lifecycle callbacks PASS**, **0 failure**.
+- Full regression sau commit `75936b07cc2266c987139d71881500cf0fa6aa5d`: `npm run typecheck` **PASS**; `npx tsx --test scripts/*.test.ts` **114/114**; `npm run test:e2e:lua` **54/54**; `npm run test:e2e:qa` **1/1**; `npm run build` **PASS** (audit in **320 equipment lifecycle smoke calls**, native caller **17/17**); `git diff --check` **PASS**. Runtime audit vẫn có **0 active-mode invalid contracts** và vẫn in riêng exception disabled `os_sx__lvmeng:kongzhi`.
+- Artifact sạch [`cp39-equipment-lifecycle-clean-20261013/release`](../scratch/deployments/cp39-equipment-lifecycle-clean-20261013/release) được tạo với `--require-clean`, verify **13.333 files / manifest v2 PASS**, runtime **13.311**, web **10**, gateway **6**, 11 package, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`; manifest SHA-256 `2e582f33df9d9c538ac2347350d251d5b6a48d5304ca451e14234b4766dd6af1`. So với artifact CP38, inventory giống nhau và **0 file hash thay đổi**; production bytes không đổi vì patch chỉ nằm trong QA audit script, không nằm trong `dist/runtime/gateway`, nên không redeploy candidate. Evidence [`cp39-equipment-lifecycle-20261013.json`](../scratch/evidence/cp39-equipment-lifecycle-20261013.json) và release checkpoint [`cp39-equipment-lifecycle-clean-20261013.json`](../scratch/evidence/cp39-equipment-lifecycle-clean-20261013.json).
+- Candidate Render vẫn live từ deployment `dep-db6kljvf3r2c73cogc20`; CP35/CP37 login canary và hosted integrity trước đó vẫn là bằng chứng hosted hiện hành. Mốc này chỉ củng cố executable coverage, không đổi semantic/live/device gate: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native caller-rules semantic, quota/rollback/SLA/monitoring và `node-forge` review còn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -595,8 +602,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:24:46.889Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `b98b2487845a`.
+- Ghi lúc: 2026-10-12T21:29:34.622Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `75936b07cc22`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -606,9 +613,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+75936b07 test: audit equipment lifecycle callbacks
+6ba1180f docs: record CP38 clean release artifact
 b98b2487 docs: record CP38 dynamic attack range audit
-baf20a78 test: audit dynamic equipment attack ranges
-1686b8c8 docs: record CP37 hosted login canary
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
