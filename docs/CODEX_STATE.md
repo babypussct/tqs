@@ -581,6 +581,13 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Hosted candidate [`tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com) recheck trực tiếp: health **200 `ok`**, manifest **200 / 11 package / 4.730 files / MD5 `a2a4b0af428f971c2642f11bd4aef162` / bundle `1fe8081d4280f7d9`**, root **200**, foreign Origin **403**, bundle version sai **404**, static SHA-256 **5/5 PASS**. Sau đó chạy login canary C++ thật **PASS**: Setup + EnterLobby, React vào sảnh online, ngắt kết nối sạch; không tạo phòng/ván và không bật scenario experimental. Bundle production byte-identical với CP36 nên không redeploy nội dung trùng.
 - CP37 chỉ củng cố bằng chứng source/release/hosted hiện hành; không đổi semantic kết luận: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal rescue→view-as, founding kingdom choice, full native caller/rules semantic, quota/rollback/SLA/monitoring và `node-forge` review còn PENDING; iOS/Android và Wi-Fi/4G vật lý còn DEFERRED.
 
+## CP38 — smoke dynamic attack range của trang bị · 13/10/2026
+
+- Mở rộng [`skill-audit.ts`](../game/web/scripts/skill-audit.ts) để thực thi `dynamicAttackRange` của mọi vũ khí động đã load qua `getAttackRange(inertPlayerProbe)`. Probe không có state thật; audit fail-closed nếu callback ném lỗi, trả giá trị không phải số hoặc số không hữu hạn. Kết quả: **3/3 dynamic attack-range smoke calls PASS**, **0 failure**; cùng với **4/4 dynamic equipment skill resolver** và **160/160 equipment** đã kiểm tra.
+- Regression sau thay đổi: `npm run audit:skills` **PASS** (2.330 tướng, 9.452 skill, 46.563 skill smoke, 384 playable + 114 derived card, 1.492 card smoke, 160 equipment, 0 active invalid contract), typecheck **PASS**, script **114/114**, Real Lua **54/54**, QA **1/1**, build **PASS**, release **2/2**, release verifier **PASS 13.333 files / manifest v2**, diff-check **PASS**.
+- Thay đổi chỉ nằm trong QA audit, không vào `dist/runtime/gateway`; hash 5 file production giữ nguyên artifact CP36 và candidate đang live nên không redeploy. Evidence: [`cp38-dynamic-attack-range-20261013.json`](../scratch/evidence/cp38-dynamic-attack-range-20261013.json). Đây đóng thêm executable contract cho trang bị động, không thay thế semantic gameplay trên C++ live.
+- `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native rules semantic, quota/rollback/SLA/monitoring, `node-forge` review vẫn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -588,8 +595,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:20:42.431Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `ac77d1fb15fc`.
+- Ghi lúc: 2026-10-12T21:23:52.399Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `baf20a785745`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -599,9 +606,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+baf20a78 test: audit dynamic equipment attack ranges
+1686b8c8 docs: record CP37 hosted login canary
 ac77d1fb docs: record CP37 source and hosted recheck
-5f9ebd73 docs: record CP36 dynamic equipment audit
-33609fed test: audit dynamic equipment skill resolvers
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
