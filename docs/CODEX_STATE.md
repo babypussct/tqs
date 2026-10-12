@@ -571,8 +571,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:04:49.335Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `ce6ba3de3a4d`.
+- Ghi lúc: 2026-10-12T21:05:31.079Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `1141969b7171`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -582,9 +582,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+1141969b docs: record CP34 hosted release recheck
 ce6ba3de deploy: package CP34 candidate for Render
 160fd8ff feat: close mobile skill request and runtime audit gates
-af3fda8c docs: refresh CP17 checkpoint snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
