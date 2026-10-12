@@ -221,6 +221,11 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Chạy lại `npm run test:e2e:qa` trên fixture Wasmoon/React hiện hành: **PASS 1/1**, fixture **5.292 files / 7.264.013 compressed bytes**, deterministic draw và toàn bộ native caller cần thiết được resolver/đi qua đúng flow.
 - Đây là local QA refresh, không tạo game hosted và không bật experimental live scenario; evidence [`cp43-qa-scenario-refresh-20261013.json`](../scratch/evidence/cp43-qa-scenario-refresh-20261013.json). CP43 củng cố executable caller coverage nhưng không biến thành semantic C++ live, device, quota, rollback hoặc SLA PASS.
 
+## CP44 — refresh PWA/offline shell mobile · 13/10/2026
+
+- Chạy `npm run test:e2e:pwa` bằng Chrome thật: **PASS** kiểm static cache đã verify, offline shell/retry/status và không cache gateway/private data. Bài chạy local, không tạo hosted game và không dùng live server.
+- Evidence [`cp44-pwa-refresh-20261013.json`](../scratch/evidence/cp44-pwa-refresh-20261013.json). CP44 đóng lại PWA/offline-shell gate ở mức browser artifact, không thay thế nghiệm thu iOS/Android cảm ứng hoặc mất mạng Wi-Fi/4G vật lý; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
