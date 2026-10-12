@@ -353,90 +353,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T08:42:30.055Z (UTC).
-- Nhánh: `main` · HEAD: `5005d7c09ed8`.
-- File thay đổi hiển thị: 99 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T08:43:02.720Z (UTC).
+- Nhánh: `main` · HEAD: `9b78ab134f92`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/web-client/MOBILE_PLAYABLE_MASTER_PLAN.md
- M game/gateway/package.json
- M game/gateway/scripts/gateway.test.mjs
- M game/gateway/src/server.mjs
- M game/web/index.html
- M game/web/package-lock.json
- M game/web/package.json
- M game/web/scripts/connection.test.ts
- D game/web/scripts/e2e-placeholder.mjs
- M game/web/scripts/protocol.test.ts
- M game/web/scripts/smoke.ts
- M game/web/scripts/store.test.ts
- M game/web/src/App.tsx
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/engine/connection.ts
- M game/web/src/engine/gameAdapter.ts
- M game/web/src/engine/generalSelection.ts
- M game/web/src/engine/hostLua.ts
- M game/web/src/engine/luaRuntime.ts
- M game/web/src/engine/packet.ts
- M game/web/src/main.tsx
- M game/web/src/store/boardState.ts
- M game/web/src/store/gameStore.ts
- M game/web/src/store/gameplayState.ts
- M game/web/src/styles.css
- M package.json
-?? AGENTS.md
-?? deploy/mobile/Caddyfile
-?? deploy/mobile/Dockerfile.gateway
-?? deploy/mobile/Dockerfile.render
-?? deploy/mobile/compose.yaml
-?? deploy/mobile/env.example
-?? deploy/mobile/package-release.mjs
-?? deploy/mobile/render.yaml
-?? deploy/mobile/verify-release.mjs
-?? docs/CODEX_PLAN.md
-?? docs/web-client/CHAT_TASK_PROMPTS.md
-?? docs/web-client/CHECKPOINT_CP06_REPORT.md
-?? docs/web-client/CHECKPOINT_DEPLOY.md
-?? docs/web-client/LIVE_TESTING.md
-?? docs/web-client/PARALLEL_COMPLETION_PLAN.md
-?? docs/web-client/PEACH_RESCUE_VERIFICATION.md
-?? docs/web-client/hosting/CP07_OPERATIONS.md
-?? docs/web-client/hosting/CP08_RENDER.md
-?? docs/web-client/hosting/CP12_RENDER_OPERATIONS.md
-?? game/gateway/scripts/security.test.mjs
-?? game/gateway/src/render.mjs
-?? game/gateway/src/security.mjs
-?? game/gateway/src/static.mjs
-?? game/web/e2e.html
-?? game/web/public/apple-touch-icon.png
-?? game/web/public/favicon.svg
-?? game/web/public/icon-192.png
-?? game/web/public/icon-512.png
-?? game/web/public/manifest.webmanifest
-?? game/web/real-lua-e2e.html
-?? game/web/scripts/audit-display-text.ts
-?? game/web/scripts/browser-e2e/harness.css
-?? game/web/scripts/browser-e2e/harness.tsx
-?? game/web/scripts/browser-e2e/run.ts
-?? game/web/scripts/build-service-worker.mjs
-?? game/web/scripts/card-selection.test.ts
-?? game/web/scripts/cards-and-choice.test.ts
-?? game/web/scripts/choices.test.ts
-?? game/web/scripts/gameplay.test.ts
-?? game/web/scripts/live-gateway-e2e/configure.ts
-?? game/web/scripts/live-gateway-e2e/run.ts
-?? game/web/scripts/live-gateway-e2e/snapshot.test.ts
-?? game/web/scripts/live-gateway-e2e/snapshot.ts
-?? game/web/scripts/lua-lifecycle.test.ts
-... và 29 mục nữa; xem git status trực tiếp.
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+9b78ab1 checkpoint: deploy CP16 candidate and start CP17
 5005d7c checkpoint: bridge Lua gameplay scene and reply transport
 99d5638 checkpoint: bootstrap mobile FreeKill UI and Lua gateway tests
-8aa82bb game
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
