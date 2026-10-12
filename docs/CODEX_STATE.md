@@ -595,6 +595,12 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Artifact sạch [`cp39-equipment-lifecycle-clean-20261013/release`](../scratch/deployments/cp39-equipment-lifecycle-clean-20261013/release) được tạo với `--require-clean`, verify **13.333 files / manifest v2 PASS**, runtime **13.311**, web **10**, gateway **6**, 11 package, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`; manifest SHA-256 `2e582f33df9d9c538ac2347350d251d5b6a48d5304ca451e14234b4766dd6af1`. So với artifact CP38, inventory giống nhau và **0 file hash thay đổi**; production bytes không đổi vì patch chỉ nằm trong QA audit script, không nằm trong `dist/runtime/gateway`, nên không redeploy candidate. Evidence [`cp39-equipment-lifecycle-20261013.json`](../scratch/evidence/cp39-equipment-lifecycle-20261013.json) và release checkpoint [`cp39-equipment-lifecycle-clean-20261013.json`](../scratch/evidence/cp39-equipment-lifecycle-clean-20261013.json).
 - Candidate Render vẫn live từ deployment `dep-db6kljvf3r2c73cogc20`; CP35/CP37 login canary và hosted integrity trước đó vẫn là bằng chứng hosted hiện hành. Mốc này chỉ củng cố executable coverage, không đổi semantic/live/device gate: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native caller-rules semantic, quota/rollback/SLA/monitoring và `node-forge` review còn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
 
+## CP40 — recheck integrity hosted candidate sau CP39 · 13/10/2026
+
+- Recheck trực tiếp candidate [`tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com) lúc `2026-10-12T21:30:59Z`: health **200 `ok`**; manifest **200**, **11 package / 4.730 bundle files**, MD5 `a2a4b0af428f971c2642f11bd4aef162` khớp artifact CP39; bundle hash hosted `1fe8081d4280f7d9`.
+- Static hash **5/5 PASS** với CP39; foreign Origin trả **403**; bundle version không hợp lệ trả **404**. Deployment vẫn `dep-db6kljvf3r2c73cogc20` từ source `ce6ba3d`; không redeploy vì CP39 không thay đổi production bytes.
+- Evidence [`cp40-hosted-integrity-recheck-20261013.json`](../scratch/evidence/cp40-hosted-integrity-recheck-20261013.json). CP40 chỉ củng cố candidate integrity; không đổi các gate semantic C++ live, quota/rollback/SLA/monitoring, `node-forge`, official và thiết bị/mạng: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`, physical device/network `DEFERRED`.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -602,20 +608,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:29:48.844Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `87a2ea7396e0`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:31:28.769Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `4090d6db1571`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+4090d6db docs: refresh codex checkpoint
 87a2ea73 docs: record CP39 equipment lifecycle audit
 75936b07 test: audit equipment lifecycle callbacks
-6ba1180f docs: record CP38 clean release artifact
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
