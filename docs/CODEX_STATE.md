@@ -625,20 +625,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:36:52.025Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `14150ad13e14`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:37:00.453Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `ef5ce4ec815b`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+ef5ce4ec docs: record CP43 QA scenario refresh
 14150ad1 docs: refresh codex checkpoint after CP42
 d2469b06 docs: record CP42 source gate recheck
-e53677b5 docs: refresh codex checkpoint after CP41
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
