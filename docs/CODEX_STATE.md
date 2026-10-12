@@ -552,7 +552,17 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 ## Bước tiếp theo
 
-**Bước chạy ngay:** tạo source snapshot sạch cho CP34 từ các thay đổi đã review, triển khai candidate CP34 rồi kiểm tra lại manifest/hash/health/origin/login canary; sau đó theo lịch live an toàn mới chạy semantic matrix C++ cho Battle-Royal/founding/native caller-rules. Không retry/bypass scenario đang bị khóa bởi policy temp-ban; không đổi `PLAYABLE_MOBILE`/official từ các gate local hoặc login canary; device/network vẫn DEFERRED cho tới khi có phiên nghiệm thu phù hợp.
+## CP35 — CP34 hosted candidate deploy và recheck · 13/10/2026
+
+- Đã tạo source snapshot sạch và push branch `codex/cp34-response-card`: feature commit `160fd8ff2993fc7b061f78b1394b68f49a9c25b1`; deployment packaging commit `ce6ba3de3a4dc2f9f899de846e31cd480b9dd071`. Commit deploy bổ sung root `Dockerfile.render`, `gateway/`, `dist/`, `runtime/`, `render.yaml` theo đúng release artifact; đối chiếu inventory/hash toàn bộ root snapshot với [`cp34-response-card-clean-20261013/release`](../scratch/deployments/cp34-response-card-clean-20261013/release) **PASS**.
+- Render service `tqs-mobile-candidate` đã deploy thành công, deployment **`dep-db6kljvf3r2c73cogc20`**, source `ce6ba3d`, dashboard báo **Deploy succeeded / Live**. Gateway log quan sát được `:10000 -> 168.110.36.224:9527`, health check PASS. Evidence sanitised: [`cp34-hosted-recheck-20261013.json`](../scratch/evidence/cp34-hosted-recheck-20261013.json); ảnh dashboard success đã được lưu trong phiên Codex.
+- Hosted recheck từ HTTPS: `/gateway/healthz` **200 `ok`**; manifest **11 package / 4.730 bundle files**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`, deterministic bundle hash `1fe8081d4280f7d9`; `/index.html`, JS `index-DjyuMNnv.js`, CSS, `/glue.wasm`, `/sw.js` **5/5 SHA-256 khớp** artifact clean CP34; candidate Origin **200**, foreign Origin **403**, wrong bundle version **404**.
+- Hosted login canary đúng một lượt trên C++ thật: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=/private/tmp/tqs-cp28-live-canary-root-20261013 TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com npm run test:e2e:login` **PASS** — `Setup` + `EnterLobby`, React lobby online, disconnect sạch; server chấp nhận MD5; không tạo room/start game, không ghi credential vào evidence.
+- CP35 xác nhận **candidate CP34 đã live**, nhưng không đổi các kết luận nghiệm thu rộng hơn: semantic từng luật/native caller trên C++ live, Battle-Royal rescue→view-as, founding kingdom choice, production quota/rollback/SLA/monitoring và review `node-forge@1.4.0` vẫn PENDING; physical iOS/Android và Wi-Fi/4G vẫn DEFERRED. Giữ `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`.
+
+## Bước tiếp theo
+
+**Bước chạy ngay:** theo lịch live an toàn, chạy semantic C++ matrix còn thiếu (Battle-Royal rescue→view-as, founding kingdom choice, native caller/rules) rồi hoàn tất quota/rollback/SLA và review `node-forge` trước khi cân nhắc official release. Không retry/bypass scenario đang bị khóa bởi policy temp-ban; không đổi `PLAYABLE_MOBILE`/official từ candidate login hoặc local audit; device/network vẫn DEFERRED cho tới khi có phiên nghiệm thu phù hợp.
 
 ## Ghi kết quả công việc tiếp theo
 
@@ -561,83 +571,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T20:55:09.918Z (UTC).
-- Nhánh: `main` · HEAD: `af3fda8cba37`.
-- File thay đổi hiển thị: 64 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:04:49.335Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `ce6ba3de3a4d`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M deploy/freekill-native/scripts/install-packages.sh
- M deploy/freekill-native/scripts/verify-install.sh
- M deploy/freekill-native/versions.env
- M deploy/mobile/package-release.mjs
- M deploy/mobile/verify-release.mjs
  M docs/CODEX_PLAN.md
- M docs/web-client/CP17_REQUEST_INVENTORY.md
- M docs/web-client/hosting/CP12_RENDER_OPERATIONS.md
- M game/gateway/scripts/gateway.test.mjs
- M game/gateway/src/server.mjs
- M game/web/package.json
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/bundle.test.ts
- M game/web/scripts/cards-and-choice.test.ts
- M game/web/scripts/connection.test.ts
- M game/web/scripts/gameplay.test.ts
- M game/web/scripts/live-gateway-e2e/configure.ts
- M game/web/scripts/live-gateway-e2e/run.ts
- M game/web/scripts/live-gateway-e2e/snapshot.test.ts
- M game/web/scripts/live-gateway-e2e/snapshot.ts
- M game/web/scripts/lua-lifecycle.test.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/native-dialogs.test.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/room-pools.test.ts
- M game/web/scripts/smoke.ts
- M game/web/scripts/store.test.ts
- M game/web/scripts/vietnamese-l01.test.ts
- M game/web/src/App.tsx
- M game/web/src/NativeDialogPanel.tsx
- M game/web/src/engine/bundle.ts
- M game/web/src/engine/cardSelection.ts
- M game/web/src/engine/cardsAndChoice.ts
- M game/web/src/engine/connection.ts
- M game/web/src/engine/displayText.ts
- M game/web/src/engine/gameAdapter.ts
- M game/web/src/engine/hostLua.ts
- M game/web/src/engine/nativeDialogs.ts
- M game/web/src/engine/vietnamese.ts
- M game/web/src/store/gameStore.ts
- M game/web/src/store/gameplayState.ts
- M game/web/src/styles.css
- M scripts/cp17-request-inventory.mjs
-?? deploy/freekill-native/scripts/verify-backup.sh
-?? deploy/mobile/release-checkpoint.mjs
-?? deploy/mobile/release.test.mjs
-?? docs/web-client/CP19_REQUEST_INVENTORY.md
-?? docs/web-client/CP19_SKILL_MAPPING.md
-?? docs/web-client/CP20_SKILL_ZH_SOURCE.md
-?? docs/web-client/CP29_NATIVE_CALLER_INVENTORY.md
-?? docs/web-client/QA_SCENARIO_MODE.md
-?? game/web/scripts/native-caller-audit.ts
-?? game/web/scripts/qa-scenarios.test.ts
-?? game/web/scripts/real-lua-e2e/qa-scenarios.ts
-?? game/web/scripts/skill-audit.ts
-?? game/web/scripts/skill-zh-source.ts
-?? game/web/scripts/upstream-packages.ts
-?? game/web/src/engine/skillInvoke.ts
-?? game/web/src/engine/vietnameseSkillRefinements.ts
-?? game/web/src/engine/vietnameseSkillReviewed.ts
-?? game/web/src/engine/vietnameseSkillSources.ts
-?? game/web/src/engine/vietnameseSkills.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+ce6ba3de deploy: package CP34 candidate for Render
+160fd8ff feat: close mobile skill request and runtime audit gates
 af3fda8c docs: refresh CP17 checkpoint snapshot
-854ddf6d checkpoint: CP17 request inventory and hosted QA
-e7926ba9 docs: record clean CP16 checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

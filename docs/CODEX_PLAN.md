@@ -163,6 +163,15 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 
 **Bước tiếp theo:** tạo source snapshot sạch CP34 từ thay đổi đã review, deploy/recheck candidate CP34 (manifest/hash/health/origin/login), rồi theo lịch live an toàn mới chạy Battle-Royal rescue→view-as, founding kingdom choice và native caller/rules semantic matrix; hoàn tất quota/rollback/SLA và review `node-forge` trước official. Không retry/bypass scenario đang bị khóa bởi policy temp-ban; không đổi `PLAYABLE_MOBILE`/official từ các gate local hoặc login canary; device/network vẫn DEFERRED.
 
+## CP35 — hosted CP34 deploy và recheck · 13/10/2026
+
+- Source snapshot deploy của branch `codex/cp34-response-card` gồm feature commit `160fd8ff2993fc7b061f78b1394b68f49a9c25b1` và packaging commit `ce6ba3de3a4dc2f9f899de846e31cd480b9dd071`; root release snapshot đã đối chiếu byte/inventory với artifact clean CP34 **PASS**.
+- Render `tqs-mobile-candidate` deployment **`dep-db6kljvf3r2c73cogc20`** từ `ce6ba3d` **Deploy succeeded / Live**. Hosted `/gateway/healthz` **200**, manifest **11 package / 4.730 files**, MD5 `a2a4b0af428f971c2642f11bd4aef162`, bundle hash `1fe8081d4280f7d9`, static hashes **5/5 PASS**, standard Origin **200**, foreign Origin **403**, wrong bundle version **404**. Evidence [`cp34-hosted-recheck-20261013.json`](../scratch/evidence/cp34-hosted-recheck-20261013.json).
+- Hosted login canary C++ thật **PASS**: Setup + EnterLobby, lobby online, disconnect sạch; không tạo room/game. Lệnh và scope: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=/private/tmp/tqs-cp28-live-canary-root-20261013 TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com npm run test:e2e:login`.
+- CP35 đóng candidate hosted recheck, không đóng official: semantic native caller/rules trên C++ live, Battle-Royal/founding, quota/rollback/SLA/monitoring và `node-forge` review vẫn PENDING; physical device/network DEFERRED; `PLAYABLE_MOBILE=false`.
+
+**Bước tiếp theo:** chạy semantic C++ matrix còn thiếu trong lịch live an toàn (Battle-Royal rescue→view-as, founding kingdom choice, native caller/rules), sau đó hoàn tất quota/rollback/SLA và review `node-forge` trước official. Không retry/bypass scenario bị khóa bởi temp-ban policy.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
