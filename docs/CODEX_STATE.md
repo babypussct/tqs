@@ -361,8 +361,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T08:43:02.720Z (UTC).
-- Nhánh: `main` · HEAD: `9b78ab134f92`.
+- Ghi lúc: 2026-10-12T09:01:58.209Z (UTC).
+- Nhánh: `main` · HEAD: `854ddf6d9819`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -372,9 +372,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+854ddf6 checkpoint: CP17 request inventory and hosted QA
+e7926ba docs: record clean CP16 checkpoint
 9b78ab1 checkpoint: deploy CP16 candidate and start CP17
-5005d7c checkpoint: bridge Lua gameplay scene and reply transport
-99d5638 checkpoint: bootstrap mobile FreeKill UI and Lua gateway tests
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
