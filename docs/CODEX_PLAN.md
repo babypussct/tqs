@@ -216,6 +216,11 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Full regression CP39 vẫn là bằng chứng hiện hành cho cùng source code: script **114/114**, Real Lua **54/54**, QA **1/1**, typecheck/build/release verifier **PASS**. CP42 chỉ chạy lại các gate nhanh sau CP41, không tự mở rộng phạm vi semantic live.
 - Evidence [`cp42-source-gates-20261013.json`](../scratch/evidence/cp42-source-gates-20261013.json). Exception upstream disabled `os_sx__lvmeng:kongzhi` tiếp tục được in riêng; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
 
+## CP43 — refresh QA Scenario Mode sau CP42 · 13/10/2026
+
+- Chạy lại `npm run test:e2e:qa` trên fixture Wasmoon/React hiện hành: **PASS 1/1**, fixture **5.292 files / 7.264.013 compressed bytes**, deterministic draw và toàn bộ native caller cần thiết được resolver/đi qua đúng flow.
+- Đây là local QA refresh, không tạo game hosted và không bật experimental live scenario; evidence [`cp43-qa-scenario-refresh-20261013.json`](../scratch/evidence/cp43-qa-scenario-refresh-20261013.json). CP43 củng cố executable caller coverage nhưng không biến thành semantic C++ live, device, quota, rollback hoặc SLA PASS.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
