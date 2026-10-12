@@ -189,7 +189,7 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 
 - `skill-audit.ts` nay gọi mọi `dynamicAttackRange` callback đã load bằng inert Player probe qua `getAttackRange`, fail-closed với exception/non-number/non-finite result. Kết quả **3/3 PASS**, cùng **4/4 dynamic equipment skill resolver** và **160/160 equipment**.
 - Regression **PASS**: `audit:skills`, typecheck, script **114/114**, Real Lua **54/54**, QA **1/1**, build, release **2/2**, release verifier **13.333 files / manifest v2**, diff-check. Evidence [`cp38-dynamic-attack-range-20261013.json`](../scratch/evidence/cp38-dynamic-attack-range-20261013.json).
-- Đây là QA-only change; production dist/runtime/gateway hashes không đổi so với CP36, candidate không cần redeploy. Semantic rules trên C++ live, Battle-Royal/founding, device/network, quota/rollback/SLA/monitoring và `node-forge` review vẫn `PENDING/DEFERRED`; official và `PLAYABLE_MOBILE` giữ nguyên.
+- Đã tạo source snapshot sạch [`cp38-dynamic-attack-range-clean-20261013/release`](../scratch/deployments/cp38-dynamic-attack-range-clean-20261013/release), verify **13.333 files / manifest v2**, runtime MD5 không đổi; inventory và toàn bộ file hash production **0 thay đổi** so với CP36. Đây là QA-only change nên candidate không cần redeploy; release checkpoint [`cp38-dynamic-attack-range-clean-20261013.json`](../scratch/evidence/cp38-dynamic-attack-range-clean-20261013.json) báo `READY_FOR_PUBLISH_REVIEW`, không tự suy diễn thành official. Semantic rules trên C++ live, Battle-Royal/founding, device/network, quota/rollback/SLA/monitoring và `node-forge` review vẫn `PENDING/DEFERRED`; official và `PLAYABLE_MOBILE` giữ nguyên.
 
 ## Nguyên tắc chuyển trạng thái
 
