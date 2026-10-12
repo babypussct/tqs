@@ -628,6 +628,14 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Quan sát trực tiếp `npm run test:e2e` bằng Chrome thật: **Browser E2E 18/18 PASS**; bao phủ render app, Lua scene/card/target/skill interactions, CBOR reply uniqueness, cancel/replacement/expiry/reconnect/disconnect/error guards và responsive viewport.
 - Không dùng live server, không tạo hosted game. Evidence [`cp45-browser-e2e-refresh-20261013.json`](../scratch/evidence/cp45-browser-e2e-refresh-20261013.json). CP45 củng cố local browser bridge/UI, không đóng semantic C++ live, native rule matrix hoặc iOS/Android/physical network gate.
 
+## CP46 — completion audit cho skill, release artifact và hosted candidate · 13/10/2026
+
+- Quan sát trực tiếp `npm run audit:skills`: **PASS** — 2.330 tướng, 2.273 visible, 311 active `new_heg_mode`, 4.718 declared skill refs, 9.452 skill, 46.563 no-side-effect smoke calls, 384 playable + 114 derived cards, 1.492 card smoke, 160 equipment, 3 dynamic attack-range, 320 lifecycle callbacks và 798 card-skill refs; **0 active-mode invalid contracts**, **0 visible unresolved**, 562 translation refs/0 heuristic review. `os_sx__lvmeng:kongzhi` chỉ còn là exception upstream ở package disabled, được in riêng.
+- Quan sát trực tiếp `npm run audit:native-callers`: **17/17 PASS** trên 4.717 Lua files. Quan sát trực tiếp `npm run test:e2e:lua`: **54/54 PASS**; Phản Quỹ (`ex__fankui`) prompt optional vẫn actionable, reply đúng một lần và đi tới card choice; response-card, cancellation, replacement, expiry, disconnect và các native dialog fixture đều PASS. Evidence: [`cp46-completion-audit-20261013.json`](../scratch/evidence/cp46-completion-audit-20261013.json).
+- Re-verify artifact sạch [`cp39-equipment-lifecycle-clean-20261013/release`](../scratch/deployments/cp39-equipment-lifecycle-clean-20261013/release): **13.333 files / manifest v2 / 11 packages PASS**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`; release **2/2**, gateway **5/5**. Sau code commit CP39 chỉ có docs/evidence thay đổi nên không cần redeploy bytes.
+- Recheck hosted candidate [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com): health **200**, manifest **11 package/4.730 files**, static **5/5**, foreign-Origin **403**, wrong version **404**, login canary Setup→EnterLobby→lobby→disconnect **PASS**. CP43 QA **1/1**, CP44 PWA **PASS**, CP45 browser **18/18** vẫn còn hiệu lực.
+- **Kết luận bàn giao:** các gate source/runtime contract, Lua/bridge, release artifact và hosted candidate trong phạm vi mã nguồn đã có bằng chứng; đây không phải bằng chứng semantic cho mọi luật trên C++ live. Giữ `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`. Việc tiếp theo duy nhất ngoài code hiện tại là mở lại lịch live an toàn cho native caller/rules còn thiếu, manual card/full-rules, rồi hoàn tất cold-start/quota/rollback/SLA/monitoring, `node-forge` review và nghiệm thu thiết bị/mạng; không retry/bypass Battle-Royal/founding scenario đang bị khóa.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -635,20 +643,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:39:40.329Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `1140a4b42753`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:43:27.351Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `8e97fb5550a6`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+8e97fb55 docs: refresh codex checkpoint after CP45
 1140a4b4 docs: record CP45 browser e2e refresh
 b0cfac45 docs: refresh codex checkpoint after CP44
-19ff3bae docs: record CP44 PWA refresh
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
