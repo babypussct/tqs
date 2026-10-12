@@ -601,6 +601,12 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Static hash **5/5 PASS** với CP39; foreign Origin trả **403**; bundle version không hợp lệ trả **404**. Deployment vẫn `dep-db6kljvf3r2c73cogc20` từ source `ce6ba3d`; không redeploy vì CP39 không thay đổi production bytes.
 - Evidence [`cp40-hosted-integrity-recheck-20261013.json`](../scratch/evidence/cp40-hosted-integrity-recheck-20261013.json). CP40 chỉ củng cố candidate integrity; không đổi các gate semantic C++ live, quota/rollback/SLA/monitoring, `node-forge`, official và thiết bị/mạng: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`, physical device/network `DEFERRED`.
 
+## CP41 — hosted login canary sau recheck integrity · 13/10/2026
+
+- Quan sát trực tiếp candidate bằng lệnh login canary với `TQS_LIVE_HOST=168.110.36.224`, root snapshot đã pin và `TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com`: **PASS** Chrome/Wasmoon/FreeKill Lua → Render Gateway → C++ thật; server chấp nhận `Setup` + `EnterLobby`, React hiển thị sảnh online, disconnect sạch.
+- Bundle thực tế của gateway là **4.730 files**, snapshot MD5 `a2a4b0af428f971c2642f11bd4aef162`; không tạo room/game, không chạy experimental scenario, không ghi credential values. Evidence [`cp41-hosted-login-canary-20261013.json`](../scratch/evidence/cp41-hosted-login-canary-20261013.json).
+- CP41 bổ sung bằng chứng hosted sau CP40, không đổi kết luận semantic/live/device/ops: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native caller-rules semantic, quota/rollback/SLA/monitoring và `node-forge` review còn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -608,8 +614,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:31:28.769Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `4090d6db1571`.
+- Ghi lúc: 2026-10-12T21:32:47.217Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `2715f2bf9488`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -619,9 +625,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+2715f2bf docs: record CP40 hosted integrity recheck
 4090d6db docs: refresh codex checkpoint
 87a2ea73 docs: record CP39 equipment lifecycle audit
-75936b07 test: audit equipment lifecycle callbacks
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

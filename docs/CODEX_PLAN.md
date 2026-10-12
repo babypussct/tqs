@@ -204,6 +204,12 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Static SHA-256 **5/5 PASS** (`index.html`, JS, CSS, `glue.wasm`, `sw.js`); request có foreign Origin trả **403**; bundle version sai trả **404**. Deployment đang LIVE là `dep-db6kljvf3r2c73cogc20` từ source `ce6ba3d`; do CP39 chỉ đổi QA audit script và production bytes không đổi, không tạo deploy trùng.
 - Evidence [`cp40-hosted-integrity-recheck-20261013.json`](../scratch/evidence/cp40-hosted-integrity-recheck-20261013.json). Mốc này củng cố hosted integrity, không đóng semantic live rules, quota/rollback/SLA, `node-forge`, official release hoặc device/network; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
 
+## CP41 — hosted login canary sau recheck integrity · 13/10/2026
+
+- Chạy login canary an toàn trên candidate hiện tại bằng Chrome + Wasmoon + Lua bundle + Render Gateway + FreeKill C++ thật: `Setup` và `EnterLobby` được server chấp nhận, React vào sảnh online rồi disconnect sạch. Kết quả **PASS**; snapshot 4.730 files, MD5 `a2a4b0af428f971c2642f11bd4aef162`.
+- Canary không tạo phòng, không start game và không bật Battle-Royal/founding/experimental scenario; credential values không được ghi vào evidence. Evidence [`cp41-hosted-login-canary-20261013.json`](../scratch/evidence/cp41-hosted-login-canary-20261013.json).
+- CP41 xác nhận candidate vẫn hoạt động sau CP40 nhưng không đóng full gameplay semantic, quota/rollback/SLA, `node-forge`, device/network hoặc official release; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
