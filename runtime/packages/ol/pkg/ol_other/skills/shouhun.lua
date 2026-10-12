@@ -1,0 +1,72 @@
+local shouhun = fk.CreateSkill{
+  name = "shouhun",
+  tags = { Skill.Compulsory },
+  dynamic_desc = function (self, player)
+    return "shouhun_inner:" ..
+      (player:getMark("shouhun1") + 2) .. ":" ..
+      (player:getMark("shouhun2") + 2) .. ":" ..
+      (player:getMark("shouhun3") + 2)
+  end,
+}
+
+Fk:loadTranslationTable{
+  ["shouhun"] = "兽魂",
+  [":shouhun"] = "锁定技，你的摸牌阶段摸牌数+2、手牌上限+1、体力上限+1；当你受到伤害时，令数值最低的一项数值+1（最大+3）。",
+
+  [":shouhun_inner"] = "锁定技，你的摸牌阶段摸牌数+{1}、手牌上限+{2}、体力上限+{3}；当你受到伤害时，令数值最低的一项数值+1（最大+3）。",
+}
+
+shouhun:addEffect(fk.DetermineDamageInflicted, {
+  anim_type = "masochism",
+  can_trigger = function (self, event, target, player, data)
+    return target == player and player:hasSkill(shouhun.name) and
+      table.find({ 1, 2, 3 }, function (i)
+        return player:getMark("shouhun"..i) < 2
+      end)
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    for i = 0, 1, 1 do
+      for j = 1, 3, 1 do
+        if player:getMark("shouhun"..j) == i then
+          room:addPlayerMark(player, "shouhun"..j, 1)
+          if j == 3 then
+            room:changeMaxHp(player, 1)
+          end
+          return
+        end
+      end
+    end
+  end,
+})
+
+shouhun:addEffect(fk.EventAcquireSkill, {
+  mute = true,
+  is_delay_effect = true,
+  can_trigger = function (self, event, target, player, data)
+    return target == player and data.skill:getSkeleton().name == shouhun.name
+  end,
+  on_use = function (self, event, target, player, data)
+    player.room:setPlayerMark(player, "shouhun1", 1)
+    player.room:changeMaxHp(player, 1)
+  end,
+})
+
+shouhun:addEffect(fk.DrawNCards, {
+  can_refresh = function (self, event, target, player, data)
+    return target == player and player:hasSkill(shouhun.name)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.n = data.n + 2 + player:getMark("shouhun1")
+  end,
+})
+
+shouhun:addEffect("maxcards", {
+  correct_func = function(self, player)
+    if player:hasSkill(shouhun.name) then
+      return 1 + player:getMark("shouhun2")
+    end
+  end,
+})
+
+return shouhun

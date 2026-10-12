@@ -1,258 +1,35 @@
-/**
- * TQSShop Service Worker — Powered by Workbox
- * =============================================
- * Strategies:
- *   - Immutable media (R2 uploads + legacy Cloudinary) → CacheFirst (180 ngày)
- *   - App shell (JS/CSS) → NetworkFirst (4s timeout, 7 ngày fallback)
- *   - Navigation (HTML)  → NetworkFirst → offline.html fallback
- *   - VietQR / API       → NetworkOnly (dynamic, không cache)
- *   - Google Fonts       → StaleWhileRevalidate (365 ngày)
- */
-
-// ─── Workbox via CDN (không cần build step) ────────────────────────────────
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js');
-
-const { core, routing, strategies, expiration, precaching, cacheableResponse } = workbox;
-const { CacheFirst, NetworkFirst, StaleWhileRevalidate, NetworkOnly } = strategies;
-const { ExpirationPlugin } = expiration;
-const { CacheableResponsePlugin } = cacheableResponse;
-
-// ─── Cấu hình chung ────────────────────────────────────────────────────────
-core.setCacheNameDetails({
-  prefix: 'tqs',
-  suffix: 'v2',
-  precache: 'precache',
-  runtime: 'runtime',
-});
-
-// Bản SW mới tự activate để các tab đang chạy bundle cũ không bị kẹt trong
-// overlay update của phiên bản trước. Bundle mới vẫn hiện overlay và chờ
-// người dùng bấm reload; tab cũ không biết protocol mới sẽ được điều hướng
-// một lần sau handshake timeout.
-const UPDATE_PROTOCOL_VERSION = 2;
-const updateClientAcks = new Set();
-core.skipWaiting();
-core.clientsClaim();
-
-// ─── Precache: App shell files ──────────────────────────────────────────────
-// offline.html được precache để luôn có sẵn khi mất mạng
-precaching.precacheAndRoute([
-  { url: '/offline.html', revision: 'v2' },
-]);
-
-// ─── Route 1: Immutable Media — CacheFirst ───────────────────────────────────
-// R2 object keys are content-addressed-by-public-URL and receive immutable cache headers.
-// Keep the legacy Cloudinary route so existing catalog data remains fast during migration.
-routing.registerRoute(
-  ({ url }) =>
-    url.hostname === 'res.cloudinary.com' ||
-    url.pathname.startsWith('/uploads/'),
-  new CacheFirst({
-    cacheName: 'tqs-media-v2',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({
-        maxEntries: 1000,
-        maxAgeSeconds: 180 * 24 * 60 * 60,
-        purgeOnQuotaError: true,   // Tự xóa khi storage đầy
-      }),
-    ],
-  })
-);
-
-// ─── Route 2: App Shell (JS/CSS bundles) — NetworkFirst ─────────────────────
-// Lấy bundle từ deploy mới trước; chỉ dùng cache khi mạng chậm/mất kết nối.
-routing.registerRoute(
-  ({ request, url }) =>
-    (request.destination === 'script' || request.destination === 'style') &&
-    url.origin === self.location.origin,
-  new NetworkFirst({
-    cacheName: 'tqs-app-shell-v2',
-    networkTimeoutSeconds: 4,
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [200] }),
-      new ExpirationPlugin({
-        maxEntries: 60,
-        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 ngày
-      }),
-    ],
-  })
-);
-
-// ─── Route 3: Google Fonts — StaleWhileRevalidate ────────────────────────────
-routing.registerRoute(
-  ({ url }) =>
-    url.hostname === 'fonts.googleapis.com' ||
-    url.hostname === 'fonts.gstatic.com',
-  new StaleWhileRevalidate({
-    cacheName: 'tqs-fonts-v2',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({
-        maxEntries: 30,
-        maxAgeSeconds: 365 * 24 * 60 * 60, // 1 năm — fonts ổn định
-      }),
-    ],
-  })
-);
-
-// ─── Route 4: VietQR Images — NetworkOnly ───────────────────────────────────
-// QR code được generate động theo mã đơn + số tiền → KHÔNG được cache
-routing.registerRoute(
-  ({ url }) => url.hostname === 'img.vietqr.io',
-  new NetworkOnly()
-);
-
-// ─── Route 5: Firebase / Firestore / Auth — NetworkOnly ──────────────────────
-// Firebase SDK tự quản lý offline persistence. SW không can thiệp.
-routing.registerRoute(
-  ({ url }) =>
-    url.hostname.includes('firebaseapp.com') ||
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('firestore.googleapis.com'),
-  new NetworkOnly()
-);
-
-// ─── Route 6: API endpoints — NetworkOnly ────────────────────────────────────
-routing.registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/'),
-  new NetworkOnly()
-);
-
-// ─── Route 7: Static assets (images from origin) — CacheFirst ───────────────
-routing.registerRoute(
-  ({ request, url }) =>
-    request.destination === 'image' &&
-    url.origin === self.location.origin,
-  new CacheFirst({
-    cacheName: 'tqs-static-images-v2',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 ngày
-      }),
-    ],
-  })
-);
-
-// ─── Route 8: Navigation (HTML pages) — NetworkFirst + Offline Fallback ──────
-// Ưu tiên lấy HTML mới nhất. Nếu offline → serve offline.html
-routing.registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  new NetworkFirst({
-    cacheName: 'tqs-pages-v2',
-    networkTimeoutSeconds: 3,    // Timeout 3s → fallback to cache
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [200] }),
-      new ExpirationPlugin({
-        maxEntries: 30,
-        maxAgeSeconds: 24 * 60 * 60, // 1 ngày
-      }),
-    ],
-  })
-);
-
-// ─── Offline Fallback cho Navigation ─────────────────────────────────────────
-routing.setCatchHandler(async ({ request }) => {
-  if (request.mode === 'navigate') {
-    // Serve offline.html từ precache khi mất mạng
-    const offlinePage = await caches.match('/offline.html');
-    return offlinePage || Response.error();
+// Generated from this frozen build. Never cache account, game or gateway traffic.
+const PREFIX='tqs-shell-';
+const CACHE=PREFIX+"69df1567a782678f5e30304a1e09b0eea7c373587eea8b46c713b84247af4d91";
+const FILES=[{"url":"/apple-touch-icon.png","sha256":"c70ec8565fc9b2b2fc15c40754a32fdf8063a07dc66c7f766b05b0d34698ea13"},{"url":"/assets/index-BB4aa3xz.css","sha256":"ee382779711f84ad7cef48c44e99673e81097bcef7e01240bf4ad4489a4abe70"},{"url":"/assets/index-DjyuMNnv.js","sha256":"b91b97a82cd42b62c26b206ed0fbb724a18159ef013b58f082e517cc5ba41a32"},{"url":"/favicon.svg","sha256":"18030e5530de7ce8b1bce387a99765b6c461add5ab4bbbd3439b40dd575711e2"},{"url":"/glue.wasm","sha256":"95f3f19ddb740125883bc41d5ec670cd0828e7b58c8bdad385323cbff497b55c"},{"url":"/icon-192.png","sha256":"6c319cad5077f1d59b7891a4c38f80af8fc45243651bbafe53e1e3277cb2265f"},{"url":"/icon-512.png","sha256":"6fb9c9ccbec4741e5ba5bd80ff6c10e010298a91137553c1075001bf23379284"},{"url":"/index.html","sha256":"892ab26db6956cba5ec38fdc9200c3abb457f664ad609a55f5cf35c2dc06055c"},{"url":"/manifest.webmanifest","sha256":"5ba6271e4edea181de440a7ec869eebec116f42e3424114babe2d0b8253d5b5e"}];
+const PATHS=new Set(FILES.map(f=>f.url));
+self.addEventListener('install',event=>event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  for(const file of FILES){
+    const response=await fetch(file.url,{cache:'reload'});
+    if(!response.ok || response.type==='opaque')throw new Error('App shell download failed');
+    const body=await response.clone().arrayBuffer();
+    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',body)),v=>v.toString(16).padStart(2,'0')).join('');
+    if(hash!==file.sha256)throw new Error('App shell hash mismatch');
+    await cache.put(file.url,response);
   }
-  return Response.error();
+})()));
+// Updates wait for existing windows to close; never force activation during a game.
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+  for(const key of await caches.keys())if(key.startsWith(PREFIX) && key!==CACHE)await caches.delete(key);
+})()));
+self.addEventListener('fetch',event=>{
+  const request=event.request;const url=new URL(request.url);
+  if(request.method!=='GET' || url.origin!==self.location.origin || url.search)return;
+  const navigation=request.mode==='navigate' && (url.pathname==='/' || url.pathname==='/index.html');
+  if(!navigation && !PATHS.has(url.pathname))return;
+  event.respondWith((async()=>{
+    const cache=await caches.open(CACHE);
+    if(navigation){
+      try{const response=await fetch(request);if(response.ok)return response;}catch{}
+      const cached=await cache.match('/index.html');
+      return cached || Response.error();
+    }
+    return (await cache.match(url.pathname)) || fetch(request);
+  })());
 });
-
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-    return;
-  }
-  if (event.data?.type === 'SW_UPDATE_CLIENT_READY' && event.source?.id) {
-    updateClientAcks.add(event.source.id);
-  }
-});
-
-// ─── SW Update Notification ──────────────────────────────────────────────────
-// Khi SW mới activate → thông báo cho tất cả tabs để hiện toast
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    (async () => {
-      // Xóa cache cũ (version mismatch)
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter(name => name.startsWith('tqs-') && name.endsWith('-v1'))
-          .map(name => caches.delete(name))
-      );
-
-      // Thông báo clients về SW mới
-      const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-      clients.forEach(client => {
-        client.postMessage({ type: 'SW_UPDATED', protocolVersion: UPDATE_PROTOCOL_VERSION });
-      });
-
-      // Các bundle mới sẽ gửi ACK để giữ overlay cho người dùng lựa chọn thời
-      // điểm reload. Bundle cũ không biết ACK này; tự điều hướng giúp họ nhận
-      // bundle đã sửa thay vì mắc kẹt với nút reload không thể click.
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const currentClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-      await Promise.all(currentClients
-        .filter(client => !updateClientAcks.has(client.id) && client.url)
-        .map(client => client.navigate(client.url).catch(() => undefined)));
-    })()
-  );
-});
-
-// ─── Background Sync: Order failover (future-proof) ──────────────────────────
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-pending-orders') {
-    event.waitUntil(syncPendingOrders());
-  }
-});
-
-async function syncPendingOrders() {
-  try {
-    const cache = await caches.open('tqs-pending-orders');
-    const keys = await cache.keys();
-    // Gửi lại các request order đang pending (nếu có)
-    // Implementation sẽ được mở rộng khi có offline order queue
-    console.log('[SW] Background sync: checking', keys.length, 'pending orders');
-  } catch (err) {
-    console.error('[SW] Background sync failed:', err);
-  }
-}
-
-// ─── Push Notifications (future-proof) ───────────────────────────────────────
-self.addEventListener('push', (event) => {
-  if (!event.data) return;
-  try {
-    const data = event.data.json();
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'TQSShop', {
-        body: data.body || '',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        data: { url: data.url || '/' },
-        vibrate: [100, 50, 100],
-        tag: data.tag || 'tqs-notification',
-      })
-    );
-  } catch (e) {
-    console.warn('[SW] Push parse error:', e);
-  }
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = event.notification.data?.url || '/';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then(clients => {
-      const existingClient = clients.find(c => c.url.includes(url) && 'focus' in c);
-      if (existingClient) return existingClient.focus();
-      return self.clients.openWindow(url);
-    })
-  );
-});
-
-console.log('[TQSShop SW] Service Worker loaded — CacheFirst immutable media, NetworkFirst navigation, Offline Ready ✓');

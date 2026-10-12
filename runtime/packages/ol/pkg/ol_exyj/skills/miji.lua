@@ -1,0 +1,49 @@
+local miji = fk.CreateSkill{
+  name = "ol_ex__miji",
+}
+
+Fk:loadTranslationTable{
+  ["ol_ex__miji"] = "秘计",
+  [":ol_ex__miji"] = "结束阶段，若你已受伤，你可以摸X张牌，然后可以将至多X张牌交给其他角色。（X为你已损失的体力值）",
+
+  ["$ol_ex__miji1"] = "身入虎穴，但谋虎子。",
+  ["$ol_ex__miji2"] = "以身为饵，必擒马儿。",
+}
+
+miji:addEffect(fk.EventPhaseStart, {
+  anim_type = "drawcard",
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(miji.name) and target.phase == Player.Finish and player:isWounded() and
+      (target == player or player:getMark("@@ol_ex__zhenlie-turn") > 0)
+  end,
+  on_cost = function (self, event, target, player, data)
+    if player:getMark("@@ol_ex__zhenlie-turn") > 0 then
+      return true
+    else
+      return player.room:askToSkillInvoke(player, {
+        skill_name = miji.name,
+      })
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local n = player:getLostHp()
+    player:drawCards(n, miji.name)
+    if player.dead or player:isNude() or #room:getOtherPlayers(player, false) == 0 then return false end
+    n = player:getLostHp()
+    if n > 0 then
+      room:askToYiji(player, {
+        min_num = 0,
+        max_num = n,
+        skill_name = miji.name,
+        targets = room:getOtherPlayers(player, false),
+        cards = player:getCardIds("he"),
+      })
+    end
+  end,
+})
+
+local AI = Fk.Ltk.AI
+miji:addAI(AI.reuse("biyue", AI.InvokeStrategy))
+
+return miji

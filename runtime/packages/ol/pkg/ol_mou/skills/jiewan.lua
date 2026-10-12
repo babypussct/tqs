@@ -1,0 +1,92 @@
+local jiewan = fk.CreateSkill{
+  name = "jiewan",
+}
+
+Fk:loadTranslationTable{
+  ["jiewan"] = "解腕",
+  [":jiewan"] = "每个准备阶段，你可以减1点体力上限或移除两张“谷”，然后你可以将一张手牌当距离限制为X的【顺手牵羊】使用（X为你的“谷”数，至少为1）。"..
+  "每个结束阶段，若你的“谷”数与手牌数相同且你的体力上限不为全场唯一最多，你加1点体力上限。",
+
+  ["#jiewan-invoke"] = "解腕：移去两张“谷”，或不选“谷”减1点体力上限，然后将一张手牌当【顺手牵羊】使用",
+  ["#jiewan-use"] = "解腕：将一张手牌当【顺手牵羊】使用",
+
+  ["$jiewan1"] = "断一腕而存全身，为之何妨？",
+  ["$jiewan2"] = "壮士解腕求存，绝境孤注一掷！",
+}
+
+jiewan:addAuxActiveSkill("jiewan_active", {
+  min_card_num = 0,
+  max_card_num = 2,
+  target_num = 0,
+  expand_pile = "dengai_grain",
+  card_filter = function(self, player, to_select, selected)
+    return #selected < 2 and table.contains(player:getPile("dengai_grain"), to_select)
+  end,
+  feasible = function (self, player, selected, selected_cards)
+    return #selected_cards == 0 or #selected_cards == 2
+  end,
+})
+
+jiewan:addEffect(fk.EventPhaseStart, {
+  anim_type = "control",
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(jiewan.name) then
+      if target.phase == Player.Start then
+        return not player:isKongcheng()
+      elseif target.phase == Player.Finish then
+        return player:getHandcardNum() == #player:getPile("dengai_grain") and
+          table.find(player.room:getOtherPlayers(player, false), function (p)
+            return player.maxHp <= p.maxHp
+          end)
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    if target.phase == Player.Start then
+      local success, dat = player.room:askToUseActiveSkill(player, {
+        skill_name = "jiewan_active",
+        prompt = "#jiewan-invoke",
+        no_indicate = true,
+      })
+      if success and dat then
+        event:setCostData(self, {cards = dat.cards})
+        return true
+      end
+    elseif target.phase == Player.Finish then
+      return true
+    end
+  end,
+  on_use = function (self, event, target, player, data)
+    local room = player.room
+    if target.phase == Player.Start then
+      if #event:getCostData(self).cards > 0 then
+        room:moveCardTo(event:getCostData(self).cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, jiewan.name, nil, true, player)
+      else
+        room:changeMaxHp(player, -1)
+      end
+      if player.dead or #player:getHandlyIds() == 0 then return end
+      room:askToUseVirtualCard(player, {
+        name = "snatch",
+        skill_name = jiewan.name,
+        prompt = "#jiewan-use",
+        cancelable = true,
+        card_filter = {
+          n = 1,
+          cards = player:getHandlyIds(),
+        },
+      })
+    elseif target.phase == Player.Finish then
+      room:changeMaxHp(player, 1)
+    end
+  end,
+})
+
+jiewan:addEffect("targetmod", {
+  distance_limit_func =  function(self, player, skill, card, to)
+    if card and card.skillName == jiewan.name then
+      return math.max(#player:getPile("dengai_grain") - 1, 0)
+    end
+  end,
+})
+
+return jiewan

@@ -1,0 +1,67 @@
+local duwu = fk.CreateSkill{
+  name = "ol__duwu",
+}
+
+Fk:loadTranslationTable{
+  ["ol__duwu"] = "黩武",
+  [":ol__duwu"] = "出牌阶段，你可以弃置X张牌，对你攻击范围内的一名其他角色造成1点伤害（X为该角色的体力值）。"..
+  "若其因此进入濒死状态且被救回，则濒死状态结算后你失去1点体力，且本回合不能再发动〖黩武〗。",
+
+  ["#ol__duwu"] = "黩武：弃置一名角色体力值张数的牌，对其造成1点伤害",
+
+  ["$ol__duwu1"] = "琅琊少年诸葛恪，金戈铁马立战勋！",
+  ["$ol__duwu2"] = "吾岂能有败绩，必须胜！",
+}
+
+duwu:addEffect("active", {
+  anim_type = "offensive",
+  prompt = "#ol__duwu",
+  target_num = 1,
+  can_use = Util.TrueFunc,
+  card_filter = function(self, player, to_select)
+    return not player:prohibitDiscard(to_select)
+  end,
+  target_filter = function(self, player, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= player and to_select.hp > 0 and
+      to_select.hp == #selected_cards and player:inMyAttackRange(to_select, nil, selected_cards)
+  end,
+  on_use = function(self, room, effect)
+    local player = effect.from
+    local target = effect.tos[1]
+    room:throwCard(effect.cards, duwu.name, player, player)
+    if not target.dead then
+      room:damage{
+        from = player,
+        to = target,
+        damage = 1,
+        skillName = duwu.name,
+      }
+    end
+  end,
+})
+
+duwu:addEffect(fk.AfterDying, {
+  anim_type = "negative",
+  is_delay_effect = true,
+  can_trigger = function(self, event, target, player, data)
+    return data.extra_data and data.extra_data.ol__duwu and data.extra_data.ol__duwu == player and
+      not target.dead and not player.dead
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:invalidateSkill(player, duwu.name, "-turn")
+    room:loseHp(player, 1, duwu.name)
+  end,
+})
+
+duwu:addEffect(fk.EnterDying, {
+  can_refresh = function(self, event, target, player, data)
+    return data.damage and data.damage.skillName == duwu.name and data.damage.from == player
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.extra_data = data.extra_data or {}
+    data.extra_data.ol__duwu = player
+  end,
+})
+
+return duwu

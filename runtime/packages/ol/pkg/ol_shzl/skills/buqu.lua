@@ -1,0 +1,60 @@
+local buqu = fk.CreateSkill{
+  name = "ol__buqu",
+  derived_piles = "ol__buqu_scar",
+  tags = { Skill.Compulsory },
+}
+
+Fk:loadTranslationTable {
+  ["ol__buqu"] = "不屈",
+  [":ol__buqu"] = "锁定技，当你处于濒死状态时，你将牌堆顶的一张牌置于武将牌上（称为“创”），若没有与此“创”点数相同的其他“创”，你将体力回复至1点；"..
+  "有与此“创”点数相同的其他“创”，你将此“创”置入弃牌堆。若有“创”，你的手牌上限改为“创”数。",
+
+  ["ol__buqu_scar"] = "创",
+
+  ["$ol__buqu1"] = "战如熊虎，不惜躯命！",
+  ["$ol__buqu2"] = "哼！这点小伤算什么。",
+}
+
+buqu:addEffect(fk.AskForPeaches, {
+  anim_type = "defensive",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(buqu.name) and player.dying
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local card = room:getNCards(1)[1]
+    player:addToPile("ol__buqu_scar", card, true, buqu.name)
+    if player.dead or not table.contains(player:getPile("ol__buqu_scar"), card) then return false end
+    local success = true
+    for _, id in pairs(player:getPile("ol__buqu_scar")) do
+      if id ~= card then
+        if Fk:getCardById(id).number == Fk:getCardById(card).number then
+          success = false
+          break
+        end
+      end
+    end
+    if success then
+      if player.hp < 1 then
+        room:recover{
+          who = player,
+          num = 1 - player.hp,
+          recoverBy = player,
+          skillName = buqu.name,
+        }
+      end
+    else
+      room:moveCardTo(card, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, buqu.name, nil, true, player)
+    end
+  end,
+})
+
+buqu:addEffect("maxcards", {
+  fixed_func = function (self, player)
+    if player:hasSkill(buqu.name) and #player:getPile("ol__buqu_scar") > 0 then
+      return #player:getPile("ol__buqu_scar")
+    end
+  end,
+})
+
+return buqu
