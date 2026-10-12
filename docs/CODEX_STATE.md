@@ -564,6 +564,15 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 **Bước chạy ngay:** theo lịch live an toàn, chạy semantic C++ matrix còn thiếu (Battle-Royal rescue→view-as, founding kingdom choice, native caller/rules) rồi hoàn tất quota/rollback/SLA và review `node-forge` trước khi cân nhắc official release. Không retry/bypass scenario đang bị khóa bởi policy temp-ban; không đổi `PLAYABLE_MOBILE`/official từ candidate login hoặc local audit; device/network vẫn DEFERRED cho tới khi có phiên nghiệm thu phù hợp.
 
+## CP36 — mở rộng smoke dynamic equipment và hosted recheck · 13/10/2026
+
+- Bổ sung probe Player bất biến vào [`skill-audit.ts`](../game/web/scripts/skill-audit.ts) để gọi cả `dynamicEquipSkills` của các trang bị cần owner state. Gate hiện kiểm **160/160 trang bị** (**156 static + 4 dynamic**), thay vì bỏ qua 4 dynamic resolver; mọi returned Skill đều phải resolve trong `Fk.skills`, nếu callback ném lỗi hoặc trả ref thiếu thì build fail-closed. Probe chỉ dùng state rỗng/kingdom `unknown`, không sửa luật, không gán skill giả và không đụng player/room thật.
+- Recheck trực tiếp: **2.330 tướng / 2.273 visible / 311 active `new_heg_mode` / 9.452 skill / 46.563 skill smoke / 384 playable + 114 derived cards / 1.492 card smoke / 160 equipment smoke / 798 card-skill refs**; **0 active invalid contract, 0 visible unresolved, 0 dynamic-equipment smoke failure**. Khai báo upstream ngoài pool active `os_sx__lvmeng:kongzhi` vẫn được báo rõ, không alias/no-op.
+- Regression trực tiếp sau patch: `git diff --check` **PASS**, `npm run typecheck` **PASS**, `npm run audit:native-callers` **17/17 PASS**, `npx tsx --test scripts/*.test.ts` **114/114 PASS**, `npm run test:e2e:lua` **54/54 PASS**, `npm run test:e2e:qa` **1/1 PASS**, `npm run build` **PASS**. Build chỉ còn warning Wasmoon `module` externalized/chunk lớn đã biết.
+- Artifact sạch [`cp36-dynamic-equipment-clean-20261013/release`](../scratch/deployments/cp36-dynamic-equipment-clean-20261013/release) được tạo từ commit `33609fed5b19ed4b634844e92226c0796ab26676`, `--require-clean`, và verify **13.333 files / manifest v2 PASS**, runtime **13.311**, web **10**, gateway **6**, đủ 11 package, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`; evidence [`cp36-dynamic-equipment-clean-20261013.json`](../scratch/evidence/cp36-dynamic-equipment-clean-20261013.json).
+- Hosted candidate recheck sau artifact: health **200 `ok`**, manifest **11 package / 4.730 files / md5 `a2a4b0af428f971c2642f11bd4aef162` / bundleHash `1fe8081d4280f7d9`**, static **5/5 PASS**, candidate Origin **200**, foreign Origin **403**, wrong version **404**. `dist/runtime/gateway` root snapshot byte-identical với CP36 nên không tạo deploy khác nội dung; login canary CP35 vẫn là **PASS** và bytes được recheck. Evidence [`cp36-dynamic-equipment-hosted-recheck-20261013.json`](../scratch/evidence/cp36-dynamic-equipment-hosted-recheck-20261013.json).
+- Mốc này đóng thêm executable gate cho dynamic equipment, **không** chứng minh semantic luật của từng skill trên C++ live. `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal rescue→view-as, founding kingdom choice, native caller/rules semantic đầy đủ, quota/rollback/SLA/monitoring, `node-forge` review vẫn PENDING; iOS/Android và Wi-Fi/4G vật lý vẫn DEFERRED.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -571,8 +580,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:05:31.079Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `1141969b7171`.
+- Ghi lúc: 2026-10-12T21:13:13.912Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `33609fed5b19`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -582,9 +591,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+33609fed test: audit dynamic equipment skill resolvers
+1af0470f docs: align release checklist with CP34 candidate
 1141969b docs: record CP34 hosted release recheck
-ce6ba3de deploy: package CP34 candidate for Render
-160fd8ff feat: close mobile skill request and runtime audit gates
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
