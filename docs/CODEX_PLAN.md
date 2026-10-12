@@ -178,6 +178,13 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Regression quan sát: `npm run typecheck`, `npm run audit:native-callers` **17/17**, `npx tsx --test scripts/*.test.ts` **114/114**, `npm run test:e2e:lua` **54/54**, `npm run test:e2e:qa` **1/1**, `npm run build`, `git diff --check` đều **PASS**.
 - Artifact [`cp36-dynamic-equipment-clean-20261013/release`](../scratch/deployments/cp36-dynamic-equipment-clean-20261013/release) từ commit `33609fe` verify **13.333 files / manifest v2 PASS**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`; hosted candidate recheck health/manifest/static/origin/wrong-version **PASS**, production bytes byte-identical nên không redeploy khác nội dung. Official vẫn **PENDING**; Battle-Royal/founding/native semantic, quota/rollback/SLA, `node-forge` và device/network vẫn mở/deferred.
 
+## CP37 — current source regression và hosted integrity recheck · 13/10/2026
+
+- Recheck hiện hành trên branch sạch `codex/cp34-response-card` HEAD `5f9ebd73`: `audit:skills` **PASS** (2.330 tướng, 9.452 skill, 46.563 skill smoke, 384 playable + 114 derived card, 1.492 card smoke, 160 equipment gồm 4 dynamic, 0 active invalid); `audit:native-callers` **17/17**; script **114/114**; Real Lua **54/54**; QA **1/1**; typecheck/build/diff-check **PASS**. Phản Quỹ prompt nil và request response-card vẫn đi qua fixture thật đúng một reply.
+- Artifact CP36 verify lại **PASS** manifest v2/**13.333 files**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`, manifest SHA-256 `80fb56f38116f2453e1a24e1108949fbdef7de0b50b2cf93f869dc39be3cb052`; evidence [`cp37-hosted-source-regression-20261013.json`](../scratch/evidence/cp37-hosted-source-regression-20261013.json).
+- Hosted candidate recheck trực tiếp **PASS**: health/root **200**, manifest **11 package/4.730 files**, static **5/5** khớp, foreign Origin **403**, wrong bundle version **404**. Bytes production không đổi nên không tạo deploy trùng.
+- CP37 không đóng các gate cần server/native/thiết bị/vận hành: Battle-Royal rescue→view-as và founding kingdom choice vẫn giữ failure evidence; full native semantic inventory, physical device/network, quota, rollback/SLA/monitoring và `node-forge` review vẫn `PENDING/DEFERRED`; không đổi `PLAYABLE_MOBILE=false` hoặc official.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
