@@ -226,6 +226,11 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Chạy `npm run test:e2e:pwa` bằng Chrome thật: **PASS** kiểm static cache đã verify, offline shell/retry/status và không cache gateway/private data. Bài chạy local, không tạo hosted game và không dùng live server.
 - Evidence [`cp44-pwa-refresh-20261013.json`](../scratch/evidence/cp44-pwa-refresh-20261013.json). CP44 đóng lại PWA/offline-shell gate ở mức browser artifact, không thay thế nghiệm thu iOS/Android cảm ứng hoặc mất mạng Wi-Fi/4G vật lý; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
 
+## CP45 — refresh Chrome browser bridge/UI · 13/10/2026
+
+- Chạy `npm run test:e2e` bằng Chrome thật: **PASS 18/18**, gồm render app, scene Lua, card/target/skill interactions, CBOR reply đúng một lần, cancel/replacement/expiry/reconnect/disconnect/error guards và responsive viewport.
+- Evidence [`cp45-browser-e2e-refresh-20261013.json`](../scratch/evidence/cp45-browser-e2e-refresh-20261013.json). Đây là local browser/bridge gate, không dùng live server và không thay thế semantic C++ live hoặc kiểm thử thiết bị vật lý; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

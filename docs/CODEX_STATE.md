@@ -623,6 +623,11 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Quan sát trực tiếp `npm run test:e2e:pwa` bằng Chrome thật: **PASS** static cache verified, offline shell/retry/status hoạt động và không cache gateway/private data. Không dùng live server, không tạo hosted game.
 - Evidence [`cp44-pwa-refresh-20261013.json`](../scratch/evidence/cp44-pwa-refresh-20261013.json). CP44 củng cố browser PWA gate, không đóng iOS/Android vật lý hoặc Wi-Fi/4G physical network; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
 
+## CP45 — refresh Chrome browser bridge/UI · 13/10/2026
+
+- Quan sát trực tiếp `npm run test:e2e` bằng Chrome thật: **Browser E2E 18/18 PASS**; bao phủ render app, Lua scene/card/target/skill interactions, CBOR reply uniqueness, cancel/replacement/expiry/reconnect/disconnect/error guards và responsive viewport.
+- Không dùng live server, không tạo hosted game. Evidence [`cp45-browser-e2e-refresh-20261013.json`](../scratch/evidence/cp45-browser-e2e-refresh-20261013.json). CP45 củng cố local browser bridge/UI, không đóng semantic C++ live, native rule matrix hoặc iOS/Android/physical network gate.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -630,20 +635,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:38:26.084Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `19ff3baec2a9`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:39:32.372Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `b0cfac453d94`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+b0cfac45 docs: refresh codex checkpoint after CP44
 19ff3bae docs: record CP44 PWA refresh
 7485918b docs: refresh codex checkpoint after CP43
-ef5ce4ec docs: record CP43 QA scenario refresh
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
