@@ -607,6 +607,12 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Bundle thực tế của gateway là **4.730 files**, snapshot MD5 `a2a4b0af428f971c2642f11bd4aef162`; không tạo room/game, không chạy experimental scenario, không ghi credential values. Evidence [`cp41-hosted-login-canary-20261013.json`](../scratch/evidence/cp41-hosted-login-canary-20261013.json).
 - CP41 bổ sung bằng chứng hosted sau CP40, không đổi kết luận semantic/live/device/ops: `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; Battle-Royal/founding/native caller-rules semantic, quota/rollback/SLA/monitoring và `node-forge` review còn PENDING; iOS/Android và Wi-Fi/4G vật lý DEFERRED.
 
+## CP42 — recheck source/runtime/release gates sau CP41 · 13/10/2026
+
+- Trên checkout sạch, quan sát trực tiếp: `npm run audit:skills` **PASS** với **2.330 tướng / 2.273 visible / 311 active / 9.452 skill / 46.563 skill smoke / 384 playable + 114 derived / 1.492 card smoke / 160 equipment / 320 lifecycle callbacks / 0 active invalid**; `npm run audit:native-callers` **17/17 PASS**; `npm run test:release` **2/2 PASS**; `game/gateway npm test` **5/5 PASS**.
+- Full regression CP39 vẫn áp dụng vì sau CP39 chỉ có docs/evidence thay đổi: script **114/114**, Real Lua **54/54**, QA **1/1**, typecheck/build/release verifier **PASS**. CP42 không dùng các gate nhanh này để tuyên bố semantic mọi luật trên C++ live.
+- Evidence [`cp42-source-gates-20261013.json`](../scratch/evidence/cp42-source-gates-20261013.json). Exception disabled `os_sx__lvmeng:kongzhi` vẫn được báo rõ; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; native/live semantic, ops và thiết bị/mạng chưa đổi.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -614,20 +620,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:32:54.169Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `d547ed62b194`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-12T21:34:18.447Z (UTC).
+- Nhánh: `codex/cp34-response-card` · HEAD: `e53677b5ae66`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+e53677b5 docs: refresh codex checkpoint after CP41
 d547ed62 docs: record CP41 hosted login canary
 2715f2bf docs: record CP40 hosted integrity recheck
-4090d6db docs: refresh codex checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

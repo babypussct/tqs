@@ -210,6 +210,12 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Canary không tạo phòng, không start game và không bật Battle-Royal/founding/experimental scenario; credential values không được ghi vào evidence. Evidence [`cp41-hosted-login-canary-20261013.json`](../scratch/evidence/cp41-hosted-login-canary-20261013.json).
 - CP41 xác nhận candidate vẫn hoạt động sau CP40 nhưng không đóng full gameplay semantic, quota/rollback/SLA, `node-forge`, device/network hoặc official release; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
 
+## CP42 — recheck source/runtime/release gates sau CP41 · 13/10/2026
+
+- Recheck trực tiếp trên checkout sạch: `npm run audit:skills` **PASS** (2.330 tướng, 9.452 skill, 46.563 skill smoke, 384 playable + 114 derived cards, 1.492 card calls, 160 equipment, 320 lifecycle calls, 0 active invalid contracts); `npm run audit:native-callers` **17/17 PASS**; `npm run test:release` **2/2 PASS**; gateway `npm test` **5/5 PASS**.
+- Full regression CP39 vẫn là bằng chứng hiện hành cho cùng source code: script **114/114**, Real Lua **54/54**, QA **1/1**, typecheck/build/release verifier **PASS**. CP42 chỉ chạy lại các gate nhanh sau CP41, không tự mở rộng phạm vi semantic live.
+- Evidence [`cp42-source-gates-20261013.json`](../scratch/evidence/cp42-source-gates-20261013.json). Exception upstream disabled `os_sx__lvmeng:kongzhi` tiếp tục được in riêng; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
