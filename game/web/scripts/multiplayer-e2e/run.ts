@@ -60,7 +60,7 @@ const qaPackageIdentity = nativeQa ? verifyQaPackageManifest({
 }) : null;
 const candidateIdentity = await verifyCandidateIdentity({
   runtime,
-  dist: web,
+  dist: path.join(web, 'dist'),
   deploymentUrl,
   releaseManifestPath: process.env.TQS_RELEASE_MANIFEST,
   allowUnpinned: process.env.TQS_LIVE_ALLOW_UNPINNED === '1',

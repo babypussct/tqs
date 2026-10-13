@@ -362,6 +362,10 @@ director:addEffect(fk.GameFinished, {
   end,
 })
 
-table.insert(extension.related_skills, director)
+-- fk.CreateSkill returns a SkillSkeleton. Register it through the package's
+-- skeleton loader so Package:install creates a real Skill before Engine:addSkill
+-- receives it. Inserting the skeleton directly into related_skills crashes the
+-- native Lua worker at Engine:addSkill's type assertion.
+extension:loadSkillSkels({ director })
 
 return extension
