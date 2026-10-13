@@ -770,6 +770,13 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Hosted login canary **PASS** với `TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com`: Chrome/Wasmoon/Lua → Render Gateway → FreeKill C++ thật, Setup + EnterLobby, React lobby online, disconnect sạch; không tạo phòng/start ván. Lượt đầu bị runner guard cũ từ chối 2 package mới; đã sửa assertion để yêu cầu đúng toàn bộ `PACKAGES`, typecheck/diff-check **PASS**, source QA fix push tại `7e5c0996`, lượt canary sau sửa **PASS**.
 - Đây là lần đồng bộ đầu tiên hoàn tất cho web public/native/QA identity. Native production và QA package vẫn cùng host, được giới hạn bằng allowlist `tqs_qa`/prefix `TQSQA/`/quota 4; không tuyên bố QA host tách biệt, semantic exhaustive mọi skill, iOS/Android hoặc official release đã hoàn thành.
 
+## CP62 — sửa lỗi nạp QA native và chuẩn bị fingerprint mới · 13/10/2026
+
+- Lần chạy QA live đầu tiên bắt được lỗi native thật: `tqs_qa` dùng `fk.CreateSkill` skeleton trực tiếp trong `related_skills`, Lua worker dừng tại `Engine:addSkill` assertion trước `StartGame`; evidence lỗi `scratch/evidence/reconnect-failure-1791866621832.json`. Không coi lượt đó là PASS.
+- Đã sửa [`deploy/freekill-native/qa/tqs_qa/init.lua`](../deploy/freekill-native/qa/tqs_qa/init.lua) sang `extension:loadSkillSkels({ director })`; `luac -p` và `npm --prefix game/web run test:qa-server-contract` **2/2 PASS**; source revision fix `feca5d7e3cdbf7e3e36669a19c14d9ebbde778c0` đã push.
+- Native live đã cài/verify package revision mới: package SHA-256 `d874bfbd…`, catalog SHA-256 `d0c0ef33…`, `serverOnly=true`; backup `/opt/freekill-hegemony/backups/freekill-hegemony-20261013T045000Z-qa-fix-pre.tar.gz`; service active, listener TCP/UDP `9527`, QA config enabled/allowlist 1/prefix `TQSQA/`/quota 4, `packages.db` QA rows `0`.
+- `flist.txt` authoritative mới: 5.513 entries, một `packages/tqs_qa/init.lua`, MD5 `fe8755ace729e81ad4ce588d46d549b2`; native login canary **PASS** với MD5 mới. Render chưa được redeploy fingerprint này; bước tiếp theo có thể chạy ngay là commit/release/deploy rồi hosted QA identity.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -777,20 +784,21 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T04:41:26.839Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `7e5c0996f55a`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T04:52:07.681Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `feca5d7e3cdb`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M runtime/flist.txt
 ```
 
 Ba commit gần nhất:
 
 ```text
+feca5d7e fix: load QA director as a native skill skeleton
+8088b572 docs: record synchronized Render and native release
 7e5c0996 test: require exact hosted package inventory
-4103dc73 release: sync native QA runtime fingerprint
-a98d5281 docs: record first release sync attempt
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

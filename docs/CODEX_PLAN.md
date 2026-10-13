@@ -363,6 +363,14 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Hosted login canary **PASS** sau khi sửa runner [`game/web/scripts/live-gateway-e2e/run.ts`](../game/web/scripts/live-gateway-e2e/run.ts): lần đầu fail vì assertion cũ vẫn loại `jsrg/mougong`; guard đã chuyển sang yêu cầu manifest khớp chính xác `PACKAGES`, typecheck/diff-check **PASS**, canary lần hai Setup→EnterLobby→lobby→disconnect **PASS**. Fix được push source tại `7e5c0996`; thay đổi này chỉ là QA guard, không làm thay đổi artifact đang Live.
 - Đồng bộ lần đầu hiện hoàn tất ở mức **web public ↔ native runtime ↔ native QA package identity**. QA và production đang dùng chung một native host với allowlist/prefix/quota; chưa có QA host vật lý tách riêng. Các gate semantic exhaustive của mọi skill, quota/rollback/SLA và official release vẫn giữ trạng thái mở; iOS/Android tiếp tục `WAIVED_BY_USER`.
 
+## CP62 — sửa lỗi nạp QA native và chuẩn bị fingerprint mới · 13/10/2026
+
+- Smoke QA live đầu tiên đã bắt được lỗi thật: `tqs_qa` cài đúng nhưng dùng `fk.CreateSkill` skeleton trực tiếp trong `related_skills`, khiến Lua worker native dừng ở `Engine:addSkill` assertion trước `StartGame`. Không đánh dấu PASS giả; evidence lỗi được giữ trong `scratch/evidence/reconnect-failure-1791866621832.json`.
+- Đã sửa [`tqs_qa/init.lua`](../deploy/freekill-native/qa/tqs_qa/init.lua) để đăng ký director qua `extension:loadSkillSkels({ director })`; `luac -p`, `test:qa-server-contract` **2/2 PASS**, source fix đã push tại `feca5d7e3cdbf7e3e36669a19c14d9ebbde778c0`.
+- Đã cài lại native live bằng source revision `feca5d7e…`; `verify-qa-package.sh` **PASS**, package SHA-256 `d874bfbd…`, catalog SHA-256 `d0c0ef33…`, `serverOnly=true`. Backup trước thay đổi tại `/opt/freekill-hegemony/backups/freekill-hegemony-20261013T045000Z-qa-fix-pre.tar.gz`; service active, TCP/UDP `9527`, QA enabled, allowlist 1, prefix `TQSQA/`, quota 4, `packages.db` không có row QA.
+- Native authoritative `flist.txt` sau fix có 5.513 entries, một entry `packages/tqs_qa/init.lua`, MD5 mới `fe8755ace729e81ad4ce588d46d549b2`; login canary native **PASS** với snapshot mới, Setup→EnterLobby→lobby→disconnect sạch.
+- Render hiện vẫn đang phục vụ artifact trước fix (`49ef…`); bước tiếp theo là commit fingerprint/docs, tạo release checkpoint mới, cập nhật deployment branch và deploy Render lại, sau đó chạy lại hosted identity + QA scenario. Không nhận scenario cụ thể nào là PASS cho tới khi Render khớp `fe8755…`.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
