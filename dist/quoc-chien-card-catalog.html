@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Catalogue card Quốc Chiến · TQS Mobile</title>
+  <style>
+    :root{--bg:#17130f;--panel:#282017;--line:#80602f;--gold:#f0c96b;--cream:#f0e5da;--muted:#b8a990;--blue:#9dc8df}
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(circle at 50% -10%,#49321b 0,#17130f 45%);color:var(--cream);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    header{position:sticky;top:0;z-index:5;background:rgba(23,19,15,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:18px clamp(16px,4vw,48px)}
+    h1{margin:0;color:var(--gold);font:700 clamp(23px,3vw,36px) Georgia,serif}
+    h2{margin:3px 0;color:var(--gold);font:700 20px Georgia,serif}
+    header p{max-width:1100px;color:var(--muted);margin:6px 0}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .toolbar input,.toolbar select{min-height:38px;border:1px solid #826333;border-radius:6px;background:#120e0a;color:var(--cream);padding:7px 10px}
+    .toolbar input{flex:1 1 360px}
+    .pills,.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .pill{border:1px solid #72552d;border-radius:999px;padding:4px 9px;color:var(--muted);font-size:12px}
+    .section{padding:24px clamp(16px,4vw,48px)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+    .card{min-width:0;border:1px solid #77582d;border-radius:8px;background:linear-gradient(145deg,#2c2118,#17120e);padding:10px;box-shadow:0 8px 20px #0006}
+    .card:hover{border-color:var(--gold);box-shadow:0 0 0 1px #f0c96b66,0 12px 24px #0009}
+    .thumb{height:220px;display:flex;align-items:center;justify-content:center;background:#0d0a08;border-radius:5px;margin-bottom:9px;overflow:hidden}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+    .no-art{color:var(--muted);text-align:center;border:1px dashed #765b37;padding:24px}
+    .scope{display:inline-block;border-radius:4px;padding:3px 7px;margin-bottom:5px;font-size:11px}
+    .scope.active{background:#234d3a;color:#bde4c7}
+    .scope.mobile-candidate{background:#523e62;color:#e7cbf3}
+    .id{font:400 11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+    .names,.meta,.art-meta{font-size:12px;color:var(--muted);margin-top:5px}
+    .art-meta a{color:var(--blue)}
+    details{margin-top:10px;border-top:1px solid #5e4829;padding-top:7px}
+    summary{cursor:pointer;color:var(--gold);font-weight:700}
+    .desc{margin-top:7px;color:var(--cream)}
+    .desc b{color:var(--gold)}
+    pre{white-space:pre-wrap;margin:8px 0 0;padding:8px;background:#100d0a;border:1px solid #4e3a24;color:#ead9c8;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .empty{padding:32px;border:1px dashed #77582d;color:var(--muted);text-align:center}
+    .hidden{display:none!important}
+    a{color:var(--blue)}
+    code{color:var(--blue)}
+    @media(max-width:680px){.grid{grid-template-columns:1fr}.thumb{height:200px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Catalogue card Quốc Chiến · TQS Mobile</h1>
+    <p>Danh sách này chỉ lấy card pool thực tế của <code>new_heg_mode</code>, không phải toàn bộ art mở rộng. Mỗi mục giữ tên tiếng Trung và mô tả nguyên văn từ source để bạn sửa bản dịch tiếng Việt.</p>
+    <p id="summary">Đang tải dữ liệu…</p>
+    <div id="pack-summary" class="pills"></div>
+    <div class="toolbar">
+      <input id="search" placeholder="Tìm tên Trung / Việt / ID / mô tả / package…">
+      <select id="scope">
+        <option value="all">Tất cả phạm vi</option>
+        <option value="active">Đang bật trong Quốc Chiến</option>
+        <option value="mobile-candidate">Mobile candidate chưa bật</option>
+      </select>
+      <select id="category"><option value="all">Tất cả loại</option></select>
+    </div>
+    <div class="stats"><span class="pill">Đang hiển thị: <b id="visible">0</b></span><span class="pill">Art: exact package/card ID</span><span class="pill"><a href="/quoc-chien-card-inventory.json">Mở JSON</a></span></div>
+  </header>
+  <main class="section"><div id="grid" class="grid"></div><div id="empty" class="empty hidden">Không tìm thấy lá phù hợp.</div></main>
+  <script>
+    const esc = value => String(value == null ? '' : value).replace(/[&<>"']/gu, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const suitNames = {1:'Bích',2:'Chuồn',3:'Cơ',4:'Rô',5:'Không chất'};
+    const formatSpecs = specs => (specs || []).map(s => {
+      const n = s.number === 1 ? 'A' : s.number === 11 ? 'J' : s.number === 12 ? 'Q' : s.number === 13 ? 'K' : s.number;
+      return (suitNames[s.suit] || ('Chất ' + s.suit)) + ' ' + n;
+    }).join(' · ');
+    const scopeLabel = scope => scope === 'active' ? 'Đang bật trong Quốc Chiến' : 'Mobile candidate · hiện chưa bật trong new_heg_mode';
+    const renderCard = e => {
+      const image = e.art && e.art.src
+        ? '<img src="' + esc(e.art.src) + '" alt="' + esc(e.zh) + '" loading="lazy" onerror="this.style.opacity=.2">'
+        : '<div class="no-art">Chưa tìm thấy art trong nguồn đã quét</div>';
+      const source = e.art && e.art.sourceLinks && e.art.sourceLinks[0] ? e.art.sourceLinks[0].url : '';
+      const artPath = e.art ? e.art.packageName + '/' + e.art.relative : 'missing';
+      const searchText = [e.zh,e.vi,e.en,e.name,(e.packages || []).join(' '),e.descriptionZhText].join(' ');
+      return '<article class="card" data-search="' + esc(searchText) + '" data-scope="' + esc(e.scope) + '" data-category="' + esc(e.category) + '">' +
+        '<div class="thumb">' + image + '</div>' +
+        '<div class="scope ' + esc(e.scope) + '">' + scopeLabel(e.scope) + '</div>' +
+        '<h2>' + esc(e.zh) + ' <span class="id">' + esc(e.name) + '</span></h2>' +
+        '<div class="names"><b>Việt hiện tại:</b> ' + esc(e.vi) + ' · <b>English:</b> ' + esc(e.en) + '</div>' +
+        '<div class="meta"><b>Phân loại:</b> ' + esc(e.category) + ' · <b>Số bản:</b> ' + e.copies + '<br><b>Điểm/chất:</b> ' + esc(formatSpecs(e.specs)) + '<br><b>Package:</b> ' + esc((e.packages || []).join(', ')) + '</div>' +
+        '<div class="art-meta"><b>Art đang đối chiếu:</b> ' + esc(artPath) + (source ? ' · <a href="' + esc(source) + '" target="_blank" rel="noreferrer">mở nguồn</a>' : '') + '</div>' +
+        '<details open><summary>Nguyên văn tiếng Trung</summary><div class="desc zh">' + (e.descZh || '<i>Không có mô tả :key trong package</i>') + '</div><pre>' + esc(e.descriptionZhText) + '</pre></details>' +
+        '<details><summary>Bản dịch hiện tại trong client</summary><div class="desc vi">' + (e.descVi || '<i>Không có bản dịch hiện tại</i>') + '</div><pre>' + esc(e.descriptionViText) + '</pre></details>' +
+        '</article>';
+    };
+    let entries = [];
+    function render() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const s = document.getElementById('scope').value;
+      const c = document.getElementById('category').value;
+      let count = 0;
+      document.getElementById('grid').innerHTML = entries.map(e => {
+        const hay = [e.zh,e.vi,e.en,e.name,(e.packages || []).join(' '),e.descriptionZhText].join(' ').toLowerCase();
+        const show = (!q || hay.includes(q)) && (s === 'all' || e.scope === s) && (c === 'all' || e.category === c);
+        if (show) count++;
+        return show ? renderCard(e) : '';
+      }).join('');
+      document.getElementById('visible').textContent = count;
+      document.getElementById('empty').classList.toggle('hidden', count !== 0);
+    }
+    fetch('/quoc-chien-card-inventory.json').then(r => r.json()).then(data => {
+      entries = data.cards;
+      document.getElementById('summary').innerHTML = 'Đang bật: <b>' + data.activeUniqueCardCount + ' tên / ' + data.activePhysicalCardCount + ' lá vật lý</b> trong 4 card pack. Mobile candidate: <b>' + data.mobileCandidateUniqueCardCount + ' tên</b> trong m_lord_cards, hiện chưa bật trong mode.';
+      document.getElementById('pack-summary').innerHTML = data.activeCardPacks.map(p => '<span class="pill">' + esc(p) + '</span>').join('');
+      [...new Set(entries.map(e => e.category))].sort().forEach(c => {
+        const option = document.createElement('option'); option.value = c; option.textContent = c; document.getElementById('category').appendChild(option);
+      });
+      render();
+    }).catch(error => { document.getElementById('summary').textContent = 'Không tải được inventory: ' + error; });
+    ['search','scope','category'].forEach(id => document.getElementById(id).addEventListener('input', render));
+  </script>
+</body>
+</html>
