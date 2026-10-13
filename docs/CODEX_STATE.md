@@ -652,20 +652,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T00:44:14.296Z (UTC).
-- Nhánh: `main` · HEAD: `3ebbe20cae5e`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T00:44:59.182Z (UTC).
+- Nhánh: `main` · HEAD: `f0b5118545b2`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+f0b51185 docs: record CP47 main deploy
 3ebbe20c docs: refresh CP46 checkpoint
 07e6715d docs: record CP46 completion audit
-8e97fb55 docs: refresh codex checkpoint after CP45
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
