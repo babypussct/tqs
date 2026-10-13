@@ -339,6 +339,15 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 
 **Bước tiếp theo:** cài `tqs_qa` vào một native QA host riêng bằng installer, chạy verifier, rồi chạy đúng native-QA runner với `TQS_RELEASE_MANIFEST`, `TQS_QA_PACKAGE_MANIFEST` và `TQS_QA_EXPECTED_REVISION`; chỉ sau khi quan sát được C++ live evidence mới đánh dấu native QA PASS.
 
+## CP59 — lần đồng bộ release đầu tiên, giữ fail-closed · 13/10/2026
+
+- Đã build lại từ checkout sạch `4090c7f45213bc8834962fdabb4f1384e4f728de`: `npm --prefix game/web run build` **PASS** với skill/activation/native-caller audit; release checkpoint `--require-clean` **READY_FOR_PUBLISH_REVIEW**. Artifact local [`first-sync-20261013-4090c7f4/release`](../scratch/deployments/first-sync-20261013-4090c7f4/release) verify **14.793 files / 14 packages**, runtime MD5 `4f71a88e1e0e3cc50615250e8da93bce`, manifest SHA-256 `5b4eaf78e0243a7e12d5685c81004f62597bc131b9399152138669ac19203d6a`.
+- Đã push source branch `codex/cp57-latest-release` tới GitHub và tạo/push deployment branch [`codex/cp57-render-release`](https://github.com/babypussct/tqs/tree/codex/cp57-render-release), deployment commit `f1e14e18e35d4023f54c59d99afe1a26a2bba9af`. Branch này chỉ chứa web/gateway/runtime artifact, không chứa `tqs_qa`.
+- Read-only hosted check hiện vẫn cho thấy Render `tqs-mobile-candidate`/native backend cũ: 11 package, MD5 `a2a4b0af428f971c2642f11bd4aef162`. Chưa chuyển Render sang deployment branch mới vì làm vậy trước khi nâng native sẽ gây `MD5 check failed`, không phải đồng bộ thành công.
+- Đã thử truy cập native host `ubuntu@168.110.36.224` để nâng base và cài `tqs_qa`; SSH bị từ chối `Permission denied (publickey)`, agent không có identity. Do đó **chưa** thay đổi production/native host, **chưa** cài QA package live, và không đánh dấu native QA hoặc full sync PASS.
+
+**Bước tiếp theo:** cung cấp quyền SSH hợp lệ cho native host (không gửi private key trong chat), hoặc tự chạy installer trên QA host theo CP58; sau khi verifier trả đúng source revision `4090c7f4…` và native base lên 14 package, deploy Render branch `codex/cp57-render-release` rồi chạy identity/login canary. Nếu chỉ có một host, phải xác nhận riêng trước khi bật `tqs_qa` trên host production.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

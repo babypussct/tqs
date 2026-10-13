@@ -746,6 +746,15 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 **Bước tiếp theo có thể chạy ngay:** cài package vào native QA host riêng bằng `install-qa-package.sh`, chạy `verify-qa-package.sh`, sau đó chạy `TQS_LIVE_NATIVE_QA=1` với release/QA manifest cùng revision để thu live C++ evidence.
 
+## CP59 — lần đồng bộ release đầu tiên, giữ fail-closed · 13/10/2026
+
+- Đã build lại từ checkout sạch `4090c7f45213bc8834962fdabb4f1384e4f728de`: `npm --prefix game/web run build` **PASS** với skill/activation/native-caller audit; release checkpoint `--require-clean` **READY_FOR_PUBLISH_REVIEW**. Artifact local [`first-sync-20261013-4090c7f4/release`](../scratch/deployments/first-sync-20261013-4090c7f4/release) verify **14.793 files / 14 packages**, runtime MD5 `4f71a88e1e0e3cc50615250e8da93bce`, manifest SHA-256 `5b4eaf78e0243a7e12d5685c81004f62597bc131b9399152138669ac19203d6a`; evidence [`first-sync-20261013-4090c7f4.json`](../scratch/evidence/first-sync-20261013-4090c7f4.json).
+- Đã push source branch `codex/cp57-latest-release` tới GitHub và tạo/push deployment branch [`codex/cp57-render-release`](https://github.com/babypussct/tqs/tree/codex/cp57-render-release), deployment commit `f1e14e18e35d4023f54c59d99afe1a26a2bba9af`. Branch deployment chỉ chứa web/gateway/runtime artifact, không chứa `tqs_qa`.
+- Read-only hosted check sau khi Render wake up: `/gateway/healthz=ok`; `/gateway/manifest.json` vẫn báo 11 package và MD5 `a2a4b0af428f971c2642f11bd4aef162`. Không chuyển service sang artifact 14 package vì native backend hiện hành chưa tương ứng; chuyển trước sẽ làm login bị `MD5 check failed`.
+- Đã thử `ssh -o BatchMode=yes ubuntu@168.110.36.224` để kiểm tra/nâng native host; kết quả quan sát là `Permission denied (publickey)`, `ssh-add -l` báo agent không có identity. Không sửa production/native host, không bật `tqs_qa`, không restart server và không tuyên bố full sync PASS.
+
+**Bước tiếp theo có thể chạy ngay:** khi có SSH identity hợp lệ trên máy chạy Codex, nâng native base lên đúng 14 package rồi cài/verify `tqs_qa` với source revision `4090c7f4…`; sau đó manual deploy Render deployment commit `f1e14e18…`, kiểm tra hosted manifest cùng runtime MD5, rồi chạy login canary/native-QA deterministic. Nếu dùng chung một host cho production và QA, cần owner xác nhận trước khi bật QA trên host đó.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -753,8 +762,8 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T03:40:45.363Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `8f02f41362ef`.
+- Ghi lúc: 2026-10-13T03:58:44.408Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `4090c7f45213`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -764,9 +773,9 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 Ba commit gần nhất:
 
 ```text
+4090c7f4 docs: record verified QA package install
 8f02f413 docs: checkpoint native QA package
 c679aafc qa: add deterministic native server scenario package
-fd87eccf release: freeze CP57 skill audit candidate
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
