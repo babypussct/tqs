@@ -636,6 +636,15 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Recheck hosted candidate [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com): health **200**, manifest **11 package/4.730 files**, static **5/5**, foreign-Origin **403**, wrong version **404**, login canary Setup→EnterLobby→lobby→disconnect **PASS**. CP43 QA **1/1**, CP44 PWA **PASS**, CP45 browser **18/18** vẫn còn hiệu lực.
 - **Kết luận bàn giao:** các gate source/runtime contract, Lua/bridge, release artifact và hosted candidate trong phạm vi mã nguồn đã có bằng chứng; đây không phải bằng chứng semantic cho mọi luật trên C++ live. Giữ `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`. Việc tiếp theo duy nhất ngoài code hiện tại là mở lại lịch live an toàn cho native caller/rules còn thiếu, manual card/full-rules, rồi hoàn tất cold-start/quota/rollback/SLA/monitoring, `node-forge` review và nghiệm thu thiết bị/mạng; không retry/bypass Battle-Royal/founding scenario đang bị khóa.
 
+## CP47 — fast-forward main và deploy toàn bộ checkout · 13/10/2026
+
+- Đưa `main` từ `af3fda8c` fast-forward lên `3ebbe20c` (27 commit của `codex/cp34-response-card`, gồm cả 4 commit CP16/CP17 local trước đó), rồi push `origin/main` thành công. Sau push, `HEAD == origin/main`, working tree sạch; không reset/clean hoặc loại bỏ thay đổi.
+- Tạo artifact sạch từ `main` tại [`cp47-main-deploy-20261013/release`](../scratch/deployments/cp47-main-deploy-20261013/release) với `--require-clean`: verifier **PASS 13.333 files / manifest v2**, runtime **13.311**, web **10**, gateway **6**, 11 package, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`, manifest SHA-256 `ceefef6c947f11e676516621bdbfcbded42aac8326915102b23fe99dcd35d05f`. Evidence local: [`cp47-main-deploy-20261013.json`](../scratch/evidence/cp47-main-deploy-20261013.json); hosted evidence: [`cp47-hosted-deploy-20261013.json`](../scratch/evidence/cp47-hosted-deploy-20261013.json).
+- Manual deploy Render service `tqs-mobile-candidate` từ SHA `3ebbe20c` thành công, deployment **`dep-db6nsgff3r2c73bqfkjg`**, trạng thái **Deploy succeeded / Live**, URL [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com). Log xác nhận gateway khởi động tới FreeKill C++ `168.110.36.224:9527`; `/gateway/healthz` **200 `ok`**; manifest **200**, 11 package/4.730 file, MD5 và bundle hash khớp candidate (`1fe8081d4280f7d9`); self-origin **200**, foreign-origin **403**, version sai **404**.
+- Recheck sau deploy: `node deploy/mobile/verify-release.mjs .../cp47-main-deploy-20261013/release` **PASS**; `npm --prefix game/web run test:release` **2/2 PASS**; `npm --prefix game/gateway test` **5/5 PASS**; `git diff --check` **PASS**. Đây là deploy candidate từ `main`, không phải official release; giữ `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`. Native C++ semantic matrix, Battle-Royal/founding, quota/rollback/SLA/monitoring, `node-forge` review và iOS/Android/Wi-Fi/4G vật lý vẫn PENDING/DEFERRED.
+
+**Bước tiếp theo:** mở một lịch live an toàn để chạy semantic matrix C++ còn thiếu (native caller/rules, rescue→view-as và founding kingdom choice nếu policy cho phép), sau đó hoàn tất quota/rollback/SLA/monitoring, review `node-forge` và nghiệm thu thiết bị/mạng; không retry/bypass scenario đang bị khóa bởi temp-ban policy.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -643,20 +652,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-12T21:43:47.254Z (UTC).
-- Nhánh: `codex/cp34-response-card` · HEAD: `07e6715d8318`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T00:44:14.296Z (UTC).
+- Nhánh: `main` · HEAD: `3ebbe20cae5e`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+3ebbe20c docs: refresh CP46 checkpoint
 07e6715d docs: record CP46 completion audit
 8e97fb55 docs: refresh codex checkpoint after CP45
-1140a4b4 docs: record CP45 browser e2e refresh
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

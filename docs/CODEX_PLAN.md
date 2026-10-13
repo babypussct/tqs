@@ -239,6 +239,15 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Hosted candidate [`tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com) recheck trực tiếp: health **200**, manifest **11 package/4.730 files**, static **5/5**, foreign-Origin **403**, wrong version **404**, login canary **PASS**. CP43 QA **1/1**, CP44 PWA **PASS**, CP45 browser **18/18** vẫn là bằng chứng mới nhất cho local/browser gates.
 - CP46 xác nhận phạm vi source/runtime/contract audit, Lua/bridge, release artifact và hosted candidate đã có gate quan sát được. Không dùng smoke/fixture để tuyên bố semantic “mọi luật của mọi skill” trên C++ live. `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`; các checkbox Q01/UI-01/GAME-03/CP22/CP23/GAME-03A/GAME-03C/GAME-04/CP17 vẫn mở đúng phần native semantic, manual card/full-rules, thiết bị/mạng, quota/rollback/SLA/monitoring và `node-forge` review.
 
+## CP47 — fast-forward main và deploy toàn bộ checkout · 13/10/2026
+
+- `main` đã fast-forward từ `af3fda8c` lên `3ebbe20c` và push `origin/main`; không còn divergence (`HEAD...origin/main = 0 0`) và working tree sạch. Toàn bộ lịch sử 27 commit của candidate đã nằm trên main.
+- Artifact sạch từ HEAD `3ebbe20c`: [`cp47-main-deploy-20261013/release`](../scratch/deployments/cp47-main-deploy-20261013/release), verifier **13.333 files / manifest v2 PASS**, 11 package, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`, manifest SHA-256 `ceefef6c947f11e676516621bdbfcbded42aac8326915102b23fe99dcd35d05f`; release test **2/2 PASS**, gateway test **5/5 PASS**.
+- Render `tqs-mobile-candidate` manual deploy **`dep-db6nsgff3r2c73bqfkjg`** từ commit `3ebbe20c` **Deploy succeeded / Live**. Hosted `/gateway/healthz` **200**, manifest **11 package / 4.730 file**, runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`, bundle hash `1fe8081d4280f7d9`; self-origin **200**, foreign-origin **403**, wrong-version **404**. Evidence [`cp47-hosted-deploy-20261013.json`](../scratch/evidence/cp47-hosted-deploy-20261013.json).
+- CP47 hoàn tất đồng bộ main và deploy candidate của toàn bộ production checkout hiện tại. Không biến docs/QA-only thay đổi thành semantic live PASS; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`. Native server semantic, Battle-Royal/founding, quota/rollback/SLA/monitoring, `node-forge` và thiết bị/mạng vật lý vẫn giữ PENDING/DEFERRED.
+
+**Bước tiếp theo:** mở lịch live an toàn cho semantic C++ matrix còn thiếu, rồi hoàn tất quota/rollback/SLA/monitoring, review `node-forge` và nghiệm thu iOS/Android/Wi-Fi/4G trước khi cân nhắc official release; không retry/bypass scenario bị khóa bởi temp-ban policy.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.
