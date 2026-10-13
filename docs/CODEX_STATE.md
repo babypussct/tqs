@@ -753,40 +753,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T03:38:56.949Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `fd87eccfbdbb`.
-- File thay đổi hiển thị: 21 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T03:39:44.128Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `c679aafcc480`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/server/freekill.server.config.json
- M deploy/mobile/package-release.mjs
- M deploy/mobile/release.test.mjs
- M deploy/mobile/verify-release.mjs
- M docs/CODEX_PLAN.md
- M docs/web-client/QA_SCENARIO_MODE.md
- M game/gateway/scripts/gateway.test.mjs
- M game/gateway/src/server.mjs
- M game/web/package.json
- M game/web/scripts/multiplayer-e2e/run.ts
-?? deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
-?? deploy/freekill-native/qa/tqs_qa-installer.test.mjs
-?? deploy/freekill-native/qa/tqs_qa/README.md
-?? deploy/freekill-native/qa/tqs_qa/catalog.json
-?? deploy/freekill-native/qa/tqs_qa/init.lua
-?? deploy/freekill-native/qa/tqs_qa/package.manifest.json
-?? deploy/freekill-native/scripts/install-qa-package.sh
-?? deploy/freekill-native/scripts/qa-package-common.sh
-?? deploy/freekill-native/scripts/verify-qa-package.sh
-?? game/web/scripts/multiplayer-e2e/identity.test.ts
-?? game/web/scripts/multiplayer-e2e/identity.ts
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+c679aafc qa: add deterministic native server scenario package
 fd87eccf release: freeze CP57 skill audit candidate
 99fcc542 docs: refresh CP47 checkpoint
-f0b51185 docs: record CP47 main deploy
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
