@@ -777,6 +777,15 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Native live đã cài/verify package revision mới: package SHA-256 `d874bfbd…`, catalog SHA-256 `d0c0ef33…`, `serverOnly=true`; backup `/opt/freekill-hegemony/backups/freekill-hegemony-20261013T045000Z-qa-fix-pre.tar.gz`; service active, listener TCP/UDP `9527`, QA config enabled/allowlist 1/prefix `TQSQA/`/quota 4, `packages.db` QA rows `0`.
 - `flist.txt` authoritative mới: 5.513 entries, một `packages/tqs_qa/init.lua`, MD5 `fe8755ace729e81ad4ce588d46d549b2`; native login canary **PASS** với MD5 mới. Render chưa được redeploy fingerprint này; bước tiếp theo có thể chạy ngay là commit/release/deploy rồi hosted QA identity.
 
+## CP63 — đồng bộ fingerprint mới lên native và Render; QA scenario còn bắt được gap hành vi · 13/10/2026
+
+- Đã hoàn tất lần đồng bộ mới: native `168.110.36.224` đang active với 14/14 package pins, QA `tqs_qa` server-only revision `feca5d7e…`, package SHA-256 `d874bfbdf27755920d03d071c0d34fc7a627d14869a80972903d5fb0734accbc`, catalog SHA-256 `d0c0ef338af4bd7a203ce87adafb1791a56ae534faa4df9577c14476d16be4d1`, `packages.db` không có row QA, prefix `TQSQA/`, quota 4. Native authoritative `flist.txt` có 5.513 entries và MD5 `fe8755ace729e81ad4ce588d46d549b2`; service giữ TCP/UDP `9527` và không crash sau khi cài fix.
+- Artifact public được đóng băng từ source commit `e2988dcaf0fa4b955e0f77d9cdb0a2b652289943`: 14 package, release manifest SHA-256 `6e46a7a7f0e786423772ad5acc3c17ba51d9b61b5926c0ac1d5b278804db1dee`, web index SHA-256 `892ab26db6956cba5ec38fdc9200c3abb457f664ad609a55f5cf35c2dc06055c`. Release verifier **PASS** (`14.793 files / manifest v2`). Artifact nằm tại [`first-sync-20261013-e2988dca/release`](../scratch/deployments/first-sync-20261013-e2988dca/release).
+- Deployment branch [`codex/cp57-render-release`](https://github.com/babypussct/tqs/tree/codex/cp57-render-release) đã cập nhật tới commit `6d6440e9350239a9467f8b3e0cd998e6389ecae2`; Render deployment `dep-db6riv7f3r2c73c8sn0g` hiển thị **Deploy succeeded | Live**. `/gateway/healthz` trả `ok`; `/gateway/manifest.json` trả đúng 14 package, runtime MD5 `fe8755…`, bundle 5.279 files, bundle hash `754a618bc6d8307d`; log Render ghi cùng fingerprint.
+- Hosted login canary **PASS**: Wasmoon/Lua → Render Gateway → C++ thật, Setup + EnterLobby/lobby/disconnect sạch; server native chấp nhận MD5 `fe8755…`. Đây là bằng chứng web public và native runtime đang dùng cùng snapshot, không phải official release/SLA.
+- Native-QA identity gate **PASS** trong runner `test:e2e:bot-audit`: release/runtime/dist hash, hosted manifest và `tqs_qa` revision/package hash đều khớp. Lượt `draw-sequence` deterministic tiếp tục tạo đúng 4 ghế (2 client thật + 2 native bot), QA precondition và cặp tướng được áp dụng, hai client đi tới GameOver/lobby; nhưng assertion cuối **FAIL có kiểm soát** vì trace không quan sát được `AddSkillUseHistory` hoặc `SetSkillUseHistory` trong lượt bot audit. Evidence sanitized: [`reconnect-failure-1791867464821.json`](../scratch/evidence/reconnect-failure-1791867464821.json). Đây là gap của scenario/semantic bot-skill assertion, không phải lệch version hay crash nạp QA.
+- Vì vậy trạng thái cần hiểu là: **đồng bộ identity native ↔ QA ↔ Render đã PASS; bài test hành vi `draw-sequence` chưa PASS**. Không dùng lượt này để tuyên bố bot đã kích hoạt kỹ năng hoặc mọi kỹ năng đã đúng. Bước kế tiếp là chọn một scenario QA ép được skill activation có log/history xác định, hoặc nới acceptance của `draw-sequence` thành liveness-only rồi giữ một scenario skill riêng; mọi bài test tiếp theo vẫn phải pin `RELEASE.json` và `tqs_qa.package.manifest.json`.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -784,21 +793,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T04:52:07.681Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `feca5d7e3cdb`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T04:59:57.436Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `e2988dcaf0fa`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M runtime/flist.txt
 ```
 
 Ba commit gần nhất:
 
 ```text
+e2988dca release: refresh native QA package fingerprint
 feca5d7e fix: load QA director as a native skill skeleton
 8088b572 docs: record synchronized Render and native release
-7e5c0996 test: require exact hosted package inventory
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
