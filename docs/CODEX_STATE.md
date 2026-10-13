@@ -741,10 +741,10 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Đã triển khai package server-only [`tqs_qa`](../deploy/freekill-native/qa/tqs_qa) với catalog deterministic cho `draw-sequence`, `card-chosen`, `cards-and-choice`, `poxi`, `rescue-normal`, `rescue-battle` và `founding`. Room bắt buộc có dạng `TQSQA/<scenario>/<0xseed>`; seed, scenario, card slots và caller native được kiểm tra server-side. Director dùng các API FreeKill thật, inject hand/card ID thật, gọi `changeHp`, battle-royal/founding native flow và fail-closed nếu package/config/room/user/quota không hợp lệ.
 - Đã thêm installer/verify cho source Git sạch và manifest verified (`sourceRevision`, catalog hash, package tree hash), allowlist/quota/duration; runtime mặc định disabled. `tqs_qa` không được ghi vào SQLite production package registry và bị loại khỏi mobile release/gateway bundle để không lộ server-only code.
 - Runner identity gate [`game/web/scripts/multiplayer-e2e/identity.ts`](../game/web/scripts/multiplayer-e2e/identity.ts) bắt buộc release manifest pin, đối chiếu runtime MD5/package list/dist index hash local với hosted `/gateway/manifest.json` trước login, và từ chối candidate stale. Native QA mode yêu cầu QA manifest verified đúng revision, khóa browser scenario với native catalog và dùng chính room/seed deterministic; `TQS_LIVE_ALLOW_UNPINNED=1` chỉ là escape chẩn đoán.
-- Kết quả quan sát trong phiên: `luac -p` **PASS**; shell syntax **PASS**; installer/verify contract **2/2 PASS**; identity **4/4 PASS**; release **3/3 PASS**; gateway **5/5 PASS**; QA browser regression **1/1 PASS**; Lua E2E **54/54 PASS**; web typecheck **PASS**; diff-check **PASS**. Build CP57 trước integration cũng **PASS** với skill activation/native caller audit.
+- Kết quả quan sát trong phiên: `luac -p` **PASS**; shell syntax **PASS**; installer/verify contract **2/2 PASS**; identity **4/4 PASS**; release **3/3 PASS**; gateway **5/5 PASS**; QA browser regression **1/1 PASS**; Lua E2E **54/54 PASS**; web typecheck **PASS**; diff-check **PASS**; web build sau integration **PASS** với skill activation/native caller audit. Sau commit implementation `c679aafc` và checkpoint `8f02f413`, đường cài từ checkout thật cũng **PASS**, manifest verified ghi package hash `1a995dbd...`, catalog hash `d0c0ef33...`, đúng `sourceRevision=8f02f413...` và không thêm row vào `packages.db`.
 - Giới hạn bắt buộc: chưa có native FreeKill binary/server QA trong workspace nên chưa thể tuyên bố package đã load/chạy C++ live. Hosted Render candidate vẫn snapshot 11 package cũ và chưa deploy/restart. Vì vậy đây là source + contract PASS, không phải native-live PASS; device/network vẫn `WAIVED_BY_USER`, `PLAYABLE_MOBILE=false`, official chưa mở.
 
-**Bước tiếp theo có thể chạy ngay:** commit source sạch, cài package vào native QA host riêng bằng `install-qa-package.sh`, chạy `verify-qa-package.sh`, sau đó chạy `TQS_LIVE_NATIVE_QA=1` với release/QA manifest cùng revision để thu live C++ evidence.
+**Bước tiếp theo có thể chạy ngay:** cài package vào native QA host riêng bằng `install-qa-package.sh`, chạy `verify-qa-package.sh`, sau đó chạy `TQS_LIVE_NATIVE_QA=1` với release/QA manifest cùng revision để thu live C++ evidence.
 
 ## Ghi kết quả công việc tiếp theo
 
@@ -753,20 +753,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T03:39:44.128Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `c679aafcc480`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T03:40:45.363Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `8f02f41362ef`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+8f02f413 docs: checkpoint native QA package
 c679aafc qa: add deterministic native server scenario package
 fd87eccf release: freeze CP57 skill audit candidate
-99fcc542 docs: refresh CP47 checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
