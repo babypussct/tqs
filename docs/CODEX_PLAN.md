@@ -348,6 +348,14 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 
 **Bước tiếp theo:** cung cấp quyền SSH hợp lệ cho native host (không gửi private key trong chat), hoặc tự chạy installer trên QA host theo CP58; sau khi verifier trả đúng source revision `4090c7f4…` và native base lên 14 package, deploy Render branch `codex/cp57-render-release` rồi chạy identity/login canary. Nếu chỉ có một host, phải xác nhận riêng trước khi bật `tqs_qa` trên host production.
 
+## CP60 — native/QA đã đồng bộ, chuẩn bị phát hành Render · 13/10/2026
+
+- Đã nâng native host `168.110.36.224` lên đúng **14/14 package pins** bằng installer hiện hành. Backup trước thay đổi tại `/opt/freekill-hegemony/backups/freekill-hegemony-20261013T040059Z.tar.gz`; `verify-backup.sh` **PASS**. `verify-install.sh` báo **14/14 commits và enabled flags verified**; executable khởi động được trên port `9527`.
+- Đã cài [`tqs_qa`](../deploy/freekill-native/qa/tqs_qa) server-only trên cùng native host (chưa có host vật lý QA riêng): source revision `a98d528111bfd811ca18d0bd8031dc08e87442a8`, package SHA-256 `1a995dbd…`, catalog SHA-256 `d0c0ef33…`; `verify-qa-package.sh` **PASS**, `serverOnly=true`, không đăng ký vào `packages.db`. Runtime đang chạy với `QA_ENABLED=true`, prefix `TQSQA/`, quota tối đa 4 người; allowlist chỉ có tài khoản test nội bộ, không ghi giá trị tài khoản vào repo.
+- Native authoritative `flist.txt` sau khi bật QA có **5.513 entries**, gồm một entry fingerprint cho `packages/tqs_qa/init.lua`, MD5 `49ef7e3218ca52d8aaee67920c15fad3`. Web artifact kế tiếp sẽ dùng chính MD5 này và vẫn loại toàn bộ thư mục/source `tqs_qa` khỏi bundle public; đây là cách giữ client fingerprint khớp mà không phát hành công cụ QA.
+- Login canary quan sát trên native thật: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=$PWD/runtime npm --prefix game/web run test:e2e:login` **PASS** — Chrome/Wasmoon/Lua → Gateway → FreeKill C++, server chấp nhận MD5 `49ef…`, vào lobby và disconnect sạch; không tạo room/start ván.
+- Checkout hiện chỉ còn thay đổi có chủ đích `runtime/flist.txt` (fingerprint native QA); bước tiếp theo là commit thay đổi, chạy lại build/release checkpoint, cập nhật deployment branch Render, rồi kiểm tra hosted manifest/login trước khi nhận các scenario QA cụ thể. Device iOS/Android vẫn `WAIVED_BY_USER`; đây không phải semantic proof cho toàn bộ skill.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

@@ -755,6 +755,14 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 **Bước tiếp theo có thể chạy ngay:** khi có SSH identity hợp lệ trên máy chạy Codex, nâng native base lên đúng 14 package rồi cài/verify `tqs_qa` với source revision `4090c7f4…`; sau đó manual deploy Render deployment commit `f1e14e18…`, kiểm tra hosted manifest cùng runtime MD5, rồi chạy login canary/native-QA deterministic. Nếu dùng chung một host cho production và QA, cần owner xác nhận trước khi bật QA trên host đó.
 
+## CP60 — native/QA đã đồng bộ, chuẩn bị phát hành Render · 13/10/2026
+
+- Native host `168.110.36.224` đã được nâng lên **14/14 package pins**. Backup trước thay đổi `/opt/freekill-hegemony/backups/freekill-hegemony-20261013T040059Z.tar.gz` đã qua `verify-backup.sh` **PASS**; `verify-install.sh` **PASS**; executable khởi động và lắng nghe TCP/UDP `9527`.
+- `tqs_qa` đã cài live bằng [`install-qa-package.sh`](../deploy/freekill-native/scripts/install-qa-package.sh), verifier **PASS**: source revision `a98d528111bfd811ca18d0bd8031dc08e87442a8`, package SHA-256 `1a995dbd…`, catalog SHA-256 `d0c0ef33…`, `serverOnly=true`; package không có row trong `packages.db`. Service đang active với `QA_ENABLED=true`, prefix `TQSQA/`, quota 4, allowlist một tài khoản test nội bộ.
+- Sau khi QA package được bật, native `flist.txt` authoritative có **5.513 entries**, một entry `packages/tqs_qa/init.lua`, MD5 `49ef7e3218ca52d8aaee67920c15fad3`. Release web tiếp theo sẽ dùng đúng fingerprint nhưng không chứa source QA; `tqs_qa` chỉ tồn tại trên native server.
+- Login canary native thật: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=$PWD/runtime npm --prefix game/web run test:e2e:login` **PASS** — server chấp nhận MD5 `49ef…`, Setup/EnterLobby/lobby/disconnect hoàn tất, không tạo phòng hay ván.
+- Trạng thái checkout trước chốt commit: chỉ còn `M runtime/flist.txt` có chủ đích. Bước tiếp theo có thể chạy ngay: commit fingerprint, tạo release artifact mới, cập nhật deployment branch Render, deploy manual và xác minh hosted manifest/login. iOS/Android vẫn `WAIVED_BY_USER`; full semantic skill matrix chưa được tuyên bố PASS.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -762,20 +770,21 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T03:58:44.408Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `4090c7f45213`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T04:35:31.135Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `a98d528111bf`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M runtime/flist.txt
 ```
 
 Ba commit gần nhất:
 
 ```text
+a98d5281 docs: record first release sync attempt
 4090c7f4 docs: record verified QA package install
 8f02f413 docs: checkpoint native QA package
-c679aafc qa: add deterministic native server scenario package
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
