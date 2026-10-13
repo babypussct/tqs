@@ -470,14 +470,11 @@ try {
     md5: string; fileCount: number; packages: string[];
   };
   assert.ok(manifest.fileCount > 100);
-  // The current hosted candidate fronts the existing native server, whose
-  // package database predates the optional jsrg/mougong extension packs. Keep
-  // the local Lua snapshot complete for decoding, but require the hosted
-  // manifest to match the server-compatible package set exactly.
-  const expectedHostedPackages = deploymentUrl
-    ? PACKAGES.filter((name) => name !== 'jsrg' && name !== 'mougong')
-    : PACKAGES;
-  assert.deepEqual(manifest.packages, expectedHostedPackages);
+  // A deployment verification must use the exact package set from the
+  // current release. Do not silently accept a reduced hosted inventory: that
+  // would let an older Render/native pair pass after the source release has
+  // added a required dependency such as jsrg or mougong.
+  assert.deepEqual(manifest.packages, PACKAGES);
   if (!deploymentUrl) {
     process.env.VITE_GATEWAY_URL = gatewayUrl;
     vite = await createServer({ root: webRoot,
