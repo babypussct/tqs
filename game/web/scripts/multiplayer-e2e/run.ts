@@ -13,18 +13,21 @@ import { fileURLToPath } from 'node:url';
 import { preview } from 'vite';
 import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
+import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
-assert.ok(testScenario === '' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
+assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding',
-  'TQS_LIVE_SCENARIO must be empty, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle or founding');
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle or founding');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
 const experimentalScenariosEnabled = process.env.TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS === '1';
 assert.ok(!testScenario || experimentalScenariosEnabled,
   'Experimental live scenarios are temporarily locked; set TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 only after broad deployment');
+const nativeQa = process.env.TQS_LIVE_NATIVE_QA === '1';
+assert.ok(!nativeQa || !!testScenario, 'TQS_LIVE_NATIVE_QA=1 requires TQS_LIVE_SCENARIO');
 
 const web = fileURLToPath(new URL('../../',import.meta.url));
 const repo = path.resolve(web,'../..');
@@ -51,6 +54,20 @@ const testGatewayRestart = process.argv.includes('--restart-gateway');
 assert.ok(!testGatewayRestart || !deploymentUrl,'Gateway restart test requires an isolated local gateway; never restart shared hosting');
 if (deploymentUrl) assert.equal(new URL(deploymentUrl).protocol,'https:');
 const base=deploymentUrl?.replace(/\/$/,'') ?? `http://127.0.0.1:${webPort}`;
+const qaPackageIdentity = nativeQa ? verifyQaPackageManifest({
+  manifestPath: process.env.TQS_QA_PACKAGE_MANIFEST ?? path.join(runtime, 'packages/tqs_qa/package.manifest.json'),
+  expectedRevision: process.env.TQS_QA_EXPECTED_REVISION,
+}) : null;
+const candidateIdentity = await verifyCandidateIdentity({
+  runtime,
+  dist: web,
+  deploymentUrl,
+  releaseManifestPath: process.env.TQS_RELEASE_MANIFEST,
+  allowUnpinned: process.env.TQS_LIVE_ALLOW_UNPINNED === '1',
+});
+console.log(`PASS candidate identity: runtimeMD5=${candidateIdentity.runtimeMD5}, packages=${candidateIdentity.localPackages.length}, ` +
+  `dist=${candidateIdentity.distIndexSha256}${deploymentUrl ? ', hosted gateway/index matched' : ', local runtime pinned'}`);
+if (qaPackageIdentity) console.log(`PASS native QA package identity: revision=${qaPackageIdentity.sourceRevision}, packageSha256=${qaPackageIdentity.packageSha256}`);
 const startGateway=(port=gatewayPort)=>spawn(process.execPath,[path.join(repo,'game/gateway/src/server.mjs')],{
   env:{...process.env,FK_TEST_USERNAME:undefined,FK_TEST_PASSWORD:undefined,FK_ROOT:runtime,FK_HOST:host,
     FK_PORT:process.env.TQS_LIVE_PORT ?? '9527',PORT:String(port),BIND_HOST:'127.0.0.1',ALLOW_ORIGIN:base,TRUSTED_PROXIES:''},stdio:'ignore'});
@@ -82,6 +99,7 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   general: RegExp; generalId: string; skill: RegExp | null; pack: RegExp; packId: string; requiredCommand: string;
   qaMode?: 'battle-royal-new' | 'battle-royal-old'; sameKingdom?: boolean; capacity?: 2 | 4; requiresGeneral?: boolean;
 }> = {
+  'draw-sequence': { general: /$^/, generalId: '', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
   'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
   'cards-and-choice': { general: /Tưởng Khâm|蒋钦|Jiang\s*Qin/i, generalId: 'ld__jiangqin', skill: /shangyi|尚义|Thượng nghĩa/i, pack: /^formation$/i, packId: 'formation', requiredCommand: 'AskForCardsAndChoice' },
   'poxi': { general: /Đặng Chi|邓芝|Deng\s*Zhi/i, generalId: 'ty_heg__dengzhi', skill: /weimeng|危盟|Nguy minh/i, pack: /^tenyear_heg$/i, packId: 'tenyear_heg', requiredCommand: 'AskForPoxi' },
@@ -93,7 +111,21 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   'founding': { general: /Giả Nam Phong|Gia Nam Phong|贾南风|Jianan\s*Feng|Jianan/i, generalId: 'heg__jiananfeng', skill: null, pack: /^zfxp$/i, packId: 'zfxp', requiredCommand: 'AskForChoices', sameKingdom: true },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
-const pageUrl = selectedScenario ? (() => {
+const nativeQaCatalog = nativeQa
+  ? JSON.parse(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'), 'utf8')) as {
+      scenarios: { id: string; seed: number; expectedCommand: string }[];
+    }
+  : null;
+const nativeQaPlan = nativeQaCatalog?.scenarios.find((scenario) => scenario.id === testScenario);
+if (nativeQa) {
+  assert.ok(nativeQaPlan, `Native QA catalog has no scenario ${testScenario}`);
+  assert.equal(nativeQaPlan?.expectedCommand, selectedScenario?.requiredCommand,
+    `Native/browser expected command drift for ${testScenario}`);
+}
+const nativeQaRoomName = nativeQa && nativeQaPlan
+  ? `TQSQA/${testScenario}/0x${nativeQaPlan.seed.toString(16).padStart(8, '0')}`
+  : null;
+const pageUrl = selectedScenario && !nativeQa ? (() => {
   const url = new URL(base);
   url.searchParams.set('tqs-qa-general', selectedScenario.generalId);
   url.searchParams.set('tqs-qa-pack', selectedScenario.packId);
@@ -368,7 +400,7 @@ async function offersGeneral(page: Page, preferredLabel: RegExp) {
  * is guaranteed to be offered by one of the two clients, so the runner can
  * drive the actual caller instead of falling back to a random general. */
 async function configureScenarioPool(page: Page) {
-  if (!selectedScenario) return;
+  if (!selectedScenario || nativeQa) return;
   const checkboxes = page.locator('input[type="checkbox"][data-pack-type="generals"]');
   await checkboxes.first().waitFor({ timeout: 60000 });
   await page.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).waitFor({ state: 'attached' });
@@ -442,7 +474,7 @@ try{
     await p.getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor({timeout:60000});
     console.log(`PASS client ${i+1}: distinct account authenticated in real lobby`);
   }
-  const roomName=`${candidateId.toUpperCase()} multiplayer ${Date.now()}`;const [a,b]=pages;
+  const roomName=nativeQaRoomName ?? `${candidateId.toUpperCase()} multiplayer ${Date.now()}`;const [a,b]=pages;
   const playerCapacity = testBotAudit ? 4 : selectedScenario?.capacity ?? 2;
   await a.getByLabel('Tên phòng',{exact:true}).fill(roomName);await a.getByLabel('Số người',{exact:true}).selectOption(String(playerCapacity));
   await configureScenarioPool(a);
@@ -459,7 +491,7 @@ try{
   await Promise.all(pages.map(p=>p.waitForFunction((expected)=>document.querySelectorAll('.player-item').length===expected, playerCapacity,{timeout:30000})));
   assert.equal(await a.locator('.player-item').count(),playerCapacity);assert.equal(await b.locator('.player-item').count(),playerCapacity);
   await b.getByRole('button',{name:'Sẵn sàng',exact:true}).click();await a.getByRole('button',{name:'Bắt đầu',exact:true}).click();gameStarted=true;
-  if (selectedScenario) {
+  if (selectedScenario && !nativeQa) {
     if (selectedScenario.requiresGeneral !== false) {
       const offered = await Promise.all(pages.map((page) => offersGeneral(page, selectedScenario.general)));
       assert.ok(offered.some(Boolean), 'Scenario caller general was not offered to either real client');
@@ -470,7 +502,7 @@ try{
     }
   }
   await Promise.all(pages.map((page, index) => selectPair(page,
-    selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
+    !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
   for(const p of pages){await p.locator('.game-board').waitFor({timeout:90000});
     await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
     const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
@@ -478,7 +510,7 @@ try{
   if (testBotAudit) await Promise.all(pages.map(installPublicBotAudit));
   if (selectedScenario) {
     const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
-    console.log(`Scenario ${testScenario}: selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
+    console.log(`Scenario ${testScenario}: ${nativeQa ? 'native QA package injected the server-side precondition; ' : ''}selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
   }
   console.log('PASS both clients: room/join/ready/StartGame/native general pairs; no opponent card IDs in board DOM');
   if (testManual) {
@@ -490,6 +522,14 @@ try{
     let printedScenarioSkills = false;
     const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
     const selectActiveClient = async () => {
+      if (nativeQa) {
+        const nativeCommands = new Set(['PlayCard', 'AskForChoices', 'AskForSkillInvoke', 'AskForUseActiveSkill',
+          'AskForUseCard', 'AskForResponseCard', 'AskForCardChosen', 'AskForPoxi', 'AskForCardsAndChoice']);
+        for (const client of [0, 1]) {
+          const request = pendingRequest(client);
+          if (request && nativeCommands.has(request.command ?? '')) return client;
+        }
+      }
       if (!rescueScenario) return scenarioClient;
       for (const client of [scenarioClient, 1 - scenarioClient]) {
         const request = pendingRequest(client);
@@ -500,6 +540,7 @@ try{
       return scenarioClient;
     };
     const scenarioDone = () => testScenario === '' ||
+      (testScenario === 'draw-sequence' && manualCardReply) ||
       (testScenario === 'card-chosen' && scenarioCardChosenHidden) ||
       (testScenario === 'cards-and-choice' && scenarioCardsAndChoiceReply) ||
       (testScenario === 'poxi' && scenarioPoxiMultiple) ||
@@ -655,7 +696,7 @@ try{
           await chooseTargetIfNeeded(actor);
           const confirm=controls.getByRole('button',{name:'Xác nhận',exact:true});
           if(await confirm.count() && await confirm.isEnabled())await confirm.click();
-          const replied = await waitForReply(scenarioClient, latest.requestId);
+          const replied = await waitForReply(activeClient, latest.requestId);
           if(replied) {
             scenarioActiveSkillReply=true;
             scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
@@ -792,7 +833,7 @@ try{
   writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / native Trust; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
-    distIndexSha256,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
+    distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
   assert.deepEqual(errors,[]);
   console.log('PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
 }catch(e){
@@ -806,7 +847,7 @@ try{
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,traces,errors,
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));

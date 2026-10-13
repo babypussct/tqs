@@ -9,6 +9,7 @@ const REQUIRED_PACKAGES = [
   'freekill-core', 'hegemony', 'utility', 'gamemode', 'standard_ex', 'shzl', 'yj',
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
+const SERVER_ONLY_PACKAGES = new Set(['tqs_qa']);
 const REQUIRED_FILES = [
   'dist/index.html', 'runtime/flist.txt', 'gateway/package.json',
   'gateway/package-lock.json', 'gateway/src/server.mjs',
@@ -56,6 +57,7 @@ export function verifyRelease(rootArg) {
   if (!Array.isArray(manifest.packages) || manifest.packages.length === 0 ||
       [...manifest.packages].sort().join('\0') !== manifest.packages.join('\0') ||
       new Set(manifest.packages).size !== manifest.packages.length ||
+      manifest.packages.some((name) => SERVER_ONLY_PACKAGES.has(name)) ||
       REQUIRED_PACKAGES.some((name) => !manifest.packages.includes(name)))
     throw new Error('Release package list is invalid');
   if (!manifest.files || typeof manifest.files !== 'object' || Array.isArray(manifest.files))
@@ -78,6 +80,8 @@ export function verifyRelease(rootArg) {
   const actualPackages = fs.readdirSync(packageRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
     .map((entry) => entry.name).sort();
+  if (actualPackages.some((name) => SERVER_ONLY_PACKAGES.has(name)))
+    throw new Error('Server-only package found in mobile release runtime');
   if (JSON.stringify(actualPackages) !== JSON.stringify(manifest.packages)) throw new Error('Runtime package inventory mismatch');
   const count = (prefix) => actual.filter((name) => name.startsWith(prefix)).length;
   if (manifest.runtimeFileCount !== count('runtime/') || manifest.webFileCount !== count('dist/') ||

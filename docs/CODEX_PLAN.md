@@ -328,6 +328,17 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 
 **Bước tiếp theo:** tạo source snapshot sạch chứa CP55/CP56, nâng native và web lên cùng 14-pin manifest, rồi chạy login canary bounded; sau đó mở semantic matrix C++ cho các caller/rules còn thiếu, không dùng một ván ngẫu nhiên để tuyên bố mọi skill đã được chứng minh.
 
+## CP58 — package QA native server-side và identity gate · 13/10/2026
+
+- Đã triển khai package server-only [`tqs_qa`](../deploy/freekill-native/qa/tqs_qa) với catalog kịch bản deterministic, seed cố định, tên phòng `TQSQA/<scenario>/<0xseed>`, precondition card/actor/target và các caller native thật (`DrawInitialCards`, `AskFor*`, rescue, battle-royal, founding). Director fail-closed khi chưa bật, manifest chưa verify, source revision/hash sai, room/seed sai, user ngoài allowlist, vượt quota hoặc quá thời lượng; bot kế thừa quyền QA nhưng vẫn đi qua AI/trigger native.
+- Đã thêm [`install-qa-package.sh`](../deploy/freekill-native/scripts/install-qa-package.sh), [`verify-qa-package.sh`](../deploy/freekill-native/scripts/verify-qa-package.sh) và common hashing/config helpers. Installer chỉ nhận source Git sạch, ghi `sourceRevision`, `catalogSha256`, `packageTreeSha256` vào manifest verified, cập nhật allowlist/quota trong `freekill.server.config.json`, và không đăng ký `tqs_qa` vào production/mobile package registry.
+- Đã khóa catalog native với browser scenario catalog; runner [`multiplayer-e2e/run.ts`](../game/web/scripts/multiplayer-e2e/run.ts) hiện yêu cầu release manifest pin, so sánh local/hosted runtime trước login, và ở native-QA mode yêu cầu QA manifest cùng revision/hash, rồi gửi đúng room/seed tương ứng. Escape `TQS_LIVE_ALLOW_UNPINNED=1` chỉ dành cho chẩn đoán, không tạo evidence release.
+- Đã chặn `tqs_qa` khỏi mobile release verifier, gateway static bundle và package inventory. Runtime mặc định `tqsQa.enabled=false`; không có thay đổi production/Render trong mốc này.
+- Verification quan sát: `luac -p` **PASS**; `bash -n deploy/freekill-native/scripts/*.sh` **PASS**; installer/verify fixture **2/2 PASS**; identity tests **4/4 PASS**; release tests **3/3 PASS**; gateway **5/5 PASS**; `test:e2e:qa` **1/1 PASS**; `test:e2e:lua` **54/54 PASS**; `npm --prefix game/web run typecheck` **PASS**; `git diff --check` **PASS**. Build web CP57 trước khi nối runner vẫn **PASS** với skill activation/native-caller gates.
+- Đây là contract/fixture và fail-closed harness, chưa phải live PASS của native C++ vì workspace không có binary/server QA để cài và chạy. Hosted candidate hiện tại vẫn là snapshot cũ 11 package; không được gọi là đã dùng `tqs_qa`. Device iOS/Android và mạng vật lý tiếp tục `WAIVED_BY_USER`, không đổi `PLAYABLE_MOBILE`/official.
+
+**Bước tiếp theo:** commit source snapshot sạch, cài `tqs_qa` vào một native QA host riêng bằng installer, rồi chạy đúng native-QA runner với `TQS_RELEASE_MANIFEST`, `TQS_QA_PACKAGE_MANIFEST` và `TQS_QA_EXPECTED_REVISION`; chỉ sau khi quan sát được C++ live evidence mới đánh dấu native QA PASS.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

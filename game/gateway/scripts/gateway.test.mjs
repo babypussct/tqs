@@ -40,6 +40,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     'freekill-core': '-- FreeKill',
     utility: '-- Utility',
     hegemony: '-- Hegemony',
+    tqs_qa: '-- server-only QA package',
   };
   for (const [name, content] of Object.entries(fixture)) {
     const dir = path.join(root, 'packages', name);
@@ -47,6 +48,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     writeFileSync(path.join(dir, 'init.lua'), content);
   }
   writeFileSync(path.join(root, 'packages', 'hegemony', 'description.md'), 'loaded by dofile');
+  writeFileSync(path.join(root, 'packages', 'tqs_qa', 'qa.json'), '{"serverOnly":true}');
   writeFileSync(path.join(root, 'flist.txt'), 'test-only flist\n');
   const secret = path.join(root, 'outside.png');
   writeFileSync(secret, 'NOT_PUBLIC');
@@ -90,6 +92,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     assert.equal((await fetch(`${baseUrl}/escape.svg`)).status,404);
     assert.equal((await fetch(`${baseUrl}/.env`)).status,404);
     assert.equal((await fetch(`${baseUrl}/assets/hegemony/escape.png`)).status,404);
+    assert.equal((await fetch(`${baseUrl}/assets/tqs_qa/qa.json`)).status,404);
     assert.equal((await fetch(`${baseUrl}/healthz`,{headers:{Origin:'https://evil.example'}})).status,403);
     const allowed = await fetch(`${baseUrl}/healthz`,{headers:{Origin:'https://game.example.com'}});
     assert.equal(allowed.headers.get('access-control-allow-origin'),'https://game.example.com');

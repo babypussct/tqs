@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "package": "tqs_qa",
+  "scenarios": [
+    {
+      "id": "draw-sequence",
+      "title": "Deterministic draw/play-card path",
+      "seed": 1369957073,
+      "expectedCommand": "PlayCard",
+      "trigger": "manual",
+      "cards": [
+        { "key": "slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "nullification", "match": { "name": "heg__nullification" }, "owner": "actor", "area": "hand" }
+      ]
+    },
+    {
+      "id": "card-chosen",
+      "title": "Pang De Jianchu card chosen",
+      "seed": 748636695,
+      "expectedCommand": "AskForCardChosen",
+      "trigger": "manual",
+      "general": "hs__pangde",
+      "skill": "jianchu",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
+        { "key": "target-equip", "match": { "type": "equip" }, "owner": "target", "area": "equip" }
+      ]
+    },
+    {
+      "id": "cards-and-choice",
+      "title": "Jiang Qin Shangyi cards and choice",
+      "seed": 514834654,
+      "expectedCommand": "AskForCardsAndChoice",
+      "trigger": "manual",
+      "general": "ld__jiangqin",
+      "skill": "shangyi",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-equip", "match": { "type": "equip" }, "owner": "actor", "area": "hand" },
+        { "key": "target-card", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "poxi",
+      "title": "Deng Zhi Weimeng poxi",
+      "seed": 2066864612,
+      "expectedCommand": "AskForPoxi",
+      "trigger": "manual",
+      "general": "ty_heg__dengzhi",
+      "skill": "ty_heg__weimeng",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
+        { "key": "target-equip", "match": { "type": "equip" }, "owner": "target", "area": "equip" }
+      ]
+    },
+    {
+      "id": "rescue-normal",
+      "title": "Normal rescue / AskForPeaches",
+      "seed": 1119542545,
+      "expectedCommand": "AskForUseCard",
+      "trigger": "rescue",
+      "cards": [
+        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" }
+      ]
+    },
+    {
+      "id": "rescue-battle",
+      "title": "Battle-royal rescue / AskForPeaches",
+      "seed": 2579562478,
+      "expectedCommand": "AskForUseCard",
+      "trigger": "rescue-battle",
+      "cards": [
+        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" }
+      ]
+    },
+    {
+      "id": "founding",
+      "title": "Wild general founding choice",
+      "seed": 252366849,
+      "expectedCommand": "AskForChoices",
+      "trigger": "founding",
+      "general": "heg__jiananfeng",
+      "cards": []
+    }
+  ]
+}

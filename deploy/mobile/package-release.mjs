@@ -12,6 +12,7 @@ export const REQUIRED_PACKAGES = [
   'freekill-core', 'hegemony', 'utility', 'gamemode', 'standard_ex', 'shzl', 'yj',
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
+export const SERVER_ONLY_PACKAGES = ['tqs_qa'];
 const SENSITIVE_NAMES = new Set(['credentials.json', 'secrets.json']);
 
 function isSensitive(name) {
@@ -67,6 +68,8 @@ export function packageRelease(runtimeArg, outputArg, options = {}) {
   const packageNames = fs.readdirSync(packagesPath, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
     .map((entry) => entry.name).sort();
+  const serverOnly = packageNames.filter((name) => SERVER_ONLY_PACKAGES.includes(name));
+  if (serverOnly.length) throw new Error(`Server-only packages cannot enter a mobile release: ${serverOnly.join(', ')}`);
   const missing = REQUIRED_PACKAGES.filter((name) => !packageNames.includes(name));
   if (missing.length) throw new Error(`Pinned runtime is missing required packages: ${missing.join(', ')}`);
 

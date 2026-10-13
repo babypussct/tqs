@@ -48,6 +48,10 @@ const allowedOrigins = new Set(ALLOW_ORIGIN.split(',').map(x => x.trim()));
 const trustedProxies = new Set((process.env.TRUSTED_PROXIES ?? '').split(',').filter(Boolean).map(normalizedIp));
 
 const PACKAGES_DIR = path.join(FK_ROOT, 'packages');
+// QA orchestration is native-server-only. Even when a QA runtime is mounted
+// beside this gateway, its package source and media must never be sent to a
+// browser bundle or exposed through /assets/.
+const SERVER_ONLY_PACKAGES = new Set(['tqs_qa']);
 const BUNDLE_EXT = new Set(['.lua', '.json', '.md']);
 // fflate serializes ZIP dates with local Date getters. Construct the frozen
 // calendar value in local time so its DOS timestamp is identical in UTC and
@@ -85,7 +89,7 @@ function walk(dir, out = []) {
 function listPackages() {
   return fs
     .readdirSync(PACKAGES_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
+    .filter((d) => d.isDirectory() && !d.name.startsWith('.') && !SERVER_ONLY_PACKAGES.has(d.name))
     .map((d) => d.name)
     .sort();
 }
@@ -197,6 +201,8 @@ const server = http.createServer((req, res) => {
     if (serveStatic(WEB_DIST, p, req, res)) return;
     if (p.startsWith('/assets/')) {
       const rel = p.slice('/assets/'.length);
+      const packageName = rel.split('/')[0];
+      if (SERVER_ONLY_PACKAGES.has(packageName)) return res.writeHead(404).end();
       const full = path.resolve(PACKAGES_DIR, rel);
       const type = MEDIA_TYPES[path.extname(full).toLowerCase()];
       if (!full.startsWith(PACKAGES_DIR + path.sep) || !type || !fs.existsSync(full)) {

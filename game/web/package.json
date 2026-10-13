@@ -38,6 +38,8 @@
     "test:vietnamese": "tsx --test scripts/vietnamese-l01.test.ts",
     "test:e2e:multiplayer": "tsx scripts/multiplayer-e2e/run.ts",
     "test:e2e:bot-audit": "tsx scripts/multiplayer-e2e/run.ts --audit-bots",
+    "test:live-identity": "tsx --test scripts/multiplayer-e2e/identity.test.ts",
+    "test:qa-server-contract": "node --test ../../deploy/freekill-native/qa/tqs_qa-catalog.test.mjs ../../deploy/freekill-native/qa/tqs_qa-installer.test.mjs",
     "test:e2e:pwa": "tsx scripts/pwa-e2e/run.ts",
     "test:lua-lifecycle": "tsx --test scripts/lua-lifecycle.test.ts",
     "test:release": "node --test ../../deploy/mobile/release.test.mjs"

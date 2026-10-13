@@ -33,6 +33,21 @@ test('mobile release packaging is deterministic and tamper evident', () => {
   }
 });
 
+test('mobile release packaging rejects the server-only QA package', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tqs-release-server-only-'));
+  try {
+    const runtime = path.join(temp, 'runtime');
+    for (const name of [...REQUIRED_PACKAGES, 'tqs_qa']) {
+      fs.mkdirSync(path.join(runtime, 'packages', name), { recursive: true });
+      fs.writeFileSync(path.join(runtime, 'packages', name, 'init.lua'), `return '${name}'\n`);
+    }
+    fs.writeFileSync(path.join(runtime, 'flist.txt'), 'fixture-flist\n');
+    assert.throws(() => packageRelease(runtime, path.join(temp, 'release')), /Server-only packages/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 assert.ok(fs.existsSync(path.join(repo, 'game/web/dist/index.html')), 'release test must run after web build');
 
 test('release checkpoint holds dirty source and never implies official release', () => {

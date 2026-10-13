@@ -736,6 +736,16 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 **Bước tiếp theo:** tạo source snapshot sạch chứa CP55/CP56, nâng native/web lên cùng 14-pin manifest rồi chạy login canary bounded; tiếp tục semantic matrix C++ cho caller/rules còn thiếu, không dùng một ván random làm bằng chứng exhaustive.
 
+## CP58 — package QA native server-side và identity gate · 13/10/2026
+
+- Đã triển khai package server-only [`tqs_qa`](../deploy/freekill-native/qa/tqs_qa) với catalog deterministic cho `draw-sequence`, `card-chosen`, `cards-and-choice`, `poxi`, `rescue-normal`, `rescue-battle` và `founding`. Room bắt buộc có dạng `TQSQA/<scenario>/<0xseed>`; seed, scenario, card slots và caller native được kiểm tra server-side. Director dùng các API FreeKill thật, inject hand/card ID thật, gọi `changeHp`, battle-royal/founding native flow và fail-closed nếu package/config/room/user/quota không hợp lệ.
+- Đã thêm installer/verify cho source Git sạch và manifest verified (`sourceRevision`, catalog hash, package tree hash), allowlist/quota/duration; runtime mặc định disabled. `tqs_qa` không được ghi vào SQLite production package registry và bị loại khỏi mobile release/gateway bundle để không lộ server-only code.
+- Runner identity gate [`game/web/scripts/multiplayer-e2e/identity.ts`](../game/web/scripts/multiplayer-e2e/identity.ts) bắt buộc release manifest pin, đối chiếu runtime MD5/package list/dist index hash local với hosted `/gateway/manifest.json` trước login, và từ chối candidate stale. Native QA mode yêu cầu QA manifest verified đúng revision, khóa browser scenario với native catalog và dùng chính room/seed deterministic; `TQS_LIVE_ALLOW_UNPINNED=1` chỉ là escape chẩn đoán.
+- Kết quả quan sát trong phiên: `luac -p` **PASS**; shell syntax **PASS**; installer/verify contract **2/2 PASS**; identity **4/4 PASS**; release **3/3 PASS**; gateway **5/5 PASS**; QA browser regression **1/1 PASS**; Lua E2E **54/54 PASS**; web typecheck **PASS**; diff-check **PASS**. Build CP57 trước integration cũng **PASS** với skill activation/native caller audit.
+- Giới hạn bắt buộc: chưa có native FreeKill binary/server QA trong workspace nên chưa thể tuyên bố package đã load/chạy C++ live. Hosted Render candidate vẫn snapshot 11 package cũ và chưa deploy/restart. Vì vậy đây là source + contract PASS, không phải native-live PASS; device/network vẫn `WAIVED_BY_USER`, `PLAYABLE_MOBILE=false`, official chưa mở.
+
+**Bước tiếp theo có thể chạy ngay:** commit source sạch, cài package vào native QA host riêng bằng `install-qa-package.sh`, chạy `verify-qa-package.sh`, sau đó chạy `TQS_LIVE_NATIVE_QA=1` với release/QA manifest cùng revision để thu live C++ evidence.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -743,90 +753,40 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T02:58:32.888Z (UTC).
-- Nhánh: `main` · HEAD: `99fcc542ad84`.
-- File thay đổi hiển thị: 1477 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T03:38:56.949Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `fd87eccfbdbb`.
+- File thay đổi hiển thị: 21 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M deploy/freekill-native/scripts/install-packages.sh
- M deploy/freekill-native/scripts/verify-install.sh
- M deploy/freekill-native/versions.env
+ M deploy/freekill-native/server/freekill.server.config.json
  M deploy/mobile/package-release.mjs
- M deploy/mobile/release-checkpoint.mjs
  M deploy/mobile/release.test.mjs
  M deploy/mobile/verify-release.mjs
  M docs/CODEX_PLAN.md
- M game/web/package-lock.json
+ M docs/web-client/QA_SCENARIO_MODE.md
+ M game/gateway/scripts/gateway.test.mjs
+ M game/gateway/src/server.mjs
  M game/web/package.json
  M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/native-caller-audit.ts
- M game/web/scripts/upstream-packages.ts
- M runtime/flist.txt
-?? game/web/scripts/crypto-scope.test.ts
-?? game/web/scripts/skill-activation-audit.ts
-?? runtime/packages/gamemode/LICENSE
-?? runtime/packages/gamemode/README.md
-?? runtime/packages/gamemode/audio/card/female/abandoning_armor.mp3
-?? runtime/packages/gamemode/audio/card/female/adaptation.mp3
-?? runtime/packages/gamemode/audio/card/female/bogus_flower.mp3
-?? runtime/packages/gamemode/audio/card/female/chasing_near.mp3
-?? runtime/packages/gamemode/audio/card/female/crafty_escape.mp3
-?? runtime/packages/gamemode/audio/card/female/diversion.mp3
-?? runtime/packages/gamemode/audio/card/female/drowning.mp3
-?? runtime/packages/gamemode/audio/card/female/enemy_at_the_gates.mp3
-?? runtime/packages/gamemode/audio/card/female/floating_thunder.mp3
-?? runtime/packages/gamemode/audio/card/female/foresight.mp3
-?? runtime/packages/gamemode/audio/card/female/ice__slash.mp3
-?? runtime/packages/gamemode/audio/card/female/looting.mp3
-?? runtime/packages/gamemode/audio/card/female/mobile__enemy_at_the_gates.mp3
-?? runtime/packages/gamemode/audio/card/female/paranoid.mp3
-?? runtime/packages/gamemode/audio/card/female/raid_and_frontal_attack.mp3
-?? runtime/packages/gamemode/audio/card/female/redistribute.mp3
-?? runtime/packages/gamemode/audio/card/female/reinforcement.mp3
-?? runtime/packages/gamemode/audio/card/female/scrape_poison.mp3
-?? runtime/packages/gamemode/audio/card/female/sincere_treat.mp3
-?? runtime/packages/gamemode/audio/card/female/stab__slash.mp3
-?? runtime/packages/gamemode/audio/card/female/underhanding.mp3
-?? runtime/packages/gamemode/audio/card/female/unexpectation.mp3
-?? runtime/packages/gamemode/audio/card/female/v11__dismantlement.mp3
-?? runtime/packages/gamemode/audio/card/female/v33__ex_nihilo.mp3
-?? runtime/packages/gamemode/audio/card/male/abandoning_armor.mp3
-?? runtime/packages/gamemode/audio/card/male/adaptation.mp3
-?? runtime/packages/gamemode/audio/card/male/bogus_flower.mp3
-?? runtime/packages/gamemode/audio/card/male/chasing_near.mp3
-?? runtime/packages/gamemode/audio/card/male/crafty_escape.mp3
-?? runtime/packages/gamemode/audio/card/male/diversion.mp3
-?? runtime/packages/gamemode/audio/card/male/drowning.mp3
-?? runtime/packages/gamemode/audio/card/male/enemy_at_the_gates.mp3
-?? runtime/packages/gamemode/audio/card/male/floating_thunder.mp3
-?? runtime/packages/gamemode/audio/card/male/foresight.mp3
-?? runtime/packages/gamemode/audio/card/male/ice__slash.mp3
-?? runtime/packages/gamemode/audio/card/male/looting.mp3
-?? runtime/packages/gamemode/audio/card/male/mobile__enemy_at_the_gates.mp3
-?? runtime/packages/gamemode/audio/card/male/paranoid.mp3
-?? runtime/packages/gamemode/audio/card/male/raid_and_frontal_attack.mp3
-?? runtime/packages/gamemode/audio/card/male/redistribute.mp3
-?? runtime/packages/gamemode/audio/card/male/reinforcement.mp3
-?? runtime/packages/gamemode/audio/card/male/scrape_poison.mp3
-?? runtime/packages/gamemode/audio/card/male/sincere_treat.mp3
-?? runtime/packages/gamemode/audio/card/male/stab__slash.mp3
-?? runtime/packages/gamemode/audio/card/male/underhanding.mp3
-?? runtime/packages/gamemode/audio/card/male/unexpectation.mp3
-?? runtime/packages/gamemode/audio/card/male/v11__dismantlement.mp3
-?? runtime/packages/gamemode/audio/card/male/v33__ex_nihilo.mp3
-?? runtime/packages/gamemode/audio/death/v22__leitong.mp3
-?? runtime/packages/gamemode/audio/death/v33__guanyu.mp3
-?? runtime/packages/gamemode/audio/death/v33__huangquan.mp3
-... và 1407 mục nữa; xem git status trực tiếp.
+?? deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
+?? deploy/freekill-native/qa/tqs_qa-installer.test.mjs
+?? deploy/freekill-native/qa/tqs_qa/README.md
+?? deploy/freekill-native/qa/tqs_qa/catalog.json
+?? deploy/freekill-native/qa/tqs_qa/init.lua
+?? deploy/freekill-native/qa/tqs_qa/package.manifest.json
+?? deploy/freekill-native/scripts/install-qa-package.sh
+?? deploy/freekill-native/scripts/qa-package-common.sh
+?? deploy/freekill-native/scripts/verify-qa-package.sh
+?? game/web/scripts/multiplayer-e2e/identity.test.ts
+?? game/web/scripts/multiplayer-e2e/identity.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+fd87eccf release: freeze CP57 skill audit candidate
 99fcc542 docs: refresh CP47 checkpoint
 f0b51185 docs: record CP47 main deploy
-3ebbe20c docs: refresh CP46 checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

@@ -90,13 +90,67 @@ Các lệnh này dùng runtime pin local và socket fixture có kiểm soát; ch
 tạo room, không đăng nhập tài khoản thật, không chạm Oracle và không gọi
 gateway Render.
 
+## Package native server-side `tqs_qa`
+
+Đã triển khai lớp tương ứng cho live C++ tại
+[`deploy/freekill-native/qa/tqs_qa`](../../deploy/freekill-native/qa/tqs_qa).
+Đây là package đặc biệt chỉ được copy vào một runtime QA riêng; nó không nằm
+trong `runtime/packages` của repository và không được đăng ký vào
+`packages.db`. `init.lua` chỉ tự đăng ký khi `ServerConfig.tqsQa.enabled` là
+`true` và manifest package có trạng thái `verified`.
+
+Installer/verify:
+
+```bash
+deploy/freekill-native/scripts/install-qa-package.sh \
+  --source deploy/freekill-native/qa/tqs_qa \
+  --runtime /srv/tqs-qa/runtime \
+  --allow-user qa-player-a,qa-player-b \
+  --expected-revision "$(git rev-parse HEAD)"
+
+deploy/freekill-native/scripts/verify-qa-package.sh \
+  --source deploy/freekill-native/qa/tqs_qa \
+  --runtime /srv/tqs-qa/runtime \
+  --expected-revision "$(git rev-parse HEAD)"
+```
+
+Installer/verify cùng kiểm tra Git revision sạch, catalog SHA-256, package
+tree SHA-256, allowlist, quota/timeout, config QA và việc `tqs_qa` không xuất
+hiện trong `packages.db`. Vì vậy sau bất kỳ chỉnh sửa nào, revision mới phải
+được commit và package QA phải được cài/verify lại; runtime cũ sẽ không được
+coi là bản mới.
+
+Kịch bản native được chọn bằng tên phòng đã xác thực ở server:
+
+```text
+TQSQA/<scenario-id>/<0xseed>
+```
+
+Director dùng các event/card API thật của FreeKill (`GamePrepared`,
+`DrawInitialCards`, `GameStart`, `RoundStart`, `GameFinished`), cố định đúng
+các matcher card trong catalog, gắn skill thật của general, và gọi native
+`Dying`/`AskForPeaches`, Battle-Royal hoặc `GeneralShown` khi kịch bản yêu
+cầu. Nó không thêm client cheat command; room prefix, seed, allowlist, số
+ghế, quota và thời lượng đều bị kiểm ở server. Catalog native được test
+lockstep với id/seed/expected command của browser catalog bằng
+`npm run test:qa-server-contract`.
+
+Runner live hiện có identity gate độc lập: `TQS_RELEASE_MANIFEST` là bắt buộc
+theo mặc định; runner đối chiếu MD5 `flist`, danh sách package và hash
+`dist/index.html` local, rồi nếu có `TQS_LIVE_URL` còn fetch
+`/gateway/manifest.json` và `/` của hosted candidate. Sai một byte hoặc thiếu
+manifest sẽ dừng trước login/room creation. Chỉ dùng
+`TQS_LIVE_ALLOW_UNPINNED=1` cho một lượt chẩn đoán có chủ ý và không được ghi
+nhận là evidence release.
+
 ## Ranh giới với live C++
 
 Fixture local có thể phát `PrepareDrawPile` và native request vì nó đóng vai
 server packet fixture. Không được suy luận rằng query string hoặc `_mode` từ
-client có thể điều khiển draw pile trên FreeKill C++ thật. Nếu cần chạy cùng
-ma trận trên server thật, bước tiếp theo phải là một package server-side riêng
-(ví dụ `tqs_qa`) với tất cả điều kiện sau:
+client có thể điều khiển draw pile trên FreeKill C++ thật. Với C++ thật, bước
+triển khai package đã có; bước live tiếp theo là cài package vào QA runtime
+riêng, verify cùng revision với source, rồi chạy room `TQSQA/...` qua runner
+đã pin release identity. Các điều kiện vận hành vẫn bắt buộc:
 
 1. package không nằm trong package production/mobile release mặc định;
 2. chỉ được load ở QA server riêng hoặc profile server tách biệt;
@@ -106,7 +160,9 @@ ma trận trên server thật, bước tiếp theo phải là một package serv
    bị bỏ dở;
 6. log/evidence phải sanitize card ID, payload riêng tư, credential và token.
 
-Cho đến khi package đó được triển khai và có lịch live an toàn, bằng chứng của
-`QA Scenario Mode` được phân loại là **local browser + Wasmoon/Lua PASS**; nó
-không biến các gate Battle-Royal/founding trên C++ thật thành live PASS và
-không thay đổi trạng thái official release.
+Cho đến khi QA runtime native riêng được cài và có live evidence của từng
+scenario, bằng chứng của `QA Scenario Mode` vẫn được phân loại là **local
+browser + Wasmoon/Lua PASS**; package source/installer đã PASS syntax, catalog
+contract và fixture installer nhưng chưa chứng minh một hosted C++ room mới.
+Nó không thay đổi trạng thái official release, `PLAYABLE_MOBILE`, hay các gate
+thiết bị/network đã được người dùng miễn.

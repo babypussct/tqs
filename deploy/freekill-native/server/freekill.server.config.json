@@ -9,5 +9,14 @@
   "enableBots": true,
   "enableWhitelist": false,
   "roomCountPerThread": 32,
-  "maxPlayersPerDevice": 2
+  "maxPlayersPerDevice": 2,
+  "tqsQa": {
+    "enabled": false,
+    "roomPrefix": "TQSQA/",
+    "allowedUsers": [],
+    "maxPlayers": 4,
+    "maxActiveRooms": 1,
+    "maxDurationSeconds": 900,
+    "maxRunsPerProcess": 50
+  }
 }
