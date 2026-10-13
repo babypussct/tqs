@@ -36,6 +36,11 @@ export const UPSTREAM_PACKAGES: readonly UpstreamPackageSpec[] = [
     commit: 'd616978ad2a53055f5815f3ae19f2d2b239862e0', role: 'extension',
   },
   {
+    name: 'gamemode', sourceDirectory: 'gamemode',
+    url: 'https://gitee.com/qsgs-fans/gamemode.git',
+    commit: 'cf168265c56dd262ae79497cf71d55285bca4bb8', role: 'skill-dependency',
+  },
+  {
     name: 'standard_ex', sourceDirectory: 'standard_ex',
     url: 'https://gitee.com/qsgs-fans/standard_ex.git',
     commit: 'b041d9d4151d436bb6c357f7b772fa2f1a040df0', role: 'skill-dependency',

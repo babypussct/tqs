@@ -59,6 +59,7 @@ clone_at_commit() {
 clone_at_commit "freekill-core" "$FREEKILL_CORE_URL" "$FREEKILL_CORE_COMMIT"
 clone_at_commit "utility" "$UTILITY_URL" "$UTILITY_COMMIT"
 clone_at_commit "hegemony" "$HEGEMONY_URL" "$HEGEMONY_COMMIT"
+clone_at_commit "gamemode" "$GAMEMODE_URL" "$GAMEMODE_COMMIT"
 clone_at_commit "standard_ex" "$STANDARD_EX_URL" "$STANDARD_EX_COMMIT"
 clone_at_commit "shzl" "$SHZL_URL" "$SHZL_COMMIT"
 clone_at_commit "yj" "$YJ_URL" "$YJ_COMMIT"
@@ -83,13 +84,15 @@ grep -Fq 'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__l
 
 sqlite3 "$PACKAGE_DB" < "$PACKAGES_DIR/init.sql"
 sqlite3 "$PACKAGE_DB" <<SQL
-DELETE FROM packages WHERE name IN ('freekill-core', 'utility', 'hegemony', 'standard_ex', 'shzl', 'yj', 'mobile', 'sp', 'tenyear', 'overseas', 'mougong', 'jsrg', 'ol');
+DELETE FROM packages WHERE name IN ('freekill-core', 'utility', 'hegemony', 'gamemode', 'standard_ex', 'shzl', 'yj', 'mobile', 'sp', 'tenyear', 'overseas', 'mougong', 'jsrg', 'ol');
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('freekill-core', '$FREEKILL_CORE_URL', '$FREEKILL_CORE_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('utility', '$UTILITY_URL', '$UTILITY_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('hegemony', '$HEGEMONY_URL', '$HEGEMONY_COMMIT', 1);
+INSERT INTO packages (name, url, hash, enabled)
+VALUES ('gamemode', '$GAMEMODE_URL', '$GAMEMODE_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)
 VALUES ('standard_ex', '$STANDARD_EX_URL', '$STANDARD_EX_COMMIT', 1);
 INSERT INTO packages (name, url, hash, enabled)

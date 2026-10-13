@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const runtimeRoot = path.resolve(process.env.TQS_NATIVE_RUNTIME_ROOT ??
-  path.join(repoRoot, 'scratch/deployments/cp28-hosted-compatible-20261013/release/runtime'));
+  path.join(repoRoot, 'runtime'));
 const packagesRoot = path.join(runtimeRoot, 'packages');
 const sourceRoot = path.join(repoRoot, 'game/web');
 

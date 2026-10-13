@@ -47,6 +47,7 @@ verify_package() {
 verify_package freekill-core "$FREEKILL_CORE_COMMIT"
 verify_package utility "$UTILITY_COMMIT"
 verify_package hegemony "$HEGEMONY_COMMIT"
+verify_package gamemode "$GAMEMODE_COMMIT"
 verify_package standard_ex "$STANDARD_EX_COMMIT"
 verify_package shzl "$SHZL_COMMIT"
 verify_package yj "$YJ_COMMIT"
@@ -58,7 +59,7 @@ verify_package mougong "$MOUGONG_COMMIT"
 verify_package jsrg "$JSRG_COMMIT"
 verify_package ol "$OL_COMMIT"
 
-printf '%s\n' 'Pinned package registry: 13/13 commits and enabled flags verified'
+printf '%s\n' 'Pinned package registry: 14/14 commits and enabled flags verified'
 
 db_rows="$(sqlite3 "$PACKAGE_DB" "SELECT name || ' @ ' || hash || ' enabled=' || enabled FROM packages ORDER BY name;")"
 printf '%s\n' 'FreeKill native deployment verification: PASS'

@@ -4,12 +4,12 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-// Minimum package set shared by the existing native server and the mobile
-// client. Newer server snapshots may add optional packs (for example jsrg or
-// mougong); packageRelease includes every directory present in the supplied
-// runtime, while verification keeps legacy server-compatible snapshots valid.
+// Minimum package set shared by the native server and the mobile client. The
+// gamemode pack is required because active skills use its virtual card
+// definitions; newer snapshots may still add optional packs. packageRelease
+// includes every directory present in the supplied runtime.
 export const REQUIRED_PACKAGES = [
-  'freekill-core', 'hegemony', 'utility', 'standard_ex', 'shzl', 'yj',
+  'freekill-core', 'hegemony', 'utility', 'gamemode', 'standard_ex', 'shzl', 'yj',
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
 const SENSITIVE_NAMES = new Set(['credentials.json', 'secrets.json']);

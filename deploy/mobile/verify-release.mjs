@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 // Optional upstream packs are still inventoried and included when present;
 // this list only defines the minimum runtime needed by the web client.
 const REQUIRED_PACKAGES = [
-  'freekill-core', 'hegemony', 'utility', 'standard_ex', 'shzl', 'yj',
+  'freekill-core', 'hegemony', 'utility', 'gamemode', 'standard_ex', 'shzl', 'yj',
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
 const REQUIRED_FILES = [

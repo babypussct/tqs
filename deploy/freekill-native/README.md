@@ -30,7 +30,7 @@ domain, a CDN or a web gateway during the first phase.
   Linux, which is the path for Oracle A1/ARM64.
 - `scripts/install-packages.sh`: idempotently checks out the exact package
   commits and records them in `packages/packages.db`.
-- `scripts/verify-install.sh`: validates executable, JSON, all 13 pinned
+- `scripts/verify-install.sh`: validates executable, JSON, all 14 pinned
   package commits, enabled flags and package database hashes.
 - `scripts/run-server.sh`: starts the server with the interactive admin shell.
 - `scripts/backup.sh`: archives server state, packages and configuration.

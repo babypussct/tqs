@@ -62,6 +62,8 @@ test('release checkpoint holds dirty source and never implies official release',
     assert.equal(report.publishEligible, false);
     assert.equal(report.safety.deployed, false);
     assert.equal(report.gates.officialRelease, 'PENDING');
+    assert.equal(report.gates.physicalDeviceAndNetwork, 'WAIVED_BY_USER');
+    assert.equal(report.gates.nodeForgeAdvisory, 'RISK_ACCEPTED_WITH_SCOPE');
     assert.match(report.holdReasons.join('\n'), /source checkout is dirty/);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });

@@ -62,6 +62,7 @@ const traces:[{direction:string;command:string;requestId:number;type:number}[],{
 const errors:string[]=[];let gameStarted=false;let finished=false;
 const testRecovery = process.argv.includes('--reconnect') || testGatewayRestart;
 const testManual = process.argv.includes('--manual');
+const testBotAudit = process.argv.includes('--audit-bots');
 let manualCardReply = false;
 const manualDeadlineMs = Number(process.env.TQS_LIVE_DEADLINE_MS ?? '180000');
 assert.ok(Number.isSafeInteger(manualDeadlineMs) && manualDeadlineMs >= 30000 && manualDeadlineMs <= 900000,
@@ -114,6 +115,49 @@ let scenarioViewAsReply = false;
 let scenarioBattleRoyalObserved = false;
 let scenarioFoundingReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
+
+type PublicBotAudit = {
+  logs: string[];
+  boardPlayers: string[];
+};
+
+const publicSkillLog = /(?:phát động kỹ năng|đã phát động|sử dụng kỹ năng|used skill|发动了|发动技能|发动了技能|발동)/iu;
+
+async function installPublicBotAudit(page: Page) {
+  await page.evaluate(String.raw`(() => {
+    const audit = { logs: [], boardPlayers: [] };
+    const add = (list, value) => {
+      const normalized = String(value || '').replace(/\s+/gu, ' ').trim();
+      if (!normalized || normalized.length > 1000 || list.includes(normalized)) return;
+      if (list.length < 500) list.push(normalized);
+    };
+    const record = () => {
+      document.querySelectorAll('.board-logs li').forEach((node) => add(audit.logs, node.textContent));
+      document.querySelectorAll('.board-player-name').forEach((node) => add(audit.boardPlayers, node.textContent));
+    };
+    record();
+    new MutationObserver(record).observe(document.body, { childList: true, characterData: true, subtree: true });
+    window.__tqsPublicBotAudit = audit;
+  })()`);
+}
+
+async function readPublicBotAudit(page: Page): Promise<PublicBotAudit> {
+  return page.evaluate(String.raw`(() => window.__tqsPublicBotAudit || { logs: [], boardPlayers: [] })()`) as Promise<PublicBotAudit>;
+}
+
+function sanitizePublicAudit(audit: PublicBotAudit, accountNames: string[]) {
+  const mask = (value: string) => accountNames.reduce((text, account) => text.split(account).join('[test-account]'), value);
+  const logs = audit.logs.map(mask);
+  const boardPlayers = [...new Set(audit.boardPlayers.map(mask))];
+  const botNames = boardPlayers.filter((name) => /bot|robot|máy|人机|机器人/iu.test(name));
+  const skillLogs = logs.filter((log) => publicSkillLog.test(log));
+  return { logs, boardPlayers, botNames, skillLogs, botSkillLogs: [] as string[] };
+}
+
+function skillActor(log: string) {
+  return (log.split(/\s+(?:đã phát động kỹ năng|used skill|发动了(?:技能)?)/iu)[0] ?? '')
+    .replace(/\s*\(bạn\)/gu, '').trim();
+}
 
 function hasReply(client: number, requestId: number) {
   return traces[client].some((packet) => packet.direction === 'outgoing' &&
@@ -399,7 +443,7 @@ try{
     console.log(`PASS client ${i+1}: distinct account authenticated in real lobby`);
   }
   const roomName=`${candidateId.toUpperCase()} multiplayer ${Date.now()}`;const [a,b]=pages;
-  const playerCapacity = selectedScenario?.capacity ?? 2;
+  const playerCapacity = testBotAudit ? 4 : selectedScenario?.capacity ?? 2;
   await a.getByLabel('Tên phòng',{exact:true}).fill(roomName);await a.getByLabel('Số người',{exact:true}).selectOption(String(playerCapacity));
   await configureScenarioPool(a);
   await a.getByLabel('Thời gian lượt',{exact:true}).selectOption('60');await a.getByRole('button',{name:'Tạo phòng Quốc Chiến'}).click();
@@ -431,6 +475,7 @@ try{
     await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
     const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
     assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
+  if (testBotAudit) await Promise.all(pages.map(installPublicBotAudit));
   if (selectedScenario) {
     const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
     console.log(`Scenario ${testScenario}: selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
@@ -697,6 +742,44 @@ try{
     console.log(testGatewayRestart ? 'PASS gateway restart: first account reauthenticates/native Reconnect/private board, independent peer stays connected' : 'PASS controlled transport loss: same account automatically authenticates, receives native Reconnect and restores the two-seat board');
   }
   await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));finished=true;
+  let publicBotAudit = testBotAudit
+    ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
+    : [];
+  if (testBotAudit) {
+    // A skill log rendered with “(bạn)” is the local real client. Merge that
+    // actor identity across both client views; the same public log is rendered
+    // without the marker for the other client. Remaining skill actors are
+    // native bot/AI seats in this four-seat room.
+    const humanSkillActors = new Set(publicBotAudit.flatMap((audit) => audit.skillLogs
+      .filter((log) => /\(bạn\)/u.test(log)).map(skillActor).filter(Boolean)));
+    publicBotAudit = publicBotAudit.map((audit) => ({
+      ...audit,
+      humanSkillActors: [...humanSkillActors],
+      botSkillLogs: audit.skillLogs.filter((log) => !humanSkillActors.has(skillActor(log))),
+    }));
+  }
+  const botAuditTrace = traces.map((trace) => {
+    const incoming = trace.filter((packet) => packet.direction === 'incoming');
+    return {
+      gameOver: incoming.filter((packet) => packet.command === 'GameOver').length,
+      gameLog: incoming.filter((packet) => packet.command === 'GameLog').length,
+      addSkillUseHistory: incoming.filter((packet) => packet.command === 'AddSkillUseHistory').length,
+      setSkillUseHistory: incoming.filter((packet) => packet.command === 'SetSkillUseHistory').length,
+      setSkillBranchUseHistory: incoming.filter((packet) => packet.command === 'SetSkillBranchUseHistory').length,
+      askForSkillInvoke: incoming.filter((packet) => packet.command === 'AskForSkillInvoke').length,
+      askForUseActiveSkill: incoming.filter((packet) => packet.command === 'AskForUseActiveSkill').length,
+    };
+  });
+  if (testBotAudit) {
+    assert.equal(playerCapacity, 4, 'Bot audit must be a four-seat room');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.length > 0), 'Bot audit must observe public GameLog text');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1), 'Every live client must observe exactly one GameOver');
+    assert.ok(botAuditTrace.some((trace) => trace.addSkillUseHistory + trace.setSkillUseHistory > 0),
+      'Bot audit must observe native skill-history state updates');
+    console.log(`PASS four-seat bot audit: ${pages.length} real clients + ${playerCapacity - pages.length} native bots; ` +
+      `${publicBotAudit[0]?.skillLogs.length ?? 0} public skill log(s), ` +
+      `${publicBotAudit[0]?.botSkillLogs.length ?? 0} attributed to bot name(s)`);
+  }
   for(let i=0;i<2;i++){
     assert.ok(traces[i].some(t=>t.direction==='incoming' && t.command==='GameOver'));
     const replies=traces[i].filter(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY);
@@ -706,7 +789,7 @@ try{
     await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / native Trust; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));

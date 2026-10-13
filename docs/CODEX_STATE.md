@@ -645,6 +645,97 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 
 **Bước tiếp theo:** mở một lịch live an toàn để chạy semantic matrix C++ còn thiếu (native caller/rules, rescue→view-as và founding kingdom choice nếu policy cho phép), sau đó hoàn tất quota/rollback/SLA/monitoring, review `node-forge` và nghiệm thu thiết bị/mạng; không retry/bypass scenario đang bị khóa bởi temp-ban policy.
 
+## CP48 — live Battle-Royal semantic probe có kiểm soát · 13/10/2026
+
+- Sau khi CP47 đã deploy rộng trên `main`, chạy đúng một lượt `rescue-battle` trên candidate [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com) bằng Chrome 390×844 + Wasmoon/Lua + Render Gateway + FreeKill C++ thật: hai account riêng đăng nhập lobby, tạo phòng 4 ghế với pool caller được kiểm soát, server offer Bàng Đức và vào bàn thành công. Không đổi source/server, không đọc/lưu payload bài kín.
+- Server thật đã phát hiện Battle-Royal, hiển thị `Quyết chiến`, và nhận reply view-as ở request `AskForUseActiveSkill` **639**; `scenarioBattleRoyalObserved=true`, `scenarioViewAsReply=true`, `scenarioActiveSkillReply=true`. Tuy nhiên lượt probe không nhận được `AskForUseCard` cứu Đào hoàn chỉnh: `scenarioRescueReply=false`, `scenarioRescuePeach=false`; assertion semantic rescue→view-as **FAIL có kiểm soát**. Không có JS/Lua/application error (`errors=[]`). Evidence sanitized: [`reconnect-failure-1791853592671.json`](../scratch/evidence/reconnect-failure-1791853592671.json).
+- Runner không cưỡng bức đóng socket giữa ván; đã bật BOT cleanup theo runbook, không retry cùng scenario sau failure. Evidence không có `GameOver` mới, vì vậy không gộp lượt này vào G5/full-rules PASS. Không đổi `PLAYABLE_MOBILE=false`/`officialRelease=PENDING`.
+- Gate nhanh quan sát ngay trước probe: `npm --prefix game/gateway test` **5/5 PASS**, `npm --prefix game/web run test:release` **2/2 PASS**, `npm --prefix game/web run audit:native-callers` **17/17 PASS** trên 4.717 Lua files.
+
+**Bước tiếp theo:** không lặp lại `rescue-battle`; nếu policy/server còn cho phép, chạy một lượt `founding` bounded riêng để xác nhận kingdom choice native, rồi chuyển sang quota/rollback/SLA/monitoring và review `node-forge`; thiết bị iOS/Android và Wi‑Fi/4G vẫn DEFERRED vì chưa có phiên vật lý để quan sát.
+
+## CP49 — founding probe, hosted recovery và ops/security recheck · 13/10/2026
+
+- Chạy đúng một lượt `founding` bounded trên candidate CP47 sau CP48: hai account thật đăng nhập, pool caller 10 tướng, server offer Giả Nam Phong và ván đi tới `GameOver` ở cả hai trace; không có JS/Lua error. Server **không phát `AskForChoices` kingdom native** (`scenarioFoundingReply=false`), nên founding kingdom choice vẫn **FAIL có kiểm soát**, không đánh dấu `GAME-03C`/full native semantic PASS. Evidence: [`reconnect-failure-1791853900423.json`](../scratch/evidence/reconnect-failure-1791853900423.json). Không retry Battle-Royal hoặc founding sau lượt này.
+- Recovery canary an toàn sau hai probe: `TQS_LIVE_ROOT=/private/tmp/tqs-cp28-live-canary-root-20261013 TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com npm --prefix game/web run test:e2e:login` **PASS** — Setup + EnterLobby/lobby/disconnect sạch, server chấp nhận snapshot **4.730 files / MD5 `a2a4b0af428f971c2642f11bd4aef162`**. Một lần preflight trước đó dùng runtime rút gọn thiếu `jsrg` và dừng trước auth; đã sửa sang full root, không phải server failure.
+- Hosted integrity recheck trực tiếp sau probe: `/gateway/healthz` **200 `ok`**, manifest **200** với **11 package/4.730 files**, bundle hash `1fe8081d4280f7d9`, static dist **10/10 SHA-256 khớp** artifact CP47, foreign Origin **403**, wrong bundle version **404**. Đây là recheck bytes/origin/login, không phải rollback/restart host thật.
+- Ops/security audit: `npm --prefix game/web audit --omit=dev --json` vẫn báo đúng **1 high `node-forge@1.4.0`**, `fixAvailable=false`, GHSA-86w9-cpqp-85rv/CVE-2026-85393; source chỉ gọi `publicKeyFromPem` + `RSAES-PKCS1-V1_5` encryption trong `connection.ts`, không có callsite signature verification. Giữ residual risk visible, không đổi crypto protocol/dependency trong lượt này. Local gateway quota/origin/burst **5/5 PASS**, nhưng production quota benchmark, Render dashboard metrics, restart/rollback host thật và SLA vẫn PENDING.
+- Đối chiếu tài liệu Render hiện hành: Free web service có thể spin down sau 15 phút idle, wake khoảng một phút, chỉ rollback được hai deploy trước và Render nêu rõ Free không dành cho production; vì vậy candidate vẫn là môi trường QA, không thể dùng health/login/static PASS để suy diễn official/SLA. Thiết bị iOS/Android và Wi‑Fi/4G vật lý không có phiên quan sát mới, giữ `DEFERRED`.
+
+**Bước tiếp theo:** dừng các probe native experimental đã có failure evidence; hoàn tất ops review/runbook (quota production, restart/rollback có dashboard và SLA/monitoring) cùng quyết định xử lý `node-forge`, còn device gate chỉ mở khi có phiên iOS/Android + mạng vật lý để quan sát; giữ `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`.
+
+## CP50 — người dùng miễn nghiệm thu thiết bị vật lý, chấp nhận web simulation · 13/10/2026
+
+- Người dùng quyết định **bỏ qua nghiệm thu iOS/Android và Wi‑Fi/4G vật lý** trong phạm vi hiện tại vì phiên Codex không có thiết bị thật. Trạng thái mới là `WAIVED_BY_USER`, không phải PASS; không dùng thiết bị vật lý làm blocker nữa. Sau này người dùng sẽ feedback lỗi thực tế để xử lý ở phiên tiếp theo.
+- Chấp nhận mô phỏng bằng web: `npm --prefix game/web run test:e2e` quan sát trực tiếp **18/18 PASS**, gồm responsive viewport phone/desktop, card/target/skill, CBOR single-reply, cancel/replacement/expiry/reconnect/disconnect/error guards và bảo vệ ván đang chạy. `npm --prefix game/web run test:e2e:pwa` **PASS**, gồm static cache, offline shell/retry/status và không cache gateway/private data.
+- Cập nhật `deploy/mobile/release-checkpoint.mjs` để report gate ghi `physicalDeviceAndNetwork: WAIVED_BY_USER`; test release tương ứng đã bổ sung assertion. Đây chỉ là metadata acceptance, không đổi production bundle, không tự biến browser simulation thành physical PASS.
+- Các gate khác không đổi: Battle-Royal rescue→view-as và founding kingdom choice vẫn failure có kiểm soát; production quota, restart/rollback, monitoring/SLA và `node-forge` review vẫn mở; `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`.
+
+**Bước tiếp theo:** bỏ device/network khỏi danh sách công việc bắt buộc; tập trung đóng ops quota/restart-rollback/monitoring-SLA và quyết định residual risk `node-forge`, sau đó mới đánh giá native semantic/full-rules cho official.
+
+## CP51 — recheck gate vận hành cục bộ và residual security · 13/10/2026
+
+- Re-run trên checkout hiện hành: `npm --prefix game/gateway test` **5/5 PASS**; `npm --prefix game/web run test:release` **2/2 PASS**; `npm --prefix game/web run typecheck` **PASS**; `bash -n deploy/freekill-native/scripts/*.sh` và `git diff --check` **PASS**. Gateway test tiếp tục bao phủ origin policy, trusted-proxy identity, global cap, flood isolation và token-bucket refill.
+- `npm --prefix game/web run audit:skills` **PASS** với 0 active-mode invalid contracts và 0 visible unresolved; output hiện hành ghi 2.330 generals, 9.452 skills, 4.718 Lua files và 13 pinned packages. Đây là source/runtime contract evidence, không phải semantic C++ live cho mọi luật.
+- Kiểm tra tĩnh các điều kiện hardening trong `deploy/mobile/compose.yaml`/`render.yaml` **PASS**: read-only, `cap_drop: [ALL]`, `no-new-privileges`, healthcheck, log rotation, Render health path và auto-deploy off. Docker executable không có (`docker: unavailable`), nên không claim `docker compose config` đã PASS.
+- Chạy negative path `bash deploy/freekill-native/scripts/verify-backup.sh /tmp/tqs-backup-does-not-exist-20261013.tar.gz`: exit **1** với `ERROR: Backup archive does not exist...`, đúng fail-closed. Không có native backup archive thật để làm restore rehearsal trong checkout này.
+- `npm --prefix game/web audit --omit=dev --json` vẫn exit lỗi do đúng **1 high `node-forge@1.4.0`**, `fixAvailable=false`, GHSA-86w9-cpqp-85rv. Đã giữ phạm vi residual risk: source chỉ gọi `publicKeyFromPem` và `RSAES-PKCS1-V1_5` encryption, không có callsite signature verification; không đổi dependency/crypto protocol trong CP51. Evidence sanitized: [`cp51-ops-gate-recheck-20261013.json`](../scratch/evidence/cp51-ops-gate-recheck-20261013.json).
+- CP51 không chạy load production, không restart/rollback Render/VM và không đụng server Oracle. Vì không có Docker/provider dashboard/SSH host, production quota, provider metrics, restart/rollback host thật và monitoring/SLA vẫn **PENDING**. `physicalDeviceAndNetwork=WAIVED_BY_USER`, `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
+**Bước tiếp theo:** xử lý decision `node-forge` (owner chấp nhận residual risk hoặc thay thế tương thích có regression), rồi khi có quyền provider/host mới chạy bounded quota và restart/rollback có quan sát; không dùng guard cục bộ để tuyên bố production gate PASS.
+
+## CP52 — hosted read-only smoke và quyết định kỹ thuật node-forge · 13/10/2026
+
+- Chạy hosted smoke chỉ đọc trên `https://tqs-mobile-candidate.onrender.com`: probe đầu dùng deadline 30 giây và timeout ở phía probe; không coi đây là candidate failure. Một retry bounded 120 giây **PASS sau 437 ms**: `/gateway/healthz` `200 ok`, manifest `200`, 11 package/4.730 files, MD5 `a2a4b0af428f971c2642f11bd4aef162`, bundle hash `1fe8081d4280f7d9`, foreign Origin `403`, query bundle version sai `404`. Không tạo room/game, không ghi credential hoặc payload private.
+- Đối chiếu dependency/advisory: `node-forge@1.4.0` chưa có patched version cho GHSA-86w9-cpqp-85rv; callsite production chỉ là `publicKeyFromPem` và RSAES-PKCS1-V1_5 encryption, không có signature-verification callsite. Web Crypto không cung cấp RSAES-PKCS1-V1_5 encryption tương thích; RSA-OAEP sẽ cần đổi protocol server/client. Không tự viết RSA và không thay bằng thư viện cũ hơn.
+- CP52 chốt **quyết định kỹ thuật**, không chốt phát hành: giữ wire contract hiện tại, giữ dependency để không phá login, đánh dấu `RESIDUAL_RISK_OPEN`; owner vẫn phải chấp nhận rủi ro có thời hạn/chủ sở hữu hoặc phê duyệt migration protocol. Evidence sanitized: [`cp52-hosted-crypto-recheck-20261013.json`](../scratch/evidence/cp52-hosted-crypto-recheck-20261013.json).
+- Không restart/rollback Render/VM, không chạy load production và không đụng Oracle. Production quota, provider metrics, host restart/rollback và monitoring/SLA vẫn **PENDING**; `physicalDeviceAndNetwork=WAIVED_BY_USER`, `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên.
+
+**Bước tiếp theo:** chờ owner chọn hướng xử lý residual risk (risk acceptance có owner/thời hạn hoặc migration server–client sang encryption tương thích browser), rồi mới đóng security gate; provider-gated ops chỉ chạy khi có quyền dashboard/host.
+
+## CP53 — triển khai risk acceptance có phạm vi và crypto guard · 13/10/2026
+
+- Theo yêu cầu trực tiếp, đã chọn hướng **risk acceptance có phạm vi** thay vì đổi protocol: `nodeForgeAdvisory=RISK_ACCEPTED_WITH_SCOPE`, owner là TQS project owner theo ủy quyền lượt này, review trước **13/11/2026**. Triggers review sớm: đổi dependency/protocol, thêm signature/certificate verification, hoặc xuất hiện patched release.
+- Đã triển khai code/config guard: pin `node-forge` chính xác `1.4.0` ở `game/web/package.json` + lockfile; thêm [`crypto-scope.test.ts`](../game/web/scripts/crypto-scope.test.ts); nối `npm run audit:crypto-scope` vào `npm run build`; release report có gate `nodeForgeAdvisory=RISK_ACCEPTED_WITH_SCOPE`. Guard fail-closed nếu forge bị import thêm vào production `src`, hoặc connection code dùng `verify`, `sign`, `decrypt` thay cho public-key parse + RSAES-PKCS1-V1_5 encrypt.
+- Verification quan sát sau triển khai: crypto scope **1/1 PASS**; full build **PASS** (crypto guard + skill audit + native caller audit **17/17** + typecheck + Vite); smoke RSA/Lua/EnterLobby **PASS**; connection **27/27 PASS**; gateway **5/5 PASS**; release **2/2 PASS**; release verifier **PASS 13.333 files / manifest v2**; `git diff --check` **PASS**.
+- Đã tạo candidate local [`cp53-risk-accepted-20261013/release`](../scratch/deployments/cp53-risk-accepted-20261013/release), runtime MD5 `a2a4b0af428f971c2642f11bd4aef162`. Release checkpoint trả `HOLD`/`publishEligible=false` vì source checkout còn dirty 7 file; đây là provenance guard. Không tự commit, không restart/rollback, không deploy production bên ngoài. Evidence sanitized: [`cp53-risk-accepted-20261013.json`](../scratch/evidence/cp53-risk-accepted-20261013.json).
+- Quyết định này chỉ chấp nhận residual risk trong phạm vi đã khóa, **không** tuyên bố advisory đã được vá. Native semantic/full-rules, production quota, provider metrics, restart/rollback/SLA và official vẫn mở; `physicalDeviceAndNetwork=WAIVED_BY_USER`, `officialRelease=PENDING`, `PLAYABLE_MOBILE=false`.
+
+**Bước tiếp theo:** review và tạo source snapshot/commit sạch nếu muốn publish candidate; sau đó cần quyền provider để deploy hosted, còn official chỉ cân nhắc sau evidence native/ops còn thiếu.
+
+## CP54 — activation audit toàn bộ tướng/kỹ năng trên web runtime · 13/10/2026
+
+- Đã thêm [`game/web/scripts/skill-activation-audit.ts`](../game/web/scripts/skill-activation-audit.ts) và lệnh `npm run audit:skill-activation`. Audit boot đúng Wasmoon/FreeKill client, tạo `ClientInstance`/hai `ClientPlayer`, hand thật 4 lá, event probe theo shape damage/move, rồi gọi activation surface của mọi skill được tham chiếu từ `skills`, `other_skills`, `related_skills`, `related_other_skills`, `all_skills`. Nó kiểm `ActiveSkill`, `ViewAsSkill`, `CardSkill`, `TriggerSkill`, modifier/status skill và đường `AskForUseActiveSkill` request-handler/UI; không gọi effect server có side effect.
+- Kết quả quan sát: **2.330 tướng / 2.273 visible / 311 active**, **4.718 declared refs / 4.110 unique skill IDs**. Activation predicate/method probes: `ActiveSkill` **9.053 calls / 0 hard failure**, `ViewAsSkill` **3.014 / 1 hard failure**, `TriggerSkill` **8.817 / 0 hard failure**, các status/modifier surface **341 calls / 0 hard failure**. UI request path thử **1.097 skill / 1.072 PASS / 22 cần fixture context / 3 FAIL**.
+- Gate mới chạy fail-closed và hiện **FAIL có nguyên nhân cụ thể**, không gắn nhãn toàn bộ skill PASS: `os__yanshih` và `os__weipo` cần clone `enemy_at_the_gates`; `qingjiaol` cần clone `sincere_treat`. Hai card này không được đăng ký trong runtime 11 package đang phục vụ web (`runtime/packages`), nên `Fk:cloneCard` báo `Attempt to clone a card that not added to engine`. Đây là dependency/runtime blocker cần quyết định bổ sung package/card source hoặc loại các skill/package đó khỏi pool active; audit không tự bịa card/effect để che lỗi.
+- Đã sửa false-positive trong audit: Lua predicate truthy ngoài boolean được chấp nhận; `ViewAsSkill.prompt` phân biệt `string|function`; `triggerableTimes` dùng `number|nil` với event data đúng shape; package disabled được tách khỏi active missing; `RoundCount` và fixture hand/player được seed đủ để probe `zonghu` không còn lỗi giả. Exception disabled `os_sx__lvmeng:kongzhi` vẫn chỉ in INFO như CP53.
+- Verification quan sát sau thay đổi: `npm run audit:skill-activation` **exit 1 đúng fail-closed với 4 hard samples**; `npm run audit:skills` **PASS** (0 active contract lỗi); `npm run audit:native-callers` **17/17 PASS**; `npm run typecheck` **PASS**; `npm run test:e2e:lua` **54/54 PASS**. Các gate cũ không chứng minh semantic effect của mọi skill trên C++ live; 31 upstream skeleton test callbacks chỉ được inventory, chưa chạy trong browser VM.
+- Không đổi production runtime/dist, không deploy/restart/rollback. `physicalDeviceAndNetwork=WAIVED_BY_USER`, `officialRelease=PENDING`, `PLAYABLE_MOBILE=false` giữ nguyên. Native semantic/full-rules cho từng effect và dependency card blocker vẫn mở.
+
+**Bước tiếp theo:** quyết định và triển khai nguồn/package cho `enemy_at_the_gates` và `sincere_treat` (hoặc quyết định loại các skill phụ thuộc khỏi active pool), sau đó chạy lại `npm run audit:skill-activation`; chỉ khi gate này PASS mới xem xét nối vào `npm run build`.
+
+## CP55 — triển khai dependency card và đóng activation gate · 13/10/2026
+
+- Đã chọn tích hợp package upstream đầy đủ thay vì tạo card giả hoặc tắt skill: thêm `gamemode` vào [`game/web/scripts/upstream-packages.ts`](../game/web/scripts/upstream-packages.ts) và [`deploy/freekill-native/versions.env`](../deploy/freekill-native/versions.env) tại commit `cf168265c56dd262ae79497cf71d55285bca4bb8`. Runtime chứa source/assets `gamemode`, cùng `mougong` và `jsrg` để browser/native dùng cùng manifest 14 gói. `Fk:cloneCard("enemy_at_the_gates")` và `Fk:cloneCard("sincere_treat")` đều PASS từ runtime thật.
+- Đã cập nhật [`install-packages.sh`](../deploy/freekill-native/scripts/install-packages.sh), [`verify-install.sh`](../deploy/freekill-native/scripts/verify-install.sh), release package/verifier và mặc định [`native-caller-audit.ts`](../game/web/scripts/native-caller-audit.ts) để dùng/kiểm cùng runtime hiện hành. Native package registry hiện kiểm **14/14 commit + enabled flag**; native caller scan **5.264 Lua files / 17 family / 0 mapping failure**.
+- `npm run audit:skill-activation` hiện **PASS fail-closed**: **2.388 generals / 2.330 visible / 311 active / 4.841 refs / 4.207 unique IDs**; UI **1.112 attempted / 1.087 PASS / 25 context-required / 0 failed**; ActiveSkill **9.174 attempted / 0 failed**; TriggerSkill **9.039 / 0 failed**; ViewAsSkill **3.058 / 0 failed**; status/modifier **459 / 0 failed**. `os_sx__lvmeng:kongzhi` vẫn chỉ là INFO vì package bị mode khóa. 25 UI, 1.680 ActiveSkill và 451 TriggerSkill probes cần context state C++ sâu hơn; không được hiểu là semantic PASS.
+- Regression trực tiếp: `npm run build` **PASS** (crypto + skill contract + activation + native caller + typecheck + Vite); `npx tsx --test scripts/*.test.ts` **115/115 PASS**; `npm run test:e2e:lua` **54/54 PASS**; Chrome browser E2E **18/18 PASS**; PWA/offline shell **PASS**; `npm run smoke` **PASS** với Wasmoon boot 14 package; `npm run test:release` **2/2 PASS**; `npm run test:live-config` **2/2 PASS**; `npm --prefix game/gateway test` **5/5 PASS**; `bash -n deploy/freekill-native/scripts/*.sh` và `git diff --check` **PASS**.
+- Candidate local [`cp55-skill-activation-20261013/release`](../scratch/deployments/cp55-skill-activation-20261013/release) verify **14.793 files / 14 package / manifest v2 PASS**, runtime MD5 `4f71a88e1e0e3cc50615250e8da93bce`; evidence [`cp55-skill-activation-20261013.json`](../scratch/evidence/cp55-skill-activation-20261013.json). Checkpoint trả **HOLD** vì source checkout dirty; không deploy/restart/rollback. Candidate hosted hiện tại vẫn snapshot 11 package nên không được coi là đã chạy CP55.
+- Giới hạn: activation/contract probe chưa thay semantic effect matrix trên C++ thật; device/network đã `WAIVED_BY_USER` theo quyết định người dùng, còn quota/rollback/SLA/monitoring và official vẫn PENDING; `PLAYABLE_MOBILE=false` giữ nguyên.
+
+**Bước tiếp theo:** tạo source snapshot/commit sạch đã review, nâng native package registry và web artifact lên cùng 14-pin manifest, rồi chạy login canary bounded trước khi cân nhắc hosted deploy; không đổi official/`PLAYABLE_MOBILE` từ local activation PASS.
+
+## CP56 — live audit ván 4 ghế với 2 bot native và kiểm tra skill · 13/10/2026
+
+- Đã thêm chế độ `--audit-bots` vào [`game/web/scripts/multiplayer-e2e/run.ts`](../game/web/scripts/multiplayer-e2e/run.ts) và lệnh [`test:e2e:bot-audit`](../game/web/package.json). Runner mở **4 ghế**, dùng **2 account thật + 2 `AddRobot` native**, hai client thật chọn cặp tướng rồi chuyển sang `BOT chơi hộ`/native `Trust`. Recorder chỉ lưu GameLog công khai, board player labels và counter trace đã sanitize.
+- Lệnh live đã quan sát: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=/private/tmp/tqs-cp28-live-canary-root-20261013 TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com TQS_CANDIDATE_ID=cp28 TQS_LIVE_DEADLINE_MS=180000 npm run test:e2e:bot-audit`. Lượt cuối **PASS**: đủ 4 ghế, StartGame/chọn tướng/round-play/Trust/GameOver/result/lobby/disconnect sạch, `errors=[]`; trace dài **7.055/7.065**; mỗi client có `gameOver=1`, `gameLog=257/256`, `addSkillUseHistory=34`, `setSkillUseHistory=1477`, `setSkillBranchUseHistory=1477`, `askForSkillInvoke=0`, `askForUseActiveSkill=0`. Evidence: [`cp28-multiplayer-live-1791860070803.json`](../scratch/evidence/cp28-multiplayer-live-1791860070803.json).
+- Hậu kiểm một lượt 4 ghế bounded trước đó cho thấy GameLog công khai `Tướng ẩn/Pháp Chính đã phát động kỹ năng〖Gia Cát Liên Nỗ〗`. Account thật khi đó dùng `Tôn Dực/Cam Ninh` và `Trương Giác/Công Tôn Toản`, nên actor `Tướng ẩn/Pháp Chính` thuộc một trong hai bot native; đây là bằng chứng bot thật sự phát động skill qua log công khai. Lượt cuối có 8 skill log nhưng tất cả thuộc cặp tướng của client Trust, `botSkillLogs=0`; ghi nhận là khác biệt do random gameplay, không kết luận bot bị vô hiệu. Evidence lượt trước: [`cp28-multiplayer-live-1791859813100.json`](../scratch/evidence/cp28-multiplayer-live-1791859813100.json).
+- Đã đối chiếu với native source: [`request.lua`](../runtime/packages/freekill-core/lua/server/request.lua) `_checkReply` chuyển request của player Online cho client, còn nhánh `use_ai` gọi `player.ai.makeReply`; [`ai.lua`](../runtime/packages/freekill-core/lua/server/ai.lua) dùng cùng `handle<command>`/skill data. Kết luận: native `Robot` và người chơi bật Trust dùng cùng server AI/trigger/skill rules; người Online khác ở dialog `AskForSkillInvoke`/`AskForUseActiveSkill` và `CLIENT_REPLY`, không khác engine skill.
+- Verification sau khi sửa harness: `npm run typecheck`, `git diff --check`, `npm run build` **PASS**. Build quan sát **2.388 generals, 9.752 skills, 48.062 skill smoke, 2.908 card smoke, 234 equipment/468 lifecycle/1.429 card-skill**; activation UI **1.112/0 hard failure**, ActiveSkill **9.174/0**, TriggerSkill **9.039/0**, ViewAsSkill **3.058/0**, native caller **17/17**.
+- Giới hạn: live audit chạy trên hosted candidate CP28 snapshot **11 package**, chưa chạy release CP55 local **14 package**; không deploy/restart/rollback production. Đây chưa phải semantic matrix chứng minh effect của mọi skill/tướng. `physicalDeviceAndNetwork=WAIVED_BY_USER`, quota/rollback/SLA/monitoring và official vẫn PENDING, `PLAYABLE_MOBILE=false` giữ nguyên.
+
+**Bước tiếp theo:** tạo source snapshot sạch chứa CP55/CP56, nâng native/web lên cùng 14-pin manifest rồi chạy login canary bounded; tiếp tục semantic matrix C++ cho caller/rules còn thiếu, không dùng một ván random làm bằng chứng exhaustive.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -652,20 +743,90 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T00:44:59.182Z (UTC).
-- Nhánh: `main` · HEAD: `f0b5118545b2`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T02:58:32.888Z (UTC).
+- Nhánh: `main` · HEAD: `99fcc542ad84`.
+- File thay đổi hiển thị: 1477 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M deploy/freekill-native/README.md
+ M deploy/freekill-native/scripts/install-packages.sh
+ M deploy/freekill-native/scripts/verify-install.sh
+ M deploy/freekill-native/versions.env
+ M deploy/mobile/package-release.mjs
+ M deploy/mobile/release-checkpoint.mjs
+ M deploy/mobile/release.test.mjs
+ M deploy/mobile/verify-release.mjs
+ M docs/CODEX_PLAN.md
+ M game/web/package-lock.json
+ M game/web/package.json
+ M game/web/scripts/multiplayer-e2e/run.ts
+ M game/web/scripts/native-caller-audit.ts
+ M game/web/scripts/upstream-packages.ts
+ M runtime/flist.txt
+?? game/web/scripts/crypto-scope.test.ts
+?? game/web/scripts/skill-activation-audit.ts
+?? runtime/packages/gamemode/LICENSE
+?? runtime/packages/gamemode/README.md
+?? runtime/packages/gamemode/audio/card/female/abandoning_armor.mp3
+?? runtime/packages/gamemode/audio/card/female/adaptation.mp3
+?? runtime/packages/gamemode/audio/card/female/bogus_flower.mp3
+?? runtime/packages/gamemode/audio/card/female/chasing_near.mp3
+?? runtime/packages/gamemode/audio/card/female/crafty_escape.mp3
+?? runtime/packages/gamemode/audio/card/female/diversion.mp3
+?? runtime/packages/gamemode/audio/card/female/drowning.mp3
+?? runtime/packages/gamemode/audio/card/female/enemy_at_the_gates.mp3
+?? runtime/packages/gamemode/audio/card/female/floating_thunder.mp3
+?? runtime/packages/gamemode/audio/card/female/foresight.mp3
+?? runtime/packages/gamemode/audio/card/female/ice__slash.mp3
+?? runtime/packages/gamemode/audio/card/female/looting.mp3
+?? runtime/packages/gamemode/audio/card/female/mobile__enemy_at_the_gates.mp3
+?? runtime/packages/gamemode/audio/card/female/paranoid.mp3
+?? runtime/packages/gamemode/audio/card/female/raid_and_frontal_attack.mp3
+?? runtime/packages/gamemode/audio/card/female/redistribute.mp3
+?? runtime/packages/gamemode/audio/card/female/reinforcement.mp3
+?? runtime/packages/gamemode/audio/card/female/scrape_poison.mp3
+?? runtime/packages/gamemode/audio/card/female/sincere_treat.mp3
+?? runtime/packages/gamemode/audio/card/female/stab__slash.mp3
+?? runtime/packages/gamemode/audio/card/female/underhanding.mp3
+?? runtime/packages/gamemode/audio/card/female/unexpectation.mp3
+?? runtime/packages/gamemode/audio/card/female/v11__dismantlement.mp3
+?? runtime/packages/gamemode/audio/card/female/v33__ex_nihilo.mp3
+?? runtime/packages/gamemode/audio/card/male/abandoning_armor.mp3
+?? runtime/packages/gamemode/audio/card/male/adaptation.mp3
+?? runtime/packages/gamemode/audio/card/male/bogus_flower.mp3
+?? runtime/packages/gamemode/audio/card/male/chasing_near.mp3
+?? runtime/packages/gamemode/audio/card/male/crafty_escape.mp3
+?? runtime/packages/gamemode/audio/card/male/diversion.mp3
+?? runtime/packages/gamemode/audio/card/male/drowning.mp3
+?? runtime/packages/gamemode/audio/card/male/enemy_at_the_gates.mp3
+?? runtime/packages/gamemode/audio/card/male/floating_thunder.mp3
+?? runtime/packages/gamemode/audio/card/male/foresight.mp3
+?? runtime/packages/gamemode/audio/card/male/ice__slash.mp3
+?? runtime/packages/gamemode/audio/card/male/looting.mp3
+?? runtime/packages/gamemode/audio/card/male/mobile__enemy_at_the_gates.mp3
+?? runtime/packages/gamemode/audio/card/male/paranoid.mp3
+?? runtime/packages/gamemode/audio/card/male/raid_and_frontal_attack.mp3
+?? runtime/packages/gamemode/audio/card/male/redistribute.mp3
+?? runtime/packages/gamemode/audio/card/male/reinforcement.mp3
+?? runtime/packages/gamemode/audio/card/male/scrape_poison.mp3
+?? runtime/packages/gamemode/audio/card/male/sincere_treat.mp3
+?? runtime/packages/gamemode/audio/card/male/stab__slash.mp3
+?? runtime/packages/gamemode/audio/card/male/underhanding.mp3
+?? runtime/packages/gamemode/audio/card/male/unexpectation.mp3
+?? runtime/packages/gamemode/audio/card/male/v11__dismantlement.mp3
+?? runtime/packages/gamemode/audio/card/male/v33__ex_nihilo.mp3
+?? runtime/packages/gamemode/audio/death/v22__leitong.mp3
+?? runtime/packages/gamemode/audio/death/v33__guanyu.mp3
+?? runtime/packages/gamemode/audio/death/v33__huangquan.mp3
+... và 1407 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+99fcc542 docs: refresh CP47 checkpoint
 f0b51185 docs: record CP47 main deploy
 3ebbe20c docs: refresh CP46 checkpoint
-07e6715d docs: record CP46 completion audit
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
