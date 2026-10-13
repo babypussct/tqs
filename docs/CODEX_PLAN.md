@@ -356,6 +356,13 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Login canary quan sát trên native thật: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=$PWD/runtime npm --prefix game/web run test:e2e:login` **PASS** — Chrome/Wasmoon/Lua → Gateway → FreeKill C++, server chấp nhận MD5 `49ef…`, vào lobby và disconnect sạch; không tạo room/start ván.
 - Checkout hiện chỉ còn thay đổi có chủ đích `runtime/flist.txt` (fingerprint native QA); bước tiếp theo là commit thay đổi, chạy lại build/release checkpoint, cập nhật deployment branch Render, rồi kiểm tra hosted manifest/login trước khi nhận các scenario QA cụ thể. Device iOS/Android vẫn `WAIVED_BY_USER`; đây không phải semantic proof cho toàn bộ skill.
 
+## CP61 — Render Live khớp native và canary hosted PASS · 13/10/2026
+
+- Deployment branch [`codex/cp57-render-release`](https://github.com/babypussct/tqs/tree/codex/cp57-render-release) đã được cập nhật tới artifact commit `a52cb0451ac774b031e2118ebd87194b7f3a1ec0`; Render deployment `dep-db6rb9qj9qps73a82340` hiển thị **Deploy succeeded | Live**. Artifact source là `4103dc73`, runtime MD5 `49ef7e3218ca52d8aaee67920c15fad3`, manifest SHA-256 `bfff80926443561c390dd1ea017342fdc5aeee86ecb9df0d21a9294a1416bfc4`, 14 package/14.793 file.
+- Probe HTTPS sau deploy **PASS**: `/gateway/healthz=200 ok`; `/gateway/manifest.json` trả đúng 14 package, MD5 `49ef…`, 5.279 file, bundle hash `754a618bc6d8307d`; log Render cũng ghi gateway build 5.279 file và cùng MD5. Không đưa `tqs_qa` vào public bundle.
+- Hosted login canary **PASS** sau khi sửa runner [`game/web/scripts/live-gateway-e2e/run.ts`](../game/web/scripts/live-gateway-e2e/run.ts): lần đầu fail vì assertion cũ vẫn loại `jsrg/mougong`; guard đã chuyển sang yêu cầu manifest khớp chính xác `PACKAGES`, typecheck/diff-check **PASS**, canary lần hai Setup→EnterLobby→lobby→disconnect **PASS**. Fix được push source tại `7e5c0996`; thay đổi này chỉ là QA guard, không làm thay đổi artifact đang Live.
+- Đồng bộ lần đầu hiện hoàn tất ở mức **web public ↔ native runtime ↔ native QA package identity**. QA và production đang dùng chung một native host với allowlist/prefix/quota; chưa có QA host vật lý tách riêng. Các gate semantic exhaustive của mọi skill, quota/rollback/SLA và official release vẫn giữ trạng thái mở; iOS/Android tiếp tục `WAIVED_BY_USER`.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

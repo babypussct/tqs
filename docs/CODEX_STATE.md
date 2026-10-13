@@ -763,6 +763,13 @@ Hoàn thiện **Tam Quốc Sát trên trình duyệt điện thoại** (React + 
 - Login canary native thật: `TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_ROOT=$PWD/runtime npm --prefix game/web run test:e2e:login` **PASS** — server chấp nhận MD5 `49ef…`, Setup/EnterLobby/lobby/disconnect hoàn tất, không tạo phòng hay ván.
 - Trạng thái checkout trước chốt commit: chỉ còn `M runtime/flist.txt` có chủ đích. Bước tiếp theo có thể chạy ngay: commit fingerprint, tạo release artifact mới, cập nhật deployment branch Render, deploy manual và xác minh hosted manifest/login. iOS/Android vẫn `WAIVED_BY_USER`; full semantic skill matrix chưa được tuyên bố PASS.
 
+## CP61 — Render Live khớp native và canary hosted PASS · 13/10/2026
+
+- Render service `tqs-mobile-candidate` đã đổi branch sang `codex/cp57-render-release` và manual deploy artifact commit `a52cb0451ac774b031e2118ebd87194b7f3a1ec0`; deployment `dep-db6rb9qj9qps73a82340` hiển thị **Deploy succeeded | Live**. Artifact lấy từ source `4103dc73`, runtime MD5 `49ef7e3218ca52d8aaee67920c15fad3`, manifest SHA-256 `bfff80926443561c390dd1ea017342fdc5aeee86ecb9df0d21a9294a1416bfc4`, 14 package, 14.793 file.
+- Hosted integrity probe **PASS**: health `200 ok`; manifest public báo đúng 14 package, MD5 `49ef…`, 5.279 file, bundle hash `754a618bc6d8307d`. Log container Render ghi `gateway build ... md5=49ef…`; public bundle không chứa source `tqs_qa`.
+- Hosted login canary **PASS** với `TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com`: Chrome/Wasmoon/Lua → Render Gateway → FreeKill C++ thật, Setup + EnterLobby, React lobby online, disconnect sạch; không tạo phòng/start ván. Lượt đầu bị runner guard cũ từ chối 2 package mới; đã sửa assertion để yêu cầu đúng toàn bộ `PACKAGES`, typecheck/diff-check **PASS**, source QA fix push tại `7e5c0996`, lượt canary sau sửa **PASS**.
+- Đây là lần đồng bộ đầu tiên hoàn tất cho web public/native/QA identity. Native production và QA package vẫn cùng host, được giới hạn bằng allowlist `tqs_qa`/prefix `TQSQA/`/quota 4; không tuyên bố QA host tách biệt, semantic exhaustive mọi skill, iOS/Android hoặc official release đã hoàn thành.
+
 ## Ghi kết quả công việc tiếp theo
 
 Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** với ngày, thay đổi quan trọng, file đã sửa, lệnh test và kết quả được quan sát, lỗi còn mở, cùng đúng một bước tiếp theo có thể thực hiện ngay. Bỏ các mục lịch sử ít liên quan để giữ file ngắn. Đồng bộ các Gate trong `CODEX_PLAN.md`. Sau đó chạy `npm run codex:checkpoint`.
@@ -770,21 +777,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-13T04:35:31.135Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `a98d528111bf`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-13T04:41:26.839Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `7e5c0996f55a`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M runtime/flist.txt
 ```
 
 Ba commit gần nhất:
 
 ```text
+7e5c0996 test: require exact hosted package inventory
+4103dc73 release: sync native QA runtime fingerprint
 a98d5281 docs: record first release sync attempt
-4090c7f4 docs: record verified QA package install
-8f02f413 docs: checkpoint native QA package
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
