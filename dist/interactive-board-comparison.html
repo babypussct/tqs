@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TQS — Mockup Kiến Trúc Bàn Chơi: Hiện Tại vs Chuẩn FreeKill/QSGS/Mobile</title>
+  <link rel="stylesheet" href="/src/styles.css">
+  <style>
+    :root {
+      --gold-main: #d49b38;
+      --gold-bright: #ffe299;
+      --bg-canvas: #0b0907;
+      --panel-dark: #16120e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--bg-canvas);
+      color: #f5eedc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* TOP CONTROLS TOOLBAR */
+    .mockup-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(18, 14, 11, 0.98);
+      border-bottom: 2px solid var(--gold-main);
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gold-bright);
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    .tool-btn {
+      background: #2b221a;
+      border: 1px solid rgba(212, 155, 56, 0.4);
+      color: #dfd3bf;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 140ms ease;
+    }
+
+    .tool-btn:hover {
+      background: #3d3024;
+      border-color: var(--gold-main);
+      color: #fff;
+    }
+
+    .tool-btn.active {
+      background: linear-gradient(180deg, #d49b38 0%, #8c5816 100%);
+      color: #1a1005;
+      font-weight: bold;
+      border-color: #ffd97d;
+      box-shadow: 0 0 10px rgba(212, 155, 56, 0.5);
+    }
+
+    .tool-toggle-btn {
+      background: #1c261e;
+      border: 1px solid #365c40;
+      color: #9fe0b0;
+    }
+    .tool-toggle-btn.toggled-on {
+      background: #27ae60;
+      color: #fff;
+      border-color: #72e8a2;
+      box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
+    }
+
+    /* MAIN WORKBENCH LAYOUT */
+    .workbench-body {
+      padding: 16px;
+      max-width: 1720px;
+      margin: 0 auto;
+    }
+
+    .view-container-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .view-container-single {
+      display: block;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .board-column {
+      background: rgba(22, 17, 13, 0.92);
+      border: 1px solid rgba(212, 155, 56, 0.35);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.65);
+      position: relative;
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(212, 155, 56, 0.25);
+    }
+
+    .column-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .badge-reality { background: #52371e; color: #ffd18a; border: 1px solid #a8733d; }
+    .badge-proposal { background: #1b4d2e; color: #8affbf; border: 1px solid #36a360; }
+
+    /* DEVICE WRAPPER SIMULATION */
+    .device-viewport-frame {
+      margin: 0 auto;
+      transition: all 250ms ease;
+      position: relative;
+    }
+    .device-viewport-frame.mode-mobile-390 {
+      width: 390px;
+      height: 780px;
+      border: 8px solid #2a221a;
+      border-radius: 36px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.9);
+      background: #111e18;
+    }
+    .device-viewport-frame.mode-mobile-360 {
+      width: 360px;
+      height: 740px;
+      border: 8px solid #2a221a;
+      border-radius: 32px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.9);
+      background: #111e18;
+    }
+
+    /* MOBILE RESPONSIVE SCALING FOR TABLE-CENTER */
+    .device-viewport-frame.mode-mobile-390 .native-table-center,
+    .device-viewport-frame.mode-mobile-360 .native-table-center {
+      gap: 6px;
+    }
+    .device-viewport-frame.mode-mobile-390 .native-deck-slot,
+    .device-viewport-frame.mode-mobile-360 .native-deck-slot {
+      width: 34px;
+      height: 48px;
+    }
+    .device-viewport-frame.mode-mobile-390 .native-deck-badge,
+    .device-viewport-frame.mode-mobile-360 .native-deck-badge {
+      font-size: 7px;
+      padding: 0 3px;
+    }
+    .device-viewport-frame.mode-mobile-390 .native-resolving-card,
+    .device-viewport-frame.mode-mobile-360 .native-resolving-card {
+      width: 46px;
+      height: 64px;
+    }
+    .device-viewport-frame.mode-mobile-390 .native-resolving-card .card-head,
+    .device-viewport-frame.mode-mobile-390 .native-resolving-card .card-foot,
+    .device-viewport-frame.mode-mobile-360 .native-resolving-card .card-head,
+    .device-viewport-frame.mode-mobile-360 .native-resolving-card .card-foot {
+      font-size: 6px;
+      padding: 1px 2px;
+    }
+    .device-viewport-frame.mode-mobile-390 .native-table-pile,
+    .device-viewport-frame.mode-mobile-360 .native-table-pile {
+      padding: 4px 6px;
+      gap: 6px;
+    }
+
+    /* ============================================================
+       STYLES FOR NATIVE PARITY (FREEKILL / QSGS / MOBILE HEGEMONY)
+       ============================================================ */
+    .native-felt-table {
+      position: relative;
+      background: radial-gradient(ellipse at center, #1b4b35 0%, #102e21 60%, #081711 100%);
+      border: 6px solid #4a3420;
+      border-radius: 40px;
+      box-shadow: inset 0 0 45px rgba(0,0,0,0.85), 0 8px 30px rgba(0,0,0,0.8);
+      min-height: 600px;
+      overflow: hidden;
+    }
+
+    /* OVAL ELLIPSE OPPONENTS CONTAINER (FULL 360° PERIMETER) */
+    .native-opponents-arch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       AUTHENTIC FREEKILL & SANGUOSHA MOBILE PHOTO SEAT
+       Dimensions: 96px x 132px (matching FreeKill 131x174 ratio 1:1.375)
+       ============================================================ */
+    .native-photo-seat {
+      position: absolute;
+      width: 96px;
+      height: 132px;
+      background: #15110d;
+      border-radius: 6px;
+      border: 2px solid #5a4634;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(255,215,0,0.25);
+      user-select: none;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      cursor: pointer;
+      overflow: hidden;
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    .native-photo-seat:hover {
+      box-shadow: 0 10px 26px rgba(0,0,0,0.9), inset 0 0 0 1px #ffd97d;
+      border-color: #ffd97d;
+    }
+
+    .native-photo-seat.faction-wei { border-color: #2b5c8f; box-shadow: 0 6px 18px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(66, 135, 245, 0.4); }
+    .native-photo-seat.faction-shu { border-color: #992626; box-shadow: 0 6px 18px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(235, 64, 52, 0.4); }
+    .native-photo-seat.faction-wu  { border-color: #26734d; box-shadow: 0 6px 18px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(52, 199, 89, 0.4); }
+    .native-photo-seat.faction-qun { border-color: #73593f; box-shadow: 0 6px 18px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(212, 155, 56, 0.4); }
+
+    .native-photo-seat.active-turn {
+      border-color: #ffd700 !important;
+      box-shadow: 0 0 18px rgba(255, 215, 0, 0.9), 0 6px 20px rgba(0,0,0,0.8) !important;
+      animation: native-turn-glow 2s infinite ease-in-out;
+    }
+    @keyframes native-turn-glow {
+      0%, 100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+      50% { box-shadow: 0 0 24px rgba(255, 215, 0, 0.95); }
+    }
+
+    .native-photo-seat.targeted {
+      border-color: #ff3333 !important;
+      box-shadow: 0 0 22px rgba(255, 51, 51, 0.95), 0 0 0 2px #ff8888 !important;
+      animation: native-target-pulse 1s infinite alternate ease-in-out;
+    }
+    @keyframes native-target-pulse {
+      0% { box-shadow: 0 0 14px rgba(255, 51, 51, 0.7), 0 0 0 2px #ff6666; }
+      100% { box-shadow: 0 0 28px rgba(255, 51, 51, 1), 0 0 0 3px #ff9999; }
+    }
+
+    /* 1. FULL-BLEED DUAL GENERAL CANVAS */
+    .native-portrait-canvas {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      background: #0d0a07;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .native-general-slot {
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .native-general-slot.half { flex: 1; }
+    .native-general-slot.full { width: 100%; }
+    .native-general-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    /* AUTHENTIC DEPUTY SPLIT (FLAME / DRAGON DIVIDER) */
+    .native-deputy-split-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      background: url('/photo-assets/deputy-split.png') center/contain no-repeat;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* VERTICAL CALLIGRAPHY GENERAL NAME */
+    .native-calligraphy-name {
+      position: absolute;
+      top: 17px;
+      font-size: 8px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000, 0 0 2px #000;
+      writing-mode: vertical-rl;
+      letter-spacing: 1px;
+      z-index: 4;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .native-calligraphy-name.left { left: 2px; }
+    .native-calligraphy-name.right { left: 52%; transform: translateX(-50%); }
+
+    /* HIDDEN GENERAL BACK CARD */
+    .native-hidden-back {
+      width: 100%;
+      height: 100%;
+      background: #1c1510 url('/photo-assets/back/wei.png') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: rgba(255,217,125,0.7);
+    }
+    .faction-shu .native-hidden-back { background-image: url('/photo-assets/back/shu.png'); }
+    .faction-wu  .native-hidden-back { background-image: url('/photo-assets/back/wu.png'); }
+    .faction-qun .native-hidden-back { background-image: url('/photo-assets/back/qun.png'); }
+
+    /* 2. TOP OVERLAY BAR: KINGDOM CREST, SEAT NUM, DELAYED TRICKS, SCREEN NAME */
+    .native-top-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 16px;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+      pointer-events: none;
+    }
+    .native-top-left-identity {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .native-kingdom-crest {
+      font-size: 7.5px;
+      font-weight: 900;
+      padding: 1px 3px;
+      border-radius: 2px;
+      color: #fff;
+      line-height: 1;
+      border: 1px solid rgba(255,217,125,0.5);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .faction-wei .native-kingdom-crest { background: linear-gradient(180deg, #3b6c9e 0%, #1c3c61 100%); }
+    .faction-shu .native-kingdom-crest { background: linear-gradient(180deg, #a83838 0%, #631919 100%); }
+    .faction-wu  .native-kingdom-crest { background: linear-gradient(180deg, #2e8b57 0%, #154e2f 100%); }
+    .faction-qun .native-kingdom-crest { background: linear-gradient(180deg, #8a735c 0%, #4a3c2e 100%); }
+
+    .native-seat-badge-circle {
+      font-size: 8px;
+      font-weight: 800;
+      color: #ffd97d;
+      background: rgba(0,0,0,0.6);
+      border-radius: 50%;
+      width: 12px;
+      height: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      border: 1px solid rgba(255,217,125,0.4);
+    }
+    .native-seat-player-name {
+      font-size: 7.5px;
+      color: #f0e2cd;
+      font-weight: 700;
+      text-shadow: 0 1px 2px #000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 42px;
+    }
+
+    /* DELAYED TRICK AREA (DelayedTrickArea.qml) */
+    .native-delayed-trick-group {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+    }
+    .native-trick-badge {
+      font-size: 7.5px;
+      font-weight: 900;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      line-height: 1;
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .native-trick-badge.trick-indulgence {
+      background: radial-gradient(circle, #3d8bfd 0%, #0d47a1 100%);
+      box-shadow: 0 0 4px #29b6f6;
+    }
+    .native-trick-badge.trick-supply {
+      background: radial-gradient(circle, #ffca28 0%, #f57f17 100%);
+      color: #212121;
+      box-shadow: 0 0 4px #ffd54f;
+    }
+    .native-trick-badge.trick-lightning {
+      background: radial-gradient(circle, #ab47bc 0%, #4a148c 100%);
+      box-shadow: 0 0 4px #e040fb;
+    }
+
+    /* 3. VERTICAL MAGATAMA HP COLUMN (HpBar.qml: x: 6, anchors.bottom: parent.bottom, anchors.bottomMargin: 27) */
+    .native-hp-vertical-column {
+      position: absolute;
+      left: 2px;
+      bottom: 22px;
+      z-index: 6;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 1px;
+      pointer-events: none;
+    }
+    .native-heg-hp-disc-v {
+      width: 12px;
+      height: 12px;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.85));
+    }
+    .native-hp-vertical-fraction {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.95;
+      font-size: 7.5px;
+      font-weight: 900;
+      color: #7de8a8;
+      text-shadow: 0 1px 2px #000, 0 0 3px #000;
+      font-variant-numeric: tabular-nums;
+      margin-top: 1px;
+    }
+    .native-hp-vertical-fraction.hp-warning { color: #ffd700; }
+    .native-hp-vertical-fraction.hp-danger  { color: #ff5252; }
+    .native-hp-vertical-fraction .hp-slash {
+      font-size: 6px;
+      opacity: 0.7;
+      transform: rotate(20deg);
+    }
+
+    /* 4. AUTHENTIC HANDCARD BADGE (Photo.qml: pinned bottom-left) */
+    .native-handcard-badge {
+      position: absolute;
+      left: -2px;
+      bottom: -2px;
+      width: 26px;
+      height: 20px;
+      z-index: 8;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 2px;
+      background: url('/photo-assets/handcard.png') center/contain no-repeat;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+    .native-handcard-count-text {
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 1px 3px #000;
+    }
+
+    /* 5. AUTHENTIC BOTTOM EQUIPMENT OVERLAY (EquipArea.qml & equipbg.png) - 4 ROWS / 5 SLOTS */
+    .native-equip-plate {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 22px;
+      height: 46px;
+      z-index: 6;
+      background: url('/photo-assets/equipbg.png') right bottom/cover no-repeat,
+                  linear-gradient(180deg, rgba(20,16,12,0.3) 0%, rgba(10,8,6,0.92) 100%);
+      border-top-left-radius: 4px;
+      border-top: 1px solid rgba(212,155,56,0.4);
+      padding: 1px 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      pointer-events: none;
+    }
+    .native-equip-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 6.5px;
+      line-height: 1;
+      height: 9.5px;
+      padding: 0 1px;
+      border-radius: 1px;
+    }
+    .native-equip-row.equipped {
+      background: rgba(255,255,255,0.08);
+    }
+    .native-equip-row.empty {
+      opacity: 0.35;
+    }
+    .native-eq-icon {
+      font-size: 7px;
+      flex: none;
+      width: 10px;
+      text-align: center;
+    }
+    .native-eq-name {
+      flex: 1;
+      font-weight: 800;
+      color: #ffe299;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0 2px;
+    }
+    .native-eq-suit {
+      font-size: 6.5px;
+      font-weight: 900;
+      flex: none;
+    }
+    .native-eq-suit.suit-red { color: #ff5252; text-shadow: 0 0 2px rgba(255,0,0,0.6); }
+    .native-eq-suit.suit-black { color: #f0f0f0; text-shadow: 0 0 2px #000; }
+
+    .native-equip-rides-split {
+      display: flex;
+      gap: 1px;
+      height: 10px;
+    }
+    .native-equip-half {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      font-size: 6.5px;
+      font-weight: 800;
+      color: #e6c88b;
+      background: rgba(255,255,255,0.06);
+      border-radius: 1px;
+    }
+    .native-equip-half.empty { opacity: 0.35; }
+
+    /* OVERLAYS: CHAIN, DRUNK, DYING, TURNOVER */
+    .native-chain-overlay {
+      position: absolute;
+      top: 48%;
+      transform: translateY(-50%);
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: url('/photo-assets/chain.png') center/contain no-repeat;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .native-drunk-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(230, 20, 20, 0.4);
+      z-index: 4;
+      pointer-events: none;
+      animation: drunk-wine-pulse 2s infinite ease-in-out;
+    }
+    @keyframes drunk-wine-pulse {
+      0%, 100% { background: rgba(230, 20, 20, 0.3); }
+      50% { background: rgba(230, 20, 20, 0.52); }
+    }
+    .native-dying-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.68);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 7;
+      pointer-events: none;
+    }
+    .native-dying-overlay img {
+      width: 42px;
+      height: auto;
+      filter: drop-shadow(0 0 6px rgba(255,50,50,0.9));
+      animation: sos-heartbeat 800ms infinite alternate ease-in-out;
+    }
+    @keyframes sos-heartbeat {
+      0% { transform: scale(0.92); }
+      100% { transform: scale(1.08); }
+    }
+
+    /* TARGETING BUTTON (PRESERVING WIRE CONTRACT FOR E2E/LUA) */
+    .native-target-btn {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #ff3333;
+      font-size: 32px;
+      font-weight: 900;
+      text-shadow: 0 0 10px #ff3333, 0 0 20px #ff0000;
+      pointer-events: auto;
+    }
+    .native-photo-seat.targeted .native-target-btn {
+      display: flex;
+    }
+
+    /* ============================================================
+       AUTHENTIC CENTER: TABLE PILE & DECK (NO STATIC TEXT!)
+       ============================================================ */
+    .native-table-center {
+      position: absolute;
+      top: 39.5%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* DRAW PILE & DISCARD PILE */
+    .native-deck-slot {
+      width: 58px;
+      height: 82px;
+      border-radius: 5px;
+      background: #1a120c;
+      border: 1px dashed rgba(212, 155, 56, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .native-deck-slot.draw-pile {
+      background: #1e1610 url('/photo-assets/back/wei.png') center/cover no-repeat;
+      border: 1px solid rgba(212, 155, 56, 0.7);
+    }
+    .native-deck-badge {
+      background: rgba(0,0,0,0.8);
+      color: #ffd97d;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 155, 56, 0.5);
+    }
+
+    /* ACTIVE RESOLUTION PILE (TABLE PILE) */
+    .native-table-pile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: rgba(10, 20, 15, 0.85);
+      border: 1px solid rgba(212, 155, 56, 0.6);
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.7), inset 0 0 15px rgba(212, 155, 56, 0.15);
+    }
+
+    .native-resolving-card {
+      width: 68px;
+      height: 96px;
+      background: #fdfaf2;
+      border: 2px solid #d49b38;
+      border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.8), 0 0 12px rgba(255, 215, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: native-card-popup 300ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      position: relative;
+    }
+    @keyframes native-card-popup {
+      0% { transform: scale(0.6) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .native-resolving-card .card-head {
+      font-size: 8.5px;
+      font-weight: bold;
+      padding: 2px 4px;
+      color: #111;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #ddd;
+    }
+    .native-resolving-card .card-thumb {
+      flex: 1;
+      background: #f0ebe1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .native-resolving-card .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .native-resolving-card .card-foot {
+      font-size: 8.5px;
+      font-weight: 800;
+      text-align: center;
+      padding: 2px;
+      color: #1a1005;
+      background: #e6c88b;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* TARGET POINTER BEAM */
+    .native-target-beam {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, #ffd700, #ff4444);
+      box-shadow: 0 0 8px #ff4444;
+      pointer-events: none;
+      z-index: 8;
+      transform-origin: left center;
+      opacity: 0.8;
+      animation: beam-pulse 800ms infinite alternate;
+    }
+    @keyframes beam-pulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    /* LOCAL DASHBOARD (DÁY BÀN) */
+    .native-dashboard-dock {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 140px;
+      background: linear-gradient(180deg, rgba(16, 12, 9, 0.7) 0%, rgba(10, 8, 6, 0.98) 30%);
+      border-top: 1px solid rgba(212, 155, 56, 0.5);
+      display: flex;
+      align-items: flex-end;
+      padding: 6px 14px;
+      gap: 14px;
+      z-index: 20;
+    }
+
+    .native-self-photo {
+      width: 120px;
+      height: 130px;
+      background: #15110d;
+      border: 2px solid #992626;
+      border-radius: 7px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(255,215,0,0.3);
+      position: relative;
+      overflow: hidden;
+      flex: none;
+    }
+
+    /* ============================================================
+       ANATOMY DEEP-DIVE ZOOM-IN SECTION (2.5X SINGLE SEAT COMPARISON)
+       ============================================================ */
+    .anatomy-deepdive-section {
+      margin-top: 26px;
+      background: linear-gradient(180deg, #18130e 0%, #100d0a 100%);
+      border: 2px solid #5a4634;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.7);
+    }
+    .anatomy-header {
+      border-bottom: 1px solid rgba(212,155,56,0.3);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .anatomy-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffd97d;
+    }
+    .anatomy-subtitle {
+      font-size: 12px;
+      color: #cbb99e;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .anatomy-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .anatomy-card-wrapper {
+      background: #1e1712;
+      border: 1px solid #4a3420;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    .anatomy-card-label {
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .anatomy-zoom-frame {
+      width: 220px;
+      height: 300px;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.9);
+    }
+    .anatomy-feature-list {
+      margin-top: 16px;
+      font-size: 11.5px;
+      color: #d6c6b2;
+      line-height: 1.55;
+      width: 100%;
+      padding-left: 18px;
+    }
+    .anatomy-feature-list li {
+      margin-bottom: 6px;
+    }
+    .callout-tag {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      margin-right: 4px;
+    }
+    .tag-danger  { background: #6b1d1d; color: #ff9999; border: 1px solid #ff4444; }
+    .tag-warning { background: #6b531d; color: #ffe299; border: 1px solid #ffd700; }
+    .tag-success { background: #1d5e35; color: #99ffbb; border: 1px solid #00e676; }
+
+    .native-hand-fanned {
+      flex: 1;
+      height: 110px;
+      display: flex;
+      align-items: flex-end;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .native-hand-card {
+      width: 66px;
+      height: 94px;
+      background: #fff;
+      border: 1px solid #4a3420;
+      border-radius: 5px;
+      margin-left: -14px;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: none;
+      position: relative;
+    }
+    .native-hand-card:first-child { margin-left: 0; }
+    .native-hand-card:hover {
+      transform: translateY(-16px) scale(1.06);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.8), 0 0 10px rgba(255,215,0,0.7);
+      z-index: 100 !important;
+    }
+    .native-hand-card.selected {
+      transform: translateY(-20px) scale(1.08);
+      border-color: #ffd700;
+      box-shadow: 0 0 16px rgba(255, 215, 0, 0.9);
+      z-index: 100 !important;
+    }
+
+    /* ACTION BAR FLOATING OVER HAND */
+    .native-actions-floating {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .native-action-btn {
+      background: linear-gradient(180deg, #ffd97d 0%, #d49b38 48%, #8c5816 100%);
+      color: #1a0f05;
+      font-weight: 800;
+      font-size: 11px;
+      border: 1px solid #ffe299;
+      border-radius: 4px;
+      padding: 4px 10px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+    }
+    .native-action-btn.cancel {
+      background: linear-gradient(180deg, #665042 0%, #3d2f25 100%);
+      color: #f0e6d6;
+      border-color: #8c7362;
+    }
+
+    /* ============================================================
+       COLUMN 1 (REALITY) CSS OVERRIDES TO SHOW 8-10 COLLISION
+       ============================================================ */
+    .reality-table-container {
+      position: relative;
+      background: #11281c;
+      border: 4px solid #3d2817;
+      border-radius: 36px;
+      min-height: 560px;
+      overflow: hidden;
+    }
+    .reality-opponents-box {
+      position: relative;
+      min-height: 380px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      align-content: flex-start;
+      justify-content: center;
+    }
+    .reality-bulky-seat {
+      width: clamp(170px, 20%, 220px);
+      background: #1c1510;
+      border: 1px solid #8c5816;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 11px;
+      color: #f5eedc;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    .reality-bulky-seat.collision-danger {
+      border: 2px dashed #ff4444;
+      background: rgba(80, 20, 20, 0.4);
+    }
+    .reality-center-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background: rgba(0,0,0,0.7);
+      padding: 12px 20px;
+      border: 1px solid #8c5816;
+      border-radius: 8px;
+    }
+    .reality-center-brand {
+      font-size: 18px;
+      font-weight: 800;
+      color: #d49b38;
+      letter-spacing: 2px;
+    }
+    .reality-center-status {
+      font-size: 12px;
+      color: #c4b5a0;
+      margin-top: 4px;
+    }
+
+    /* NOTICE BANNER */
+    .critique-banner {
+      background: rgba(30, 15, 10, 0.9);
+      border: 1px solid #a83838;
+      border-left: 4px solid #ff4444;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .critique-banner strong { color: #ffd97d; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP TOOLBAR -->
+  <header class="mockup-toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Chế độ xem:</span>
+      <button class="tool-btn active" id="btnViewSplit" onclick="setViewMode('split')">Song Song Đối Chiếu</button>
+      <button class="tool-btn" id="btnViewReality" onclick="setViewMode('reality')">Chỉ Code Hiện Tại</button>
+      <button class="tool-btn" id="btnViewProposal" onclick="setViewMode('proposal')">Chỉ Chuẩn FreeKill/QSGS</button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Số Ghế:</span>
+      <button class="tool-btn" id="btnCount2" onclick="setSeatCount(2)">2 Ghế (1v1)</button>
+      <button class="tool-btn" id="btnCount4" onclick="setSeatCount(4)">4 Ghế</button>
+      <button class="tool-btn active" id="btnCount8" onclick="setSeatCount(8)">8 Ghế (Quốc Chiến Chuẩn)</button>
+      <button class="tool-btn" id="btnCount10" onclick="setSeatCount(10)">10 Ghế (Bàn Lớn)</button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Màn hình:</span>
+      <button class="tool-btn active" id="btnDevDesktop" onclick="setDevice('desktop')">Desktop (1280px)</button>
+      <button class="tool-btn" id="btnDev390" onclick="setDevice('mobile-390')">iPhone (390px)</button>
+      <button class="tool-btn" id="btnDev360" onclick="setDevice('mobile-360')">Android (360px)</button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Trạng thái:</span>
+      <button class="tool-btn tool-toggle-btn toggled-on" id="toggleTurn" onclick="toggleState('turn')">Lượt chơi</button>
+      <button class="tool-btn tool-toggle-btn toggled-on" id="toggleChain" onclick="toggleState('chain')">Xích sắt</button>
+      <button class="tool-btn tool-toggle-btn" id="toggleDrunk" onclick="toggleState('drunk')">Say rượu</button>
+      <button class="tool-btn tool-toggle-btn" id="toggleDying" onclick="toggleState('dying')">Hấp hối (SOS)</button>
+      <button class="tool-btn tool-toggle-btn" id="toggleTablePile" onclick="toggleState('tablepile')">Bài Tâm Bàn</button>
+      <button class="tool-btn tool-toggle-btn" id="toggleTarget" onclick="toggleState('target')">Chọn Mục Tiêu</button>
+    </div>
+  </header>
+
+  <main class="workbench-body">
+
+    <!-- CRITIQUE CALLOUT BANNER -->
+    <div class="critique-banner">
+      <strong>Xác nhận 3 điểm phê chuẩn từ mã nguồn gốc:</strong>
+      <ol style="margin: 4px 0 0 16px; padding: 0;">
+        <li><strong>Kích thước khung:</strong> Code hiện tại dùng <code>clamp(170px, 20%, 220px)</code> (quá to). Khi bàn 8–10 người, cột trái sẽ bị va chạm, đè nát bàn chơi. Cột phải áp dụng chuẩn FreeKill <code>98px × 136px</code> và thuật toán <code>arrangeManyPhotos</code> chữ U.</li>
+        <li><strong>Giao diện máu:</strong> Cột trái dùng ngọc câu hình phẩy vương triều (<code>3.png</code>). Cột phải tích hợp đúng 4 đĩa <strong>Âm Dương Ngư Thái Cực</strong> (<code>0-heg.png</code>, <code>1-heg.png</code>, <code>2-heg.png</code>, <code>3-heg.png</code>) từ FreeKill upstream!</li>
+        <li><strong>Tâm bàn chơi:</strong> Cột trái lãng phí diện tích với text tĩnh "Quốc Chiến" và "X ghế đã xếp". Cột phải thay thế bằng <strong>TablePile (Processing Area)</strong> giải quyết thẻ bài thực thời kèm Draw/Discard deck.</li>
+      </ol>
+    </div>
+
+    <div class="view-container-split" id="mainContainer">
+
+      <!-- ========================================================
+           CỘT TRÁI: 100% CODE HIỆN TẠI (REALITY)
+           ======================================================== -->
+      <section class="board-column" id="columnReality">
+        <div class="column-header">
+          <div class="column-title">
+            <span>1. Thực Tế Code Đang Chạy</span>
+            <span class="column-badge badge-reality">Mã Nguồn Hiện Hành</span>
+          </div>
+          <span style="font-size: 12px; color: #d4a770;" id="realitySummaryNote">Khung 170-220px · Ngọc Câu Vương Triều · Text Giữa Bàn</span>
+        </div>
+
+        <div class="device-viewport-frame" id="frameReality">
+          <div class="reality-table-container">
+
+            <!-- Tâm bàn hiện tại: Text tĩnh thừa thãi -->
+            <div class="reality-center-box" id="realityCenterBox">
+              <div class="reality-center-brand">Quốc Chiến</div>
+              <div class="reality-center-status" id="realitySeatCount">8 ghế đã xếp</div>
+              <div style="font-size: 10px; color: #887a6b; margin-top: 4px;">(Khối text tĩnh giữa bàn)</div>
+            </div>
+
+            <!-- Danh sách ghế đối thủ hiện tại (Khung to 170-220px) -->
+            <div class="reality-opponents-box" id="realityOpponentsBox">
+              <!-- Dynamically populated to demonstrate collision -->
+            </div>
+
+            <!-- Ghế bản thân ở đáy -->
+            <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); width: clamp(200px, 30%, 280px); background:#1e1711; border:2px solid #a83838; border-radius:8px; padding:8px; text-align:center;">
+              <span style="color:#ffd97d; font-weight:bold; font-size:11px;">Ghế 1 (Bạn) · Thục</span>
+              <div style="display:flex; justify-content:center; gap:3px; margin:4px 0;">
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+              </div>
+              <span style="font-size:10px; color:#cbb99e;">Ngọc câu đơn Vương Triều cổ điển</span>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================================
+           CỘT PHẢI: KẾ HOẠCH ĐỀ XUẤT NATIVE PARITY (PROPOSAL)
+           ======================================================== -->
+      <section class="board-column" id="columnProposal">
+        <div class="column-header">
+          <div class="column-title">
+            <span>2. Chuẩn Native Parity</span>
+            <span class="column-badge badge-proposal">FreeKill / QSGS / Mobile Hegemony</span>
+          </div>
+          <span style="font-size: 12px; color: #7de8a8;">Khung 98px · Âm Dương Ngư · TablePile Tâm Bàn</span>
+        </div>
+
+        <div class="device-viewport-frame" id="frameProposal">
+          <div class="native-felt-table" id="nativeTable">
+
+            <!-- VÒNG CUNG ĐỐI THỦ CHỮ U (FREEKILL ARRANGE-MANY-PHOTOS) -->
+            <div class="native-opponents-arch" id="nativeOpponentsArch">
+              <!-- Dynamically generated according to seat count -->
+            </div>
+
+            <!-- TÂM BÀN THẬT: TABLE PILE & DECK (KHÔNG CÓ CHỮ TĨNH!) -->
+            <div class="native-table-center" id="nativeTableCenter">
+              <!-- Cọc bài rút -->
+              <div class="native-deck-slot draw-pile" title="Chồng bài rút">
+                <span class="native-deck-badge">104</span>
+                <span style="font-size: 8px; color: #ffe299; font-weight: bold;">Rút</span>
+              </div>
+
+              <!-- VÙNG GIẢI QUYẾT BÀI ĐANG CHƠI (PROCESSING AREA) -->
+              <div class="native-table-pile" id="nativeProcessingArea">
+                <div class="native-resolving-card" id="cardSlash">
+                  <div class="card-head">
+                    <span style="color:#000;">♠ 7</span>
+                    <span style="color:#8c5816; font-size:7.5px;">Cơ Bản</span>
+                  </div>
+                  <div class="card-thumb">
+                    <img src="/card-catalog-art/slash.png" alt="Sát" onerror="this.src='/photo-assets/back/wei.png'" />
+                  </div>
+                  <div class="card-foot">【 SÁT 】</div>
+                </div>
+
+                <div class="native-resolving-card" id="cardNull" style="display:none; animation-delay: 200ms;">
+                  <div class="card-head">
+                    <span style="color:#000;">♣ Q</span>
+                    <span style="color:#1e6b3c; font-size:7.5px;">Cẩm Nang</span>
+                  </div>
+                  <div class="card-thumb">
+                    <img src="/card-catalog-art/nullification.png" alt="Vô Giải" onerror="this.src='/photo-assets/back/wu.png'" />
+                  </div>
+                  <div class="card-foot">【 VÔ GIẢI 】</div>
+                </div>
+              </div>
+
+              <!-- Cọc bài bỏ -->
+              <div class="native-deck-slot" title="Chồng bài bỏ">
+                <span class="native-deck-badge" style="background:#3d2f25;">18</span>
+                <span style="font-size: 8px; color: #bdaa93;">Bỏ</span>
+              </div>
+            </div>
+
+            <!-- DASHBOARD BẢN THÂN Ở ĐÁY -->
+            <div class="native-dashboard-dock">
+              <!-- Avatar kép bản thân chuẩn FreeKill Full-Bleed -->
+              <div class="native-self-photo">
+                <!-- 1. FULL-BLEED DUAL PORTRAIT CANVAS -->
+                <div class="native-portrait-canvas">
+                  <div class="native-general-slot half">
+                    <img src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" />
+                    <span class="native-calligraphy-name left">Quan Vũ</span>
+                  </div>
+                  <div class="native-deputy-split-line"></div>
+                  <div class="native-general-slot half">
+                    <img src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" />
+                    <span class="native-calligraphy-name right">Triệu Vân</span>
+                  </div>
+                </div>
+
+                <!-- 2. TOP OVERLAY: KINGDOM CREST, SEAT NUM, YOU BADGE -->
+                <div class="native-top-overlay">
+                  <div class="native-top-left-identity">
+                    <span class="native-kingdom-crest faction-shu">THỤC</span>
+                    <span class="native-seat-badge-circle">①</span>
+                  </div>
+                  <span class="native-seat-player-name" style="color:#ffd97d;">Bạn</span>
+                  <div class="native-delayed-trick-group">
+                    <!-- Trống hoặc bài phán định -->
+                  </div>
+                </div>
+
+                <!-- 3. VERTICAL MAGATAMA HP COLUMN (HpBar.qml) -->
+                <div class="native-hp-vertical-column">
+                  <img class="native-heg-hp-disc-v" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+                  <img class="native-heg-hp-disc-v" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+                  <img class="native-heg-hp-disc-v" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+                  <img class="native-heg-hp-disc-v" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+                  <div class="native-hp-vertical-fraction">
+                    <span>4</span>
+                    <span class="hp-slash">/</span>
+                    <span>4</span>
+                  </div>
+                </div>
+
+                <!-- 4. AUTHENTIC HANDCARD BADGE (Photo.qml: pinned bottom-left) -->
+                <div class="native-handcard-badge">
+                  <span class="native-handcard-count-text">4</span>
+                </div>
+
+                <!-- 5. BOTTOM EQUIPMENT OVERLAY (EquipArea.qml & equipbg.png) - 4 ROWS / 5 SLOTS -->
+                <div class="native-equip-plate" style="height:52px; left:26px;">
+                  <!-- Hàng 1: Bảo vật (Treasure) -->
+                  <div class="native-equip-row equipped">
+                    <span class="native-eq-icon">📿</span>
+                    <span class="native-eq-name">Mộc Ngưu Lưu Mã</span>
+                    <span class="native-eq-suit suit-red">♦5</span>
+                  </div>
+                  <!-- Hàng 2: Vũ khí (Weapon) -->
+                  <div class="native-equip-row equipped">
+                    <span class="native-eq-icon">⚔️</span>
+                    <span class="native-eq-name">Thanh Long Đao</span>
+                    <span class="native-eq-suit suit-black">♠6</span>
+                  </div>
+                  <!-- Hàng 3: Phòng cụ (Armor) -->
+                  <div class="native-equip-row equipped">
+                    <span class="native-eq-icon">🛡️</span>
+                    <span class="native-eq-name">Bát Quái Trận</span>
+                    <span class="native-eq-suit suit-black">♣2</span>
+                  </div>
+                  <!-- Hàng 4: Tọa kỵ (+1 Mã / -1 Mã) -->
+                  <div class="native-equip-rides-split">
+                    <div class="native-equip-half"><span class="native-eq-icon">🐎</span>+1 Đích Lư</div>
+                    <div class="native-equip-half empty"><span class="native-eq-icon">🏹</span>-1</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dải bài trên tay 0° và dải nút thao tác -->
+              <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
+                <div class="native-actions-floating">
+                  <button class="native-action-btn" type="button">Xác nhận</button>
+                  <button class="native-action-btn cancel" type="button">Hủy</button>
+                  <button class="native-action-btn cancel" type="button">Kết thúc lượt</button>
+                </div>
+                <div class="native-hand-fanned">
+                  <!-- Lá 1 -->
+                  <div class="native-hand-card" onclick="this.classList.toggle('selected')">
+                    <span style="font-size:8px; font-weight:bold; padding:2px 3px; color:#111;">♠ 8</span>
+                    <div style="flex:1; overflow:hidden;"><img src="/card-catalog-art/slash.png" style="width:100%; height:100%; object-fit:cover;" /></div>
+                    <span style="font-size:7.5px; font-weight:bold; text-align:center; background:#e6c88b; padding:1px;">Băng Sát</span>
+                  </div>
+                  <!-- Lá 2 -->
+                  <div class="native-hand-card" onclick="this.classList.toggle('selected')">
+                    <span style="font-size:8px; font-weight:bold; padding:2px 3px; color:#ff4444;">♥ 7</span>
+                    <div style="flex:1; overflow:hidden;"><img src="/card-catalog-art/ex_nihilo.png" style="width:100%; height:100%; object-fit:cover;" /></div>
+                    <span style="font-size:7.5px; font-weight:bold; text-align:center; background:#e6c88b; padding:1px;">Vô Trung</span>
+                  </div>
+                  <!-- Lá 3 -->
+                  <div class="native-hand-card" onclick="this.classList.toggle('selected')">
+                    <span style="font-size:8px; font-weight:bold; padding:2px 3px; color:#111;">♣ 2</span>
+                    <div style="flex:1; overflow:hidden;"><img src="/card-catalog-art/eight_diagram.png" style="width:100%; height:100%; object-fit:cover;" /></div>
+                    <span style="font-size:7.5px; font-weight:bold; text-align:center; background:#e6c88b; padding:1px;">Bát Quái</span>
+                  </div>
+                  <!-- Lá 4 -->
+                  <div class="native-hand-card" onclick="this.classList.toggle('selected')">
+                    <span style="font-size:8px; font-weight:bold; padding:2px 3px; color:#ff4444;">♦ A</span>
+                    <div style="flex:1; overflow:hidden;"><img src="/card-catalog-art/crossbow.png" style="width:100%; height:100%; object-fit:cover;" /></div>
+                    <span style="font-size:7.5px; font-weight:bold; text-align:center; background:#e6c88b; padding:1px;">Gia Cát Nỏ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========================================================
+         PHÂN TÍCH & ĐỐI CHIẾU GIẢI PHẪU CHI TIẾT 1 Ô GHẾ (ZOOM-IN 2.5X)
+         ======================================================== -->
+    <section class="anatomy-deepdive-section" id="anatomySection">
+      <div class="anatomy-header">
+        <div class="anatomy-title">
+          <span>🔬 So Sánh Giải Phẫu Chi Tiết Từng Ô Ghế (Single Seat Anatomy Zoom-In)</span>
+          <span class="column-badge badge-proposal">Phóng to 2.5x Đối Chiếu Kiến Trúc</span>
+        </div>
+        <p class="anatomy-subtitle">
+          Đối chiếu trực tiếp 3 mô hình trình bày thông tin của 1 ghế người chơi: <strong>[A] Code Thực Tế Hiện Tại</strong> (dạng bảng form văn bản hành chính) vs <strong>[B] Bản Mockup Trước</strong> (4 dải tầng cắt khúc) vs <strong>[C] Chuẩn Gốc FreeKill QML & Sanguosha Mobile Hegemony</strong> (Tràn viền 100%, Cột máu âm dương dọc, Quạt 3 lá bài ghim góc, Bảng trang bị viền tối, Phù hiệu thế lực sơn mài).
+        </p>
+      </div>
+
+      <div class="anatomy-cards-grid">
+
+        <!-- THẺ A: CODE HIỆN TẠI (FORM TEXT THÔ) -->
+        <div class="anatomy-card-wrapper">
+          <div class="anatomy-card-label" style="color:#ff8888;">
+            <span class="callout-tag tag-danger">[A] Mã Nguồn Hiện Tại</span>
+            <span>PlayerPhotoPanel.tsx</span>
+          </div>
+
+          <!-- Mockup Zoom-in của code hiện tại -->
+          <div class="anatomy-zoom-frame" style="background:#1c1510; border:2px solid #8c5816; padding:10px; display:flex; flex-direction:column; justify-content:space-between; font-size:11px;">
+            <!-- Dải 1: Header định danh -->
+            <div style="background:#261d15; border:1px solid #5a4634; padding:5px 8px; border-radius:4px; display:flex; justify-content:space-between;">
+              <span style="color:#ffd97d; font-weight:bold;">Ghế 2 · Người chơi 2</span>
+              <span style="background:#821f1f; color:#fff; font-size:9px; padding:1px 4px; border-radius:2px;">Đang lượt</span>
+            </div>
+            <!-- Dải 2: Thế lực & giai đoạn -->
+            <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:3px; font-size:10px; color:#d4a770; display:flex; justify-content:space-between;">
+              <span>Thế lực: Ngụy</span>
+              <span>Giai đoạn: Đánh bài</span>
+            </div>
+            <!-- Dải 3: Tướng compat text -->
+            <div style="font-size:10px; color:#cbb99e; text-align:center;">
+              Tào Tháo · Chủ tướng ẩn
+            </div>
+            <!-- Dải 4: Khung ảnh bị bóp nhỏ + máu bên phải -->
+            <div style="display:flex; height:90px; gap:8px; align-items:center;">
+              <div style="flex:1; height:100%; border:1px solid #5a4634; border-radius:4px; overflow:hidden; background:#000;">
+                <img src="/photo-assets/generals/caocao.jpg" style="width:100%; height:100%; object-fit:cover;" />
+              </div>
+              <div style="width:36px; display:flex; flex-direction:column; align-items:center; gap:2px;">
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/3.png" style="width:14px; height:14px;" />
+                <img src="/photo-assets/magatama/0.png" style="width:14px; height:14px;" />
+                <span style="font-size:10px; font-weight:bold; color:#7de8a8;">3/4</span>
+              </div>
+            </div>
+            <!-- Dải 5: 5 slot trang bị dạng text list -->
+            <div style="border:1px solid #4a3420; border-radius:4px; padding:4px; font-size:9.5px; color:#bdaa93; background:rgba(0,0,0,0.3);">
+              <div>⚔️ Ỷ Thiên Kiếm (Vũ khí)</div>
+              <div>🛡️ Đằng Giáp (Giáp)</div>
+            </div>
+            <!-- Dải 6: Footer text phán định/dấu hiệu -->
+            <div style="font-size:9px; color:#887a6b; border-top:1px dashed #4a3420; padding-top:4px;">
+              Phán định: Lạc Bất Tư Thục (♠6) · 3 lá bài
+            </div>
+          </div>
+
+          <ul class="anatomy-feature-list">
+            <li><span class="callout-tag tag-danger">Khuyết điểm 1</span> <strong>Bị chia cắt thành 6 khối dẹt riêng lẻ:</strong> Trình bày như một biểu mẫu quản trị HTML, văn bản lặp lại tốn nhiều dòng diện tích.</li>
+            <li><span class="callout-tag tag-danger">Khuyết điểm 2</span> <strong>Ảnh tướng bị bóp nhỏ:</strong> Bị kẹp giữa 5 dải text trên và dưới, mất hoàn toàn vẻ oai phong và tính mỹ thuật của thẻ bài Tam Quốc Sát.</li>
+            <li><span class="callout-tag tag-danger">Khuyết điểm 3</span> <strong>Không thể dàn trang 8-10 người:</strong> Chiều cao 220px-280px làm cho các ô ghế đè chồng lên nhau khi chơi bàn đông người.</li>
+          </ul>
+        </div>
+
+        <!-- THẺ B: BẢN THỬ NGHIỆM TRƯỚC -->
+        <div class="anatomy-card-wrapper">
+          <div class="anatomy-card-label" style="color:#ffd97d;">
+            <span class="callout-tag tag-warning">[B] Bản Thử Nghiệm Trước</span>
+            <span>4 Tầng Cắt Khúc (CP83)</span>
+          </div>
+
+          <!-- Mockup Zoom-in của bản thử nghiệm trước -->
+          <div class="anatomy-zoom-frame" style="background:#15110d; border:2px solid #5a4634; padding:8px; display:flex; flex-direction:column; justify-content:space-between;">
+            <!-- Header dẹt -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:4px;">
+              <span style="font-weight:bold; color:#ffd97d;">Ghế 2</span>
+              <span style="background:#264a73; color:#fff; font-size:10px; font-weight:bold; padding:1px 5px; border-radius:3px;">WEI</span>
+            </div>
+            <!-- Ảnh bị bóp ở giữa -->
+            <div style="flex:1; position:relative; border-radius:5px; overflow:hidden; border:1px solid #3a2818; display:flex;">
+              <div style="flex:1; height:100%; position:relative;">
+                <img src="/photo-assets/generals/caocao.jpg" style="width:100%; height:100%; object-fit:cover;" />
+                <span style="position:absolute; top:4px; left:4px; font-size:10px; font-weight:900; color:#fff; writing-mode:vertical-rl; text-shadow:0 1px 3px #000;">Tào Tháo</span>
+              </div>
+              <div style="width:1px; background:#ffd97d;"></div>
+              <div style="flex:1; height:100%; background:#1c1510 url('/photo-assets/back/wei.png') center/cover; display:flex; align-items:center; justify-content:center; color:#ffd97d; font-size:14px;">
+                ❖
+              </div>
+            </div>
+            <!-- Thanh máu ngang -->
+            <div style="margin-top:6px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; gap:3px;">
+                <img src="/photo-assets/magatama/3-heg.png" style="width:16px; height:16px;" />
+                <img src="/photo-assets/magatama/3-heg.png" style="width:16px; height:16px;" />
+                <img src="/photo-assets/magatama/3-heg.png" style="width:16px; height:16px;" />
+                <img src="/photo-assets/magatama/0-heg.png" style="width:16px; height:16px;" />
+              </div>
+              <span style="font-size:11px; font-weight:bold; color:#7de8a8;">3/4</span>
+              <div style="background:rgba(0,0,0,0.6); border:1px solid rgba(212,155,56,0.5); padding:1px 5px; border-radius:3px; font-size:10px; color:#ffd97d; font-weight:bold;">🎴 3</div>
+            </div>
+            <!-- 5 ô emoji rời rạc -->
+            <div style="margin-top:5px; display:flex; gap:3px; background:rgba(0,0,0,0.5); padding:2px; border-radius:3px;">
+              <span style="flex:1; text-align:center; font-size:10px; background:rgba(255,255,255,0.06); border-radius:2px;">📿</span>
+              <span style="flex:1; text-align:center; font-size:10px; background:#8c5816; color:#ffe299; font-weight:bold; border-radius:2px;">⚔️</span>
+              <span style="flex:1; text-align:center; font-size:10px; background:#8c5816; color:#ffe299; font-weight:bold; border-radius:2px;">🛡️</span>
+              <span style="flex:1; text-align:center; font-size:10px; background:rgba(255,255,255,0.06); border-radius:2px;">🐎</span>
+              <span style="flex:1; text-align:center; font-size:10px; background:rgba(255,255,255,0.06); border-radius:2px;">🏹</span>
+            </div>
+          </div>
+
+          <ul class="anatomy-feature-list">
+            <li><span class="callout-tag tag-warning">Nhược điểm 1</span> <strong>Vẫn là 4 tầng cắt khúc:</strong> Header dẹt trên cùng và 2 thanh footer ở đáy vẫn chiếm gần 40% chiều cao của ô, bóp nghẹt ảnh tướng ở giữa.</li>
+            <li><span class="callout-tag tag-warning">Nhược điểm 2</span> <strong>Thanh máu ngang chiếm đáy:</strong> FreeKill và Sanguosha Mobile không dùng thanh máu ngang dưới ảnh, mà dùng cột dọc bên trái.</li>
+            <li><span class="callout-tag tag-warning">Nhược điểm 3</span> <strong>5 nút emoji trọc:</strong> Không có tên thẻ, không có chất bài (♠♥♦♣), không đúng chuẩn hiển thị của FreeKill EquipArea.</li>
+          </ul>
+        </div>
+
+        <!-- THẺ C: CHUẨN GỐC FREEKILL QML & SANGUOSHA MOBILE HEGEMONY -->
+        <div class="anatomy-card-wrapper" style="border-color:#00e676; box-shadow:0 8px 26px rgba(0,230,118,0.25);">
+          <div class="anatomy-card-label" style="color:#7de8a8;">
+            <span class="callout-tag tag-success">[C] Chuẩn Gốc FreeKill / Sanguosha</span>
+            <span>Photo.qml & Mobile Hegemony</span>
+          </div>
+
+          <!-- Mockup Zoom-in 2.5x CHUẨN GỐC NATIVE -->
+          <div class="anatomy-zoom-frame" style="background:#15110d; border:2px solid #2b5c8f; box-shadow:0 8px 26px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(66,135,245,0.4);">
+            <!-- 1. FULL-BLEED DUAL GENERAL CANVAS -->
+            <div class="native-portrait-canvas">
+              <div class="native-general-slot half">
+                <img src="/photo-assets/generals/caocao.jpg" alt="Tào Tháo" />
+                <span class="native-calligraphy-name left" style="font-size:12px; top:28px; left:6px;">Tào Tháo</span>
+              </div>
+              <div class="native-deputy-split-line" style="width:10px;"></div>
+              <div class="native-general-slot half">
+                <div class="native-hidden-back" style="font-size:18px;">❖</div>
+              </div>
+            </div>
+
+            <!-- 2. TOP OVERLAY: PHÙ HIỆU SƠN MÀI, SỐ GHẾ, DELAYED TRICKS -->
+            <div class="native-top-overlay" style="height:26px; padding:2px 6px;">
+              <div class="native-top-left-identity" style="gap:4px;">
+                <span class="native-kingdom-crest faction-wei" style="font-size:10px; padding:2px 5px;">NGỤY</span>
+                <span class="native-seat-badge-circle" style="width:16px; height:16px; font-size:10px;">②</span>
+              </div>
+              <span class="native-seat-player-name" style="font-size:10.5px; max-width:80px;">Tào Tháo</span>
+              <div class="native-delayed-trick-group" style="gap:3px;">
+                <span class="native-trick-badge trick-indulgence" style="width:18px; height:18px; font-size:10px;" title="Lạc Bất Tư Thục">Lạc</span>
+              </div>
+            </div>
+
+            <!-- 3. CỘT MÁU ÂM DƯƠNG DỌC (HpBar.qml: x: 6, bottom: 27) -->
+            <div class="native-hp-vertical-column" style="left:5px; bottom:38px; gap:2px;">
+              <img class="native-heg-hp-disc-v" style="width:18px; height:18px;" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img class="native-heg-hp-disc-v" style="width:18px; height:18px;" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img class="native-heg-hp-disc-v" style="width:18px; height:18px;" src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img class="native-heg-hp-disc-v" style="width:18px; height:18px;" src="/photo-assets/magatama/0-heg.png" alt="HP" />
+              <div class="native-hp-vertical-fraction" style="font-size:11px; margin-top:2px;">
+                <span>3</span>
+                <span class="hp-slash">/</span>
+                <span>4</span>
+              </div>
+            </div>
+
+            <!-- 4. HUY HIỆU QUẠT 3 LÁ BÀI TRÊN TAY (Photo.qml: pinned bottom-left) -->
+            <div class="native-handcard-badge" style="width:40px; height:30px; left:-3px; bottom:-3px; padding-bottom:4px;">
+              <span class="native-handcard-count-text" style="font-size:16px;">3</span>
+            </div>
+
+            <!-- 5. BẢNG TRANG BỊ VIỀN TỐI PHỦ ĐÁY (EquipArea.qml & equipbg.png) - ĐẦY ĐỦ 5 Ô -->
+            <div class="native-equip-plate" style="left:38px; height:68px; padding:2px 4px;">
+              <!-- Hàng 1: Bảo vật (Treasure) -->
+              <div class="native-equip-row equipped" style="height:13px; font-size:9px;">
+                <span class="native-eq-icon" style="font-size:10px; width:14px;">📿</span>
+                <span class="native-eq-name">Định Hải Châu</span>
+                <span class="native-eq-suit suit-black" style="font-size:9px;">♠A</span>
+              </div>
+              <!-- Hàng 2: Vũ khí (Weapon) -->
+              <div class="native-equip-row equipped" style="height:13px; font-size:9px;">
+                <span class="native-eq-icon" style="font-size:10px; width:14px;">⚔️</span>
+                <span class="native-eq-name">Ỷ Thiên Kiếm</span>
+                <span class="native-eq-suit suit-black" style="font-size:9px;">♠6</span>
+              </div>
+              <!-- Hàng 3: Phòng cụ (Armor) -->
+              <div class="native-equip-row equipped" style="height:13px; font-size:9px;">
+                <span class="native-eq-icon" style="font-size:10px; width:14px;">🛡️</span>
+                <span class="native-eq-name">Đằng Giáp</span>
+                <span class="native-eq-suit suit-black" style="font-size:9px;">♠2</span>
+              </div>
+              <!-- Hàng 4: Tọa kỵ (+1 Mã / -1 Mã) -->
+              <div class="native-equip-rides-split" style="height:13px;">
+                <div class="native-equip-half" style="font-size:8.5px;"><span class="native-eq-icon" style="font-size:9px;">🐎</span>+1 Tuyệt Ảnh</div>
+                <div class="native-equip-half empty" style="font-size:8.5px;"><span class="native-eq-icon" style="font-size:9px;">🏹</span>-1</div>
+              </div>
+            </div>
+          </div>
+
+          <ul class="anatomy-feature-list">
+            <li><span class="callout-tag tag-success">Đặc điểm 1</span> <strong>Tràn Viền 100% (Full-Bleed):</strong> Không có dải header hay footer nào cắt ngang thẻ. Tranh tướng phủ kín 100% không gian, có rãnh chia long phụng <code>deputy-split.png</code> và tên chữ dọc truyền thống.</li>
+            <li><span class="callout-tag tag-success">Đặc điểm 2</span> <strong>Cột Máu Âm Dương Dọc (HpBar.qml):</strong> Bám sát mép trái, các đĩa Thái Cực <code>3-heg.png</code>..<code>0-heg.png</code> xếp chồng thẳng đứng kèm tỷ lệ <code>3/4</code>, giải phóng hoàn toàn tầm nhìn trung tâm.</li>
+            <li><span class="callout-tag tag-success">Đặc điểm 3</span> <strong>Huy Hiệu Quạt 3 Lá Bài (Photo.qml):</strong> Ghim góc dưới trái đúng asset <code>handcard.png</code> với số lượng chữ trắng viền nét đen đậm.</li>
+            <li><span class="callout-tag tag-success">Đặc điểm 4</span> <strong>Đầy Đủ 5 Ô Trang Bị (EquipArea.qml & equipbg.png):</strong> Ô 1 Bảo vật (<code>📿 Định Hải Châu ♠A</code>), Ô 2 Vũ khí (<code>⚔️ Ỷ Thiên ♠6</code>), Ô 3 Phòng cụ (<code>🛡️ Đằng Giáp ♠2</code>), Ô 4 & 5 Tọa kỵ (<code>🐎+1 Tuyệt Ảnh</code> | <code>🏹-1</code>).</li>
+            <li><span class="callout-tag tag-success">Đặc điểm 5</span> <strong>Phù Hiệu Sơn Mài & Bài Phán Định:</strong> Góc trên trái có phù hiệu thế lực + số ghế <code>②</code>; góc trên phải có ấn bài phán định (Lạc, Binh, Sấm).</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // DATA PROTOTYPES FOR SEATS (AUTHENTIC HEGEMONY ROSTER WITH EQUIPMENT & DELAYED TRICKS)
+    const ROSTER = [
+      { id: 2, name: 'Tào Tháo', dep: 'Ẩn', faction: 'wei', hp: 3, maxHp: 4, hand: 3, art: 'caocao', treasure: 'Định Hải Châu', treasureSuit: '♠A', weapon: 'Ỷ Thiên Kiếm', weaponSuit: '♠6', armor: 'Đằng Giáp', armorSuit: '♠2', defHorse: 'Tuyệt Ảnh', delayed: 'indulgence' },
+      { id: 3, name: 'Chu Du', dep: 'Hoàng Cái', faction: 'wu', hp: 2, maxHp: 3, hand: 4, art: 'zhouyu', depArt: 'zhouyu', weapon: 'Cổ Đĩnh Đao', weaponSuit: '♥A', offHorse: 'Xích Thố', delayed: 'supply' },
+      { id: 4, name: 'Điêu Thuyền', dep: 'Lữ Bố', faction: 'qun', hp: 1, maxHp: 3, hand: 2, art: 'diaochan', depArt: 'diaochan', treasure: 'Thái Bình', treasureSuit: '♣3', delayed: 'lightning' },
+      { id: 5, name: 'Gia Cát Lượng', dep: 'Ẩn', faction: 'shu', hp: 3, maxHp: 3, hand: 3, art: 'guanyu', armor: 'Bát Quái Trận', armorSuit: '♣2', defHorse: 'Đích Lư' },
+      { id: 6, name: 'Tư Mã Ý', dep: 'Trương Liêu', faction: 'wei', hp: 2, maxHp: 4, hand: 4, art: 'caocao', depArt: 'caocao', weapon: 'Thanh Cương Kiếm', weaponSuit: '♠6' },
+      { id: 7, name: 'Lục Tốn', dep: 'Tôn Quyền', faction: 'wu', hp: 3, maxHp: 3, hand: 2, art: 'zhouyu', depArt: 'zhouyu' },
+      { id: 8, name: 'Viên Thiệu', dep: 'Ẩn', faction: 'qun', hp: 4, maxHp: 4, hand: 5, art: 'diaochan' },
+      { id: 9, name: 'Trương Phi', dep: 'Bàng Thống', faction: 'shu', hp: 2, maxHp: 4, hand: 1, art: 'guanyu', depArt: 'guanyu', weapon: 'Bát Xà Mâu', weaponSuit: '♠Q' },
+      { id: 10, name: 'Tôn Thượng Hương', dep: 'Đại Kiều', faction: 'wu', hp: 3, maxHp: 3, hand: 3, art: 'zhouyu', depArt: 'zhouyu' }
+    ];
+
+    let currentSeatCount = 8;
+    let currentDevice = 'desktop';
+    let stateTurn = true;
+    let stateChain = true;
+    let stateDrunk = false;
+    let stateDying = false;
+    let stateTablePile = true;
+    let stateTarget = false;
+
+    // AUTHENTIC ELLIPTICAL PARAMETRIC POSITIONING (FREEKILL / QSGS / MOBILE HEGEMONY)
+    // Formula: Distribute opponents evenly around the entire 360° oval table circumference
+    // Self is at 90° (bottom center).
+    // Opponents progress clockwise: Seat 2 at 90° - delta, Seat 3 at 90° - 2*delta, etc.
+    // Utilizing the empty lower quadrants flanking and above the player's dashboard.
+    function getOpponentPositions(totalSeats, isMobile) {
+      const cX = 50;
+      const cY = isMobile ? 38 : 38.5;
+      const rX = isMobile ? 38 : 41;
+      const rY = isMobile ? 24 : 27;
+
+      let scale = 1;
+      if (isMobile) {
+        if (totalSeats === 10) scale = 0.48;
+        else if (totalSeats === 8) scale = 0.58;
+        else if (totalSeats === 4) scale = 0.72;
+        else scale = 0.85;
+      } else {
+        if (totalSeats === 10) scale = 0.68;
+        else if (totalSeats === 8) scale = 0.78;
+        else if (totalSeats === 4) scale = 0.90;
+        else scale = 1.0;
+      }
+
+      if (totalSeats === 2) {
+        return [{
+          left: '50%',
+          top: isMobile ? '13%' : '12%',
+          transform: `translate(-50%, -50%) scale(${scale})`
+        }];
+      }
+
+      const angleStep = 360 / totalSeats;
+      const positions = [];
+
+      for (let i = 1; i < totalSeats; i++) {
+        const deg = 90 - i * angleStep;
+        const rad = deg * Math.PI / 180;
+        const x = cX + rX * Math.cos(rad);
+        const y = cY + rY * Math.sin(rad);
+        positions.push({
+          left: `${x.toFixed(2)}%`,
+          top: `${y.toFixed(2)}%`,
+          transform: `translate(-50%, -50%) scale(${scale})`
+        });
+      }
+
+      return positions;
+    }
+
+    // RENDER SEATS ACCORDING TO SEAT COUNT
+    function renderSeats() {
+      const opponentCount = currentSeatCount - 1;
+      const opponents = ROSTER.slice(0, opponentCount);
+
+      // 1. RENDER COLUMN 1 (REALITY: BULKY OVERFLOW)
+      const realBox = document.getElementById('realityOpponentsBox');
+      document.getElementById('realitySeatCount').textContent = `${currentSeatCount} ghế đã xếp`;
+      realBox.innerHTML = '';
+
+      opponents.forEach((p, idx) => {
+        const isCollision = currentSeatCount >= 8 && idx >= 3;
+        const div = document.createElement('div');
+        div.className = `reality-bulky-seat ${isCollision ? 'collision-danger' : ''}`;
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:10px;">
+            <span>Ghế ${p.id} · ${p.faction.toUpperCase()}</span>
+            <span>${p.hand} lá</span>
+          </div>
+          <div style="font-weight:bold; margin:2px 0;">${p.name} · ${p.dep}</div>
+          <div style="display:flex; gap:2px; margin:3px 0;">
+            ${Array.from({length: p.maxHp}, (_, i) => `<img src="/photo-assets/magatama/${i < p.hp ? '2' : '0'}.png" style="width:12px; height:12px;" />`).join('')}
+          </div>
+          <div style="font-size:9.5px; color:#bdaa93;">${p.weapon ? `⚔️ ${p.weapon}` : 'Trang bị: Không'}</div>
+          ${isCollision ? '<div style="color:#ff6666; font-size:9px; font-weight:bold; margin-top:2px;">⚠️ Vỡ layout: Khung quá to đè nhau!</div>' : ''}
+        `;
+        realBox.appendChild(div);
+      });
+
+      // 2. RENDER COLUMN 2 (NATIVE PARITY: FREEKILL / QSGS ELLIPTICAL ARRANGE-PHOTOS)
+      const archBox = document.getElementById('nativeOpponentsArch');
+      archBox.innerHTML = '';
+
+      // Authentic Elliptical Parametric Distribution (FreeKill / QSGS arrangePhotos Parity)
+      // Uses the FULL 360° oval table circumference, utilizing the bottom flanks
+      // flanking and above the player's dashboard to ensure 100% equidistant, non-overlapping seats!
+      const isMobile = currentDevice !== 'desktop';
+      const positions = getOpponentPositions(currentSeatCount, isMobile);
+
+      opponents.forEach((p, idx) => {
+        const pos = positions[idx] || { top: '10%', left: '50%', transform: 'translate(-50%, -50%)' };
+        const seatEl = document.createElement('div');
+        seatEl.className = `native-photo-seat faction-${p.faction} ${idx === 0 && stateTurn ? 'active-turn' : ''} ${idx === 0 && stateTarget ? 'targeted' : ''}`;
+        seatEl.id = `nativeSeat${p.id}`;
+        seatEl.style.top = pos.top;
+        seatEl.style.left = pos.left;
+        seatEl.style.transform = pos.transform;
+
+        seatEl.onclick = () => toggleTargetSeat(`nativeSeat${p.id}`);
+
+        const crestMap = { wei: 'NGỤY', shu: 'THỤC', wu: 'NGÔ', qun: 'QUẦN' };
+        const crestLabel = crestMap[p.faction] || p.faction.toUpperCase();
+        const delayedBadge = p.delayed ? `<span class="native-trick-badge trick-${p.delayed}" title="${p.delayed === 'indulgence' ? 'Lạc Bất Tư Thục' : (p.delayed === 'supply' ? 'Binh Lương Thốn Đoạn' : 'Sấm Sét')}">${p.delayed === 'indulgence' ? 'Lạc' : (p.delayed === 'supply' ? 'Binh' : 'Sấm')}</span>` : '';
+        const hpClass = p.hp <= 1 ? 'hp-danger' : (p.hp === 2 ? 'hp-warning' : '');
+        const hpDiscs = p.maxHp <= 4
+          ? Array.from({length: p.maxHp}, (_, i) => `<img class="native-heg-hp-disc-v" src="/photo-assets/magatama/${i < p.hp ? (p.hp >= 3 ? '3-heg' : (p.hp === 2 ? '2-heg' : '1-heg')) : '0-heg'}.png" alt="HP" />`).reverse().join('')
+          : `<img class="native-heg-hp-disc-v" src="/photo-assets/magatama/${p.hp >= 3 ? '3-heg' : (p.hp === 2 ? '2-heg' : '1-heg')}.png" alt="HP" /><div class="native-hp-vertical-fraction ${hpClass}"><span>${p.hp}</span><span class="hp-slash">/</span><span>${p.maxHp}</span></div>`;
+
+        seatEl.innerHTML = `
+          <!-- 1. FULL-BLEED DUAL PORTRAIT CANVAS -->
+          <div class="native-portrait-canvas">
+            <div class="native-general-slot half">
+              <img src="/photo-assets/generals/${p.art}.jpg" alt="${p.name}" onerror="this.src='/photo-assets/back/${p.faction}.png'" />
+              <span class="native-calligraphy-name left">${p.name}</span>
+            </div>
+            <div class="native-deputy-split-line"></div>
+            <div class="native-general-slot half">
+              ${p.dep === 'Ẩn'
+                ? `<div class="native-hidden-back">❖</div>`
+                : `<img src="/photo-assets/generals/${p.depArt || p.art}.jpg" alt="${p.dep}" onerror="this.src='/photo-assets/back/${p.faction}.png'" />
+                   <span class="native-calligraphy-name right">${p.dep}</span>`}
+            </div>
+
+            <!-- OVERLAYS: CHAIN, DRUNK, DYING -->
+            <div class="native-chain-overlay" id="chainOverlay${p.id}" style="display: ${idx === 1 && stateChain ? 'block' : 'none'};"></div>
+            <div class="native-drunk-overlay" id="drunkOverlay${p.id}" style="display: ${idx === 2 && stateDrunk ? 'block' : 'none'};"></div>
+            <div class="native-dying-overlay" id="dyingOverlay${p.id}" style="display: ${idx === 2 && stateDying ? 'flex' : 'none'};">
+              <img src="/photo-assets/death/saveme.png" alt="Cứu" />
+            </div>
+          </div>
+
+          <!-- 2. TOP OVERLAY: CREST, SEAT NUM, DELAYED TRICKS -->
+          <div class="native-top-overlay">
+            <div class="native-top-left-identity">
+              <span class="native-kingdom-crest faction-${p.faction}">${crestLabel}</span>
+              <span class="native-seat-badge-circle">${p.id}</span>
+            </div>
+            <div class="native-delayed-trick-group">
+              ${delayedBadge}
+            </div>
+          </div>
+
+          <!-- 3. VERTICAL MAGATAMA HP COLUMN (HpBar.qml: x: 6, anchors.bottom: parent.bottom) -->
+          <div class="native-hp-vertical-column">
+            ${hpDiscs}
+          </div>
+
+          <!-- 4. AUTHENTIC HANDCARD BADGE (Photo.qml: pinned bottom-left) -->
+          <div class="native-handcard-badge">
+            <span class="native-handcard-count-text">${p.hand}</span>
+          </div>
+
+          <!-- 5. BOTTOM EQUIPMENT OVERLAY (EquipArea.qml & equipbg.png) - 4 ROWS / 5 SLOTS -->
+          <div class="native-equip-plate">
+            <!-- Hàng 1: Bảo vật (Treasure) -->
+            <div class="native-equip-row ${p.treasure ? 'equipped' : 'empty'}">
+              <span class="native-eq-icon">📿</span>
+              <span class="native-eq-name">${p.treasure || '—'}</span>
+              ${p.treasureSuit ? `<span class="native-eq-suit suit-${p.treasureSuit.startsWith('♥') || p.treasureSuit.startsWith('♦') ? 'red' : 'black'}">${p.treasureSuit}</span>` : ''}
+            </div>
+            <!-- Hàng 2: Vũ khí (Weapon) -->
+            <div class="native-equip-row ${p.weapon ? 'equipped' : 'empty'}">
+              <span class="native-eq-icon">⚔️</span>
+              <span class="native-eq-name">${p.weapon || '—'}</span>
+              ${p.weaponSuit ? `<span class="native-eq-suit suit-${p.weaponSuit.startsWith('♥') || p.weaponSuit.startsWith('♦') ? 'red' : 'black'}">${p.weaponSuit}</span>` : ''}
+            </div>
+            <!-- Hàng 3: Phòng cụ (Armor) -->
+            <div class="native-equip-row ${p.armor ? 'equipped' : 'empty'}">
+              <span class="native-eq-icon">🛡️</span>
+              <span class="native-eq-name">${p.armor || '—'}</span>
+              ${p.armorSuit ? `<span class="native-eq-suit suit-${p.armorSuit.startsWith('♥') || p.armorSuit.startsWith('♦') ? 'red' : 'black'}">${p.armorSuit}</span>` : ''}
+            </div>
+            <!-- Hàng 4: Tọa kỵ (+1 Mã / -1 Mã) -->
+            <div class="native-equip-rides-split">
+              <div class="native-equip-half ${p.defHorse ? '' : 'empty'}"><span class="native-eq-icon">🐎</span>${p.defHorse ? '+1' : '+1'}</div>
+              <div class="native-equip-half ${p.offHorse ? '' : 'empty'}"><span class="native-eq-icon">🏹</span>${p.offHorse ? '-1' : '-1'}</div>
+            </div>
+          </div>
+
+          <!-- 6. TARGETING CROSSHAIR BUTTON (Wire contract for tests & interactions) -->
+          <button class="native-target-btn gameplay-target" type="button" data-target-id="${p.id}" aria-label="Mục tiêu ghế ${p.id}" aria-pressed="${idx === 0 && stateTarget}">✛</button>
+        `;
+        archBox.appendChild(seatEl);
+      });
+    }
+
+    // SEAT COUNT SWITCHER
+    function setSeatCount(count) {
+      currentSeatCount = count;
+      document.querySelectorAll('#btnCount2, #btnCount4, #btnCount8, #btnCount10').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btnCount${count}`).classList.add('active');
+      renderSeats();
+    }
+
+    // VIEW MODE
+    function setViewMode(mode) {
+      document.querySelectorAll('#btnViewSplit, #btnViewReality, #btnViewProposal').forEach(b => b.classList.remove('active'));
+      const container = document.getElementById('mainContainer');
+      const colReal = document.getElementById('columnReality');
+      const colProp = document.getElementById('columnProposal');
+
+      if (mode === 'split') {
+        document.getElementById('btnViewSplit').classList.add('active');
+        container.className = 'view-container-split';
+        colReal.style.display = 'block';
+        colProp.style.display = 'block';
+      } else if (mode === 'reality') {
+        document.getElementById('btnViewReality').classList.add('active');
+        container.className = 'view-container-single';
+        colReal.style.display = 'block';
+        colProp.style.display = 'none';
+      } else if (mode === 'proposal') {
+        document.getElementById('btnViewProposal').classList.add('active');
+        container.className = 'view-container-single';
+        colReal.style.display = 'none';
+        colProp.style.display = 'block';
+      }
+    }
+
+    // DEVICE VIEWPORT
+    function setDevice(device) {
+      currentDevice = device;
+      document.querySelectorAll('#btnDevDesktop, #btnDev390, #btnDev360').forEach(b => b.classList.remove('active'));
+      const frameReal = document.getElementById('frameReality');
+      const frameProp = document.getElementById('frameProposal');
+
+      frameReal.className = 'device-viewport-frame';
+      frameProp.className = 'device-viewport-frame';
+
+      if (device === 'desktop') {
+        document.getElementById('btnDevDesktop').classList.add('active');
+      } else if (device === 'mobile-390') {
+        document.getElementById('btnDev390').classList.add('active');
+        frameReal.classList.add('mode-mobile-390');
+        frameProp.classList.add('mode-mobile-390');
+      } else if (device === 'mobile-360') {
+        document.getElementById('btnDev360').classList.add('active');
+        frameReal.classList.add('mode-mobile-360');
+        frameProp.classList.add('mode-mobile-360');
+      }
+      renderSeats();
+    }
+
+    // STATE TOGGLES
+    function toggleState(name) {
+      if (name === 'turn') {
+        stateTurn = !stateTurn;
+        document.getElementById('toggleTurn').classList.toggle('toggled-on', stateTurn);
+        renderSeats();
+      } else if (name === 'chain') {
+        stateChain = !stateChain;
+        document.getElementById('toggleChain').classList.toggle('toggled-on', stateChain);
+        renderSeats();
+      } else if (name === 'drunk') {
+        stateDrunk = !stateDrunk;
+        document.getElementById('toggleDrunk').classList.toggle('toggled-on', stateDrunk);
+        renderSeats();
+      } else if (name === 'dying') {
+        stateDying = !stateDying;
+        document.getElementById('toggleDying').classList.toggle('toggled-on', stateDying);
+        renderSeats();
+      } else if (name === 'tablepile') {
+        stateTablePile = !stateTablePile;
+        document.getElementById('toggleTablePile').classList.toggle('toggled-on', stateTablePile);
+        document.getElementById('cardNull').style.display = stateTablePile ? 'flex' : 'none';
+      } else if (name === 'target') {
+        stateTarget = !stateTarget;
+        document.getElementById('toggleTarget').classList.toggle('toggled-on', stateTarget);
+        const firstOpp = document.querySelector('.native-photo-seat');
+        if (firstOpp) firstOpp.classList.toggle('targeted', stateTarget);
+      }
+    }
+
+    function toggleTargetSeat(seatId) {
+      const el = document.getElementById(seatId);
+      if (el) el.classList.toggle('targeted');
+    }
+
+    // INITIAL RENDER
+    renderSeats();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TQS — Đối Chiếu Bàn Chơi Thực Tế Hiện Tại vs Chuẩn Native Parity</title>
+  <link rel="stylesheet" href="/src/styles.css">
+  <style>
+    .comparison-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    .report-header {
+      background: rgba(22, 17, 13, 0.95);
+      border: 1px solid var(--sg-gold);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .report-header h1 {
+      color: var(--sg-gold-hi);
+      font-size: 24px;
+      margin: 0 0 8px;
+    }
+
+    .report-header p {
+      color: #cbbba6;
+      font-size: 14px;
+      margin: 0 0 14px;
+    }
+
+    .status-summary-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .pill-yes {
+      background: rgba(39, 174, 96, 0.2);
+      border: 1px solid #27ae60;
+      color: #72e8a2;
+    }
+
+    .pill-no {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid #e74c3c;
+      color: #ff8c82;
+    }
+
+    .pill-partial {
+      background: rgba(243, 156, 18, 0.2);
+      border: 1px solid #f39c12;
+      color: #ffd175;
+    }
+
+    .section-divider {
+      margin: 36px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(212, 155, 56, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .section-divider h2 {
+      font-size: 20px;
+      color: var(--sg-gold-hi);
+      margin: 0;
+    }
+
+    .section-divider .badge {
+      font-size: 12px;
+      font-weight: bold;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-reality {
+      background: #422d1b;
+      border: 1px solid #91683b;
+      color: #ffd699;
+    }
+
+    .badge-ideal {
+      background: #1b422e;
+      border: 1px solid #3b9164;
+      color: #99ffd0;
+    }
+
+    /* Embedded Ideal Panel Styling (from FreeKill mockup) */
+    .ideal-photo-seat {
+      width: 154px;
+      background: #1e1915;
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15);
+      border: 2px solid #524233;
+      user-select: none;
+      position: absolute;
+    }
+    .ideal-photo-seat.faction-shu { border-color: #c44040; }
+    .ideal-photo-seat.faction-wei { border-color: #4a7bb0; }
+    .ideal-photo-seat.faction-wu  { border-color: #3bb371; }
+    .ideal-photo-seat.faction-qun { border-color: #998370; }
+    .ideal-photo-seat.active-turn {
+      border-color: #ffd700;
+      box-shadow: 0 0 18px rgba(255, 215, 0, 0.75), 0 10px 24px rgba(0,0,0,0.85);
+    }
+
+    .ideal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .ideal-portrait-box {
+      position: relative;
+      width: 114px;
+      height: 120px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #0d0a08;
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+    }
+    .ideal-half {
+      flex: 1 1 50%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .ideal-full {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .ideal-half img, .ideal-full img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+    .ideal-split-line {
+      position: absolute;
+      left: 50%;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: #d49b38;
+      transform: translateX(-50%);
+      z-index: 5;
+      box-shadow: 0 0 4px #ffd700;
+    }
+    .ideal-name-v {
+      position: absolute;
+      top: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #fff;
+      writing-mode: vertical-rl;
+      background: rgba(0,0,0,0.6);
+      padding: 2px;
+      border-radius: 2px;
+      z-index: 4;
+    }
+    .ideal-hp-col {
+      width: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: rgba(0,0,0,0.45);
+      border-radius: 4px;
+      padding: 3px 1px;
+    }
+    .ideal-hp-col img { width: 15px; height: 15px; object-fit: contain; }
+    .ideal-equips {
+      margin-top: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: rgba(10,8,6,0.7);
+      padding: 2px;
+      border-radius: 3px;
+      font-size: 9px;
+    }
+    .ideal-eq-row {
+      display: flex;
+      align-items: center;
+      height: 15px;
+      padding: 0 3px;
+      background: rgba(35,28,22,0.65);
+      border-radius: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .ideal-eq-type {
+      font-weight: bold;
+      padding: 0 2px;
+      border-radius: 2px;
+      margin-right: 3px;
+      font-size: 8px;
+    }
+    .ideal-chain-img {
+      position: absolute;
+      top: 40px;
+      left: -6px;
+      right: -6px;
+      height: 26px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .ideal-chain-img img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* Comparison Table */
+    .gap-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      background: rgba(22, 17, 13, 0.9);
+      border: 1px solid rgba(212, 155, 56, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .gap-table th, .gap-table td {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .gap-table th {
+      background: rgba(42, 28, 17, 0.95);
+      color: var(--sg-gold-hi);
+      font-weight: 600;
+    }
+    .gap-table tr:last-child td { border-bottom: none; }
+    .cell-reality { color: #f5a623; }
+    .cell-ideal { color: #2ecc71; font-weight: 500; }
+  </style>
+</head>
+<body class="sg-game-shell">
+
+  <div class="comparison-container">
+    <div class="report-header">
+      <h1>Đối Chiếu Thực Tế Hệ Thống Hiện Tại vs Chuẩn Native Parity</h1>
+      <p>Câu hỏi của bạn: <em>"Tôi thấy oval felt table là chuẩn mực nhưng thực tế hệ thống hiện tại có vận hành như vậy chưa?"</em></p>
+
+      <div class="status-summary-bar">
+        <span class="status-pill pill-yes">✓ Bàn Nỉ Bầu Dục (Oval Table): ĐÃ VẬN HÀNH (CSS gradient & border-radius)</span>
+        <span class="status-pill pill-partial">⚠ Ghế Quanh Bàn (Desktop Seat Ring): ĐÃ CÓ VỊ TRÍ, NHƯNG THIẾU BỐ CỤC MOBILE</span>
+        <span class="status-pill pill-no">✗ Khối Thẻ Nhân Vật: CHƯA VẬN HÀNH NHƯ BẢN GỐC (Chỉ có text, thiếu hoàn toàn Avatar & 5 ô Trang bị)</span>
+      </div>
+    </div>
+
+    <!-- BẢNG ĐỐI CHIẾU CHI TIẾT TỪNG TIÊU CHÍ -->
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th>Hạng mục</th>
+          <th>Thực tế Hệ thống Hiện tại (Live Code)</th>
+          <th>Chuẩn FreeKill / QSGS / Mobile Parity</th>
+          <th>Đánh giá trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Mặt bàn Oval Nỉ (Oval Felt Table)</strong></td>
+          <td class="cell-reality">Đã có <code>.sg-board-table</code> với <code>border-radius: 50% / 23%</code> và radial-gradient nỉ xanh sâu.</td>
+          <td class="cell-ideal">Bàn oval nỉ xanh có vân gỗ viền ngoài và hoa văn trung tâm.</td>
+          <td><span style="color: #2ecc71;">Đã hoàn thành 95%</span></td>
+        </tr>
+        <tr>
+          <td><strong>2. Phân bố vị trí ghế (Seat Ring)</strong></td>
+          <td class="cell-reality">Desktop: Dùng <code>nth-child(1..8)</code> xếp xoay vòng cung. Mobile: Co lại dạng danh sách flex.</td>
+          <td class="cell-ideal">Xếp quanh bàn vòng cung đồng tâm, người chơi ở đáy, đối thủ phân bổ đều hai cánh và đỉnh bàn.</td>
+          <td><span style="color: #f1c40f;">Đạt trên Desktop, cần tối ưu Mobile</span></td>
+        </tr>
+        <tr>
+          <td><strong>3. Ảnh Chân Dung Tướng (Avatar Portrait)</strong></td>
+          <td class="cell-reality"><strong>HOÀN TOÀN CHƯA CÓ</strong>. Chỉ có thẻ text: <code>&lt;span&gt;Chủ tướng: Quan Vũ&lt;/span&gt;</code>.</td>
+          <td class="cell-ideal">Ảnh chân dung Native thật. Quốc Chiến chia đôi 50/50 có rãnh vàng kim ở giữa.</td>
+          <td><span style="color: #e74c3c;">CHƯA CÓ (Cần làm mới)</span></td>
+        </tr>
+        <tr>
+          <td><strong>4. Lưới 5 Ô Trang Bị (Equipment Area)</strong></td>
+          <td class="cell-reality"><strong>HOÀN TOÀN CHƯA CÓ</strong>. Dồn tất cả vào mảng text thô: <code>&lt;span class="board-mark"&gt;Bát Quái Trận · ♣2&lt;/span&gt;</code>.</td>
+          <td class="cell-ideal">5 slot hình học cố định: Bảo vật, Vũ khí (kèm Range), Phòng cụ, +1 Mã, -1 Mã.</td>
+          <td><span style="color: #e74c3c;">CHƯA CÓ (Cần làm mới)</span></td>
+        </tr>
+        <tr>
+          <td><strong>5. Cột Máu Ngọc Câu (Magatama HP)</strong></td>
+          <td class="cell-reality">Chỉ có thanh <code>HealthMeter</code> phẳng với vài chấm div màu xám/xanh.</td>
+          <td class="cell-ideal">Dải ngọc câu Magatama Native: Xanh (đầy) $\to$ Vàng $\to$ Đỏ (nguy kịch) + Khiên Hộ giáp.</td>
+          <td><span style="color: #e74c3c;">CHƯA CÓ (Cần làm mới)</span></td>
+        </tr>
+        <tr>
+          <td><strong>6. Trạng Thái Đặc Biệt (Xích / Say / Hấp hối)</strong></td>
+          <td class="cell-reality">In nhãn text: <code>&lt;span class="board-mark"&gt;Đang bị xích&lt;/span&gt;</code>.</td>
+          <td class="cell-ideal">Overlay đồ họa trực tiếp lên Avatar: Sợi xích kim loại <code>chain.png</code>, khói đỏ say rượu, con dấu Cầu cứu <code>saveme.png</code>.</td>
+          <td><span style="color: #e74c3c;">CHƯA CÓ (Cần làm mới)</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <!-- ========================================================
+         PHẦN 1: BÀN CHƠI THỰC TẾ HIỆN TẠI (CURRENT SYSTEM REALITY)
+         Render 100% bằng đúng DOM và CSS đang chạy trong src/
+         ======================================================== -->
+    <div class="section-divider">
+      <h2>1. Thực Tế Hệ Thống Hiện Tại Đang Chạy (Current Live Code)</h2>
+      <span class="badge badge-reality">Chính xác mã nguồn GameBoardScreen.tsx hiện tại</span>
+    </div>
+    <p style="color: #a89a87; font-size: 13px; margin-bottom: 12px;">
+      Dưới đây là chính xác những gì DOM của <code>GameBoardScreen.tsx</code> và CSS <code>styles.css</code> đang hiển thị trong một ván đấu Quốc Chiến 4 người. Mặt bàn nỉ Oval đã tồn tại, nhưng các nhân vật bên trong hoàn toàn là <strong>các khối hộp văn bản xám/xanh không có hình ảnh</strong>:
+    </p>
+
+    <!-- KHUNG BÀN CHƠI THỰC TẾ HIỆN HÀNH -->
+    <div class="board-table sg-board-table" style="margin-bottom: 40px;">
+
+      <!-- ĐỐI THỦ XẾP QUANH BÀN BẰNG CSS THẬT CỦA REPO -->
+      <div class="board-opponents" aria-label="Các ghế khác">
+
+        <!-- Ghế 2: Tào Tháo (Wei) -->
+        <article class="board-player sg-board-player faction-wei" style="top: 4%; left: 50%; transform: translateX(-50%);">
+          <div class="board-player-top">
+            <span class="board-seat">Ghế 2</span>
+            <span class="turn-badge">Đang lượt</span>
+          </div>
+          <strong class="board-player-name">Tào Tháo</strong>
+          <div class="board-generals">
+            <span title="Chủ tướng">Tào Tháo</span>
+            <span title="Phó tướng">Chưa lật</span>
+          </div>
+          <div class="board-player-stats">
+            <div class="board-health"><div class="board-magatama"><span class="magatama current-hp"></span><span class="magatama current-hp"></span><span class="magatama current-hp"></span><span class="magatama lost-hp"></span></div></div>
+            <span>3 lá trên tay</span>
+          </div>
+          <div class="board-player-meta">
+            <span>Thế lực: Nguỵ</span>
+          </div>
+          <div class="board-marks" aria-label="Trang bị công khai">
+            <span class="board-mark">Ỷ Thiên Kiếm · ♠6</span>
+            <span class="board-mark">Đằng Giáp · ♣2</span>
+          </div>
+        </article>
+
+        <!-- Ghế 3: Chu Du (Wu) -->
+        <article class="board-player sg-board-player faction-wu" style="top: 22%; left: 3%;">
+          <div class="board-player-top">
+            <span class="board-seat">Ghế 3</span>
+          </div>
+          <strong class="board-player-name">Chu Du</strong>
+          <div class="board-generals">
+            <span title="Chủ tướng">Chu Du</span>
+            <span title="Phó tướng">Hoàng Cái</span>
+          </div>
+          <div class="board-player-stats">
+            <div class="board-health"><div class="board-magatama"><span class="magatama current-hp"></span><span class="magatama current-hp"></span><span class="magatama lost-hp"></span></div></div>
+            <span>Giáp 1</span>
+            <span>4 lá trên tay</span>
+          </div>
+          <div class="board-player-meta">
+            <span>Thế lực: Ngô</span>
+            <span class="board-mark">Đang bị xích</span>
+          </div>
+          <div class="board-marks" aria-label="Trang bị công khai">
+            <span class="board-mark">Cổ Đĩnh Đao · ♠A</span>
+          </div>
+        </article>
+
+        <!-- Ghế 4: Điêu Thuyền (Qun) -->
+        <article class="board-player sg-board-player faction-qun" style="top: 22%; right: 3%;">
+          <div class="board-player-top">
+            <span class="board-seat">Ghế 4</span>
+          </div>
+          <strong class="board-player-name">Điêu Thuyền</strong>
+          <div class="board-generals">
+            <span title="Chủ tướng">Điêu Thuyền</span>
+            <span title="Phó tướng">Lữ Bố</span>
+          </div>
+          <div class="board-player-stats">
+            <div class="board-health"><div class="board-magatama"><span class="magatama current-hp"></span><span class="magatama lost-hp"></span><span class="magatama lost-hp"></span></div></div>
+            <span>2 lá trên tay</span>
+          </div>
+          <div class="board-player-meta">
+            <span>Thế lực: Quần</span>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- TRUNG TÂM BÀN CHƠI THẬT -->
+      <div class="board-center" aria-label="Khu vực bàn chơi">
+        <span class="board-center-symbol" aria-hidden="true">Quốc Chiến</span>
+        <p>4 ghế đã xếp</p>
+        <div class="board-moments" aria-label="Diễn biến mới nhất">
+          <strong>Diễn biến mới nhất</strong>
+          <p class="board-moment">Tào Tháo sử dụng 【Sát】 lên Chu Du.</p>
+          <p class="board-moment">Chu Du sử dụng 【Thiểm】 hóa giải.</p>
+        </div>
+      </div>
+
+      <!-- GHẾ BẢN THÂN Ở ĐÁY THẬT -->
+      <div class="board-local-seat">
+        <article class="board-player sg-board-player faction-shu board-self">
+          <div class="board-player-top">
+            <span class="board-seat">Ghế 1</span>
+            <span class="you-tag">Bạn</span>
+          </div>
+          <strong class="board-player-name">Người chơi 1 (Bạn)</strong>
+          <div class="board-generals">
+            <span title="Chủ tướng">Quan Vũ</span>
+            <span title="Phó tướng">Triệu Vân</span>
+          </div>
+          <div class="board-player-stats">
+            <div class="board-health"><div class="board-magatama"><span class="magatama current-hp"></span><span class="magatama current-hp"></span><span class="magatama current-hp"></span><span class="magatama current-hp"></span></div></div>
+            <span>4 lá trên tay</span>
+          </div>
+          <div class="board-player-meta">
+            <span>Thế lực: Thục</span>
+          </div>
+          <div class="board-marks" aria-label="Trang bị công khai">
+            <span class="board-mark">Thanh Long Yển Nguyệt Đao · ♠5</span>
+            <span class="board-mark">Bát Quái Trận · ♣2</span>
+          </div>
+        </article>
+      </div>
+
+    </div>
+
+
+    <!-- ========================================================
+         PHẦN 2: CHUẨN NATIVE PARITY ĐỀ XUẤT (PROPOSED FUTURE MOCKUP)
+         Cùng mặt bàn Oval nhưng nâng cấp từng ghế thành Photo Card
+         ======================================================== -->
+    <div class="section-divider">
+      <h2>2. Đề Xuất Nâng Cấp Chuẩn Native Parity (FreeKill & QSGS Standards)</h2>
+      <span class="badge badge-ideal">Cùng mặt bàn Oval nhưng với Photo Panel & Trang bị thật</span>
+    </div>
+    <p style="color: #a89a87; font-size: 13px; margin-bottom: 12px;">
+      Giữ nguyên vẹn kích thước và vị trí của mặt bàn Oval Felt Table, nhưng thay thế các thẻ chữ thô bằng <strong>Photo Panel chuẩn Tam Quốc Sát</strong> (Song tướng 50/50, cột Magatama ngọc câu, 5 ô trang bị đồ họa, xích sắt kim loại vắt ngang):
+    </p>
+
+    <!-- KHUNG BÀN CHƠI CHUẨN MỰC NATIVE PARITY -->
+    <div class="board-table sg-board-table" style="min-height: 640px; margin-bottom: 40px;">
+
+      <!-- CÁC ĐỐI THỦ PHÂN BỔ TRÊN BÀN OVAL BẰNG PHOTO PANEL NATIVE -->
+      <div class="board-opponents">
+
+        <!-- ĐỐI THỦ 1 (ĐỈNH BÀN): TÀO THÁO - NỬA ẨN NỬA HIỆN -->
+        <div class="ideal-photo-seat faction-wei active-turn" style="top: 4%; left: 50%; transform: translateX(-50%) scale(0.95); transform-origin: top center;">
+          <div class="ideal-header">
+            <span style="color: #ffd97d;">Ghế 2</span>
+            <span style="background: #264a73; padding: 1px 4px; border-radius: 2px;">Nguỵ</span>
+          </div>
+          <div style="font-size: 11px; font-weight: bold; text-align: center; margin-bottom: 3px;">Tào Tháo · Ẩn</div>
+          <div style="display: flex; gap: 4px;">
+            <div class="ideal-portrait-box">
+              <div class="ideal-half">
+                <span class="ideal-name-v" style="left: 2px;">Tào Tháo</span>
+                <img src="/photo-assets/generals/caocao.jpg" alt="Tào Tháo" />
+              </div>
+              <div class="ideal-split-line"></div>
+              <div class="ideal-half" style="background: #221a15; display: flex; align-items: center; justify-content: center; color: #d49b38; font-size: 16px;">
+                ❖
+              </div>
+            </div>
+            <div class="ideal-hp-col">
+              <img src="/photo-assets/magatama/2.png" />
+              <img src="/photo-assets/magatama/2.png" />
+              <img src="/photo-assets/magatama/2.png" />
+              <img src="/photo-assets/magatama/0.png" />
+              <div style="margin-top: auto; font-size: 10px; color: #ffe699; font-weight: bold;">3🂠</div>
+            </div>
+          </div>
+          <div class="ideal-equips">
+            <div class="ideal-eq-row"><span class="ideal-eq-type" style="background: #5c2c1a; color:#ffab7a;">Vũ</span>Ỷ Thiên Kiếm ♠6</div>
+            <div class="ideal-eq-row"><span class="ideal-eq-type" style="background: #1c3d52; color:#7ad1ff;">Giáp</span>Đằng Giáp ♣2</div>
+          </div>
+        </div>
+
+        <!-- ĐỐI THỦ 2 (BÊN TRÁI): CHU DU - XÍCH SẮT & GIÁP -->
+        <div class="ideal-photo-seat faction-wu" style="top: 20%; left: 3%; transform: scale(0.9); transform-origin: left center;">
+          <div class="ideal-header">
+            <span style="color: #ffd97d;">Ghế 3</span>
+            <span style="background: #226b41; padding: 1px 4px; border-radius: 2px;">Ngô</span>
+          </div>
+          <div style="font-size: 11px; font-weight: bold; text-align: center; margin-bottom: 3px;">Chu Du</div>
+          <div style="display: flex; gap: 4px;">
+            <div class="ideal-portrait-box">
+              <div class="ideal-full">
+                <span class="ideal-name-v" style="left: 2px;">Chu Du</span>
+                <img src="/photo-assets/generals/zhouyu.jpg" alt="Chu Du" />
+              </div>
+              <div class="ideal-chain-img"><img src="/photo-assets/chain.png" /></div>
+            </div>
+            <div class="ideal-hp-col">
+              <div style="font-size: 9px; background: #39526e; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;">🛡1</div>
+              <img src="/photo-assets/magatama/2.png" />
+              <img src="/photo-assets/magatama/2.png" />
+              <img src="/photo-assets/magatama/0.png" />
+              <div style="margin-top: auto; font-size: 10px; color: #ffe699; font-weight: bold;">4🂠</div>
+            </div>
+          </div>
+          <div class="ideal-equips">
+            <div class="ideal-eq-row"><span class="ideal-eq-type" style="background: #5c2c1a; color:#ffab7a;">Vũ</span>Cổ Đĩnh Đao ♠A</div>
+          </div>
+        </div>
+
+        <!-- ĐỐI THỦ 3 (BÊN PHẢI): ĐIÊU THUYỀN -->
+        <div class="ideal-photo-seat faction-qun" style="top: 20%; right: 3%; transform: scale(0.9); transform-origin: right center;">
+          <div class="ideal-header">
+            <span style="color: #ffd97d;">Ghế 4</span>
+            <span style="background: #615245; padding: 1px 4px; border-radius: 2px;">Quần</span>
+          </div>
+          <div style="font-size: 11px; font-weight: bold; text-align: center; margin-bottom: 3px;">Điêu Thuyền</div>
+          <div style="display: flex; gap: 4px;">
+            <div class="ideal-portrait-box">
+              <div class="ideal-full">
+                <span class="ideal-name-v" style="left: 2px;">Điêu Thuyền</span>
+                <img src="/photo-assets/generals/diaochan.jpg" alt="Điêu Thuyền" />
+              </div>
+            </div>
+            <div class="ideal-hp-col">
+              <img src="/photo-assets/magatama/1.png" />
+              <img src="/photo-assets/magatama/0.png" />
+              <img src="/photo-assets/magatama/0.png" />
+              <div style="margin-top: auto; font-size: 10px; color: #ffe699; font-weight: bold;">2🂠</div>
+            </div>
+          </div>
+          <div class="ideal-equips">
+            <div class="ideal-eq-row" style="opacity: 0.4;">Chưa có trang bị</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TRUNG TÂM BÀN CHƠI CHUẨN MỰC -->
+      <div class="board-center" aria-label="Khu vực bàn chơi">
+        <span class="board-center-symbol" aria-hidden="true" style="font-size: 32px; letter-spacing: 2px;">Quốc Chiến</span>
+        <p>4 ghế đã xếp</p>
+        <div class="board-moments" aria-label="Diễn biến mới nhất">
+          <strong>Diễn biến mới nhất</strong>
+          <p class="board-moment">Tào Tháo sử dụng 【Sát】 lên Chu Du.</p>
+          <p class="board-moment">Chu Du kích hoạt kỹ năng phòng thủ.</p>
+        </div>
+      </div>
+
+      <!-- GHẾ BẢN THÂN Ở ĐÁY: QUAN VŨ + TRIỆU VÂN -->
+      <div class="board-local-seat">
+        <div class="ideal-photo-seat faction-shu" style="position: relative; width: 170px; margin: 0 auto; transform: translateY(-8px);">
+          <div class="ideal-header">
+            <span style="color: #ffd97d; font-weight: bold;">Ghế 1 (Bạn)</span>
+            <span style="background: #821f1f; padding: 1px 6px; border-radius: 2px; color: #fff;">Thục</span>
+          </div>
+          <div style="font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 4px; color: #fff;">Quan Vũ · Triệu Vân</div>
+          <div style="display: flex; gap: 5px;">
+            <div class="ideal-portrait-box" style="width: 128px; height: 130px;">
+              <div class="ideal-half">
+                <span class="ideal-name-v" style="left: 3px;">Quan Vũ</span>
+                <img src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" />
+              </div>
+              <div class="ideal-split-line"></div>
+              <div class="ideal-half">
+                <span class="ideal-name-v" style="right: 3px;">Triệu Vân</span>
+                <img src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" />
+              </div>
+            </div>
+            <div class="ideal-hp-col" style="width: 24px;">
+              <img src="/photo-assets/magatama/3.png" />
+              <img src="/photo-assets/magatama/3.png" />
+              <img src="/photo-assets/magatama/3.png" />
+              <img src="/photo-assets/magatama/3.png" />
+              <div style="margin-top: auto; font-size: 11px; color: #ffe699; font-weight: bold;">4🂠</div>
+            </div>
+          </div>
+          <div class="ideal-equips">
+            <div class="ideal-eq-row"><span class="ideal-eq-type" style="background: #5c2c1a; color:#ffab7a;">Vũ</span>Thanh Long Đao ♠5</div>
+            <div class="ideal-eq-row"><span class="ideal-eq-type" style="background: #1c3d52; color:#7ad1ff;">Giáp</span>Bát Quái Trận ♣2</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
