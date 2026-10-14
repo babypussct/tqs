@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tam Quốc Sát — Mockup Giao Diện Ghế Người Chơi Chuẩn FreeKill & QSGS</title>
+  <style>
+    :root {
+      --bg-dark: #120e0b;
+      --felt-green: #1a3b2b;
+      --felt-gradient: radial-gradient(ellipse at 50% 50%, #244d38 0%, #173526 55%, #0f2319 100%);
+      --gold-border: #d49b38;
+      --gold-hi: #ffe299;
+      --text-gold: #f5d68a;
+      
+      /* Faction Colors */
+      --faction-wei: #1f3a58;
+      --faction-wei-border: #4a7bb0;
+      --faction-shu: #691d1d;
+      --faction-shu-border: #c44040;
+      --faction-wu: #1e5234;
+      --faction-wu-border: #3bb371;
+      --faction-qun: #4d433b;
+      --faction-qun-border: #998370;
+      --faction-god: #5c4314;
+      --faction-god-border: #f0be3a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-dark);
+      color: #f0e6d2;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans", sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    h1, h2, h3 { color: var(--gold-hi); font-weight: 600; }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 28px;
+      border-bottom: 1px solid rgba(212, 155, 56, 0.3);
+      padding-bottom: 16px;
+    }
+    header p { color: #b8aa93; font-size: 14px; margin-top: 6px; }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1240px;
+      margin: 0 auto 40px;
+    }
+
+    .seat-showcase-card {
+      background: rgba(30, 24, 20, 0.85);
+      border: 1px solid rgba(212, 155, 56, 0.35);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .seat-showcase-card h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .seat-showcase-card .case-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(212, 155, 56, 0.2);
+      color: var(--gold-hi);
+      border: 1px solid rgba(212, 155, 56, 0.4);
+    }
+
+    .seat-showcase-card p.case-desc {
+      font-size: 12px;
+      color: #9c8e7c;
+      margin-bottom: 16px;
+      align-self: flex-start;
+    }
+
+    /* ============================================================
+       PLAYER SEAT PHOTO PANEL (CHÂN THẬT CHUẨN FREEKILL & QSGS)
+       ============================================================ */
+    .sg-photo-panel {
+      position: relative;
+      width: 154px;
+      background: #1e1915;
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15);
+      border: 2px solid #524233;
+      user-select: none;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+
+    .sg-photo-panel:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.85);
+    }
+
+    /* Faction Borders */
+    .sg-photo-panel.faction-shu { border-color: var(--faction-shu-border); }
+    .sg-photo-panel.faction-wei { border-color: var(--faction-wei-border); }
+    .sg-photo-panel.faction-wu  { border-color: var(--faction-wu-border); }
+    .sg-photo-panel.faction-qun { border-color: var(--faction-qun-border); }
+    .sg-photo-panel.faction-god { border-color: var(--faction-god-border); }
+
+    /* Active Turn Glow */
+    .sg-photo-panel.active-turn {
+      border-color: #ffd700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.75), 0 12px 28px rgba(0,0,0,0.9);
+      animation: pulse-turn 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-turn {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+      50% { box-shadow: 0 0 26px rgba(255, 215, 0, 0.95); }
+    }
+
+    /* Dead State */
+    .sg-photo-panel.dead {
+      filter: grayscale(0.9) brightness(0.7);
+      border-color: #444;
+    }
+
+    /* 1. Header Row */
+    .sg-photo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
+    .sg-seat-badge {
+      background: rgba(0,0,0,0.6);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #d8c8b0;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-weight: 600;
+    }
+
+    .sg-kingdom-tag {
+      font-weight: bold;
+      padding: 1px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+    .faction-shu .sg-kingdom-tag { background: #821f1f; color: #fff; }
+    .faction-wei .sg-kingdom-tag { background: #264a73; color: #fff; }
+    .faction-wu  .sg-kingdom-tag { background: #226b41; color: #fff; }
+    .faction-qun .sg-kingdom-tag { background: #615245; color: #fff; }
+    .faction-god .sg-kingdom-tag { background: #8a6416; color: #ffe699; }
+
+    .sg-player-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+
+    /* 2. Middle Body: Portrait & Magatama Column */
+    .sg-photo-middle {
+      display: flex;
+      gap: 5px;
+      position: relative;
+    }
+
+    /* Portrait Box (Single or Dual Generals 50/50) */
+    .sg-portrait-box {
+      position: relative;
+      width: 116px;
+      height: 148px;
+      border-radius: 5px;
+      overflow: hidden;
+      background: #0d0a08;
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+    }
+
+    .sg-portrait-half {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      flex: 1 1 50%;
+    }
+
+    .sg-portrait-full {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .sg-portrait-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    /* General Name Overlays */
+    .sg-general-name-vertical {
+      position: absolute;
+      top: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 0 1px 4px #000, 0 0 8px #000;
+      writing-mode: vertical-rl;
+      letter-spacing: 1px;
+      z-index: 4;
+      background: rgba(0,0,0,0.55);
+      padding: 3px 2px;
+      border-radius: 2px;
+    }
+    .sg-name-main { left: 4px; }
+    .sg-name-deputy { right: 4px; }
+
+    /* Dual Split Divider Line */
+    .sg-deputy-split-line {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, #d49b38 0%, rgba(212,155,56,0.3) 50%, #d49b38 100%);
+      transform: translateX(-50%);
+      z-index: 5;
+      box-shadow: 0 0 4px #ffd700;
+    }
+
+    /* Hidden General Back */
+    .sg-hidden-general-cover {
+      width: 100%;
+      height: 100%;
+      background: #2a201a repeating-linear-gradient(45deg, #1f1712, #1f1712 10px, #261d17 10px, #261d17 20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #a3917e;
+      border-left: 1px solid rgba(212, 155, 56, 0.4);
+    }
+    .sg-hidden-general-cover .hidden-sigil {
+      font-size: 22px;
+      color: #d49b38;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+      margin-bottom: 2px;
+    }
+    .sg-hidden-general-cover span {
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ============================================================
+       OVERLAYS (XÍCH LIÊN HOÀN, SAY RƯỢU, HẤP HỐI, TỬ TRẬN)
+       ============================================================ */
+    /* Chained Iron Overlay */
+    .sg-chained-overlay {
+      position: absolute;
+      top: 48px;
+      left: -8px;
+      right: -8px;
+      height: 32px;
+      z-index: 10;
+      pointer-events: none;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
+    }
+    .sg-chained-overlay img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Drunk Red Haze Overlay */
+    .sg-drunk-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 60%, rgba(255, 20, 20, 0.55) 0%, rgba(180, 0, 0, 0.25) 70%, transparent 100%);
+      mix-blend-mode: color-dodge;
+      z-index: 8;
+      pointer-events: none;
+      animation: pulse-drunk 2.5s infinite alternate ease-in-out;
+    }
+    @keyframes pulse-drunk {
+      0% { opacity: 0.6; }
+      100% { opacity: 0.95; }
+    }
+
+    /* Dying Save Me SOS Overlay */
+    .sg-dying-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(180, 0, 0, 0.35);
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: pulse-dying 1s infinite alternate;
+      pointer-events: none;
+    }
+    .sg-dying-overlay img {
+      width: 64px;
+      height: auto;
+      filter: drop-shadow(0 0 10px #ff2222);
+    }
+    @keyframes pulse-dying {
+      0% { background: rgba(180, 0, 0, 0.2); }
+      100% { background: rgba(220, 0, 0, 0.55); }
+    }
+
+    /* Dead Seal Overlay */
+    .sg-dead-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 15;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .sg-dead-seal {
+      width: 58px;
+      height: 58px;
+      border: 3px solid #b32424;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #b32424;
+      font-size: 22px;
+      font-weight: 900;
+      transform: rotate(-18deg);
+      text-shadow: 0 0 8px rgba(0,0,0,0.8);
+      box-shadow: inset 0 0 8px rgba(179,36,36,0.5), 0 0 10px rgba(0,0,0,0.9);
+      letter-spacing: 2px;
+    }
+
+    /* 3. Magatama Column (Cột Ngọc Câu Sinh Lực) */
+    .sg-hp-column {
+      width: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 3px;
+      background: rgba(0,0,0,0.45);
+      border-radius: 4px;
+      padding: 4px 2px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sg-shield-badge {
+      width: 18px;
+      height: 18px;
+      background: #39526e;
+      border: 1px solid #7199c4;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      margin-bottom: 2px;
+    }
+
+    .sg-magatama {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+    .sg-magatama img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .sg-handcard-count-badge {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: #ffe699;
+      font-weight: bold;
+    }
+    .sg-handcard-count-badge img {
+      width: 18px;
+      height: auto;
+      margin-bottom: -2px;
+    }
+
+    /* 4. Equipment Grid (Lưới 5 Ô Trang Bị Chuẩn FreeKill & QSGS) */
+    .sg-equip-grid {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: rgba(10, 8, 6, 0.75);
+      border-radius: 4px;
+      padding: 3px;
+      border: 1px solid rgba(212, 155, 56, 0.2);
+    }
+
+    .sg-equip-row {
+      display: flex;
+      align-items: center;
+      height: 17px;
+      padding: 0 4px;
+      border-radius: 2px;
+      background: rgba(35, 28, 22, 0.65);
+      font-size: 10px;
+      color: #e0d5c1;
+      border: 1px solid rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+
+    .sg-equip-row.empty {
+      background: transparent;
+      border-color: transparent;
+      opacity: 0.35;
+      color: #7a6e60;
+    }
+
+    .sg-equip-icon-type {
+      width: 14px;
+      height: 14px;
+      font-size: 9px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+    .equip-weapon   { background: #5c2c1a; color: #ffab7a; }
+    .equip-armor    { background: #1c3d52; color: #7ad1ff; }
+    .equip-def-ride { background: #264d26; color: #9eff9e; }
+    .equip-off-ride { background: #52471c; color: #ffe47a; }
+    .equip-treasure { background: #521c47; color: #ff9ee6; }
+
+    .sg-equip-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .sg-equip-suit-rank {
+      font-size: 9px;
+      font-weight: bold;
+      margin-left: 4px;
+      flex-shrink: 0;
+    }
+    .suit-black { color: #ffffff; }
+    .suit-red   { color: #ff5252; }
+
+    .sg-equip-split-row {
+      display: flex;
+      gap: 2px;
+    }
+    .sg-equip-split-row .sg-equip-row {
+      flex: 1 1 50%;
+      min-width: 0;
+    }
+
+    /* 5. Delayed Trick Area (Khay Phán Xét Dưới Đáy) */
+    .sg-delayed-trick-bar {
+      margin-top: 4px;
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      min-height: 18px;
+    }
+
+    .sg-judge-badge {
+      background: #2b183b;
+      border: 1px solid #8e44ad;
+      color: #e1b2ff;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 1px 4px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .judge-lightning { background: #3d2314; border-color: #d35400; color: #ffaa66; }
+    .judge-indulgence { background: #381212; border-color: #c0392b; color: #ff9999; }
+    .judge-supply     { background: #162a38; border-color: #2980b9; color: #99d6ff; }
+
+    /* 6. Active Turn Countdown Bar */
+    .sg-countdown-bar {
+      margin-top: 4px;
+      width: 100%;
+      height: 4px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .sg-countdown-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c);
+      width: 65%;
+      border-radius: 2px;
+    }
+
+    /* ============================================================
+       OVAL TABLE CONTAINER PREVIEW (BÀN CHƠI THẬT)
+       ============================================================ */
+    .table-preview-section {
+      max-width: 1200px;
+      margin: 0 auto 60px;
+      background: rgba(18, 14, 11, 0.9);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    
+    .oval-table {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      background: var(--felt-gradient);
+      border-radius: 240px;
+      border: 8px solid #3d2d1e;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.85), 0 16px 40px rgba(0,0,0,0.8);
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .table-center-sigil {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      color: rgba(212, 155, 56, 0.08);
+      font-weight: bold;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Fixed Positions Around Oval Table */
+    .seat-pos-bottom {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .seat-pos-top {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .seat-pos-left {
+      position: absolute;
+      top: 50%;
+      left: 24px;
+      transform: translateY(-50%);
+    }
+    .seat-pos-right {
+      position: absolute;
+      top: 50%;
+      right: 24px;
+      transform: translateY(-50%);
+    }
+
+    /* Mobile Frame Preview Container */
+    .mobile-matrix-container {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .mobile-device-frame {
+      width: 390px;
+      height: 620px;
+      background: #15110d;
+      border: 8px solid #2d2620;
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .mobile-screen-header {
+      background: rgba(0,0,0,0.8);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--gold-hi);
+      border-bottom: 1px solid rgba(212,155,56,0.2);
+    }
+
+    .mobile-table-area {
+      flex: 1;
+      background: var(--felt-gradient);
+      position: relative;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .mobile-dock {
+      background: rgba(15, 12, 9, 0.95);
+      border-top: 1px solid var(--gold-border);
+      padding: 8px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Tam Quốc Sát — Mockup Giao Diện Nhân Vật Chuẩn Native Parity</h1>
+    <p>Đối chiếu trực tiếp mã nguồn <strong>FreeKill</strong> (<code>Photo.qml</code>, <code>EquipArea.qml</code>, <code>HpBar.qml</code>), <strong>QSanguosha</strong> (<code>photo.cpp</code>, <code>generic-cardcontainer-ui.cpp</code>) và <strong>Sanguosha Mobile</strong>.</p>
+  </header>
+
+  <!-- 1. MA TRẬN CÁC TRẠNG THÁI GHẾ NGƯỜI CHƠI -->
+  <section class="matrix-grid">
+
+    <!-- CASE 1: QUỐC CHIẾN SONG TƯỚNG FULL LẬT (THỤC: QUAN VŨ + TRIỆU VÂN) -->
+    <div class="seat-showcase-card">
+      <h3>
+        <span>Ghế 1 · Thục Hán</span>
+        <span class="case-tag">Quốc Chiến Song Tướng</span>
+      </h3>
+      <p class="case-desc">Quan Vũ (Chủ) + Triệu Vân (Phó) chia đôi 50/50. Đang trong lượt (Active Turn viền vàng), 5 ô trang bị đầy đủ.</p>
+      
+      <!-- Photo Panel -->
+      <div class="sg-photo-panel faction-shu active-turn">
+        <div class="sg-photo-header">
+          <span class="sg-seat-badge">Ghế 1 (Bạn)</span>
+          <span class="sg-kingdom-tag">Thục</span>
+        </div>
+        <div class="sg-player-title">Vũ Thánh Triệu Long</div>
+        
+        <div class="sg-photo-middle">
+          <!-- Dual Portrait Box -->
+          <div class="sg-portrait-box">
+            <div class="sg-portrait-half">
+              <span class="sg-general-name-vertical sg-name-main">Quan Vũ</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" />
+            </div>
+            <div class="sg-deputy-split-line"></div>
+            <div class="sg-portrait-half">
+              <span class="sg-general-name-vertical sg-name-deputy">Triệu Vân</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" />
+            </div>
+          </div>
+
+          <!-- HP Magatama Column -->
+          <div class="sg-hp-column">
+            <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="3 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="3 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="3 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="3 HP" /></div>
+            <div class="sg-handcard-count-badge">
+              <img src="/photo-assets/handcard.png" alt="Card" />
+              <span>4</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Equip Standard Grid -->
+        <div class="sg-equip-grid">
+          <!-- Treasure -->
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-treasure">Bảo</span>
+            <span class="sg-equip-name">Ngọc Tỷ</span>
+            <span class="sg-equip-suit-rank suit-red">♥ A</span>
+          </div>
+          <!-- Weapon -->
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-weapon">Vũ</span>
+            <span class="sg-equip-name">Thanh Long Đao</span>
+            <span class="sg-equip-suit-rank suit-black">♠ 5</span>
+          </div>
+          <!-- Armor -->
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-armor">Giáp</span>
+            <span class="sg-equip-name">Bát Quái Trận</span>
+            <span class="sg-equip-suit-rank suit-black">♣ 2</span>
+          </div>
+          <!-- Horses Split Row -->
+          <div class="sg-equip-split-row">
+            <div class="sg-equip-row">
+              <span class="sg-equip-icon-type equip-def-ride">+1</span>
+              <span class="sg-equip-name">Xích Thố</span>
+            </div>
+            <div class="sg-equip-row">
+              <span class="sg-equip-icon-type equip-off-ride">-1</span>
+              <span class="sg-equip-name">Đích Lô</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="sg-countdown-bar">
+          <div class="sg-countdown-progress"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- CASE 2: NỬA ẨN NỬA HIỆN (NGỤY: TÀO THÁO + PHÓ TƯỚNG ẨN) -->
+    <div class="seat-showcase-card">
+      <h3>
+        <span>Ghế 2 · Tào Nguỵ</span>
+        <span class="case-tag">Nửa Ẩn Nửa Hiện</span>
+      </h3>
+      <p class="case-desc">Tào Tháo (đã lật) + Phó tướng bí mật (thẻ lưng Quốc Chiến). Vùng phán xét có Lạc Bất Tư Thục & Sấm Sét.</p>
+      
+      <!-- Photo Panel -->
+      <div class="sg-photo-panel faction-wei">
+        <div class="sg-photo-header">
+          <span class="sg-seat-badge">Ghế 2</span>
+          <span class="sg-kingdom-tag">Nguỵ</span>
+        </div>
+        <div class="sg-player-title">Tào Tháo · Ẩn</div>
+        
+        <div class="sg-photo-middle">
+          <!-- Portrait Box: 1 Revealed + 1 Hidden -->
+          <div class="sg-portrait-box">
+            <div class="sg-portrait-half">
+              <span class="sg-general-name-vertical sg-name-main">Tào Tháo</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/caocao.jpg" alt="Tào Tháo" />
+            </div>
+            <div class="sg-deputy-split-line"></div>
+            <div class="sg-portrait-half">
+              <div class="sg-hidden-general-cover">
+                <div class="hidden-sigil">❖</div>
+                <span>Phó Tướng</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- HP Magatama Column -->
+          <div class="sg-hp-column">
+            <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="2 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="2 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-handcard-count-badge">
+              <img src="/photo-assets/handcard.png" alt="Card" />
+              <span>3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delayed Trick Area (Cẩm nang trì hoãn) -->
+        <div class="sg-delayed-trick-bar">
+          <span class="sg-judge-badge judge-indulgence">☯ Lạc Bất Tư Thục</span>
+          <span class="sg-judge-badge judge-lightning">⚡ Sấm Sét</span>
+        </div>
+
+        <!-- 5-Equip Standard Grid -->
+        <div class="sg-equip-grid">
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-weapon">Vũ</span>
+            <span class="sg-equip-name">Ỷ Thiên Kiếm</span>
+            <span class="sg-equip-suit-rank suit-black">♠ 6</span>
+          </div>
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-armor">Giáp</span>
+            <span class="sg-equip-name">Đằng Giáp</span>
+            <span class="sg-equip-suit-rank suit-black">♣ 2</span>
+          </div>
+          <div class="sg-equip-split-row">
+            <div class="sg-equip-row">
+              <span class="sg-equip-icon-type equip-def-ride">+1</span>
+              <span class="sg-equip-name">Tuyệt Ảnh</span>
+            </div>
+            <div class="sg-equip-row empty">
+              <span class="sg-equip-icon-type">-1</span>
+              <span class="sg-equip-name">Trống</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- CASE 3: BỊ XÍCH LIÊN HOÀN & SAY RƯỢU (ĐÔNG NGÔ: CHU DU) -->
+    <div class="seat-showcase-card">
+      <h3>
+        <span>Ghế 3 · Đông Ngô</span>
+        <span class="case-tag">Xích Sắt & Say Rượu</span>
+      </h3>
+      <p class="case-desc">Chu Du bị Xích Sắt Liên Hoàn (Chained) vắt ngang ngực và hiệu ứng Say Rượu (Drunk) ánh đỏ rực rỡ.</p>
+      
+      <!-- Photo Panel -->
+      <div class="sg-photo-panel faction-wu">
+        <div class="sg-photo-header">
+          <span class="sg-seat-badge">Ghế 3</span>
+          <span class="sg-kingdom-tag">Ngô</span>
+        </div>
+        <div class="sg-player-title">Chu Du · Mỹ Chu Lang</div>
+        
+        <div class="sg-photo-middle">
+          <!-- Portrait Box -->
+          <div class="sg-portrait-box">
+            <div class="sg-portrait-full">
+              <span class="sg-general-name-vertical sg-name-main">Chu Du</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/zhouyu.jpg" alt="Chu Du" />
+            </div>
+
+            <!-- Overlays -->
+            <div class="sg-drunk-overlay"></div>
+            <div class="sg-chained-overlay">
+              <img src="/photo-assets/chain.png" alt="Chained" />
+            </div>
+          </div>
+
+          <!-- HP Column with Shield -->
+          <div class="sg-hp-column">
+            <div class="sg-shield-badge" title="Hộ Giáp">🛡1</div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="2 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="2 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-handcard-count-badge">
+              <img src="/photo-assets/handcard.png" alt="Card" />
+              <span>5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Equip Grid -->
+        <div class="sg-equip-grid">
+          <div class="sg-equip-row">
+            <span class="sg-equip-icon-type equip-weapon">Vũ</span>
+            <span class="sg-equip-name">Cổ Đĩnh Đao</span>
+            <span class="sg-equip-suit-rank suit-black">♠ A</span>
+          </div>
+          <div class="sg-equip-row empty">
+            <span class="sg-equip-icon-type">Giáp</span>
+            <span class="sg-equip-name">Trống</span>
+          </div>
+          <div class="sg-equip-split-row">
+            <div class="sg-equip-row empty">
+              <span class="sg-equip-icon-type">+1</span>
+              <span class="sg-equip-name">Trống</span>
+            </div>
+            <div class="sg-equip-row">
+              <span class="sg-equip-icon-type equip-off-ride">-1</span>
+              <span class="sg-equip-name">Tử Tinh</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- CASE 4: TRẠNG THÁI HẤP HỐI (QUẦN HÙNG: ĐIÊU THUYỀN) -->
+    <div class="seat-showcase-card">
+      <h3>
+        <span>Ghế 4 · Quần Hùng</span>
+        <span class="case-tag">Hấp Hối Cầu Đào (SOS)</span>
+      </h3>
+      <p class="case-desc">Điêu Thuyền 0 HP, nền nhấp nháy đỏ dồn dập, giữa avatar hiện biểu tượng Cầu Cứu (Save Me) chuẩn FreeKill.</p>
+      
+      <!-- Photo Panel -->
+      <div class="sg-photo-panel faction-qun">
+        <div class="sg-photo-header">
+          <span class="sg-seat-badge">Ghế 4</span>
+          <span class="sg-kingdom-tag">Quần</span>
+        </div>
+        <div class="sg-player-title">Điêu Thuyền · Bế Nguyệt</div>
+        
+        <div class="sg-photo-middle">
+          <!-- Portrait Box -->
+          <div class="sg-portrait-box">
+            <div class="sg-portrait-full">
+              <span class="sg-general-name-vertical sg-name-main">Điêu Thuyền</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/diaochan.jpg" alt="Điêu Thuyền" />
+            </div>
+
+            <!-- Dying SOS Overlay -->
+            <div class="sg-dying-overlay">
+              <img src="/photo-assets/death/saveme.png" alt="Cứu nguy" />
+            </div>
+          </div>
+
+          <!-- HP Column (Dying 0 HP) -->
+          <div class="sg-hp-column">
+            <div class="sg-magatama"><img src="/photo-assets/magatama/1.png" alt="1 HP nguy kịch" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-handcard-count-badge">
+              <img src="/photo-assets/handcard.png" alt="Card" />
+              <span>1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Equip Grid -->
+        <div class="sg-equip-grid">
+          <div class="sg-equip-row empty">
+            <span class="sg-equip-icon-type">Vũ</span>
+            <span class="sg-equip-name">Trống</span>
+          </div>
+          <div class="sg-equip-row empty">
+            <span class="sg-equip-icon-type">Giáp</span>
+            <span class="sg-equip-name">Trống</span>
+          </div>
+          <div class="sg-equip-split-row">
+            <div class="sg-equip-row empty"><span class="sg-equip-icon-type">+1</span><span class="sg-equip-name">Trống</span></div>
+            <div class="sg-equip-row empty"><span class="sg-equip-icon-type">-1</span><span class="sg-equip-name">Trống</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- CASE 5: TRẠNG THÁI TỬ TRẬN (THẦN LỮ BỐ) -->
+    <div class="seat-showcase-card">
+      <h3>
+        <span>Ghế 5 · Thần Tướng</span>
+        <span class="case-tag">Trận Vong (Dead)</span>
+      </h3>
+      <p class="case-desc">Thần Lữ Bố tử trận: Toàn bộ avatar chuyển sang đơn sắc đen trắng, đóng dấu ấn triện đỏ "Trận Vong".</p>
+      
+      <!-- Photo Panel -->
+      <div class="sg-photo-panel faction-god dead">
+        <div class="sg-photo-header">
+          <span class="sg-seat-badge">Ghế 5</span>
+          <span class="sg-kingdom-tag">Thần</span>
+        </div>
+        <div class="sg-player-title">Thần Lữ Bố · Ma Vương</div>
+        
+        <div class="sg-photo-middle">
+          <!-- Portrait Box with Dead Seal -->
+          <div class="sg-portrait-box">
+            <div class="sg-portrait-full">
+              <span class="sg-general-name-vertical sg-name-main">Thần Lữ Bố</span>
+              <img class="sg-portrait-img" src="/photo-assets/generals/godlvbu.jpg" alt="Thần Lữ Bố" />
+            </div>
+
+            <!-- Dead Seal Overlay -->
+            <div class="sg-dead-overlay">
+              <div class="sg-dead-seal">TRẬN VONG</div>
+            </div>
+          </div>
+
+          <!-- HP Column -->
+          <div class="sg-hp-column">
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="0 HP" /></div>
+            <div class="sg-handcard-count-badge">
+              <img src="/photo-assets/handcard.png" alt="Card" />
+              <span>0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Equip Grid Empty -->
+        <div class="sg-equip-grid">
+          <div class="sg-equip-row empty"><span class="sg-equip-icon-type">Vũ</span><span class="sg-equip-name">Trống</span></div>
+          <div class="sg-equip-row empty"><span class="sg-equip-icon-type">Giáp</span><span class="sg-equip-name">Trống</span></div>
+          <div class="sg-equip-split-row">
+            <div class="sg-equip-row empty"><span class="sg-equip-icon-type">+1</span><span class="sg-equip-name">Trống</span></div>
+            <div class="sg-equip-row empty"><span class="sg-equip-icon-type">-1</span><span class="sg-equip-name">Trống</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- 2. PHÂN CẢNH BÀN CHƠI TOÀN CẢNH OVAL TABLE DESKTOP & MOBILE -->
+  <section class="table-preview-section">
+    <h2>2. Bố Cục Ghế Ngồi Quanh Bàn Chơi Oval Thực Tế</h2>
+    <p style="color: #a89a87; font-size: 13px; margin-top: 4px;">Kiểm nghiệm sự tương thích khi đặt các Photo Panel vào bàn cờ Tam Quốc Sát hình bầu dục (Oval Felt Table).</p>
+
+    <div class="oval-table">
+      <div class="table-center-sigil">三国杀</div>
+
+      <!-- Top Seat: Opponent -->
+      <div class="seat-pos-top">
+        <div class="sg-photo-panel faction-wei" style="transform: scale(0.9); transform-origin: top center;">
+          <div class="sg-photo-header"><span class="sg-seat-badge">Ghế 2</span><span class="sg-kingdom-tag">Nguỵ</span></div>
+          <div class="sg-player-title">Tào Tháo</div>
+          <div class="sg-photo-middle">
+            <div class="sg-portrait-box" style="height: 110px;">
+              <img class="sg-portrait-img" src="/photo-assets/generals/caocao.jpg" alt="Tào Tháo" />
+            </div>
+            <div class="sg-hp-column" style="height: 110px;">
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/0.png" alt="HP" /></div>
+              <div class="sg-handcard-count-badge"><img src="/photo-assets/handcard.png" alt="Card" /><span>3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left Seat: Opponent -->
+      <div class="seat-pos-left">
+        <div class="sg-photo-panel faction-wu" style="transform: scale(0.85); transform-origin: left center;">
+          <div class="sg-photo-header"><span class="sg-seat-badge">Ghế 3</span><span class="sg-kingdom-tag">Ngô</span></div>
+          <div class="sg-player-title">Chu Du</div>
+          <div class="sg-photo-middle">
+            <div class="sg-portrait-box" style="height: 100px;">
+              <img class="sg-portrait-img" src="/photo-assets/generals/zhouyu.jpg" alt="Chu Du" />
+            </div>
+            <div class="sg-hp-column" style="height: 100px;">
+              <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/2.png" alt="HP" /></div>
+              <div class="sg-handcard-count-badge"><img src="/photo-assets/handcard.png" alt="Card" /><span>4</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Seat: Opponent -->
+      <div class="seat-pos-right">
+        <div class="sg-photo-panel faction-qun" style="transform: scale(0.85); transform-origin: right center;">
+          <div class="sg-photo-header"><span class="sg-seat-badge">Ghế 4</span><span class="sg-kingdom-tag">Quần</span></div>
+          <div class="sg-player-title">Điêu Thuyền</div>
+          <div class="sg-photo-middle">
+            <div class="sg-portrait-box" style="height: 100px;">
+              <img class="sg-portrait-img" src="/photo-assets/generals/diaochan.jpg" alt="Điêu Thuyền" />
+            </div>
+            <div class="sg-hp-column" style="height: 100px;">
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-handcard-count-badge"><img src="/photo-assets/handcard.png" alt="Card" /><span>2</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Seat: Self Player (Bạn) -->
+      <div class="seat-pos-bottom">
+        <div class="sg-photo-panel faction-shu active-turn" style="transform: scale(1.05); transform-origin: bottom center;">
+          <div class="sg-photo-header"><span class="sg-seat-badge">Ghế 1 (Bạn)</span><span class="sg-kingdom-tag">Thục</span></div>
+          <div class="sg-player-title">Quan Vũ · Triệu Vân</div>
+          <div class="sg-photo-middle">
+            <div class="sg-portrait-box" style="height: 120px;">
+              <div class="sg-portrait-half"><img class="sg-portrait-img" src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" /></div>
+              <div class="sg-deputy-split-line"></div>
+              <div class="sg-portrait-half"><img class="sg-portrait-img" src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" /></div>
+            </div>
+            <div class="sg-hp-column" style="height: 120px;">
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+              <div class="sg-magatama"><img src="/photo-assets/magatama/3.png" alt="HP" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>
