@@ -932,7 +932,7 @@ try {
       assert.equal(await p.getByRole('button', { name: 'Theo dõi dòng mới' }).count(), 0);
       const evidenceDir = path.resolve(root, '../../scratch/evidence');
       mkdirSync(evidenceDir, { recursive: true });
-      for (const width of [320, 390, 1280]) {
+      for (const width of [360, 390, 1280]) {
         await p.setViewportSize({ width, height: 844 });
         await p.waitForFunction(() => {
           const el = document.querySelector('.board-logs')!;
@@ -954,7 +954,7 @@ try {
         } else {
           assert.ok(metrics.logTop < metrics.mainTop, `mobile log must appear above board: ${JSON.stringify(metrics)}`);
         }
-        await p.screenshot({ path: path.join(evidenceDir, `ui-03-${width}px-lua-fixture-2026-10-11.png`), fullPage: true });
+        await p.screenshot({ path: path.join(evidenceDir, `ui-03-${width}px-target-overlay-lua-fixture-2026-10-14.png`), fullPage: true });
       }
       await p.setViewportSize({ width: 390, height: 844 });
       await logList.focus();
@@ -1017,11 +1017,16 @@ try {
         const controls = document.querySelector<HTMLElement>('.sg-gameplay-controls');
         if (!target || !center || !local || !controls) throw new Error('board interaction surfaces missing');
         const targetBox = target.getBoundingClientRect();
+        const portrait = target.closest<HTMLElement>('.sg-portrait-frame');
         const centerBox = center.getBoundingClientRect();
         const localBox = local.getBoundingClientRect();
         const controlsBox = controls.getBoundingClientRect();
+        if (!portrait) throw new Error('target portrait frame missing');
+        const portraitBox = portrait.getBoundingClientRect();
         const targetRect = { left: targetBox.left, right: targetBox.right, top: targetBox.top, bottom: targetBox.bottom,
           width: targetBox.width, height: targetBox.height };
+        const portraitRect = { left: portraitBox.left, right: portraitBox.right, top: portraitBox.top, bottom: portraitBox.bottom,
+          width: portraitBox.width, height: portraitBox.height };
         const point = document.elementFromPoint(targetRect.left + targetRect.width / 2,
           targetRect.top + targetRect.height / 2);
         const panels = [...document.querySelectorAll<HTMLElement>('.board-opponents .sg-photo-panel')].map((panel) => {
@@ -1036,12 +1041,19 @@ try {
             width: localBox.width, height: localBox.height },
           controls: { left: controlsBox.left, right: controlsBox.right, top: controlsBox.top, bottom: controlsBox.bottom,
             width: controlsBox.width, height: controlsBox.height }, panels,
+          targetClass: target.className,
+          targetId: target.getAttribute('data-target-id'),
+          targetInsidePortrait: targetRect.left >= portraitRect.left && targetRect.right <= portraitRect.right &&
+            targetRect.top >= portraitRect.top && targetRect.bottom <= portraitRect.bottom,
           centerPointerEvents: getComputedStyle(center).pointerEvents,
           hitTarget: point?.closest('.gameplay-target') === target,
           viewport: { width: window.innerWidth, height: window.innerHeight } };
       });
       assert.equal(desktop.centerPointerEvents, 'none');
       assert.equal(desktop.hitTarget, true, `desktop target is not the hit-test surface: ${JSON.stringify(desktop)}`);
+      assert.match(desktop.targetClass, /sg-portrait-target-overlay/);
+      assert.equal(desktop.targetInsidePortrait, true, `desktop target must cover only the portrait: ${JSON.stringify(desktop)}`);
+      assert.ok(desktop.targetId, 'desktop target must expose the public player id');
       assert.equal(intersects(desktop.target, desktop.center), false,
         `desktop centre content overlaps target: ${JSON.stringify(desktop)}`);
       assert.equal(intersects(desktop.target, desktop.local), false,
@@ -1067,12 +1079,16 @@ try {
         const target = document.querySelector<HTMLElement>('.board-player:not(.board-self) .gameplay-target:enabled');
         const center = document.querySelector<HTMLElement>('.board-center');
         const controls = document.querySelector<HTMLElement>('.sg-gameplay-controls');
-        if (!target || !center || !controls) throw new Error('mobile interaction surfaces missing');
+        const portrait = target?.closest<HTMLElement>('.sg-portrait-frame');
+        if (!target || !portrait || !center || !controls) throw new Error('mobile interaction surfaces missing');
         const targetBox = target.getBoundingClientRect();
+        const portraitBox = portrait.getBoundingClientRect();
         const centerBox = center.getBoundingClientRect();
         const controlsBox = controls.getBoundingClientRect();
         const targetRect = { left: targetBox.left, right: targetBox.right, top: targetBox.top, bottom: targetBox.bottom,
           width: targetBox.width, height: targetBox.height };
+        const portraitRect = { left: portraitBox.left, right: portraitBox.right, top: portraitBox.top, bottom: portraitBox.bottom,
+          width: portraitBox.width, height: portraitBox.height };
         const point = document.elementFromPoint(targetRect.left + targetRect.width / 2,
           targetRect.top + targetRect.height / 2);
         return { target: targetRect,
@@ -1080,6 +1096,10 @@ try {
             width: centerBox.width, height: centerBox.height },
           controls: { left: controlsBox.left, right: controlsBox.right, top: controlsBox.top, bottom: controlsBox.bottom,
             width: controlsBox.width, height: controlsBox.height },
+          targetClass: target.className,
+          targetId: target.getAttribute('data-target-id'),
+          targetInsidePortrait: targetRect.left >= portraitRect.left && targetRect.right <= portraitRect.right &&
+            targetRect.top >= portraitRect.top && targetRect.bottom <= portraitRect.bottom,
           centerPointerEvents: getComputedStyle(center).pointerEvents,
           controlsPosition: getComputedStyle(controls).position,
           hitTarget: point?.closest('.gameplay-target') === target,
@@ -1089,6 +1109,9 @@ try {
       assert.equal(mobile.centerPointerEvents, 'none');
       assert.equal(mobile.controlsPosition, 'relative', 'mobile actions must not cover a lower seat');
       assert.equal(mobile.hitTarget, true, `mobile target is not the hit-test surface: ${JSON.stringify(mobile)}`);
+      assert.match(mobile.targetClass, /sg-portrait-target-overlay/);
+      assert.equal(mobile.targetInsidePortrait, true, `mobile target must cover only the portrait: ${JSON.stringify(mobile)}`);
+      assert.ok(mobile.targetId, 'mobile target must expose the public player id');
       assert.equal(intersects(mobile.target, mobile.center), false,
         `mobile centre content overlaps target: ${JSON.stringify(mobile)}`);
       assert.equal(intersects(mobile.target, mobile.controls), false,

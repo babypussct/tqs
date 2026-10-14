@@ -593,6 +593,64 @@ Dựng bài: Ngụy 3 Sát + 1 Đào để giao, Thục 1 Sát để né + 1 Thi
 
 **Bước tiếp theo:** review snapshot CP83 và quyết định có cần canary/deploy candidate hay chỉ giữ bản local để tiếp tục tinh chỉnh art/tỉ lệ panel.
 
+## CP84–CP85 — target overlay, portrait fallback an toàn và Render candidate chơi được · 14/10/2026
+
+- [x] Đưa `.gameplay-target` vào đúng `.sg-portrait-frame` trong [`game/web/src/PlayerPhotoPanel.tsx`](../game/web/src/PlayerPhotoPanel.tsx), giữ `data-target-id`, `aria-pressed`, `disabled`, callback Lua và accessibility label; CSS overlay có focus/selected state và `pointer-events:none` khi disabled.
+- [x] Sửa [`game/web/src/generalArt.ts`](../game/web/src/generalArt.ts) để chỉ trả candidate cho 6 portrait fixture đã tồn tại; tướng native không có bitmap đi thẳng về sigil `卍`, không phát sinh chuỗi request 404 speculative trên Render.
+- [x] Cập nhật mockup [`game/web/public/interactive-board-comparison.html`](../game/web/public/interactive-board-comparison.html) để 1v1 đổi đúng số ghế/diễn biến; mockup vẫn được ghi rõ là static prototype, không dùng làm evidence React.
+- [x] Regression quan sát sau CP85: typecheck **PASS**; gameplay **16/16**; store **31/31**; browser E2E **18/18**; Real Lua Browser E2E **59/59**; build/audit **PASS**; `git diff --check` **PASS**. UI-03 tạo evidence React/Lua thật ở 360/390/1280px với target overlay.
+- [x] Release snapshot cô lập `package-release.mjs` + `verify-release.mjs`: **14.938 files**, 14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; branch [`codex/cp85-render-current`](https://github.com/babypussct/tqs/tree/codex/cp85-render-current), commit `f09c52d49f3c4260b94561ff912836354febc8ca` đã push.
+- [x] Manual deploy Render service `tqs-mobile-candidate`: deployment [`dep-db7grka5b2lc73ftk5g0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db7grka5b2lc73ftk5g0) quan sát được **Deploy succeeded | Live**; `/gateway/healthz` 200/ok; manifest live 14 package/5.279 bundle files, MD5 khớp; route `interactive-board-comparison.html` 200.
+- [x] Hosted acceptance qua Render URL PASS: Chrome 390px + Wasmoon/Lua + gateway + FreeKill C++ thật, login/EnterLobby → phòng 2 ghế → BOT/Trust → `GameOver` → `Về sảnh` → disconnect sạch; không JS/Lua/console error. Evidence sanitized ở `scratch/evidence/cp85-render-ui01-20261014/`.
+- [ ] Live audit còn 4 chuỗi heuristic chứa mảnh Trung văn (`由于`, `观看了`, `的手牌`, `定澜夜明珠`); ván vẫn PASS nhưng UI-01/translation gate còn mở. Chưa đóng iOS/Android/Safari vật lý, official release, cold-start/quota/rollback-SLA.
+
+**Bước tiếp theo:** người dùng có thể chơi trực tiếp tại [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com). Nếu muốn tiếp tục polish, ưu tiên sửa 4 chuỗi dịch live theo evidence, rồi chạy focused live audit; không coi bản candidate này là official release.
+
+## CP86 — Đại tu toàn diện giao diện bàn chơi: Parity Sanguosha Mobile, QSGS & FreeKill · 14/10/2026
+
+- [x] **Full-Viewport Game Canvas (100dvh)**: Ẩn `.app-header` (tiêu đề/slogan web blog) khi vào trận (`.shell-playing`, `.sg-game-shell`), thu gọn footer thành dòng trạng thái mỏng 22px bảo toàn nút `Ngắt kết nối`, tạo top bar 36px mỏng đẹp (`.board-toolbar`), chuyển alertdialog và request panel thành modal overlay nổi giữa màn hình.
+- [x] **Triệt tiêu ký tự `卍`, tích hợp 1.570+ tranh tướng native**: Đồng bộ 1.570 ảnh chân dung từ `runtime/packages/` vào `game/web/public/photo-assets/generals/`, lập chỉ mục `generalArtList.json`, hỗ trợ strip base-name (`m_heg__dianwei` -> `dianwei.jpg`, `ld__bianfuren` -> `bianfuren.jpg`). Tướng ẩn hiển thị lưng bài Quốc Chiến hoa văn chuẩn theo thế lực (`/photo-assets/back/{kingdom}.png`).
+- [x] **Thiết kế lại PlayerPhotoPanel & 5 ô trang bị đồ họa**: Chuẩn hóa cột ngọc câu Magatama ngọc bích, ẩn text thừa gây vỡ chữ, bổ sung glyph/icon vector sắc nét cho 5 ô trang bị (`📿` Bảo, `⚔️` Vũ, `🛡️` Giáp, `🐎` +1, `🏹` -1), highlight ánh kim khi có trang bị.
+- [x] **Bottom Dashboard & Floating Action Bar**: Thiết kế dải nút thao tác `[Xác nhận]`, `[Hủy]`, `[Kết thúc lượt]` nổi mạ vàng phát sáng, xếp gọn gàng cùng dải bài trên tay 0° overlap.
+- [x] **Kiểm chứng hồi quy toàn bộ**:
+  - `typecheck`: **PASS**
+  - `test:gameplay`: **16/16 PASS**
+  - `test:store`: **31/31 PASS**
+  - `test:e2e`: **18/18 PASS**
+  - `test:e2e:lua`: **59/59 PASS**
+  - `build`: **PASS** (Vite + SW 147 files)
+  - `git diff --check`: **PASS**
+- [x] **Visual Evidence**: Đã chụp ảnh màn hình xác minh thực tế từ React + Lua WASM tại 390px, 360px và 1280px (`real_gameplay_390_mobile.png`, `real_gameplay_390_bottom_dashboard.png`, `real_gameplay_1280_desktop.png`).
+
+## CP87 — triệt tiêu text trùng và thu gọn center/mobile overlap · 14/10/2026
+
+- [x] `PlayerPhotoPanel.tsx` đã gộp class/accessible label tên tướng vào span calligraphy, giữ tướng ẩn duy nhất tại `.sg-general-compat` và phase duy nhất tại `.sg-phase-compat`; lỗi Strict Mode do text trùng được loại bỏ mà không thay đổi wire ID hay public/private boundary.
+- [x] `styles.css` đã thu center mobile: ẩn số ghế giữa bàn, làm watermark `Quốc Chiến` nhỏ/mờ, giới hạn dải `.board-moments` còn 44px và giữ center không bắt pointer để target đối thủ có hit surface độc lập.
+- [x] UI-03 có assertion hình học `intersects(mobile.target, mobile.center) === false` cùng các kiểm tra target/controls/document overflow; Real Lua Browser E2E quan sát trong phiên này **59/59 PASS**.
+- [x] Regression quan sát từ `game/web/`: typecheck **PASS**; gameplay **16/16**; store **31/31**; Chrome E2E **18/18**; Real Lua E2E **59/59**; production build **PASS** với toàn bộ audit trước Vite/service worker; `git diff --check` **PASS**. Build tạo service worker với **151 verified public files**; cảnh báo Wasmoon externalized `module` và chunk JS >500 kB vẫn là cảnh báo đã biết.
+- **Phạm vi/giới hạn:** CP87 chỉ là client UI/accessibility/layout và local browser acceptance; không deploy, không commit root, không đổi native Lua/C++/wire protocol. Official release, `PLAYABLE_MOBILE`, device/Safari và operations gates vẫn giữ trạng thái trước đó.
+
+**Bước tiếp theo:** review trực quan các viewport 360/390/1280px và một ván live/candidate trên thiết bị thật; nếu chấp nhận, tạo snapshot release sạch và chạy canary bounded. Không tự động deploy từ checkout dirty.
+
+## CP88 — fresh visual evidence, ellipse collision gate và capture workflow reproducible · 14/10/2026
+
+- [x] Hai script capture nhận `TQS_CAPTURE_BASE_URL`, tránh lỗi giả khi chạy qua preview server: các fixture `/__tqs_fixture_lua.zip` và `/__tqs_fixture_key.txt` chỉ có ở Vite dev middleware.
+- [x] Capture React + Wasmoon thật trên port dev 5175 **PASS**; ảnh gameplay mobile/desktop và bottom dashboard được ghi lại, inspect trực tiếp cho thấy CP87 center/mobile rules đã áp dụng.
+- [x] Collision verification mockup **PASS** ở 8/10 ghế desktop và 8/10 ghế mobile 390px, không có pairwise seat overlap; checker đã chuyển từ log-only sang fail-closed.
+- [x] Evidence-enabled Real Lua E2E **59/59 PASS**; thêm Vietnamese **4/4**, card-display **9/9**, native-dialogs **7/7**, room-pools **1/1**, typecheck/build/diff-check **PASS**.
+- **Phạm vi/giới hạn:** CP88 chỉ bổ sung reproducible capture/evidence tooling và xác nhận local layout; mockup không thay React/C++ live/device gate, pairwise seat check không thay UI-03 target-vs-center assertion. Không deploy/commit root và vẫn giữ official release/`PLAYABLE_MOBILE` ở trạng thái trước đó.
+
+**Bước tiếp theo:** review artifact CP88 trên 360/390/1280px; nếu đạt, tạo release snapshot sạch và chạy bounded canary. Không tự động deploy từ checkout dirty.
+
+## CP89 — safe mobile ribbon và release candidate Render · 14/10/2026
+
+- [x] Giới hạn `board-moments` trên mobile theo một dòng ellipsis cho cả tiêu đề và event, giữ chiều cao tối đa 44px và không đụng Lua/wire/target hit-surface.
+- [x] Regression sau patch: typecheck **PASS**; gameplay **16/16**; store **31/31**; Vietnamese **4/4**; card-display **9/9**; native-dialogs **7/7**; room-pools **1/1**; Chrome E2E **18/18**; Real Lua E2E **59/59**; build **PASS**; diff-check **PASS**.
+- [ ] Package/verify snapshot từ runtime pinned, commit/push toàn bộ dirty-tree vào `codex/cp89-render-current`, manual deploy `tqs-mobile-candidate` (Render auto deploy đang tắt), rồi kiểm tra health/manifest/bundle sau deploy.
+- **Gate:** candidate chỉ phục vụ user test; official release, PLAYABLE_MOBILE, device/Safari và operations vẫn chưa đóng.
+
+**Bước tiếp theo:** hoàn tất release snapshot bất biến, deploy candidate bounded và trả URL/commit/deployment evidence.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

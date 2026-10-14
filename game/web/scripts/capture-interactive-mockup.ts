@@ -34,6 +34,18 @@ async function capture() {
   await page.screenshot({ path: path.join(outDir, 'mockup_interactive_mobile_390.png'), fullPage: false });
   console.log('Saved mockup_interactive_mobile_390.png');
 
+  // 4. Switch to 2 Players (1v1) on Mobile
+  await page.click('#btnCount2');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(outDir, 'mockup_interactive_1v1_mobile.png'), fullPage: false });
+  console.log('Saved mockup_interactive_1v1_mobile.png');
+
+  // 5. Switch to 2 Players (1v1) on Desktop
+  await page.click('#btnDevDesktop');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(outDir, 'mockup_interactive_1v1_desktop.png'), fullPage: false });
+  console.log('Saved mockup_interactive_1v1_desktop.png');
+
   await browser.close();
   console.log('All interactive screenshots captured successfully!');
 }

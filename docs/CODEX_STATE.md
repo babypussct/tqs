@@ -805,90 +805,90 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-14T04:11:33.113Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `457e511c5913`.
-- File thay đổi hiển thị: 117 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-14T09:11:10.199Z (UTC).
+- Nhánh: `codex/cp57-latest-release` · HEAD: `330d8bbd3ba4`.
+- File thay đổi hiển thị: 1588 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/tqs_qa/README.md
- M deploy/freekill-native/qa/tqs_qa/catalog.json
- M deploy/freekill-native/qa/tqs_qa/init.lua
  M docs/CODEX_PLAN.md
  M game/gateway/src/static.mjs
- M game/web/package.json
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/live-gateway-e2e/run.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/qa-scenarios.test.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/qa-scenarios.ts
+ M game/web/public/interactive-board-comparison.html
+ M game/web/scripts/capture-interactive-mockup.ts
  M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/store.test.ts
- M game/web/src/App.tsx
  M game/web/src/GameBoardScreen.tsx
- M game/web/src/GameResultPanel.tsx
- M game/web/src/GameplayControls.tsx
- M game/web/src/engine/hostLua.ts
- M game/web/src/store/boardState.ts
- M game/web/src/store/gameStore.ts
- M game/web/src/store/gameplayState.ts
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/generalArt.ts
  M game/web/src/styles.css
- M game/web/vite.config.ts
- M runtime/flist.txt
-?? game/web/card-catalog-sources/alliance_feast.png
-?? game/web/card-catalog-sources/amiantus_robe.png
-?? game/web/card-catalog-sources/await_exhausted.png
-?? game/web/card-catalog-sources/befriend_attacking.png
-?? game/web/card-catalog-sources/burning_camps.png
-?? game/web/card-catalog-sources/dragon_phoenix.png
-?? game/web/card-catalog-sources/dunjia_book.png
-?? game/web/card-catalog-sources/fight_together.png
-?? game/web/card-catalog-sources/grand_ensign.png
-?? game/web/card-catalog-sources/heg__nullification.png
-?? game/web/card-catalog-sources/imperial_order.png
-?? game/web/card-catalog-sources/iron_armor.png
-?? game/web/card-catalog-sources/jade_seal.png
-?? game/web/card-catalog-sources/jingfan.png
-?? game/web/card-catalog-sources/known_both.png
-?? game/web/card-catalog-sources/liulongcanjia.png
-?? game/web/card-catalog-sources/luminous_pearl.png
-?? game/web/card-catalog-sources/lure_tiger.png
-?? game/web/card-catalog-sources/mobile__dragon_phoenix.png
-?? game/web/card-catalog-sources/mobile__liulongcanjia.png
-?? game/web/card-catalog-sources/mobile__luminous_pearl.png
-?? game/web/card-catalog-sources/nine_tripod_cauldrons.png
-?? game/web/card-catalog-sources/overbearing.png
-?? game/web/card-catalog-sources/part_ways.png
-?? game/web/card-catalog-sources/peace_spell.png
-?? game/web/card-catalog-sources/reveal_intention.png
-?? game/web/card-catalog-sources/rob__jink.png
-?? game/web/card-catalog-sources/sa__blade.png
-?? game/web/card-catalog-sources/sa__breastplate.png
-?? game/web/card-catalog-sources/sa__drowning.png
-?? game/web/card-catalog-sources/sa__halberd.png
-?? game/web/card-catalog-sources/scaly_wings.png
-?? game/web/card-catalog-sources/serpent_slayer_sword.png
-?? game/web/card-catalog-sources/six_swords.png
-?? game/web/card-catalog-sources/threaten_emperor.png
-?? game/web/card-catalog-sources/tianlu.png
-?? game/web/card-catalog-sources/triblade.png
-?? game/web/card-catalog-sources/tricky_heist.png
-?? game/web/card-catalog-sources/turban_shell_cup.png
-?? game/web/card-catalog-sources/unworthy_continuation.png
-?? game/web/card-catalog-sources/white_kylin.png
-?? game/web/card-catalog-sources/wooden_ox.png
-?? game/web/card-catalog-sources/yangsui_spear.png
-?? game/web/public/card-catalog.html
-... và 47 mục nữa; xem git status trực tiếp.
+?? game/web/public/boot-login-mockup.html
+?? game/web/public/photo-assets/generals/baihu.jpg
+?? game/web/public/photo-assets/generals/bailingyun.jpg
+?? game/web/public/photo-assets/generals/baosanniang.jpg
+?? game/web/public/photo-assets/generals/baoxin.jpg
+?? game/web/public/photo-assets/generals/bianfuren.jpg
+?? game/web/public/photo-assets/generals/bianxi.jpg
+?? game/web/public/photo-assets/generals/bianyue.jpg
+?? game/web/public/photo-assets/generals/bihan.jpg
+?? game/web/public/photo-assets/generals/bilan.jpg
+?? game/web/public/photo-assets/generals/bingyuan.jpg
+?? game/web/public/photo-assets/generals/bulianshi.jpg
+?? game/web/public/photo-assets/generals/caifuren.jpg
+?? game/web/public/photo-assets/generals/caimaozhangyun.jpg
+?? game/web/public/photo-assets/generals/caiwenji.jpg
+?? game/web/public/photo-assets/generals/caiyang.jpg
+?? game/web/public/photo-assets/generals/caiyong.jpg
+?? game/web/public/photo-assets/generals/caizhenji.jpg
+?? game/web/public/photo-assets/generals/caoang.jpg
+?? game/web/public/photo-assets/generals/caoanmin.jpg
+?? game/web/public/photo-assets/generals/caobao.jpg
+?? game/web/public/photo-assets/generals/caochong.jpg
+?? game/web/public/photo-assets/generals/caochun.jpg
+?? game/web/public/photo-assets/generals/caofang.jpg
+?? game/web/public/photo-assets/generals/caohong.jpg
+?? game/web/public/photo-assets/generals/caohua.jpg
+?? game/web/public/photo-assets/generals/caojie.jpg
+?? game/web/public/photo-assets/generals/caojinyu.jpg
+?? game/web/public/photo-assets/generals/caomao.jpg
+?? game/web/public/photo-assets/generals/caopi.jpg
+?? game/web/public/photo-assets/generals/caoren.jpg
+?? game/web/public/photo-assets/generals/caorui.jpg
+?? game/web/public/photo-assets/generals/caoshuang.jpg
+?? game/web/public/photo-assets/generals/caosong.jpg
+?? game/web/public/photo-assets/generals/caoxian.jpg
+?? game/web/public/photo-assets/generals/caoxing.jpg
+?? game/web/public/photo-assets/generals/caoxiu.jpg
+?? game/web/public/photo-assets/generals/caoyi.jpg
+?? game/web/public/photo-assets/generals/caoying.jpg
+?? game/web/public/photo-assets/generals/caoyuan.jpg
+?? game/web/public/photo-assets/generals/caozhang.jpg
+?? game/web/public/photo-assets/generals/caozhao.jpg
+?? game/web/public/photo-assets/generals/caozhen.jpg
+?? game/web/public/photo-assets/generals/caozhi.jpg
+?? game/web/public/photo-assets/generals/cenhun.jpg
+?? game/web/public/photo-assets/generals/changshi__bilan.jpg
+?? game/web/public/photo-assets/generals/changshi__duangui.jpg
+?? game/web/public/photo-assets/generals/changshi__gaowang.jpg
+?? game/web/public/photo-assets/generals/changshi__guosheng.jpg
+?? game/web/public/photo-assets/generals/changshi__hankui.jpg
+?? game/web/public/photo-assets/generals/changshi__lisong.jpg
+?? game/web/public/photo-assets/generals/changshi__sunzhang.jpg
+?? game/web/public/photo-assets/generals/changshi__xiayun.jpg
+?? game/web/public/photo-assets/generals/changshi__zhangrang.jpg
+?? game/web/public/photo-assets/generals/changshi__zhaozhong.jpg
+?? game/web/public/photo-assets/generals/chaos__fanchou.jpg
+?? game/web/public/photo-assets/generals/chaos__guosi.jpg
+?? game/web/public/photo-assets/generals/chaos__jiaxu.jpg
+?? game/web/public/photo-assets/generals/chaos__lijue.jpg
+?? game/web/public/photo-assets/generals/chaos__zhangji.jpg
+?? game/web/public/photo-assets/generals/cheliji.jpg
+... và 1518 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+330d8bbd feat: finalize web game presentation and QA coverage
 457e511c docs: record first synchronized release verification
 e2988dca release: refresh native QA package fingerprint
-feca5d7e fix: load QA director as a native skill skeleton
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
@@ -1113,3 +1113,71 @@ feca5d7e fix: load QA director as a native skill skeleton
 - **Giới hạn:** CP83 chưa deploy Render, chưa restart native và chưa đóng device iOS/Android/Safari gate; root working tree dirty được bảo toàn. Tướng/card thiếu bitmap exact vẫn dùng fallback an toàn cho đến khi có resource authoritative tương ứng.
 
 **Bước tiếp theo có thể chạy ngay:** nếu cần phát hành, tạo release snapshot sạch từ CP83 rồi chạy canary live; sau đó mới cân nhắc deploy candidate. Không commit/reset/clean working tree gốc trong checkpoint này.
+
+## CP84–CP85 — target overlay và Render candidate đã chơi được · 14/10/2026
+
+- Đã triển khai target overlay trong [`game/web/src/PlayerPhotoPanel.tsx`](../game/web/src/PlayerPhotoPanel.tsx) và [`game/web/src/styles.css`](../game/web/src/styles.css): button `.gameplay-target` nằm đúng trong `.sg-portrait-frame`, giữ `data-target-id`, `aria-pressed`, `disabled`, callback Lua và accessibility; UI-03 đo hit-test/rect containment ở desktop/mobile.
+- Đã sửa [`game/web/src/generalArt.ts`](../game/web/src/generalArt.ts): chỉ probe 6 portrait fixture thực sự tồn tại; variant native thiếu bitmap không còn phát 404 speculative mà rơi thẳng về sigil `卍`. Mockup 1v1 trong [`game/web/public/interactive-board-comparison.html`](../game/web/public/interactive-board-comparison.html) cũng cập nhật số ghế/diễn biến động.
+- Regression quan sát mới: `npm --prefix game/web run typecheck` **PASS**; `test:gameplay` **16/16**; `test:store` **31/31**; `test:e2e` **18/18**; `test:e2e:lua` **59/59**; `npm --prefix game/web run build` **PASS**; `git diff --check` **PASS**. Evidence target overlay thật từ React/Lua ở [`scratch/evidence/ui-03-390px-target-overlay-lua-fixture-2026-10-14.png`](../scratch/evidence/ui-03-390px-target-overlay-lua-fixture-2026-10-14.png), cùng 360/1280px.
+- Release cô lập CP85 đã `package-release.mjs` + `verify-release.mjs` **PASS 14.938 files**, 14 package, `runtimeMD5=c4704cd70bfbce3375c4c123a2443a3f`; branch deploy `codex/cp85-render-current`, commit `f09c52d49f3c4260b94561ff912836354febc8ca` đã push. Root checkout vẫn giữ dirty, không reset/clean/commit đè thay đổi của người dùng.
+- Render candidate `tqs-mobile-candidate`: deployment [`dep-db7grka5b2lc73ftk5g0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db7grka5b2lc73ftk5g0) quan sát trực tiếp **Deploy succeeded | Live**; URL [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com). `/gateway/healthz` **200/ok**; `/gateway/manifest.json` trả 14 packages, 5.279 bundle files, MD5 khớp; `interactive-board-comparison.html` **200**.
+- Hosted acceptance dùng `TQS_LIVE_URL=https://tqs-mobile-candidate.onrender.com ... npm --prefix game/web run test:e2e:live -- --ui-translations`: **PASS** login/EnterLobby, tạo phòng 2 ghế, thêm BOT, native Trust, GameOver, về lobby, disconnect sạch, không JS/Lua/console error; evidence sanitized ở [`scratch/evidence/cp85-render-ui01-20261014/ui-01-live-cpp-cp85-render-2026-10-14.json`](../scratch/evidence/cp85-render-ui01-20261014/ui-01-live-cpp-cp85-render-2026-10-14.json), ảnh `ui-01-live-board-*`/`ui-01-live-finished-*` cùng thư mục.
+- Live UI audit còn `4 possible untranslated strings` chứa mảnh Trung văn (`由于`, `观看了`, `的手牌`, `定澜夜明珠`); đây là residual dịch cần xử lý nếu muốn đóng UI-01, không làm gameplay/connectivity fail. Không tuyên bố Việt hóa toàn bộ.
+- **Giới hạn:** đây là Render **candidate để test**, chưa là official release; iOS/Android/Safari vật lý, cold-start/quota/rollback-SLA và các gate vận hành vẫn mở. CP84 trước đó đã chạy được GameOver nhưng test strict console còn bắt 404 portrait; CP85 đã sửa nguyên nhân và chạy lại PASS sạch.
+
+**Bước tiếp theo có thể chạy ngay:** người dùng mở [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com) và chơi thử; nếu tiếp tục, sửa 4 chuỗi live audit theo evidence rồi chạy focused live audit/release, không tự coi candidate là official.
+
+## CP86 — Đại tu toàn diện giao diện bàn chơi: Parity Sanguosha Mobile, QSGS & FreeKill · 14/10/2026
+
+- [x] **Full-Viewport Game Canvas (100dvh)**: Ẩn `.app-header` (tiêu đề/slogan web blog) khi vào trận (`.shell-playing`, `.sg-game-shell`), thu gọn footer thành dòng trạng thái mỏng 22px bảo toàn nút `Ngắt kết nối`, tạo top bar 36px mỏng đẹp (`.board-toolbar`), chuyển alertdialog và request panel thành modal overlay nổi giữa màn hình.
+- [x] **Triệt tiêu ký tự `卍`, tích hợp 1.570+ tranh tướng native**: Đồng bộ 1.570 ảnh chân dung từ `runtime/packages/` vào `game/web/public/photo-assets/generals/`, lập chỉ mục `generalArtList.json`, hỗ trợ strip base-name (`m_heg__dianwei` -> `dianwei.jpg`, `ld__bianfuren` -> `bianfuren.jpg`). Tướng ẩn hiển thị lưng bài Quốc Chiến hoa văn chuẩn theo thế lực (`/photo-assets/back/{kingdom}.png`).
+- [x] **Thiết kế lại PlayerPhotoPanel & 5 ô trang bị đồ họa**: Chuẩn hóa cột ngọc câu Magatama ngọc bích, ẩn text thừa gây vỡ chữ, bổ sung glyph/icon vector sắc nét cho 5 ô trang bị (`📿` Bảo, `⚔️` Vũ, `🛡️` Giáp, `🐎` +1, `🏹` -1), highlight ánh kim khi có trang bị.
+- [x] **Bottom Dashboard & Floating Action Bar**: Thiết kế dải nút thao tác `[Xác nhận]`, `[Hủy]`, `[Kết thúc lượt]` nổi mạ vàng phát sáng, xếp gọn gàng cùng dải bài trên tay 0° overlap.
+- [x] **Kiểm chứng hồi quy toàn bộ**:
+  - `typecheck`: **PASS**
+  - `test:gameplay`: **16/16 PASS**
+  - `test:store`: **31/31 PASS**
+  - `test:e2e`: **18/18 PASS**
+  - `test:e2e:lua`: **59/59 PASS**
+  - `build`: **PASS** (Vite + SW 147 files)
+  - `git diff --check`: **PASS**
+- [x] **Visual Evidence**: Đã chụp ảnh màn hình xác minh thực tế từ React + Lua WASM tại 390px, 360px và 1280px:
+  - [`real_gameplay_390_mobile.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/real_gameplay_390_mobile.png)
+  - [`real_gameplay_390_bottom_dashboard.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/real_gameplay_390_bottom_dashboard.png)
+  - [`real_gameplay_390_fullpage.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/real_gameplay_390_fullpage.png)
+  - [`real_gameplay_360_mobile.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/real_gameplay_360_mobile.png)
+  - [`real_gameplay_1280_desktop.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/real_gameplay_1280_desktop.png)
+  - [`mockup_interactive_1v1_mobile.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/mockup_interactive_1v1_mobile.png)
+  - [`mockup_interactive_desktop_split.png`](file:///Users/otada/.gemini/antigravity/brain/c9930c20-0ab8-4476-8dbb-395b52928420/mockup_interactive_desktop_split.png)
+
+**Bước tiếp theo có thể chạy ngay:** người dùng đánh giá các ảnh chụp visual evidence hoặc mở `interactive-board-comparison.html` để kiểm tra diện mạo mới. Nếu hài lòng, tiến hành tạo release snapshot cô lập và deploy candidate lên Render để chơi live ván mới.
+
+## CP87 — triệt tiêu text trùng và thu gọn center/mobile overlap · 14/10/2026
+
+- [x] Sửa [`game/web/src/PlayerPhotoPanel.tsx`](../game/web/src/PlayerPhotoPanel.tsx) để tên tướng hiển thị đúng một accessible text node: `sg-portrait-name` được gộp vào span calligraphy; tên tướng ẩn chỉ còn ở `.sg-general-compat`; nhãn phase chỉ còn ở `.sg-phase-compat`. Điều này loại lỗi Strict Mode nhiều phần tử cùng text, đặc biệt với `Biện Phu Nhân`, và không làm lộ tướng ẩn hai lần.
+- [x] Thu gọn vùng trung tâm mobile trong [`game/web/src/styles.css`](../game/web/src/styles.css): ẩn `.board-center-seat-count`, biến `Quốc Chiến` thành watermark nhỏ/mờ, giới hạn `.board-moments` ở dải tối đa 44px, giữ center `pointer-events:none` và không để bảng diễn biến chiếm vùng ghế/target.
+- [x] Acceptance UI-03 trong [`game/web/scripts/real-lua-e2e/run.ts`](../game/web/scripts/real-lua-e2e/run.ts) tiếp tục đo rect/hit-test và khẳng định `intersects(mobile.target, mobile.center) === false`; bộ Real Lua Browser E2E chạy thật trong phiên này **59/59 PASS**, trong đó case `UI-03 photo panels keep target actions clear of the table centre and recent-action surfaces` **PASS**.
+- [x] Regression quan sát trực tiếp từ `game/web/`: `npm run typecheck` **PASS**; `npm run test:gameplay` **16/16 PASS**; `npm run test:store` **31/31 PASS**; `npm run test:e2e` **18/18 PASS**; `npm run test:e2e:lua` **59/59 PASS**; `npm run build` **PASS** (audit crypto/skill/activation/native-caller, Vite và service worker **151 verified public files**); `git diff --check` **PASS**.
+- **Giới hạn:** chỉ thay đổi client presentation, accessibility text và acceptance layout local; không đổi Lua rules, wire protocol, native server, deploy, commit hoặc `PLAYABLE_MOBILE`. Working tree vẫn dirty với toàn bộ thay đổi/asset từ các mốc trước và được bảo toàn.
+
+**Bước tiếp theo có thể chạy ngay:** review lại ảnh 360/390/1280px và gameplay live/candidate trên thiết bị thật; nếu bố cục đã đạt, tạo release snapshot cô lập rồi mới cân nhắc deploy candidate. Không dùng local 59/59 để đóng device/Safari, operations hoặc official-release gate.
+
+## CP88 — fresh visual evidence, ellipse collision gate và capture workflow reproducible · 14/10/2026
+
+- [x] Sửa [`game/web/scripts/capture-real-gameplay.ts`](../game/web/scripts/capture-real-gameplay.ts) và [`game/web/scripts/capture-ellipse-verification.ts`](../game/web/scripts/capture-ellipse-verification.ts) nhận `TQS_CAPTURE_BASE_URL`. Capture gameplay cần Vite **dev** middleware vì `npm run preview` fallback `/__tqs_fixture_lua.zip` và `/__tqs_fixture_key.txt` về HTML thay vì fixture; không coi preview fallback là bằng chứng Lua boot.
+- [x] Chạy capture thật trên Vite dev `127.0.0.1:5175`: `TQS_CAPTURE_BASE_URL=http://127.0.0.1:5175 npx tsx scripts/capture-real-gameplay.ts` **PASS**, ghi mới ảnh gameplay 390/360/1280px và bottom dashboard vào artifact directory; ảnh 390px đã inspect xác nhận seat count bị ẩn, watermark nhỏ/mờ và ribbon center bị giới hạn.
+- [x] Chạy `TQS_CAPTURE_BASE_URL=http://127.0.0.1:5175 npx tsx scripts/capture-ellipse-verification.ts` **PASS**: mockup có **7 opponent seats** ở bàn 8 ghế và **9 opponent seats** ở bàn 10 ghế; 8 desktop, 10 desktop, 8 mobile 390px và 10 mobile 390px đều **ZERO pairwise seat overlap**. Collision checker nay fail-closed bằng exception nếu có overlap.
+- [x] Chạy lại `TQS_EVIDENCE_DIR=... npm run test:e2e:lua`: **59/59 PASS**, gồm UI-03 target/hit-test/center/controls/document overflow; evidence ảnh UI-03 mới nằm trong `scratch/evidence/ui-03-*-target-overlay-lua-fixture-2026-10-14.png`.
+- [x] Regression bổ sung sau capture-script patch: `npm run typecheck` **PASS**; `test:vietnamese` **4/4**; `test:card-display` **9/9**; `test:native-dialogs` **7/7**; `test:room-pools` **1/1**; `npm run build` **PASS**; `git diff --check` **PASS**. Build vẫn chỉ có cảnh báo Wasmoon externalized `module` và chunk JS >500 kB.
+- **Giới hạn:** ảnh elip là mockup `interactive-board-comparison.html`, không thay thế React/C++ live device QA; pairwise seat check không tự chứng minh target-vs-center, phần đó thuộc assertion UI-03. Không deploy, không commit root, không đổi native Lua/C++/wire protocol; dev server 5175 đã dừng, preview 5174 được giữ nguyên.
+
+**Bước tiếp theo có thể chạy ngay:** dùng ảnh fresh CP88 để review trực quan; nếu chấp nhận, tạo release snapshot sạch rồi chạy canary bounded. Không đánh dấu official release hoặc `PLAYABLE_MOBILE` chỉ từ mockup/local fixture.
+
+## CP89 — khóa dải diễn biến mobile theo hướng an toàn và chuẩn bị Render candidate · 14/10/2026
+
+- [x] Áp dụng hướng an toàn tối thiểu trong [`game/web/src/styles.css`](../game/web/src/styles.css): tiêu đề `Diễn biến mới nhất` và từng `.board-moment` trên mobile đều là một dòng, dùng `overflow: hidden`, `text-overflow: ellipsis`, `white-space: nowrap`; giữ `max-height: 44px`, center watermark nhỏ/mờ, `pointer-events:none` và không thay đổi wire/Lua.
+- [x] Chạy lại từ checkout hiện tại: `npm run typecheck` **PASS**; gameplay **16/16**; store **31/31**; Vietnamese **4/4**; card-display **9/9**; native-dialogs **7/7**; room-pools **1/1**; Chrome E2E **18/18**; Real Lua Browser E2E **59/59**; `npm run build` **PASS**; `git diff --check` **PASS**. Build vẫn chỉ có cảnh báo Wasmoon externalized `module` và chunk JS >500 kB.
+- [ ] Đang chuẩn bị release snapshot cô lập từ `scratch/live-web-test/current` (14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`), tạo nhánh `codex/cp89-render-current`, commit toàn bộ thay đổi tracked/untracked hiện tại sau khi kiểm tra không có path nhạy cảm, push GitHub và manual deploy service `tqs-mobile-candidate` vì `render.yaml` đặt `autoDeployTrigger: off`.
+- **Phạm vi/giới hạn:** đây là candidate để người dùng test; không tự động merge/push các branch cũ không liên quan, không đánh dấu official release hoặc `PLAYABLE_MOBILE`, và không coi việc deploy candidate là bằng chứng device/Safari/operations.
+
+**Bước tiếp theo có thể chạy ngay:** package + verify release từ runtime pinned, commit/push snapshot CP89, kích hoạt deploy Render thủ công, rồi probe health/manifest/bundle marker và báo URL test cùng deployment identity.

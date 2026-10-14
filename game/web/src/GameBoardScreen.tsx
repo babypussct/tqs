@@ -11,6 +11,64 @@ import PlayerPhotoPanel from './PlayerPhotoPanel';
 // changing the server's timeout/wire protocol.
 const PRESENTATION_MOMENT_INTERVAL_MS = 650;
 
+function useIsMobile(query = '(max-width: 640px)'): boolean {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia(query);
+    const onChange = () => setIsMobile(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return isMobile;
+}
+
+export function getOpponentPosition(
+  opponentIndex: number,
+  totalSeats: number,
+  isMobile: boolean
+): React.CSSProperties {
+  const cX = 50;
+  const cY = isMobile ? 38 : 38.5;
+  const rX = isMobile ? 38 : 41;
+  const rY = isMobile ? 24 : 27;
+
+  let scale = 1;
+  if (isMobile) {
+    if (totalSeats >= 10) scale = 0.48;
+    else if (totalSeats >= 8) scale = 0.58;
+    else if (totalSeats >= 4) scale = 0.72;
+    else scale = 0.85;
+  } else {
+    if (totalSeats >= 10) scale = 0.68;
+    else if (totalSeats >= 8) scale = 0.78;
+    else if (totalSeats >= 4) scale = 0.90;
+    else scale = 1.0;
+  }
+
+  if (totalSeats <= 2) {
+    return {
+      left: '50%',
+      top: isMobile ? '13%' : '12%',
+      transform: `translate(-50%, -50%) scale(${scale})`,
+    };
+  }
+
+  const angleStep = 360 / totalSeats;
+  const deg = 90 - (opponentIndex + 1) * angleStep;
+  const rad = (deg * Math.PI) / 180;
+  const x = cX + rX * Math.cos(rad);
+  const y = cY + rY * Math.sin(rad);
+
+  return {
+    left: `${x.toFixed(2)}%`,
+    top: `${y.toFixed(2)}%`,
+    transform: `translate(-50%, -50%) scale(${scale})`,
+  };
+}
+
 function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): string {
   if (moment.kind === 'log') return localizedGameLog(moment.text);
   const player = players.get(moment.playerId);
@@ -91,11 +149,13 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     };
   }, [showLogs, followLogs]);
   const markUserScroll = () => { userScrollUntil.current = performance.now() + 1500; };
+  const isMobile = useIsMobile();
   const seatOrder = relativeSeatOrder(board.seats, players.map((p) => p.id), ownId);
   const byId = new Map(players.map((p) => [p.id, p]));
   const self = ownId == null ? null : byId.get(ownId);
   const trusting = self?.netState === 'trust';
   const others = seatOrder.filter((id) => id !== ownId);
+  const totalSeats = Math.max(2, seatOrder.length);
   // Keep the server's absolute seat number for log/UI parity.  The visual
   // order is rotated so the local player sits at the bottom, but that
   // rotation must never renumber the seats.
@@ -177,16 +237,18 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         <div className="board-main sg-board-main">
       <div className="board-table sg-board-table">
         <div className="board-opponents" aria-label="Các ghế khác">
-          {others.map((id) => {
+          {others.map((id, index) => {
             const player = byId.get(id);
+            const pos = getOpponentPosition(index, totalSeats, isMobile);
             return player && <PlayerPhotoPanel key={id} player={player} game={board.player[id]}
               seat={seatNumbers.get(id) ?? 0} self={false} active={activeFor(id)} target={targetFor(id)}
-              busy={busy || requestExpired} onTarget={() => chooseTarget(id)} />;
+              busy={busy || requestExpired} onTarget={() => chooseTarget(id)}
+              style={pos} />;
           })}
         </div>
         <div className="board-center" aria-label="Khu vực bàn chơi">
           <span className="board-center-symbol" aria-hidden="true">Quốc Chiến</span>
-          <p>{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
+          <p className="board-center-seat-count">{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
           <div className="board-moments" aria-label="Diễn biến mới nhất" aria-live="off">
             <strong>Diễn biến mới nhất</strong>
             {visibleMoments.length ? visibleMoments.map((moment) =>
