@@ -3,26 +3,29 @@ import { useDisplayText } from './engine/displayText';
 import { choices, objectValue } from './engine/gameplayInteraction';
 import type { RequestInfo } from './engine/connection';
 import type { GameplayItem, GameplayItemType, GameplayScene } from './store/gameplayState';
+import {
+  CardDetailSheet,
+  formatRank,
+  getCardCategory,
+  getSuitInfo,
+  HandCardItem,
+  resolveCardText,
+  SelectedCardSummary,
+  type CardData,
+} from './HandCardItem';
 
 export type GameplayDispatch = (type: GameplayItemType, id: string | number,
   action: 'click' | 'update' | 'finish', data: unknown) => void;
 export type GameplayDirect = (id: string | number, data: unknown) => void;
 
-function ItemButton({ item, label, onClick, busy }: {
-  item: GameplayItem; label: string; onClick: () => void; busy: boolean;
+function ItemButton({ item, label, onClick, busy, card = false }: {
+  item: GameplayItem; label: string; onClick: () => void; busy: boolean; card?: boolean;
 }) {
-  return <button className={`gameplay-choice ${item.selected ? 'selected' : ''}`} type="button"
+  return <button className={`gameplay-choice ${card ? 'sg-card-button' : ''} ${item.selected ? 'selected' : ''}`} type="button"
     data-card-id={typeof item.id === 'number' ? item.id : undefined} aria-pressed={item.selected} disabled={busy || !item.enabled} onClick={onClick}>{label}</button>;
 }
 
 function list(value: unknown): unknown[] { return Array.isArray(value) ? value.slice(0, 256) : []; }
-
-function describeCard(item: GameplayItem, text: (value: string) => string): string {
-  const card = objectValue(item.card);
-  const name = card && (typeof card.name === 'string' ? card.name :
-    typeof card.trueName === 'string' ? card.trueName : null);
-  return name ? text(name) : 'Lá bài chưa xác định';
-}
 
 function InteractionPicker({ item, dispatch, direct, busy }: {
   item: GameplayItem; dispatch: GameplayDispatch; direct: GameplayDirect; busy: boolean;
@@ -148,24 +151,55 @@ export function GameplayControls({ scene, request, busy, dispatch, direct }: {
   const specials = Object.values(scene.items.SpecialSkills);
   const interactions = Object.values(scene.items.Interaction);
   const buttons = Object.values(scene.items.Button);
+  const [inspectedCardId, setInspectedCardId] = useState<string | number | null>(null);
+  const selectedCard = cards.find((item) => item.selected) ?? null;
+  const inspectedCard = inspectedCardId === null
+    ? null
+    : cards.find((item) => item.id === inspectedCardId && item.selected) ?? null;
+  const inspectedData = objectValue(inspectedCard?.card) as CardData | null;
+  const inspectedCategoryFromName = getCardCategory(inspectedData?.name);
+  const inspectedCategory = inspectedCategoryFromName.typeKey === 'unknown'
+    ? getCardCategory(inspectedData?.trueName)
+    : inspectedCategoryFromName;
+  const inspectedSuit = getSuitInfo(inspectedData?.suit);
+  const inspectedRank = formatRank(inspectedData?.number);
+  const inspectedText = resolveCardText(inspectedData ?? undefined, text);
   const disabledReasons = [...new Set(cards.filter((item) => !item.enabled && item.disabledReason)
     .map((item) => item.disabledReason!))];
   const expired = request.expiresAt !== null && Date.now() >= request.expiresAt;
   const waiting = busy || expired;
-  return <section className="gameplay-controls" aria-label="Điều khiển lượt chơi">
+  return <section className="gameplay-controls sg-gameplay-controls" aria-label="Điều khiển lượt chơi">
     <div className="gameplay-control-heading">
       <strong>Thao tác trong lượt</strong>
     </div>
     {scene.prompt && <p className="gameplay-prompt">{text(scene.prompt)}</p>}
     {disabledReasons.map((reason) => <p key={reason} className="notice" role="status">{text(reason)}</p>)}
+    {selectedCard && <SelectedCardSummary
+      item={selectedCard}
+      onInspect={() => setInspectedCardId(selectedCard.id)}
+    />}
     {!!skills.length && <div><h3>Kỹ năng</h3><div className="gameplay-options">
       {skills.map((item) => <ItemButton key={item.id} item={item} label={text(String(item.id))} busy={waiting}
         onClick={() => dispatch('SkillButton', item.id, 'click', { selected: !item.selected, autoTarget: false })} />)}
     </div></div>}
-    {!!cards.length && <div><h3>Lá bài có thể chọn</h3><div className="gameplay-options gameplay-hand">
-      {cards.map((item) => <ItemButton key={item.id} item={item} label={describeCard(item, text)} busy={waiting}
-        onClick={() => dispatch('CardItem', item.id, 'click', { selected: !item.selected })} />)}
-    </div></div>}
+    {!!cards.length && <div className="gameplay-card-section">
+      <div className="gameplay-card-heading">
+        <h3>Lá bài có thể chọn</h3>
+        <span className="sg-hand-count" aria-label={`${cards.length} lá bài trên tay`}>
+          {cards.length} lá
+        </span>
+      </div>
+      <div
+        className={`gameplay-options gameplay-hand sg-hand-fan${cards.length > 4 ? ' sg-hand-overlap' : ''}`}
+        data-card-count={cards.length}
+        aria-label={`Bài trên tay, ${cards.length} lá. Cuộn ngang để xem thêm.`}
+      >
+        {cards.map((item, index) => <HandCardItem key={item.id} item={item} index={index}
+          totalCards={cards.length} busy={waiting}
+          onClick={() => dispatch('CardItem', item.id, 'click', { selected: !item.selected })} />)}
+      </div>
+      {cards.length > 6 && <p className="sg-hand-scroll-hint">Vuốt hoặc cuộn ngang để xem toàn bộ bài trên tay</p>}
+    </div>}
     {specials.filter((item) => item.skills?.length).map((item) => <div key={item.id}>
       <h3>Cách sử dụng lá bài</h3><div className="gameplay-options">
         {item.skills?.map((skill) => <button key={skill} type="button" className="gameplay-choice"
@@ -185,5 +219,15 @@ export function GameplayControls({ scene, request, busy, dispatch, direct }: {
       })}
     </div>}
     {expired && <p className="notice error-notice">Yêu cầu đã hết thời gian.</p>}
+    {inspectedCard && <CardDetailSheet
+      isOpen={true}
+      onClose={() => setInspectedCardId(null)}
+      displayName={inspectedText.displayName}
+      category={inspectedCategory}
+      suitInfo={inspectedSuit}
+      rank={inspectedRank}
+      description={inspectedText.description}
+      card={inspectedData ?? undefined}
+    />}
   </section>;
 }

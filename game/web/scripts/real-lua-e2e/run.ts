@@ -90,6 +90,60 @@ try {
       await p.getByText('Kích hoạt kỹ năng thử?').waitFor();
       assert.equal((await snapshot(p)).replies.length, 0);
     }],
+    ['Real Lua gameplay hand renders catalogue art and remains horizontally scrollable', async (p) => {
+      const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+      const hand = controls.locator('.gameplay-hand');
+      await p.setViewportSize({ width: 360, height: 844 });
+      const { id: compactId, cardIds: compactCardIds } = await p.evaluate(() => window.__tqsRealLuaE2e.beginVisualHand(10));
+      await hand.waitFor();
+      await p.waitForFunction(() => {
+        const images = [...document.querySelectorAll<HTMLImageElement>('.gameplay-hand .sg-card-native-art')];
+        return images.length > 0 && images.every((image) => image.complete && image.naturalWidth > 0);
+      });
+      const compactMetrics = await hand.evaluate((element) => ({
+        buttonCount: element.querySelectorAll('button.gameplay-choice').length,
+        artCount: element.querySelectorAll('img.sg-card-native-art').length,
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        overflowX: getComputedStyle(element).overflowX,
+      }));
+      assert.equal(compactMetrics.buttonCount, compactCardIds.length);
+      assert.equal(compactMetrics.artCount, compactCardIds.length, 'every compact hand card needs catalogue art');
+      assert.equal(compactMetrics.overflowX, 'auto');
+      assert.ok(compactMetrics.scrollWidth <= compactMetrics.clientWidth,
+        `ten cards should fit the mobile hand (${compactMetrics.scrollWidth} > ${compactMetrics.clientWidth})`);
+      await hand.locator('button.gameplay-choice:enabled').last().click();
+      assert.equal((await snapshot(p)).requestId, compactId);
+      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
+
+      await p.setViewportSize({ width: 390, height: 844 });
+      const { id, cardIds } = await p.evaluate(() => window.__tqsRealLuaE2e.beginVisualHand(12));
+      await hand.waitFor();
+      await p.waitForFunction(() => {
+        const images = [...document.querySelectorAll<HTMLImageElement>('.gameplay-hand .sg-card-native-art')];
+        return images.length > 0 && images.every((image) => image.complete && image.naturalWidth > 0);
+      });
+      const metrics = await hand.evaluate((element) => ({
+        buttonCount: element.querySelectorAll('button.gameplay-choice').length,
+        artCount: element.querySelectorAll('img.sg-card-native-art').length,
+        artSources: [...element.querySelectorAll<HTMLImageElement>('img.sg-card-native-art')]
+          .map((image) => image.getAttribute('src')),
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        overflowX: getComputedStyle(element).overflowX,
+      }));
+      assert.equal(metrics.buttonCount, cardIds.length);
+      assert.equal(metrics.artCount, cardIds.length, 'every real CardItem needs a catalogue/native art image');
+      assert.ok(metrics.artSources.every((source) => source?.startsWith('/card-catalog-art/')),
+        `unexpected gameplay card art sources: ${metrics.artSources.join(', ')}`);
+      assert.equal(metrics.overflowX, 'auto');
+      assert.ok(metrics.scrollWidth > metrics.clientWidth,
+        `hand must expose horizontal scrolling (${metrics.scrollWidth} <= ${metrics.clientWidth})`);
+      await hand.locator('button.gameplay-choice:enabled').last().click();
+      assert.equal((await snapshot(p)).requestId, id);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
+    }],
     ['Unsolicited Lua ReplyToServer does not send a packet', async (p) => {
       const id = await start(p);
       await p.evaluate(() => window.__tqsRealLuaE2e.unsolicited('1'));
@@ -282,8 +336,11 @@ try {
     }],
     ['Native Lua GameOver shows the winner, sends QuitRoom and clears result in lobby', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
-      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
+      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame(true));
       await p.getByRole('heading', { name: 'Bạn đã thắng!', exact: true }).waitFor();
+      await p.getByRole('heading', { name: 'Nhật ký cuối trận', exact: true }).waitFor();
+      await p.getByText('Thông báo cuối trận thử nghiệm', { exact: true }).waitFor();
+      assert.equal(await p.locator('[aria-labelledby="result-title"] .board-player').count(), 2);
       await p.getByText('Người thắng: browser-test', { exact: true }).waitFor();
       assert.equal((await snapshot(p)).requestId, null);
       await p.getByRole('button', { name: 'Về sảnh', exact: true }).click();
@@ -825,6 +882,10 @@ try {
       const moments = p.locator('.board-moments');
       await moments.getByText('Bot fixture mất 2 HP (4 → 2)', { exact: true }).waitFor();
       await moments.getByText('Bot fixture bị xích', { exact: true }).waitFor();
+      // Moments are intentionally presented at a readable interval; wait for
+      // the queued log item instead of assuming the two earlier items imply
+      // that the third one has already reached the DOM.
+      await p.waitForFunction(() => document.querySelector('.board-moments')?.textContent?.includes('Sử dụng'));
       assert.match(await moments.innerText(), /Sử dụng/);
       assert.match(await logs.innerText(), /Sử dụng/);
       assert.equal((await moments.locator('.board-moment').count()), 3);
@@ -914,6 +975,10 @@ try {
         'End resumes automatic following');
       await addLogs(52, 54);
       assert.equal(await nearBottom(), true, 'follow remains active after keyboard navigation');
+      await p.waitForFunction(() =>
+        document.querySelector('.board-moments')?.textContent?.includes('lá Sát nhắm vào Bot fixture') ?? false,
+        undefined,
+        { timeout: 3000 });
       assert.match(await p.locator('.board-moments').innerText(), /lá Sát nhắm vào Bot fixture/,
         'recent public card and target details appear in the center');
       await p.setViewportSize({ width: 390, height: 844 });
@@ -924,6 +989,113 @@ try {
       assert.equal(await nearBottom(), true, 'reopening logs resumes at latest when following');
       assert.deepEqual((await snapshot(p)).luaErrors, []);
       assert.equal((await snapshot(p)).replies.length, 0, 'UI-03 rendering must never reply to gameplay requests');
+    }],
+    ['UI-03 photo panels keep target actions clear of the table centre and recent-action surfaces', async (p) => {
+      const intersects = (a: { left: number; right: number; top: number; bottom: number },
+        b: { left: number; right: number; top: number; bottom: number }) =>
+        a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      await p.setViewportSize({ width: 1280, height: 900 });
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
+      await p.evaluate(() => {
+        for (let id = 18; id <= 24; id++) {
+          window.__tqsRealLuaE2e.boardNotify('AddPlayer', `{${id}, 'Bot ${id}', 'avatar', true, 0}`);
+        }
+        window.__tqsRealLuaE2e.boardNotify('ArrangeSeats', '{17, -1, 18, 19, 20, 21, 22, 23, 24}');
+      });
+      await p.evaluate(() => {
+        window.__tqsRealLuaE2e.boardNotify('GameLog', "{type='Hành động gần nhất: Bot fixture bị nhắm mục tiêu'}");
+        window.__tqsRealLuaE2e.boardNotify('GameLog', "{type='Bảng diễn biến mới nhất vẫn còn hiển thị'}");
+      });
+      await p.locator('.sg-gameplay-controls button[data-card-id]:enabled').first().click();
+      const target = p.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+      await target.waitFor({ state: 'attached' });
+      await target.scrollIntoViewIfNeeded();
+      const desktop = await p.evaluate(() => {
+        const target = document.querySelector<HTMLButtonElement>('.board-player:not(.board-self) .gameplay-target:enabled');
+        const center = document.querySelector<HTMLElement>('.board-center');
+        const local = document.querySelector<HTMLElement>('.board-local-seat');
+        const controls = document.querySelector<HTMLElement>('.sg-gameplay-controls');
+        if (!target || !center || !local || !controls) throw new Error('board interaction surfaces missing');
+        const targetBox = target.getBoundingClientRect();
+        const centerBox = center.getBoundingClientRect();
+        const localBox = local.getBoundingClientRect();
+        const controlsBox = controls.getBoundingClientRect();
+        const targetRect = { left: targetBox.left, right: targetBox.right, top: targetBox.top, bottom: targetBox.bottom,
+          width: targetBox.width, height: targetBox.height };
+        const point = document.elementFromPoint(targetRect.left + targetRect.width / 2,
+          targetRect.top + targetRect.height / 2);
+        const panels = [...document.querySelectorAll<HTMLElement>('.board-opponents .sg-photo-panel')].map((panel) => {
+          const box = panel.getBoundingClientRect();
+          return { left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+            width: box.width, height: box.height };
+        });
+        return { target: targetRect,
+          center: { left: centerBox.left, right: centerBox.right, top: centerBox.top, bottom: centerBox.bottom,
+            width: centerBox.width, height: centerBox.height },
+          local: { left: localBox.left, right: localBox.right, top: localBox.top, bottom: localBox.bottom,
+            width: localBox.width, height: localBox.height },
+          controls: { left: controlsBox.left, right: controlsBox.right, top: controlsBox.top, bottom: controlsBox.bottom,
+            width: controlsBox.width, height: controlsBox.height }, panels,
+          centerPointerEvents: getComputedStyle(center).pointerEvents,
+          hitTarget: point?.closest('.gameplay-target') === target,
+          viewport: { width: window.innerWidth, height: window.innerHeight } };
+      });
+      assert.equal(desktop.centerPointerEvents, 'none');
+      assert.equal(desktop.hitTarget, true, `desktop target is not the hit-test surface: ${JSON.stringify(desktop)}`);
+      assert.equal(intersects(desktop.target, desktop.center), false,
+        `desktop centre content overlaps target: ${JSON.stringify(desktop)}`);
+      assert.equal(intersects(desktop.target, desktop.local), false,
+        `desktop local dashboard overlaps opponent target: ${JSON.stringify(desktop)}`);
+      assert.equal(intersects(desktop.local, desktop.controls), false,
+        `desktop action panel overlaps local photo: ${JSON.stringify(desktop)}`);
+      for (let first = 0; first < desktop.panels.length; first++) {
+        for (let second = first + 1; second < desktop.panels.length; second++) {
+          assert.equal(intersects(desktop.panels[first], desktop.panels[second]), false,
+            `desktop seat panels overlap at 8-player layout: ${JSON.stringify(desktop.panels)}`);
+        }
+      }
+      await target.click();
+      assert.equal(await target.getAttribute('aria-pressed'), 'true');
+
+      await p.setViewportSize({ width: 390, height: 844 });
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
+      await p.locator('.sg-gameplay-controls button[data-card-id]:enabled').first().click();
+      const mobileTarget = p.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+      await mobileTarget.waitFor({ state: 'attached' });
+      await mobileTarget.scrollIntoViewIfNeeded();
+      const mobile = await p.evaluate(() => {
+        const target = document.querySelector<HTMLElement>('.board-player:not(.board-self) .gameplay-target:enabled');
+        const center = document.querySelector<HTMLElement>('.board-center');
+        const controls = document.querySelector<HTMLElement>('.sg-gameplay-controls');
+        if (!target || !center || !controls) throw new Error('mobile interaction surfaces missing');
+        const targetBox = target.getBoundingClientRect();
+        const centerBox = center.getBoundingClientRect();
+        const controlsBox = controls.getBoundingClientRect();
+        const targetRect = { left: targetBox.left, right: targetBox.right, top: targetBox.top, bottom: targetBox.bottom,
+          width: targetBox.width, height: targetBox.height };
+        const point = document.elementFromPoint(targetRect.left + targetRect.width / 2,
+          targetRect.top + targetRect.height / 2);
+        return { target: targetRect,
+          center: { left: centerBox.left, right: centerBox.right, top: centerBox.top, bottom: centerBox.bottom,
+            width: centerBox.width, height: centerBox.height },
+          controls: { left: controlsBox.left, right: controlsBox.right, top: controlsBox.top, bottom: controlsBox.bottom,
+            width: controlsBox.width, height: controlsBox.height },
+          centerPointerEvents: getComputedStyle(center).pointerEvents,
+          controlsPosition: getComputedStyle(controls).position,
+          hitTarget: point?.closest('.gameplay-target') === target,
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+          documentWidth: document.documentElement.scrollWidth };
+      });
+      assert.equal(mobile.centerPointerEvents, 'none');
+      assert.equal(mobile.controlsPosition, 'relative', 'mobile actions must not cover a lower seat');
+      assert.equal(mobile.hitTarget, true, `mobile target is not the hit-test surface: ${JSON.stringify(mobile)}`);
+      assert.equal(intersects(mobile.target, mobile.center), false,
+        `mobile centre content overlaps target: ${JSON.stringify(mobile)}`);
+      assert.equal(intersects(mobile.target, mobile.controls), false,
+        `mobile action panel overlaps opponent target: ${JSON.stringify(mobile)}`);
+      assert.ok(mobile.documentWidth <= mobile.viewport.width,
+        `mobile layout overflows horizontally: ${JSON.stringify(mobile)}`);
+      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
     }],
   );
   tests.push(
@@ -1075,7 +1247,9 @@ try {
       await poxiPanel.getByRole('button', { name: 'Xác nhận chọn bài', exact: true }).click();
       await reply(p);
       assert.equal((await snapshot(p)).replies[0].requestId, poxi.requestId);
-      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply())).length, 2);
+      const poxiReply = await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply());
+      assert.ok(Array.isArray(poxiReply));
+      assert.equal(poxiReply.length, 2);
 
       const cardsAndChoice = await startScenario('cards-and-choice');
       const cardsPanel = p.getByRole('region', { name: 'Xem bài và chọn phương án' });
@@ -1112,6 +1286,79 @@ try {
       await reply(p);
       assert.equal((await snapshot(p)).replies[0].requestId, founding.requestId);
       assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), ['heg_qin']);
+
+      const damageExchange = await startScenario('fazheng-enyuan');
+      const damageControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+      const damageCard = damageControls.locator('.gameplay-hand button.gameplay-choice:enabled').first();
+      if (await damageCard.count()) await damageCard.click();
+      await p.locator('.board-player:not(.board-self) .gameplay-target:enabled').click();
+      await damageControls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      await reply(p);
+      assert.equal((await snapshot(p)).replies[0].requestId, damageExchange.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: { skill: 'userealcard_skill', subcards: [damageExchange.slotCards['actor-slash-1']] }, targets: [-1],
+      });
+    }],
+  );
+  tests.push(
+    ['QA Scenario Mode Longdan converts Slash to Jink and Jink to Slash through actual Lua', async (p) => {
+      for (const direction of ['defend', 'attack'] as const) {
+        const { id, cardId } = await p.evaluate((value) => window.__tqsRealLuaE2e.beginLongdan(value), direction);
+        const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+        await controls.getByRole('button', { name: 'Long Đảm', exact: true }).click();
+        await controls.locator(`button[data-card-id="${cardId}"]:enabled`).click();
+        if (direction === 'attack') await p.locator('.board-player:not(.board-self) .gameplay-target:enabled').click();
+        await controls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+        const s = await reply(p);
+        assert.equal(s.replies.length, 1);
+        assert.equal(s.replies[0].requestId, id);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+          card: { skill: 'hs__longdan', subcards: [cardId] }, targets: direction === 'attack' ? [-1] : [],
+        });
+        assert.deepEqual(s.luaErrors, []);
+      }
+    }],
+    ['QA Scenario Mode Yiji and Fankui each allow Invoke and Skip', async (p) => {
+      for (const skill of ['hs__yiji', 'fankui'] as const) {
+        for (const invoke of [true, false]) {
+          const { id } = await p.evaluate((value) => window.__tqsRealLuaE2e.beginFankui(value), skill);
+          assert.equal((await snapshot(p)).skill?.skill, skill);
+          assert.equal(await p.getByRole('button', { name: 'Kích hoạt', exact: true }).isEnabled(), true);
+          assert.equal(await p.getByRole('button', { name: 'Bỏ qua', exact: true }).isEnabled(), true);
+          await p.getByRole('button', { name: invoke ? 'Kích hoạt' : 'Bỏ qua', exact: true }).click();
+          const s = await reply(p);
+          assert.equal(s.replies.length, 1);
+          assert.equal(s.replies[0].requestId, id);
+          assert.equal(s.replies[0].hex, invoke ? '4131' : '485f5f63616e63656c');
+          assert.deepEqual(s.luaErrors, []);
+        }
+      }
+    }],
+    ['QA Scenario Mode invoked Yiji gives both expanded cards to self; Fankui chooses one source card', async (p) => {
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginFankui('hs__yiji'));
+      await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+      await reply(p);
+      const yiji = await p.evaluate(() => window.__tqsRealLuaE2e.continueYiji());
+      const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+      for (const cardId of yiji.cards) await controls.locator(`button[data-card-id="${cardId}"]:enabled`).click();
+      await p.locator('.board-self .gameplay-target:enabled').click();
+      await controls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const distributed = await reply(p, 2);
+      assert.equal(distributed.replies[1].requestId, yiji.id);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: { skill: 'ex__choose_skill', subcards: yiji.cards }, targets: [17],
+      });
+      assert.deepEqual(distributed.luaErrors, []);
+
+      const fankui = await p.evaluate(() => window.__tqsRealLuaE2e.beginFankui('fankui'));
+      await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+      await reply(p);
+      const id = await p.evaluate(() => window.__tqsRealLuaE2e.continueFankui());
+      await p.getByRole('region', { name: 'Chọn bài đối thủ' }).getByRole('button', { name: 'Bài úp', exact: true }).click();
+      const chosen = await reply(p, 2);
+      assert.equal(chosen.replies[1].requestId, id);
+      assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), fankui.cardId);
+      assert.deepEqual(chosen.luaErrors, []);
     }],
   );
   const testsToRun = process.argv.includes('--qa-scenarios')

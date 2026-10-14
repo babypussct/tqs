@@ -32,6 +32,11 @@ export type GamePhase = 'boot' | 'login' | 'lobby' | 'room' | 'playing';
 export interface GameResult {
   outcome: 'win' | 'loss' | 'draw' | 'unknown';
   winners: { id: number; name: string }[];
+  summary?: {
+    players: { id: number; name: string; general: string | null; deputyGeneral: string | null;
+      hp: number | null; maxHp: number | null; handcardNum: number | null }[];
+    logs: string[];
+  };
 }
 
 function gameResult(state: GameSnapshot, data: unknown): GameResult {
@@ -42,6 +47,20 @@ function gameResult(state: GameSnapshot, data: unknown): GameResult {
   const winners = [...new Set(ids.map(Number))].map((id) => ({ id,
     name: state.players.find((p) => p.id === id)?.name || (id < 0 ? `Bot ${id}` : `Người chơi ${id}`) }));
   return { outcome: state.ownId === null ? 'unknown' : winners.some((p) => p.id === state.ownId) ? 'win' : 'loss', winners };
+}
+
+function completedResult(state: GameSnapshot, data: unknown): GameResult {
+  const result = gameResult(state, data);
+  if (!state.board.logs.length && !Object.keys(state.board.player).length) return result;
+  // Keep only the public projection. Hidden/self-only generals, card ids,
+  // marks, equipment and pending request data are not retained here.
+  const players = state.players.flatMap((player) => {
+    const board = state.board.player[player.id];
+    return board ? [{ id: player.id, name: player.name, general: board.general,
+      deputyGeneral: board.deputyGeneral, hp: board.hp, maxHp: board.maxHp,
+      handcardNum: board.handcardNum }] : [];
+  });
+  return { ...result, summary: { players, logs: [...state.board.logs] } };
 }
 
 export interface GameSnapshot {
@@ -168,11 +187,12 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         skillInvoke: null, initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'GameOver':
       return { ...state, phase: 'room', pendingRequest: null, skillInvoke: null,
-        result: gameResult(state, data),
+        result: completedResult(state, data),
         initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'ArrangeSeats':
     case 'PropertyUpdate':
     case 'SelfGenerals':
+    case 'GeneralArtUpdate':
     case 'VisibleKingdom':
     case 'EquipmentUpdate':
     case 'SetPlayerMark':

@@ -10,7 +10,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createPublicKey } from 'node:crypto';
+import { createHash, createPublicKey } from 'node:crypto';
 import { once } from 'node:events';
 import { cpSync, existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, statSync, readdirSync, readFileSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
@@ -28,6 +28,26 @@ import { PACKAGES } from './snapshot';
 const roomPools = process.argv.includes('--room-pools');
 const uiTranslations = process.argv.includes('--ui-translations');
 const login = process.argv.includes('--login') || roomPools || uiTranslations;
+const webRoot = fileURLToPath(new URL('../../', import.meta.url));
+const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
+
+function snapshotPackages(root: string): string[] {
+  const packages = path.join(root, 'packages');
+  if (!existsSync(packages)) return [];
+  return readdirSync(packages, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+function hasCompleteSnapshot(root: string | undefined): root is string {
+  return !!root && existsSync(path.join(root, 'flist.txt')) &&
+    JSON.stringify(snapshotPackages(root)) === JSON.stringify(PACKAGES);
+}
+
+function snapshotMd5(root: string): string {
+  return createHash('md5').update(readFileSync(path.join(root, 'flist.txt'))).digest('hex');
+}
 function vietnamDate(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -67,17 +87,29 @@ if (login) {
 const username = login ? process.env.FK_TEST_USERNAME : 'tqs-preauth-e2e';
 const password = login ? process.env.FK_TEST_PASSWORD : 'unused-local-preauth-only';
 assert.ok(username && password, 'Login requires FK_TEST_USERNAME and FK_TEST_PASSWORD');
-const snapshotRoot = login ? process.env.TQS_LIVE_ROOT : undefined;
-if (login) assert.ok(snapshotRoot && existsSync(path.join(snapshotRoot, 'flist.txt')),
-  'Login requires TQS_LIVE_ROOT with matching packages/ and flist.txt');
+let snapshotRoot: string | undefined = login ? process.env.TQS_LIVE_ROOT : undefined;
+if (login) {
+  // A persistent test config can outlive a release and still point to the
+  // old three-package CP19 snapshot. Prefer the checkout's pinned runtime
+  // when the configured snapshot is incomplete or has a different flist.
+  // The hosted manifest check below remains the final guard against using a
+  // Lua snapshot that does not match the live native server.
+  const currentRuntime = path.join(repoRoot, 'runtime');
+  const configuredReady = hasCompleteSnapshot(snapshotRoot);
+  const runtimeReady = hasCompleteSnapshot(currentRuntime);
+  if ((!configuredReady || (runtimeReady && snapshotMd5(snapshotRoot!) !== snapshotMd5(currentRuntime))) && runtimeReady) {
+    console.warn(`WARN TQS_LIVE_ROOT is stale/incomplete; using current runtime snapshot ${currentRuntime}`);
+    snapshotRoot = currentRuntime;
+  }
+  assert.ok(hasCompleteSnapshot(snapshotRoot),
+    `Login requires a complete ${PACKAGES.length}-package TQS_LIVE_ROOT snapshot`);
+}
 const host = process.env.TQS_LIVE_HOST;
 if (!host || !/^[a-zA-Z0-9.:-]+$/.test(host)) {
   throw new Error('Set TQS_LIVE_HOST to the test FreeKill server hostname/IP');
 }
 const tcpPort = Number(process.env.TQS_LIVE_PORT ?? 9527);
 assert.ok(Number.isInteger(tcpPort) && tcpPort > 0 && tcpPort <= 65535, 'Invalid TCP port');
-const webRoot = fileURLToPath(new URL('../../', import.meta.url));
-const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 const upstream = path.join(repoRoot, 'scratch/upstream');
 const executablePath = [process.env.TQS_CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -196,12 +228,17 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     await page.getByRole('button', { name: 'Bắt đầu' }).click();
     gameStarted = true;
     await page.getByRole('heading', { name: 'Chọn chủ tướng và phó tướng' }).waitFor({ timeout: 60_000 });
-    const offered = await page.evaluate(async () => {
-      const storeModule = await (new Function('return import("/src/store/gameStore.ts")')() as Promise<{
-        useGameStore: { getState(): { initialGeneral: { generals: string[] } | null } };
-      }>);
-      return storeModule.useGameStore.getState().initialGeneral?.generals ?? [];
-    });
+    // Read the production-safe CustomDialog packet instead of importing a
+    // Vite source module. The latter works for local preview but is absent
+    // from the frozen Render bundle. This also verifies the exact payload
+    // that the real C++ server sent to the browser.
+    const initialTrace = await capture();
+    const initialDialog = initialTrace.incoming.find((packet) => packet.command === 'CustomDialog');
+    assert.ok(initialDialog, 'Missing C++ CustomDialog for initial generals');
+    const initialPayload = decode<{ component?: { model?: { prop?: { generals?: unknown } } } }>(initialDialog);
+    const offered = initialPayload.component?.model?.prop?.generals;
+    assert.ok(Array.isArray(offered) && offered.every((name): name is string => typeof name === 'string'),
+      'C++ initial-general payload must contain a string generals list');
     assert.ok(offered.length >= 5, 'Server should offer at least five generals');
     const offeredLua = `{${offered.map((id) => JSON.stringify(id)).join(',')}}`;
     const offeredPacks = lua.eval<string[]>(`local packs = {}; for _, name in ipairs(${offeredLua}) do
@@ -283,10 +320,49 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     await page.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
     console.log('PASS full C++ bot game / GameOver / return to lobby; sanitized evidence saved');
   } finally {
-    lua.close();
     if (gameStarted && !completed) {
-      console.error('WARNING live game might still be active; premature exit may cause temporary server IP ban');
+      console.error('WARNING live game did not finish the assertion; attempting native BOT Trust/GameOver cleanup');
+      try {
+        // A failure can happen while the initial-general dialog is still open.
+        // Complete one legal pair before enabling Trust so the shared room is
+        // allowed to reach GameOver instead of being abandoned mid-game.
+        const initialHeading = page.getByRole('heading', { name: 'Chọn chủ tướng và phó tướng', exact: true });
+        if (await initialHeading.isVisible().catch(() => false)) {
+          const choices = page.getByRole('group', { name: 'Danh sách võ tướng' }).getByRole('button');
+          const generalCount = await choices.count();
+          let pairChosen = false;
+          for (let main = 0; main < generalCount && !pairChosen; main++) {
+            await page.getByRole('button', { name: 'Chọn lại' }).click().catch(() => {});
+            await choices.nth(main).click().catch(() => {});
+            for (let deputy = 0; deputy < generalCount; deputy++) {
+              if (deputy === main) continue;
+              await choices.nth(deputy).click().catch(() => {});
+              if (await page.getByRole('button', { name: 'Xác nhận tướng' }).isEnabled().catch(() => false)) {
+                pairChosen = true;
+                break;
+              }
+            }
+          }
+          if (pairChosen) await page.getByRole('button', { name: 'Xác nhận tướng' }).click();
+        }
+        const board = page.locator('.game-board');
+        await board.waitFor({ timeout: 75_000 }).catch(() => {});
+        const bot = page.getByRole('button', { name: 'BOT chơi hộ', exact: true });
+        if (await bot.isVisible().catch(() => false)) await bot.click().catch(() => {});
+        const back = page.getByRole('button', { name: 'Về sảnh', exact: true });
+        await back.waitFor({ timeout: 480_000 }).catch(() => {});
+        if (await back.isVisible().catch(() => false)) {
+          await back.click().catch(() => {});
+          await page.getByRole('heading', { name: 'Tạo phòng mới', exact: true }).waitFor({ timeout: 30_000 }).catch(() => {});
+          console.error('PASS cleanup returned the live room to lobby after assertion failure');
+        } else {
+          console.error('WARNING cleanup could not observe Về sảnh; keep the live browser/session open until server timeout');
+        }
+      } catch (cleanupError) {
+        console.error(`WARNING live cleanup failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`);
+      }
     }
+    lua.close();
   }
 }
 
@@ -475,6 +551,8 @@ try {
   // would let an older Render/native pair pass after the source release has
   // added a required dependency such as jsrg or mougong.
   assert.deepEqual(manifest.packages, PACKAGES);
+  if (snapshotRoot) assert.equal(snapshotMd5(snapshotRoot), manifest.md5,
+    `Lua snapshot MD5 ${snapshotMd5(snapshotRoot)} does not match live manifest ${manifest.md5}; refresh the pinned runtime before retrying`);
   if (!deploymentUrl) {
     process.env.VITE_GATEWAY_URL = gatewayUrl;
     vite = await createServer({ root: webRoot,
@@ -523,7 +601,7 @@ try {
     };
   })();` });
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('heading', { name: 'Đăng nhập FreeKill' }).waitFor({ timeout: 45_000 });
+  await page.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor({ timeout: 45_000 });
   await page.getByLabel('Tên tài khoản').fill(username);
   await page.getByLabel('Mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Vào sảnh' }).click();
@@ -593,7 +671,7 @@ try {
       console.log('PASS saved authenticated lobby screenshot without credential fields');
     }
     await page.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click();
-    await page.getByRole('heading', { name: 'Đăng nhập FreeKill' }).waitFor();
+    await page.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
     console.log('PASS real server Setup + EnterLobby accepted by Lua; React lobby online; disconnected cleanly');
     console.log(`PASS gateway Lua bundle: ${manifest.fileCount} files; server accepted snapshot MD5 ${manifest.md5}`);
   } else {

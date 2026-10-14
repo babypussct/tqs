@@ -1,16 +1,15 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
-import { relativeSeatOrder, type BoardMoment, type BoardPlayer } from './store/boardState';
+import { relativeSeatOrder, serverSeatNumbers, type BoardMoment } from './store/boardState';
 import { useGameStore, type RoomPlayer } from './store/gameStore';
 import { GameplayControls, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
-import { GAMEPLAY_REQUESTS, type GameplayItem } from './store/gameplayState';
+import { GAMEPLAY_REQUESTS } from './store/gameplayState';
+import PlayerPhotoPanel from './PlayerPhotoPanel';
 
-const phaseLabels: Record<string, string> = {
-  '1': 'Bắt đầu lượt', '2': 'Chuẩn bị', '3': 'Phán định', '4': 'Rút bài',
-  '5': 'Đánh bài', '6': 'Bỏ bài', '7': 'Kết thúc lượt', '8': 'Ngoài lượt', '9': 'Chuyển giai đoạn',
-  RoundStart: 'Bắt đầu lượt', Start: 'Chuẩn bị', Judge: 'Phán định', Draw: 'Rút bài',
-  Play: 'Đánh bài', Discard: 'Bỏ bài', Finish: 'Kết thúc lượt', NotActive: 'Ngoài lượt', PhaseNone: 'Chuyển giai đoạn',
-};
+// Native Request already leaves a short AI think interval. Keep public board
+// moments readable at the browser layer as well, without delaying replies or
+// changing the server's timeout/wire protocol.
+const PRESENTATION_MOMENT_INTERVAL_MS = 650;
 
 function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): string {
   if (moment.kind === 'log') return localizedGameLog(moment.text);
@@ -21,63 +20,6 @@ function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): stri
   return `${name} ${difference > 0 ? `hồi ${difference}` : `mất ${-difference}`} HP (${moment.before} → ${moment.after})`;
 }
 
-function PlayerPanel({ player, game, self, seat, target, busy, onTarget }: {
-  player: RoomPlayer;
-  game: BoardPlayer | undefined;
-  self: boolean;
-  seat: number;
-  target?: GameplayItem;
-  busy?: boolean;
-  onTarget?: () => void;
-}) {
-  const text = useDisplayText();
-  const phase = game?.phase;
-  const active = phase !== null && phase !== undefined &&
-    ![0, 8, 9, 'NotActive', 'PhaseNone'].includes(phase);
-  const marks = Object.entries(game?.marks ?? {}).filter(([, v]) => v !== 0 && v !== false && v !== '');
-  const main = game?.general || (self ? game?.selfGeneral : null);
-  const deputy = game?.deputyGeneral || (self ? game?.selfDeputyGeneral : null);
-  const kingdom = game?.visibleKingdom || game?.kingdom;
-  return (
-    <article className={`board-player ${self ? 'board-self' : ''} ${active ? 'board-active' : ''} ${game?.died ? 'board-dead' : ''}`}
-      aria-label={`${player.name || `Người chơi ${player.id}`}${self ? ' (bạn)' : ''}`}>
-      <div className="board-player-top">
-        <span className="board-seat">Ghế {seat}</span>
-        {self && <span className="you-tag">Bạn</span>}
-        {active && <span className="turn-badge">Đang lượt</span>}
-        {game?.died && <span className="dead-badge">Đã loại</span>}
-        {!game?.died && game?.hp != null && game.hp <= 0 && <span className="dead-badge">Hấp hối</span>}
-      </div>
-      <strong className="board-player-name">{player.name || (player.id < 0 ? 'Máy' : `Người chơi ${player.id}`)}</strong>
-      <div className="board-generals">
-        <span title="Chủ tướng">{main ? text(main) : 'Chủ tướng ẩn'}{self && main && !game?.general && <small> · Chưa lật</small>}</span>
-        <span title="Phó tướng">{deputy ? text(deputy) : 'Phó tướng ẩn'}{self && deputy && !game?.deputyGeneral && <small> · Chưa lật</small>}</span>
-      </div>
-      <div className="board-player-stats">
-        <span>♥ {game?.hp ?? '?'} / {game?.maxHp ?? '?'}</span>
-        {game?.shield != null && game.shield > 0 && <span>Giáp {game.shield}</span>}
-        <span>{game?.handcardNum ?? '?'} lá trên tay</span>
-      </div>
-      <div className="board-player-meta">
-        <span>Thế lực: {(self || game?.roleShown) && kingdom ? text(kingdom) : 'Chưa công khai'}</span>
-        {phase != null && <span>Giai đoạn: {phaseLabels[String(phase)] ?? String(phase)}</span>}
-        {game?.chained && <span className="board-mark">Đang bị xích</span>}
-        {game?.faceup === false && <span className="board-mark">Úp mặt</span>}
-      </div>
-      {!!game?.equipment.length && <div className="board-marks" aria-label="Trang bị công khai">
-        {game.equipment.map((card, index) => <span className="board-mark" key={index}>{text(card.name)} · {['', '♠', '♣', '♥', '♦'][card.suit]}{card.number || ''}</span>)}
-      </div>}
-      {marks.length > 0 && <div className="board-marks" aria-label="Dấu hiệu công khai">
-        {marks.map(([name, value]) => <span key={name} className="board-mark">{text(name)}: {typeof value === 'string' ? text(value) : String(value)}</span>)}
-      </div>}
-      {target && <button className={`gameplay-target ${target.selected ? 'selected' : ''}`} type="button"
-        aria-pressed={target.selected} disabled={busy || !target.enabled} onClick={onTarget}>
-        {target.selected ? 'Đã chọn mục tiêu' : 'Chọn mục tiêu'}
-      </button>}
-    </article>
-  );
-}
-
 export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleTrust }: {
   leave: () => void; busy: boolean; dispatch: GameplayDispatch; direct: GameplayDirect; toggleTrust?: () => void;
 }) {
@@ -85,8 +27,44 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const text = useDisplayText();
   const [showLogs, setShowLogs] = useState(true);
   const [followLogs, setFollowLogs] = useState(true);
+  const [visibleMoments, setVisibleMoments] = useState<BoardMoment[]>([]);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
+  const momentQueue = useRef<BoardMoment[]>([]);
+  const seenMomentIds = useRef(new Set<number>());
+  const momentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleMoment = () => {
+    if (momentTimer.current !== null || momentQueue.current.length === 0) return;
+    // A short presentation queue makes native bot turns readable without
+    // changing server timing, request deadlines, or wire replies.
+    momentTimer.current = setTimeout(() => {
+      momentTimer.current = null;
+      const next = momentQueue.current.shift();
+      if (next) setVisibleMoments((prior) => [next, ...prior].slice(0, 3));
+      scheduleMoment();
+    }, PRESENTATION_MOMENT_INTERVAL_MS);
+  };
+  useEffect(() => {
+    if (board.moments.length === 0) {
+      momentQueue.current = [];
+      seenMomentIds.current.clear();
+      setVisibleMoments([]);
+      if (momentTimer.current !== null) {
+        clearTimeout(momentTimer.current);
+        momentTimer.current = null;
+      }
+      return;
+    }
+    for (const moment of board.moments) {
+      if (seenMomentIds.current.has(moment.id)) continue;
+      seenMomentIds.current.add(moment.id);
+      momentQueue.current.push(moment);
+    }
+    scheduleMoment();
+  }, [board.moments]);
+  useEffect(() => () => {
+    if (momentTimer.current !== null) clearTimeout(momentTimer.current);
+  }, []);
   const lastMomentId = board.moments.at(-1)?.id;
   useLayoutEffect(() => {
     if (showLogs && followLogs && logList.current) logList.current.scrollTop = logList.current.scrollHeight;
@@ -118,17 +96,25 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const self = ownId == null ? null : byId.get(ownId);
   const trusting = self?.netState === 'trust';
   const others = seatOrder.filter((id) => id !== ownId);
-  const seatNumbers = new Map(seatOrder.map((id, index) => [id, index + 1]));
+  // Keep the server's absolute seat number for log/UI parity.  The visual
+  // order is rotated so the local player sits at the bottom, but that
+  // rotation must never renumber the seats.
+  const absoluteSeatNumbers = serverSeatNumbers(board.seats, players.map((p) => p.id));
+  const seatNumbers = new Map(seatOrder.map((id, index) => [id, absoluteSeatNumbers.get(id) ?? index + 1]));
   const gameplayActive = !trusting && pendingRequest !== null && GAMEPLAY_REQUESTS.has(pendingRequest.command);
   const requestExpired = pendingRequest?.expiresAt != null && Date.now() >= pendingRequest.expiresAt;
   const targetFor = (id: number) => gameplayActive ? gameplay.items.Photo[String(id)] : undefined;
+  const activeFor = (id: number) => {
+    const phase = board.player[id]?.phase;
+    return phase !== null && phase !== undefined && ![0, 8, 9, 'NotActive', 'PhaseNone'].includes(phase);
+  };
   const chooseTarget = (id: number) => {
     const item = targetFor(id);
     if (item) dispatch('Photo', item.id, 'click', { selected: !item.selected });
   };
 
   return (
-    <section className="game-board" aria-labelledby="board-title">
+    <section className="game-board sg-game-board" aria-labelledby="board-title">
       <header className="board-toolbar">
         <div><span className="section-label">04 / Bàn chơi Quốc Chiến</span><h2 id="board-title">{roomName || 'Trận đấu'}</h2></div>
         <div className="inline-controls">
@@ -139,7 +125,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
       </header>
       {trusting && <p className="notice" role="status">Máy chủ đã bật BOT chơi hộ. Giữ trang mở để duy trì kết nối; bấm Tự chơi lại khi quay lại.</p>}
       <div className="board-layout">
-        <section className="board-log-panel" aria-label="Nhật ký trận đấu">
+        <section className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
           <div className="board-log-heading">
             <strong>Nhật ký trận đấu ({board.logs.length})</strong>
             <button type="button" className="button small-button secondary" aria-expanded={showLogs}
@@ -188,13 +174,13 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             </button>}
           </>}
         </section>
-        <div className="board-main">
-      <div className="board-table">
+        <div className="board-main sg-board-main">
+      <div className="board-table sg-board-table">
         <div className="board-opponents" aria-label="Các ghế khác">
           {others.map((id) => {
             const player = byId.get(id);
-            return player && <PlayerPanel key={id} player={player} game={board.player[id]}
-              seat={seatNumbers.get(id) ?? 0} self={false} target={targetFor(id)}
+            return player && <PlayerPhotoPanel key={id} player={player} game={board.player[id]}
+              seat={seatNumbers.get(id) ?? 0} self={false} active={activeFor(id)} target={targetFor(id)}
               busy={busy || requestExpired} onTarget={() => chooseTarget(id)} />;
           })}
         </div>
@@ -203,7 +189,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           <p>{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
           <div className="board-moments" aria-label="Diễn biến mới nhất" aria-live="off">
             <strong>Diễn biến mới nhất</strong>
-            {board.moments.length ? board.moments.slice(-3).reverse().map((moment) =>
+            {visibleMoments.length ? visibleMoments.map((moment) =>
               <p className={`board-moment moment-${moment.kind}`} key={moment.id}>{momentText(moment, byId)}</p>) :
               <p className="board-moment">Đang chờ diễn biến từ máy chủ.</p>}
           </div>
@@ -212,15 +198,17 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
               <span className="board-mark" key={key}>{text(key)}: {typeof value === 'string' ? text(value) : String(value)}</span>)}
           </div>
         </div>
-        {self && <div className="board-local-seat"><PlayerPanel player={self} game={board.player[self.id]} self
-          seat={seatNumbers.get(self.id) ?? 0} target={targetFor(self.id)} busy={busy || requestExpired}
-          onTarget={() => chooseTarget(self.id)} /></div>}
       </div>
-      {gameplayActive && <GameplayControls key={`${pendingRequest.requestId}-${pendingRequest.receivedAt}`}
-        scene={gameplay} request={pendingRequest} dispatch={dispatch} direct={direct} busy={busy} />}
-      {!gameplayActive && <div className="board-status" role="status">
-        Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
-      </div>}
+      <div className="board-local-dashboard" aria-label="Bảng điều khiển người chơi">
+        {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
+          seat={seatNumbers.get(self.id) ?? 0} active={activeFor(self.id)} target={targetFor(self.id)}
+          busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} /></div>}
+        {gameplayActive && <GameplayControls key={`${pendingRequest.requestId}-${pendingRequest.receivedAt}`}
+          scene={gameplay} request={pendingRequest} dispatch={dispatch} direct={direct} busy={busy} />}
+        {!gameplayActive && <div className="board-status" role="status">
+          Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
+        </div>}
+      </div>
         </div>
       </div>
     </section>

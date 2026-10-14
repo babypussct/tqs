@@ -220,6 +220,28 @@ const api = {
     }
     return { id, cardId };
   },
+  /** Put a real native hand large enough to exercise the gameplay art and
+   * horizontal hand viewport in one deterministic browser fixture. */
+  beginVisualHand: (count = 12) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const requestedCount = Math.max(1, Math.floor(count));
+    const cardIds = conn.lua.eval<number[]>(`local ret = {}
+      for _, id in ipairs(ClientInstance.draw_pile) do
+        if #ret >= ${requestedCount} then break end
+        ret[#ret + 1] = id
+      end
+      return ret`);
+    if (cardIds.length < requestedCount) throw new Error('Lua fixture has too few cards for hand viewport test');
+    const moves = cardIds.map((id) => `{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+      moveInfo={{cardId=${id}, fromArea=Card.DrawPile}}, moveVisible=true}`).join(',');
+    serverNotify('MoveCards', serverCbor(`{{${moves}}, 1}`));
+    const id = ++nextId;
+    currentSocket().handlers.onData(encodePacket({ requestId: id,
+      type: PacketType.REQUEST | PacketType.SRC_SERVER | PacketType.DEST_CLIENT,
+      command: 'PlayCard', data: serverCbor('{}'), timestamp: Date.now(), timeout: 30,
+    }));
+    return { id, cardIds };
+  },
   /** Exercise the native response-card request separately from normal play. */
   beginResponseCard: () => {
     api.beginPlay(false, { initialCards: [], playCardRequest: false });
@@ -327,6 +349,14 @@ const api = {
           `{table.filter(require('packages.hegemony.util').wildKingdoms,
             function(k) return k ~= 'heg_han' end), require('packages.hegemony.util').wildKingdoms,
             {1,1}, false, 'game_rule', '#wild-choose', false, true}`);
+        break;
+      case 'damage-exchange':
+        // Mirror the first real-card attack request. Only the native director
+        // resolves Slash/Jink, damage and Damaged reactions on the server.
+        requestId = sendRequest('AskForUseActiveSkill',
+          `{'userealcard_skill', 'Sát lần 1: tấn công đối thủ', true,
+            {cardIds={${resolved.slotCards['actor-slash-1']}}, bypass_times=true,
+             extraUse=true, bypass_distances=true, exclusive_targets={-1}, must_targets={-1}}}`);
         break;
       default: {
         const unreachable: never = plan.trigger;
@@ -459,7 +489,7 @@ const api = {
     }));
     return { id, handId, equipId };
   },
-  beginFankui: () => {
+  beginFankui: (skill: 'ex__fankui' | 'fankui' | 'hs__yiji' = 'ex__fankui') => {
     // This follows the native ex__fankui request shape: the prompt is
     // optional in FreeKill and the next request asks for one card from the
     // damage source. The card remains hidden to the client just like a real
@@ -473,7 +503,7 @@ const api = {
     const id = ++nextId;
     // The native Client:askForSkillInvoke accepts {skill_name, nil}; this is
     // the exact case that previously left the web button waiting for Lua.
-    fixtureRequest(id, 'AskForSkillInvoke', serverCbor("{'ex__fankui', nil}"));
+    fixtureRequest(id, 'AskForSkillInvoke', serverCbor(`{'${skill}', nil}`));
     return { id, cardId };
   },
   continueFankui: () => {
@@ -482,6 +512,35 @@ const api = {
       `{ClientInstance:getPlayerById(-1), 'he', '#ex__fankui-invoke::-1'}`,
     ));
     return id;
+  },
+  beginLongdan: (direction: 'defend' | 'attack') => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const material = direction === 'defend' ? 'slash' : 'jink';
+    const cardId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+      return Fk:getCardById(id).trueName == '${material}' end)`);
+    serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'hs__zhaoyun'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'ld__fazheng'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'kingdom', 'shu'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'role_shown', true}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.NotActive}"));
+    serverNotify('AddSkill', serverCbor("{17, 'hs__longdan'}"));
+    serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+      moveInfo={{cardId=${cardId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+    const id = ++nextId;
+    const pattern = direction === 'defend' ? 'jink' : 'slash';
+    fixtureRequest(id, 'AskForUseCard', serverCbor(`{'tqs_qa', '${pattern}',
+      'Long Đảm: ${direction === 'defend' ? 'dùng Sát như Thiểm để né Sát' : 'dùng Thiểm như Sát để phản công'}', true,
+      {bypass_times=true, bypass_distances=true${direction === 'attack' ? ', exclusive_targets={-1}, must_targets={-1}' : ''}}, {}}`));
+    return { id, cardId };
+  },
+  continueYiji: () => {
+    const cards = conn.lua.eval<number[]>('return {ClientInstance.draw_pile[1], ClientInstance.draw_pile[2]}');
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForUseActiveSkill', serverCbor(`{'ex__choose_skill', '#yiji-give', true,
+      {max_t_num=1, min_t_num=1, min_c_num=1, max_c_num=2,
+       targets={17,-1}, pattern=tostring(Exppattern{id={${cards.join(',')}}}),
+       skillName='hs__yiji', expand_pile={${cards.join(',')}}}}`));
+    return { id, cards };
   },
   beginCardsAndChoice: (mode: 'view' | 'empty' | 'select' | 'cancel-only' | 'missing-filter' = 'view', expired = false) => {
     const { cardId } = api.beginPlay();
@@ -551,7 +610,8 @@ const api = {
     ClientInstance:appendLog({type='Nhật ký &#34;&lt;img src=x onerror=alert(1)&gt; &#x4E2D;'})
     return true
   `),
-  finishGame: () => {
+  finishGame: (withFinalLog = false) => {
+    if (withFinalLog) serverNotify('GameLog', serverCbor("{type='Thông báo cuối trận thử nghiệm'}"));
     serverNotify('GameOver', serverCbor("'17'"));
     serverNotify('RemovePlayer', serverCbor('{-1}'));
   },
@@ -619,6 +679,7 @@ async function boot() {
     await conn.start();
     (roomAdapter as unknown as { connection: GameConnection }).connection = conn;
     ready = true;
+    useGameStore.getState().update({ progress: 'Lua WASM sẵn sàng' });
   } catch (error) {
     bootError = String(error instanceof Error ? error.stack ?? error.message : error);
     useGameStore.getState().update({ error: bootError });
@@ -663,6 +724,21 @@ function Fixture() {
   return <main className={`shell ${phase === 'playing' ? 'shell-playing' : ''}`}>
     <h1>TQS real Lua WASM E2E</h1>
     {error && <div className="notice error-notice" role="alert">{error}</div>}
+    {phase !== 'playing' && <section className="panel" aria-label="Bắt đầu ván test tương tác">
+      <h2>Ván test tương tác</h2>
+      <p>Lua FreeKill thật chạy trong Wasmoon, còn máy chủ là socket fixture cục bộ để bạn thử trọn luồng chọn bài.</p>
+      <div className="inline-controls">
+        <button className="button primary" disabled={busy || !ready}
+          onClick={() => roomRun(() => api.beginPlay())}>
+          Bắt đầu ván test
+        </button>
+        <button className="button secondary" disabled={busy || !ready}
+          onClick={() => roomRun(() => api.beginVisualHand(10))}>
+          Bắt đầu với 10 lá
+        </button>
+      </div>
+      {!ready && <p role="status">Đang khởi tạo Lua WASM…</p>}
+    </section>}
     {phase === 'lobby' && <LobbyScreen adapter={roomAdapter} run={roomRun} busy={busy} />}
     {phase === 'room' && <WaitingRoomScreen adapter={roomAdapter} run={roomRun} busy={busy} />}
     {result && <GameResultPanel result={result} busy={busy} leave={() => conn.lua.call('__web_notify', 'QuitRoom', '')} />}

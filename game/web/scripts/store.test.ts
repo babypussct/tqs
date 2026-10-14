@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { connectionProgress } from '../src/engine/connectionMessages';
 import { parseInitialGeneralPrompt } from '../src/engine/generalSelection';
 import { initialSnapshot, reduceUiEvent, useGameStore, type GameSnapshot } from '../src/store/gameStore';
-import { relativeSeatOrder } from '../src/store/boardState';
+import { MAX_BOARD_LOGS, relativeSeatOrder, serverSeatNumbers } from '../src/store/boardState';
 import { displayText, localizedGameLog, plainText } from '../src/engine/displayText';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
 
@@ -311,6 +311,14 @@ test('board follows Lua seat order, preserves relative self position, and update
   assert.deepEqual(state.board.seats, [22, 17, 21]);
 });
 
+test('absolute seat labels stay aligned with ArrangeSeats after visual rotation', () => {
+  const seats = [22, -1, 17, 21];
+  const labels = serverSeatNumbers(seats, [17, -1, 21, 22]);
+  assert.deepEqual([...labels.entries()], [[22, 1], [-1, 2], [17, 3], [21, 4]]);
+  assert.deepEqual(relativeSeatOrder(seats, [17, -1, 21, 22], 17), [21, 22, -1, 17]);
+  assert.equal(labels.get(17), 3, 'self remains server seat 3 even when rendered at the bottom');
+});
+
 test('board ignores private properties and unpublished marks while guarding hidden generals', () => {
   let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [17, 'Me', '', false, 0]);
   state = reduceUiEvent(state, 'StartGame', null);
@@ -365,6 +373,37 @@ test('Self snapshot rejects other seats and equipment strips extra data; negativ
   assert.deepEqual(reduceUiEvent(state, 'EnterLobby', '').board.player, {});
 });
 
+test('photo projection keeps native art hints, equipment slots, delayed tricks and status overlays public-only', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  for (const id of [17, -1]) state = reduceUiEvent(state, 'AddPlayer', [id, 'Player', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'general', 'ld__bianfuren']);
+  state = reduceUiEvent(state, 'SelfGenerals', [17, 'ld__bianfuren', 'm_heg__dianwei', 'hegemony', 'hegemony']);
+  assert.equal(state.board.player[17].selfGeneralExtension, 'hegemony');
+  assert.equal(state.board.player[17].selfDeputyGeneralExtension, 'hegemony');
+  state = reduceUiEvent(state, 'GeneralArtUpdate', [17, 'general', 'ld__bianfuren', 'mobile']);
+  assert.equal(state.board.player[17].generalExtension, 'mobile');
+  state = reduceUiEvent(state, 'GeneralArtUpdate', [17, 'general', 'other_general', 'mobile']);
+  assert.equal(state.board.player[17].generalExtension, 'mobile', 'art updates cannot retarget another general');
+  state = reduceUiEvent(state, 'EquipmentUpdate', [-1, [{
+    name: 'spear', suit: 1, number: 12, subtype: 'weapon', range: 3,
+    extension: 'mobile', picName: 'spear', id: 42, private: 'must-drop',
+  }], [{ name: 'indulgence', suit: 2, number: 6, subtype: 'delayed_trick', id: 99 }]]);
+  assert.deepEqual(state.board.player[-1].equipment, [{
+    name: 'spear', suit: 1, number: 12, subtype: 'weapon', range: 3,
+    extension: 'mobile', picName: 'spear',
+  }]);
+  assert.deepEqual(state.board.player[-1].delayedTricks, [{
+    name: 'indulgence', suit: 2, number: 6, subtype: 'delayed_trick',
+  }]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'surrendered', true]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'drank', 1]);
+  assert.equal(state.board.player[17].surrendered, true);
+  assert.equal(state.board.player[17].drank, 1);
+  assert.equal(reduceUiEvent(state, 'PropertyUpdate', [17, 'drank', 'private']).board, state.board);
+  assert.equal(reduceUiEvent(state, 'EquipmentUpdate', [-1, [{ name: 'spear', suit: 'private', number: 12 }]]).board, state.board);
+});
+
 test('visible kingdom rejects hidden opponents, accepts public state and clears when hidden again', () => {
   let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
   for (const id of [17, -1]) state = reduceUiEvent(state, 'AddPlayer', [id, 'Player', '', false, 0]);
@@ -383,13 +422,13 @@ test('visible kingdom rejects hidden opponents, accepts public state and clears 
   assert.deepEqual(state.board.player, {});
 });
 
-test('game logs are bounded and board clears on game/lobby/connection lifecycle', () => {
+test('game logs retain a full match beyond 100 entries and board clears on lifecycle', () => {
   let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [1, 'Player', '', false, 0]);
   state = reduceUiEvent(state, 'StartGame', null);
   state = reduceUiEvent(state, 'ArrangeSeats', [1]);
   for (let i = 0; i < 104; i++) state = reduceUiEvent(state, 'GameLog', `<b>Log ${i}</b>`);
-  assert.equal(state.board.logs.length, 100);
-  assert.equal(state.board.logs[0], '<b>Log 4</b>');
+  assert.equal(state.board.logs.length, 104);
+  assert.equal(state.board.logs[0], '<b>Log 0</b>');
   const canceled = reduceUiEvent(state, 'CancelRequest', null);
   assert.deepEqual(canceled.board, state.board, 'request cancellation must not wipe board');
   const over = reduceUiEvent(state, 'GameOver', '1');
@@ -408,11 +447,21 @@ test('UI-03 records only valid public log moments with bounded and increasing ID
   for (let i = 0; i < 104; i++) {
     state = reduceUiEvent(state, 'GameLog', `<b>Thông báo ${i}</b>`);
   }
-  assert.equal(state.board.logs.length, 100);
+  assert.equal(state.board.logs.length, 104);
   assert.equal(state.board.moments.length, 12);
   assert.deepEqual(state.board.moments.map(({ id }) => id), Array.from({ length: 12 }, (_, i) => i + 93));
   assert.deepEqual(state.board.moments[0], { id: 93, kind: 'log', text: '<b>Thông báo 92</b>' });
   assert.deepEqual(state.board.moments.at(-1), { id: 104, kind: 'log', text: '<b>Thông báo 103</b>' });
+});
+
+test('public log history uses a generous safety cap instead of a 100-line cap', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  for (let i = 0; i < MAX_BOARD_LOGS + 17; i++) {
+    state = reduceUiEvent(state, 'GameLog', `Thông báo ${i}`);
+  }
+  assert.equal(state.board.logs.length, MAX_BOARD_LOGS);
+  assert.equal(state.board.logs[0], 'Thông báo 17');
+  assert.equal(state.board.logs.at(-1), `Thông báo ${MAX_BOARD_LOGS + 16}`);
 });
 
 test('UI-03 public HP moments include damage/healing but ignore first and unchanged values', () => {
@@ -470,4 +519,28 @@ test('UI-03 never records private properties or opponent hidden data and resets 
     assert.deepEqual(reset.board.logs, [], `${event} must clear logs`);
     assert.deepEqual(reset.board.player, {}, `${event} must clear old player state`);
   }
+});
+
+
+test('GameOver retains public final stats and the last log, excludes private fields and clears on lobby', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'AddPlayer', [-1, 'Đối thủ', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  for (const id of [17, -1]) {
+    state = reduceUiEvent(state, 'PropertyUpdate', [id, 'hp', 1]);
+    state = reduceUiEvent(state, 'PropertyUpdate', [id, 'maxHp', 3]);
+    state = reduceUiEvent(state, 'PropertyUpdate', [id, 'handcardNum', id === 17 ? 3 : 1]);
+  }
+  state = reduceUiEvent(state, 'SelfGenerals', [17, 'private-main', 'private-deputy']);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'handcards', [101, 102]]);
+  state = reduceUiEvent(state, 'GameLog', 'Kết quả cuối: Di Kế giữ hai lá, Phản Quỹ lấy một lá.');
+  const over = reduceUiEvent(state, 'GameOver', '');
+  assert.equal(over.result?.outcome, 'draw');
+  assert.deepEqual(over.result?.summary?.logs, ['Kết quả cuối: Di Kế giữ hai lá, Phản Quỹ lấy một lá.']);
+  assert.deepEqual(over.result?.summary?.players.map((p) => [p.hp, p.maxHp, p.handcardNum]), [[1, 3, 3], [1, 3, 1]]);
+  assert.equal(JSON.stringify(over.result).includes('private-'), false);
+  assert.equal(JSON.stringify(over.result).includes('handcards'), false);
+  assert.deepEqual(over.board.logs, []);
+  assert.equal(reduceUiEvent(over, 'EnterLobby', null).result, null);
 });

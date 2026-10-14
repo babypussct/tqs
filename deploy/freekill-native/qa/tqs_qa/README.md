@@ -68,3 +68,64 @@ The package is not a deployment artifact for the public gateway. The browser
 runner must first verify the release manifest and hosted gateway identity; a
 stale or unpinned hosted candidate is a hard failure before any login or room
 creation.
+
+## `fazheng-enyuan`: three Slashes and a Longdan counterattack
+
+The two-seat roster is fixed: Wei Quách Gia + Tư Mã Ý (`hs__guojia` +
+`hs__simayi`) versus Shu Triệu Vân + Pháp Chính (`hs__zhaoyun` + `ld__fazheng`).
+Seed: `0x6e9a2026`. The native director requests actual hand-card use and runs
+normal `room:useCard` resolution; it does not inject `room:damage` to simulate
+a successful attack.
+
+Wei starts with three Slashes and one Peach to give. Shu starts with a Slash
+for defense, a Jink for the counterattack, and a Peach available to steal.
+The QA requests allow three extra Slashes without installing an equipment or
+changing an upstream skill. Each result is independently checked against
+native card-use, Damaged, SkillEffect, hand movement, and HP observations:
+
+| Step | Explicit player choice | Required native outcome |
+| --- | --- | --- |
+| 1 | Wei uses Slash; Shu selects Longdan and its Slash as Jink | Dodge, zero damage/HP loss, no Enyuan |
+| 2 | Wei uses Slash; Shu declines Jink; Wei gives the reserved Peach | Shu loses exactly 1 HP; Enyuan transfers exactly 1 hand card; Wei loses no HP |
+| 3 | Wei uses its last Slash; Shu declines Jink | Shu loses exactly 1 HP; empty-handed Wei loses exactly 1 HP to Enyuan; this HP loss triggers neither Yiji nor Fankui |
+| 4 | Shu selects Longdan and uses its Jink as Slash; Wei explicitly invokes Yiji and Fankui | Wei loses exactly 1 HP; Yiji gives 2 cards to Wei itself; Fankui transfers exactly 1 card from Shu |
+
+**Yiji and Fankui are both optional.** They remain in `optionalSkills` and
+are never declared mandatory damage reactions. `expectedInvokedSkills`
+selects the positive test branch; declining either skill is valid gameplay
+but does not satisfy this particular branch's acceptance criteria. The local
+browser suite also tests Invoke and Skip for each skill. Native negative
+coverage must separately observe that skipping Yiji/Fankui causes no draw or
+transfer; a browser reply alone is not that evidence.
+
+Run the positive native acceptance path using two manually controlled seats:
+
+```bash
+TQS_LIVE_SCENARIO=fazheng-enyuan \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+`--manual` drives both real UIs; neither seat is delegated to Trust/AI in this
+scenario. The source package must be installed and verified for the exact
+source revision, and the release/native-QA identity gate must pass before
+login/room creation. Running an old installed package cannot test this new
+catalog. GameOver is requested only after all four results pass; both clients
+must see the public outcome summary and each request must receive one reply.
+QA summary templates are transmitted as literal log text because the
+server-only package's translations are absent from the public client bundle.
+
+Local checks:
+
+```bash
+npm --prefix game/web run test:e2e:qa
+npm --prefix game/web run test:qa-server-contract
+```
+
+The first executes Chrome + actual FreeKill client Lua/Wasmoon with a socket
+fixture. It verifies both Longdan replies, optional Invoke/Skip, Yiji selecting
+two cards for self, Fankui choosing a hidden source card, and the first native
+attack request shape. The second checks catalog/installer contracts and
+executes Lua startup validation with JSON/engine registration stubs. Neither
+command proves native C++ damage or live card-transfer outcomes.

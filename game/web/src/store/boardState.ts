@@ -1,5 +1,27 @@
 /** Public Lua events plus a restricted snapshot of the local player's generals. */
-export interface BoardEquipment { name: string; suit: number; number: number }
+export type BoardCardSubtype =
+  | 'weapon'
+  | 'armor'
+  | 'defensive_ride'
+  | 'offensive_ride'
+  | 'treasure'
+  | 'delayed_trick'
+  | 'normal_trick'
+  | 'basic'
+  | 'unknown';
+
+export interface BoardEquipment {
+  name: string;
+  suit: number;
+  number: number;
+  /** Public native subtype; never contains a private card id. */
+  subtype?: BoardCardSubtype;
+  /** Native weapon range, when this public card is a weapon. */
+  range?: number;
+  /** Package/art hints copied from the public native card model. */
+  extension?: string;
+  picName?: string;
+}
 /** Public server/Lua updates only; never store raw MoveCards or hidden cards. */
 type MomentInput =
   | { kind: 'log'; text: string }
@@ -12,17 +34,24 @@ export interface BoardPlayer {
   shield: number | null;
   handcardNum: number | null;
   died: boolean;
+  surrendered: boolean;
+  drank: number | null;
   phase: string | number | null;
   general: string | null;
   deputyGeneral: string | null;
+  generalExtension: string | null;
+  deputyGeneralExtension: string | null;
   kingdom: string | null;
   visibleKingdom: string | null;
   roleShown: boolean;
   selfGeneral: string | null;
   selfDeputyGeneral: string | null;
+  selfGeneralExtension: string | null;
+  selfDeputyGeneralExtension: string | null;
   chained: boolean | null;
   faceup: boolean | null;
   equipment: BoardEquipment[];
+  delayedTricks: BoardEquipment[];
   marks: Record<string, string | number | boolean>;
 }
 
@@ -32,6 +61,25 @@ export interface BoardState {
   banners: Record<string, string | number | boolean>;
   logs: string[];
   moments: BoardMoment[];
+}
+
+/**
+ * A complete Quốc Chiến round can produce considerably more than one
+ * hundred public GameLog notifications.  Keep a generous safety bound for
+ * an untrusted server while retaining enough history for a full match.
+ */
+export const MAX_BOARD_LOGS = 2000;
+
+/** Absolute seat labels from ArrangeSeats; visual rotation is separate. */
+export function serverSeatNumbers(seats: number[], knownIds: number[] = []): Map<number, number> {
+  const known = new Set(knownIds);
+  const filterKnown = known.size > 0;
+  const result = new Map<number, number>();
+  for (const id of seats) {
+    if (!validId(id) || (filterKnown && !known.has(id)) || result.has(id)) continue;
+    result.set(id, result.size + 1);
+  }
+  return result;
 }
 
 export function emptyBoard(): BoardState {
@@ -46,9 +94,11 @@ function recordMoment(board: BoardState, moment: MomentInput): BoardMoment[] {
 function newPlayer(): BoardPlayer {
   return {
     hp: null, maxHp: null, shield: null, handcardNum: null,
-    died: false, phase: null, general: null, deputyGeneral: null,
+    died: false, surrendered: false, drank: null, phase: null,
+    general: null, deputyGeneral: null, generalExtension: null, deputyGeneralExtension: null,
     kingdom: null, visibleKingdom: null, roleShown: false, selfGeneral: null, selfDeputyGeneral: null,
-    chained: null, faceup: null, equipment: [], marks: {},
+    selfGeneralExtension: null, selfDeputyGeneralExtension: null,
+    chained: null, faceup: null, equipment: [], delayedTricks: [], marks: {},
   };
 }
 
@@ -71,6 +121,38 @@ function publicMark(value: unknown): string | number | boolean | null {
   return typeof value === 'string' && value.length <= 160 ? value : null;
 }
 
+const BOARD_CARD_SUBTYPES = new Set<BoardCardSubtype>([
+  'weapon', 'armor', 'defensive_ride', 'offensive_ride', 'treasure',
+  'delayed_trick', 'normal_trick', 'basic', 'unknown',
+]);
+
+function publicCard(value: unknown): BoardEquipment | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const card = value as Record<string, unknown>;
+  if (typeof card.name !== 'string' || card.name.length > 120 ||
+      !Number.isInteger(card.suit) || (card.suit as number) < 0 || (card.suit as number) > 4 ||
+      !Number.isInteger(card.number) || (card.number as number) < 0 || (card.number as number) > 13) return null;
+  const result: BoardEquipment = {
+    name: card.name,
+    suit: card.suit as number,
+    number: card.number as number,
+  };
+  if (typeof card.subtype === 'string' && BOARD_CARD_SUBTYPES.has(card.subtype as BoardCardSubtype))
+    result.subtype = card.subtype as BoardCardSubtype;
+  if (typeof card.range === 'number' && Number.isInteger(card.range) && card.range >= 0 && card.range <= 99)
+    result.range = card.range;
+  if (typeof card.extension === 'string' && card.extension.length <= 120 && /^[A-Za-z0-9_-]+$/.test(card.extension))
+    result.extension = card.extension;
+  if (typeof card.picName === 'string' && card.picName.length <= 120 && /^[A-Za-z0-9_-]+$/.test(card.picName))
+    result.picName = card.picName;
+  return result;
+}
+
+function optionalExtension(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 && value.length <= 120 &&
+    /^[A-Za-z0-9_-]+$/.test(value) ? value : null;
+}
+
 /** Ignore unknown fields: server state can contain private Lua properties. */
 export function updateBoard(board: BoardState, command: string, data: unknown, knownIds: number[], ownId: number | null = null): BoardState {
   if (command === 'ArrangeSeats') {
@@ -80,16 +162,38 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
   }
   if (command === 'GameLog') {
     if (typeof data !== 'string' || !data || data.length > 10000) return board;
-    return { ...board, logs: [...board.logs, data].slice(-100),
+    return { ...board, logs: [...board.logs, data].slice(-MAX_BOARD_LOGS),
       moments: recordMoment(board, { kind: 'log', text: data }) };
   }
   if (!Array.isArray(data)) return board;
   if (command === 'SelfGenerals') {
-    const [id, main, deputy] = data;
+    const [id, main, deputy, mainExtension, deputyExtension] = data;
     if (!validId(id) || id !== ownId || !knownIds.includes(id) ||
         typeof main !== 'string' || typeof deputy !== 'string' || main.length > 120 || deputy.length > 120) return board;
     return { ...board, player: { ...board.player, [id]: { ...(board.player[id] ?? newPlayer()),
-      selfGeneral: publicGeneral(main), selfDeputyGeneral: publicGeneral(deputy) } } };
+      selfGeneral: publicGeneral(main), selfDeputyGeneral: publicGeneral(deputy),
+      selfGeneralExtension: optionalExtension(mainExtension),
+      selfDeputyGeneralExtension: optionalExtension(deputyExtension), } } };
+  }
+  if (command === 'GeneralArtUpdate') {
+    const [id, slot, name, extension] = data;
+    if (!validId(id) || !knownIds.includes(id) ||
+        (slot !== 'general' && slot !== 'deputyGeneral') ||
+        typeof name !== 'string' || name.length > 120 || !publicGeneral(name)) return board;
+    const prior = board.player[id] ?? newPlayer();
+    const artExtension = optionalExtension(extension);
+    if (slot === 'general') {
+      if (prior.general !== name && !(id === ownId && prior.selfGeneral === name)) return board;
+      return { ...board, player: { ...board.player, [id]: {
+        ...prior, generalExtension: prior.general === name ? artExtension : prior.generalExtension,
+        selfGeneralExtension: id === ownId && prior.selfGeneral === name ? artExtension : prior.selfGeneralExtension,
+      } } };
+    }
+    if (prior.deputyGeneral !== name && !(id === ownId && prior.selfDeputyGeneral === name)) return board;
+    return { ...board, player: { ...board.player, [id]: {
+      ...prior, deputyGeneralExtension: prior.deputyGeneral === name ? artExtension : prior.deputyGeneralExtension,
+      selfDeputyGeneralExtension: id === ownId && prior.selfDeputyGeneral === name ? artExtension : prior.selfDeputyGeneralExtension,
+    } } };
   }
   if (command === 'VisibleKingdom') {
     const [id, name] = data;
@@ -99,13 +203,14 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     return { ...board, player: { ...board.player, [id]: { ...prior, visibleKingdom: name || null } } };
   }
   if (command === 'EquipmentUpdate') {
-    const [id, cards] = data;
+    const [id, cards, delayedTricks] = data;
     if (!validId(id) || !knownIds.includes(id) || !Array.isArray(cards) || cards.length > 40 ||
-        !cards.every((c) => c && typeof c.name === 'string' && c.name.length <= 120 &&
-          Number.isInteger(c.suit) && c.suit >= 0 && c.suit <= 4 &&
-          Number.isInteger(c.number) && c.number >= 0 && c.number <= 13)) return board;
+        !cards.every((card: unknown) => publicCard(card) !== null) ||
+        (delayedTricks !== undefined && (!Array.isArray(delayedTricks) || delayedTricks.length > 40 ||
+          !delayedTricks.every((card: unknown) => publicCard(card) !== null)))) return board;
     return { ...board, player: { ...board.player, [id]: { ...(board.player[id] ?? newPlayer()),
-      equipment: cards.map(({ name, suit, number }) => ({ name, suit, number })) } } };
+      equipment: cards.map((card: unknown) => publicCard(card)!).filter(Boolean),
+      delayedTricks: (delayedTricks ?? []).map((card: unknown) => publicCard(card)!).filter(Boolean), } } };
   }
   if (command === 'SetBanner') {
     const [name, value] = data;
@@ -140,13 +245,22 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     case 'died':
       if (typeof value !== 'boolean') return board;
       next = { ...prior, died: value }; break;
+    case 'surrendered':
+      if (typeof value !== 'boolean') return board;
+      next = { ...prior, surrendered: value }; break;
+    case 'drank': {
+      const n = numberOrNull(value);
+      if (n === null) return board;
+      next = { ...prior, drank: n }; break;
+    }
     case 'phase':
       if (typeof value !== 'string' && !(typeof value === 'number' && Number.isFinite(value))) return board;
       next = { ...prior, phase: value }; break;
     case 'general':
     case 'deputyGeneral':
       if (typeof value !== 'string') return board;
-      next = { ...prior, [name]: publicGeneral(value) }; break;
+      next = { ...prior, [name]: publicGeneral(value),
+        ...(name === 'general' ? { generalExtension: null } : { deputyGeneralExtension: null }) }; break;
     case 'kingdom':
       if (typeof value !== 'string' || value.length > 120) return board;
       next = { ...prior, kingdom: value }; break;

@@ -20,6 +20,8 @@ function fakeCards(): QaCardDescriptor[] {
     { id: 6, name: 'duel', trueName: 'duel', type: 'trick' },
     { id: 7, name: 'fire_attack', trueName: 'fire_attack', type: 'trick' },
     { id: 8, name: 'wine', trueName: 'analeptic', type: 'basic' },
+    ...[9, 10, 11].map((id) => ({ id, name: 'slash', trueName: 'slash', type: 'basic' })),
+    { id: 12, name: 'peach', trueName: 'peach', type: 'basic' },
   ];
 }
 

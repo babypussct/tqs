@@ -112,7 +112,7 @@ function publicCard(value: unknown): unknown {
   const data = record(value);
   if (!data) return undefined;
   const card: Record<string, unknown> = {};
-  for (const key of ['name', 'trueName'] as const) {
+  for (const key of ['name', 'trueName', 'extension', 'picName'] as const) {
     if (typeof data[key] === 'string' && data[key].length <= 120 &&
         !/[\u0000-\u001F\u007F]/.test(data[key])) card[key] = data[key];
   }

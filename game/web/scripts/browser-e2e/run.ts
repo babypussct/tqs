@@ -224,7 +224,7 @@ async function runSuite(page: Page) {
     }],
     ['App protects a running match from leaving, disconnecting and reload, with BOT alternative', async (p) => {
       await p.goto('/e2e.html?app=1');
-      await p.getByRole('heading', { name: 'Đăng nhập FreeKill' }).waitFor();
+      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
       await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
       const baseline = await p.evaluate(() => window.__tqsE2e.appActions());
@@ -261,7 +261,7 @@ async function runSuite(page: Page) {
         return event.defaultPrevented;
       }), false);
       await p.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click();
-      await p.getByRole('heading', { name: 'Đăng nhập FreeKill' }).waitFor();
+      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
       assert.equal(await p.getByRole('alertdialog').count(), 0);
       assert.equal((await p.evaluate(() => window.__tqsE2e.appActions())).at(-1), 'disconnect');
       await p.goto('/e2e.html');

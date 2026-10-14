@@ -379,6 +379,220 @@ Bảng giao việc, checklist đến hoàn tất, ownership, phụ thuộc và m
 - Native-QA identity gate **PASS** trong `test:e2e:bot-audit`: release/runtime/dist/hosted gateway/QA revision/hash đồng nhất. Lượt `draw-sequence` bounded tạo 4 ghế (2 account thật + 2 native bot), qua precondition/cặp tướng và GameOver/lobby; tuy nhiên assertion bot audit **FAIL có kiểm soát** vì không thấy `AddSkillUseHistory`/`SetSkillUseHistory` trong trace. Evidence [`reconnect-failure-1791867464821.json`](../scratch/evidence/reconnect-failure-1791867464821.json). Đây là gap hành vi/acceptance của scenario, không phải lỗi đồng bộ hoặc lỗi nạp package.
 - Kết luận CP63: **identity sync PASS, behavior scenario FAIL/PENDING**. Chưa đánh dấu exhaustive skill semantic, bot skill activation, official release, quota/rollback/SLA/monitoring hoặc device gate. Bước tiếp theo là dựng scenario ép skill activation có history/log xác định (hoặc tách `draw-sequence` thành liveness-only) rồi chạy lại trên cùng contract pin; sửa → build/reinstall native → refresh `flist`/release → redeploy Render → rerun.
 
+## CP64 — thiết kế scenario Ân Oán Pháp Chính và trao đổi sát thương hai chiều · 13/10/2026
+
+> Acceptance CP64 đã được sửa ở CP65 bên dưới; nội dung sau là lịch sử, không còn là kế hoạch chạy mới.
+
+- Bổ sung catalog `fazheng-enyuan` với đúng **2 ghế**: Quách Gia + Tư Mã Ý (Ngụy) đấu Triệu Vân + Pháp Chính (Thục). Native director gọi `room:damage` trực tiếp hai chiều, không dùng Gia Cát Liên Nỗ/equipment; step 1 yêu cầu `ld__enyuan`, step 2 yêu cầu `hs__yiji` và ghi `fankui` là optional. Outcome step 1 được kiểm tra là chuyển hand-card hoặc mất HP; summary log ghi SkillEffect thật.
+- Runner live đã có allowlist scenario, room seed/catalog lock, kiểm tra roster sau reveal, xử lý `AskForUseActiveSkill`/`AskForSkillInvoke`/`AskForCardChosen`, và chế độ `--manual` để chủ động bật Phản Quỹ. README ghi lệnh native QA hai tài khoản và nhấn mạnh fixture local không phải native live proof. `hs__longdan` không nằm trong expected trigger vì không phải `Damaged` reaction; Gia Cát Liên Nỗ bị loại khỏi test surface.
+- Evidence quan sát: `npm --prefix game/web run typecheck` **PASS**; `npm --prefix game/web run test:e2e:qa` **1/1 PASS**; `npm --prefix game/web run test:qa-server-contract` **3/3 PASS**; `luac -p deploy/freekill-native/qa/tqs_qa/init.lua` **PASS**; `git diff --check` **PASS**. Native C++ live scenario chưa chạy trên package source mới trong mốc này; không đánh dấu live PASS hay SmartAI exhaustive.
+- Không deploy/restart/rollback production. CP63 `draw-sequence` bot-history gap vẫn mở độc lập; CP64 chỉ tạo acceptance path deterministic để kiểm đúng Ân Oán và các phản ứng `Damaged` của cặp tướng yêu cầu.
+
+**Bước tiếp theo:** build/reverify package `tqs_qa` từ checkout CP64, chạy native runner với `TQS_LIVE_SCENARIO=fazheng-enyuan`, `TQS_LIVE_NATIVE_QA=1`, `TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1`, `--manual`, rồi lưu public logs/SkillEffect evidence của cả hai bước.
+
+## CP65 — sửa acceptance Long Đảm / Ân Oán / Di Kế / Phản Quỹ · 13/10/2026
+
+**Thay thế acceptance của CP64:** Di Kế `hs__yiji` và Phản Quỹ `fankui` đều là **tùy chọn** sau `Damaged`; Ân Oán `ld__enyuan` của cặp Quốc Chiến này là khóa định. Không được gán Di Kế thành mandatory, không dùng `room:damage` trực tiếp làm bằng chứng đã dùng Sát/né Thiểm.
+
+- [x] Sửa source catalog/director/runner/fixture: đúng hai ghế như CP64, bốn bước dùng lá thật; chỉ lựa chọn Kích hoạt trong nhánh dương mới yêu cầu SkillEffect của hai kỹ năng optional. Catalog giữ riêng `optionalSkills` và `expectedInvokedSkills`. Source/kết quả local của phiên này được ghi ở `CODEX_STATE.md` CP65.
+- [x] Kiểm UI/Lua local cả hai chiều Long Đảm, Kích hoạt/Bỏ qua độc lập cho Di Kế và Phản Quỹ, Di Kế chọn hai lá cho chính mình, Phản Quỹ chọn một lá nguồn sát thương: Chrome/Wasmoon **4/4 focused**, suite **57/57**, contract QA **4/4**, resolver **5/5**. Đây không phải proof C++ live.
+- [x] Chạy native C++ nhánh dương, cả hai ghế trả lời thủ công: bốn bước **PASS** qua gateway local, đối chiếu CardUsing/CardResponding/Damaged/SkillEffect, HP và số lá chuyển; summary công khai ở cả hai UI, GameOver/Về sảnh/disconnect sạch. Evidence `cp66-fazheng-enyuan-multiplayer-live-1791882269251.json`. Lượt Render hosted cuối cũng **PASS**: `cp66-fazheng-enyuan-multiplayer-live-1791882727500.json`, log `cp65-native/scenario-hosted-final.log`, errors[].
+- [ ] Native nhánh âm riêng: chọn Bỏ qua Di Kế và/hoặc Phản Quỹ; không có hiệu ứng tương ứng (không nhận hai lá/không lấy một lá), request kết thúc và trận tiếp tục. UI trả lời Bỏ qua local đã PASS, hậu quả server của nhánh âm vẫn PENDING.
+
+| Bước | Thao tác đã thống nhất | Điều kiện nghiệm thu native |
+| --- | --- | --- |
+| 1 | Ngụy Quách Gia/Tư Mã Ý dùng Sát lần 1; Thục Triệu Vân/Pháp Chính chọn Long Đảm, dùng Sát như Thiểm | Né thành công, Thục không mất HP; không phát động Ân Oán |
+| 2 | Ngụy Sát lần 2; Thục không né và nhận 1 sát thương | Thục mất đúng 1 HP; Ân Oán chuyển đúng 1 lá tay Ngụy → Thục, Ngụy không mất HP |
+| 3 | Ngụy dùng lá Sát thứ 3/cuối cùng; Thục không né và nhận 1 sát thương | Thục mất đúng 1 HP; Ngụy hết bài để giao nên mất đúng 1 HP do Ân Oán; mất HP này không kích Di Kế/Phản Quỹ |
+| 4 | Thục dùng Long Đảm chuyển Thiểm thành Sát, gây 1 sát thương cho Ngụy; Ngụy chọn Kích hoạt Di Kế và Phản Quỹ | Ngụy mất đúng 1 HP; Di Kế giao đủ 2 lá cho bản thân, Phản Quỹ lấy đúng 1 lá của Thục; Ngụy tăng tổng 3 lá tay, Thục giảm 2 lá gồm lá Thiểm chuyển hóa và lá bị lấy |
+
+Dựng bài: Ngụy 3 Sát + 1 Đào để giao, Thục 1 Sát để né + 1 Thiểm để phản công + 1 Đào làm bài nguồn. Lần 2 giao Đào để giữ Sát thứ 3; lần 3 dùng Sát cuối nên hết bài. Ba Sát dùng quyền extra-use **chỉ của QA**, không cài Gia Cát Liên Nỗ hoặc sửa kỹ năng upstream. Thứ tự Di Kế/Phản Quỹ theo engine được chấp nhận miễn từng hiệu ứng đúng.
+
+**Trạng thái triển khai CP66:** Render artifact df81afa8 **Live**, hosted bốn bước PASS. Native QA f45c7e12 giữ nguyên vì package hash trùng source web bbb5f3ad; không restart chỉ đổi metadata. Báo cáo `scratch/evidence/cp65-native/REPORT.md` + release-lock-hosted.json. Nhánh âm native cần scenario acceptance riêng; chưa gán PASS.
+
+**Bước tiếp theo khi mở rộng QA:** dựng/run native acceptance nhánh Bỏ qua Di Kế/Phản Quỹ; CP65 nhánh dương và yêu cầu triển khai/báo cáo hiện tại đã hoàn tất.
+
+## CP67 — Bước 1 refactor màn hình web · 13/10/2026
+
+- [x] Tách `game/web/src/App.tsx` thành các component `BootScreen.tsx`, `LoginScreen.tsx` và `LobbyScreen.tsx`; chuyển nguyên text, placeholder, accessibility label, lobby pool helper/QA plan và giữ `export { default as LobbyScreen } from './LobbyScreen';` cho harness cũ.
+- [x] Đưa `WaitingRoomScreen` và `InitialGeneralPanel` ra khỏi orchestrator để `App.tsx` chỉ còn shell, lifecycle/connection state và điều phối các screen/panel. `App.tsx` giảm từ 500 xuống 149 dòng; không đổi wire ID, selector hay API của `GameAdapter`.
+- [x] Verification quan sát được: `npm --prefix game/web run typecheck` PASS; `npm --prefix game/web run test:store` **28/28 PASS**; `npm --prefix game/web run test:room-pools` **1/1 PASS**; `npm --prefix game/web run test:e2e` **18/18 PASS**; `npm --prefix game/web run test:e2e:lua` **57/57 PASS**; `npm --prefix game/web run test:e2e:pwa` PASS; `npm --prefix game/web run build` PASS; `git diff --check` PASS.
+- Phạm vi chỉ là refactor client/local verification; không deploy, không sửa runtime/native/server và không gộp các thay đổi chưa commit có sẵn trong checkout.
+
+**Bước tiếp theo:** giữ visual redesign Bước 2 trong phạm vi client/local; không deploy hoặc đổi runtime/native nếu chưa có yêu cầu riêng.
+
+## CP68 — Bước 2 copy và visual Loading/Login · 13/10/2026
+
+- [x] Thanh lọc player-facing copy: header dùng `Chiến trường Quốc Chiến trên trình duyệt.`, Boot mô tả dữ liệu võ tướng/thẻ bài, Login dùng heading accessible `Đăng nhập Tam Quốc Sát`, placeholder thuần sản phẩm, ghi chú đăng ký tài khoản và lobby không còn thuật ngữ engine. Giữ nguyên ghi chú phạm vi sử dụng thông tin đăng nhập.
+- [x] Thêm presentation layer scoped `.sg-*` cho Boot/Login: token kem ngà/outline nâu/đồng/vàng, nền tối nhiều lớp, panel viền kép, input inset, nút kim bài, mark TQS dạng chữ, progress indeterminate có `role="progressbar"`, không giả phần trăm, `prefers-reduced-motion` và active/disabled/focus states. Không đổi wire ID, GameAdapter, runtime/native hoặc các selector gameplay/lobby dùng chung.
+- [x] Cập nhật đúng 4 assertion login trong `scripts/browser-e2e/run.ts` và `scripts/live-gateway-e2e/run.ts` sang `getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true })`; không dùng `aria-label` để giữ tên engine ẩn khỏi người nhìn thấy.
+- [x] Verification quan sát được trong checkout: `npm --prefix game/web run typecheck` **PASS**; `test:store` **28/28 PASS**; `test:room-pools` **1/1 PASS**; Chrome browser E2E **18/18 PASS**; Chrome + Wasmoon Lua E2E **57/57 PASS**; PWA/offline **PASS**; `npm --prefix game/web run build` **PASS** (crypto/skill/activation/native-caller audits, Vite, service worker); `git diff --check` **PASS**.
+- [x] Visual QA local: Vite tại `http://localhost:5174/` và fixture `/e2e.html?app=1` được mở trong Chrome; đã quan sát Boot error/progress state, Login DOM/AX tree, heading/labels/button/progressbar và screenshot tông nền/panel/input/nút; browser responsive suite tiếp tục PASS. Root không có gateway nên trạng thái Boot trực tiếp hiển thị `Manifest HTTP 500`; đây là lỗi môi trường local không phải regression copy/skin.
+- Phạm vi chỉ là web client/local verification; không deploy Render, không đổi `runtime/flist.txt`, không sửa source Lua/native/server và không gộp các thay đổi chưa commit có sẵn trong checkout.
+
+**Bước tiếp theo:** nếu cần tiếp tục, review visual trên thiết bị iOS/Android thật; Bước 2 code/local đã hoàn tất, không tự động deploy.
+
+## CP69 — Bước 3 Mốc 1: skin Sảnh và Phòng chờ · 13/10/2026
+
+- [x] Triển khai scoped `.sg-*` cho Sảnh Quốc Chiến và Phòng chờ trong [`game/web/src/LobbyScreen.tsx`](../game/web/src/LobbyScreen.tsx) và [`game/web/src/styles.css`](../game/web/src/styles.css): header `Sảnh Quốc Chiến`, bố cục hai cột desktop, panel `Tạo phòng mới`, panel `Danh sách phòng`, room card đồng cổ, trạng thái còn chỗ/đã đầy/không tương thích, input mật khẩu và empty state.
+- [x] Triển khai Waiting Room dạng `Trướng chỉ huy`: panel cấu hình bể, danh sách ghế/người chơi, huy hiệu `Bạn`/`Chủ phòng`/`Bot`, trạng thái `Sẵn sàng`/`Chưa sẵn sàng` có cả chữ và biểu tượng, ghế trống và thanh hành động responsive.
+- [x] Thêm `formatRoomMode()` để không render raw mode kỹ thuật ra DOM player-facing; giữ các mode wire ID, payload `CreateRoom`, `GameAdapter`, điều kiện `Bắt đầu`, quyền `Thêm bot` và các selector `.room-item`, `.player-item`, `.waiting-pools` hiện có. Ghế trống dùng class riêng, không làm sai bộ đếm `.player-item` của E2E.
+- [x] Thêm variant shell trong [`game/web/src/App.tsx`](../game/web/src/App.tsx): Lobby mở rộng desktop, Room giữ bề rộng riêng; mobile đưa CTA tạo phòng lên trước accordion và dùng sticky action bar cho thao tác phòng chờ. Không thay đổi giao diện bàn chơi.
+- [x] Verification quan sát trong checkout: `npm --prefix game/web run typecheck` **PASS**; `npm --prefix game/web run test:room-pools` **1/1 PASS**; `npm --prefix game/web run test:e2e` **18/18 PASS**; `npm --prefix game/web run test:e2e:lua` **57/57 PASS**; `npm --prefix game/web run build` **PASS** (crypto/skills/activation/native-callers audit, typecheck, Vite, service worker); `git diff --check` **PASS**.
+- [x] Visual QA qua Chrome/Wasmoon fixture: ảnh `scratch/evidence/ui-02-mobile-lobby-lua-fixture-2026-10-11.png` và `ui-02-mobile-waiting-lua-fixture-2026-10-11.png` đã quan sát với CTA mobile hiển thị trước bể gói, panel ghế trống và action bar; responsive test xác nhận không overflow ở 390px và 320px. Mockup desktop đã được dùng làm chuẩn đối chiếu cho breakpoint hai cột.
+- Phạm vi chỉ là web client/local verification. Không deploy Render, không sửa runtime/native/server, không đổi fingerprint và không commit; toàn bộ thay đổi dirty có sẵn trong checkout được bảo toàn. Build vẫn chỉ có các cảnh báo đã biết về `wasmoon` externalized `module` và chunk JS lớn, không có failure.
+
+**Bước tiếp theo:** nếu tiếp tục Bước 3, thực hiện review desktop/thiết bị thật và tinh chỉnh visual Waiting Room; không tự động deploy.
+
+## CP70 — Bước 4 Mốc 1: skin bàn chơi và bộ điều khiển · 13/10/2026
+
+- [x] Thêm shell gameplay `sg-game-shell` trong [`game/web/src/App.tsx`](../game/web/src/App.tsx), giữ nguyên lifecycle, wire ID, request/reply và cảnh báo rời trận.
+- [x] Thêm bàn chơi oval/vòng cung trong [`game/web/src/GameBoardScreen.tsx`](../game/web/src/GameBoardScreen.tsx) và [`game/web/src/styles.css`](../game/web/src/styles.css): viền felt/đồng cổ, vùng trung tâm, panel nhật ký và player card theo bố cục desktop/mobile hiện có.
+- [x] Thêm mã màu thế lực chỉ từ dữ liệu đã công khai (`Ngụy` lam sapphire, `Thục` đỏ son, `Ngô` lục ngọc, `Quần` vàng); đối thủ chưa công khai luôn dùng `neutral`, không suy diễn hoặc render dữ liệu ẩn.
+- [x] Thêm HealthMeter/Câu Ngọc có số HP hiện hữu để giữ contract text cũ, các hạt trang trí `aria-hidden` và nhãn trợ năng `Sinh lực`; không thay đổi nguồn state HP/maxHP.
+- [x] Đưa vùng lá bài trong [`game/web/src/GameplayControls.tsx`](../game/web/src/GameplayControls.tsx) sang fan card có kích thước cố định, cuộn ngang riêng trên mobile, reduced-motion và giữ nguyên `.gameplay-hand`, `.gameplay-choice`, `data-card-id`, selected/disabled cùng hành vi Lua.
+- [x] Verification quan sát trong checkout: `npm run typecheck` **PASS**; `npm run test:gameplay` **16/16 PASS**; Chrome browser E2E **18/18 PASS**; Chrome + Wasmoon Lua E2E **57/57 PASS**; `npm run build` **PASS** (crypto/skill/activation/native-caller audits, Vite, service worker); `git diff --check` **PASS**.
+- [x] Visual QA fixture: đã quan sát ảnh mobile và desktop [`ui-03-390px-lua-fixture-2026-10-11.png`](../scratch/evidence/ui-03-390px-lua-fixture-2026-10-11.png) và [`ui-03-1280px-lua-fixture-2026-10-11.png`](../scratch/evidence/ui-03-1280px-lua-fixture-2026-10-11.png); xác nhận bàn oval, Câu Ngọc, viền thế lực, card đơn không nở toàn chiều rộng và vùng fan không gây tràn trang. Đây là fixture client/Lua local, không phải device/live server proof.
+- Phạm vi chỉ là web client/presentation local. Không deploy Render, không sửa runtime/native/server, không thay fingerprint và không commit; toàn bộ thay đổi dirty có sẵn được giữ nguyên. Build còn các cảnh báo đã biết về `wasmoon` externalized `module` và chunk JS lớn, không có failure.
+
+**Bước tiếp theo:** review CP70 trên App shell thật và thiết bị mobile; nếu đạt, mở Mốc 2 cho trạng thái card/target nâng cao và polish board giữa trận, không tự động deploy.
+
+## CP71 — Bước 4 Mốc 2: card presentation, native art fallback và chi tiết tương tác · 13/10/2026
+
+- [x] Nối [`game/web/src/HandCardItem.tsx`](../game/web/src/HandCardItem.tsx) vào [`GameplayControls.tsx`](../game/web/src/GameplayControls.tsx), bảo toàn một button/card cùng các selector và thuộc tính wire/accessibility hiện hữu; accessible name giữ tên bài để các E2E locator `Sát`/`Đào` không đổi.
+- [x] Hoàn thiện bốn lớp card, phân loại màu, rank/chất, native package art với fallback ảnh lỗi/neutral, baseline name/description an toàn và không render raw technical ID.
+- [x] Hoàn thiện selected summary + `CardDetailSheet` chuẩn accessibility; hover/focus lift, selected lift, mobile bottom-sheet path, overflow tooltip và reduced-motion.
+- [x] Thêm/harden Vite dev route `/packages/...` chỉ phục vụ asset ảnh trong `runtime` và build plugin emit whitelist 27 ảnh native vào `dist/packages/...`; giữ mockup native-art độc lập tại [`game/web/public/mockup.html`](../game/web/public/mockup.html) với ảnh nhúng Base64. Mockup đã được mở/quan sát trên Chrome; đây không phải proof device/live gameplay.
+- [x] Verification: typecheck **PASS**; `test:card-display` **8/8**; `test:gameplay` **16/16**; `test:store` **28/28**; browser E2E **18/18**; Real Lua E2E **57/57**; web build **PASS** với service worker **37 public files**; production `dist` có native PNGs; asset MIME/traversal probe **PASS**; diff-check **PASS** sau checkpoint.
+- Phạm vi chỉ là client/local/mockup; không deploy, không sửa runtime/native/Lua law hoặc wire protocol, không đổi `PLAYABLE_MOBILE`/official. Artifact mockup ~1,4 MB cần review trước release vì sẽ được copy từ `public/` vào dist.
+
+**Bước tiếp theo:** review card fan/tooltip trên App shell thật và mobile thật; quyết định giữ hoặc tách mockup khỏi `public/`, rồi mở rộng polish target/board giữa trận. Không tự động deploy.
+
+## CP72 — hiệu chỉnh native card art theo khóa authoritative · 13/10/2026
+
+- [x] Sửa projection/state để truyền `extension` + `picName` từ Lua và lookup ảnh theo đúng package/name; loại bỏ alias generic card sang ảnh biến thể, giữ `data-card-id`/button/accessibility contract.
+- [x] Sửa mockup và tỉ lệ card để các ảnh có sẵn hiển thị nguyên vẹn; nhãn mockup ghi rõ khóa native thật. Kiểm tra bằng Chrome/in-app browser local.
+- [x] Verification: typecheck **PASS**; `test:card-display` **9/9**; `test:gameplay` **16/16**; browser E2E **18/18**; Real Lua E2E **57/57**; web build **PASS**; `git diff --check` **PASS**.
+- Phạm vi vẫn là web client/presentation local. Checkout chưa có bitmap chuẩn cho các card cơ bản mục tiêu (`slash`, `peach`, `ex_nihilo`, `eight_diagram`…), nên chúng cố ý fallback trung tính thay vì mượn art biến thể. Chưa deploy/restart/commit.
+
+**Bước tiếp theo:** bổ sung resource pack chuẩn đúng package/name, cập nhật whitelist/manifest và thêm acceptance test cho từng card mục tiêu trước khi tuyên bố art chuẩn hoàn tất.
+
+## CP73 — catalogue đối chiếu card art upstream · 13/10/2026
+
+- [x] Quét GitHub FreeKill và Gitee package sources theo commit/tree thực tế; xác định bộ art chuẩn nằm tại `packages/standard_cards/image/card/` và `packages/maneuvering/image/card/` của FreeKill, không suy diễn từ tên chung và không lấy `freekill-core` Lua repo làm nguồn bitmap.
+- [x] Gộp ảnh từ GitHub base packages, các package pin/live trong `runtime/packages/`, và các repo Qsgs-Fans công khai có art bổ sung. Inventory có **529** entry duy nhất, 14 package; giữ source/commit/path/raw link và tên đa ngôn ngữ khi có translation.
+- [x] Tạo [`game/web/public/card-catalog.html`](../game/web/public/card-catalog.html) để duyệt ảnh trực quan và inventory JSON/Markdown ở `/Users/otada/.codex/visualizations/2026/10/13/01a135a7-83e3-7ac2-b45c-6b956be9618b/` làm dữ liệu đối chiếu. Route local `http://localhost:5174/card-catalog.html` trả 200; browser verification nạp đủ 529 thẻ và 529 ảnh.
+- [ ] Người dùng chọn entry authoritative cho từng lá mục tiêu. Chỉ sau bước này mới copy resource đúng package/name vào runtime/web manifest, sửa whitelist nếu cần, và thêm test không cho alias nhầm sang art biến thể.
+- **Không nằm trong CP73:** đổi luật Lua, đổi wire protocol, deploy/restart native hoặc thay mapping card gameplay trước khi có chỉ định card tương ứng.
+
+## CP74 — catalogue card pool Quốc Chiến/TQS Mobile tập trung · 13/10/2026
+
+- [x] Dùng Lua runtime thật với `__web_room_packs('new_heg_mode')` để thu hẹp phạm vi từ 529 asset tổng quát còn đúng bốn card pack đang bật: `hegemony_cards` 108, `strategic_advantage` 52, `nine_variations` 54, `lord_cards` 5; tổng **219 lá vật lý / 78 tên card duy nhất**.
+- [x] Tách 4 card trong `m_lord_cards` (`mobile__liulongcanjia`, `mobile__dragon_phoenix`, `mobile__luminous_pearl`, `grand_ensign`) thành nhóm **Mobile candidate chưa bật trong `new_heg_mode`**, để người dùng xem xét mà không trộn vào pool Quốc Chiến đang chạy.
+- [x] Lấy tên và mô tả nguyên văn bằng `Fk:translate(..., 'zh_CN')` trong runtime thật; catalogue hiển thị tiếng Trung mở mặc định và bản Việt hiện tại ở panel riêng để người dùng thay bằng bản dịch chuẩn sau.
+- [x] Tạo [`game/web/public/quoc-chien-card-catalog.html`](../game/web/public/quoc-chien-card-catalog.html) và [`game/web/public/quoc-chien-card-inventory.json`](../game/web/public/quoc-chien-card-inventory.json), có filter phạm vi, tìm kiếm, package/card ID, chất/số, số bản, art key và source link.
+- [x] Ghim nguồn art đối chiếu: FreeKill `standard_cards`/`maneuvering` tại commit `671b0ad698c36b703808d8b29f3483ce54b36631`; package `hegemony` tại Gitee commit `d616978ad2a53055f5815f3ae19f2d2b239862e0`. Không dùng alias chung hoặc branch trôi nổi.
+- [x] Verification: focused HTML/JSON **200**; Chrome headless **82 entry**, mobile filter **4**, tìm `part_ways` **1**, no page errors; tập chọn có `cardsWithoutArt: []` theo generator. Đây chỉ xác nhận catalogue có nguồn art để đối chiếu, chưa xác nhận art nào đã được người dùng duyệt là đúng.
+- [ ] Người dùng chỉ ra card có art không hợp lệ và cung cấp bản dịch Việt chuẩn dựa trên cột tiếng Trung. Sau bước đó mới sửa resource/mapping/translation và thêm acceptance test tương ứng.
+- **Không nằm trong CP74:** copy toàn bộ art vào runtime, đổi luật/wire protocol, deploy/restart native, hoặc tự ý chốt bản dịch tiếng Việt.
+
+## CP75 — tạm chấp nhận bản dịch hiện tại và deploy candidate Render · 14/10/2026
+
+- [x] Giữ nguyên tên/mô tả tiếng Việt hiện tại theo yêu cầu tạm chấp nhận; không coi đây là bản dịch chuẩn cuối cùng. Catalogue vẫn cung cấp tiếng Trung gốc để người dùng hiệu chỉnh ở vòng sau.
+- [x] Build/test client trước phát hành: typecheck **PASS**; `test:card-display` **9/9**; `test:gameplay` **16/16**; `test:store` **28/28**; Real Lua E2E **57/57**; web build **PASS**.
+- [x] Đóng gói snapshot cô lập và verify **PASS**: 14.824 file, manifest v2, 14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`. Root dirty chỉ làm evidence provenance ở trạng thái `HOLD`; không deploy trực tiếp từ root.
+- [x] Push commit `694929d613f8fc2b4d01b145224e9238f967045b` lên `codex/cp57-render-release`, manual deploy service duy nhất `tqs-mobile-candidate`; deployment `dep-db76fe3l550s73au7vg0` quan sát được **Deploy succeeded | Live**.
+- [x] Sửa gate static web đúng nguồn [`game/gateway/src/static.mjs`](../game/gateway/src/static.mjs) để phục vụ `.json` sau khi phát hiện inventory JSON 404; redeploy lại và kiểm tra live `healthz=ok`, manifest 14 package/5.279 files, catalogue HTML **200**, inventory JSON **200**/82 entries, mockup **200**.
+- [ ] Người dùng test live, chỉ ra các card có art không hợp lệ và gửi bản dịch Việt chuẩn. Chưa copy art mới, chưa chốt mapping authoritative, chưa đánh dấu bản dịch cuối.
+
+**Bước tiếp theo:** chờ phản hồi live của người dùng về `package/card ID`, art và bản dịch; sau đó mới sửa resource/mapping/translation và thêm acceptance test cho từng card được duyệt.
+
+## CP76 — phát hành catalogue art và hiệu chỉnh gameplay presentation · 14/10/2026
+
+- [x] Dùng catalogue 82 tên card làm nguồn art tạm thời trong mọi nhánh render hand-card/detail: exact `card.name` → `/card-catalog-art/<name>.png`; không alias biến thể qua `picName`; build production phát đủ 82 PNG.
+- [x] Giữ parity số ghế tuyệt đối sau visual rotation, tăng lịch sử log an toàn từ 100 lên 2.000 dòng, thêm queue hiển thị moment 650ms cho bot presentation, và hoàn thiện board oval + hand fan/sticky controls mobile. Không thay native server timing, wire protocol, request/reply hoặc luật Lua.
+- [x] Verification: typecheck **PASS**; card-display **9/9**; gameplay **16/16**; store **30/30**; browser E2E **18/18**; Real Lua E2E **57/57**; build **PASS**; diff-check **PASS**.
+- [x] Release cô lập verify **PASS**: 14.906 files, 14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 82 catalogue art. Commit `e132f90c8c8cd77b83a21815f533ed32bec06c59` được push lên `codex/cp57-render-release`.
+- [x] Manual deploy `dep-db7780tg1s2s739bbh6g` trên `tqs-mobile-candidate` **Deploy succeeded | Live**. Live smoke PASS: health `ok`, manifest native 5.279 files/14 packages, inventory 82 cards, catalogue 200, representative catalogue PNGs 200 `image/png`, app boot/login package verified và console error count 0.
+- **Chưa chốt cuối:** bản dịch Việt vẫn tạm thời; người dùng chưa chỉ ra card art sai. Bot slowdown hiện chỉ là lớp presentation vì không có quyền SSH native để thay delay server an toàn; không được coi là native AI pacing đã thay đổi.
+
+**Bước tiếp theo:** chờ người dùng test live và gửi các `package/card ID` cần sửa art hoặc bản dịch Việt chuẩn; chỉ cập nhật mapping/translation theo các chỉ định đó rồi chạy lại focused acceptance/release.
+
+## CP77 — xác nhận catalogue được dùng trong gameplay và smoke test Render production · 14/10/2026
+
+- [x] Catalogue 82 tên khớp tuyệt đối với inventory 82 entry; gameplay renderer dùng exact `card.name` → `/card-catalog-art/<name>.png`, không alias biến thể qua `picName`.
+- [x] Card display **9/9 PASS**; Render live `/gateway/healthz` `ok`, catalogue `200`, representative catalogue art `200 image/png`.
+- [x] Hosted login/lobby smoke **PASS** với runtime hiện hành: Setup/EnterLobby qua C++ thật, React lobby online, disconnect sạch; live manifest 5.279 files/14 packages, MD5 `c4704cd70bfbce3375c4c123a2443a3f`.
+- [x] Sửa `live-gateway-e2e` để đọc initial generals từ `CustomDialog` packet, tương thích frozen production bundle; thêm cleanup native BOT/GameOver sau `StartGame` nếu assertion lỗi; typecheck/diff-check **PASS**.
+- [ ] Full room/bot smoke chưa PASS: lượt đầu tạo phòng/StartGame nhưng runner cũ import source Vite không có trên Render; lượt retry bị server `temporarily banned` sau phiên dở dang. Chưa dùng kết quả này để tuyên bố GameOver live.
+
+**Bước tiếp theo:** sau khi temporary IP ban hết hạn, chạy một lượt room/bot production với runner đã sửa và chờ GameOver/Về sảnh sạch; catalogue hiện có thể dùng ngay để review art và gameplay card.
+
+## CP78 — chốt presentation queue và xác nhận catalogue sẵn sàng dùng · 14/10/2026
+
+- [x] Tăng khoảng cách trình bày `visibleMoments` trong `game/web/src/GameBoardScreen.tsx` từ 360ms lên **650ms** để các lượt bot/hiệu ứng không dồn quá nhanh trên UI. Đây chỉ là nhịp hiển thị phía client; native `request.lua` vẫn giữ delay AI 800ms, không thay server timing, deadline, wire protocol hoặc luật Lua.
+- [x] Chạy lại từ checkout hiện tại: `npm --prefix game/web run typecheck` **PASS**; `test:gameplay` **16/16 PASS**; `test:store` **30/30 PASS**; Chrome browser E2E **18/18 PASS**; `npm --prefix game/web run build` **PASS**; `git diff --check` **PASS**. Build phát đủ **82** file `dist/card-catalog-art/*.png`.
+- [x] Xác nhận catalogue không chỉ để xem: cùng khóa `card.name` được renderer hand-card và detail-sheet dùng trực tiếp; exact art route `/card-catalog-art/<name>.png` có trong production build và các card không có exact art vẫn rơi về fallback an toàn, không mượn ảnh biến thể.
+- [x] Đã đóng gói/verify snapshot cô lập **14.906 file**, push commit `c6374aa5be96ebf01e50380066e144e66e13ffc3` lên `codex/cp57-render-release` và manual deploy `dep-db77hqad0e5s73fh65h0`; Render hiển thị **Deploy succeeded | Live**. Probe live: `/gateway/healthz=ok`, manifest **5.279 file/14 package** với MD5 `c4704cd70bfbce3375c4c123a2443a3f`, inventory **82 entry**, catalogue HTML **200**, các art `slash`, `peach`, `ex_nihilo`, `part_ways` đều **200 image/png**.
+- [x] Visual live bằng in-app browser: catalogue hiển thị **78 tên / 219 lá vật lý** trong `hegemony_cards`, `strategic_advantage`, `nine_variations`, `lord_cards`, tách **4 Mobile candidate**; từng entry hiện ảnh, khóa `package/card`, tên Trung và mô tả Trung nguyên văn để đối chiếu.
+- [x] Full room/bot production với runner đã sửa đã PASS: evidence `scratch/evidence/ui-02-live-cpp-2026-10-14-1791917244432.json` ghi `status=full-live-game-pass`, `GameOver=true`, `EnterRoom → StartGame → CustomDialog → PrepareDrawPile → NetStateChanged → GameOver`; pool sau khi tắt `hegemony_standard` + `hegemony_cards` có 109 card ID duy nhất và 0 card thuộc pack bị tắt; runner bật BOT, chờ `GameOver`, bấm `Về sảnh` và disconnect sạch.
+- [x] Live UI audit 390×844 với C++ thật đã PASS vòng đời và bố cục: `ui-01-live-cpp-2026-10-14-1791917342765.json` ghi `gameOver=true`, `maxLogEntries=116` (vượt giới hạn 100 cũ), `maxMoments=3`, `logVisible=true`, `horizontalOverflow=false`. Ảnh bàn live cho thấy bàn oval và nhãn ghế tuyệt đối `Ghế 1`/`Ghế 2`; một chuỗi `sa__breastplate · ♣2` còn theo bản dịch tạm được người dùng chấp nhận.
+
+**Bước tiếp theo có thể thực hiện:** mục tiêu triển khai và smoke live hiện đã đủ bằng chứng; nếu người dùng gửi card/package có art sai hoặc bản dịch Việt chuẩn, cập nhật mapping/dịch rồi chạy lại focused release. Không cần chạy lại toàn bộ catalogue.
+
+## CP79 — gameplay card art parity và hand overflow · 14/10/2026
+
+- [x] Nối projection cho card ở cả snapshot và incremental UI delta (`CardItem`, `_new`) để renderer gameplay luôn nhận `card.name`, `trueName`, suit/number và exact catalogue art URL.
+- [x] Khóa hand layout trong viewport cuộn ngang: `min-width: 0`, `overflow-x: auto`, `flex-wrap: nowrap`, card width bounded, touch/trackpad scroll, hint/aria count; giữ nguyên test contract và clickability của card cuối.
+- [x] Acceptance local: typecheck **PASS**; card-display **9/9**; gameplay **16/16**; store **30/30**; Chrome E2E **18/18**; Real Lua E2E **58/58**, gồm 12-card art/overflow/click test; build và diff-check **PASS**.
+- [x] Release snapshot verify **PASS** với **14.906 files**; commit cô lập `7df8a01e1c9c2653060a6404ae51a578502dbdb5` đã push lên `codex/cp57-render-release`.
+- [x] Render deploy `dep-db7d6qd9fdbs73dprjgg` của `tqs-mobile-candidate` **Deploy succeeded | Live**; production health/art/index/bundle probes **PASS**, bundle chứa `project_card_item` và CSS chứa `overflow-x:auto`.
+- [ ] Người dùng kiểm tra ván live trên Render, đặc biệt kéo ngang hand nhiều lá và đối chiếu từng art với catalogue; nếu card nào sai, cung cấp `package/card ID` và bản dịch chuẩn để làm focused mapping/translation release.
+
+**Bước tiếp theo:** hard-refresh live URL, mở ván có hand vượt viewport và thử kéo ngang; không quét lại catalogue hoặc thay bản dịch khi chưa có card ID/bản dịch người dùng chỉ định.
+
+## CP80 — straight hand, adaptive overlap và dark veil · 14/10/2026
+
+- [x] Hoàn tất hand card đứng thẳng 0° trong [`game/web/src/HandCardItem.tsx`](../game/web/src/HandCardItem.tsx): nhận `index`/`totalCards`, z-index nền theo thứ tự, hover/focus `100`, selected `200`; overlap desktop/mobile được tính theo số lá và truyền qua CSS custom properties.
+- [x] [`game/web/src/GameplayControls.tsx`](../game/web/src/GameplayControls.tsx) truyền đúng index/count cho từng lá, thêm class overlap khi tay có hơn 4 lá, đồng thời giữ nguyên `.gameplay-hand`, `.gameplay-choice`, `.sg-card-button`, `data-card-id`, `aria-pressed`, `disabled` và Lua dispatch.
+- [x] [`game/web/src/styles.css`](../game/web/src/styles.css) đã bỏ toàn bộ `nth-child`/rotation cũ; tay ≤4 lá dùng gap 8px, tay >4 lá gối lớp đều; mobile dùng 72×101px, vùng hand đủ rộng cho 10 lá ở viewport 390px, còn tay lớn vẫn scroll nội vùng. Hover/focus nhấc `-22px`, selected nhấc `-30px`; disabled dùng dark veil `rgba(10, 8, 6, .60)` thay cho bạc màu/opacity chung.
+- [x] Mở rộng acceptance Real Lua trong [`game/web/scripts/real-lua-e2e/{harness.tsx,run.ts}`](../game/web/scripts/real-lua-e2e/run.ts): 10 lá phải vừa trong hand mobile ở 360px và 12 lá phải còn scroll được ở 390px, tất cả art vẫn load và lá cuối vẫn click/dispatch được.
+- [x] Verification quan sát trong phiên: `npm --prefix game/web run typecheck` **PASS**; `test:card-display` **9/9 PASS**; `test:gameplay` **16/16 PASS**; `test:store` **30/30 PASS**; Chrome E2E **18/18 PASS**; Real Lua E2E **58/58 PASS**; `npm --prefix game/web run build` **PASS**; `git diff --check` **PASS**. Build vẫn có cảnh báo đã biết: Wasmoon externalized `module` và chunk JS lớn hơn 500 kB.
+- Phạm vi chỉ là client presentation/test local; không đổi luật Lua, wire protocol, native server, runtime manifest, Render deploy hoặc `PLAYABLE_MOBILE`. Root checkout vẫn giữ toàn bộ thay đổi dirty trước đó, không reset/clean/commit.
+
+**Bước tiếp theo:** hard-refresh bản live và review trực quan tay 4/10/12 lá trên mobile thật; nếu art hoặc bản dịch của card cụ thể chưa đúng, gửi `package/card ID` để làm mapping focused. Không tự động deploy.
+
+## CP81 — local real-Lua mocktest trước Render · 14/10/2026
+
+- [x] Dev server local phục vụ bundle/key fixture cho `real-lua-e2e.html`; manual route dùng baseline 3 package để boot nhẹ, còn Playwright regression tiếp tục dùng full upstream fixture.
+- [x] Harness có nút bắt đầu ván test tương tác/nạp 10 lá; UI vẫn dùng production board, hand-card selector và Lua bridge.
+- [x] Local evidence đã quan sát: Real Lua Browser E2E **58/58 PASS**, typecheck **PASS**, diff-check **PASS**, fixture zip endpoint **200**.
+- [ ] Chưa coi local mock là bằng chứng live: gateway/TCP/WebSocket/C++ room, Render proxy/cache, multiplayer concurrency, bot scheduling và Safari/device QA vẫn cần canary riêng.
+
+**Bước tiếp theo:** chạy local gate đầy đủ trước mỗi release candidate, sau đó chạy canary live với đúng release/manifest identity; chỉ đánh dấu Render PASS khi live probes và một ván thật đã kết thúc/cleanup.
+
+## CP82 — phát hành dirty-tree hiện tại, full live game và ổn định live-test snapshot · 14/10/2026
+
+- [x] Release hiện tại được build/package/verify từ toàn bộ phần web/runtime/gateway đang có trong working tree: **14.936 files**, 14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; source snapshot `codex/cp82-render-current@1f6eee6`.
+- [x] Render candidate `tqs-mobile-candidate` deploy `dep-db7fh9aj9qps73c8tuug` **Live**; health, manifest, 14-package identity và bundle marker của hand-card mới đều PASS.
+- [x] Hosted login/lobby **PASS**; full room-pools trên FreeKill C++ thật **PASS** đến `GameOver`, về sảnh và disconnect sạch. Không coi đây là official release; `PLAYABLE_MOBILE` vẫn giữ gate riêng.
+- [x] Sửa nguyên nhân login canary lặp lỗi `Missing pinned package gamemode`: snapshot config cũ 3 package được thay bằng snapshot ổn định 14 package; runner kiểm package inventory + MD5, tự fallback về `runtime/` hiện hành khi config stale/incomplete và fail-closed nếu MD5 không khớp live manifest. `typecheck`, `test:live-config`, login canary config mặc định và `git diff --check` **PASS**.
+- [x] Dọn branch candidate cũ sau khi xác nhận clean: giữ checkout `codex/cp57-latest-release`, branch live `codex/cp82-render-current`, backup Render gần nhất `origin/codex/cp57-render-release`; giữ `main`/`staging-gate4` ngoài phạm vi, xóa branch/worktree mobile cũ CP11–CP17/CP22/CP24/CP28/CP34/CP65.
+
+**Bước tiếp theo:** người dùng có thể hard-refresh URL candidate và chơi trực tiếp; nếu cần đổi card art/bản dịch, gửi exact `package/card ID`. Official/mobile-device/network/operations gates vẫn chưa tự động đóng từ canary này.
+
+## CP83 — PlayerPhotoPanel chuẩn ghế FreeKill/QSanguosha và triệt tiêu lớp che tương tác · 14/10/2026
+
+- [x] Triển khai `PlayerPhotoPanel.tsx` độc lập với header, avatar kép, HP/magatama, 5 ô equipment, delayed trick, mark/timeline và các overlay trạng thái động; giữ các selector/wire contract cũ.
+- [x] Nối exact native general art theo package/name qua `generalArt.ts`; không fuzzy-alias, fallback sigil khi asset exact chưa có.
+- [x] Nối public projection cho general extension, equipment subtype/range/picName, delayed tricks, `surrendered` và `drank`; reducer/store sanitization giữ public/private boundary.
+- [x] Đưa dashboard ghế bản thân ra ngoài oval; center không bắt pointer; target và action controls có lớp tương tác độc lập; mobile controls theo normal flow, không che target/log.
+- [x] Thêm UI-03 Real Lua acceptance cho 8 ghế ở desktop/mobile: rect overlap, `elementFromPoint`, pointer-events, target click/aria-pressed và document overflow đều PASS.
+- [x] Regression quan sát: typecheck **PASS**, store **31/31**, gameplay **16/16**, browser **18/18**, Real Lua **59/59**, build **PASS**, diff-check **PASS**; visual evidence trong `scratch/evidence/seat-panel-final/` và các ảnh UI-03.
+- [ ] Chưa deploy CP83 lên Render/native và chưa đóng device/Safari gate; nếu phát hành tiếp theo thì tạo snapshot sạch, chạy release verifier + live canary, rồi mới deploy candidate.
+
+**Bước tiếp theo:** review snapshot CP83 và quyết định có cần canary/deploy candidate hay chỉ giữ bản local để tiếp tục tinh chỉnh art/tỉ lệ panel.
+
 ## Nguyên tắc chuyển trạng thái
 
 Chỉ đánh dấu `[x]` khi có minh chứng trong `CODEX_STATE.md` gồm lệnh/kịch bản, ngày, phạm vi thực tế và kết quả. Nếu chỉ qua mock/browser fixture, ghi rõ mức đó. Mỗi lần thay đổi ticket hoặc mục tiêu, cập nhật **bước tiếp theo** trong `CODEX_STATE.md`; trạng thái Git nằm ở vùng tự động của file ấy.

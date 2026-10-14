@@ -210,7 +210,7 @@ end
 
 local public_properties = {
   hp = true, maxHp = true, shield = true, handcardNum = true,
-  dead = true, died = true, phase = true,
+  dead = true, died = true, surrendered = true, drank = true, phase = true,
   general = true, deputyGeneral = true, kingdom = true,
   role_shown = true, chained = true, faceup = true,
 }
@@ -234,6 +234,26 @@ local function hidden_hegemony_kingdom(id)
   return ok_player and player ~= nil and player ~= Self and player.role_shown ~= true
 end
 
+-- Resolve the same package-level general art identity used by the native
+-- SkinBank.  The browser receives only a safe package name; it never receives
+-- a Lua General object or private marks.  Missing media is intentionally left
+-- to the browser fallback instead of borrowing another variant's portrait.
+local function general_extension(name)
+  if type(name) ~= 'string' or name == '' or name == 'anjiang' or name == 'hidden' then return '' end
+  local generals = rawget(Fk, 'generals')
+  local general = generals and generals[name]
+  local package = general and general.package
+  local extension = package and package.extensionName
+  return type(extension) == 'string' and #extension <= 120 and extension ~= '' and extension or ''
+end
+
+local function emit_general_art(id, slot, name)
+  local extension = general_extension(name)
+  if extension ~= '' then
+    J.ui('GeneralArtUpdate', to_json({id, slot, name, extension}))
+  end
+end
+
 -- ClientPlayer:sendDataToUI() iterates every native property, including private
 -- seat/role/general state. Keep the browser-facing shape explicit and copy the
 -- scalar before serialization so private tables/userdata cannot leak through a
@@ -251,7 +271,7 @@ local function project_property(data)
   elseif name == 'phase' then
     if type(value) ~= 'string' and not finite_number(value) then return nil end
   elseif name == 'dead' or name == 'died' or name == 'role_shown' or
-      name == 'chained' or name == 'faceup' then
+      name == 'surrendered' or name == 'chained' or name == 'faceup' then
     if type(value) ~= 'boolean' then return nil end
   else
     if not finite_number(value) then return nil end
@@ -282,7 +302,39 @@ local function project_card(value)
       card[key] = field
     end
   end
+  -- The native QML client resolves card art from the card's package/name and
+  -- lets an active FilterSkill override the picture through getPicName().
+  -- Keep those two public display hints so the web client can make the same
+  -- exact lookup instead of guessing that (for example) every "slash" is the
+  -- espionage "stab__slash" artwork.
+  local package = value.package
+  local extension = package and package.extensionName
+  if type(extension) == 'string' and #extension <= 120 and extension ~= '' then
+    card.extension = extension
+  end
+  if type(value.getPicName) == 'function' then
+    local ok, pic_name = pcall(value.getPicName, value)
+    if ok and type(pic_name) == 'string' and #pic_name <= 120 and pic_name ~= '' then
+      card.picName = pic_name
+    end
+  end
   return next(card) and card or nil
+end
+
+-- CardItem:toData() is used both when a request scene is created (_new) and
+-- when an existing item changes (CardItem).  Keep both paths identical: the
+-- native QML client always has the CardModel/cardId available for artwork,
+-- while React otherwise receives only the selectable item's id and falls back
+-- to a neutral card frame.  The public projection is deliberately tiny and
+-- never crosses the native Card object itself.
+local function project_card_item(value)
+  if type(value) ~= 'table' then return end
+  local card = project_card(value.card)
+  if not card and math.type(value.id) == 'integer' then
+    local ok, native_card = pcall(Fk.getCardById, Fk, value.id)
+    if ok then card = project_card(native_card) end
+  end
+  value.card = card
 end
 
 function FClient:notifyUI(command, data)
@@ -331,6 +383,7 @@ function FClient:notifyUI(command, data)
       data._prompt = fallback_prompt
     end
     for _, value in ipairs(data.CardItem or {}) do
+      project_card_item(value)
       local h = ClientInstance and ClientInstance.current_request_handler
       local item = h and h.scene and h.scene:getAllItems('CardItem')[value.id]
       -- Deltas can omit enabled. Read the current native scene before explaining.
@@ -339,12 +392,18 @@ function FClient:notifyUI(command, data)
       value.disabledReason = state.disabledReason
     end
     for _, entry in ipairs(data._new or {}) do
-      if entry.type == 'CardItem' then annotate_card_reason(entry.data) end
+      if entry.type == 'CardItem' then
+        project_card_item(entry.data)
+        annotate_card_reason(entry.data)
+      end
     end
   end
   local ok, s = pcall(to_json, data)
   if not ok then error("UI serialization failed for " .. tostring(command) .. ": " .. tostring(s), 0) end
   J.ui(command, s)
+  if command == 'PropertyUpdate' and (data[2] == 'general' or data[2] == 'deputyGeneral') and data[3] ~= '' then
+    emit_general_art(data[1], data[2], data[3])
+  end
 end
 
 __host_client = setmetatable({ players = {} }, FClient)
@@ -384,14 +443,41 @@ function __host_recv(command, hex, is_request)
   -- Lua tracks all hand sizes while MoveCards only forwards visibility data
   -- to QML. Publish counts for the board without forwarding any card IDs.
   if command == 'MoveCards' or command == 'Reconnect' then
+    local function project_public_card(card, owner)
+      if not card then return nil end
+      local result = {name = card.name, suit = card.suit, number = card.number}
+      local subtype_ok, subtype = pcall(card.getSubtypeString, card)
+      if subtype_ok and type(subtype) == 'string' and #subtype <= 40 then result.subtype = subtype end
+      local package = card.package
+      local extension = package and package.extensionName
+      if type(extension) == 'string' and #extension <= 120 and extension ~= '' then result.extension = extension end
+      if type(card.getPicName) == 'function' then
+        local pic_ok, pic_name = pcall(card.getPicName, card)
+        if pic_ok and type(pic_name) == 'string' and #pic_name <= 120 and pic_name ~= '' then
+          result.picName = pic_name
+        end
+      end
+      if result.subtype == 'weapon' and type(card.getAttackRange) == 'function' then
+        local range_ok, range = pcall(card.getAttackRange, card, owner)
+        if range_ok and finite_number(range) then result.range = range end
+      end
+      return result
+    end
     for _, player in ipairs(ClientInstance.players) do
       J.ui('PropertyUpdate', to_json({player.id, 'handcardNum', player:getHandcardNum()}))
       local equipment = {}
       for _, id in ipairs(player:getCardIds('e')) do
         local card = Fk:getCardById(id)
-        if card then table.insert(equipment, {name = card.name, suit = card.suit, number = card.number}) end
+        local projected = project_public_card(card, player)
+        if projected then table.insert(equipment, projected) end
       end
-      J.ui('EquipmentUpdate', to_json({player.id, equipment}))
+      local delayed_tricks = {}
+      for _, id in ipairs(player:getCardIds('j')) do
+        local card = Fk:getCardById(id)
+        local projected = project_public_card(card, player)
+        if projected then table.insert(delayed_tricks, projected) end
+      end
+      J.ui('EquipmentUpdate', to_json({player.id, equipment, delayed_tricks}))
     end
   end
   -- Hegemony uses anjiang publicly and private marks for the actual pair.
@@ -403,8 +489,10 @@ function __host_recv(command, hex, is_request)
         if name == 'anjiang' then name = Self:getMark(mark) end
         return type(name) == 'string' and name or ''
       end
-      J.ui('SelfGenerals', to_json({Self.id, own_general('general', '__heg_general'),
-        own_general('deputyGeneral', '__heg_deputy')}))
+      local main = own_general('general', '__heg_general')
+      local deputy = own_general('deputyGeneral', '__heg_deputy')
+      J.ui('SelfGenerals', to_json({Self.id, main, deputy,
+        general_extension(main), general_extension(deputy)}))
     end
     if command ~= 'SetPlayerMark' and ClientInstance:getSettings('gameMode') == 'new_heg_mode' then
       local H = require 'packages.hegemony.util'
@@ -433,15 +521,9 @@ function __host_recv(command, hex, is_request)
         for _, item in pairs(scene:getAllItems(kind)) do
           local value = item:toData()
           if kind == 'CardItem' then
-            -- CardItem:toData() returns the native Card object for virtual
-            -- cards. Project it even when present; serializing that object
-            -- would otherwise include subcards/marks/skill graphs.
-            local card = project_card(value.card)
-            if not card then
-              local native_card = Fk:getCardById(item.id)
-              card = project_card(native_card)
-            end
-            value.card = card
+            -- Project the native Card object for both real and virtual cards.
+            -- This is the same path used by incremental _new/CardItem deltas.
+            project_card_item(value)
           end
           if kind == 'CardItem' then annotate_card_reason(value) end
           table.insert(snapshot._new, {type = kind, data = value})

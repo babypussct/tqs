@@ -15,11 +15,11 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
-  testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle or founding');
+  testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan',
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding or fazheng-enyuan');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
@@ -28,6 +28,8 @@ assert.ok(!testScenario || experimentalScenariosEnabled,
   'Experimental live scenarios are temporarily locked; set TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 only after broad deployment');
 const nativeQa = process.env.TQS_LIVE_NATIVE_QA === '1';
 assert.ok(!nativeQa || !!testScenario, 'TQS_LIVE_NATIVE_QA=1 requires TQS_LIVE_SCENARIO');
+assert.ok(testScenario !== 'fazheng-enyuan' || (nativeQa && process.argv.includes('--manual')),
+  'fazheng-enyuan requires native QA and --manual to select both optional reactions');
 
 const web = fileURLToPath(new URL('../../',import.meta.url));
 const repo = path.resolve(web,'../..');
@@ -58,6 +60,12 @@ const qaPackageIdentity = nativeQa ? verifyQaPackageManifest({
   manifestPath: process.env.TQS_QA_PACKAGE_MANIFEST ?? path.join(runtime, 'packages/tqs_qa/package.manifest.json'),
   expectedRevision: process.env.TQS_QA_EXPECTED_REVISION,
 }) : null;
+if (qaPackageIdentity) {
+  const catalogHash = createHash('sha256')
+    .update(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'))).digest('hex');
+  assert.equal(qaPackageIdentity.catalogSha256, catalogHash,
+    'Installed native QA catalog is stale; install and verify this source before running the scenario');
+}
 const candidateIdentity = await verifyCandidateIdentity({
   runtime,
   dist: path.join(web, 'dist'),
@@ -109,8 +117,13 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // the server's real reveal/founding path; it is not evidence until the
   // native rule actually emits and accepts the expected kingdom choice.
   'founding': { general: /Giả Nam Phong|Gia Nam Phong|贾南风|Jianan\s*Feng|Jianan/i, generalId: 'heg__jiananfeng', skill: null, pack: /^zfxp$/i, packId: 'zfxp', requiredCommand: 'AskForChoices', sameKingdom: true },
+  // Native QA fixes both players' pairs at GamePrepared. The URL-side pool
+  // is intentionally unused for this scenario; the regexes document the
+  // roster expected on the real board after the director reveals it.
+  'fazheng-enyuan': { general: /Pháp Chính|法正|Fa\s*Zheng/i, generalId: 'ld__fazheng', skill: /Ân Oán|恩怨|enyuan|Di Kế|遗计|yiji|Phản Quỹ|反馈|fankui/i, pack: /^(?:power|hegemony_standard)$/i, packId: 'power', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
+const damageExchangeScenario = testScenario === 'fazheng-enyuan';
 const nativeQaCatalog = nativeQa
   ? JSON.parse(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'), 'utf8')) as {
       scenarios: { id: string; seed: number; expectedCommand: string }[];
@@ -146,6 +159,14 @@ let scenarioRescueBlocked = false;
 let scenarioViewAsReply = false;
 let scenarioBattleRoyalObserved = false;
 let scenarioFoundingReply = false;
+let scenarioEnyuanReply = false;
+let scenarioYijiReply = false;
+let scenarioFankuiReply = false;
+let scenarioFankuiInvoked = false;
+let scenarioYijiInvoked = false;
+let scenarioSlashReplies = 0;
+let scenarioLongdanDefenseReply = false;
+let scenarioLongdanAttackReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
 
 type PublicBotAudit = {
@@ -275,6 +296,66 @@ async function completeActiveSkill(page: Page, client: number, requestId: number
   const replied = await waitForReply(client, requestId);
   if (replied && prefer) scenarioActiveSkillReply = true;
   return replied;
+}
+
+/** Complete the selected branch using only the production UI. */
+async function completeDamageExchangeActiveSkill(page: Page, client: number, requestId: number) {
+  const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
+  const prompt = await controls.innerText();
+  const yiji = /Di Kế|遗计|yiji|hs__yiji/i.test(prompt);
+  const enyuan = /Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt);
+  if (enyuan) {
+    // Preserve Slash 3. Giving an arbitrary first card would invalidate the
+    // empty-hand branch; the reserved Peach must be given after attack 2.
+    const gift = controls.locator('.gameplay-hand button:enabled').filter({ hasText: /Đào|Peach|桃/i }).first();
+    if (scenarioSlashReplies === 3 && !await controls.locator('.gameplay-hand button:enabled').count()) {
+      // askToCards can still request a cancelable reply for an empty hand.
+      // Decline so native Enyuan performs the required one-HP fallback.
+      await controls.getByRole('button', { name: 'Hủy', exact: true }).click();
+      return waitForReply(client, requestId);
+    }
+    assert.ok(await gift.count(), 'Enyuan give branch requires the reserved Peach');
+    await gift.click();
+  } else if (yiji) {
+    for (let n = 0; n < 2; n++) {
+      const card = controls.locator('.gameplay-hand button:enabled:not([aria-pressed="true"])').first();
+      assert.ok(await card.count(), 'Yiji must offer both expanded cards');
+      await card.click();
+    }
+    await page.locator('.board-self .gameplay-target:enabled').click();
+  } else {
+    await controls.locator('.gameplay-hand button:enabled').first().click();
+    await chooseTargetIfNeeded(page);
+  }
+  const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+  assert.ok(await ok.isEnabled(), 'Selected damage-exchange branch must allow confirmation');
+  await ok.click();
+  return waitForReply(client, requestId);
+}
+
+async function completeDamageExchangeUseCard(page: Page, client: number, requestId: number) {
+  const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
+  // Only the first defense converts Slash to Jink. Later defenses deliberately
+  // decline even though a Jink is retained for the Longdan counterattack.
+  const prompt = await controls.innerText();
+  const counter = client === 1 && /dùng Thiểm như Sát để phản công|tqs_qa-counter/i.test(prompt);
+  const defend = !scenarioLongdanDefenseReply && client === 1;
+  if (counter || defend) {
+    await controls.getByRole('button', { name: 'Long Đảm', exact: true }).click();
+    const material = controls.locator('.gameplay-hand button:enabled').filter({
+      hasText: counter ? /Thiểm|Jink|闪/i : /Sát|Slash|杀/i,
+    }).first();
+    assert.ok(await material.count(), 'Longdan must expose the requested material card');
+    await material.click();
+    if (counter) await chooseTargetIfNeeded(page);
+    await controls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+  } else {
+    await controls.getByRole('button', { name: 'Hủy', exact: true }).click();
+  }
+  const replied = await waitForReply(client, requestId);
+  if (defend && replied) scenarioLongdanDefenseReply = true;
+  if (counter && replied) scenarioLongdanAttackReply = true;
+  return { replied, detail: counter ? 'longdan-jink-as-slash' : defend ? 'longdan-slash-as-jink' : 'decline-jink' };
 }
 
 async function completeUseCard(page: Page, client: number, requestId: number) {
@@ -507,7 +588,16 @@ try{
     await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
     const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
     assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
-  if (testBotAudit) await Promise.all(pages.map(installPublicBotAudit));
+  if (damageExchangeScenario) {
+    await pages[0].waitForFunction(() => /Quách Gia/u.test(document.querySelector('.board-self .board-generals')?.textContent ?? ''), null, { timeout: 30000 });
+    await pages[1].waitForFunction(() => /Triệu Vân/u.test(document.querySelector('.board-self .board-generals')?.textContent ?? ''), null, { timeout: 30000 });
+    assert.match(await pages[0].locator('.board-self .board-generals').innerText(), /Quách Gia.*Tư Mã Ý/s,
+      'Native damage scenario must reveal Quách Gia + Tư Mã Ý for the first account');
+    assert.match(await pages[1].locator('.board-self .board-generals').innerText(), /Triệu Vân.*Pháp Chính/s,
+      'Native damage scenario must reveal Triệu Vân + Pháp Chính for the second account');
+    console.log('PASS fazheng-enyuan roster: Wei Quách Gia/Tư Mã Ý versus Shu Triệu Vân/Pháp Chính');
+  }
+  if (testBotAudit || damageExchangeScenario) await Promise.all(pages.map(installPublicBotAudit));
   if (selectedScenario) {
     const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
     console.log(`Scenario ${testScenario}: ${nativeQa ? 'native QA package injected the server-side precondition; ' : ''}selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
@@ -517,7 +607,7 @@ try{
     let actor = pages[scenarioClient];
     let actorTrace = traces[scenarioClient];
     const botPage = pages[1 - scenarioClient];
-    await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
+    if (!damageExchangeScenario) await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
     const deadline=Date.now()+manualDeadlineMs;
     let printedScenarioSkills = false;
     const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
@@ -546,8 +636,10 @@ try{
       (testScenario === 'poxi' && scenarioPoxiMultiple) ||
       (testScenario === 'rescue-normal' && scenarioRescueReply && scenarioRescuePeach) ||
       (testScenario === 'rescue-battle' && scenarioRescueReply && scenarioRescuePeach && scenarioViewAsReply && scenarioBattleRoyalObserved) ||
-      (testScenario === 'founding' && scenarioFoundingReply);
-    while(Date.now()<deadline && (!manualCardReply || !scenarioDone())) {
+      (testScenario === 'founding' && scenarioFoundingReply) ||
+      (damageExchangeScenario && scenarioSlashReplies === 3 && scenarioLongdanDefenseReply &&
+        scenarioLongdanAttackReply && scenarioEnyuanReply && scenarioYijiInvoked && scenarioYijiReply && scenarioFankuiReply);
+    while(Date.now()<deadline && (damageExchangeScenario ? !scenarioDone() : (!manualCardReply || !scenarioDone()))) {
       const activeClient = await selectActiveClient();
       actor = pages[activeClient];
       actorTrace = traces[activeClient];
@@ -596,9 +688,28 @@ try{
           : actor.locator('.request-panel').getByRole('button', { name: /^(Bỏ qua|Hủy)$/ });
         if(await choice.count() && await choice.isEnabled())await choice.click();
         const replied = await waitForReply(activeClient, latest.requestId);
+        if (damageExchangeScenario && isScenarioSkillInvoke && replied) {
+          if (/Phản Quỹ|反馈|fankui/i.test(invokeText)) scenarioFankuiInvoked = shouldInvoke;
+          if (/Di Kế|遗计|yiji/i.test(invokeText)) scenarioYijiInvoked = shouldInvoke;
+        }
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
           detail: shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
       } else if(latest?.command==='AskForUseActiveSkill') {
+        if (damageExchangeScenario) {
+          const prompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+          const replied = await completeDamageExchangeActiveSkill(actor, activeClient, latest.requestId);
+          // The engine's prompts are translated from the real skill names; the
+          // exact card/target payload remains inside the client and is not
+          // persisted by this runner.
+          if (/Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt)) scenarioEnyuanReply = replied;
+          else if (/Di Kế|遗计|yiji|hs__yiji/i.test(prompt)) scenarioYijiReply = replied;
+          else if (/Sát lần|tqs_qa-slash/i.test(prompt) && replied) scenarioSlashReplies++;
+          scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: /Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt) ? 'enyuan-give-card' :
+              /Di Kế|遗计|yiji|hs__yiji/i.test(prompt) ? 'yiji-distribute' : 'damage-exchange-active'});
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
         const activeSkill = testScenario === 'rescue-battle'
           ? selectedScenario?.skill ?? null
           : testScenario === 'cards-and-choice' || testScenario === 'poxi'
@@ -608,6 +719,11 @@ try{
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
           detail: activeSkill?.source ?? 'cancel'});
       } else if(latest?.command==='AskForUseCard' || latest?.command==='AskForResponseCard') {
+        if (damageExchangeScenario) {
+          const result = await completeDamageExchangeUseCard(actor, activeClient, latest.requestId);
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: result.replied, detail: result.detail });
+          continue;
+        }
         const result = await completeUseCard(actor, activeClient, latest.requestId);
         if (result.rescue && result.replied) scenarioRescueReply = true;
         if (result.rescue && result.peach && result.replied) scenarioRescuePeach = true;
@@ -626,6 +742,7 @@ try{
         if (replied) {
           scenarioCardChosenReply=true;
           if (hiddenIndex >= 0) scenarioCardChosenHidden=true;
+          if (damageExchangeScenario && scenarioFankuiInvoked) scenarioFankuiReply = true;
           scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
             detail: hiddenIndex >= 0 ? 'hidden-card' : 'public-card'});
         }
@@ -680,7 +797,7 @@ try{
               detail: `no-enabled-choice cards-${await panel.locator('[role="group"] .gameplay-choice').count()}`});
           }
         }
-      } else if(['AskForArrangeCards','AskForAG','CustomDialog','AskForGeneral','AskForMoveCardInBoard'].includes(latest?.command ?? '')) {
+      } else if(latest && ['AskForArrangeCards','AskForAG','CustomDialog','AskForGeneral','AskForMoveCardInBoard'].includes(latest.command)) {
         await completeNativeDialog(actor, activeClient, latest.requestId);
       } else if(latest?.command==='PlayCard') {
         const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
@@ -731,8 +848,19 @@ try{
       }
       await new Promise(r=>setTimeout(r,250));
     }
-    assert.ok(manualCardReply,'A native PlayCard must receive one user-selected card/target/OK reply');
-    console.log('PASS manual native PlayCard: offered card, Lua-enabled target/OK and one exact client reply');
+    if (damageExchangeScenario) {
+      assert.equal(scenarioSlashReplies, 3, 'Wei must answer three real Slash requests');
+      assert.ok(scenarioLongdanDefenseReply && scenarioLongdanAttackReply, 'Longdan must convert both directions');
+      assert.ok(scenarioYijiInvoked, 'Positive branch must explicitly invoke optional Yiji');
+      assert.ok(scenarioEnyuanReply, 'fazheng-enyuan must answer the native Ân Oán card request');
+      assert.ok(scenarioYijiReply, 'fazheng-enyuan must answer the native Di Kế distribution request');
+      assert.ok(scenarioFankuiInvoked && scenarioFankuiReply,
+        'fazheng-enyuan manual mode must invoke Phản Quỹ and answer its source-card request');
+      console.log('PASS fazheng-enyuan requests: three Wei Slashes, both Longdan conversions, Enyuan gift, optional Yiji/Fankui invoked');
+    } else {
+      assert.ok(manualCardReply,'A native PlayCard must receive one user-selected card/target/OK reply');
+      console.log('PASS manual native PlayCard: offered card, Lua-enabled target/OK and one exact client reply');
+    }
     if (testScenario === 'card-chosen') {
       assert.ok(scenarioCardChosenHidden,'card-chosen scenario must receive and answer hidden AskForCardChosen on the real server');
       console.log('PASS card-chosen scenario: Bàng Đức/jianchu reached hidden AskForCardChosen and received one exact reply');
@@ -755,7 +883,9 @@ try{
       assert.ok(scenarioFoundingReply, 'founding scenario must receive and answer the native kingdom choice');
       console.log('PASS founding scenario: real wild general reached the native Vietnamese kingdom choice');
     }
-    const trust=actor.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
+    if (!damageExchangeScenario) {
+      const trust=actor.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
+    }
   } else await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
   if (testRecovery) {
     const recovering = [a];
@@ -783,7 +913,7 @@ try{
     console.log(testGatewayRestart ? 'PASS gateway restart: first account reauthenticates/native Reconnect/private board, independent peer stays connected' : 'PASS controlled transport loss: same account automatically authenticates, receives native Reconnect and restores the two-seat board');
   }
   await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));finished=true;
-  let publicBotAudit = testBotAudit
+  let publicBotAudit = (testBotAudit || damageExchangeScenario)
     ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
     : [];
   if (testBotAudit) {
@@ -821,6 +951,44 @@ try{
       `${publicBotAudit[0]?.skillLogs.length ?? 0} public skill log(s), ` +
       `${publicBotAudit[0]?.botSkillLogs.length ?? 0} attributed to bot name(s)`);
   }
+  if (damageExchangeScenario) {
+    const publicLogs = publicBotAudit.flatMap((audit) => audit.logs);
+    assert.ok(publicLogs.some((log) => /Ân Oán|恩怨|enyuan/iu.test(log)),
+      'fazheng-enyuan must expose a public Ân Oán/恩怨 skill log');
+    assert.ok(publicLogs.some((log) => /Di Kế|遗计|yiji/iu.test(log)),
+      'fazheng-enyuan must expose a public Di Kế/遗计 skill log');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'fazheng-enyuan must finish after all four Slash steps');
+    for (const result of ['longdan-slash-as-jink-dodge', 'source-gives-one-hand-card',
+      'empty-source-loses-one-hp', 'yiji-two-to-self', 'fankui-one-from-source']) {
+      assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) => log.includes(result))),
+        `Each native client must observe verified outcome ${result}`);
+    }
+    console.log('PASS fazheng-enyuan public audit: all four native HP/card-transfer outcomes verified and visible to both clients');
+  }
+  const scenarioBoardStates = damageExchangeScenario
+    ? await Promise.all(pages.map(async (page) => {
+        const states = await page.locator('.board-player').allTextContents();
+        return states.map((value) => [first.username, second.username, first.password, second.password]
+          .reduce((safe, secret) => safe.split(secret).join('[test-account]'), value).replace(/\s+/gu, ' ').trim());
+      }))
+    : [];
+  if (damageExchangeScenario) {
+    for (const states of scenarioBoardStates) {
+      assert.ok(states.some((text) => /Quách Gia/.test(text) && /Tư Mã Ý/.test(text) &&
+        /♥\s*1\s*\/\s*3/.test(text) && /3 lá trên tay/.test(text)), 'Both UIs must retain Wei final HP 1/3 and three hand cards');
+      assert.ok(states.some((text) => /Triệu Vân/.test(text) && /Pháp Chính/.test(text) &&
+        /♥\s*1\s*\/\s*3/.test(text) && /1 lá trên tay/.test(text)), 'Both UIs must retain Shu final HP 1/3 and one hand card');
+    }
+    const evidenceDir = path.join(repo, 'scratch/evidence/cp65-native');
+    mkdirSync(evidenceDir, { recursive: true });
+    for (let i = 0; i < pages.length; i++) {
+      await pages[i].screenshot({ path: path.join(evidenceDir, `scenario-board-client-${i + 1}.png`),
+        fullPage: true, mask: [pages[i].locator('.board-player-name'), pages[i].locator('.player-item'),
+          pages[i].locator('.board-logs li').filter({ hasText: first.username }),
+          pages[i].locator('.board-logs li').filter({ hasText: second.username })] });
+    }
+  }
   for(let i=0;i<2;i++){
     assert.ok(traces[i].some(t=>t.direction==='incoming' && t.command==='GameOver'));
     const replies=traces[i].filter(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY);
@@ -830,7 +998,7 @@ try{
     await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioObservations,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / native Trust; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / native Trust; no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));

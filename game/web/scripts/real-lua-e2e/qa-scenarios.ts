@@ -23,7 +23,8 @@ export type QaScenarioId =
   | 'cards-and-choice'
   | 'rescue-normal'
   | 'rescue-battle'
-  | 'founding';
+  | 'founding'
+  | 'fazheng-enyuan';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -51,7 +52,8 @@ export type QaScenarioTrigger =
   | 'cards-and-choice'
   | 'rescue-normal'
   | 'rescue-battle'
-  | 'founding';
+  | 'founding'
+  | 'damage-exchange';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -183,11 +185,35 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'founding',
     expectedCommand: 'AskForChoices',
   },
+  'fazheng-enyuan': {
+    version: 1,
+    id: 'fazheng-enyuan',
+    title: 'Long Đảm, hai nhánh Ân Oán và tùy chọn Di Kế/Phản Quỹ',
+    seed: 0x6e9a2026,
+    // Three real attacks consume the Wei Slashes. The spare Peach is given
+    // after attack 2, leaving no hand card after attack 3. Shu keeps a Slash
+    // for Longdan defense, a Jink for the counterattack and a card to steal.
+    drawSequence: [trueName('slash'), trueName('slash'), trueName('slash'), trueName('peach'),
+      trueName('slash'), trueName('jink'), trueName('peach')],
+    slots: [
+      slot('actor-slash-1', trueName('slash'), 'self', 'hand', true, 0),
+      slot('actor-slash-2', trueName('slash'), 'self', 'hand', true, 1),
+      slot('actor-slash-3', trueName('slash'), 'self', 'hand', true, 2),
+      slot('actor-gift', trueName('peach'), 'self', 'hand', true, 3),
+      slot('target-dodge', trueName('slash'), 'opponent', 'hand', false, 4),
+      slot('target-counter', trueName('jink'), 'opponent', 'hand', false, 5),
+      slot('target-loot', trueName('peach'), 'opponent', 'hand', false, 6),
+    ],
+    trigger: 'damage-exchange',
+    // The native QA director replaces the selected pair with:
+    // Wei: Quách Gia + Tư Mã Ý; Shu: Triệu Vân + Pháp Chính.
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'draw-sequence', 'card-chosen', 'poxi', 'cards-and-choice',
-  'rescue-normal', 'rescue-battle', 'founding',
+  'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
 ];
 
 export class QaScenarioError extends Error {
@@ -252,6 +278,12 @@ function validatePlan(plan: QaScenarioPlan): void {
   if (plan.trigger === 'card-chosen' || plan.trigger === 'poxi') {
     if (!keys.has('hidden-hand') || !keys.has('public-equip')) {
       throw new QaScenarioError(`${plan.id} must expose the hand/equip selection contract`);
+    }
+  }
+  if (plan.trigger === 'damage-exchange') {
+    for (const key of ['actor-slash-1', 'actor-slash-2', 'actor-slash-3', 'actor-gift',
+      'target-dodge', 'target-counter', 'target-loot']) {
+      if (!keys.has(key)) throw new QaScenarioError(`${plan.id} must reserve ${key} for the four attacks`);
     }
   }
 }

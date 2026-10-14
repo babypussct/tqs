@@ -86,6 +86,129 @@
       "trigger": "founding",
       "general": "heg__jiananfeng",
       "cards": []
+    },
+    {
+      "id": "fazheng-enyuan",
+      "title": "Longdan dodge, two Enyuan branches, optional Yiji and Fankui",
+      "seed": 1855594534,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "damage-exchange",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "actor-slash-1",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-slash-2",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-slash-3",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-gift",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "target-dodge",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "target-counter",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "target-loot",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ],
+      "attackSteps": [
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 0,
+          "mandatorySkills": [],
+          "optionalSkills": [],
+          "expectedEffect": "longdan-slash-as-jink-dodge"
+        },
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 1,
+          "mandatorySkills": [
+            "ld__enyuan"
+          ],
+          "optionalSkills": [],
+          "expectedEffect": "source-gives-one-hand-card"
+        },
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 1,
+          "mandatorySkills": [
+            "ld__enyuan"
+          ],
+          "optionalSkills": [],
+          "expectedEffect": "empty-source-loses-one-hp"
+        },
+        {
+          "from": "target",
+          "to": "actor",
+          "amount": 1,
+          "mandatorySkills": [],
+          "optionalSkills": [
+            "hs__yiji",
+            "fankui"
+          ],
+          "expectedInvokedSkills": [
+            "hs__yiji",
+            "fankui"
+          ],
+          "expectedEffect": "longdan-jink-as-slash; yiji-two-to-self; fankui-one-from-source"
+        }
+      ]
     }
   ]
 }
