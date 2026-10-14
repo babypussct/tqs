@@ -805,90 +805,20 @@ Khi kết thúc mỗi mốc, **cập nhật các phần bàn giao phía trên** 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-14T09:11:10.199Z (UTC).
-- Nhánh: `codex/cp57-latest-release` · HEAD: `330d8bbd3ba4`.
-- File thay đổi hiển thị: 1588 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-14T09:24:28.347Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `a0bff426229f`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/gateway/src/static.mjs
- M game/web/public/interactive-board-comparison.html
- M game/web/scripts/capture-interactive-mockup.ts
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/generalArt.ts
- M game/web/src/styles.css
-?? game/web/public/boot-login-mockup.html
-?? game/web/public/photo-assets/generals/baihu.jpg
-?? game/web/public/photo-assets/generals/bailingyun.jpg
-?? game/web/public/photo-assets/generals/baosanniang.jpg
-?? game/web/public/photo-assets/generals/baoxin.jpg
-?? game/web/public/photo-assets/generals/bianfuren.jpg
-?? game/web/public/photo-assets/generals/bianxi.jpg
-?? game/web/public/photo-assets/generals/bianyue.jpg
-?? game/web/public/photo-assets/generals/bihan.jpg
-?? game/web/public/photo-assets/generals/bilan.jpg
-?? game/web/public/photo-assets/generals/bingyuan.jpg
-?? game/web/public/photo-assets/generals/bulianshi.jpg
-?? game/web/public/photo-assets/generals/caifuren.jpg
-?? game/web/public/photo-assets/generals/caimaozhangyun.jpg
-?? game/web/public/photo-assets/generals/caiwenji.jpg
-?? game/web/public/photo-assets/generals/caiyang.jpg
-?? game/web/public/photo-assets/generals/caiyong.jpg
-?? game/web/public/photo-assets/generals/caizhenji.jpg
-?? game/web/public/photo-assets/generals/caoang.jpg
-?? game/web/public/photo-assets/generals/caoanmin.jpg
-?? game/web/public/photo-assets/generals/caobao.jpg
-?? game/web/public/photo-assets/generals/caochong.jpg
-?? game/web/public/photo-assets/generals/caochun.jpg
-?? game/web/public/photo-assets/generals/caofang.jpg
-?? game/web/public/photo-assets/generals/caohong.jpg
-?? game/web/public/photo-assets/generals/caohua.jpg
-?? game/web/public/photo-assets/generals/caojie.jpg
-?? game/web/public/photo-assets/generals/caojinyu.jpg
-?? game/web/public/photo-assets/generals/caomao.jpg
-?? game/web/public/photo-assets/generals/caopi.jpg
-?? game/web/public/photo-assets/generals/caoren.jpg
-?? game/web/public/photo-assets/generals/caorui.jpg
-?? game/web/public/photo-assets/generals/caoshuang.jpg
-?? game/web/public/photo-assets/generals/caosong.jpg
-?? game/web/public/photo-assets/generals/caoxian.jpg
-?? game/web/public/photo-assets/generals/caoxing.jpg
-?? game/web/public/photo-assets/generals/caoxiu.jpg
-?? game/web/public/photo-assets/generals/caoyi.jpg
-?? game/web/public/photo-assets/generals/caoying.jpg
-?? game/web/public/photo-assets/generals/caoyuan.jpg
-?? game/web/public/photo-assets/generals/caozhang.jpg
-?? game/web/public/photo-assets/generals/caozhao.jpg
-?? game/web/public/photo-assets/generals/caozhen.jpg
-?? game/web/public/photo-assets/generals/caozhi.jpg
-?? game/web/public/photo-assets/generals/cenhun.jpg
-?? game/web/public/photo-assets/generals/changshi__bilan.jpg
-?? game/web/public/photo-assets/generals/changshi__duangui.jpg
-?? game/web/public/photo-assets/generals/changshi__gaowang.jpg
-?? game/web/public/photo-assets/generals/changshi__guosheng.jpg
-?? game/web/public/photo-assets/generals/changshi__hankui.jpg
-?? game/web/public/photo-assets/generals/changshi__lisong.jpg
-?? game/web/public/photo-assets/generals/changshi__sunzhang.jpg
-?? game/web/public/photo-assets/generals/changshi__xiayun.jpg
-?? game/web/public/photo-assets/generals/changshi__zhangrang.jpg
-?? game/web/public/photo-assets/generals/changshi__zhaozhong.jpg
-?? game/web/public/photo-assets/generals/chaos__fanchou.jpg
-?? game/web/public/photo-assets/generals/chaos__guosi.jpg
-?? game/web/public/photo-assets/generals/chaos__jiaxu.jpg
-?? game/web/public/photo-assets/generals/chaos__lijue.jpg
-?? game/web/public/photo-assets/generals/chaos__zhangji.jpg
-?? game/web/public/photo-assets/generals/cheliji.jpg
-... và 1518 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
-330d8bbd feat: finalize web game presentation and QA coverage
-457e511c docs: record first synchronized release verification
-e2988dca release: refresh native QA package fingerprint
+a0bff426 release: publish verified web artifact
+dd297df7 chore: preserve latest boot mockup changes
+ead4e0bb fix: include latest boot mockup stylesheet
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
@@ -1177,7 +1107,8 @@ e2988dca release: refresh native QA package fingerprint
 
 - [x] Áp dụng hướng an toàn tối thiểu trong [`game/web/src/styles.css`](../game/web/src/styles.css): tiêu đề `Diễn biến mới nhất` và từng `.board-moment` trên mobile đều là một dòng, dùng `overflow: hidden`, `text-overflow: ellipsis`, `white-space: nowrap`; giữ `max-height: 44px`, center watermark nhỏ/mờ, `pointer-events:none` và không thay đổi wire/Lua.
 - [x] Chạy lại từ checkout hiện tại: `npm run typecheck` **PASS**; gameplay **16/16**; store **31/31**; Vietnamese **4/4**; card-display **9/9**; native-dialogs **7/7**; room-pools **1/1**; Chrome E2E **18/18**; Real Lua Browser E2E **59/59**; `npm run build` **PASS**; `git diff --check` **PASS**. Build vẫn chỉ có cảnh báo Wasmoon externalized `module` và chunk JS >500 kB.
-- [ ] Đang chuẩn bị release snapshot cô lập từ `scratch/live-web-test/current` (14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`), tạo nhánh `codex/cp89-render-current`, commit toàn bộ thay đổi tracked/untracked hiện tại sau khi kiểm tra không có path nhạy cảm, push GitHub và manual deploy service `tqs-mobile-candidate` vì `render.yaml` đặt `autoDeployTrigger: off`.
+- [x] Đã package/verify release snapshot cô lập từ `scratch/live-web-test/current`: checkpoint [`scratch/evidence/cp89-render-current-v3.json`](../scratch/evidence/cp89-render-current-v3.json) đạt `READY_FOR_PUBLISH_REVIEW`, `publishEligible=true`, source sạch tại commit `a0bff426229f63ca826d9c259ae1e207700759cd`, manifest SHA-256 `a1323e725ef68a10cefbfea63e445310ac857b42daf84798d8c36bcc2648581c`, **16.513** file release, web **1.730** file, gateway **6** file, runtime **14.771** file, 14 package và runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`. Toàn bộ thay đổi tracked/untracked trong phạm vi candidate đã được giữ nguyên, kiểm tra path nhạy cảm và `git diff --check` đều PASS, rồi push lên nhánh [`codex/cp89-render-current`](https://github.com/babypussct/tqs/tree/codex/cp89-render-current). Root `dist/`, `gateway/`, `runtime/` được đồng bộ vào commit release để Dockerfile Render COPY đúng artifact mới nhất.
+- [x] Manual deploy service `tqs-mobile-candidate` (auto deploy đang tắt) đã chạy đúng source `a0bff426` tại deployment [`dep-db7kjgl9fdbs73ej9tn0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db7kjgl9fdbs73ej9tn0), quan sát được **Deploy succeeded | Live**. Probe ngoài mạng: `/gateway/healthz` **200/ok**; `/gateway/manifest.json` **14 package / 5.279 file**, MD5 khớp; `/` dùng bundle `index-DNEQLblE.js` + `index-CpWTiRnN.css`; CSS có `text-overflow:ellipsis`, `white-space:nowrap`, `max-height:44px`; các asset `/photo-assets/generals/bianfuren.jpg`, `/photo-assets/magatama/3-heg.png`, `/photo-assets/handcard.png`, `/photo-assets/deputy-split.png`, `/boot-login-mockup.html` và `/card-catalog.html` đều **200**. Deployment source-only cũ `63f4fcc` đã được thay thế, không phải bản live cuối.
 - **Phạm vi/giới hạn:** đây là candidate để người dùng test; không tự động merge/push các branch cũ không liên quan, không đánh dấu official release hoặc `PLAYABLE_MOBILE`, và không coi việc deploy candidate là bằng chứng device/Safari/operations.
 
-**Bước tiếp theo có thể chạy ngay:** package + verify release từ runtime pinned, commit/push snapshot CP89, kích hoạt deploy Render thủ công, rồi probe health/manifest/bundle marker và báo URL test cùng deployment identity.
+**Bước tiếp theo có thể chạy ngay:** người dùng hard-refresh và test candidate tại [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com), ưu tiên vào bàn 8/10 ghế ở 360/390px, kiểm tra ribbon diễn biến không đè ghế/target, avatar native, cột máu Thái Cực, 5 ô trang bị và kéo hand nhiều lá. Nếu có lỗi cụ thể, gửi viewport + ảnh hoặc `package/card ID`; không coi candidate này là official release/device-Safari sign-off.

@@ -646,10 +646,11 @@ Dựng bài: Ngụy 3 Sát + 1 Đào để giao, Thục 1 Sát để né + 1 Thi
 
 - [x] Giới hạn `board-moments` trên mobile theo một dòng ellipsis cho cả tiêu đề và event, giữ chiều cao tối đa 44px và không đụng Lua/wire/target hit-surface.
 - [x] Regression sau patch: typecheck **PASS**; gameplay **16/16**; store **31/31**; Vietnamese **4/4**; card-display **9/9**; native-dialogs **7/7**; room-pools **1/1**; Chrome E2E **18/18**; Real Lua E2E **59/59**; build **PASS**; diff-check **PASS**.
-- [ ] Package/verify snapshot từ runtime pinned, commit/push toàn bộ dirty-tree vào `codex/cp89-render-current`, manual deploy `tqs-mobile-candidate` (Render auto deploy đang tắt), rồi kiểm tra health/manifest/bundle sau deploy.
+- [x] Package/verify snapshot từ runtime pinned đã đạt `READY_FOR_PUBLISH_REVIEW` tại [`scratch/evidence/cp89-render-current-v3.json`](../scratch/evidence/cp89-render-current-v3.json): commit sạch `a0bff426229f63ca826d9c259ae1e207700759cd`, **16.513** file release, web **1.730**, gateway **6**, runtime **14.771**, 14 package, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; toàn bộ thay đổi candidate đã được push lên [`codex/cp89-render-current`](https://github.com/babypussct/tqs/tree/codex/cp89-render-current), gồm root `dist/`, `gateway/`, `runtime/` cần cho Dockerfile Render.
+- [x] Manual deploy `tqs-mobile-candidate` (Render auto deploy đang tắt) thành công tại deployment [`dep-db7kjgl9fdbs73ej9tn0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db7kjgl9fdbs73ej9tn0), source `a0bff426`, trạng thái **Deploy succeeded | Live**. Live health/manifest/bundle/asset probes đều PASS: health `200/ok`, manifest **5.279 file / 14 package** đúng MD5, bundle `index-DNEQLblE.js` + `index-CpWTiRnN.css`, ribbon CSS markers hiện diện, portrait/magatama/handcard/deputy-split/login mockup/card catalogue đều HTTP **200**.
 - **Gate:** candidate chỉ phục vụ user test; official release, PLAYABLE_MOBILE, device/Safari và operations vẫn chưa đóng.
 
-**Bước tiếp theo:** hoàn tất release snapshot bất biến, deploy candidate bounded và trả URL/commit/deployment evidence.
+**Bước tiếp theo:** người dùng hard-refresh và test bounded candidate tại [`https://tqs-mobile-candidate.onrender.com`](https://tqs-mobile-candidate.onrender.com). Chỉ mở lại focused release nếu có lỗi quan sát được; official release, PLAYABLE_MOBILE, device/Safari và operations gates vẫn chưa đóng.
 
 ## Nguyên tắc chuyển trạng thái
 
