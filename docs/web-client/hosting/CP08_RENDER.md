@@ -8,7 +8,7 @@
 | Thành phần | Giá trị |
 | --- | --- |
 | Web/gateway | `https://tqs-mobile-candidate.onrender.com` |
-| Render deployment | [`dep-db8hmd1srm7s73ecuhgg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8hmd1srm7s73ecuhgg), commit `d015189c` |
+| Render deployment | [`dep-db8hu43ncjis73b3u1r0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8hu43ncjis73b3u1r0), commit `cc5d4ea6` |
 | Native replacement | `161.33.209.212:9527`, VM `freekill-hegemony-qa` |
 | Cấu hình bền vững | `render.yaml` và service env cùng ghim `FK_HOST` vào replacement; `FK_PORT=9527` |
 | Vai trò | Render phục vụ React/gateway; Oracle chạy FreeKill C++/Lua và state server |
@@ -18,11 +18,11 @@
 - Health public: `200 / ok`.
 - Gateway manifest: 14 package, 5.279 file, bundle hash
   `0b4c3d1ea4f5eae7`, runtime MD5
-  `c0bef6508553205941d64c4994a4fd21`.
+  `fc7357dd585b614312a6894eb16552be`.
 - Public HTML SHA-256: `fa42af15…`; JS
   `index-DXmKDLu9.js`; CSS `index-7DaeryPw.css`.
 - Oracle: Lua 5.4.8, service enabled/active, port 9527; current QA revision
-  `87cf8853…`, package SHA `50dc2155…`, catalog SHA `5ad80f76…`; identity đã
+  `8b7b6938…`, package SHA `006e541b…`, catalog SHA `5ad80f76…`; identity đã
   được verify trên VM.
 
 ## Acceptance đã PASS
@@ -36,9 +36,11 @@
 - Hidden Yiji chủ tướng: Quách Gia còn úp → prelight Di Kế → nhận damage →
   invoke → mở đúng chủ tướng → chuyển 2 lá. Evidence: [`cp08-hidden-yiji-multiplayer-live-1792088748424.json`](../../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792088748424.json).
 - Hidden Yiji phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json`](../../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json).
+- Hidden Jueqing chủ tướng: tướng còn ẩn + prelight → `PreDamage` → mở Trương Xuân Hoa ở chủ tướng → mất đúng 1 HP và chặn `DamageEvent`. Evidence: [`cp08-hidden-jueqing-multiplayer-live-1792090046211.json`](../../../scratch/evidence/cp08-hidden-jueqing-multiplayer-live-1792090046211.json).
+- Hidden Jueqing phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json`](../../../scratch/evidence/cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json).
 
 Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
-identity, login, hidden Gongqing và hidden Yiji ở cả main/deputy. Đây chưa
+identity, login, hidden Gongqing, hidden Yiji và hidden Jueqing ở cả main/deputy. Đây chưa
 phải full rule parity; ma trận effect, native interaction còn lại,
 cold-start/rollback/SLA và official sign-off vẫn OPEN. Corpus 51 run trước đó
 thuộc identity cũ và không được gộp vào bằng chứng current identity.

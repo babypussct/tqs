@@ -118,9 +118,9 @@ These are two separate layers and must be verified independently:
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
 `FK_HOST=161.33.209.212` in `render.yaml` and the Render service; public
-health/manifest, login, hidden Gongqing and hidden Yiji main/deputy runs have
-verified the route on one release identity. This is bounded parity, not
-exhaustive rule coverage or an official release.
+health/manifest, login, hidden Gongqing, hidden Yiji and hidden Jueqing
+main/deputy runs have verified the route on one release identity. This is
+bounded parity, not exhaustive rule coverage or an official release.
 
 ## Administrator access
 
@@ -216,7 +216,8 @@ SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 current Yiji main/deputy native + hosted PASS; full parity OPEN
+                 current Yiji native + hosted PASS; Jueqing native-QA +
+                 hosted main/deputy PASS; full parity OPEN
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
@@ -233,11 +234,11 @@ recreate the exact runner without guessing:
 ```text
 Runtime:          /opt/freekill-hegemony/current
 Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: c0bef6508553205941d64c4994a4fd21
+Runtime flist MD5: fc7357dd585b614312a6894eb16552be
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      87cf88536e6b21adfa8460198e70faa0b8e2e71d
-QA package SHA:   50dc215536933406d62d5ae894417c346b13dd6c5afa3477871dd75a369219e9
+QA revision:      8b7b69388824b35e53f71d00aa5edf4fa151b4f5
+QA package SHA:   006e541b1b9ed670de6275075b30bb8a6f6703545f9ff055b1ecd04162dd303d
 QA catalog SHA:   5ad80f767a27f3d10db0917e85e124d7a8e95519dfa311ba9beb0d5a2338189a
 QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
 Service:          freekill-native.service enabled/active; TCP 9527 reachable
@@ -245,12 +246,13 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 
 Current acceptance on this replacement identity is intentionally concise: the
 native and hosted Render → Oracle Yiji positive paths pass for both main and
-deputy, with the evidence links in the canonical audit. The earlier 51-run
-bounded corpus used the previous QA identity (`7787544e…`, runtime
-`0e2e6585…`) and is retained as historical reference only; it must not be
-presented as current-identity proof until rerun. The current hidden-Jueqing
-probe remains OPEN at its native QA assertion. None of these bounded results
-closes the exhaustive 607-pair rule matrix.
+deputy; the hosted Render → Oracle Jueqing native-QA paths pass for both main
+and deputy, with the evidence links in the canonical audit; hosted Gongqing
+also passes both slots. The earlier 51-run bounded corpus used the
+previous QA identity (`7787544e…`, runtime `0e2e6585…`) and is retained as
+historical reference only; it must not be presented as current-identity proof
+until rerun. None of these bounded results closes the exhaustive 607-pair rule
+matrix.
 
 ```sh
 ssh tqs-native-qa-replacement 'id; hostname'
