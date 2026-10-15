@@ -59,7 +59,7 @@ Oracle A1 deployment needs the source-build path rather than this static
 bootstrap. The live server is the amd64 fallback because A1 capacity was not
 available in the selected region.
 
-## Live validation
+## Historical validation — old VM
 
 As of 2026-09-23, the live endpoint is:
 
@@ -117,11 +117,10 @@ These are two separate layers and must be verified independently:
 
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
-`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; public
-health/manifest, login, hidden Gongqing, hidden Yiji, hidden Jueqing, hidden
-Jianxiong and a 30-variant hidden-trigger batch have verified the route on one
-release identity. This is
-bounded parity, not exhaustive rule coverage or an official release.
+`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09 health,
+manifest, login and hidden Fuyin main/deputy have verified the route on the
+current release identity. This is bounded parity, not exhaustive rule coverage
+or an official release.
 
 ## Administrator access
 
@@ -217,9 +216,9 @@ SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 current Yiji/Di Kế + Ân Oán native/hosted PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; full parity OPEN
+                 main/deputy PASS; Fuyin current CP09 main/deputy PASS;
+                 full parity OPEN
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
@@ -236,25 +235,25 @@ recreate the exact runner without guessing:
 ```text
 Runtime:          /opt/freekill-hegemony/current
 Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: ae598a4c946040df3a458ddeb4771999
+Runtime flist MD5: 43b6cdade072b75f93b9d49b3384f08f
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      f80d346ed2ad727358615fb03650db2132a9fb02
-QA package SHA:   7145a6466704910fc95c06ed3b3a95e7979f49cc368bd7151dce57e244a03905
-QA catalog SHA:   ac0be89dfc06f50fc9ec9bdbd7551d36307c3564463b86210fa796784d13c2bc
+QA revision:      cbd2e685b7ea9a91b8685c3563083803968afdd5
+QA package SHA:   2d829d02414c326a119ac3cb214df9214092f0153b5f484c04297b4e79621f6b
+QA catalog SHA:   704f5bd388dc03f3a8a0776d2517f993c677bf6562629d843793aaa22d3e8a7c
 QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
+QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
+Public QA path:   packages/tqs_qa absent; no packages.db row
 Service:          freekill-native.service enabled/active; TCP 9527 reachable
 ```
 
-Current acceptance on this replacement identity is intentionally concise: the
-native and hosted Render → Oracle Yiji/Di Kế and Ân Oán paths pass for both main
-and deputy; the hosted Render → Oracle Jueqing, Jianxiong and 30-variant
-native-QA paths pass for both main and deputy, with the evidence index in the
-canonical audit; hosted Gongqing also passes both slots. The earlier 51-run bounded corpus used the
-previous QA identity (`7787544e…`, runtime `0e2e6585…`) and is retained as
-historical reference only; it must not be presented as current-identity proof
-until rerun. None of these bounded results closes the exhaustive 607-pair rule
-matrix.
+`qa_packages/tqs_qa` is deliberately outside the public `packages/` namespace.
+`run-server.sh` creates a broken runtime-only symlink while the native process
+calculates the public `flist.txt` MD5, then activates the symlink after port
+9527 is listening. This lets the QA director load on Oracle without changing
+the public Render/Oracle release identity. The current CP09 Fuyin main/deputy
+proof passes with this arrangement; the earlier 51-run corpus remains
+historical and does not close the exhaustive 607-pair rule matrix.
 
 ```sh
 ssh tqs-native-qa-replacement 'id; hostname'

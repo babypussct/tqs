@@ -1,4 +1,4 @@
-# CP08 — Render → Oracle replacement và nghiệm thu mobile
+# CP09 — Render → Oracle replacement và nghiệm thu mobile
 
 > Cập nhật 16/10/2026. Đây là runbook ngắn cho tuyến candidate hiện hành; không
 > phải cam kết official/SLA.
@@ -8,7 +8,7 @@
 | Thành phần | Giá trị |
 | --- | --- |
 | Web/gateway | `https://tqs-mobile-candidate.onrender.com` |
-| Render deployment | [`dep-db8iptu7bikc73e8p100`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8iptu7bikc73e8p100), commit `93b9f652` |
+| Render deployment | [`dep-db8j9gei0phs73fs8pcg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8j9gei0phs73fs8pcg), commit `798dc2e4` |
 | Native replacement | `161.33.209.212:9527`, VM `freekill-hegemony-qa` |
 | Cấu hình bền vững | `render.yaml` và service env cùng ghim `FK_HOST` vào replacement; `FK_PORT=9527` |
 | Vai trò | Render phục vụ React/gateway; Oracle chạy FreeKill C++/Lua và state server |
@@ -17,17 +17,30 @@
 
 - Health public: `200 / ok`.
 - Gateway manifest: 14 package, 5.279 file, bundle hash
-  `0b4c3d1ea4f5eae7`, runtime MD5
-  `ae598a4c946040df3a458ddeb4771999`.
-- Public HTML SHA-256: `fa42af15…`; JS
-  `index-DXmKDLu9.js`; CSS `index-7DaeryPw.css`.
-- Public release snapshot: 16.522 file, 14 package; `dist/index.html` SHA-256
-  `fa42af15a4591bc5cf252d1834c9175c2d629a8a6c0328447e2518a3ed21f68b`.
-- Oracle: Lua 5.4.8, service enabled/active, port 9527; current QA revision
-  `f80d346e…`, package SHA `7145a646…`, catalog SHA `ac0be89d…`; identity đã
-  được verify trên VM.
+  `04e2e885b9ac56c3`, runtime MD5
+  `43b6cdade072b75f93b9d49b3384f08f`.
+- Public HTML SHA-256:
+  `591c51f15482d78267b3db4c48b150d20747d5bf83631f01c335e7799e114012`.
+- Public release snapshot: 16.522 file, 14 package; `dist/index.html` dùng
+  cùng SHA-256 ở trên.
+- Oracle: Lua 5.4.8, service enabled/active, port 9527; QA revision
+  `cbd2e685b7ea9a91b8685c3563083803968afdd5`, package SHA
+  `2d829d02414c326a119ac3cb214df9214092f0153b5f484c04297b4e79621f6b`,
+  catalog SHA `704f5bd388dc03f3a8a0776d2517f993c677bf6562629d843793aaa22d3e8a7c`;
+  QA package nằm ngoài public `packages/` và đã verify trên VM.
 
-## Acceptance đã PASS
+## Acceptance current CP09
+
+- Hidden Fuyin chủ tướng: actor còn úp nhưng đã prelight; native
+  `TargetConfirmed` nhận Sát, mở Gia Cát Chiêm đúng ô chủ tướng và vô hiệu lá
+  Sát. Evidence: [`cp08-hidden-fuyin-multiplayer-live-1792096610323.json`](../../../scratch/evidence/cp08-hidden-fuyin-multiplayer-live-1792096610323.json).
+- Hidden Fuyin phó tướng: cùng hợp đồng ở ô phó tướng. Evidence:
+  [`cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json`](../../../scratch/evidence/cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json).
+- Cả hai run đều PASS candidate identity, native QA gate, login/lobby/room,
+  GameOver và clean disconnect. Các batch hidden-trigger CP08 bên dưới dùng
+  identity cũ; không gộp chúng vào current proof.
+
+## Historical CP08 acceptance — identity cũ
 
 - Login/lobby thật qua Chrome + Wasmoon + Render gateway + Oracle C++.
 - Hidden Gongqing chủ tướng: fake trigger trước damage gate; hai nhánh tầm
@@ -51,11 +64,10 @@
 - Hidden dual/reveal: Song Hùng tự bỏ nguồn màu rồi chuyển Sát → Quyết Đấu; `reveal_skill&` mở đúng Lục Tốn chủ/phó. Evidence: [`1792091320794`](../../../scratch/evidence/cp08-hidden-dual-multiplayer-live-1792091320794.json), [`1792091332078`](../../../scratch/evidence/cp08-hidden-reveal-multiplayer-live-1792091332078.json), [`1792091343440`](../../../scratch/evidence/cp08-hidden-reveal-deputy-multiplayer-live-1792091343440.json).
 - Batch current hosted bổ sung 32 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Tôn Thượng Hương/Xiaoji, Guanxing, Anh Tư, Thiên Hương, Phản Gián) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
-Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
-identity, login, hidden Gongqing, hidden Yiji/Di Kế, hidden Ân Oán, hidden Jueqing, hidden Jianxiong, hidden Phản Gián, Lạc Thần, Đoạn Trường, ActiveSkill/ViewAs main/deputy, dual, reveal và batch 32 slot/nhánh hidden-trigger ở các slot đã nêu. Đây chưa
-phải full rule parity; ma trận effect, native interaction còn lại,
-cold-start/rollback/SLA và official sign-off vẫn OPEN. Corpus 51 run trước đó
-thuộc identity cũ và không được gộp vào bằng chứng current identity.
+Kết luận CP08: các ca bên dưới là **historical bounded evidence** của identity
+cũ. Current CP09 chỉ kết luận Fuyin chủ/phó đã PASS trên Render → Oracle; full
+rule parity, native interaction còn lại, cold-start/rollback/SLA và official
+sign-off vẫn OPEN.
 
 ## Quy tắc vận hành
 
