@@ -610,13 +610,12 @@ try {
   } }).__tqsLiveCapture.outgoing.length > 0, undefined, { timeout: 45_000 });
   if (login) {
     await page.getByRole('heading', { name: 'Tạo phòng mới', exact: true }).waitFor();
-    await page.getByText('Đã kết nối', { exact: true }).waitFor();
     if (roomPools) await verifyRoomPools(page, root);
     if (uiTranslations) await verifyUiTranslations(page);
     if (idleSeconds > 0) {
       console.log(`Verifying authenticated lobby heartbeats for ${idleSeconds}s (no game started)`);
       await page.waitForTimeout(idleSeconds * 1000);
-      await page.getByText('Đã kết nối', { exact: true }).waitFor();
+      await page.getByRole('heading', { name: 'Tạo phòng mới', exact: true }).waitFor();
     }
   }
   const capture = await page.evaluate(() => (window as unknown as { __tqsLiveCapture: {

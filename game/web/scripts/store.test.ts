@@ -379,6 +379,16 @@ test('ChangeSelf updates the privacy owner before rebuilding the skill dashboard
   assert.equal(reduceUiEvent(state, 'ChangeSelf', '21'), state);
 });
 
+test('ChangeSelf with the current identity keeps the native initial skill snapshot', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'gongqing', true]);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__active']);
+  state = reduceUiEvent(state, 'ChangeSelf', 17);
+
+  assert.deepEqual(state.fakeSkills, [{ name: 'gongqing', prelighted: false, enabled: true }]);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__active' }]);
+});
+
 test('React preserves the native dual projection when one hidden skill has trigger and active effects', () => {
   let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
   state = reduceUiEvent(state, 'AddSkill', [17, 'hs__dual', true]);

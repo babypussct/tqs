@@ -236,10 +236,12 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       // Native Client:changeSelf() changes Lua Self before rebuilding the
       // dashboard. Keep the privacy boundary aligned with that identity
       // switch: discard the old player's hidden/regular skills and accept
-      // subsequent AddSkill events only for the new Self.
-      return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
-        ? clearSkillState({ ...state, ownId: data })
-        : state;
+      // subsequent AddSkill events only for the new Self. Native startup can
+      // also emit the same-ID marker after the initial AddSkill snapshot; in
+      // that case the snapshot already belongs to the current Self and must
+      // remain visible.
+      if (typeof data !== 'number' || !Number.isSafeInteger(data) || data <= 0) return state;
+      return state.ownId === data ? state : clearSkillState({ ...state, ownId: data });
     case 'AddSkill': {
       const [id, skillName, prelight] = arr;
       if (id !== state.ownId || !Number.isSafeInteger(id) || !validSkillName(skillName))

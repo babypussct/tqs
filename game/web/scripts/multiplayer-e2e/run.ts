@@ -946,10 +946,18 @@ try{
   }
   await Promise.all(pages.map((page, index) => selectPair(page,
     !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
-  if (!hiddenScenario) for(const p of pages){await p.locator('.game-board').waitFor({timeout:90000});
-    await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
-    const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
-    assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
+  for (const p of pages) {
+    await p.locator('.game-board').waitFor({ timeout: 90000 });
+    await p.waitForFunction((expected) => document.querySelectorAll('.board-player').length === expected,
+      playerCapacity, { timeout: 30000 });
+    await p.locator('.board-self').waitFor({ state: 'attached', timeout: 30000 });
+    if (!hiddenScenario) {
+      const opponent = p.locator('.board-player:not(.board-self)');
+      assert.equal(await opponent.count(), playerCapacity - 1);
+      assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(), 0,
+        'opponent hand IDs must not render');
+    }
+  }
   if (damageExchangeScenario) {
     // The QA director binds the actor by allowlisted screen name, while room
     // seat assignment is not stable. Discover the two private owners from the
