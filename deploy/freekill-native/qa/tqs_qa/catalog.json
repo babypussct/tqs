@@ -947,6 +947,68 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-weimu",
+      "title": "Hidden 贾诩 帷幕 cancels a black Duel target",
+      "seed": 1567522724,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiaxu",
+          "deputy": "hs__pangde",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-duel",
+          "match": {
+            "trueName": "duel",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu-deputy",
+      "title": "Hidden deputy 贾诩 帷幕 cancels a black Duel target",
+      "seed": 1567522725,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__pangde",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-duel",
+          "match": {
+            "trueName": "duel",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

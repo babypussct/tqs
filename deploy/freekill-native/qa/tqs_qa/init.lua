@@ -436,6 +436,34 @@ local function validateHiddenKongchengScenario(scenario)
   end
 end
 
+local function validateHiddenWeimuScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-weimu scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-weimu-deputy"
+  local expectedMain = deputy and "hs__pangde" or "hs__jiaxu"
+  local expectedDeputy = deputy and "hs__jiaxu" or "hs__pangde"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "qun" then
+    fail("hidden-weimu actor must use the catalogued Jia Xu main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-weimu source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" then
+    fail("hidden-weimu must expose AskForUseActiveSkill for the real black Duel request")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "weimu-duel" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "duel" or scenario.cards[1].match.color ~= "black" then
+    fail("hidden-weimu must reserve one black source Duel")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -468,6 +496,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenQianxunScenario(scenario)
   elseif scenario.trigger == "hidden-kongcheng" then
     validateHiddenKongchengScenario(scenario)
+  elseif scenario.trigger == "hidden-weimu" then
+    validateHiddenWeimuScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -2168,6 +2198,92 @@ local function triggerHiddenKongcheng(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenWeimu(room, state)
+  -- 帷幕 is compulsory on TargetConfirming, but its source predicate is more
+  -- specific than Kongcheng: the incoming card must be a black Trick. Use a
+  -- real black Duel so the test proves the card color/type gate as well as
+  -- hidden prelight, slot reveal and target cancellation.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-weimu actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__weimu") then
+    fail("hidden-weimu must attach the hidden Weimu skill")
+  end
+  if state.actor:hasSkill("hs__weimu") then
+    fail("hidden-weimu must not be active before TargetConfirming")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_weimu_gate",
+    prompt = "TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Quyết Đấu đen.",
+  })
+  if not gate then
+    fail("hidden-weimu readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__weimu") then
+    fail("hidden-weimu must be prelighted before TargetConfirming")
+  end
+
+  local duelId = state.slotCards["weimu-duel"]
+  if not duelId or not table.contains(state.target:getCardIds(Player.Hand), duelId) then
+    fail("hidden-weimu must put its reserved black Duel in the source hand")
+  end
+
+  local beforeHp = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { duelId },
+    skill_name = "tqs_qa_hidden_weimu_duel",
+    prompt = "TQS QA: dùng Quyết Đấu đen lên Giả Hủ để kiểm tra 帷幕.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= duelId or use.card.trueName ~= "duel" or
+      use.card:getColorString() ~= "black" or #use.tos ~= 1 or use.tos[1] ~= state.actor then
+    fail("hidden-weimu must receive the reserved black Duel against the actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__weimu" and entry.player == state.actor.id
+  end)
+  local weimuIsDeputy = state.scenario == "hidden-weimu-deputy"
+  local revealedCorrectSlot = weimuIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__jiaxu"
+    or not weimuIsDeputy and state.actor.general == "hs__jiaxu" and state.actor.deputyGeneral == "anjiang"
+  local targetCancelled = room:getCardArea(duelId) == Card.DiscardPile and state.actor.hp == beforeHp
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Weimu must run a real SkillEffect and reveal Jia Xu in its catalogued slot")
+  end
+  if not targetCancelled then
+    fail("hidden Weimu must cancel the valid black Duel target before damage")
+  end
+  if state.actor:isFakeSkill("hs__weimu") or not state.actor:hasSkill("hs__weimu") then
+    fail("hidden Weimu must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden 帷幕: TargetConfirming Quyết Đấu đen=%arg; SkillEffect=%arg2; mở tướng=%arg3; hủy mục tiêu=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(revealedCorrectSlot),
+    arg4 = tostring(targetCancelled),
+    arg5 = weimuIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-weimu target_confirming=black_duel effect=true slot=%s revealed=%s cancelled=%s damage=0 revision=%s",
+    weimuIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), tostring(targetCancelled), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -2191,7 +2307,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-qianxun-indulgence" or
       state.scenario == "hidden-qianxun-indulgence-deputy" or
       state.scenario == "hidden-kongcheng" or
-      state.scenario == "hidden-kongcheng-deputy") and
+      state.scenario == "hidden-kongcheng-deputy" or
+      state.scenario == "hidden-weimu" or
+      state.scenario == "hidden-weimu-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -2319,6 +2437,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenQianxun(room, state)
     elseif scenario.trigger == "hidden-kongcheng" then
       triggerHiddenKongcheng(room, state)
+    elseif scenario.trigger == "hidden-weimu" then
+      triggerHiddenWeimu(room, state)
     end
   end,
 })

@@ -310,6 +310,9 @@ const api = {
   acknowledgeKongchengPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__kongcheng', ${prelight}}`));
   },
+  acknowledgeWeimuPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__weimu', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -366,7 +369,7 @@ const api = {
     const nativeCards = conn.lua.eval<QaCardDescriptor[]>(`return table.map(ClientInstance.draw_pile, function(id)
       local card = Fk:getCardById(id)
       return {id=id, name=card.name, trueName=card.trueName,
-        type=card.type == Card.TypeEquip and 'equip' or 'other'}
+        color=card:getColorString(), type=card.type == Card.TypeEquip and 'equip' or 'other'}
     end)`);
     const resolved = resolveQaScenario(plan, nativeCards);
     serverNotify('PrepareDrawPile', serverCbor(`{${resolved.drawPile.join(',')}}`));
@@ -579,6 +582,23 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__kongcheng', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_kongcheng_gate', 'TQS QA: prelight Không Thành, rồi xác nhận để đối thủ dùng Quyết Đấu.'}");
+        break;
+      }
+      case 'hidden-weimu':
+      case 'hidden-weimu-deputy': {
+        // Weimu is a compulsory TargetConfirming branch for black Trick
+        // cards. The local fixture mirrors only the hidden fake-skill/prelight
+        // gate; native QA owns the real black Duel cancellation and reveal.
+        const deputy = scenarioId === 'hidden-weimu-deputy';
+        const main = deputy ? 'hs__pangde' : 'hs__jiaxu';
+        const deputyGeneral = deputy ? 'hs__jiaxu' : 'hs__pangde';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__weimu', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_weimu_gate', 'TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Quyết Đấu đen.'}");
         break;
       }
       case 'hidden-reveal':

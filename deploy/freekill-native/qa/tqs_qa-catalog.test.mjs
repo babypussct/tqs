@@ -19,6 +19,7 @@ const luoshenSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/
 const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua');
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
+const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -360,6 +361,43 @@ test('hidden-kongcheng locks empty-hand TargetConfirming cancellation for both s
   assert.match(kongcheng, /data\.card\.trueName == "slash" or data\.card\.name == "duel"/u);
   assert.match(kongcheng, /data:cancelTarget\(player\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-kongcheng"[\s\S]*triggerHiddenKongcheng\(room, state\)/u);
+});
+
+test('hidden-weimu locks black Trick TargetConfirming cancellation for both slots', () => {
+  const expected = {
+    'hidden-weimu': {
+      seed: 0x5d6e7fa4,
+      actor: { general: 'hs__jiaxu', deputy: 'hs__pangde', kingdom: 'qun' },
+    },
+    'hidden-weimu-deputy': {
+      seed: 0x5d6e7fa5,
+      actor: { general: 'hs__pangde', deputy: 'hs__jiaxu', kingdom: 'qun' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-weimu', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} black Duel source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'weimu-duel', match: { trueName: 'duel', color: 'black' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const weimu = fs.readFileSync(weimuSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(weimu, /name = "hs__weimu"/u);
+  assert.match(weimu, /tags = \{Skill\.Compulsory\}/u);
+  assert.match(weimu, /weimu:addEffect\(fk\.TargetConfirming/u);
+  assert.match(weimu, /data\.card\.color == Card\.Black/u);
+  assert.match(weimu, /data\.card\.type == Card\.TypeTrick/u);
+  assert.match(weimu, /data:cancelTarget\(player\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-weimu"[\s\S]*triggerHiddenWeimu\(room, state\)/u);
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {

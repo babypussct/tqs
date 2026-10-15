@@ -49,10 +49,12 @@ export type QaScenarioId =
   | 'hidden-qianxun-indulgence'
   | 'hidden-qianxun-indulgence-deputy'
   | 'hidden-kongcheng'
-  | 'hidden-kongcheng-deputy';
+  | 'hidden-kongcheng-deputy'
+  | 'hidden-weimu'
+  | 'hidden-weimu-deputy';
 
 export type QaCardMatcher =
-  | { trueName: string }
+  | { trueName: string; color?: 'red' | 'black' }
   | { name: string }
   | { type: 'equip' };
 
@@ -90,7 +92,8 @@ export type QaScenarioTrigger =
   | 'hidden-jizhi'
   | 'hidden-mingshi'
   | 'hidden-qianxun'
-  | 'hidden-kongcheng';
+  | 'hidden-kongcheng'
+  | 'hidden-weimu';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -109,6 +112,7 @@ export interface QaCardDescriptor {
   id: number;
   name: string;
   trueName: string;
+  color: string;
   /** The fixture normalizes the native enum to keep this module package-agnostic. */
   type: string;
 }
@@ -119,7 +123,7 @@ export interface ResolvedQaScenario {
   slotCards: Record<string, number>;
 }
 
-const trueName = (value: string): QaCardMatcher => ({ trueName: value });
+const trueName = (value: string, color?: 'red' | 'black'): QaCardMatcher => ({ trueName: value, color });
 const named = (value: string): QaCardMatcher => ({ name: value });
 const equip = (): QaCardMatcher => ({ type: 'equip' });
 
@@ -511,6 +515,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-kongcheng',
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-weimu': {
+    version: 1,
+    id: 'hidden-weimu',
+    title: 'Giả Hủ úp cùng Bàng Đức: 帷幕 hủy mục tiêu Quyết Đấu đen',
+    seed: 0x5d6e7fa4,
+    drawSequence: [trueName('duel', 'black')],
+    slots: [slot('weimu-duel', trueName('duel', 'black'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-weimu',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-weimu-deputy': {
+    version: 1,
+    id: 'hidden-weimu-deputy',
+    title: 'Giả Hủ phó tướng úp cùng Bàng Đức: 帷幕 hủy mục tiêu Quyết Đấu đen',
+    seed: 0x5d6e7fa5,
+    drawSequence: [trueName('duel', 'black')],
+    slots: [slot('weimu-duel', trueName('duel', 'black'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-weimu',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -526,6 +550,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-qianxun', 'hidden-qianxun-deputy',
   'hidden-qianxun-indulgence', 'hidden-qianxun-indulgence-deputy',
   'hidden-kongcheng', 'hidden-kongcheng-deputy',
+  'hidden-weimu', 'hidden-weimu-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -540,7 +565,10 @@ export function getQaScenario(id: QaScenarioId): QaScenarioPlan {
 }
 
 function matches(card: QaCardDescriptor, requirement: QaCardMatcher): boolean {
-  if ('trueName' in requirement) return card.trueName === requirement.trueName;
+  if ('trueName' in requirement) {
+    return card.trueName === requirement.trueName &&
+      (requirement.color === undefined || card.color === requirement.color);
+  }
   if ('name' in requirement) return card.name === requirement.name;
   return requirement.type === 'equip' && card.type === 'equip';
 }
@@ -672,6 +700,14 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel') {
       throw new QaScenarioError(`${plan.id} must reserve one opponent Duel for Không Thành`);
+    }
+  }
+  if (plan.trigger === 'hidden-weimu') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'weimu-duel' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel' ||
+        plan.slots[0].match.color !== 'black') {
+      throw new QaScenarioError(`${plan.id} must reserve one black opponent Duel for 帷幕`);
     }
   }
 }
