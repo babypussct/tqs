@@ -298,6 +298,12 @@ const api = {
   acknowledgeLuoshenPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__luoshen', ${prelight}}`));
   },
+  acknowledgeJizhiPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__jizhi', ${prelight}}`));
+  },
+  acknowledgeMingshiPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'mingshi', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -498,6 +504,38 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__luoshen', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_luoshen_gate', 'TQS QA: prelight 洛神, rồi xác nhận để bắt đầu pha chuẩn bị.'}");
+        break;
+      }
+      case 'hidden-jizhi':
+      case 'hidden-jizhi-deputy': {
+        // Jizhi is a hidden optional CardUsing trigger.  The local browser
+        // fixture only mirrors the private fake-skill/prelight readiness
+        // gate; native QA owns the real Duel -> CardUsing -> draw path.
+        const main = scenarioId === 'hidden-jizhi-deputy' ? 'hs__zhaoyun' : 'hs__huangyueying';
+        const deputy = scenarioId === 'hidden-jizhi-deputy' ? 'hs__huangyueying' : 'hs__zhaoyun';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__jizhi', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_jizhi_gate', 'TQS QA: prelight Tập Trí, rồi xác nhận để dùng Lạc Hồn.'}");
+        break;
+      }
+      case 'hidden-mingshi':
+      case 'hidden-mingshi-deputy': {
+        // Mingshi is compulsory on DamageInflicted.  Keep the browser fixture
+        // limited to the fake-skill/prelight gate; native QA verifies the
+        // hidden source predicate and zero-damage effect on a real Slash.
+        const main = scenarioId === 'hidden-mingshi-deputy' ? 'hs__jiling' : 'hs__kongrong';
+        const deputy = scenarioId === 'hidden-mingshi-deputy' ? 'hs__kongrong' : 'hs__jiling';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'mingshi', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_mingshi_gate', 'TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.'}");
         break;
       }
       case 'hidden-reveal':

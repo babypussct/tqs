@@ -15,15 +15,17 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
   testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy' || testScenario === 'hidden-reveal' ||
   testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' ||
   testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main' || testScenario === 'hidden-dual' ||
-  testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen or hidden-luoshen-deputy');
+  testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy' ||
+  testScenario === 'hidden-jizhi' || testScenario === 'hidden-jizhi-deputy' ||
+  testScenario === 'hidden-mingshi' || testScenario === 'hidden-mingshi-deputy',
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi or hidden-mingshi-deputy');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
@@ -50,6 +52,10 @@ assert.ok(testScenario !== 'hidden-dual' || (nativeQa && process.argv.includes('
   'hidden-dual requires native QA and --manual to control the prelight, target, discard and PlayCard path');
 assert.ok(!['hidden-luoshen', 'hidden-luoshen-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
   'hidden-luoshen scenarios require native QA and --manual to control the prelight and phase-start judgment path');
+assert.ok(!['hidden-jizhi', 'hidden-jizhi-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-jizhi scenarios require native QA and --manual to control the prelight, Duel and optional draw path');
+assert.ok(!['hidden-mingshi', 'hidden-mingshi-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-mingshi scenarios require native QA and --manual to control the prelight and hidden-source Slash path');
 const hiddenYijiMode = process.env.TQS_LIVE_HIDDEN_YIJI_MODE ?? 'positive';
 assert.ok(hiddenYijiMode === 'negative' || hiddenYijiMode === 'positive' || hiddenYijiMode === 'skip',
   'TQS_LIVE_HIDDEN_YIJI_MODE must be negative, positive or skip');
@@ -178,6 +184,14 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // prelight/reveal boundary, followed by the native judge/obtain chain.
   'hidden-luoshen': { general: /甄姬|Zhen\s*Ji|Lạc Thần|luoshen/i, generalId: 'hs__zhenji', skill: /洛神|Lạc Thần|luoshen|hs__luoshen/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
   'hidden-luoshen-deputy': { general: /甄姬|Zhen\s*Ji|Lạc Thần|luoshen/i, generalId: 'hs__zhenji', skill: /洛神|Lạc Thần|luoshen|hs__luoshen/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  // Jizhi covers an optional CardUsing trigger on a common Trick and must
+  // reveal Huang Yueying before its native draw effect runs.
+  'hidden-jizhi': { general: /黄月英|Hoàng Nguyệt Anh|Huang\s*Yueying|Tập Trí|集智|jizhi/i, generalId: 'hs__huangyueying', skill: /Tập Trí|集智|jizhi|hs__jizhi/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  'hidden-jizhi-deputy': { general: /黄月英|Hoàng Nguyệt Anh|Huang\s*Yueying|Tập Trí|集智|jizhi/i, generalId: 'hs__huangyueying', skill: /Tập Trí|集智|jizhi|hs__jizhi/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  // Mingshi is compulsory on DamageInflicted; the important source predicate
+  // is that the attacking player's general slot remains anjiang.
+  'hidden-mingshi': { general: /孔融|Khổng Dung|Kong\s*Rong|Danh Sĩ|名士|mingshi/i, generalId: 'hs__kongrong', skill: /Danh Sĩ|名士|mingshi/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  'hidden-mingshi-deputy': { general: /孔融|Khổng Dung|Kong\s*Rong|Danh Sĩ|名士|mingshi/i, generalId: 'hs__kongrong', skill: /Danh Sĩ|名士|mingshi/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
 const damageExchangeScenario = testScenario === 'fazheng-enyuan';
@@ -196,7 +210,11 @@ const hiddenViewAsMainScenario = testScenario === 'hidden-view-as-main';
 const hiddenDualScenario = testScenario === 'hidden-dual';
 const hiddenLuoshenScenario = testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy';
 const hiddenLuoshenDeputyScenario = testScenario === 'hidden-luoshen-deputy';
-const hiddenScenario = hiddenYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario;
+const hiddenJizhiScenario = testScenario === 'hidden-jizhi' || testScenario === 'hidden-jizhi-deputy';
+const hiddenJizhiDeputyScenario = testScenario === 'hidden-jizhi-deputy';
+const hiddenMingshiScenario = testScenario === 'hidden-mingshi' || testScenario === 'hidden-mingshi-deputy';
+const hiddenMingshiDeputyScenario = testScenario === 'hidden-mingshi-deputy';
+const hiddenScenario = hiddenYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario || hiddenJizhiScenario || hiddenMingshiScenario;
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
@@ -271,6 +289,11 @@ let hiddenDualUseReply = false;
 let hiddenLuoshenGateReply = false;
 let hiddenLuoshenInvoked = false;
 let hiddenLuoshenInvokeCount = 0;
+let hiddenJizhiGateReply = false;
+let hiddenJizhiCardReply = false;
+let hiddenJizhiInvoked = false;
+let hiddenMingshiGateReply = false;
+let hiddenMingshiCardReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
 
 type PublicBotAudit = {
@@ -846,6 +869,32 @@ try{
       'hidden-luoshen must expose the fake Luoshen trigger before the phase gate');
     console.log('PASS hidden-luoshen pre-gate: native fake-skill dock is visible before the EventPhaseStart gate');
   }
+  if (hiddenJizhiScenario || hiddenMingshiScenario) {
+    const label = hiddenJizhiScenario ? /Tập Trí|集智|jizhi/i : /Danh Sĩ|名士|mingshi/i;
+    const name = hiddenJizhiScenario ? 'hidden-jizhi' : 'hidden-mingshi';
+    const deadline = Date.now() + 12000;
+    let owner = -1;
+    let fallback = -1;
+    while (Date.now() < deadline && owner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        const fake = pages[client].locator('button.fake-skill-button');
+        if (await fake.count()) {
+          if (fallback < 0) fallback = client;
+          if (await fake.filter({ hasText: label }).count()) {
+            owner = client;
+            break;
+          }
+        }
+      }
+      if (owner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (owner < 0) owner = fallback;
+    assert.ok(owner >= 0, `${name} must expose a fake trigger before its native gate`);
+    scenarioClient = owner;
+    assert.ok(await pages[scenarioClient].locator('button.fake-skill-button').filter({ hasText: label }).count(),
+      `${name} must expose its fake skill before the native gate`);
+    console.log(`PASS ${name} pre-gate: native fake-skill dock is visible while the actor remains hidden`);
+  }
   if (hiddenRevealScenario) {
     await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
     assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/i }).count(),
@@ -937,6 +986,10 @@ try{
         (hiddenDualDiscardReply || hiddenDualDiscardAuto) && hiddenDualUseReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenLuoshenScenario && hiddenLuoshenGateReply && hiddenLuoshenInvoked &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenJizhiScenario && hiddenJizhiGateReply && hiddenJizhiCardReply && hiddenJizhiInvoked &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenMingshiScenario && hiddenMingshiGateReply && hiddenMingshiCardReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver')));
     const rescueOrFoundingScenario = testScenario === 'rescue-normal' ||
       testScenario === 'rescue-battle' || testScenario === 'founding';
@@ -1026,10 +1079,16 @@ try{
         const isHiddenViewAsGate = hiddenViewAsScenario && /TQS QA|Long Đảm|longdan|hidden_view_as_gate/i.test(invokeText);
         const isHiddenDualGate = hiddenDualScenario && /TQS QA|Song Hùng|双雄|shuangxiong|hidden_dual_gate/i.test(invokeText);
         const isHiddenLuoshenGate = hiddenLuoshenScenario && /TQS QA|prelight|tqs_qa_hidden_luoshen_gate/i.test(invokeText);
+        // Keep the readiness gate separate from the actual Jizhi invoke. The
+        // native CardUsing prompt contains the skill label but must not be
+        // mistaken for the server-only prelight synchronization request.
+        const isHiddenJizhiGate = hiddenJizhiScenario && /TQS QA|prelight|tqs_qa_hidden_jizhi_gate/i.test(invokeText);
+        const isHiddenMingshiGate = hiddenMingshiScenario && /TQS QA|prelight|tqs_qa_hidden_mingshi_gate/i.test(invokeText);
         const isHiddenYijiInvoke = hiddenYijiScenario && !isHiddenGate && /Di Kế|遗计|yiji|hs__yiji/i.test(invokeText);
         const isHiddenJianxiongInvoke = hiddenJianxiongScenario && !isHiddenJianxiongGate && /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i.test(invokeText);
         const isHiddenLuoshenInvoke = hiddenLuoshenScenario && !isHiddenLuoshenGate && /洛神|Lạc Thần|luoshen|hs__luoshen/i.test(invokeText);
-        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate) {
+        const isHiddenJizhiInvoke = hiddenJizhiScenario && !isHiddenJizhiGate && /Tập Trí|集智|jizhi|hs__jizhi/i.test(invokeText);
+        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenJizhiGate || isHiddenMingshiGate) {
           nativeQaGateSeen = true;
           nativeQaGateCommand = latest.command;
         }
@@ -1069,16 +1128,34 @@ try{
           await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
             null, { timeout: 10000 });
         }
+        if (isHiddenJizhiGate) {
+          const fakeJizhi = actor.locator('button.fake-skill-button')
+            .filter({ hasText: /Tập Trí|集智|jizhi/i }).first();
+          await fakeJizhi.waitFor({ timeout: 10000 });
+          if (await fakeJizhi.getAttribute('aria-pressed') !== 'true') await fakeJizhi.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
+        if (isHiddenMingshiGate) {
+          const fakeMingshi = actor.locator('button.fake-skill-button')
+            .filter({ hasText: /Danh Sĩ|名士|mingshi/i }).first();
+          await fakeMingshi.waitFor({ timeout: 10000 });
+          if (await fakeMingshi.getAttribute('aria-pressed') !== 'true') await fakeMingshi.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
         // A manual run may encounter unrelated optional skills while the
         // target prompt is still pending. Only invoke the requested caller
         // skill; cancel everything else so it cannot starve a native choice.
-        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate
+        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenJizhiGate || isHiddenMingshiGate
           ? true
           : isHiddenYijiInvoke
           ? hiddenYijiMode === 'positive'
           : isHiddenJianxiongInvoke
           ? true
           : isHiddenLuoshenInvoke
+          ? true
+          : isHiddenJizhiInvoke
           ? true
           : testScenario === 'card-chosen'
           ? isCardChosenInvoke
@@ -1096,6 +1173,8 @@ try{
         if (hiddenViewAsScenario && isHiddenViewAsGate && replied) hiddenViewAsGateReply = true;
         if (hiddenDualScenario && isHiddenDualGate && replied) hiddenDualGateReply = true;
         if (hiddenLuoshenScenario && isHiddenLuoshenGate && replied) hiddenLuoshenGateReply = true;
+        if (hiddenJizhiScenario && isHiddenJizhiGate && replied) hiddenJizhiGateReply = true;
+        if (hiddenMingshiScenario && isHiddenMingshiGate && replied) hiddenMingshiGateReply = true;
         if (hiddenYijiScenario && isHiddenYijiInvoke && replied) {
           hiddenYijiAsked = true;
           hiddenYijiInvoked = shouldInvoke;
@@ -1105,6 +1184,7 @@ try{
           hiddenLuoshenInvoked = shouldInvoke;
           hiddenLuoshenInvokeCount += 1;
         }
+        if (hiddenJizhiScenario && isHiddenJizhiInvoke && replied) hiddenJizhiInvoked = shouldInvoke;
         if (damageExchangeScenario && isScenarioSkillInvoke && replied) {
           if (/Phản Quỹ|反馈|fankui/i.test(invokeText)) scenarioFankuiInvoked = shouldInvoke;
           if (/Di Kế|遗计|yiji/i.test(invokeText)) scenarioYijiInvoked = shouldInvoke;
@@ -1116,7 +1196,10 @@ try{
             isHiddenDualGate ? 'hidden-dual-readiness-gate' :
             isHiddenFankuiGate ? 'hidden-fankui-readiness-gate' :
             isHiddenLuoshenGate ? 'hidden-luoshen-readiness-gate' :
+            isHiddenJizhiGate ? 'hidden-jizhi-readiness-gate' :
+            isHiddenMingshiGate ? 'hidden-mingshi-readiness-gate' :
             isHiddenJianxiongGate ? 'hidden-jianxiong-readiness-gate' :
+            isHiddenJizhiInvoke ? 'invoke-hidden-jizhi' :
             isHiddenJianxiongInvoke ? 'invoke-hidden-jianxiong' :
             isHiddenLuoshenInvoke ? 'invoke-hidden-luoshen' :
             shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
@@ -1132,6 +1215,28 @@ try{
           /hs__shuangxiong-choose|Song Hùng.*chọn một người|双雄.*令一名|chọn.*Song Hùng/i.test(activePrompt);
         const hiddenDualDiscard = hiddenDualScenario &&
           /hs__shuangxiong-discard|Song Hùng.*hãy bỏ|双雄.*请弃置|hãy bỏ.*Song Hùng/i.test(activePrompt);
+        const hiddenJizhiCard = hiddenJizhiScenario &&
+          /hidden_jizhi_card|Lạc Hồn|Duel|Tập Trí|集智|jizhi/i.test(activePrompt);
+        const hiddenMingshiCard = hiddenMingshiScenario &&
+          /hidden_mingshi_damage|dùng Sát lên Khổng Dung|Danh Sĩ|名士|mingshi/i.test(activePrompt);
+        if (hiddenJizhiCard || hiddenMingshiCard) {
+          const card = actor.locator('.gameplay-hand button:enabled').first();
+          assert.ok(await card.count(), `${hiddenJizhiCard ? 'hidden-jizhi' : 'hidden-mingshi'} must expose its reserved real card`);
+          await card.click();
+          await chooseTargetIfNeeded(actor);
+          const ok = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await ok.count() && await ok.isEnabled(),
+            `${hiddenJizhiCard ? 'hidden-jizhi' : 'hidden-mingshi'} must enable confirmation after selecting its real card`);
+          await ok.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (hiddenJizhiCard && replied) hiddenJizhiCardReply = true;
+          if (hiddenMingshiCard && replied) hiddenMingshiCardReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: hiddenJizhiCard ? 'hidden-jizhi-duel' : 'hidden-mingshi-hidden-source-slash' });
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
         if (hiddenDualChoose) {
           await chooseTargetIfNeeded(actor);
           const ok = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
@@ -1321,6 +1426,23 @@ try{
         if (selectedScenario && !printedScenarioSkills) {
           printedScenarioSkills = true;
           console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillButtons.allTextContents()).join(' | ') || '(none)'}`);
+        }
+        if (hiddenJizhiScenario || hiddenMingshiScenario) {
+          const card = controls.locator('.gameplay-hand button:enabled').first();
+          assert.ok(await card.count(), `${hiddenJizhiScenario ? 'hidden-jizhi' : 'hidden-mingshi'} must expose its reserved real card`);
+          await card.click();
+          await chooseTargetIfNeeded(actor);
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await confirm.count() && await confirm.isEnabled(),
+            `${hiddenJizhiScenario ? 'hidden-jizhi' : 'hidden-mingshi'} must enable PlayCard confirmation after selecting its real card`);
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (hiddenJizhiScenario && replied) hiddenJizhiCardReply = true;
+          if (hiddenMingshiScenario && replied) hiddenMingshiCardReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: hiddenJizhiScenario ? 'hidden-jizhi-duel' : 'hidden-mingshi-hidden-source-slash' });
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
         }
         if (hiddenJianxiongScenario) {
           const card = controls.locator('.gameplay-hand button:enabled')
@@ -1710,6 +1832,32 @@ try{
     assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 2,
       'hidden-luoshen owner must receive the readiness gate and at least one real trigger/continuation invoke');
     console.log('PASS hidden-luoshen public audit: both native clients observed phase-start reveal, judgment and black-card obtain');
+  } else if (hiddenJizhiScenario) {
+    const expectedPosition = hiddenJizhiDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Tập Trí/iu.test(log) && /CardUsing Duel=true/iu.test(log) &&
+      /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
+      /rút bài=1/iu.test(log) && log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Jizhi CardUsing, reveal and one-card draw in the ${expectedPosition} slot`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-jizhi must finish after its native Duel/CardUsing branch');
+    assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 2,
+      'hidden-jizhi owner must receive the readiness gate and the real optional CardUsing invoke');
+    console.log('PASS hidden-jizhi public audit: both native clients observed Duel, Huang Yueying reveal and native draw');
+  } else if (hiddenMingshiScenario) {
+    const expectedPosition = hiddenMingshiDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Danh Sĩ/iu.test(log) && /DamageInflicted=true/iu.test(log) &&
+      /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
+      /sát thương=0/iu.test(log) && log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Mingshi DamageInflicted reduction and reveal in the ${expectedPosition} slot`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-mingshi must finish after its native hidden-source Slash branch');
+    assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 1,
+      'hidden-mingshi owner must receive the native prelight readiness gate');
+    assert.ok(botAuditTrace[1 - scenarioClient].askForUseActiveSkill + botAuditTrace[1 - scenarioClient].playCard >= 1,
+      'hidden-mingshi hidden source must receive the private real-Slash request');
+    console.log('PASS hidden-mingshi public audit: both native clients observed hidden-source damage reduction and Kong Rong reveal');
   } else if (hiddenRevealScenario) {
     const expectedPosition = hiddenRevealDeputyScenario ? 'phó tướng' : 'chủ tướng';
     assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
@@ -1787,7 +1935,7 @@ try{
     await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));

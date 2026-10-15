@@ -39,7 +39,11 @@ export type QaScenarioId =
   | 'hidden-view-as-main'
   | 'hidden-dual'
   | 'hidden-luoshen'
-  | 'hidden-luoshen-deputy';
+  | 'hidden-luoshen-deputy'
+  | 'hidden-jizhi'
+  | 'hidden-jizhi-deputy'
+  | 'hidden-mingshi'
+  | 'hidden-mingshi-deputy';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -76,7 +80,9 @@ export type QaScenarioTrigger =
   | 'hidden-active'
   | 'hidden-view-as'
   | 'hidden-dual'
-  | 'hidden-luoshen';
+  | 'hidden-luoshen'
+  | 'hidden-jizhi'
+  | 'hidden-mingshi';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -391,6 +397,46 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-luoshen',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-jizhi': {
+    version: 1,
+    id: 'hidden-jizhi',
+    title: 'Hoàng Nguyệt Anh úp: Tập Trí mở tướng trước CardUsing',
+    seed: 0x5d6e7f9a,
+    drawSequence: [trueName('duel')],
+    slots: [slot('jizhi-card', trueName('duel'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-jizhi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-jizhi-deputy': {
+    version: 1,
+    id: 'hidden-jizhi-deputy',
+    title: 'Hoàng Nguyệt Anh phó tướng úp: Tập Trí mở tướng trước CardUsing',
+    seed: 0x5d6e7f9b,
+    drawSequence: [trueName('duel')],
+    slots: [slot('jizhi-card', trueName('duel'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-jizhi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-mingshi': {
+    version: 1,
+    id: 'hidden-mingshi',
+    title: 'Khổng Dung úp: Danh Sĩ giảm sát thương từ nguồn úp',
+    seed: 0x5d6e7f9c,
+    drawSequence: [trueName('slash')],
+    slots: [slot('mingshi-damage', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-mingshi',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-mingshi-deputy': {
+    version: 1,
+    id: 'hidden-mingshi-deputy',
+    title: 'Khổng Dung phó tướng úp: Danh Sĩ giảm sát thương từ nguồn úp',
+    seed: 0x5d6e7f9d,
+    drawSequence: [trueName('slash')],
+    slots: [slot('mingshi-damage', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-mingshi',
+    expectedCommand: 'PlayCard',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -401,6 +447,8 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
   'hidden-dual', 'hidden-luoshen', 'hidden-luoshen-deputy',
+  'hidden-jizhi', 'hidden-jizhi-deputy',
+  'hidden-mingshi', 'hidden-mingshi-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -510,6 +558,20 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
         plan.slots[1].match.trueName !== 'jink') {
       throw new QaScenarioError(`${plan.id} must reserve actor Slash and opponent Jink for Song Hùng`);
+    }
+  }
+  if (plan.trigger === 'hidden-jizhi') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'jizhi-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Duel for Tập Trí`);
+    }
+  }
+  if (plan.trigger === 'hidden-mingshi') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'mingshi-damage' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one hidden-source Slash for Danh Sĩ`);
     }
   }
 }

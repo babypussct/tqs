@@ -301,6 +301,62 @@ local function validateHiddenLuoshenScenario(scenario)
   end
 end
 
+local function validateHiddenJizhiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-jizhi scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-jizhi-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "hs__huangyueying"
+  local expectedDeputy = deputy and "hs__huangyueying" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-jizhi actor must use the catalogued Huang Yueying main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__pangde" or
+      target.deputy ~= "hs__zhangliao" or target.kingdom ~= "wei" then
+    fail("hidden-jizhi target must be Pang De + Zhang Liao in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-jizhi must expose AskForSkillInvoke for the optional CardUsing effect")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "jizhi-card" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "duel" then
+    fail("hidden-jizhi must reserve exactly one actor Duel")
+  end
+end
+
+local function validateHiddenMingshiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-mingshi scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-mingshi-deputy"
+  local expectedMain = deputy and "hs__jiling" or "hs__kongrong"
+  local expectedDeputy = deputy and "hs__kongrong" or "hs__jiling"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "qun" then
+    fail("hidden-mingshi actor must use the catalogued Kong Rong main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-mingshi target must be Zhao Yun + Fazheng in Shu")
+  end
+  if scenario.expectedCommand ~= "PlayCard" then
+    fail("hidden-mingshi must expose the native PlayCard damage source request")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "mingshi-damage" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "slash" then
+    fail("hidden-mingshi must reserve exactly one hidden-source Slash")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -325,6 +381,10 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenDualScenario(scenario)
   elseif scenario.trigger == "hidden-luoshen" then
     validateHiddenLuoshenScenario(scenario)
+  elseif scenario.trigger == "hidden-jizhi" then
+    validateHiddenJizhiScenario(scenario)
+  elseif scenario.trigger == "hidden-mingshi" then
+    validateHiddenMingshiScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -1606,6 +1666,179 @@ local function triggerHiddenLuoshen(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenJizhi(room, state)
+  -- 集智 is an optional CardUsing effect. The actor stays face-down while a
+  -- real common Trick is used; the source SkillEffect must reveal only the
+  -- Huang Yueying slot before asking whether to draw.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-jizhi actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__jizhi") then
+    fail("hidden-jizhi must attach the hidden Jizhi skill")
+  end
+  if state.actor:hasSkill("hs__jizhi") then
+    fail("hidden-jizhi must not be active before CardUsing")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_jizhi_gate",
+    prompt = "TQS QA: prelight Tập Trí, rồi xác nhận để dùng Lạc Hồn.",
+  })
+  if not gate then
+    fail("hidden-jizhi readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__jizhi") then
+    fail("hidden-jizhi must be prelighted before the CardUsing branch")
+  end
+
+  local cardId = state.slotCards["jizhi-card"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) then
+    fail("hidden-jizhi must put its reserved Duel in the actor hand")
+  end
+
+  local beforeHand = #state.actor:getCardIds(Player.Hand)
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_jizhi_card",
+    prompt = "TQS QA: dùng Lạc Hồn lên đối thủ để kiểm tra Tập Trí.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or use.card.trueName ~= "duel" or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    fail("hidden-jizhi must receive the reserved Duel against the catalog target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__jizhi" and entry.player == state.actor.id
+  end)
+  local jizhiIsDeputy = state.scenario == "hidden-jizhi-deputy"
+  local revealedCorrectSlot = jizhiIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__huangyueying"
+    or not jizhiIsDeputy and state.actor.general == "hs__huangyueying" and state.actor.deputyGeneral == "anjiang"
+  local afterHand = #state.actor:getCardIds(Player.Hand)
+  local drawn = movedFromArea(state, 1, "hs__jizhi", state.actor, Card.DrawPile)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Jizhi must run a real SkillEffect and reveal Huang Yueying in its catalogued slot")
+  end
+  if afterHand ~= beforeHand or table.contains(state.actor:getCardIds(Player.Hand), cardId) or drawn ~= 1 then
+    fail("hidden Jizhi must consume the Duel and draw exactly one card through its native effect")
+  end
+  if state.actor:isFakeSkill("hs__jizhi") or not state.actor:hasSkill("hs__jizhi") then
+    fail("hidden Jizhi must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Tập Trí: CardUsing Duel=%arg; SkillEffect=%arg2; mở tướng=%arg3; rút bài=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(revealedCorrectSlot),
+    arg4 = tostring(drawn),
+    arg5 = jizhiIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-jizhi card_using=duel effect=true slot=%s revealed=%s drawn=%d revision=%s",
+    jizhiIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), drawn, manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenMingshi(room, state)
+  -- 名士 is compulsory and only checks whether the damage source still has an
+  -- unrevealed slot. Keep both players hidden until the real Slash reaches
+  -- DamageInflicted; the target must remain hidden after the effect as well.
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-mingshi actor must start with both generals hidden")
+  end
+  if state.target.general ~= "anjiang" or state.target.deputyGeneral ~= "anjiang" then
+    fail("hidden-mingshi source must remain hidden so DamageInflicted can see anjiang")
+  end
+  if not state.actor:isFakeSkill("mingshi") then
+    fail("hidden-mingshi must attach the hidden Mingshi skill")
+  end
+  if state.actor:hasSkill("mingshi") then
+    fail("hidden-mingshi must not be active before DamageInflicted")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_mingshi_gate",
+    prompt = "TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.",
+  })
+  if not gate then
+    fail("hidden-mingshi readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "mingshi") then
+    fail("hidden-mingshi must be prelighted before the DamageInflicted branch")
+  end
+
+  local cardId = state.slotCards["mingshi-damage"]
+  if not cardId or not table.contains(state.target:getCardIds(Player.Hand), cardId) then
+    fail("hidden-mingshi must put its reserved hidden-source Slash in the target hand")
+  end
+  local beforeHp = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_mingshi_damage",
+    prompt = "TQS QA: dùng Sát lên Khổng Dung để kiểm tra Danh Sĩ.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or use.card.trueName ~= "slash" or
+      #use.tos ~= 1 or use.tos[1] ~= state.actor then
+    fail("hidden-mingshi must receive the reserved hidden-source Slash against the actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "mingshi" and entry.player == state.actor.id
+  end)
+  local mingshiIsDeputy = state.scenario == "hidden-mingshi-deputy"
+  local revealedCorrectSlot = mingshiIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__kongrong"
+    or not mingshiIsDeputy and state.actor.general == "hs__kongrong" and state.actor.deputyGeneral == "anjiang"
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Mingshi must run a real SkillEffect and reveal Kong Rong in its catalogued slot")
+  end
+  if state.actor.hp ~= beforeHp then
+    fail("hidden Mingshi must reduce the one Slash damage to zero")
+  end
+  if state.target.general ~= "anjiang" or state.target.deputyGeneral ~= "anjiang" then
+    fail("hidden Mingshi must not reveal the hidden damage source")
+  end
+  if state.actor:isFakeSkill("mingshi") or not state.actor:hasSkill("mingshi") then
+    fail("hidden Mingshi must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Danh Sĩ: DamageInflicted=%arg; SkillEffect=%arg2; mở tướng=%arg3; sát thương=0; vị trí=%arg4",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(revealedCorrectSlot),
+    arg4 = mingshiIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-mingshi damage_inflicted=zero effect=true slot=%s revealed=%s source_hidden=true revision=%s",
+    mingshiIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -1622,7 +1855,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
       state.scenario == "hidden-active-main" or state.scenario == "hidden-view-as" or
       state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual" or
-      state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy") and
+      state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy" or
+      state.scenario == "hidden-jizhi" or state.scenario == "hidden-jizhi-deputy" or
+      state.scenario == "hidden-mingshi" or state.scenario == "hidden-mingshi-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -1742,6 +1977,10 @@ director:addEffect(fk.GameStart, {
       triggerHiddenDual(room, state)
     elseif scenario.trigger == "hidden-luoshen" then
       triggerHiddenLuoshen(room, state)
+    elseif scenario.trigger == "hidden-jizhi" then
+      triggerHiddenJizhi(room, state)
+    elseif scenario.trigger == "hidden-mingshi" then
+      triggerHiddenMingshi(room, state)
     end
   end,
 })

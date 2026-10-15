@@ -1500,6 +1500,36 @@ try {
         assert.deepEqual(gateReply.luaErrors, []);
       }
 
+      for (const scenarioId of ['hidden-jizhi', 'hidden-jizhi-deputy'] as const) {
+        const hiddenJizhi = await startScenario(scenarioId);
+        const fakeJizhi = p.locator('button.fake-skill-button').filter({ hasText: /集智|Tập Trí|jizhi/i }).first();
+        await fakeJizhi.waitFor();
+        await fakeJizhi.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeJizhiPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__jizhi' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenJizhi.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
+      for (const scenarioId of ['hidden-mingshi', 'hidden-mingshi-deputy'] as const) {
+        const hiddenMingshi = await startScenario(scenarioId);
+        const fakeMingshi = p.locator('button.fake-skill-button').filter({ hasText: /名士|Danh Sĩ|mingshi/i }).first();
+        await fakeMingshi.waitFor();
+        await fakeMingshi.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeMingshiPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'mingshi' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenMingshi.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       const hiddenReveal = await startScenario('hidden-reveal');
       const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
       await reveal.waitFor();

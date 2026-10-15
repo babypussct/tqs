@@ -631,6 +631,126 @@
         }
       },
       "cards": []
+    },
+    {
+      "id": "hidden-jizhi",
+      "title": "Hidden 黄月英 集智 reveals before CardUsing and draws",
+      "seed": 1567522714,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jizhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangyueying",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__pangde",
+          "deputy": "hs__zhangliao",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jizhi-card",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jizhi-deputy",
+      "title": "Hidden deputy 黄月英 集智 reveals before CardUsing and draws",
+      "seed": 1567522715,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jizhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__huangyueying",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__pangde",
+          "deputy": "hs__zhangliao",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jizhi-card",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-mingshi",
+      "title": "Hidden 孔融 名士 reduces damage from a hidden source",
+      "seed": 1567522716,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-mingshi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__kongrong",
+          "deputy": "hs__jiling",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "mingshi-damage",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-mingshi-deputy",
+      "title": "Hidden deputy 孔融 名士 reduces damage from a hidden source",
+      "seed": 1567522717,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-mingshi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiling",
+          "deputy": "hs__kongrong",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "mingshi-damage",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

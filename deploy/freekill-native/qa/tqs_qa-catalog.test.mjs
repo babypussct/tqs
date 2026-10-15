@@ -16,6 +16,8 @@ const battleRoyalPath = path.resolve(here, '../../../runtime/packages/hegemony/p
 const gameRulePath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/aux_skills_dir/game_rule.lua');
 const yijiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/yiji.lua');
 const luoshenSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/luoshen.lua');
+const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua');
+const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -177,6 +179,77 @@ test('hidden-fankui locks compulsory Damaged reveal and source-card obtain for b
   assert.match(fankui, /room:obtainCard\(player, card/u);
   assert.doesNotMatch(fankui, /askToSkillInvoke\(player, fankui/u,
     'fankui must not add a second optional invoke gate to the native Damaged trigger');
+});
+
+test('hidden-jizhi locks optional CardUsing reveal, invoke and draw for both slots', () => {
+  const expected = {
+    'hidden-jizhi': {
+      seed: 0x5d6e7f9a,
+      actor: { general: 'hs__huangyueying', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-jizhi-deputy': {
+      seed: 0x5d6e7f9b,
+      actor: { general: 'hs__zhaoyun', deputy: 'hs__huangyueying', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-jizhi', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__pangde', deputy: 'hs__zhangliao', kingdom: 'wei',
+    }, `${id} target roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'jizhi-card', match: { trueName: 'duel' }, owner: 'actor', area: 'hand' },
+    ]);
+  }
+
+  const jizhi = fs.readFileSync(jizhiSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(jizhi, /name = "hs__jizhi"/u);
+  assert.match(jizhi, /jizhi:addEffect\(fk\.CardUsing/u);
+  assert.match(jizhi, /data\.card:isCommonTrick\(\)/u);
+  assert.match(jizhi, /player:drawCards\(1, jizhi\.name\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-jizhi"[\s\S]*triggerHiddenJizhi\(room, state\)/u);
+});
+
+test('hidden-mingshi locks compulsory DamageInflicted reduction from a hidden source', () => {
+  const expected = {
+    'hidden-mingshi': {
+      seed: 0x5d6e7f9c,
+      actor: { general: 'hs__kongrong', deputy: 'hs__jiling', kingdom: 'qun' },
+    },
+    'hidden-mingshi-deputy': {
+      seed: 0x5d6e7f9d,
+      actor: { general: 'hs__jiling', deputy: 'hs__kongrong', kingdom: 'qun' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-mingshi', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'PlayCard', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu',
+    }, `${id} hidden source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'mingshi-damage', match: { trueName: 'slash' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const mingshi = fs.readFileSync(mingshiSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(mingshi, /name = "mingshi"/u);
+  assert.match(mingshi, /tags = \{ Skill\.Compulsory \}/u);
+  assert.match(mingshi, /mingshi:addEffect\(fk\.DamageInflicted/u);
+  assert.match(mingshi, /data\.from\.general == "anjiang"/u);
+  assert.match(mingshi, /data:changeDamage\(-1\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-mingshi"[\s\S]*triggerHiddenMingshi\(room, state\)/u);
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
