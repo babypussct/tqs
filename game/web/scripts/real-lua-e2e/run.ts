@@ -1485,6 +1485,21 @@ try {
         assert.deepEqual(gateReply.luaErrors, []);
       }
 
+      for (const scenarioId of ['hidden-luoshen', 'hidden-luoshen-deputy'] as const) {
+        const hiddenLuoshen = await startScenario(scenarioId);
+        const fakeLuoshen = p.locator('button.fake-skill-button').filter({ hasText: /洛神|Lạc Thần|luoshen/i }).first();
+        await fakeLuoshen.waitFor();
+        await fakeLuoshen.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeLuoshenPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__luoshen' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenLuoshen.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       const hiddenReveal = await startScenario('hidden-reveal');
       const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
       await reveal.waitFor();

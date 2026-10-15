@@ -589,6 +589,48 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-luoshen",
+      "title": "Hidden 甄姬 洛神 prelight and phase-start judgment",
+      "seed": 1567522712,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-luoshen",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhenji",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-luoshen-deputy",
+      "title": "Hidden deputy 甄姬 洛神 reveals the deputy before judgment",
+      "seed": 1567522713,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-luoshen",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__zhenji",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
     }
   ]
 }

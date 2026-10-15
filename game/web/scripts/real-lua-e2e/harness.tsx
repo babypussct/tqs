@@ -295,6 +295,9 @@ const api = {
   acknowledgeFankuiPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'fankui', ${prelight}}`));
   },
+  acknowledgeLuoshenPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__luoshen', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -479,6 +482,22 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'fankui', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_fankui_gate', 'TQS QA: prelight Phản Quỹ, rồi xác nhận để tiếp tục.'}");
+        break;
+      }
+      case 'hidden-luoshen':
+      case 'hidden-luoshen-deputy': {
+        // Luoshen is an EventPhaseStart trigger. The local fixture mirrors the
+        // hidden fake-skill/prelight gate and phase-start invoke; native C++
+        // remains authoritative for judge, reveal and card obtain.
+        const main = scenarioId === 'hidden-luoshen-deputy' ? 'hs__simayi' : 'hs__zhenji';
+        const deputy = scenarioId === 'hidden-luoshen-deputy' ? 'hs__zhenji' : 'hs__simayi';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__luoshen', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_luoshen_gate', 'TQS QA: prelight 洛神, rồi xác nhận để bắt đầu pha chuẩn bị.'}");
         break;
       }
       case 'hidden-reveal':

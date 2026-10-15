@@ -37,7 +37,9 @@ export type QaScenarioId =
   | 'hidden-active-main'
   | 'hidden-view-as'
   | 'hidden-view-as-main'
-  | 'hidden-dual';
+  | 'hidden-dual'
+  | 'hidden-luoshen'
+  | 'hidden-luoshen-deputy';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -73,7 +75,8 @@ export type QaScenarioTrigger =
   | 'hidden-reveal'
   | 'hidden-active'
   | 'hidden-view-as'
-  | 'hidden-dual';
+  | 'hidden-dual'
+  | 'hidden-luoshen';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -368,6 +371,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-dual',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-luoshen': {
+    version: 1,
+    id: 'hidden-luoshen',
+    title: '甄姬 úp: prelight 洛神 ở đầu pha và nhận lá phán xét đen',
+    seed: 0x5d6e7f98,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-luoshen',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-luoshen-deputy': {
+    version: 1,
+    id: 'hidden-luoshen-deputy',
+    title: '甄姬 phó tướng úp: prelight 洛神 ở đầu pha và nhận lá phán xét đen',
+    seed: 0x5d6e7f99,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-luoshen',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -377,7 +400,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
   'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
-  'hidden-dual',
+  'hidden-dual', 'hidden-luoshen', 'hidden-luoshen-deputy',
 ];
 
 export class QaScenarioError extends Error {

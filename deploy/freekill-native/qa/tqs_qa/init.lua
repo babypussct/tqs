@@ -276,6 +276,31 @@ local function validateHiddenDualScenario(scenario)
   end
 end
 
+local function validateHiddenLuoshenScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-luoshen scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-luoshen-deputy"
+  local expectedMain = deputy and "hs__simayi" or "hs__zhenji"
+  local expectedDeputy = deputy and "hs__zhenji" or "hs__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wei" then
+    fail("hidden-luoshen actor must use the catalogued Zhen Ji main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-luoshen target must be Triệu Vân + Pháp Chính in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-luoshen must expose AskForSkillInvoke as its phase-start proof")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-luoshen must not reserve hand cards; judgment cards come from the native pile")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -298,6 +323,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenViewAsScenario(scenario)
   elseif scenario.trigger == "hidden-dual" then
     validateHiddenDualScenario(scenario)
+  elseif scenario.trigger == "hidden-luoshen" then
+    validateHiddenLuoshenScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -1486,6 +1513,99 @@ local function triggerHiddenDual(room, state)
   room:gameOver("")
 end
 
+local function moveJudgmentColorsToTop(room)
+  local blackId, redId
+  for index = #room.draw_pile, 1, -1 do
+    local id = room.draw_pile[index]
+    local color = Fk:getCardById(id):getColorString()
+    if not blackId and color == "black" then
+      blackId = table.remove(room.draw_pile, index)
+    elseif not redId and color == "red" then
+      redId = table.remove(room.draw_pile, index)
+    end
+    if blackId and redId then break end
+  end
+  if not blackId or not redId then
+    fail("hidden-luoshen needs one black and one red native judgment card")
+  end
+  -- Luoshen sees the black card first, then the red card ends the loop. The
+  -- QA fixture only fixes the pile order; the source skill still owns judge,
+  -- reveal-before-effect, optional continuation and obtaining the black card.
+  table.insert(room.draw_pile, 1, redId)
+  table.insert(room.draw_pile, 1, blackId)
+  room:syncDrawPile()
+  return blackId, redId
+end
+
+local function triggerHiddenLuoshen(room, state)
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-luoshen actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__luoshen") then
+    fail("hidden-luoshen must attach the hidden Luoshen skill")
+  end
+  if state.actor:hasSkill("hs__luoshen") then
+    fail("hidden-luoshen must not be active before the prelighted phase trigger")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_luoshen_gate",
+    prompt = "TQS QA: prelight 洛神, rồi xác nhận để bắt đầu pha chuẩn bị.",
+  })
+  if not gate then
+    fail("hidden-luoshen readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__luoshen") then
+    fail("hidden-luoshen must be prelighted before the EventPhaseStart branch")
+  end
+
+  local blackId = moveJudgmentColorsToTop(room)
+  state.currentDamageStep = 1
+  room:setPlayerProperty(state.actor, "phase", Player.Start)
+  room:broadcastProperty(state.actor, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor,
+    phase = Player.Start,
+  })
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "hs__luoshen" and entry.player == state.actor.id
+  end)
+  local luoshenIsDeputy = state.scenario == "hidden-luoshen-deputy"
+  local revealedCorrectSlot = luoshenIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__zhenji"
+    or not luoshenIsDeputy and state.actor.general == "hs__zhenji" and state.actor.deputyGeneral == "anjiang"
+  local obtained = movedFromArea(state, 1, "hs__luoshen", state.actor, Card.Processing)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Luoshen must run a real SkillEffect and reveal Zhen Ji in its catalogued slot")
+  end
+  if obtained ~= 1 or not table.contains(state.actor:getCardIds(Player.Hand), blackId) then
+    fail("hidden Luoshen must obtain the black judgment card after the red stop card")
+  end
+  if state.actor:isFakeSkill("hs__luoshen") or not state.actor:hasSkill("hs__luoshen") then
+    fail("hidden Luoshen must convert from fake to active after reveal")
+  end
+
+  state.hiddenLuoshenBranch = "positive-prelight-phase-start-judge-obtain"
+  room:sendLog{
+    type = "[TQS QA] Hidden 洛神: %arg; vị trí=%arg6; prelight=%arg2; SkillEffect=%arg3; mở tướng=%arg4; lấy bài đen=%arg5",
+    from = state.actor.id,
+    arg = state.hiddenLuoshenBranch,
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(obtained),
+    arg6 = luoshenIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-luoshen branch=%s slot=%s prelight=true invoked=true revealed=%s obtained=%d revision=%s",
+    state.hiddenLuoshenBranch, luoshenIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), obtained,
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -1501,7 +1621,8 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-fankui-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
       state.scenario == "hidden-active-main" or state.scenario == "hidden-view-as" or
-      state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual") and
+      state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual" or
+      state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -1619,6 +1740,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenViewAs(room, state)
     elseif scenario.trigger == "hidden-dual" then
       triggerHiddenDual(room, state)
+    elseif scenario.trigger == "hidden-luoshen" then
+      triggerHiddenLuoshen(room, state)
     end
   end,
 })
