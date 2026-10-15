@@ -92,14 +92,11 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T08:58:31.728Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `0cc0d3466c27`.
-- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T08:58:56.589Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `7bc7dad6a8c7`.
+- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/MOBILE_PLAYABLE_MASTER_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/multiplayer-e2e/run.ts
  M game/web/scripts/real-lua-e2e/harness.tsx
@@ -111,9 +108,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+7bc7dad6 docs: record CP96 Render hotfix evidence
 0cc0d346 hotfix: publish card tooltip and board polish
 18969850 qa: cover hidden yiji re-hide prelight retention
-9f36c160 hotfix: polish Render gameplay prompts and mobile board
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
