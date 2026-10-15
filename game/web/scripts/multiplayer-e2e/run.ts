@@ -2147,7 +2147,7 @@ try{
       assert.ok(hiddenDualUseReply, 'hidden-dual must complete the native PlayCard Duel request');
       console.log(`PASS hidden-dual: native hidden trigger revealed Song Hùng, discarded the color source ` +
         `(${hiddenDualDiscardAuto ? 'auto' : 'interactive'}) and converted Slash to Duel`);
-    } else if (testScenario !== 'rescue-normal' && testScenario !== 'rescue-battle' && testScenario !== 'founding') {
+    } else if (!hiddenTianduScenario && testScenario !== 'rescue-normal' && testScenario !== 'rescue-battle' && testScenario !== 'founding') {
       assert.ok(manualCardReply,'A native PlayCard must receive one user-selected card/target/OK reply');
       console.log('PASS manual native PlayCard: offered card, Lua-enabled target/OK and one exact client reply');
     }

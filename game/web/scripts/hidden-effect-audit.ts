@@ -46,6 +46,7 @@ const NATIVE_LOCAL_EFFECT_EVIDENCE: readonly EvidenceMap[] = [
   { scenario: 'hidden-yingzi (+ deputy)', skill: 'ex__yingzi', events: ['fk.DrawNCards'] },
   { scenario: 'hidden-tianxiang (+ deputy)', skill: 'hs__tianxiang', events: ['fk.DetermineDamageInflicted'] },
   { scenario: 'hidden-duanchang (+ deputy)', skill: 'hs__duanchang', events: ['fk.Death'] },
+  { scenario: 'hidden-tiandu (+ deputy)', skill: 'tiandu', events: ['fk.FinishJudge'] },
 ];
 
 const LUA_EFFECT_AUDIT = String.raw`
