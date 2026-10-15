@@ -415,6 +415,32 @@ Acceptance bắt buộc: cả hai client thấy `AskForSkillInvoke` của gate v
 reveal đúng chủ/phó, hai lá đã trở lại DrawPile và GameOver. Đây là
 `NATIVE-LOCAL staged`, chưa phải Render/Oracle LIVE.
 
+## `hidden-yingzi`: `fk.DrawNCards` khi Chu Du còn úp
+
+[`yingzi.lua`](../../../../runtime/packages/standard_ex/pkg/general/skills/yingzi.lua)
+đăng ký `ex__yingzi` là `Skill.Compulsory` trên `fk.DrawNCards`, tăng
+`data.n` thêm một lá. Gate QA chỉ cho browser gửi prelight trong lúc cả hai
+tướng còn úp; nó không thay thế trigger hay tạo một prompt invoke giả. Native
+director chạy đúng chuỗi pha Rút bài: `EventPhaseStart` →
+`EventPhaseProceeding` → `DrawNCards` với `n=2` → rút thật →
+`AfterDrawNCards`. Hai mirror xác nhận skill tự động mở đúng slot và rút
+`n=3`, không phát sinh `AskForArrangeCards`.
+
+```bash
+TQS_LIVE_SCENARIO=hidden-yingzi \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-yingzi-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: fake `ex__yingzi` hiện trước gate; native
+`SkillEffect` mở Chu Du đúng chủ/phó, `DrawNCards`/`AfterDrawNCards` ghi nhận
+`n=3`, fake chuyển thành active, cả hai client thấy log công khai và
+GameOver. Đây là `NATIVE-LOCAL staged`, chưa phải Render/Oracle LIVE.
+
 ## `hidden-duanchang`: `fk.Death` khi Thái Văn Cơ còn úp
 
 [`duanchang.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua)
