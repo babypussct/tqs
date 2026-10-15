@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { packageRelease, REQUIRED_PACKAGES } from './package-release.mjs';
+import { packageRelease, publicFlist, REQUIRED_PACKAGES } from './package-release.mjs';
 import { verifyRelease } from './verify-release.mjs';
 import { createReleaseEvidence } from './release-checkpoint.mjs';
 
@@ -43,6 +43,27 @@ test('mobile release packaging rejects the server-only QA package', () => {
     }
     fs.writeFileSync(path.join(runtime, 'flist.txt'), 'fixture-flist\n');
     assert.throws(() => packageRelease(runtime, path.join(temp, 'release')), /Server-only packages/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('mobile release packaging strips server-only entries from the public flist identity', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tqs-release-public-flist-'));
+  try {
+    const runtime = path.join(temp, 'runtime');
+    for (const name of REQUIRED_PACKAGES) {
+      fs.mkdirSync(path.join(runtime, 'packages', name), { recursive: true });
+      fs.writeFileSync(path.join(runtime, 'packages', name, 'init.lua'), `return '${name}'\n`);
+    }
+    const sourceFlist = 'packages/tqs_qa/init.lua=old;packages/hegemony/init.lua=stable;';
+    fs.writeFileSync(path.join(runtime, 'flist.txt'), sourceFlist);
+    const release = path.join(temp, 'release');
+    const result = packageRelease(runtime, release, { createdAt: '2026-01-01T00:00:00.000Z' });
+    assert.equal(publicFlist(sourceFlist), 'packages/hegemony/init.lua=stable;');
+    assert.equal(fs.readFileSync(path.join(release, 'runtime/flist.txt'), 'utf8'),
+      'packages/hegemony/init.lua=stable;');
+    assert.deepEqual(verifyRelease(release).manifest, result.manifest);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }

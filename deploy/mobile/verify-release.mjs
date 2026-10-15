@@ -90,7 +90,11 @@ export function verifyRelease(rootArg) {
     if (manifest.packageFileCounts?.[name] !== count(`runtime/packages/${name}/`))
       throw new Error(`Runtime package count mismatch: ${name}`);
   }
-  const flistHash = crypto.createHash('md5').update(fs.readFileSync(path.join(root, 'runtime/flist.txt'))).digest('hex');
+  const flistContents = fs.readFileSync(path.join(root, 'runtime/flist.txt'), 'utf8');
+  if (flistContents.split(';').some((entry) => [...SERVER_ONLY_PACKAGES].some((name) =>
+    entry.startsWith(`packages/${name}/`))))
+    throw new Error('Server-only package found in public runtime flist');
+  const flistHash = crypto.createHash('md5').update(flistContents).digest('hex');
   if (!/^[a-f0-9]{32}$/i.test(String(manifest.runtimeMD5)) || flistHash !== manifest.runtimeMD5.toLowerCase())
     throw new Error('Runtime MD5 mismatch');
   return { root, manifest, fileCount: actual.length };

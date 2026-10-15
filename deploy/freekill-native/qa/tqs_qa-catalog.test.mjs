@@ -1319,6 +1319,14 @@ test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () 
   assert.match(verifier, /lua54_prepare "\$RUNTIME_DIR"/u);
 });
 
+test('native launcher keeps server-only QA packages out of the public MD5 flist', () => {
+  const launcher = fs.readFileSync(nativeRunServerPath, 'utf8');
+  assert.match(launcher, /publicize_flist/u);
+  assert.match(launcher, /packages\/tqs_qa\//u);
+  assert.match(launcher, /wait_for_public_flist "\$RUNTIME_DIR\/flist\.txt"/u);
+  assert.match(launcher, /server-only QA entries removed/u);
+});
+
 // Execute the package's actual startup validation/registration in Lua. JSON
 // decoding and engine registration are stubs; this is not C++ gameplay proof.
 function luaValue(value) {

@@ -21,6 +21,19 @@ function isSensitive(name) {
     lower.endsWith('.key') || SENSITIVE_NAMES.has(lower);
 }
 
+/**
+ * The native server may keep a server-only package under packages/ so Lua can
+ * load its QA director.  That package must not participate in the public
+ * client identity: the browser bundle intentionally excludes it, and the
+ * public flist must therefore exclude its entries as well.
+ */
+export function publicFlist(contents) {
+  const entries = String(contents).split(';');
+  const filtered = entries.filter((entry) => !SERVER_ONLY_PACKAGES.some((name) =>
+    entry.startsWith(`packages/${name}/`)));
+  return filtered.length === entries.length ? String(contents) : filtered.join(';');
+}
+
 function copyTree(src, dst, filter) {
   if (!fs.existsSync(src)) throw new Error(`Release source is missing: ${src}`);
   fs.mkdirSync(dst, { recursive: true });
@@ -90,6 +103,9 @@ export function packageRelease(runtimeArg, outputArg, options = {}) {
     fs.copyFileSync(path.join(repo, 'deploy/mobile', name), path.join(output, name));
   }
 
+  const publicFlistContents = publicFlist(fs.readFileSync(flistPath, 'utf8'));
+  fs.writeFileSync(path.join(output, 'runtime/flist.txt'), publicFlistContents);
+
   const files = inventory(output);
   const createdAt = options.createdAt ?? new Date().toISOString();
   if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) throw new Error('Invalid release createdAt');
@@ -100,7 +116,7 @@ export function packageRelease(runtimeArg, outputArg, options = {}) {
   const manifest = {
     schemaVersion: 2,
     createdAt,
-    runtimeMD5: crypto.createHash('md5').update(fs.readFileSync(flistPath)).digest('hex'),
+    runtimeMD5: crypto.createHash('md5').update(publicFlistContents).digest('hex'),
     packages: packageNames,
     runtimeFileCount: prefixCount('runtime/'),
     webFileCount: prefixCount('dist/'),
