@@ -94,14 +94,11 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T09:36:10.184Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `ea8faeb7b3b6`.
-- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T09:36:17.648Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `fb1759bc03d9`.
+- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/tqs_qa/README.md
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
@@ -113,9 +110,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+fb1759bc docs: record hidden fanjian QA boundary
 ea8faeb7 qa: cover hidden fanjian active reveal path
 e8e12acd docs: refresh Render handoff snapshot
-dd5208c3 docs: record Render hotfix redeploy
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
