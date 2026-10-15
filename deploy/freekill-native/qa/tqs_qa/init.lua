@@ -2221,18 +2221,20 @@ local function triggerHiddenWeimu(room, state)
     fail("hidden-weimu must attach the hidden Weimu skill")
   end
   if state.actor:hasSkill("hs__weimu") then
-    fail("hidden-weimu must not be active before TargetConfirming")
+    fail("hidden-weimu must not be active before its source event")
   end
 
   local gate = room:askToSkillInvoke(state.actor, {
     skill_name = "tqs_qa_hidden_weimu_gate",
-    prompt = "TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Quyết Đấu đen.",
+    prompt = indulgenceScenario
+      and "TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Lạc Bất Tư Thục đen."
+      or "TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Quyết Đấu đen.",
   })
   if not gate then
     fail("hidden-weimu readiness gate was cancelled")
   end
   if not isPrelighted(state.actor, "hs__weimu") then
-    fail("hidden-weimu must be prelighted before TargetConfirming")
+    fail("hidden-weimu must be prelighted before its source event")
   end
 
   if indulgenceScenario then
