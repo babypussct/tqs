@@ -3829,7 +3829,12 @@ director:addEffect(fk.SkillEffect, {
 
 director:addEffect(fk.PreDamage, {
   global = true,
-  priority = -1000,
+  -- DamageEvent:breakCheck() stops lower-priority PreDamage observers after
+  -- a prevention skill such as Jueqing calls data:preventDamage(). Observe
+  -- before the real skill so the QA marker proves that the native
+  -- PreDamage branch was entered, without changing the source-law ordering
+  -- of any production skill.
+  priority = 1000,
   can_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
     return state and (state.scenario == "hidden-jueqing" or state.scenario == "hidden-jueqing-deputy") and

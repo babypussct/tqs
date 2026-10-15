@@ -2260,6 +2260,19 @@ try{
           continue;
         }
         if (hiddenJueqingScenario) {
+          // askToUseRealCard normally arrives as AskForUseActiveSkill. If the
+          // native adapter also publishes a regular PlayCard request while
+          // the QA director is finishing, it belongs to the other seat's
+          // normal play phase, not to the reserved actor Slash. Do not let
+          // that request consume the hidden-Jueqing branch or assert for a
+          // target that is not present on the opponent's board.
+          if (activeClient !== scenarioClient) {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            if (await end.count() && await end.isEnabled()) await end.click();
+            await waitForReply(activeClient, latest.requestId);
+            await new Promise(r => setTimeout(r, 250));
+            continue;
+          }
           const card = controls.locator('.gameplay-hand button:enabled')
             .filter({ hasText: /Sát|Slash|杀/i }).first();
           assert.ok(await card.count(), 'hidden-jueqing must expose the reserved actor Slash');
