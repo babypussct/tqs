@@ -1250,7 +1250,7 @@ try{
           const hiddenJianxiongChoice = hiddenJianxiongScenario &&
             /jianxiong|奸雄|Gian Hùng|obtain|获得|damage card|lá Sát|gây sát thương/i.test(choiceText);
           const hiddenFanjianChoice = hiddenFanjianScenario &&
-            /fanjian|反间|Phản Gián|loseHp|失去1点体力|mất 1 điểm/i.test(choiceText);
+            /fanjian|反间|Phản Gián|loseHp|失去1点体力|mất 1 điểm|mất 1 máu|mất máu/i.test(choiceText);
           const hiddenTianxiangChoice = hiddenTianxiangScenario &&
             /tianxiang|天香|Thiên Hương|loseHp|失去1点体力|mất 1 điểm|nhận.*bài/i.test(choiceText);
           const hiddenDuanchangChoice = hiddenDuanchangScenario &&
@@ -1260,7 +1260,7 @@ try{
               .filter({ hasText: /hs__jianxiong-obtain|jianxiong-obtain|obtain|获得|damage.*card|lá Sát|gây sát thương/i }).first()
             : hiddenFanjianChoice
             ? choices.locator('button.gameplay-choice:enabled')
-              .filter({ hasText: /loseHp|失去1点体力|mất 1 điểm/i }).first()
+              .filter({ hasText: /loseHp|失去1点体力|mất 1 điểm|mất 1 máu|mất máu/i }).first()
             : hiddenTianxiangChoice
             ? choices.locator('button.gameplay-choice:enabled')
               .filter({ hasText: /hs__tianxiang_loseHp|loseHp|失去1点体力|mất 1 điểm|nhận.*bài/i }).first()

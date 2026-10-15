@@ -1,6 +1,7 @@
 import { VI_SKILL_TRANSLATIONS } from './vietnameseSkills';
 import { VI_SKILL_REFINEMENTS } from './vietnameseSkillRefinements';
 import { VI_SKILL_REVIEWED } from './vietnameseSkillReviewed';
+import OFFICIAL_TRANSLATIONS from './officialTranslations.json';
 
 /** Web display additions for the pinned Hegemony package, which has no vi_VN table.
  * Names and common UI prompts only: variant skill rules are never copied from another version. */
@@ -261,6 +262,7 @@ export const VI_ADDITIONS: Record<string, string> = {
   ...VI_SKILL_TRANSLATIONS,
   ...VI_SKILL_REFINEMENTS,
   ...VI_SKILL_REVIEWED,
+  ...(OFFICIAL_TRANSLATIONS as Record<string, string>),
   '#TargetCancelled': 'Mục tiêu %to đã bị hủy khỏi lá %arg do %from sử dụng.',
   '#AskForSkillInvoke': 'Bạn có muốn kích hoạt %arg?',
   '#AskForUseActiveSkill': 'Hãy phát động kỹ năng %arg',

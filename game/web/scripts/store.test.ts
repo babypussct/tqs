@@ -177,6 +177,11 @@ test('display text formats native prompts and choices without changing IDs or in
   assert.equal(displayText('slash', translations), 'Sát');
   assert.equal(displayText(':slash', translations), 'Dòng 1\nDòng 2');
   assert.equal(displayText('unknown_fixture', translations), 'unknown_fixture');
+  assert.equal(displayText('#iron_chain_skill', VI_ADDITIONS), 'Thiết Tỏa Liên Hoàn: Chọn 1-2 người để đổi trạng thái xích (hoặc chọn Trùng Chú để đổi lá)');
+  assert.equal(displayText('recast', VI_ADDITIONS), 'Trùng Chú');
+  assert.equal(displayText('reveal_skill&', VI_ADDITIONS), 'Mở tướng');
+  assert.equal(displayText('#m_ex__fenji-invoke::-10', VI_ADDITIONS, [{ id: 10, name: 'Lữ Bố' }]), 'Phấn Kích: Bạn có muốn cho Lữ Bố rút 2 lá bài và bạn mất 1 máu không?');
+  assert.equal(displayText('#m_ex__fenji-invoke::-10', VI_ADDITIONS), 'Phấn Kích: Bạn có muốn cho mục tiêu rút 2 lá bài và bạn mất 1 máu không?');
   assert.equal(localizedGameLog('Nhân vật đã phát động kỹ năng 祸水'), 'Nhân vật đã phát động kỹ năng Họa Thủy');
 });
 
@@ -684,4 +689,32 @@ test('GameOver retains public final stats and the last log, excludes private fie
   assert.equal(JSON.stringify(over.result).includes('handcards'), false);
   assert.deepEqual(over.board.logs, []);
   assert.equal(reduceUiEvent(over, 'EnterLobby', null).result, null);
+});
+
+test('damage prevention and reshuffle logs are localized in Vietnamese', () => {
+  const log1 = '由于 Thiên Hương，Tào Phi/Hạ Hầu Đôn 即将对 Tiểu Kiều/Tướng ẩn (bạn) 造成的 1 点 Hỏa 伤害被防止了';
+  assert.equal(
+    localizedGameLog(log1),
+    'Do Thiên Hương, 1 điểm sát thương Hỏa do Tào Phi/Hạ Hầu Đôn sắp gây ra cho Tiểu Kiều/Tướng ẩn (bạn) đã được ngăn chặn.',
+  );
+
+  const log2 = '由于 八卦阵，Enemy 即将受到的 2 点 雷 伤害被防止了';
+  assert.equal(
+    localizedGameLog(log2),
+    'Do 八卦阵, 2 điểm sát thương 雷 mà Enemy sắp phải chịu đã được ngăn chặn.',
+  );
+
+  const log3 = '已重新洗牌，牌堆现有 91 张牌';
+  assert.equal(localizedGameLog(log3), 'Đã xáo lại chồng bài, chồng bài hiện có 91 lá bài.');
+});
+
+test('card skill keys and prompts resolve to Vietnamese without leaking code tokens', () => {
+  assert.equal(displayText('amazing_grace_skill', VI_ADDITIONS), 'Ngũ Cốc Phong Đăng');
+  assert.match(displayText('#amazing_grace_skill', VI_ADDITIONS), /Lật ra số lá trên đỉnh chồng bài rút/);
+  assert.equal(displayText('m_ex__amazing_grace_skill', VI_ADDITIONS), 'Ngũ Cốc Phong Đăng');
+  assert.equal(displayText('god_salvation_skill', VI_ADDITIONS), 'Đào Viên Kết Nghĩa');
+  assert.equal(displayText('recast', VI_ADDITIONS), 'Trùng Chú');
+  assert.equal(displayText('#iron_chain_skill', VI_ADDITIONS), 'Thiết Tỏa Liên Hoàn: Chọn 1-2 người để đổi trạng thái xích (hoặc chọn Trùng Chú để đổi lá)');
+  assert.equal(displayText('#m_ex__fenji-invoke::-10', VI_ADDITIONS), 'Phấn Kích: Bạn có muốn cho mục tiêu rút 2 lá bài và bạn mất 1 máu không?');
+  assert.equal(displayText('#unlisted_skill-invoke::-10', VI_ADDITIONS), 'unlisted_skill: Bạn có muốn kích hoạt lên mục tiêu không?');
 });

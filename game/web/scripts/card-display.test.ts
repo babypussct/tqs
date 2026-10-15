@@ -253,3 +253,16 @@ test('version is displayed as BETA across screens rather than hardcoded 2.4.1', 
   assert.doesNotMatch(lobbyScreen, /2\.4\.1/);
   assert.match(lobbyScreen, /Bản\s*BETA/);
 });
+
+test('IdleHandCard maintains identical 4-layer structure to active cards', () => {
+  const itemSource = readFileSync(path.join(rootDir, 'src/HandCardItem.tsx'), 'utf8');
+  const idleFn = itemSource.slice(itemSource.indexOf('export function IdleHandCard'));
+  assert.ok(idleFn.length > 0);
+  assert.match(idleFn, /className="sg-card-top-left"/);
+  assert.match(idleFn, /className="sg-card-rank"/);
+  assert.match(idleFn, /className=\{`sg-card-suit \$\{suitInfo\.colorClass\}`\}/);
+  assert.match(idleFn, /className="sg-card-type-badge"/);
+  assert.match(idleFn, /<CardArt card=\{card\} \/>/);
+  assert.match(idleFn, /className="sg-card-banner"/);
+  assert.doesNotMatch(idleFn, /sg-card-badge-cluster/);
+});

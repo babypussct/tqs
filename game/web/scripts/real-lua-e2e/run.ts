@@ -1295,7 +1295,7 @@ try {
       // The seventh native field is FreeKill's `single` flag. AskForOptions
       // therefore confirms by clicking the offered option itself; it is not
       // the eight-field AskForChoices contract with a separate OK button.
-      await panel.getByRole('button', { name: 'OK', exact: true }).click();
+      await panel.getByRole('button', { name: /^(OK|Xác nhận)$/ }).click();
       await reply(p); assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), ['OK']);
     }],
   );
