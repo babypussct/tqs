@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 19:29 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
+> Cập nhật handoff: 15/10/2026 19:31 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
 ## Mục tiêu và phạm vi
 
@@ -49,15 +49,12 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:30:54.200Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `2c89a6f50a26`.
-- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T12:31:14.872Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `857ee0f22ce0`.
+- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
- M game/web/scripts/hidden-rule-contract.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.md
@@ -68,9 +65,9 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 Ba commit gần nhất:
 
 ```text
+857ee0f2 qa: lock hidden active skill reveal path
 2c89a6f5 docs: record remote hidden-tiandu gate block
 6992a895 docs: checkpoint hidden trigger gate
-252e5b4a qa: reject global hidden trigger predicates
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
