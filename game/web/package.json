@@ -7,7 +7,7 @@
     "predev": "node scripts/prepare-wasm.mjs",
     "dev": "vite --host 0.0.0.0 --port 5174",
     "prebuild": "node scripts/prepare-wasm.mjs",
-    "build": "npm run audit:crypto-scope && npm run audit:skills && npm run audit:skill-activation && npm run audit:hidden-skills && npm run audit:native-callers && tsc --noEmit && vite build && node scripts/build-service-worker.mjs",
+    "build": "npm run audit:crypto-scope && npm run audit:skills && npm run audit:skill-activation && npm run audit:hidden-skills && npm run test:hidden-rule-contract && npm run audit:native-callers && tsc --noEmit && vite build && node scripts/build-service-worker.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 5174",
     "typecheck": "tsc --noEmit",
     "audit:crypto-scope": "tsx --test scripts/crypto-scope.test.ts",
