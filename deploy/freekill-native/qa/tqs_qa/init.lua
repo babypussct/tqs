@@ -314,9 +314,9 @@ local function validateHiddenJizhiScenario(scenario)
       actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
     fail("hidden-jizhi actor must use the catalogued Huang Yueying main/deputy placement")
   end
-  if type(target) ~= "table" or target.general ~= "hs__pangde" or
-      target.deputy ~= "hs__zhangliao" or target.kingdom ~= "wei" then
-    fail("hidden-jizhi target must be Pang De + Zhang Liao in Wei")
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-jizhi target must be Zhang Liao + Xu Chu in Wei")
   end
   if scenario.expectedCommand ~= "AskForSkillInvoke" then
     fail("hidden-jizhi must expose AskForSkillInvoke for the optional CardUsing effect")

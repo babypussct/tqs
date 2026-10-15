@@ -646,8 +646,8 @@
           "kingdom": "shu"
         },
         "target": {
-          "general": "hs__pangde",
-          "deputy": "hs__zhangliao",
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
           "kingdom": "wei"
         }
       },
@@ -676,8 +676,8 @@
           "kingdom": "shu"
         },
         "target": {
-          "general": "hs__pangde",
-          "deputy": "hs__zhangliao",
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
           "kingdom": "wei"
         }
       },

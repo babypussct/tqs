@@ -200,7 +200,7 @@ test('hidden-jizhi locks optional CardUsing reveal, invoke and draw for both slo
     assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
     assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
     assert.deepEqual(scenario.players.target, {
-      general: 'hs__pangde', deputy: 'hs__zhangliao', kingdom: 'wei',
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
     }, `${id} target roster drift`);
     assert.deepEqual(scenario.cards, [
       { key: 'jizhi-card', match: { trueName: 'duel' }, owner: 'actor', area: 'hand' },
