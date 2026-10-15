@@ -112,15 +112,15 @@ These are two separate layers and must be verified independently:
 
 | Layer | Current target | Responsibility | What it proves |
 | --- | --- | --- | --- |
-| Render | `tqs-mobile-candidate.onrender.com` | React web bundle, browser transport and hosted candidate release | The published web artifact and its bounded browser path are reachable |
-| Oracle VM | `161.33.209.212:9527` (`freekill-hegemony-qa`) | FreeKill C++/Lua process, pinned packages, server state and native rules | The replacement QA native package and process are installed and responding |
+| Render | `tqs-mobile-candidate.onrender.com` | React web bundle, browser transport and hosted candidate release | Published artifact, health, login/lobby and bounded gameplay route are reachable |
+| Oracle VM | `161.33.209.212:9527` (`freekill-hegemony-qa`) | FreeKill C++/Lua process, pinned packages, server state and native rules | Replacement package/process are installed, responding and match the hosted runtime identity |
 
 The intended production path remains **browser → Render web/gateway →
-FreeKill native on the VM**. The Oracle evidence recorded below used an
-isolated local gateway pointed at the replacement VM, so it proves the native
-VM and the browser/native bridge but does not yet prove the Render → Oracle
-network route. A green Render health check does not prove native rule state;
-the Oracle QA result does not prove that Render serves the latest React bundle.
+FreeKill native on the VM**. The current deployment is pinned to
+`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; public
+health/manifest, login and the two hosted Gongqing slot runs have verified the
+route on one release identity. This is bounded parity, not exhaustive rule
+coverage or an official release.
 
 ## Administrator access
 
@@ -216,7 +216,7 @@ SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 Oracle bounded QA 51 runs PASS; Render-to-Oracle route PENDING
+                 Oracle bounded QA 51 runs PASS; Render-to-Oracle bounded PASS
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
@@ -233,12 +233,12 @@ recreate the exact runner without guessing:
 ```text
 Runtime:          /opt/freekill-hegemony/current
 Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: 07ef36b3316100f35479fc0436caa051
+Runtime flist MD5: 0e2e6585bb80a8145ac71208258196f0
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      5218c2255ea14d3b9ac4c8cb5dd2ef9c2ff95f3f
-QA package SHA:   6b8e5b7c9f8350ceef58503b01d5776c74a817328e8ef167a2c6a8fbde8c0dc4
-QA catalog SHA:   887544d149394a7cfa1f686d024837fae53af1787cf05c76ce1cf850afc569e6
+QA revision:      7787544e21f1871c944558992edf9dcb97801ce2
+QA package SHA:   d8b3d5789c97b418b41a2af576038de9f75b21d0a95a5328b04efba1bce03d80
+QA catalog SHA:   9a06fb21c37e5885a1b0dee47feb7c8daaee7bf7521669019e9974a5b575a48c
 QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
 Service:          freekill-native.service enabled/active; TCP 9527 reachable
 ```
@@ -253,8 +253,9 @@ Lượng/Không Thành; Giả Hủ/Vi Mộ; Tôn Thượng Hương/Xiaoji; Gia C
 Lượng/Guanxing; Tiểu Kiều/Thiên Hương; and Thái Văn Cơ/Đoạn Trường in the
 main and deputy slots where the scenario supports both slots. These runs used the exact identity above and an isolated local gateway with
 `FK_HOST=161.33.209.212`; no credentials or allowlist names are stored in the
-repository. This is native VM evidence, not proof of the Render → Oracle
-network route or an exhaustive 607-pair rule matrix.
+repository. Native VM evidence is complemented by hosted Render → Oracle
+login plus Gongqing main/deputy evidence in the canonical audit; neither
+closes the exhaustive 607-pair rule matrix.
 
 ```sh
 ssh tqs-native-qa-replacement 'id; hostname'

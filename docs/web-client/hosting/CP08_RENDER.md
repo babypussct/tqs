@@ -1,11 +1,60 @@
-# CP08 — hướng Render và nghiệm thu iPhone
+# CP08 — Render → Oracle replacement và nghiệm thu mobile
 
-Ngày 12/10/2026: người dùng yêu cầu tự tạo hosting, kiểm lại thảo luận trước, xác nhận có iPhone. Kế hoạch hiện hành đã nêu Render→Oracle như phương án MVP/demo, Oracle FreeKill giữ nguyên. Plugin Render đã được tìm thấy nhưng **chưa được xác nhận cài/kết nối**; chưa có tài khoản dịch vụ được tạo hoặc domain chính thức.
+> Cập nhật 16/10/2026. Đây là runbook ngắn cho tuyến candidate hiện hành; không
+> phải cam kết official/SLA.
 
-Gói `scratch/deployments/cp08-candidate/release` có `Dockerfile.render`, gateway/runtime/dist đóng băng và RELEASE.json. Gateway hỗ trợ phục vụ web và `/gateway/*`/WSS trên cùng PORT. Entry Render yêu cầu RENDER_EXTERNAL_URL/PUBLIC_ORIGIN HTTPS chính xác, từ chối wildcard; bind 0.0.0.0. Forwarding headers vẫn không tin khi chưa xác minh proxy contract. Vì tất cả kết nối có thể chung IP proxy, MAX_WS_PER_IP phải được cấu hình phù hợp (128 với global cap 128 cho candidate) hoặc xác minh proxy IP trước khi bật per-user IP quota. Không giả định XFF bất kỳ là người chơi.
+## Tuyến hiện hành
 
-Render cung cấp URL onrender.com/TLS/WebSocket. Free ngủ sau 15 phút không có HTTP hoặc tin nhắn WebSocket, cold-start khoảng một phút theo docs hiện hành; cần đo thật trước phát hành. Không gọi Free là SLA 24/7; không tự chuyển sang gói có phí hoặc mua domain. Nguồn: https://render.com/docs/free, https://render.com/docs/websocket.
+| Thành phần | Giá trị |
+| --- | --- |
+| Web/gateway | `https://tqs-mobile-candidate.onrender.com` |
+| Render deployment | [`dep-db8gqkavcj2c73abuqs0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8gqkavcj2c73abuqs0), commit `1ac5603f` |
+| Native replacement | `161.33.209.212:9527`, VM `freekill-hegemony-qa` |
+| Cấu hình bền vững | `render.yaml` và service env cùng ghim `FK_HOST` vào replacement; `FK_PORT=9527` |
+| Vai trò | Render phục vụ React/gateway; Oracle chạy FreeKill C++/Lua và state server |
 
-Khi kết nối Render: tạo dịch vụ candidate từ artifact/snapshot cô lập, không commit checkout root bẩn và không nâng Lua pin. Dùng Dockerfile.render; active FK_HOST=161.33.209.212 (Oracle replacement), FK_PORT=9527, MAX_CONNECTIONS=128. Xác minh URL/cold-start/Origin/bundle/login/trận hoàn chỉnh, rồi restart/rollback sau khi ván đã hết. Render → Oracle replacement được xem là PASS chỉ sau khi health, manifest, WebSocket và login/lobby đi qua hosted gateway; old VM 168.110.36.224 chỉ giữ làm rollback/reference.
+## Release identity đã xác minh
 
-iPhone Safari: mở URL CP08 candidate do agent cung cấp; ghi model/iOS, Wi-Fi/4G. Kiểm màn hình dọc/ngang, bàn phím đăng nhập, tạo/vào phòng, chọn tướng, bài/mục tiêu/OK/Cancel, nhật ký cuộn, vùng tai thỏ/thanh Home và nút Về sảnh. Mất mạng thật: thử trong phiên test riêng, ghi thời gian khôi phục và đối chiếu server Reconnect; tránh đổi tài khoản/IP để vượt temp-ban. Chỉ tính PASS khi quan sát thiết bị thật. URL Quick Tunnel phụ thuộc Mac, chưa tính hosting chính thức.
+- Health public: `200 / ok`.
+- Gateway manifest: 14 package, 5.279 file, bundle hash
+  `0b4c3d1ea4f5eae7`, runtime MD5
+  `0e2e6585bb80a8145ac71208258196f0`.
+- Public HTML SHA-256: `fa42af15…`; JS
+  `index-DXmKDLu9.js`; CSS `index-7DaeryPw.css`.
+- Oracle: Lua 5.4.8, service enabled/active, port 9527; QA package revision
+  `7787544e…`, catalog/package identity đã được verify trên VM.
+
+## Acceptance đã PASS
+
+- Login/lobby thật qua Chrome + Wasmoon + Render gateway + Oracle C++.
+- Hidden Gongqing chủ tướng: fake trigger trước damage gate; hai nhánh tầm
+  thấp/tầm cao gây lần lượt 1/2 damage; mở Phan Tuấn đúng slot.
+  Evidence: [`cp08-hidden-gongqing-multiplayer-live-1792085727624.json`](../../../scratch/evidence/cp08-hidden-gongqing-multiplayer-live-1792085727624.json).
+- Hidden Gongqing phó tướng: cùng hợp đồng và mở đúng slot phó.
+  Evidence: [`cp08-hidden-gongqing-deputy-multiplayer-live-1792085744289.json`](../../../scratch/evidence/cp08-hidden-gongqing-deputy-multiplayer-live-1792085744289.json).
+
+Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
+identity, login và hai scenario Gongqing. Đây chưa phải full rule parity; ma
+trận effect, native interaction còn lại, cold-start/rollback/SLA và official
+sign-off vẫn OPEN.
+
+## Quy tắc vận hành
+
+- Mọi deployment mới phải giữ một identity duy nhất giữa `runtime/flist.txt`,
+  `RELEASE.json`, gateway manifest và public web artifact; sau deploy chạy
+  health, manifest, artifact hash và login probe.
+- Không dùng VM cũ `168.110.36.224` cho release mới; VM đó chỉ là
+  rollback/reference.
+- QA allowlist và credential chỉ nằm ngoài repository; tài liệu chỉ ghi count,
+  hash hoặc revision không nhạy cảm.
+- Render Free có cold-start và không phải SLA 24/7; không tự chuyển gói trả phí
+  hoặc mua domain khi chưa có yêu cầu riêng.
+
+## Mobile smoke test
+
+Mở URL Render trên iPhone Safari và ghi model/iOS, Wi-Fi/4G. Kiểm màn hình
+dọc/ngang, bàn phím login, tạo/vào phòng, chọn tướng, bài/mục tiêu/OK/Cancel,
+log cuộn, vùng tai thỏ/Home và nút Về sảnh. Mất mạng thật chỉ thử trong phiên
+riêng; ghi thời gian reconnect và không đổi tài khoản/IP để vượt temp-ban.
+Kết quả thiết bị thật là evidence riêng, không nâng bounded server parity thành
+official release.
