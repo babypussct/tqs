@@ -290,6 +290,19 @@ Lệnh `npm --prefix game/web run audit:hidden-skills` đã chạy trên 14 pack
 
 Bổ trợ, activation-surface audit LOCAL (`npm --prefix game/web run audit:skill-activation`) đã chạy 2.388 general, 4.207 skill ID và 22.761 predicate/request probes: `failed=0`, `hard failure=0`; 25/1.112 request probes và một phần predicate được đánh dấu `context-required` vì cần state trận cụ thể. Đây chỉ là bằng chứng callable path không rơi trong VM, không phải bằng chứng hiệu ứng đã chạy đúng trên C++.
 
+### Ma trận effect của skill tướng úp — audit tự động
+
+Lệnh `npm --prefix game/web run audit:hidden-effects` tách riêng effect-level evidence khỏi projection/activation:
+
+| Phạm vi | Kết quả | Ý nghĩa |
+| --- | ---: | --- |
+| Source trigger `skill × event`, không gồm delay effect | **607 cặp / 403 skill ID / 53 event kinds** | Tập effect cần native scenario để chứng minh điều kiện và callback thật. |
+| Source inventory gồm delay effect | **672 cặp / 57 event kinds** | Khớp boundary inventory rộng của `audit:hidden-skills`; delay effect không đi qua reveal-before-`SkillEffect` như trigger thường. |
+| Native-local effect evidence đã map | **18/607 cặp; 10/53 event kinds (~3%)** | Chỉ các scenario đã chạy C++/Lua thật trong runtime cô lập; không phải hosted/Oracle/Render. |
+| Nhóm đã có evidence | `AfterCardsMove`, `BeforeCardsMove`, `CardUsing`, `Damaged`, `DamageInflicted`, `Death`, `DetermineDamageInflicted`, `DrawNCards`, `EventPhaseStart`, `TargetConfirming` | Evidence hiện tập trung vào các case hidden đã được dựng, không đại diện toàn bộ event. |
+
+Các nhóm còn trống/rủi ro cao gồm `TargetSpecified` (31 skill ID), `TargetConfirmed` (22), `Damage` (25), `DamageCaused` (16), `CardUseFinished` (16), `EventPhaseStart` (108 skill ID chưa test), `EnterDying` (10), `AskForPeaches` (5), `AskForRetrial` (4), cùng các event `GeneralHidden/GeneralRevealed`, phase transition, death/round và package-specific hooks. Vì vậy kết luận hiện tại là **projection/lifecycle/slot-route đã đạt SOURCE/LOCAL; effect parity của skill tướng úp vẫn OPEN**, không được suy ra từ 18 cặp native-local hoặc từ 520/520 lifecycle.
+
 ## Mức bao phủ hiện tại
 
 | Tầng | Trạng thái | Bằng chứng / giới hạn |

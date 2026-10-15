@@ -15,6 +15,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - CP90/CP91, các hotfix UI CP93/CP94/CP96 và các sửa bridge/runtime đã được đưa vào artifact candidate; identity hosted đã được đối chiếu. Smoke test gameplay nhiều bước và official sign-off vẫn mở.
 - `PLAYABLE_MOBILE` vẫn `false`. Thiết bị vật lý và mất mạng vật lý được người dùng miễn trong scope hiện tại; trạng thái là `DEFERRED/WAIVED_BY_USER`, không phải PASS.
 - Audit P0 hidden-general: Lua/C++ gốc cho phép trigger skill khi tướng úp nếu đã prelight. React đã triển khai fake-skill dock, privacy/lifecycle reducer, regular-skill gate và wire `PushRequest("prelight,...")`. Native QA **PASS NATIVE-LOCAL bounded** cho ma trận lõi 12/12, các staged add-on trước đó, Xiaoji `2/2`, Guanxing `2/2`, 英姿 `2/2`, Thiên Hương `2/2`, Đoạn Trường `2/2` và regression Di Kế re-hide `2/2` main/deputy. Regression mới đã khóa `SkillEffect` reveal đúng slot → Di Kế chuyển 2 lá → `hideGeneral()` → fake `hs__yiji` vẫn prelight, `hasSkill` đúng và không có regular duplicate; 英姿 khóa `DrawNCards` `2→3` và rút thật 3 lá. Catalog/source scenarios hiện **51/51**, `test:qa-server-contract` **31/31** subtests. `hidden-fanjian` main/deputy đã PASS source/browser contract và wire PlayCard, nhưng native C++ remote probe dừng trước readiness gate vì host chưa có `tqs_qa`; không tính vào PASS native. Không gộp add-on vào identity lõi. Source projection/lifecycle/slot-route audit vẫn PASS theo số liệu canonical ở [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Hosted/official release matrix và exhaustive live effect matrix vẫn chưa đóng.
+- Audit effect mới (`npm --prefix game/web run audit:hidden-effects`) đã tách rõ hai lớp: source có **607 non-delay trigger `skill × event` pairs / 403 skill ID / 53 event kinds** (672/57 nếu gồm delay), còn evidence NATIVE-LOCAL staged hiện map được **18/607 pairs** trên 10 event kinds. Đây là inventory/backlog tự động, không phải lỗi runtime; các nhóm `TargetSpecified`, `TargetConfirmed`, `Damage`, `DamageCaused`, `CardUseFinished`, `EnterDying`, `AskForPeaches/Retrial`, phase/death/round và package-specific hooks vẫn OPEN. Không nâng GAME-03D thành exhaustive.
 - Fake trigger và fake active đã tách đúng: `AddSkill/LoseSkill` chỉ nhận skill của Self; dock idle bị khóa; chỉ `SkillButton` do Lua gửi mới được kích hoạt. Native matrix đã chứng minh Di Kế, `reveal_skill&`, Chế Hành và Long Đảm ViewAs đều mở đúng slot chủ/phó trước effect.
 
 ## Evidence đã được xác nhận
@@ -76,8 +77,9 @@ Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC
 ## Việc còn mở theo thứ tự
 
 1. **P0 gameplay:** xác minh guest access, cài/verify đúng QA/package identity trên Oracle hoặc hosted target rồi rerun normal rescue, Battle Royal rescue/view-as và founding; native-local đã PASS nhưng không thay thế LIVE.
-2. **P0 native interaction:** hoàn tất live matrix cho CardChosen, Poxi, CardsAndChoice, ArrangeCards, AG, MoveCardInBoard, SkillInvoke và CustomDialog; kiểm tra cancel/expiry/cleanup/reconnect theo semantics từng request.
-3. **P1 presentation/release:** mở smoketest CP96 cho người dùng; sau đó xử lý residual translation, official release, cold-start/quota/rollback/SLA và `PLAYABLE_MOBILE`.
+2. **P0 hidden effects:** dùng `audit:hidden-effects` làm checklist, sau đó dựng native scenario main/deputy theo nhóm event có rủi ro cao; mỗi ca phải ghi predicate, reveal-before-effect, callback state và cleanup, không chỉ prelight/activation.
+3. **P0 native interaction:** hoàn tất live matrix cho CardChosen, Poxi, CardsAndChoice, ArrangeCards, AG, MoveCardInBoard, SkillInvoke và CustomDialog; kiểm tra cancel/expiry/cleanup/reconnect theo semantics từng request.
+4. **P1 presentation/release:** mở smoketest CP96 cho người dùng; sau đó xử lý residual translation, official release, cold-start/quota/rollback/SLA và `PLAYABLE_MOBILE`.
 
 ## Nguyên tắc cho phiên sau
 
@@ -94,25 +96,29 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T09:36:17.648Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `fb1759bc03d9`.
-- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T09:44:54.857Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `577fb8df04be`.
+- File thay đổi hiển thị: 10 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+ M game/web/package.json
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.md
 ?? docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
 ?? game/web/scripts/export-all-zh.ts
+?? game/web/scripts/hidden-effect-audit.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+577fb8df docs: checkpoint fanjian QA state
 fb1759bc docs: record hidden fanjian QA boundary
 ea8faeb7 qa: cover hidden fanjian active reveal path
-e8e12acd docs: refresh Render handoff snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
