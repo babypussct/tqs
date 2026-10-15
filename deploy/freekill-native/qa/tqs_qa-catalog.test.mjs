@@ -21,6 +21,7 @@ const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
+const guanxingSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -473,6 +474,40 @@ test('hidden-xiaoji locks equipment-loss AfterCardsMove draw for both slots', ()
   assert.match(xiaoji, /player:drawCards\(player\.room\.current == player and 1 or 3, xiaoji\.name\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-xiaoji"[\s\S]*triggerHiddenXiaoji\(room, state\)/u);
   assert.match(qaInit, /after_cards_move=equipment/u);
+});
+
+test('hidden-guanxing locks EventPhaseStart reveal and native arrange for both slots', () => {
+  const expected = {
+    'hidden-guanxing': {
+      seed: 0x5d6e7faa,
+      actor: { general: 'hs__zhugeliang', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-guanxing-deputy': {
+      seed: 0x5d6e7fab,
+      actor: { general: 'hs__zhaoyun', deputy: 'hs__zhugeliang', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-guanxing', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} source roster drift`);
+    assert.deepEqual(scenario.cards, []);
+  }
+
+  const guanxing = fs.readFileSync(guanxingSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(guanxing, /name = "hs__guanxing"/u);
+  assert.match(guanxing, /guanxing:addEffect\(fk\.EventPhaseStart/u);
+  assert.match(guanxing, /player\.phase == Player\.Start/u);
+  assert.match(guanxing, /room:askToGuanxing\(player/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-guanxing"[\s\S]*triggerHiddenGuanxing\(room, state\)/u);
+  assert.match(qaInit, /hidden-guanxing[\s\S]*AskForArrangeCards/iu);
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {

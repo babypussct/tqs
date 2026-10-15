@@ -55,7 +55,9 @@ export type QaScenarioId =
   | 'hidden-weimu-indulgence'
   | 'hidden-weimu-indulgence-deputy'
   | 'hidden-xiaoji'
-  | 'hidden-xiaoji-deputy';
+  | 'hidden-xiaoji-deputy'
+  | 'hidden-guanxing'
+  | 'hidden-guanxing-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -580,6 +582,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-xiaoji',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-guanxing': {
+    version: 1,
+    id: 'hidden-guanxing',
+    title: '诸葛亮 úp: Quan Tinh mở đúng slot trước khi sắp xếp bài',
+    seed: 0x5d6e7faa,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-guanxing',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-guanxing-deputy': {
+    version: 1,
+    id: 'hidden-guanxing-deputy',
+    title: '诸葛亮 phó tướng úp: Quan Tinh mở đúng slot trước khi sắp xếp bài',
+    seed: 0x5d6e7fab,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-guanxing',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -598,6 +620,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-weimu', 'hidden-weimu-deputy',
   'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy',
   'hidden-xiaoji', 'hidden-xiaoji-deputy',
+  'hidden-guanxing', 'hidden-guanxing-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -767,6 +790,9 @@ function validatePlan(plan: QaScenarioPlan): void {
         !('type' in plan.slots[0].match) || plan.slots[0].match.type !== 'equip') {
       throw new QaScenarioError(`${plan.id} must reserve one actor equipment for 枭姬`);
     }
+  }
+  if (plan.trigger === 'hidden-guanxing' && plan.slots.length !== 0) {
+    throw new QaScenarioError(`${plan.id} must not reserve cards; native 观星 owns the top-card selection`);
   }
 }
 

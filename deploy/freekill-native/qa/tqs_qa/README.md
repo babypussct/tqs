@@ -389,6 +389,32 @@ ghi `AfterCardsMove`, `SkillEffect=true`, reveal đúng chủ/phó và số lá 
 `1`/`3`; cả hai client thấy GameOver. Đây là `NATIVE-LOCAL staged`, chưa phải
 Render/Oracle LIVE.
 
+## `hidden-guanxing`: `EventPhaseStart` và `AskForArrangeCards`
+
+[`guanxing.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua)
+được kiểm tra với Gia Cát Lượng đang úp ở chủ hoặc phó tướng. Gate chỉ cho
+browser gửi prelight trước khi director nâng `Player.Start` và gọi event
+native; chính skill gốc phải hỏi `AskForSkillInvoke`, mở đúng slot rồi gọi
+`room:askToGuanxing`, tức request `AskForArrangeCards`. Hai lá đầu thật phải
+được trả về DrawPile sau khi dialog hoàn tất.
+
+Chạy hai mirror trên room sạch:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-guanxing \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-guanxing-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: cả hai client thấy `AskForSkillInvoke` của gate và
+`AskForArrangeCards`, log native ghi `EventPhaseStart`, `SkillEffect=true`,
+reveal đúng chủ/phó, hai lá đã trở lại DrawPile và GameOver. Đây là
+`NATIVE-LOCAL staged`, chưa phải Render/Oracle LIVE.
+
 ## `hidden-fankui`: trigger `Damaged` khi Tư Mã Ý còn úp
 
 `fankui.lua` uses a compulsory `fk.Damaged` effect. The QA gate only pauses the
@@ -559,6 +585,8 @@ wrong slot:
 | `hidden-weimu-indulgence-deputy` | Giả Hủ is the deputy; black delayed-Trick `BeforeCardsMove` opens only the deputy and mirrors Indulgence to discard. |
 | `hidden-xiaoji` | Tôn Thượng Hương is the main; equipment-loss `AfterCardsMove` opens only the main and draws by native turn rule. |
 | `hidden-xiaoji-deputy` | Tôn Thượng Hương is the deputy; equipment-loss `AfterCardsMove` opens only the deputy and draws by native turn rule. |
+| `hidden-guanxing` | Gia Cát Lượng is the main; `EventPhaseStart` opens only the main and completes native `AskForArrangeCards`. |
+| `hidden-guanxing-deputy` | Gia Cát Lượng is the deputy; `EventPhaseStart` opens only the deputy and completes native `AskForArrangeCards`. |
 | `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
 | `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
 
@@ -568,8 +596,8 @@ negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
 `hidden-active` and `hidden-active-main`, plus `hidden-view-as` and
 `hidden-view-as-main`. The staged add-on set now also includes
 `hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
-`hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors and both
-Weimu mirrors and both Xiaoji mirrors. Slot mirrors remain separate scenario IDs because each must prove
+`hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors, both
+Weimu mirrors, both Xiaoji mirrors and both Guanxing mirrors. Slot mirrors remain separate scenario IDs because each must prove
 the owning main/deputy slot; the canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.

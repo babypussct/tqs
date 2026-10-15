@@ -499,6 +499,31 @@ local function validateHiddenXiaojiScenario(scenario)
   end
 end
 
+local function validateHiddenGuanxingScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-guanxing scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-guanxing-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "hs__zhugeliang"
+  local expectedDeputy = deputy and "hs__zhugeliang" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-guanxing actor must use the catalogued Zhuge Liang main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-guanxing source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-guanxing must expose AskForSkillInvoke before the native arrange request")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-guanxing must let native Guanxing own the top-card selection")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -535,6 +560,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenWeimuScenario(scenario)
   elseif scenario.trigger == "hidden-xiaoji" then
     validateHiddenXiaojiScenario(scenario)
+  elseif scenario.trigger == "hidden-guanxing" then
+    validateHiddenGuanxingScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -2469,6 +2496,87 @@ local function triggerHiddenXiaoji(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenGuanxing(room, state)
+  -- 观星 is an optional EventPhaseStart trigger. The QA pause is separate
+  -- from the source trigger: it gives the browser a real opportunity to
+  -- prelight the hidden skill before the native event is raised.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-guanxing actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__guanxing") then
+    fail("hidden-guanxing must attach the hidden Guanxing skill")
+  end
+  if state.actor:hasSkill("hs__guanxing") then
+    fail("hidden-guanxing must not be active before the prelighted phase trigger")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_guanxing_gate",
+    prompt = "TQS QA: prelight 观星, rồi xác nhận để bắt đầu pha chuẩn bị.",
+  })
+  if not gate then
+    fail("hidden-guanxing readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__guanxing") then
+    fail("hidden-guanxing must be prelighted before the EventPhaseStart branch")
+  end
+
+  -- With two live players the source skill must ask the native arrange dialog
+  -- for exactly two top cards. The skill itself calls getNCards/askToGuanxing;
+  -- this director only records the expected native cards so completion can be
+  -- checked after the real AskForArrangeCards reply returns.
+  state.guanxingCards = table.simpleClone(room:getNCards(math.min(5, #room.alive_players)))
+  state.currentDamageStep = 1
+  room:setPlayerProperty(state.actor, "phase", Player.Start)
+  room:broadcastProperty(state.actor, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor,
+    phase = Player.Start,
+  })
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__guanxing" and entry.player == state.actor.id
+  end)
+  local guanxingIsDeputy = state.scenario == "hidden-guanxing-deputy"
+  local revealedCorrectSlot = guanxingIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__zhugeliang"
+    or not guanxingIsDeputy and state.actor.general == "hs__zhugeliang" and state.actor.deputyGeneral == "anjiang"
+  local arranged = #state.guanxingCards == 2
+  for _, id in ipairs(state.guanxingCards) do
+    if room:getCardArea(id) ~= Card.DrawPile then
+      arranged = false
+      break
+    end
+  end
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Guanxing must run a real SkillEffect and reveal Zhuge Liang in its catalogued slot")
+  end
+  if not arranged then
+    fail("hidden Guanxing must return both native top cards to the draw pile after AskForArrangeCards")
+  end
+  if state.actor:isFakeSkill("hs__guanxing") or not state.actor:hasSkill("hs__guanxing") then
+    fail("hidden Guanxing must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden 观星: EventPhaseStart=%arg; AskForArrangeCards=%arg2; SkillEffect=%arg3; mở tướng=%arg4; đã xếp=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(arranged),
+    arg6 = guanxingIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-guanxing event_phase_start=guanxing arrange=true effect=true slot=%s revealed=%s cards=%d revision=%s",
+    guanxingIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), #state.guanxingCards,
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -2498,7 +2606,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-weimu-indulgence" or
       state.scenario == "hidden-weimu-indulgence-deputy" or
       state.scenario == "hidden-xiaoji" or
-      state.scenario == "hidden-xiaoji-deputy") and
+      state.scenario == "hidden-xiaoji-deputy" or
+      state.scenario == "hidden-guanxing" or
+      state.scenario == "hidden-guanxing-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -2630,6 +2740,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenWeimu(room, state)
     elseif scenario.trigger == "hidden-xiaoji" then
       triggerHiddenXiaoji(room, state)
+    elseif scenario.trigger == "hidden-guanxing" then
+      triggerHiddenGuanxing(room, state)
     end
   end,
 })

@@ -1131,6 +1131,48 @@
           "area": "equip"
         }
       ]
+    },
+    {
+      "id": "hidden-guanxing",
+      "title": "Hidden 诸葛亮 观星 reveals before native arrange",
+      "seed": 1567522730,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-guanxing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhugeliang",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-guanxing-deputy",
+      "title": "Hidden deputy 诸葛亮 观星 reveals before native arrange",
+      "seed": 1567522731,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-guanxing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhugeliang",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
     }
   ]
 }
