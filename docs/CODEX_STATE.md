@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 19:31 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
+> Cập nhật handoff: 15/10/2026 19:37 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
 ## Mục tiêu và phạm vi
 
@@ -8,7 +8,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Handoff ngắn
 
-- **Render candidate:** [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com) đang ở identity CP96 UI trên runtime CP92; health/manifest/asset probe đã PASS. Các commit sau CP96 chỉ là QA/docs/harness, không đổi `game/web/src`, `dist`, gateway hoặc runtime, nên không cần tạo deployment mới. Candidate vẫn là bản smoke-test hợp lệ, chưa phải official.
+- **Render candidate:** [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com) đang ở identity CP96 UI trên runtime CP92; deployment `dep-db8cgp6q1p3s73acdhcg` từ HEAD `568f69bb` đã Live, health/manifest/asset probe PASS. Các commit sau CP96 chỉ là QA/docs/harness, không đổi `game/web/src`, `dist`, gateway hoặc runtime; lần redeploy này giữ nguyên artifact CP96 để người dùng smoke test, chưa phải official.
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. Quách Gia úp → prelight Di Kế → nhận sát thương → invoke → mở đúng chủ/phó → chạy Di Kế đã PASS NATIVE-LOCAL ở nhánh negative/positive/skip và re-hide main/deputy. Đây chưa phải evidence Render/Oracle.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
 - **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, nhưng native-local effect evidence mới `18/607`. `hidden-tiandu` và `hidden-fanjian` mới đạt source/catalog/browser contract, chưa tính native C++ gameplay.
@@ -44,16 +44,18 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên đúng target remote, rồi rerun cả `hidden-tiandu` main/deputy; song song giữ Render CP96 cho smoke test UI. Không deploy lại QA/docs-only commit và không đánh dấu goal hoàn tất khi exhaustive effect matrix hoặc hosted native identity còn mở.
+Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên đúng target remote, rồi rerun cả `hidden-tiandu` main/deputy; song song giữ Render CP96 hiện hành cho smoke test UI. Không đánh dấu goal hoàn tất khi exhaustive effect matrix hoặc hosted native identity còn mở.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:31:14.872Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `857ee0f22ce0`.
-- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T12:37:33.936Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `568f69bbd0ac`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
@@ -65,9 +67,9 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 Ba commit gần nhất:
 
 ```text
+568f69bb docs: checkpoint hidden active skill gate
 857ee0f2 qa: lock hidden active skill reveal path
 2c89a6f5 docs: record remote hidden-tiandu gate block
-6992a895 docs: checkpoint hidden trigger gate
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

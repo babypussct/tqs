@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 19:29 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
+> Cập nhật 15/10/2026 19:37 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
@@ -21,7 +21,7 @@
 | G4 card/target/skill | **PASS bounded** | Sát/target/OK, Vô Giải, reveal, Cường Tập trong live bot path. | T06–T08, response/view-as và native dialog matrix. |
 | G5 bot game | **PASS bounded** | Có ván bot C++ thật đi tới GameOver và về sảnh. | Một ván không chứng minh mọi luật/tướng/card. |
 | G6 multiplayer/reconnect | **PASS browser bounded** | Two-account và controlled reconnect đã có evidence. | Physical network waived; prompt-specific reconnect còn cần matrix; native hủy `AskForSkillInvoke` đang pending khi actor disconnect. |
-| G7 release | **CANDIDATE LIVE + CP96 UI HOTFIX DEPLOYED** | Latest deployment `dep-db89kson74is73eakr6g` từ HEAD `74a7b30e` báo Live; source này chỉ chứa QA/docs/harness sau UI artifact `0cc0d346`; health `ok`, manifest runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, bundle hash `0183516d94e2865f`, HTML asset `index-B7bZuyxk.js`/`index-7DaeryPw.css` probe và byte hash PASS. | Full gameplay smoketest, official sign-off, cold-start/quota/rollback/SLA. |
+| G7 release | **CANDIDATE LIVE + CP96 UI HOTFIX DEPLOYED** | Latest deployment `dep-db8cgp6q1p3s73acdhcg` từ HEAD `568f69bb` báo Live; source này chỉ chứa QA/docs/harness sau UI artifact `0cc0d346`, nên artifact UI/runtime không đổi; health `ok`, manifest runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, bundle hash `0183516d94e2865f`, HTML asset `index-B7bZuyxk.js`/`index-7DaeryPw.css` probe và byte hash PASS. | Full gameplay smoketest, official sign-off, cold-start/quota/rollback/SLA. |
 | `PLAYABLE_MOBILE` | **FALSE** | — | Chỉ đóng sau khi P0 gameplay/native interaction và release criteria pass. |
 
 ## Backlog ưu tiên
@@ -54,7 +54,7 @@ Các evidence trên chỉ đóng đúng phạm vi ghi ở đây. Khi runtime MD5
 1. **Đã hoàn tất NATIVE-LOCAL bounded:** runtime native cô lập được dựng bằng đúng package pin, installer/verify `tqs_qa` PASS; ngoài Đoạn Trường đã có trong audit, regression Di Kế re-hide main/deputy vừa PASS trên runtime flist MD5 `3966a400db61802cd94b8d87b4cc54d5`, QA revision `18969850…`: tướng úp/prelight → damage thật → Di Kế reveal/phân phối 2 lá → `hideGeneral()` → giữ fake/prelight, không regular duplicate, GameOver sạch. Evidence mới nằm ở audit; runtime này không khớp `RELEASE.json` nên chỉ là local/unpinned, không coi là Oracle/LIVE. Với Oracle VM, hai rerun trước (`reconnect-failure-1792002124241.json`, `1792002605900.json`) fail trước QA gate vì package/config chưa xác định; service/port reachable không chứng minh parity.
    **Blocker Oracle còn nguyên:** SSH vẫn `Permission denied (publickey)`; Run Command chỉ chạy dưới `ocarun`, `sudo -n` yêu cầu mật khẩu; OCI không cho sửa `ssh_authorized_keys`; recovery/reboot có kiểm soát chưa vào được root shell. Probe mới nhất đã vào được room nhưng dừng trước readiness gate (`nativeQaGateSeen=false`), nên cần guest admin credential hoặc recovery có kiểm soát để đọc manifest/hash trong `/opt/freekill-hegemony/current`, rồi mới install/verify package thực tế. Không dùng evidence NATIVE-LOCAL để suy ra hosted/official.
 2. Hoàn tất P0 native interaction matrix và phần rescue/wild còn thiếu sau request (round events, state phe, reward/punishment, winner); hosted/Oracle rerun phải ghi request, renderer, reply và state sau reply vào [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
-3. Mở smoketest CP96 cho người dùng; ghi lại lỗi gameplay thực tế nếu có. Không nâng mức gate chỉ từ việc deploy thành công.
+3. Mở smoketest CP96 hiện hành cho người dùng; ghi lại lỗi gameplay thực tế nếu có. Không nâng mức gate chỉ từ việc deploy thành công.
 4. Cập nhật bảng gate và `CODEX_STATE.md`, rồi chạy `npm run codex:checkpoint`.
 
 ## Quy tắc cập nhật tài liệu
