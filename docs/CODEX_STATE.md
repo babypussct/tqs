@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 18:55 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
+> Cập nhật handoff: 15/10/2026 19:02 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
 ## Mục tiêu và phạm vi
 
@@ -12,7 +12,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. Quách Gia úp → prelight Di Kế → nhận sát thương → invoke → mở đúng chủ/phó → chạy Di Kế đã PASS NATIVE-LOCAL ở nhánh negative/positive/skip và re-hide main/deputy. Đây chưa phải evidence Render/Oracle.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
 - **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, nhưng native-local effect evidence mới `18/607`. `hidden-tiandu` và `hidden-fanjian` mới đạt source/catalog/browser contract, chưa tính native C++ gameplay.
-- **Gate vừa chạy PASS:** `test:store` 40/40; `audit:hidden-skills`; `audit:hidden-effects`; `test:qa-server-contract` 32/32; `typecheck`; `test:e2e:lua` 63/63. Các fixture/local gate không thay thế native hosted evidence.
+- **Gate vừa chạy PASS:** source-law contract `test:hidden-rule-contract` 6/6; `audit:hidden-skills`; `audit:hidden-effects`; `test:qa-server-contract` 32/32; `typecheck`; các gate trước đó gồm `test:store` 40/40 và `test:e2e:lua` 63/63. Các fixture/local gate không thay thế native hosted evidence.
 - **Lua ABI:** launcher và installer đã fail-closed với Lua 5.5, chọn Lua 5.4 và preflight `socket`/`lfs`; native-local đã verify. Oracle chưa được verify lại package hiện hành.
 - **Oracle/SSH:** profile `tqs-native-qa` và public key local tồn tại nhưng `ssh -o BatchMode=yes tqs-native-qa true` vẫn `Permission denied (publickey)`. Chưa có quyền guest để đọc manifest hoặc cài `tqs_qa`; không ghi nhận deploy trên VM và không dùng NATIVE-LOCAL để suy ra LIVE.
 
@@ -48,8 +48,8 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T11:57:54.515Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `9b86745aba3d`.
+- Ghi lúc: 2026-10-15T12:05:29.697Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `17ad322efaf3`.
 - File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -64,9 +64,9 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 Ba commit gần nhất:
 
 ```text
-9b86745a docs: streamline hidden-skill QA handoff
+17ad322e qa: lock hidden-general reveal contract
+2194267a docs: streamline hidden-skill QA handoff
 c73f6e04 docs: checkpoint hidden tiandu QA
-d598ff16 qa: cover hidden tiandu finish judge path
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

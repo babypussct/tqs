@@ -15,6 +15,7 @@
     "audit:skill-activation": "tsx scripts/skill-activation-audit.ts",
     "audit:hidden-skills": "tsx scripts/hidden-skill-audit.ts",
     "audit:hidden-effects": "tsx scripts/hidden-effect-audit.ts",
+    "test:hidden-rule-contract": "tsx --test scripts/hidden-rule-contract.test.ts",
     "audit:native-callers": "tsx scripts/native-caller-audit.ts",
     "extract:skills:zh": "tsx scripts/skill-zh-source.ts --markdown",
     "smoke": "tsx scripts/smoke.ts",

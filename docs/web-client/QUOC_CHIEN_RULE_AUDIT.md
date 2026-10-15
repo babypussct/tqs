@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 15/10/2026 18:55 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 15/10/2026 19:02 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -44,6 +44,8 @@ Probe public sau latest redeploy `dep-db89kson74is73eakr6g` (15/10/2026 16:20 GM
 Re-validation local/native sau CP96 UI: mốc lịch sử trước commit Phản Gián là catalog/source `49/49` và `test:qa-server-contract` `30/30`; mốc hiện hành sau QA Thiên Đố là catalog/source `53/53`, `test:qa-server-contract` `32/32`, Wasmoon/React Lua E2E `63/63`, hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Browser QA đã thêm `hidden-fanjian`/`hidden-fanjian-deputy` và `hidden-tiandu`/`hidden-tiandu-deputy`; Phản Gián native C++ remote probe dừng trước readiness gate vì package chưa có trên host, còn Thiên Đố mới kiểm source contract và local prelight gate, nên cả hai nhóm không tính vào PASS native. Các ca NATIVE-LOCAL staged trước đó vẫn giữ identity riêng; không nâng candidate thành Oracle/hosted LIVE.
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local; `verify-install.sh` và `verify-qa-package.sh` PASS trước các ca hiện hành. Candidate hosted và Oracle VM chưa được package/deploy lại nên không được gắn evidence này cho LIVE.
+
+Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract` hiện **6/6 PASS**. Gate này khóa đúng thứ tự và ownership của luật gốc: fake skill phải prelight mới qua `Player:hasSkill`; trigger phải vào `room:useSkill`; `SkillEffect` gọi `revealBySkillName` trước `fk.SkillEffect`/callback; route chủ được ưu tiên rồi mới fallback phó; prelight `true` chỉ nhận fake skill của đúng player; và `hideGeneral()` re-attach phải phát lại `PrelightSkill=true`. Đây là **SOURCE contract regression**, không phải 607 effect cases native.
 
 ## Hợp đồng runtime Lua native
 
