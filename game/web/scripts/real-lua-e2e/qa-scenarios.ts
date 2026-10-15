@@ -27,6 +27,8 @@ export type QaScenarioId =
   | 'fazheng-enyuan'
   | 'hidden-yiji'
   | 'hidden-yiji-deputy'
+  | 'hidden-rehide-yiji'
+  | 'hidden-rehide-yiji-deputy'
   | 'hidden-jianxiong'
   | 'hidden-jianxiong-deputy'
   | 'hidden-fankui'
@@ -57,12 +59,19 @@ export type QaScenarioId =
   | 'hidden-xiaoji'
   | 'hidden-xiaoji-deputy'
   | 'hidden-guanxing'
-  | 'hidden-guanxing-deputy';
+  | 'hidden-guanxing-deputy'
+  | 'hidden-yingzi'
+  | 'hidden-yingzi-deputy'
+  | 'hidden-tianxiang'
+  | 'hidden-tianxiang-deputy'
+  | 'hidden-duanchang'
+  | 'hidden-duanchang-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
   | { name: string }
-  | { type: 'equip' };
+  | { type: 'equip' }
+  | { suit: string };
 
 export type QaCardArea = 'hand' | 'equip';
 export type QaCardOwner = 'self' | 'opponent';
@@ -88,6 +97,7 @@ export type QaScenarioTrigger =
   | 'founding'
   | 'damage-exchange'
   | 'hidden-yiji'
+  | 'hidden-rehide-yiji'
   | 'hidden-jianxiong'
   | 'hidden-fankui'
   | 'hidden-reveal'
@@ -100,7 +110,11 @@ export type QaScenarioTrigger =
   | 'hidden-qianxun'
   | 'hidden-kongcheng'
   | 'hidden-weimu'
-  | 'hidden-xiaoji';
+  | 'hidden-xiaoji'
+  | 'hidden-guanxing'
+  | 'hidden-tianxiang'
+  | 'hidden-yingzi'
+  | 'hidden-duanchang';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -120,6 +134,7 @@ export interface QaCardDescriptor {
   name: string;
   trueName: string;
   color: string;
+  suit?: string;
   /** The fixture normalizes the native enum to keep this module package-agnostic. */
   type: string;
 }
@@ -133,6 +148,7 @@ export interface ResolvedQaScenario {
 const trueName = (value: string, color?: 'red' | 'black'): QaCardMatcher => ({ trueName: value, color });
 const named = (value: string): QaCardMatcher => ({ name: value });
 const equip = (): QaCardMatcher => ({ type: 'equip' });
+const suit = (value: string): QaCardMatcher => ({ suit: value });
 
 const slot = (
   key: string,
@@ -275,6 +291,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     drawSequence: [],
     slots: [],
     trigger: 'hidden-yiji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-rehide-yiji': {
+    version: 1,
+    id: 'hidden-rehide-yiji',
+    title: 'Quách Gia úp lại sau Di Kế: fake skill vẫn giữ prelight',
+    seed: 0x5d6e7fb0,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-rehide-yiji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-rehide-yiji-deputy': {
+    version: 1,
+    id: 'hidden-rehide-yiji-deputy',
+    title: 'Quách Gia phó tướng úp lại sau Di Kế: fake skill vẫn giữ prelight',
+    seed: 0x5d6e7fb1,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-rehide-yiji',
     expectedCommand: 'AskForSkillInvoke',
   },
   'hidden-jianxiong': {
@@ -602,6 +638,66 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-guanxing',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-yingzi': {
+    version: 1,
+    id: 'hidden-yingzi',
+    title: '周瑜 úp: Anh Tư tăng số bài của DrawNCards native',
+    seed: 0x5d6e7fb2,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-yingzi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-yingzi-deputy': {
+    version: 1,
+    id: 'hidden-yingzi-deputy',
+    title: '周瑜 phó tướng úp: Anh Tư tăng số bài của DrawNCards native',
+    seed: 0x5d6e7fb3,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-yingzi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-tianxiang': {
+    version: 1,
+    id: 'hidden-tianxiang',
+    title: '小乔 úp: Thiên Hương chuyển sát thương sau khi chọn bài tim',
+    seed: 0x5d6e7fac,
+    drawSequence: [suit('heart')],
+    slots: [slot('tianxiang-heart', suit('heart'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-tianxiang',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-tianxiang-deputy': {
+    version: 1,
+    id: 'hidden-tianxiang-deputy',
+    title: '小乔 phó tướng úp: Thiên Hương chuyển sát thương sau khi chọn bài tim',
+    seed: 0x5d6e7fad,
+    drawSequence: [suit('heart')],
+    slots: [slot('tianxiang-heart', suit('heart'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-tianxiang',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-duanchang': {
+    version: 1,
+    id: 'hidden-duanchang',
+    title: '蔡文姬 úp: Đoạn Trường kích hoạt khi chết và tước kỹ năng chủ tướng của killer',
+    seed: 0x5d6e7fae,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-duanchang',
+    expectedCommand: 'AskForChoices',
+  },
+  'hidden-duanchang-deputy': {
+    version: 1,
+    id: 'hidden-duanchang-deputy',
+    title: '蔡文姬 phó tướng úp: Đoạn Trường kích hoạt khi chết và tước kỹ năng chủ tướng của killer',
+    seed: 0x5d6e7faf,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-duanchang',
+    expectedCommand: 'AskForChoices',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -609,6 +705,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
   'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
+  'hidden-rehide-yiji', 'hidden-rehide-yiji-deputy',
   'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
   'hidden-dual', 'hidden-luoshen', 'hidden-luoshen-deputy',
@@ -621,6 +718,9 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy',
   'hidden-xiaoji', 'hidden-xiaoji-deputy',
   'hidden-guanxing', 'hidden-guanxing-deputy',
+  'hidden-yingzi', 'hidden-yingzi-deputy',
+  'hidden-tianxiang', 'hidden-tianxiang-deputy',
+  'hidden-duanchang', 'hidden-duanchang-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -640,6 +740,7 @@ function matches(card: QaCardDescriptor, requirement: QaCardMatcher): boolean {
       (requirement.color === undefined || card.color === requirement.color);
   }
   if ('name' in requirement) return card.name === requirement.name;
+  if ('suit' in requirement) return card.suit === requirement.suit;
   return requirement.type === 'equip' && card.type === 'equip';
 }
 
@@ -793,6 +894,22 @@ function validatePlan(plan: QaScenarioPlan): void {
   }
   if (plan.trigger === 'hidden-guanxing' && plan.slots.length !== 0) {
     throw new QaScenarioError(`${plan.id} must not reserve cards; native 观星 owns the top-card selection`);
+  }
+  if (plan.trigger === 'hidden-yingzi' && plan.slots.length !== 0) {
+    throw new QaScenarioError(`${plan.id} must not reserve cards; native 英姿 owns the DrawNCards count`);
+  }
+  if (plan.trigger === 'hidden-tianxiang') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'tianxiang-heart' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('suit' in plan.slots[0].match) || plan.slots[0].match.suit !== 'heart') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor heart hand card for 天香`);
+    }
+  }
+  if (plan.trigger === 'hidden-duanchang' && plan.slots.length !== 0) {
+    throw new QaScenarioError(`${plan.id} must not reserve cards; native 断肠 owns the death/choice path`);
+  }
+  if (plan.trigger === 'hidden-rehide-yiji' && plan.slots.length !== 0) {
+    throw new QaScenarioError(`${plan.id} must not reserve cards; native Di Kế owns the reveal/re-hide path`);
   }
 }
 

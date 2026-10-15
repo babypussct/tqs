@@ -1443,6 +1443,35 @@ try {
       await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{17, 'hp', 3}"));
       assert.equal((await snapshot(p)).fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, true);
 
+      for (const scenarioId of ['hidden-rehide-yiji', 'hidden-rehide-yiji-deputy'] as const) {
+        const hiddenRehide = await startScenario(scenarioId);
+        const fakeRehide = p.locator('button.fake-skill-button').first();
+        await fakeRehide.waitFor();
+        await fakeRehide.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgePrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__yiji' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenRehide.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        await p.evaluate((deputy) => window.__tqsRealLuaE2e.rehideHiddenYiji(deputy), scenarioId.endsWith('-deputy'));
+        await p.waitForFunction(() => {
+          const state = window.__tqsRealLuaE2e.snapshot();
+          return state.fakeSkills.some((skill) => skill.name === 'hs__yiji' && skill.prelighted) &&
+            !state.regularSkills.some((skill) => skill.name === 'hs__yiji');
+        });
+        const afterRehide = await snapshot(p);
+        assert.equal(afterRehide.fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, true,
+          `${scenarioId} must retain prelight after re-hide`);
+        assert.equal(afterRehide.regularSkills.some((skill) => skill.name === 'hs__yiji'), false,
+          `${scenarioId} must not retain a regular duplicate after re-hide`);
+        const board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
+        assert.equal(board.player[17]?.general, null, `${scenarioId} main slot must be hidden again`);
+        assert.equal(board.player[17]?.deputyGeneral, null, `${scenarioId} deputy slot must be hidden again`);
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       for (const scenarioId of ['hidden-jianxiong', 'hidden-jianxiong-deputy'] as const) {
         const hiddenJianxiong = await startScenario(scenarioId);
         const fakeJianxiong = p.locator('button.fake-skill-button').first();
@@ -1589,6 +1618,54 @@ try {
         await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
         const gateReply = await reply(p);
         assert.equal(gateReply.replies.at(-1)?.requestId, hiddenWeimu.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
+      for (const scenarioId of ['hidden-tianxiang', 'hidden-tianxiang-deputy'] as const) {
+        const hiddenTianxiang = await startScenario(scenarioId);
+        const fakeTianxiang = p.locator('button.fake-skill-button')
+          .filter({ hasText: /天香|Thiên Hương|tianxiang/i }).first();
+        await fakeTianxiang.waitFor();
+        await fakeTianxiang.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeTianxiangPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__tianxiang' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenTianxiang.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
+      for (const scenarioId of ['hidden-yingzi', 'hidden-yingzi-deputy'] as const) {
+        const hiddenYingzi = await startScenario(scenarioId);
+        const fakeYingzi = p.locator('button.fake-skill-button')
+          .filter({ hasText: /英姿|Anh Tư|yingzi/i }).first();
+        await fakeYingzi.waitFor();
+        await fakeYingzi.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeYingziPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'ex__yingzi' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenYingzi.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
+      for (const scenarioId of ['hidden-duanchang', 'hidden-duanchang-deputy'] as const) {
+        const hiddenDuanchang = await startScenario(scenarioId);
+        const fakeDuanchang = p.locator('button.fake-skill-button')
+          .filter({ hasText: /断肠|Đoạn Trường|duanchang/i }).first();
+        await fakeDuanchang.waitFor();
+        await fakeDuanchang.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeDuanchangPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__duanchang' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenDuanchang.requestId);
         assert.equal(gateReply.replies.at(-1)?.hex, '4131');
         assert.deepEqual(gateReply.luaErrors, []);
       }

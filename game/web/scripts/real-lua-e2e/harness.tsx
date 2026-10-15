@@ -282,6 +282,28 @@ const api = {
   acknowledgePrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__yiji', ${prelight}}`));
   },
+  acknowledgeYingziPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'ex__yingzi', ${prelight}}`));
+  },
+  rehideHiddenYiji: (isDeputy: boolean) => {
+    // Native hideGeneral first removes the revealed regular skill, reattaches
+    // it as fake and re-emits retained PrelightSkill=true. Keep that order in
+    // the bridge fixture so the reducer regression is explicit.
+    if (isDeputy) {
+      serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'hs__guojia'}"));
+      serverNotify('LoseSkill', serverCbor("{17, 'hs__yiji', true}"));
+      serverNotify('AddSkill', serverCbor("{17, 'hs__yiji'}"));
+      serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+    } else {
+      serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'hs__guojia'}"));
+      serverNotify('LoseSkill', serverCbor("{17, 'hs__yiji', true}"));
+      serverNotify('AddSkill', serverCbor("{17, 'hs__yiji'}"));
+      serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+    }
+    serverNotify('LoseSkill', serverCbor("{17, 'hs__yiji'}"));
+    serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+    serverNotify('PrelightSkill', serverCbor("{'hs__yiji', true}"));
+  },
   continueHiddenJianxiong: () => {
     const id = ++nextId;
     fixtureRequest(id, 'AskForChoices', serverCbor(
@@ -312,6 +334,12 @@ const api = {
   },
   acknowledgeWeimuPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__weimu', ${prelight}}`));
+  },
+  acknowledgeTianxiangPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__tianxiang', ${prelight}}`));
+  },
+  acknowledgeDuanchangPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__duanchang', ${prelight}}`));
   },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
@@ -369,7 +397,8 @@ const api = {
     const nativeCards = conn.lua.eval<QaCardDescriptor[]>(`return table.map(ClientInstance.draw_pile, function(id)
       local card = Fk:getCardById(id)
       return {id=id, name=card.name, trueName=card.trueName,
-        color=card:getColorString(), type=card.type == Card.TypeEquip and 'equip' or 'other'}
+        color=card:getColorString(), suit=card:getSuitString(),
+        type=card.type == Card.TypeEquip and 'equip' or 'other'}
     end)`);
     const resolved = resolveQaScenario(plan, nativeCards);
     serverNotify('PrepareDrawPile', serverCbor(`{${resolved.drawPile.join(',')}}`));
@@ -467,6 +496,23 @@ const api = {
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_yiji_gate', 'TQS QA: prelight Di Kế nếu muốn, rồi bấm Kích hoạt để tiếp tục.'}");
         break;
+      case 'hidden-rehide-yiji':
+      case 'hidden-rehide-yiji-deputy': {
+        // The local fixture mirrors the native readiness gate. The explicit
+        // re-hide transition is applied only after the gate reply so the
+        // final fake+prelight projection can be asserted separately.
+        const deputy = scenarioId === 'hidden-rehide-yiji-deputy';
+        const main = deputy ? 'hs__simayi' : 'hs__guojia';
+        const deputyGeneral = deputy ? 'hs__guojia' : 'hs__simayi';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_rehide_yiji_gate', 'TQS QA: prelight Di Kế, kích hoạt rồi kiểm tra úp lại.'}");
+        break;
+      }
       case 'hidden-jianxiong':
       case 'hidden-jianxiong-deputy': {
         // Mirror the native prelight gate and the later AskForChoices request;
@@ -618,6 +664,57 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__xiaoji', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_xiaoji_gate', 'TQS QA: prelight 枭姬, rồi xác nhận để mất trang bị thật.'}");
+        break;
+      }
+      case 'hidden-yingzi':
+      case 'hidden-yingzi-deputy': {
+        // Yingzi is compulsory on fk.DrawNCards. The local fixture mirrors
+        // only the hidden fake-skill/prelight gate; native C++ owns the real
+        // DrawNCards mutation, draw count and slot reveal.
+        const deputy = scenarioId === 'hidden-yingzi-deputy';
+        const main = deputy ? 'hs__daqiao' : 'hs__zhouyu';
+        const deputyGeneral = deputy ? 'hs__zhouyu' : 'hs__daqiao';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'ex__yingzi', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_yingzi_gate', 'TQS QA: prelight 英姿, rồi xác nhận để bắt đầu pha rút bài.'}");
+        break;
+      }
+      case 'hidden-tianxiang':
+      case 'hidden-tianxiang-deputy': {
+        // Tianxiang owns a real DetermineDamageInflicted interaction. The
+        // fixture mirrors only the hidden fake-skill/prelight gate; native C++
+        // owns the heart-card/target selection, choice branch and redirect.
+        const deputy = scenarioId === 'hidden-tianxiang-deputy';
+        const main = deputy ? 'hs__sunquan' : 'hs__xiaoqiao';
+        const deputyGeneral = deputy ? 'hs__xiaoqiao' : 'hs__sunquan';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__tianxiang', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_tianxiang_gate', 'TQS QA: prelight Thiên Hương, rồi xác nhận để nhận sát thương.'}");
+        break;
+      }
+      case 'hidden-duanchang':
+      case 'hidden-duanchang-deputy': {
+        // Duanchang is a compulsory fk.Death trigger.  The fixture mirrors
+        // only the hidden fake-skill/prelight readiness gate; native C++ owns
+        // the real death event, killer choice and slot-skill loss.
+        const deputy = scenarioId === 'hidden-duanchang-deputy';
+        const main = deputy ? 'hs__yuanshao' : 'hs__caiwenji';
+        const deputyGeneral = deputy ? 'hs__caiwenji' : 'hs__yuanshao';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__duanchang', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_duanchang_gate', 'TQS QA: prelight Đoạn Trường, rồi xác nhận để xử lý khi chết.'}");
         break;
       }
       case 'hidden-reveal':
