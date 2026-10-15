@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 15/10/2026 10:49 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 15/10/2026 10:52 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -28,9 +28,11 @@ Bản candidate hiện đạt **MVP browser có server thật**, nhưng chưa đ
 | NATIVE-LOCAL staged add-on | `hidden-dual` + Lua 5.4 launcher; runtime MD5 `cf6e10887c7513df25c07d0bd5c20744`, QA revision `ee71594d4826b6126f4609ccfd283976cc0c0235`, package SHA-256 `1c7ba7b22a4608e1f2ef26ce33e03a378d46c03d817ec1cdf335ff72cab469d1`, catalog SHA-256 `66f7afd8530e12ca098422f91eae6c5a3a5c1de4ee84e6c39e626c45ef3e45da`, browser artifact SHA-256 `d432f717a938665fab8ae81a6a903aa11f1cfeaa84d5cc0fd62f07572e436893` |
 | Cài đặt native local | Lua 5.4 + `luasocket`/`luafilesystem` và package QA nằm trong runtime tạm `/tmp/tqs-native-runtime.a6bMIc`; chỉ phục vụ kiểm thử cục bộ, **không phải Oracle/production** |
 | Oracle VM package identity | **Chưa xác định / chưa chứng minh đã deploy source hiện hành**; service và cổng 9527 từng reachable nhưng chưa đọc được manifest/hash trong guest |
-| CP92 UI/runtime hotfix local | Web 1.739 file; `RELEASE.json` v2 verify PASS (16.522 file); runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; root `dist/` đã dọn và đồng bộ từ `game/web/dist`; chưa probe Render |
+| CP92 UI/runtime hotfix local | Web 1.739 file; `RELEASE.json` v2 verify PASS (16.522 file); runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; root `dist/` đã dọn và đồng bộ từ `game/web/dist`; commit `f039e228` đã push, chưa probe Render |
 
 `CP90` (pile/tay bài) và `CP91` (skill dock/time bar/action row/sorter) đã được đưa vào artifact CP92 hotfix local. Không tính chúng là tính năng live cho đến khi Render deploy và probe lại.
+
+Probe public ngay sau push vẫn quan sát CP89 (`fileCount=5279`, bundle hash `754a618bc6d8307d`, HTML trỏ `index-DNEQLblE.js`). Dashboard Render đang yêu cầu đăng nhập và hiển thị bảo trì; không có deployment ID mới, nên CP92 chưa được gắn nhãn LIVE.
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local; `verify-install.sh` và `verify-qa-package.sh` PASS trước các ca hiện hành. Candidate hosted và Oracle VM chưa được package/deploy lại nên không được gắn evidence này cho LIVE.
 

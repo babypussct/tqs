@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 10:49 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
+> Cập nhật 15/10/2026 10:52 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
@@ -21,7 +21,7 @@
 | G4 card/target/skill | **PASS bounded** | Sát/target/OK, Vô Giải, reveal, Cường Tập trong live bot path. | T06–T08, response/view-as và native dialog matrix. |
 | G5 bot game | **PASS bounded** | Có ván bot C++ thật đi tới GameOver và về sảnh. | Một ván không chứng minh mọi luật/tướng/card. |
 | G6 multiplayer/reconnect | **PASS browser bounded** | Two-account và controlled reconnect đã có evidence. | Physical network waived; prompt-specific reconnect còn cần matrix; native hủy `AskForSkillInvoke` đang pending khi actor disconnect. |
-| G7 release | **CANDIDATE LIVE + CP92 HOTFIX READY** | CP89 health/manifest/bundle identity và hosted smoke pass; CP92 UI/runtime artifact đã package/verify local. | Deploy/probe CP92, full gameplay, official sign-off, cold-start/quota/rollback/SLA. |
+| G7 release | **CANDIDATE LIVE + CP92 HOTFIX READY** | CP89 health/manifest/bundle identity và hosted smoke pass; CP92 UI/runtime artifact đã package/verify local, commit `f039e228` đã push. | Render đang bảo trì/login và auto-deploy off; deploy/probe CP92, full gameplay, official sign-off, cold-start/quota/rollback/SLA. |
 | `PLAYABLE_MOBILE` | **FALSE** | — | Chỉ đóng sau khi P0 gameplay/native interaction và release criteria pass. |
 
 ## Backlog ưu tiên

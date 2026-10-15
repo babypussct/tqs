@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 10:49 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
+> Cập nhật handoff: 15/10/2026 10:52 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
 
 ## Mục tiêu và phạm vi
 
@@ -10,6 +10,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 - Bản live là Render candidate [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com), identity CP89: source `a0bff426`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 14 package, 5.279 file trong bundle. Health/manifest đã được probe; đây là candidate để test, chưa phải official release.
 - Đã chuẩn bị **CP92 UI/runtime hotfix** trên nhánh Render hiện hành: build game web mới có 1.739 file, `RELEASE.json` v2 verify PASS với runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, root `dist/` đã được dọn và đồng bộ từ `game/web/dist`, gồm UI CP90/CP91 cùng bridge hidden-skill/Lua 5.4 hardening. Đây mới là artifact local đã kiểm tra; service Render đang tắt auto-deploy nên chưa gọi là LIVE cho đến khi deploy/probe thật.
+- Commit hotfix đã push thành công lên `origin/codex/cp89-render-current`: `f039e228`. Public probe sau push vẫn trả CP89 cũ (`fileCount=5279`, bundle `754a618bc6d8307d`, HTML `index-DNEQLblE.js`); Render dashboard đang ở login/bảo trì nên chưa có deployment ID mới.
 - Đã có browser → Wasmoon/Lua → gateway → FreeKill C++ live path: login/lobby/room/bot, một ván bot hoàn chỉnh, GameOver, về sảnh và disconnect sạch. Đây là bounded evidence, không phải full rule parity.
 - CP90/CP91 và các sửa bridge/runtime đã được đưa vào artifact hotfix CP92; trạng thái hosted vẫn **OPEN** cho đến khi đối chiếu deployment SHA, health, manifest và smoke test trên Render.
 - `PLAYABLE_MOBILE` vẫn `false`. Thiết bị vật lý và mất mạng vật lý được người dùng miễn trong scope hiện tại; trạng thái là `DEFERRED/WAIVED_BY_USER`, không phải PASS.
@@ -67,90 +68,21 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T03:44:18.017Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `3a3fe5dc250d`.
-- File thay đổi hiển thị: 1908 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T03:52:30.001Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `f039e228c39a`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/tqs_qa/README.md
- M deploy/freekill-native/qa/tqs_qa/catalog.json
- M deploy/freekill-native/qa/tqs_qa/init.lua
- M deploy/freekill-native/scripts/bootstrap-amd64.sh
- M deploy/freekill-native/scripts/install-packages.sh
- M deploy/freekill-native/scripts/run-server.sh
- M deploy/freekill-native/scripts/verify-install.sh
- D dist/apple-touch-icon.png
- D dist/assets/index-CpWTiRnN.css
- D dist/assets/index-DNEQLblE.js
- D dist/boot-login-mockup.html
- D dist/card-catalog-art/alliance_feast.png
- D dist/card-catalog-art/amazing_grace.png
- D dist/card-catalog-art/amiantus_robe.png
- D dist/card-catalog-art/analeptic.png
- D dist/card-catalog-art/archery_attack.png
- D dist/card-catalog-art/await_exhausted.png
- D dist/card-catalog-art/axe.png
- D dist/card-catalog-art/befriend_attacking.png
- D dist/card-catalog-art/burning_camps.png
- D dist/card-catalog-art/chitu.png
- D dist/card-catalog-art/collateral.png
- D dist/card-catalog-art/crossbow.png
- D dist/card-catalog-art/dayuan.png
- D dist/card-catalog-art/dilu.png
- D dist/card-catalog-art/dismantlement.png
- D dist/card-catalog-art/double_swords.png
- D dist/card-catalog-art/dragon_phoenix.png
- D dist/card-catalog-art/duel.png
- D dist/card-catalog-art/dunjia_book.png
- D dist/card-catalog-art/eight_diagram.png
- D dist/card-catalog-art/ex_nihilo.png
- D dist/card-catalog-art/fan.png
- D dist/card-catalog-art/fight_together.png
- D dist/card-catalog-art/fire__slash.png
- D dist/card-catalog-art/fire_attack.png
- D dist/card-catalog-art/god_salvation.png
- D dist/card-catalog-art/grand_ensign.png
- D dist/card-catalog-art/heg__nullification.png
- D dist/card-catalog-art/ice_sword.png
- D dist/card-catalog-art/imperial_order.png
- D dist/card-catalog-art/indulgence.png
- D dist/card-catalog-art/iron_armor.png
- D dist/card-catalog-art/iron_chain.png
- D dist/card-catalog-art/jade_seal.png
- D dist/card-catalog-art/jingfan.png
- D dist/card-catalog-art/jink.png
- D dist/card-catalog-art/jueying.png
- D dist/card-catalog-art/known_both.png
- D dist/card-catalog-art/kylin_bow.png
- D dist/card-catalog-art/lightning.png
- D dist/card-catalog-art/liulongcanjia.png
- D dist/card-catalog-art/luminous_pearl.png
- D dist/card-catalog-art/lure_tiger.png
- D dist/card-catalog-art/mobile__dragon_phoenix.png
- D dist/card-catalog-art/mobile__liulongcanjia.png
- D dist/card-catalog-art/mobile__luminous_pearl.png
- D dist/card-catalog-art/nine_tripod_cauldrons.png
- D dist/card-catalog-art/nioh_shield.png
- D dist/card-catalog-art/nullification.png
- D dist/card-catalog-art/overbearing.png
- D dist/card-catalog-art/part_ways.png
- D dist/card-catalog-art/peace_spell.png
- D dist/card-catalog-art/peach.png
- D dist/card-catalog-art/qinggang_sword.png
- D dist/card-catalog-art/reveal_intention.png
- D dist/card-catalog-art/rob__jink.png
- D dist/card-catalog-art/sa__blade.png
-... và 1838 mục nữa; xem git status trực tiếp.
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+f039e228 hotfix: publish current UI and native bridge to Render
 3a3fe5dc debug native QA startup
 6331d875 docs: record CP89 Render live verification
-a0bff426 release: publish verified web artifact
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
