@@ -109,6 +109,21 @@ test('resolveCardText resolves translations with layered fallback without leakin
   const emptyResult = resolveCardText(undefined, (k) => k);
   assert.equal(emptyResult.displayName, 'Lá bài chưa xác định');
   assert.equal(emptyResult.description, 'Chi tiết luật chưa được nạp.');
+
+  // Case 6: Equipment card resolves Vietnamese name from baseline when dictionary is absent
+  const crossbowResult = resolveCardText({ name: 'zhuge_crossbow' }, (k) => k);
+  assert.equal(crossbowResult.displayName, 'Chư Cát Liên Nỗ');
+  assert.match(crossbowResult.description, /không giới hạn số lần/i);
+
+  const eightDiagramResult = resolveCardText({ name: 'eight_diagram' }, (k) => k);
+  assert.equal(eightDiagramResult.displayName, 'Bát Quái Trận');
+
+  const diluResult = resolveCardText({ name: 'dilu' }, (k) => k);
+  assert.equal(diluResult.displayName, 'Đích Lô');
+
+  // Case 7: Package-prefixed equipment strips prefix and resolves correctly
+  const prefixedEquipResult = resolveCardText({ name: 'm__zhuge_crossbow' }, (k) => k);
+  assert.equal(prefixedEquipResult.displayName, 'Chư Cát Liên Nỗ');
 });
 
 test('GameplayControls uses the card presentation while preserving the gameplay button contract', () => {
@@ -205,4 +220,36 @@ test('Vite emits the native card whitelist into production output as well as ser
   assert.match(source, /quoc-chien-card-inventory\.json/);
   assert.match(source, /card-catalog-art/);
   assert.match(source, /emitFile/);
+});
+
+test('styles.css contains log scrollbar, moments wrapping, and skill font styles', () => {
+  const cssPath = path.join(rootDir, 'src/styles.css');
+  const css = readFileSync(cssPath, 'utf8');
+
+  // Verify match log has bounded height and scrollbar
+  assert.match(css, /\.board-logs\s*\{[\s\S]*scrollbar-width:\s*thin/);
+  assert.match(css, /\.board-logs::-webkit-scrollbar/);
+  assert.match(css, /\.board-log-panel\s*\.board-logs\s*\{[\s\S]*max-height:\s*calc/);
+
+  // Verify moments display full content without ellipsis truncation
+  assert.match(css, /\.board-center\s*\.board-moment\s*\{[\s\S]*white-space:\s*normal/);
+  assert.match(css, /\.sg-board-table\s*\.board-center\s*\.board-moment\s*\{[\s\S]*white-space:\s*normal/);
+
+  // Verify skill buttons use Vietnamese font stack
+  assert.match(css, /\.sg-skill-button[\s\S]*font-family:\s*"Be Vietnam Pro"/);
+});
+
+test('version is displayed as BETA across screens rather than hardcoded 2.4.1', () => {
+  const bootScreen = readFileSync(path.join(rootDir, 'src/BootScreen.tsx'), 'utf8');
+  const loginScreen = readFileSync(path.join(rootDir, 'src/LoginScreen.tsx'), 'utf8');
+  const lobbyScreen = readFileSync(path.join(rootDir, 'src/LobbyScreen.tsx'), 'utf8');
+
+  assert.doesNotMatch(bootScreen, /2\.4\.1/);
+  assert.match(bootScreen, /Phiên bản:\s*BETA/);
+
+  assert.doesNotMatch(loginScreen, /2\.4\.1/);
+  assert.match(loginScreen, /Phiên bản:\s*BETA/);
+
+  assert.doesNotMatch(lobbyScreen, /2\.4\.1/);
+  assert.match(lobbyScreen, /Bản\s*BETA/);
 });

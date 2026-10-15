@@ -888,7 +888,14 @@ function __web_init_display_translations(extra)
       'fire_slash', 'fire__slash', 'thunder_slash', 'thunder__slash', 'duel', 'snatch', 'dismantlement',
       'indulgence', 'supply_shortage', 'collateral', 'amazing_grace',
       'ex_nihilo', 'god_salvation', 'savage_assault', 'archery_attack',
-      'iron_chain', 'lightning'}) do
+      'iron_chain', 'lightning',
+      'crossbow', 'zhuge_crossbow', 'qinggang_sword', 'double_swords', 'blade', 'spear',
+      'axe', 'halberd', 'kylin_bow', 'ice_sword', 'guding_blade', 'fan', 'triblade',
+      'six_swords', 'dragon_phoenix', 'yangsui_spear', 'serpent_slayer_sword',
+      'eight_diagram', 'nioh_shield', 'silver_lion', 'vine', 'breastplate', 'iron_armor', 'amiantus_robe',
+      'jueying', 'dilu', 'zhuahuangfeidian', 'white_kylin',
+      'chitu', 'dayuan', 'zixing', 'tianlu', 'liulongcanjia', 'mobile__liulongcanjia',
+      'wooden_ox', 'role__wooden_ox', 'jade_seal', 'dunjia_book', 'nine_tripod_cauldrons', 'turban_shell_cup', 'rare_treasure'}) do
     keep(key); keep(':' .. key); keep('#' .. key)
   end
   for name, general in pairs(Fk.generals or {}) do

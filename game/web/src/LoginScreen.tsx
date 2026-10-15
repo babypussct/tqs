@@ -400,7 +400,7 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
           <span className={`sg-ping-indicator-dot ${connection.kind === 'online' ? '' : 'yellow'}`} />
           <span className="sg-ping-text">{pingStatusText}</span>
         </div>
-        <span>Phiên bản: 2.4.1</span>
+        <span>Phiên bản: BETA</span>
       </div>
     </div>
   );

@@ -125,7 +125,12 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .request-panel .row-between { margin-top: 8px; }
 .countdown { flex-shrink: 0; border: 1px solid #9cbe9c; border-radius: 10px; padding: 7px 10px; color: #c0edbf; font-variant-numeric: tabular-nums; }
 .countdown.expired { color: #ffd5bc; border-color: #c78171; }
-.skill-name { font-weight: 700; color: #ffe4a6; overflow-wrap: anywhere; }
+.skill-name {
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  color: #ffe4a6;
+  overflow-wrap: anywhere;
+}
 .request-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
 .chosen-generals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
 .chosen-generals > div { padding: 12px; border: 1px solid #758064; border-radius: 12px; min-height: 80px; }
@@ -190,16 +195,16 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .board-center .board-moment {
   margin: 3px 0;
-  padding: 3px 7px;
+  padding: 4px 8px;
   font-size: .82rem;
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: left;
   background: rgba(62, 48, 28, .82);
   border-left: 3px solid #b8c799;
   border-radius: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .board-center .board-moment.moment-hp { border-color: #eab37c; }
 .board-center .board-moment.moment-chain { border-color: #93cbdf; }
@@ -207,7 +212,31 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .board-local-seat .board-player { width: min(100%, 400px); border-color: #e7c888; }
 .board-status { border: 1px solid #536b55; border-radius: 12px; background: #1c3226; color: #d1ddc7; padding: 12px; font-size: .85rem; }
 .board-log-panel { border: 1px solid #536b55; border-radius: 13px; padding: 12px; background: #192f23; min-width: 0; align-self: start; }
-.board-logs { max-height: 165px; overflow-y: auto; margin: 12px 0 0; padding-left: 25px; font-size: .86rem; line-height: 1.55; overflow-wrap: anywhere; }
+.board-logs {
+  max-height: 165px;
+  overflow-y: auto;
+  margin: 12px 0 0;
+  padding-left: 25px;
+  font-size: .86rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 155, 56, .85) rgba(20, 16, 11, .6);
+}
+.board-logs::-webkit-scrollbar {
+  width: 6px;
+}
+.board-logs::-webkit-scrollbar-track {
+  background: rgba(20, 16, 11, 0.6);
+  border-radius: 3px;
+}
+.board-logs::-webkit-scrollbar-thumb {
+  background: rgba(212, 155, 56, 0.7);
+  border-radius: 3px;
+}
+.board-logs::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 217, 125, 0.9);
+}
 .board-logs li { margin: 5px 0; }
 .log-follow { margin-top: 10px; width: 100%; }
 @media (min-width: 940px) {
@@ -3012,6 +3041,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     background: #14100c !important;
     padding: 0 !important;
     height: 100% !important;
+    max-height: min(85dvh, 850px) !important;
+    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -3050,10 +3081,11 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
   .board-log-panel .board-logs {
     flex: 1 1 auto;
-    max-height: none !important;
+    min-height: 0 !important;
+    max-height: calc(min(85dvh, 850px) - 38px) !important;
     margin: 0;
     padding: 8px 10px;
-    overflow-y: auto;
+    overflow-y: auto !important;
     font-size: 11px;
     line-height: 1.45;
     color: #d1c5b4;
@@ -3061,6 +3093,22 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     flex-direction: column;
     gap: 4px;
     list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 155, 56, .85) rgba(20, 16, 11, .6);
+  }
+  .board-log-panel .board-logs::-webkit-scrollbar {
+    width: 6px;
+  }
+  .board-log-panel .board-logs::-webkit-scrollbar-track {
+    background: rgba(20, 16, 11, 0.6);
+    border-radius: 3px;
+  }
+  .board-log-panel .board-logs::-webkit-scrollbar-thumb {
+    background: rgba(212, 155, 56, 0.7);
+    border-radius: 3px;
+  }
+  .board-log-panel .board-logs::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 217, 125, 0.9);
   }
   .board-log-panel .board-logs li {
     margin: 0;
@@ -3119,7 +3167,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   width: 100%;
 }
 .sg-floating-controls-hud .gameplay-prompt {
-  font-family: Georgia, serif;
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 13.5px;
   font-weight: bold;
   color: #f0e5da;
@@ -3221,7 +3269,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .sg-gameplay-controls .gameplay-actions button.button,
 .sg-gameplay-controls .sg-action-bar button.button {
-  font-family: Georgia, serif;
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 12px;
   font-weight: bold;
   border-radius: 5px;
@@ -3416,7 +3464,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   border: 1px solid #8c5816 !important;
   border-radius: 4px !important;
   color: #dfd3bf !important;
-  font-family: Georgia, serif;
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   font-size: 11px !important;
   font-weight: bold;
   display: flex !important;
@@ -3475,11 +3523,14 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
   .board-log-heading strong { font-size: .75rem; }
   .board-logs {
-    max-height: 52px;
+    max-height: clamp(80px, 20vh, 160px);
     margin: 4px 0 0;
     padding-left: 18px;
     font-size: .72rem;
     line-height: 1.35;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 155, 56, .85) rgba(20, 16, 11, .6);
   }
   .board-logs li { margin: 2px 0; }
   .sg-board-table .board-center {
@@ -3548,31 +3599,30 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     min-width: 290px;
     max-width: min(290px, 86vw);
     box-sizing: border-box;
-    margin: 6px auto 0;
+    margin: 16px auto 0;
     padding: 3px 6px;
     font-size: 0.68rem;
-    max-height: 44px;
-    overflow: hidden;
+    max-height: 85px;
+    overflow-y: auto;
     line-height: 1.25;
     border-radius: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 155, 56, .6) rgba(20, 16, 11, .4);
   }
   .sg-board-table .board-moments > strong {
     display: block;
     font-size: 0.68rem;
     margin-bottom: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .sg-board-table .board-center .board-moment {
     display: block;
-    margin: 1px 0;
+    margin: 2px 0;
     padding: 2px 4px;
     font-size: 0.68rem;
-    line-height: 1.2;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
   .sg-board-table .board-banners {
     margin-top: 2px;
@@ -3597,6 +3647,16 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     max-width: none;
     font-size: .65rem;
     padding: 0;
+  }
+}
+
+@media (max-width: 899px) and (orientation: portrait), (max-width: 640px) and (orientation: portrait) {
+  .sg-board-table .board-center {
+    top: 48%;
+  }
+  .sg-board-table .board-moments {
+    margin: 20px auto 0;
+    max-height: 95px;
   }
 }
 

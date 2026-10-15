@@ -23,11 +23,18 @@ export function plainText(text: string): string {
 
 export function displayText(text: string, translations: Record<string, string>, players: { id: number; name: string }[] = []): string {
   const [key, src, dest, ...args] = text.split(':');
+  const baseKey = key.includes('__') ? key.replace(/^.*__/, '') : key;
+  const baseText = text.includes('__') && !text.startsWith(':') ? text.replace(/^.*__/, '') : text;
   // A full key wins (e.g. descriptions beginning with ':').
-  const translated = translations[text] ?? translations[key] ?? text;
+  const translated = translations[text] ?? translations[key] ?? translations[baseText] ?? translations[baseKey] ?? text;
   const playerName = (value: string | undefined) => players.find((p) => String(p.id) === value)?.name ?? value ?? '';
-  const name = (value: string | undefined) => value ? plainText(translations[value] ?? value) : '';
-  if (translated === text && !translations[key]) return plainText(text);
+  const name = (value: string | undefined) => {
+    if (!value) return '';
+    const base = value.includes('__') ? value.replace(/^.*__/, '') : value;
+    const tr = translations[value] ?? translations[base] ?? value;
+    return plainText(tr);
+  };
+  if (translated === text && !translations[key] && !translations[baseKey]) return plainText(text);
   return plainText(translated).replace(/%(arg\d*|src|dest|from|to)\b/g, (_token, parameter: string) => {
     if (parameter.startsWith('arg')) {
       const index = parameter === 'arg' ? 0 : Number(parameter.slice(3)) - 1;

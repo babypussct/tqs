@@ -166,7 +166,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
           <span className="sg-ping-indicator-dot" />
           <span className="sg-ping-text">Máy chủ: Chuẩn bị tài nguyên</span>
         </div>
-        <span>Phiên bản: 2.4.1</span>
+        <span>Phiên bản: BETA</span>
       </div>
     </div>
   );

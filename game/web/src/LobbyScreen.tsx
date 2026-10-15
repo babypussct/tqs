@@ -456,7 +456,7 @@ export function LobbyScreen({ adapter, run, busy }: {
           <span className="sg-ping-green" />
           <span>Máy chủ: Hoạt động tốt</span>
         </div>
-        <span>Quốc Chiến · Bản 2.4.1</span>
+        <span>Quốc Chiến · Bản BETA</span>
       </footer>
     </div>
   );
@@ -634,7 +634,7 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
           <span className="sg-ping-green" />
           <span>Máy chủ: Hoạt động tốt</span>
         </div>
-        <span>Quốc Chiến · Bản 2.4.1</span>
+        <span>Quốc Chiến · Bản BETA</span>
       </footer>
     </div>
   );

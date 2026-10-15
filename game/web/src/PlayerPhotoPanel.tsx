@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { formatRank, getSuitInfo } from './HandCardItem';
+import { BASELINE_NAMES, formatRank, getSuitInfo } from './HandCardItem';
 import { useDisplayText } from './engine/displayText';
 import type { GameplayItem } from './store/gameplayState';
 import type { BoardEquipment, BoardPlayer } from './store/boardState';
@@ -128,6 +128,14 @@ function HandCardBadge({ count }: { count: number | null | undefined }) {
   </div>;
 }
 
+function resolveEquipName(card: BoardEquipment | undefined, fallback: string, text: (v: string) => string): string {
+  if (!card) return fallback;
+  const t = text(card.name);
+  if (t && t !== card.name) return t;
+  const base = card.name.replace(/^.*__/, '');
+  return BASELINE_NAMES[base] ?? BASELINE_NAMES[card.name] ?? t;
+}
+
 function EquipRow({
   icon, typeLabel, card, text,
 }: {
@@ -137,7 +145,7 @@ function EquipRow({
   text: (value: string) => string;
 }) {
   const info = card ? suitInfo(card) : null;
-  const name = card ? text(card.name) : typeLabel;
+  const name = resolveEquipName(card, typeLabel, text);
   const suitText = info ? info.text : '';
   const detail = card ? `${name} · ${suitText}${card.range != null ? ` · Tầm ${card.range}` : ''}` : `${typeLabel} trống`;
 
@@ -157,8 +165,8 @@ function EquipRidesSplit({
 }) {
   const defInfo = defCard ? suitInfo(defCard) : null;
   const offInfo = offCard ? suitInfo(offCard) : null;
-  const defName = defCard ? text(defCard.name) : '+1';
-  const offName = offCard ? text(offCard.name) : '-1';
+  const defName = resolveEquipName(defCard, '+1', text);
+  const offName = resolveEquipName(offCard, '-1', text);
   const defDetail = defCard ? `${defName} · ${defInfo?.text}` : '+1 Mã trống';
   const offDetail = offCard ? `${offName} · ${offInfo?.text}` : '-1 Mã trống';
 
