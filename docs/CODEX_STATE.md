@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 10:52 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
+> Cập nhật handoff: 15/10/2026 11:00 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
 
 ## Mục tiêu và phạm vi
 
@@ -8,11 +8,11 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Trạng thái hiện hành
 
-- Bản live là Render candidate [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com), identity CP89: source `a0bff426`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 14 package, 5.279 file trong bundle. Health/manifest đã được probe; đây là candidate để test, chưa phải official release.
-- Đã chuẩn bị **CP92 UI/runtime hotfix** trên nhánh Render hiện hành: build game web mới có 1.739 file, `RELEASE.json` v2 verify PASS với runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, root `dist/` đã được dọn và đồng bộ từ `game/web/dist`, gồm UI CP90/CP91 cùng bridge hidden-skill/Lua 5.4 hardening. Đây mới là artifact local đã kiểm tra; service Render đang tắt auto-deploy nên chưa gọi là LIVE cho đến khi deploy/probe thật.
-- Commit hotfix đã push thành công lên `origin/codex/cp89-render-current`: `f039e228`. Public probe sau push vẫn trả CP89 cũ (`fileCount=5279`, bundle `754a618bc6d8307d`, HTML `index-DNEQLblE.js`); Render dashboard đang ở login/bảo trì nên chưa có deployment ID mới.
+- Bản live hiện là Render candidate [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com), identity **CP92**: source `c40e36a7`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 14 package, 5.279 file trong bundle, bundle hash `0183516d94e2865f`. Deployment `dep-db84u7avcj2c7387q6dg` đã báo `Deploy succeeded | Live`; public health/manifest/HTML asset probe đều PASS. Đây là candidate để test, chưa phải official release.
+- **CP92 UI/runtime hotfix** đã được deploy từ nhánh Render hiện hành: build game web có 1.739 file, `RELEASE.json` v2 verify PASS với runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, root `dist/` đã dọn và đồng bộ từ `game/web/dist`, gồm UI CP90/CP91 cùng bridge hidden-skill/Lua 5.4 hardening. Auto-deploy vẫn tắt; deployment được kích hoạt thủ công từ commit cụ thể để tránh lấy nhầm branch tip.
+- Commit hotfix `f039e228` và checkpoint deploy `c40e36a7` đã push thành công lên `origin/codex/cp89-render-current`. HTML live dùng `index-DUN9EqW6.js` và `index-B2V66FPQ.css`; người dùng có thể tiếp tục smoketest trên URL candidate.
 - Đã có browser → Wasmoon/Lua → gateway → FreeKill C++ live path: login/lobby/room/bot, một ván bot hoàn chỉnh, GameOver, về sảnh và disconnect sạch. Đây là bounded evidence, không phải full rule parity.
-- CP90/CP91 và các sửa bridge/runtime đã được đưa vào artifact hotfix CP92; trạng thái hosted vẫn **OPEN** cho đến khi đối chiếu deployment SHA, health, manifest và smoke test trên Render.
+- CP90/CP91 và các sửa bridge/runtime đã được đưa vào artifact hotfix CP92; identity hosted đã được đối chiếu. Smoke test gameplay nhiều bước và official sign-off vẫn mở.
 - `PLAYABLE_MOBILE` vẫn `false`. Thiết bị vật lý và mất mạng vật lý được người dùng miễn trong scope hiện tại; trạng thái là `DEFERRED/WAIVED_BY_USER`, không phải PASS.
 - Audit P0 hidden-general: Lua/C++ gốc cho phép trigger skill khi tướng úp nếu đã prelight. React đã triển khai fake-skill dock, privacy/lifecycle reducer, regular-skill gate và wire `PushRequest("prelight,...")`. Native QA **PASS NATIVE-LOCAL bounded** cho ma trận lõi 12/12: Di Kế chủ/phó với negative/positive/skip, Gian Hùng chủ/phó, reveal helper chủ/phó, Chế Hành chủ/phó và Long Đảm ViewAs chủ/phó. Có thêm ca staged `hidden-dual` PASS để khóa trigger bắt buộc + discard + ViewAs khi tướng còn úp; không gộp ca này vào identity 12/12 cũ. Source projection/lifecycle/slot-route audit vẫn PASS theo số liệu canonical ở [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Hosted/official release matrix và exhaustive live effect matrix vẫn chưa đóng.
 - Fake trigger và fake active đã tách đúng: `AddSkill/LoseSkill` chỉ nhận skill của Self; dock idle bị khóa; chỉ `SkillButton` do Lua gửi mới được kích hoạt. Native matrix đã chứng minh Di Kế, `reveal_skill&`, Chế Hành và Long Đảm ViewAs đều mở đúng slot chủ/phó trước effect.
@@ -30,7 +30,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 | Hidden trigger/prelight + active reveal | **PASS NATIVE-LOCAL bounded** | Ma trận lõi 12/12 ca C++/Lua thật; thêm `hidden-dual` staged PASS với trigger bắt buộc, auto-discard và ViewAs Duel. Chưa đại diện hosted/official release. |
 | Hidden-skill source projection/lifecycle/slot route | **PASS SOURCE/LOCAL** | Build audit chạy 301 tướng active/602 vị trí, 1.039 reference, 520 skill ID; native `AddSkill`/`LoseSkill` 520/520, replay event qua React 521/521, privacy Add/Lose 1.042/1.042, helper `reveal_skill&` 105/105, `canUse` theo slot 205/205, route `revealBySkillName` 155.168/155.168 trên cặp hợp lệ, prelight sync 403/403, reconnect projection 520/520, actual `Client:addSkill` state 520/520 và `Client:loseSkill` 520/520 (đã bắt/sửa duplicate regular và stale lifecycle), gồm fake trigger, regular Active/ViewAs, dual projection và 15 delay-fallback loss paths. Chưa thay thế live effect matrix. |
 
-Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Release evidence CP89: [`cp89-render-current-v3.json`](../scratch/evidence/cp89-render-current-v3.json).
+Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Evidence CP89 giữ lại để đối chiếu lịch sử; identity hiện hành là CP92.
 
 ## Mốc vừa triển khai
 
@@ -44,14 +44,14 @@ Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC
 - Đã thử reconnect native khi readiness `AskForSkillInvoke` của Di Kế còn pending: FreeKill hủy request khi actor disconnect rồi cho login lại, nên không coi đây là React regression; prompt-specific reconnect vẫn **OPEN** và phải kiểm riêng theo semantics request.
 - Oracle VM chỉ mới được xác nhận ở mức process/port: service `freekill-native` active và 9527 reachable, nhưng chưa đọc được manifest/hash trong guest. SSH vẫn bị từ chối, Run Command chạy dưới `ocarun` không có root, OCI không cho sửa `ssh_authorized_keys`, recovery chưa vào được root shell. **Không có bằng chứng phiên này đã deploy package hiện hành lên VM.**
 - Hai rerun Oracle/ngoài trước (`reconnect-failure-1792002124241.json`, `1792002605900.json`) fail trước QA gate do thiếu/chưa xác định `tqs_qa`; runner đã fail-fast đúng boundary package/config. Không dùng chúng để kết luận lỗi luật React.
-- Hotfix CP92 đã được package local nhưng chưa có bằng chứng Render live; `PLAYABLE_MOBILE=false`, full parity/P0 live interaction/rescue/wild/founding và official release vẫn mở.
+- Hotfix CP92 đã package, deploy và probe PASS trên Render; `PLAYABLE_MOBILE=false`, full parity/P0 live interaction/rescue/wild/founding và official release vẫn mở.
 - Invariant quan trọng sau reveal: source gốc gỡ fake skill và chuyển sang regular trước `SkillEffect`, không tự xóa `prelighted_skills`; tài liệu canonical đã ghi để tránh review nhầm hide/transform/swap.
 
 ## Việc còn mở theo thứ tự
 
 1. **P0 gameplay:** xác minh guest access, cài/verify đúng QA/package identity trên Oracle hoặc hosted target rồi rerun normal rescue, Battle Royal rescue/view-as và founding; native-local đã PASS nhưng không thay thế LIVE.
 2. **P0 native interaction:** hoàn tất live matrix cho CardChosen, Poxi, CardsAndChoice, ArrangeCards, AG, MoveCardInBoard, SkillInvoke và CustomDialog; kiểm tra cancel/expiry/cleanup/reconnect theo semantics từng request.
-3. **P1 presentation/release:** deploy/probe CP92 hotfix trên Render để người dùng smoketest; sau đó xử lý residual translation, official release, cold-start/quota/rollback/SLA và `PLAYABLE_MOBILE`.
+3. **P1 presentation/release:** mở smoketest CP92 cho người dùng; sau đó xử lý residual translation, official release, cold-start/quota/rollback/SLA và `PLAYABLE_MOBILE`.
 
 ## Nguyên tắc cho phiên sau
 
@@ -68,8 +68,8 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T03:52:30.001Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `f039e228c39a`.
+- Ghi lúc: 2026-10-15T04:01:12.808Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `c40e36a75663`.
 - File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -80,9 +80,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+c40e36a7 docs: record Render hotfix deployment boundary
 f039e228 hotfix: publish current UI and native bridge to Render
 3a3fe5dc debug native QA startup
-6331d875 docs: record CP89 Render live verification
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

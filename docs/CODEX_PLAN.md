@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 10:52 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
+> Cập nhật 15/10/2026 11:00 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
@@ -21,7 +21,7 @@
 | G4 card/target/skill | **PASS bounded** | Sát/target/OK, Vô Giải, reveal, Cường Tập trong live bot path. | T06–T08, response/view-as và native dialog matrix. |
 | G5 bot game | **PASS bounded** | Có ván bot C++ thật đi tới GameOver và về sảnh. | Một ván không chứng minh mọi luật/tướng/card. |
 | G6 multiplayer/reconnect | **PASS browser bounded** | Two-account và controlled reconnect đã có evidence. | Physical network waived; prompt-specific reconnect còn cần matrix; native hủy `AskForSkillInvoke` đang pending khi actor disconnect. |
-| G7 release | **CANDIDATE LIVE + CP92 HOTFIX READY** | CP89 health/manifest/bundle identity và hosted smoke pass; CP92 UI/runtime artifact đã package/verify local, commit `f039e228` đã push. | Render đang bảo trì/login và auto-deploy off; deploy/probe CP92, full gameplay, official sign-off, cold-start/quota/rollback/SLA. |
+| G7 release | **CANDIDATE LIVE + CP92 HOTFIX DEPLOYED** | Deployment `dep-db84u7avcj2c7387q6dg` từ `c40e36a7` báo Live; health `ok`, manifest runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, bundle hash `0183516d94e2865f`, HTML asset CP92 đã probe PASS. | Full gameplay smoketest, official sign-off, cold-start/quota/rollback/SLA. |
 | `PLAYABLE_MOBILE` | **FALSE** | — | Chỉ đóng sau khi P0 gameplay/native interaction và release criteria pass. |
 
 ## Backlog ưu tiên
@@ -32,7 +32,7 @@
 - [ ] **GAME-03C — rescue and Hegemony edge rules (P0):** NATIVE-LOCAL bounded đã PASS `rescue-normal`, Battle Royal Peach→Analeptic/view-as và `founding` kingdom choice trên QA revision `5dcd…`; còn hosted/Oracle rerun, round events, reward/punishment, wild state transition và winner transition. Failure phải được phân loại server pin/bridge/renderer trước khi sửa.
 - [ ] **UI-01 — live translation cleanup (P1):** xử lý residual runtime text (`由于`, `观看了`, `的手牌`, `定澜夜明珠`) và kiểm tra lại artifact live; static audit không đủ.
 - [ ] **UI-02 — pack pool live acceptance (P1):** kiểm disabled GeneralPack/CardPack trên C++ thật với đúng manifest, không chỉ local room-pool fixture.
-- [ ] **UI-03 — board presentation live acceptance (P1):** Đã hoàn tất cải tổ UI/UX toàn diện 5 Category theo chuẩn FreeKill/QSGS trên source và test local 100% pass (`test:e2e` 20/20, `test:e2e:lua` 63/63, build pass); CP92 hotfix đã đóng gói 1.739 web files, pending Render deploy/probe để người dùng smoketest.
+- [ ] **UI-03 — board presentation live acceptance (P1):** Đã hoàn tất cải tổ UI/UX toàn diện 5 Category theo chuẩn FreeKill/QSGS trên source và test local 100% pass (`test:e2e` 20/20, `test:e2e:lua` 63/63, build pass); CP92 hotfix đã deploy/probe PASS, còn chờ người dùng smoketest gameplay trên candidate.
 - [ ] **G7 — official release/operations (P1):** release identity duy nhất giữa source/runtime/web/gateway; cold-start/quota, rollback rehearsal, monitoring và SLA decision. Candidate không tự chuyển thành official.
 
 ## Evidence đã đóng, không mở lại nếu không có thay đổi identity
@@ -44,7 +44,7 @@
 - **Hidden-skill source projection/lifecycle/slot route:** build audit 301 tướng active/602 vị trí, 1.039 reference, 520 skill ID; native `AddSkill` và `LoseSkill` đều 520/520 PASS, replay event qua React 521/521, privacy Add/Lose 1.042/1.042, helper `reveal_skill&` 105/105 Add/Lose, 205/205 `canUse` theo slot, route `revealBySkillName` 155.168/155.168 trên cặp hợp lệ, 403/403 prelight sync, 520/520 reconnect snapshot projection trên toàn bộ hidden skill ID, 520/520 actual `Client:addSkill` state và 520/520 actual `Client:loseSkill` lifecycle (regular/trigger/dual), gồm 15 delay-fallback loss paths. Inventory runtime thêm 92 active, 31 ViewAs, 418 trigger effect, 92 status effect trên 57 event kinds để làm checklist native tiếp theo. Đây là projection/lifecycle/route coverage, không phải live effect coverage.
 - **GAME-03D NATIVE-LOCAL:** evidence 12/12 hidden-trigger/prelight lõi trên cùng identity, cộng một `hidden-dual` staged identity; evidence được giữ duy nhất trong [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md), chưa đại diện hosted/official hoặc exhaustive effect matrix.
 - **GAME-03C NATIVE-LOCAL bounded:** normal rescue, Battle Royal rescue/view-as và founding request đã PASS trên cùng runtime/package identity `5dcd…`; evidence chi tiết nằm ở audit, không coi là hosted/Oracle.
-- **CP89 candidate:** Render health, 14-package manifest, bundle hash và asset probes.
+- **CP92 candidate:** Render deployment `dep-db84u7avcj2c7387q6dg`, health, 14-package manifest, bundle hash và HTML asset probes.
 
 Các evidence trên chỉ đóng đúng phạm vi ghi ở đây. Khi runtime MD5, package list, bundle hoặc server pin đổi, phải chạy lại acceptance tương ứng.
 
@@ -53,7 +53,7 @@ Các evidence trên chỉ đóng đúng phạm vi ghi ở đây. Khi runtime MD5
 1. **Đã hoàn tất NATIVE-LOCAL bounded:** runtime native cô lập được dựng bằng đúng package pin, installer đã cài `tqs_qa` server-only và `verify-install.sh`/`verify-qa-package.sh` PASS; QA revision `5dcd…` đã PASS Di Kế chủ/phó, normal rescue, Battle Royal rescue/view-as và founding request; staged revision `ee715…` đã PASS thêm `hidden-dual` và launcher Lua 5.4/module preflight. Không coi đây là Oracle/LIVE. Với Oracle VM, hai rerun trước (`reconnect-failure-1792002124241.json`, `reconnect-failure-1792002605900.json`) fail trước QA gate vì package/config chưa xác định; service/port reachable không chứng minh parity.
    **Blocker Oracle còn nguyên:** SSH vẫn `Permission denied (publickey)`; Run Command chỉ chạy dưới `ocarun`, `sudo -n` yêu cầu mật khẩu; OCI không cho sửa `ssh_authorized_keys`; recovery/reboot có kiểm soát chưa vào được root shell. Cần guest admin credential hoặc recovery có kiểm soát để đọc manifest/hash trong `/opt/freekill-hegemony/current`, rồi mới install/verify package thực tế. Không dùng evidence NATIVE-LOCAL để suy ra hosted/official.
 2. Hoàn tất P0 native interaction matrix và phần rescue/wild còn thiếu sau request (round events, state phe, reward/punishment, winner); hosted/Oracle rerun phải ghi request, renderer, reply và state sau reply vào [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
-3. Deploy CP92 hotfix lên Render, đối chiếu deployment SHA/health/manifest và mở smoke test cho người dùng; không nâng mức gate chỉ từ việc push branch.
+3. Mở smoketest CP92 cho người dùng; ghi lại lỗi gameplay thực tế nếu có. Không nâng mức gate chỉ từ việc deploy thành công.
 4. Cập nhật bảng gate và `CODEX_STATE.md`, rồi chạy `npm run codex:checkpoint`.
 
 ## Quy tắc cập nhật tài liệu
