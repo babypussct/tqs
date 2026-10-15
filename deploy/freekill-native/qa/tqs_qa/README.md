@@ -219,7 +219,149 @@ the two Jianxiong slot branches were run through two browser clients, a local
 gateway and a real C++/Lua runtime after the installer wrote a verified
 server-only manifest. The sanitized evidence files are linked from
 `docs/web-client/QUOC_CHIEN_RULE_AUDIT.md`; this local result does not certify
-the hosted CP89 candidate or an official release.
+the hosted CP92 candidate or an official release.
+
+## `hidden-jizhi`: `CardUsing` khi Hoàng Nguyệt Anh còn úp
+
+Đây là ca kiểm chứng skill `hs__jizhi` trong
+[`jizhi.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua).
+QA gate chỉ chuẩn bị `PrelightSkill=true`; gameplay thật dùng một Quyết Đấu
+native, đi qua `fk.CardUsing`, hỏi invoke tùy chọn, mở đúng slot của Hoàng
+Nguyệt Anh rồi rút đúng 1 lá. Hai scenario mirror là `hidden-jizhi` (chủ) và
+`hidden-jizhi-deputy` (phó):
+
+```bash
+TQS_LIVE_SCENARIO=hidden-jizhi \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-jizhi-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+## `hidden-mingshi`: `DamageInflicted` từ nguồn còn úp
+
+[`mingshi.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua)
+là skill bắt buộc trên `fk.DamageInflicted`: khi nguồn còn một general
+`anjiang`, sát thương giảm 1. QA gate chỉ chuẩn bị prelight; browser gửi một
+lá Sát/Hỏa Sát thật từ nguồn hidden, native mở đúng slot Khổng Dung và kết quả
+phải là sát thương 1 → 0. Hai mirror là `hidden-mingshi` (chủ) và
+`hidden-mingshi-deputy` (phó):
+
+```bash
+TQS_LIVE_SCENARIO=hidden-mingshi \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-mingshi-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+## `hidden-qianxun`: `TargetConfirming` hủy mục tiêu Thuận Thủ
+
+[`qianxun.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua)
+là skill bắt buộc trên `fk.TargetConfirming`: khi Lục Tốn còn úp nhưng đã
+prelight, một `snatch` có mục tiêu Peach hợp lệ vẫn phải được gửi tới native
+server; `SkillEffect` phải mở đúng slot Lục Tốn rồi `cancelTarget(player)`, để
+Peach vẫn ở tay và không bị lấy. Hai mirror là `hidden-qianxun` (chủ) và
+`hidden-qianxun-deputy` (phó):
+
+```bash
+TQS_LIVE_SCENARIO=hidden-qianxun \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-qianxun-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Qianxun còn có nhánh `fk.BeforeCardsMove`: Lạc Bất Tư Thục thật phải không vào
+vùng phán xét của Lục Tốn mà được mirror vào DiscardPile. Hai mirror chủ/phó:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-qianxun-indulgence \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-qianxun-indulgence-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Các scenario Jizhi/Mingshi/Qianxun/Không Thành/帷幕 đã PASS ở `NATIVE-LOCAL` với các QA
+package identity được ghi trong audit canonical;
+evidence và hash chỉ giữ trong audit canonical để README không tạo bản sao dễ
+lệch.
+
+## `hidden-kongcheng`: `TargetConfirming` hủy mục tiêu Quyết Đấu khi tay rỗng
+
+[`kongcheng.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/kongcheng.lua)
+chỉ chạy khi người sở hữu còn úp, đã prelight, đang là mục tiêu và thật sự
+`isKongcheng()`. Native QA dùng `throwAllCards` qua move path trước khi đối
+thủ dùng một lá Quyết Đấu thật, rồi kiểm tra `SkillEffect`, reveal đúng slot và
+`cancelTarget`. Hai mirror là `hidden-kongcheng` (chủ) và
+`hidden-kongcheng-deputy` (phó):
+
+```bash
+TQS_LIVE_SCENARIO=hidden-kongcheng \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-kongcheng-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: actor vẫn úp và hết bài trước Quyết Đấu, browser gửi
+prelight thật, source nhận `AskForUseActiveSkill`, native mở Gia Cát Lượng
+đúng chủ/phó, hủy mục tiêu và kết thúc GameOver. Đây là `NATIVE-LOCAL staged`,
+chưa phải Render/Oracle LIVE.
+
+## `hidden-weimu`: `TargetConfirming` hủy mục tiêu Quyết Đấu đen
+
+[`weimu.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua)
+đòi hỏi đồng thời `TargetConfirming`, kỹ năng đã được prelight và lá đến là
+锦囊 đen (`Card.Black` + `Card.TypeTrick`). Native QA dành riêng một lá Quyết
+Đấu đen thật, giữ Giả Hủ úp, rồi kiểm tra `SkillEffect`, reveal đúng slot,
+`cancelTarget` và không có sát thương. Hai mirror là chủ và phó:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-weimu \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-weimu-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: card thật có màu đen, actor còn úp trước event, browser
+gửi prelight thật, source nhận `AskForUseActiveSkill`, native mở Giả Hủ đúng
+chủ/phó, hủy mục tiêu và kết thúc GameOver. Đây là `NATIVE-LOCAL staged`,
+chưa phải Render/Oracle LIVE.
+
+Cùng skill này còn có nhánh `fk.BeforeCardsMove`: một Lạc Bất Tư Thục đen
+thật được đưa tới mục tiêu, nhưng không được vào vùng phán xét; native phải
+mirror move sang `DiscardPile`, mở đúng slot và chuyển skill fake thành active.
+Hai mirror này kiểm tra riêng nhánh đó:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-weimu-indulgence \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-weimu-indulgence-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bổ sung: log native phải ghi `BeforeCardsMove`, card đen, `vào
+phán xét=false`, `chuyển bỏ=true`; card thật ở DiscardPile, vùng Judge của
+actor rỗng, và GameOver kết thúc scenario. Đây là `NATIVE-LOCAL staged`, chưa
+phải Render/Oracle LIVE.
 
 ## `hidden-fankui`: trigger `Damaged` khi Tư Mã Ý còn úp
 
@@ -375,14 +517,31 @@ wrong slot:
 | `hidden-reveal-deputy` | Lục Tốn is the deputy; `revealDeputy` opens only the deputy. |
 | `hidden-active-main` | Tôn Quyền is the main; Chế Hành opens only the main. |
 | `hidden-view-as-main` | Triệu Vân is the main; Longdan opens only the main and converts Jink to Slash. |
+| `hidden-jizhi` | Hoàng Nguyệt Anh is the main; `CardUsing` opens only the main and draws one card. |
+| `hidden-jizhi-deputy` | Hoàng Nguyệt Anh is the deputy; `CardUsing` opens only the deputy and draws one card. |
+| `hidden-mingshi` | Khổng Dung is the main; hidden-source `DamageInflicted` opens only the main and reduces damage to zero. |
+| `hidden-mingshi-deputy` | Khổng Dung is the deputy; hidden-source `DamageInflicted` opens only the deputy and reduces damage to zero. |
+| `hidden-qianxun` | Lục Tốn is the main; `TargetConfirming` opens only the main and cancels a valid Snatch target. |
+| `hidden-qianxun-deputy` | Lục Tốn is the deputy; `TargetConfirming` opens only the deputy and cancels a valid Snatch target. |
+| `hidden-qianxun-indulgence` | Lục Tốn is the main; `BeforeCardsMove` opens only the main and mirrors Indulgence to discard. |
+| `hidden-qianxun-indulgence-deputy` | Lục Tốn is the deputy; `BeforeCardsMove` opens only the deputy and mirrors Indulgence to discard. |
+| `hidden-kongcheng` | Gia Cát Lượng is the main; empty-hand `TargetConfirming` opens only the main and cancels a valid Duel target. |
+| `hidden-kongcheng-deputy` | Gia Cát Lượng is the deputy; empty-hand `TargetConfirming` opens only the deputy and cancels a valid Duel target. |
+| `hidden-weimu` | Giả Hủ is the main; black-Trick `TargetConfirming` opens only the main and cancels a valid Duel target. |
+| `hidden-weimu-deputy` | Giả Hủ is the deputy; black-Trick `TargetConfirming` opens only the deputy and cancels a valid Duel target. |
+| `hidden-weimu-indulgence` | Giả Hủ is the main; black delayed-Trick `BeforeCardsMove` opens only the main and mirrors Indulgence to discard. |
+| `hidden-weimu-indulgence-deputy` | Giả Hủ is the deputy; black delayed-Trick `BeforeCardsMove` opens only the deputy and mirrors Indulgence to discard. |
 | `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
 | `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
 
-The current 12-case core NATIVE-LOCAL matrix is: `hidden-yiji` negative/positive/skip,
-`hidden-yiji-deputy`, `hidden-jianxiong` and `hidden-jianxiong-deputy`,
-`hidden-reveal` and `hidden-reveal-deputy`, `hidden-active` and
-`hidden-active-main`, plus `hidden-view-as` and `hidden-view-as-main`. The
-staged `hidden-dual`, `hidden-fankui` and `hidden-luoshen` add-ons are tracked
-separately because they use newer QA package identities. The canonical evidence table and package identities remain in
+The 12-case core NATIVE-LOCAL matrix remains: `hidden-yiji`
+negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
+`hidden-jianxiong-deputy`, `hidden-reveal` and `hidden-reveal-deputy`,
+`hidden-active` and `hidden-active-main`, plus `hidden-view-as` and
+`hidden-view-as-main`. The staged add-on set now also includes
+`hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
+`hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors and both
+Weimu mirrors. Slot mirrors remain separate scenario IDs because each must prove
+the owning main/deputy slot; the canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.
