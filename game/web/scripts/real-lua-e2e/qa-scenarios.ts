@@ -77,7 +77,9 @@ export type QaScenarioId =
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
-  | 'hidden-gongqing-deputy';
+  | 'hidden-gongqing-deputy'
+  | 'hidden-enyuan'
+  | 'hidden-enyuan-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -132,7 +134,8 @@ export type QaScenarioTrigger =
   | 'hidden-liegong'
   | 'hidden-kuanggu'
   | 'hidden-jueqing'
-  | 'hidden-gongqing';
+  | 'hidden-gongqing'
+  | 'hidden-enyuan';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -854,6 +857,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-gongqing',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-enyuan': {
+    version: 1,
+    id: 'hidden-enyuan',
+    title: 'Pháp Chính úp: Ân Oán mở tướng trước TargetConfirmed và rút Đào',
+    seed: 0x5d6e7fc0,
+    drawSequence: [trueName('peach')],
+    slots: [slot('enyuan-peach', trueName('peach'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-enyuan',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-enyuan-deputy': {
+    version: 1,
+    id: 'hidden-enyuan-deputy',
+    title: 'Pháp Chính phó tướng úp: Ân Oán mở tướng trước TargetConfirmed và rút Đào',
+    seed: 0x5d6e7fc1,
+    drawSequence: [trueName('peach')],
+    slots: [slot('enyuan-peach', trueName('peach'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-enyuan',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -883,6 +906,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
   'hidden-jueqing', 'hidden-jueqing-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
+  'hidden-enyuan', 'hidden-enyuan-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -1102,6 +1126,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('name' in plan.slots[0].match) || plan.slots[0].match.name !== 'kylin_bow') {
       throw new QaScenarioError(`${plan.id} must reserve one opponent Kylin Bow for 公清`);
+    }
+  }
+  if (plan.trigger === 'hidden-enyuan') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'enyuan-peach' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'peach') {
+      throw new QaScenarioError(`${plan.id} must reserve one opponent Peach for Ân Oán`);
     }
   }
   if (plan.trigger === 'hidden-rehide-yiji' && plan.slots.length !== 0) {

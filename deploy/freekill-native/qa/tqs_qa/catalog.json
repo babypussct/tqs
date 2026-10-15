@@ -1749,6 +1749,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-enyuan",
+      "title": "Hidden 法正 恩怨 reveals before TargetConfirmed Peach draw",
+      "seed": 1567522752,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-enyuan",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__fazheng",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "enyuan-peach",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-enyuan-deputy",
+      "title": "Hidden deputy 法正 恩怨 reveals before TargetConfirmed Peach draw",
+      "seed": 1567522753,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-enyuan",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "enyuan-peach",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

@@ -20,6 +20,7 @@ const tianduSkillPath = path.resolve(here, '../../../runtime/packages/freekill-c
 const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua');
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const gongqingSkillPath = path.resolve(here, '../../../runtime/packages/tenyear/pkg/tenyear_xinghuo/skills/gongqing.lua');
+const enyuanSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/power/skills/enyuan.lua');
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
@@ -343,6 +344,46 @@ test('hidden-gongqing locks both native attack-range damage branches for both sl
   assert.match(gongqing, /data:changeDamage\(1 - data\.damage\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-gongqing"[\s\S]*triggerHiddenGongqing\(room, state\)/u);
   assert.match(qaInit, /hidden-gongqing[\s\S]*Kylin Bow[\s\S]*DamageInflicted/u);
+});
+
+test('hidden-enyuan locks TargetConfirmed Peach draw and hidden main/deputy reveal', () => {
+  const expected = {
+    'hidden-enyuan': {
+      seed: 0x5d6e7fc0,
+      actor: { general: 'ld__fazheng', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-enyuan-deputy': {
+      seed: 0x5d6e7fc1,
+      actor: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-enyuan', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'enyuan-peach', match: { trueName: 'peach' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const enyuan = fs.readFileSync(enyuanSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(enyuan, /name = "ld__enyuan"/u);
+  assert.match(enyuan, /tags = \{ Skill\.Compulsory \}/u);
+  assert.match(enyuan, /enyuan:addEffect\(fk\.TargetConfirmed/u);
+  assert.match(enyuan, /data\.card\.trueName == "peach"/u);
+  assert.match(enyuan, /data\.from ~= player/u);
+  assert.match(enyuan, /data\.from:drawCards\(1, enyuan\.name\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-enyuan"[\s\S]*triggerHiddenEnyuan\(room, state\)/u);
+  assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenEnyuanTargetConfirmed = true/u);
+  assert.match(qaInit, /move\.skillName == "ld__enyuan"[\s\S]*hiddenEnyuanDrawCount/u);
 });
 
 test('hidden-qianxun locks TargetConfirming cancellation for both slots', () => {

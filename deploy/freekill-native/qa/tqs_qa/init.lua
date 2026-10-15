@@ -584,6 +584,34 @@ local function validateHiddenGongqingScenario(scenario)
   end
 end
 
+local function validateHiddenEnyuanScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-enyuan scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-enyuan-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "ld__fazheng"
+  local expectedDeputy = deputy and "ld__fazheng" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-enyuan actor must use the catalogued Fa Zheng main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-enyuan source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-enyuan must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "enyuan-peach" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "peach" then
+    fail("hidden-enyuan must reserve exactly one source Peach")
+  end
+end
+
 local function validateHiddenQianxunScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-qianxun scenarios must define exactly two players")
@@ -871,6 +899,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenMingshiScenario(scenario)
   elseif scenario.trigger == "hidden-gongqing" then
     validateHiddenGongqingScenario(scenario)
+  elseif scenario.trigger == "hidden-enyuan" then
+    validateHiddenEnyuanScenario(scenario)
   elseif scenario.trigger == "hidden-qianxun" then
     validateHiddenQianxunScenario(scenario)
   elseif scenario.trigger == "hidden-kongcheng" then
@@ -1206,6 +1236,8 @@ local function setupState(room, scenario, seed)
     liegongTargetSpecified = false,
     liegongDamage = false,
     jueqingPreDamage = false,
+    hiddenEnyuanTargetConfirmed = false,
+    hiddenEnyuanDrawCount = 0,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -1743,6 +1775,94 @@ local function triggerHiddenFankui(room, state)
     state.hiddenFankuiBranch, fankuiIsDeputy and "deputy" or "main", tostring(invoked),
     tostring(revealedCorrectSlot), obtained, manifest.sourceRevision))
   state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenEnyuan(room, state)
+  -- 法正 remains face-down while the other player uses a real Peach on the
+  -- wounded actor.  This covers TargetConfirmed rather than the separate
+  -- Damaged branch already exercised by fazheng-enyuan.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-enyuan actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("ld__enyuan") then
+    fail("hidden-enyuan must attach the hidden Enyuan skill")
+  end
+  if state.actor:hasSkill("ld__enyuan") then
+    fail("hidden-enyuan must not be active before the prelighted Peach target branch")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_enyuan_gate",
+    prompt = "TQS QA: prelight Ân Oán, rồi xác nhận để đối thủ dùng Đào lên Pháp Chính.",
+  })
+  if not gate then
+    fail("hidden-enyuan QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "ld__enyuan") then
+    fail("hidden-enyuan must be prelighted before the Peach target branch")
+  end
+
+  local peachId = state.slotCards["enyuan-peach"]
+  if not peachId or not table.contains(state.target:getCardIds(Player.Hand), peachId) then
+    fail("hidden-enyuan must put the reserved Peach in the native source hand")
+  end
+  if state.actor.hp >= state.actor.maxHp then
+    room:setPlayerProperty(state.actor, "hp", math.max(1, state.actor.hp - 1))
+  end
+  if state.actor.hp >= state.actor.maxHp then
+    fail("hidden-enyuan must make the actor wounded so the Peach target is legal")
+  end
+
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { peachId },
+    skill_name = "tqs_qa_hidden_enyuan_peach",
+    prompt = "TQS QA: dùng Đào lên Pháp Chính để kiểm tra Ân Oán.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= peachId or #use.tos ~= 1 or
+      use.tos[1] ~= state.actor then
+    fail("hidden-enyuan must receive the reserved source Peach against the hidden actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "ld__enyuan" and entry.player == state.actor.id
+  end)
+  state.currentDamageStep = nil
+
+  local enyuanIsDeputy = state.scenario == "hidden-enyuan-deputy"
+  local revealedCorrectSlot = enyuanIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "ld__fazheng"
+    or not enyuanIsDeputy and state.actor.general == "ld__fazheng" and state.actor.deputyGeneral == "anjiang"
+  if not state.hiddenEnyuanTargetConfirmed or not effect or effect.fake or not revealedCorrectSlot or
+      state.hiddenEnyuanDrawCount ~= 1 or #state.target:getCardIds(Player.Hand) ~= 1 then
+    fail(string.format("prelighted hidden Enyuan must reveal Fa Zheng before TargetConfirmed and draw one card (target_confirmed=%s effect=%s fake=%s revealed=%s draw=%d target_hand=%d)",
+      tostring(state.hiddenEnyuanTargetConfirmed), tostring(effect ~= nil), tostring(effect and effect.fake),
+      tostring(revealedCorrectSlot), state.hiddenEnyuanDrawCount, #state.target:getCardIds(Player.Hand)))
+  end
+
+  state.gameOverRequested = true
+  room:sendLog{
+    type = "[TQS QA] Hidden Ân Oán: TargetConfirmed=%arg; SkillEffect=%arg2; mở Pháp Chính=%arg3; rút bài=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = tostring(state.hiddenEnyuanTargetConfirmed),
+    arg2 = tostring(effect ~= nil and not effect.fake),
+    arg3 = tostring(revealedCorrectSlot),
+    arg4 = tostring(state.hiddenEnyuanDrawCount),
+    arg5 = enyuanIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-enyuan target_confirmed=%s skill_effect=%s revealed=%s drawn=%d slot=%s revision=%s",
+    tostring(state.hiddenEnyuanTargetConfirmed), tostring(effect ~= nil and not effect.fake),
+    tostring(revealedCorrectSlot), state.hiddenEnyuanDrawCount,
+    enyuanIsDeputy and "deputy" or "main", manifest.sourceRevision))
   room:gameOver("")
 end
 
@@ -3781,7 +3901,8 @@ director:addEffect(fk.SkillEffect, {
   priority = -1000,
   can_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
-    return state and (state.scenario == "fazheng-enyuan" or state.scenario == "hidden-yiji" or
+    return state and (state.scenario == "fazheng-enyuan" or state.scenario == "hidden-enyuan" or
+      state.scenario == "hidden-enyuan-deputy" or state.scenario == "hidden-yiji" or
       state.scenario == "hidden-yiji-deputy" or state.scenario == "hidden-jianxiong" or
       state.scenario == "hidden-rehide-yiji" or state.scenario == "hidden-rehide-yiji-deputy" or
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
@@ -3920,6 +4041,37 @@ director:addEffect(fk.Damaged, {
   end,
 })
 
+director:addEffect(fk.TargetConfirmed, {
+  global = true, priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-enyuan" or state.scenario == "hidden-enyuan-deputy") and
+      state.currentDamageStep and target == state.actor and data and data.card and
+      data.card.trueName == "peach" and data.from == state.target
+  end,
+  on_trigger = function(self, event, target, player, data)
+    stateFor(player.room).hiddenEnyuanTargetConfirmed = true
+  end,
+})
+
+director:addEffect(fk.AfterCardsMove, {
+  global = true, priority = -999,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-enyuan" or state.scenario == "hidden-enyuan-deputy") and
+      state.currentDamageStep and type(data) == "table"
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    for _, move in ipairs(data) do
+      if move.skillName == "ld__enyuan" and move.to == state.target and
+          move.toArea == Card.PlayerHand then
+        state.hiddenEnyuanDrawCount = state.hiddenEnyuanDrawCount + #(move.moveInfo or {})
+      end
+    end
+  end,
+})
+
 director:addEffect(fk.AfterCardsMove, {
   global = true, priority = -1000,
   can_trigger = function(self, event, target, player, data)
@@ -4014,6 +4166,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenJianxiong(room, state)
     elseif scenario.trigger == "hidden-fankui" then
       triggerHiddenFankui(room, state)
+    elseif scenario.trigger == "hidden-enyuan" then
+      triggerHiddenEnyuan(room, state)
     elseif scenario.trigger == "hidden-kuanggu" then
       triggerHiddenKuanggu(room, state)
     elseif scenario.trigger == "hidden-liegong" then
