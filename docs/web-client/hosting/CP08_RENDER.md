@@ -38,9 +38,11 @@
 - Hidden Yiji phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json`](../../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json).
 - Hidden Jueqing chủ tướng: tướng còn ẩn + prelight → `PreDamage` → mở Trương Xuân Hoa ở chủ tướng → mất đúng 1 HP và chặn `DamageEvent`. Evidence: [`cp08-hidden-jueqing-multiplayer-live-1792090046211.json`](../../../scratch/evidence/cp08-hidden-jueqing-multiplayer-live-1792090046211.json).
 - Hidden Jueqing phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json`](../../../scratch/evidence/cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json).
+- Hidden Jianxiong chủ tướng: tướng còn ẩn + prelight → `Damaged` → mở Tào Tháo ở chủ tướng → chọn/nhận 1 lá sát thương. Evidence: [`cp08-hidden-jianxiong-multiplayer-live-1792090284132.json`](../../../scratch/evidence/cp08-hidden-jianxiong-multiplayer-live-1792090284132.json).
+- Hidden Jianxiong phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jianxiong-deputy-multiplayer-live-1792090299019.json`](../../../scratch/evidence/cp08-hidden-jianxiong-deputy-multiplayer-live-1792090299019.json).
 
 Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
-identity, login, hidden Gongqing, hidden Yiji và hidden Jueqing ở cả main/deputy. Đây chưa
+identity, login, hidden Gongqing, hidden Yiji, hidden Jueqing và hidden Jianxiong ở cả main/deputy. Đây chưa
 phải full rule parity; ma trận effect, native interaction còn lại,
 cold-start/rollback/SLA và official sign-off vẫn OPEN. Corpus 51 run trước đó
 thuộc identity cũ và không được gộp vào bằng chứng current identity.
