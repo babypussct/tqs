@@ -48,8 +48,8 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:05:29.697Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `17ad322efaf3`.
+- Ghi lúc: 2026-10-15T12:05:46.433Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `c21aab539a14`.
 - File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -64,7 +64,7 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 Ba commit gần nhất:
 
 ```text
-17ad322e qa: lock hidden-general reveal contract
+c21aab53 qa: lock hidden-general reveal contract
 2194267a docs: streamline hidden-skill QA handoff
 c73f6e04 docs: checkpoint hidden tiandu QA
 ```
