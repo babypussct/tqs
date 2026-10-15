@@ -940,12 +940,31 @@ try{
     const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
     assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
   if (damageExchangeScenario) {
-    await pages[0].waitForFunction(() => /Quách Gia/u.test(document.querySelector('.board-self .board-generals')?.textContent ?? ''), null, { timeout: 30000 });
-    await pages[1].waitForFunction(() => /Triệu Vân/u.test(document.querySelector('.board-self .board-generals')?.textContent ?? ''), null, { timeout: 30000 });
-    assert.match(await pages[0].locator('.board-self .board-generals').innerText(), /Quách Gia.*Tư Mã Ý/s,
-      'Native damage scenario must reveal Quách Gia + Tư Mã Ý for the first account');
-    assert.match(await pages[1].locator('.board-self .board-generals').innerText(), /Triệu Vân.*Pháp Chính/s,
-      'Native damage scenario must reveal Triệu Vân + Pháp Chính for the second account');
+    // The QA director binds the actor by allowlisted screen name, while room
+    // seat assignment is not stable. Discover the two private owners from the
+    // actual roster instead of assuming browser tab order.
+    const rosterDeadline = Date.now() + 30000;
+    let weiOwner = -1;
+    let shuOwner = -1;
+    while (Date.now() < rosterDeadline && (weiOwner < 0 || shuOwner < 0)) {
+      for (let client = 0; client < pages.length; client++) {
+        const text = await pages[client].locator('.board-self .board-generals').innerText().catch(() => '');
+        if (/Quách Gia/u.test(text) && /Tư Mã Ý/u.test(text)) weiOwner = client;
+        if (/Triệu Vân/u.test(text) && /Pháp Chính/u.test(text)) shuOwner = client;
+      }
+      if (weiOwner < 0 || shuOwner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    const observedRosters = await Promise.all(pages.map((page) =>
+      page.locator('.board-self .board-generals').innerText().catch(() => '[unavailable]')));
+    assert.ok(weiOwner >= 0,
+      `Native damage scenario must reveal Quách Gia + Tư Mã Ý on one private client; observed=${JSON.stringify(observedRosters)}`);
+    assert.ok(shuOwner >= 0,
+      `Native damage scenario must reveal Triệu Vân + Pháp Chính on one private client; observed=${JSON.stringify(observedRosters)}`);
+    scenarioClient = weiOwner;
+    assert.match(await pages[weiOwner].locator('.board-self .board-generals').innerText(), /Quách Gia.*Tư Mã Ý/s,
+      'Native damage scenario must reveal Quách Gia + Tư Mã Ý on the Wei client');
+    assert.match(await pages[shuOwner].locator('.board-self .board-generals').innerText(), /Triệu Vân.*Pháp Chính/s,
+      'Native damage scenario must reveal Triệu Vân + Pháp Chính on the Shu client');
     console.log('PASS fazheng-enyuan roster: Wei Quách Gia/Tư Mã Ý versus Shu Triệu Vân/Pháp Chính');
   }
   if (hiddenYijiScenario || hiddenRehideYijiScenario || hiddenYingziScenario) {
@@ -1171,10 +1190,27 @@ try{
     console.log(`PASS ${name} pre-gate: native fake-skill dock is visible while the actor remains hidden`);
   }
   if (hiddenRevealScenario) {
-    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
-    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/i }).count(),
-      'hidden-reveal must expose the native active reveal helper in the regular skill dock');
-    console.log('PASS hidden-reveal pre-request: native fake Qianxun and active reveal dock are visible');
+    // Native QA assigns the allowlisted actor to a room seat, so the private
+    // fake/regular skill projection is not guaranteed to be on browser tab 1.
+    // Discover the owner from the actual reveal helper before entering the
+    // request loop; otherwise a valid deputy run can be mistaken for a server
+    // readiness failure when the actor lands on client 2.
+    const label = /Mở tướng|reveal_skill&/i;
+    const deadline = Date.now() + 30000;
+    let owner = -1;
+    while (Date.now() < deadline && owner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        if (await pages[client].locator('button.regular-skill-button').filter({ hasText: label }).count()) {
+          owner = client;
+          break;
+        }
+      }
+      if (owner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(owner >= 0,
+      'hidden-reveal must expose the native active reveal helper in the private regular skill dock');
+    scenarioClient = owner;
+    console.log(`PASS hidden-reveal pre-request: native fake Qianxun and active reveal dock are visible on client ${owner + 1}`);
   }
   if (hiddenActiveScenario) {
     await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
@@ -2420,10 +2456,22 @@ try{
     recovered=true;
     console.log(testGatewayRestart ? 'PASS gateway restart: first account reauthenticates/native Reconnect/private board, independent peer stays connected' : 'PASS controlled transport loss: same account automatically authenticates, receives native Reconnect and restores the two-seat board');
   }
-  await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));finished=true;
+  // Founding acceptance ends when the native GeneralShown kingdom choice is
+  // answered; that source path intentionally does not end the whole match.
+  // Waiting for a result screen here would leave the QA runner playing an
+  // unrelated full game after the rule under test has already passed.
   let publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
     ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
     : [];
+  if (testScenario === 'founding') {
+    finished = true;
+  } else {
+    await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));
+    finished = true;
+    publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
+      ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
+      : [];
+  }
   if (testBotAudit) {
     // A skill log rendered with “(bạn)” is the local real client. Merge that
     // actor identity across both client views; the same public log is rendered
@@ -2858,12 +2906,16 @@ try{
     }
   }
   for(let i=0;i<2;i++){
-    assert.ok(traces[i].some(t=>t.direction==='incoming' && t.command==='GameOver'));
+    if (testScenario !== 'founding') {
+      assert.ok(traces[i].some(t=>t.direction==='incoming' && t.command==='GameOver'));
+    }
     const replies=traces[i].filter(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY);
     assert.equal(new Set(replies.map(t=>t.requestId)).size,replies.length,'one reply per request');
-    await pages[i].getByRole('button',{name:'Về sảnh',exact:true}).click();
-    await pages[i].getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor();
-    await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
+    if (testScenario !== 'founding') {
+      await pages[i].getByRole('button',{name:'Về sảnh',exact:true}).click();
+      await pages[i].getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor();
+      await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
+    }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
   writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenTianduGateReply,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenQianxunGateReply,hiddenQianxunCardReply,hiddenKongchengGateReply,hiddenKongchengCardReply,hiddenWeimuGateReply,hiddenWeimuCardReply,hiddenXiaojiGateReply,hiddenGuanxingGateReply,hiddenGuanxingInvoked,hiddenGuanxingArrangeReply,hiddenTianxiangGateReply,hiddenTianxiangCardReply,hiddenTianxiangInvoked,hiddenTianxiangChoiceReply,hiddenDuanchangGateReply,hiddenDuanchangChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenFanjianGateReply,hiddenFanjianReply,hiddenFanjianChoiceReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTiandu:hiddenTianduScenario ? {deputy:hiddenTianduDeputyScenario,gate:hiddenTianduGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenQianxun:hiddenQianxunScenario ? {indulgence:hiddenQianxunIndulgenceScenario,deputy:hiddenQianxunDeputyScenario,gate:hiddenQianxunGateReply,card:hiddenQianxunCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenKongcheng:hiddenKongchengScenario ? {deputy:hiddenKongchengDeputyScenario,gate:hiddenKongchengGateReply,card:hiddenKongchengCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenWeimu:hiddenWeimuScenario ? {deputy:hiddenWeimuDeputyScenario,gate:hiddenWeimuGateReply,card:hiddenWeimuCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenXiaoji:hiddenXiaojiScenario ? {deputy:hiddenXiaojiDeputyScenario,gate:hiddenXiaojiGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGuanxing:hiddenGuanxingScenario ? {deputy:hiddenGuanxingDeputyScenario,gate:hiddenGuanxingGateReply,invoked:hiddenGuanxingInvoked,arrange:hiddenGuanxingArrangeReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTianxiang:hiddenTianxiangScenario ? {deputy:hiddenTianxiangDeputyScenario,gate:hiddenTianxiangGateReply,card:hiddenTianxiangCardReply,invoked:hiddenTianxiangInvoked,choice:hiddenTianxiangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDuanchang:hiddenDuanchangScenario ? {deputy:hiddenDuanchangDeputyScenario,gate:hiddenDuanchangGateReply,choice:hiddenDuanchangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFanjian:hiddenFanjianScenario ? {deputy:hiddenFanjianDeputyScenario,gate:hiddenFanjianGateReply,reply:hiddenFanjianReply,choice:hiddenFanjianChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenFanjianScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fanjian ${hiddenFanjianDeputyScenario ? 'deputy' : 'main'} active reveal, Peach gift and target lose-HP choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenTianduScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tiandu ${hiddenTianduDeputyScenario ? 'deputy' : 'main'} prelight, FinishJudge and judged-card obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenQianxunScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-qianxun ${hiddenQianxunIndulgenceScenario ? 'BeforeCardsMove Indulgence discard mirror' : 'TargetConfirming Snatch cancellation'} ${hiddenQianxunDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenWeimuScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenXiaojiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenGuanxingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-guanxing EventPhaseStart reveal and AskForArrangeCards ${hiddenGuanxingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenTianxiangScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenDuanchangScenario ? `two real accounts + two native bots / four-seat C++ / hidden-duanchang fk.Death, killer main-general choice and slot skill loss ${hiddenDuanchangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
@@ -3027,8 +3079,13 @@ try{
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-rehide-yiji reveal, Di Kế distribution and hideGeneral fake/prelight reattachment ${hiddenRehideYijiDeputyScenario ? 'deputy' : 'main'} / no physical device`;
     writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
   }
+  if (testScenario === 'founding') {
+    await Promise.all(pages.map((page) => page.close()));
+  }
   assert.deepEqual(errors,[]);
-  console.log('PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
+  console.log(testScenario === 'founding'
+    ? 'PASS both clients: founding choice evidence saved; browser sessions closed after the source choice (no GameOver required by this scenario)'
+    : 'PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
 }catch(e){
   console.error('FAIL two-client candidate verification:', (e as Error).message.split(first.username).join('[account]').split(second.username).join('[account]').split(first.password).join('[redacted]').split(second.password).join('[redacted]'));
   const feedback:string[]=[];

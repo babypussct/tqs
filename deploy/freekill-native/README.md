@@ -113,19 +113,45 @@ These are two separate layers and must be verified independently:
 | Layer | Current target | Responsibility | What it proves |
 | --- | --- | --- | --- |
 | Render | `tqs-mobile-candidate.onrender.com` | React web bundle, browser transport and hosted candidate release | The published web artifact and its bounded browser path are reachable |
-| Oracle VM | `168.110.36.224:9527` | FreeKill C++/Lua process, pinned packages, server state and native rules | The actual native server package and process are installed and responding |
+| Oracle VM | `161.33.209.212:9527` (`freekill-hegemony-qa`) | FreeKill C++/Lua process, pinned packages, server state and native rules | The replacement QA native package and process are installed and responding |
 
-The intended path is **browser → Render web/gateway → FreeKill native on the
-VM**. A green Render health check does not prove that the VM has the expected
-native package or rule state; a healthy VM does not prove that Render serves the
-latest React bundle. For native package, process, or rule verification, use the
-VM access procedure below and record it as `LIVE` only after the VM itself is
-observed.
+The intended production path remains **browser → Render web/gateway →
+FreeKill native on the VM**. The Oracle evidence recorded below used an
+isolated local gateway pointed at the replacement VM, so it proves the native
+VM and the browser/native bridge but does not yet prove the Render → Oracle
+network route. A green Render health check does not prove native rule state;
+the Oracle QA result does not prove that Render serves the latest React bundle.
 
 ## Administrator access
 
 The owner retains administration through the VM's local FreeKill CLI. Port
 9000 is intentionally not public. Attach to the persistent console over SSH:
+
+### Oracle target record
+
+This is the operational record for the existing Oracle host. It is kept here
+so a later session does not confuse the Render web candidate with the native
+VM:
+
+```text
+Instance:       freekill-hegemony
+OCID:           ocid1.instance.oc1.ap-tokyo-1.anxhiljrqlk7czacaimrirsrg6zgnlrvhokggofuknqzjpgggyuszeybuqsa
+Region:         ap-tokyo-1 (Japan East/Tokyo)
+Public IPv4:    168.110.36.224
+Private IPv4:   10.0.0.35
+Shape:          VM.Standard.E2.1.Micro
+Image:          Canonical Ubuntu 24.04
+Guest user:     ubuntu
+Native port:    9527
+```
+
+The VM and boot volume have not been deleted or reinstalled. Controlled
+graceful reboots have returned to a normal Ubuntu boot and the
+`freekill-native.service` unit has started again. As of the latest recovery
+attempt, no guest file has been changed and the extra Ed25519 key has not yet
+been installed in `ubuntu`'s `authorized_keys`; therefore SSH guest access is
+still **PENDING**, not PASS. Do not label the VM `LIVE` until the package
+manifest and the installed `tqs_qa` identity have been read on the VM itself.
 
 ```sh
 ssh -i /path/to/ssh-key ubuntu@168.110.36.224
@@ -133,8 +159,20 @@ sudo tmux attach -t freekill-native
 ```
 
 Trên máy phát triển hiện tại đã lưu một SSH profile cục bộ tên `tqs-native-qa`
-(`~/.ssh/config`, dùng key `~/.ssh/tqs-native-qa`). Có thể dùng lệnh ngắn sau
-sau khi public key tương ứng đã được thêm vào `ubuntu:~/.ssh/authorized_keys`:
+(`~/.ssh/config`, dùng key `~/.ssh/tqs-native-qa`). Hồ sơ truy cập này được
+lưu ở máy cục bộ, không ghi private key vào repository:
+
+```text
+Host alias:       tqs-native-qa
+Host:             168.110.36.224
+User:             ubuntu
+IdentityFile:     ~/.ssh/tqs-native-qa
+Key fingerprint:  SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
+Public key file:  ~/.ssh/tqs-native-qa.pub
+```
+
+Có thể dùng lệnh ngắn sau sau khi public key tương ứng đã được thêm vào
+`ubuntu:~/.ssh/authorized_keys`:
 
 ```sh
 ssh tqs-native-qa
@@ -153,16 +191,102 @@ root shell vẫn cần thiết trước khi `ssh tqs-native-qa` có thể PASS. 
 Console Connection của OCI yêu cầu RSA public key riêng; không dùng key
 Ed25519 của alias SSH trực tiếp cho serial console. Connection mới dùng
 fingerprint đúng và đã vào login prompt Ubuntu; guest credential thử nghiệm bị
-từ chối. OCI cũng từ chối thay đổi `ssh_authorized_keys` sau khi instance đã tạo,
-kể cả khi giữ lại key RSA hiện hữu và nối thêm key Ed25519. Recovery reboot gần
-nhất không bắt được GRUB nhưng đã trở lại normal boot; chưa có guest file nào bị
-sửa và chưa xác nhận được `ssh tqs-native-qa`.
+từ chối. Key RSA dành riêng cho serial console được lưu cục bộ tại
+`~/.ssh/tqs-native-qa-console-rsa` (public fingerprint
+`SHA256:nwh9RXfbFO1qtZd77dts6VRsyEu2SwDN2+V8B4mDc/s`). Không dùng private key
+này cho SSH thường và không sao chép private key vào tài liệu.
 
-> Bằng chứng vận hành hiện tại chỉ xác nhận `freekill-native.service` đang active
-> tại `/opt/freekill-hegemony/current` và cổng `9527` có listener. Package
-> identity, manifest và `tqs_qa` chưa được xác minh trực tiếp trên VM; không ghi
-> nhận deploy package trong phiên này. Vì vậy không gọi VM là `LIVE` cho tới khi
-> bootstrap được quyền guest và chạy `verify-install.sh` trên package thực tế.
+### Replacement VM record
+
+The existing VM is intentionally preserved. A replacement was created on
+2026-10-15 with the SSH key present at creation time, so recovery access is no
+longer required for the next install attempt:
+
+```text
+Instance:        freekill-hegemony-qa
+OCID:            ocid1.instance.oc1.ap-tokyo-1.anxhiljrqlk7czac5lxmhmk7cshy63b6td3qb6kuaig3hblz2dqsxmisbx7q
+Region:          ap-tokyo-1 (Japan East/Tokyo)
+Public IPv4:     161.33.209.212
+Private IPv4:    10.0.0.78
+Shape:           VM.Standard.E2.1.Micro
+Image:           Canonical Ubuntu 24.04 (2026.09.18-0)
+Guest user:      ubuntu
+Native port:     9527
+SSH alias:       tqs-native-qa-replacement
+SSH key:         ~/.ssh/tqs-native-qa
+SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
+Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
+                 Oracle bounded QA 51 runs PASS; Render-to-Oracle route PENDING
+```
+
+Observed SSH verification on the replacement: `id`, hostname and the
+presence of `tqs-native-qa@tqs` in `/home/ubuntu/.ssh/authorized_keys` all
+passed. The replacement now has Lua 5.4.8, the pinned 14-package registry,
+the verified server-only `tqs_qa` package and an enabled `freekill-native`
+service listening on port 9527. The old VM remains untouched and is the
+rollback/reference host. It is a **QA-verified native target**, not an
+official/public release.
+
+The verified replacement identity is recorded here so a later session can
+recreate the exact runner without guessing:
+
+```text
+Runtime:          /opt/freekill-hegemony/current
+Static release:   freekill-asio v0.1.17 amd64
+Runtime flist MD5: 07ef36b3316100f35479fc0436caa051
+Package registry: 14/14 pinned commits and enabled flags verified
+Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
+QA revision:      5218c2255ea14d3b9ac4c8cb5dd2ef9c2ff95f3f
+QA package SHA:   6b8e5b7c9f8350ceef58503b01d5776c74a817328e8ef167a2c6a8fbde8c0dc4
+QA catalog SHA:   887544d149394a7cfa1f686d024837fae53af1787cf05c76ce1cf850afc569e6
+QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
+Service:          freekill-native.service enabled/active; TCP 9527 reachable
+```
+
+Oracle QA acceptance for the hidden-trigger reveal contract is recorded in the
+canonical audit. It currently covers the original 32/32 bounded runs plus 19
+additional bounded runs: Quách Gia/Di Kế
+positive, negative, skip and deputy-positive branches; Ngụy Diên/Cuồng Cốt;
+Hoàng Trung/Liệt Cung; Tào Tháo/Gian Hùng; Tư Mã Ý/Phản Quỹ; Khổng Dung/Danh
+Sĩ; Quách Gia/Thiên Đố; Hoàng Nguyệt Anh/Cơ Trí; Lục Tốn/Tuần Tầm; Gia Cát
+Lượng/Không Thành; Giả Hủ/Vi Mộ; Tôn Thượng Hương/Xiaoji; Gia Cát
+Lượng/Guanxing; Tiểu Kiều/Thiên Hương; and Thái Văn Cơ/Đoạn Trường in the
+main and deputy slots where the scenario supports both slots. These runs used the exact identity above and an isolated local gateway with
+`FK_HOST=161.33.209.212`; no credentials or allowlist names are stored in the
+repository. This is native VM evidence, not proof of the Render → Oracle
+network route or an exhaustive 607-pair rule matrix.
+
+```sh
+ssh tqs-native-qa-replacement 'id; hostname'
+```
+
+The recovery notes below apply only to the preserved old VM. OCI cũng từ chối thay đổi `ssh_authorized_keys` sau khi instance đã tạo, kể cả
+khi giữ lại key RSA hiện hữu và nối thêm key Ed25519. Nếu OCI báo đã có một
+console connection active, chỉ xoá **console connection tạm thời** ở bảng
+`OS Management → Console connection`, rồi tạo lại bằng public key RSA nói trên;
+thao tác này không xoá VM, boot volume hay dữ liệu. Sau khi connection mới
+active, dùng đúng lệnh `Copy serial console connection for Linux/Mac` mà OCI cung cấp, rồi
+đăng nhập console bằng key `~/.ssh/tqs-native-qa-console-rsa`.
+
+Recovery reboot gần nhất không bắt được GRUB nhưng đã trở lại normal boot; chưa
+có guest file nào bị sửa và chưa xác nhận được `ssh tqs-native-qa`. Khi vào được
+root shell, thêm đúng public key trong `~/.ssh/tqs-native-qa.pub` vào
+`/home/ubuntu/.ssh/authorized_keys`, đặt owner `ubuntu:ubuntu`, mode thư mục
+`700` và mode file `600`, reboot bình thường, rồi kiểm tra:
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=8 tqs-native-qa true
+ssh tqs-native-qa 'id; hostname; systemctl is-active freekill-native; ss -lntp | grep 9527 || true'
+```
+
+Các lệnh trên vẫn là checklist cho old VM `tqs-native-qa`; không áp dụng cho
+replacement alias `tqs-native-qa-replacement`, vì alias mới đã được xác minh
+trực tiếp. Không dùng kết quả NATIVE-LOCAL để suy ra package identity của VM.
+
+> Ghi chú lịch sử của old VM: các lần kiểm tra trước chỉ thấy service/listener
+> và chưa đọc được package identity. Không áp dụng kết luận đó cho
+> `freekill-hegemony-qa`; replacement đã chạy `verify-install.sh`,
+> `verify-qa-package.sh` và Oracle QA bounded thành công.
 
 Useful commands in that console include `lsplayer`, `lsroom`, `msg`, `kick`,
 `tempban`, `tempmute`, `ban`, `unban`, `whitelist` and `stat`. The initial
