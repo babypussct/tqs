@@ -1240,6 +1240,19 @@ local function setupCards(room, state, scenario)
       fail("unsupported catalog card area: " .. tostring(spec.area))
     end
   end
+  if scenario.trigger == "hidden-fuyin" then
+    -- 父荫 only nullifies the first Slash when the user's hand is no larger
+    -- than the Slash user. The catalogued source Slash is the only card that
+    -- must be selected by the browser; add four non-Slash filler cards so the
+    -- native source has five cards against the actor's normal four-card hand.
+    -- This preserves the real hand-size predicate instead of making the QA
+    -- fixture pass by bypassing it.
+    local source = playerForRole(state, "target")
+    state.fixedHands[source.id] = state.fixedHands[source.id] or {}
+    for _ = 1, 4 do
+      table.insert(state.fixedHands[source.id], takeCard(room, { trueName = "jink" }, reserved))
+    end
+  end
 end
 
 local function setupState(room, scenario, seed)
@@ -1965,9 +1978,11 @@ local function triggerHiddenFuyin(room, state)
     or not fuyinIsDeputy and state.actor.general == "zhugezhan" and state.actor.deputyGeneral == "anjiang"
   if not state.hiddenFuyinTargetConfirmed or not state.hiddenFuyinNullified or
       state.actor.hp ~= actorHpBefore or not effect or effect.fake or not revealedCorrectSlot then
-    fail(string.format("prelighted hidden Fuyin must reveal Zhuge Zhan before nullifying TargetConfirmed Slash (target_confirmed=%s nullified=%s hp_before=%d hp_after=%d effect=%s fake=%s revealed=%s)",
+    fail(string.format("prelighted hidden Fuyin must reveal Zhuge Zhan before nullifying TargetConfirmed Slash (target_confirmed=%s nullified=%s hp_before=%d hp_after=%d effect=%s fake=%s revealed=%s has_skill=%s fake_skill=%s actor_hand=%d source_hand=%d)",
       tostring(state.hiddenFuyinTargetConfirmed), tostring(state.hiddenFuyinNullified), actorHpBefore,
-      state.actor.hp, tostring(effect ~= nil), tostring(effect and effect.fake), tostring(revealedCorrectSlot)))
+      state.actor.hp, tostring(effect ~= nil), tostring(effect and effect.fake), tostring(revealedCorrectSlot),
+      tostring(state.actor:hasSkill("fuyin")), tostring(state.actor:isFakeSkill("fuyin")),
+      state.actor:getHandcardNum(), state.target:getHandcardNum()))
   end
 
   room:sendLog{
@@ -4316,7 +4331,10 @@ director:addEffect(fk.GameStart, {
     elseif scenario.trigger == "hidden-enyuan" then
       triggerHiddenEnyuan(room, state)
     elseif scenario.trigger == "hidden-fuyin" then
-      triggerHiddenFuyin(room, state)
+      -- 父荫's official predicate searches the current turn history. Defer
+      -- the real Slash until the actor's Start phase so the QA director
+      -- exercises the same TargetConfirmed context as a live turn.
+      state.hiddenFuyinPending = true
     elseif scenario.trigger == "hidden-kuanggu" then
       triggerHiddenKuanggu(room, state)
     elseif scenario.trigger == "hidden-liegong" then
@@ -4360,6 +4378,26 @@ director:addEffect(fk.GameStart, {
     elseif scenario.trigger == "hidden-jueqing" then
       triggerHiddenJueqing(room, state)
     end
+  end,
+})
+
+director:addEffect(fk.EventPhaseStart, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.hiddenFuyinPending and target == state.actor and
+      player == state.actor and data.phase == Player.Start
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.hiddenFuyinPending = false
+    -- Hegemony reveals the first player's pair before EventPhaseStart. Re-hide
+    -- the catalogued slots here so the actual TargetConfirmed test begins in
+    -- the same hidden-general state as a player who kept both generals down.
+    if state.actor.general ~= "anjiang" then state.actor:hideGeneral(false) end
+    if state.actor.deputyGeneral ~= "anjiang" then state.actor:hideGeneral(true) end
+    triggerHiddenFuyin(player.room, state)
   end,
 })
 

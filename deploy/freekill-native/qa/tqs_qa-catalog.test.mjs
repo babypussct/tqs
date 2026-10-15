@@ -424,7 +424,9 @@ test('hidden-fuyin locks TargetConfirmed Slash nullification and hidden main/dep
   assert.match(fuyin, /data\.card\.trueName\)/u);
   assert.match(fuyin, /data\.from:getHandcardNum\(\) < player:getHandcardNum\(\)/u);
   assert.match(fuyin, /data\.nullified = true/u);
-  assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*triggerHiddenFuyin\(room, state\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*state\.hiddenFuyinPending = true/u);
+  assert.match(qaInit, /director:addEffect\(fk\.EventPhaseStart[\s\S]*state\.hiddenFuyinPending[\s\S]*data\.phase == Player\.Start[\s\S]*triggerHiddenFuyin\(player\.room, state\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*for _ = 1, 4 do[\s\S]*trueName = "jink"/u);
   assert.match(qaInit, /skill_name = "tqs_qa_hidden_fuyin_damage"[\s\S]*exclusive_targets = \{ state\.actor\.id \}/u);
   assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenFuyinTargetConfirmed = true/u);
   assert.match(qaInit, /hiddenFuyinNullified = data\.nullified == true/u);
