@@ -1809,6 +1809,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-fuyin",
+      "title": "Hidden 诸葛瞻 Phụ Âm reveals before TargetConfirmed Slash nullification",
+      "seed": 1567522754,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fuyin",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "zhugezhan",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fuyin-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fuyin-deputy",
+      "title": "Hidden deputy 诸葛瞻 Phụ Âm reveals before TargetConfirmed Slash nullification",
+      "seed": 1567522755,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fuyin",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "zhugezhan",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fuyin-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

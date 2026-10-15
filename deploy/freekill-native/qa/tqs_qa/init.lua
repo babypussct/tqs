@@ -612,6 +612,34 @@ local function validateHiddenEnyuanScenario(scenario)
   end
 end
 
+local function validateHiddenFuyinScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-fuyin scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-fuyin-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "zhugezhan"
+  local expectedDeputy = deputy and "zhugezhan" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-fuyin actor must use the catalogued Zhuge Zhan main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-fuyin source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "PlayCard" then
+    fail("hidden-fuyin must expose the native PlayCard Slash request")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "fuyin-slash" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "slash" then
+    fail("hidden-fuyin must reserve exactly one source Slash")
+  end
+end
+
 local function validateHiddenQianxunScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-qianxun scenarios must define exactly two players")
@@ -901,6 +929,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenGongqingScenario(scenario)
   elseif scenario.trigger == "hidden-enyuan" then
     validateHiddenEnyuanScenario(scenario)
+  elseif scenario.trigger == "hidden-fuyin" then
+    validateHiddenFuyinScenario(scenario)
   elseif scenario.trigger == "hidden-qianxun" then
     validateHiddenQianxunScenario(scenario)
   elseif scenario.trigger == "hidden-kongcheng" then
@@ -1239,6 +1269,8 @@ local function setupState(room, scenario, seed)
     hiddenEnyuanTargetConfirmed = false,
     hiddenEnyuanDrawCount = 0,
     hiddenEnyuanDrawCards = {},
+    hiddenFuyinTargetConfirmed = false,
+    hiddenFuyinNullified = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -1869,6 +1901,89 @@ local function triggerHiddenEnyuan(room, state)
     tostring(state.hiddenEnyuanTargetConfirmed), tostring(effect ~= nil and not effect.fake),
     tostring(revealedCorrectSlot), state.hiddenEnyuanDrawCount,
     enyuanIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  room:gameOver("")
+end
+
+local function triggerHiddenFuyin(room, state)
+  -- 父荫 is a compulsory TargetConfirmed effect. Keep Zhuge Zhan face-down
+  -- until the real Slash reaches the native target-confirmation stage, then
+  -- prove that the source reveals the owning slot before nullifying the card.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-fuyin actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("fuyin") then
+    fail("hidden-fuyin must attach the hidden Fuyin skill")
+  end
+  if state.actor:hasSkill("fuyin") then
+    fail("hidden-fuyin must not be active before the prelighted Slash branch")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_fuyin_gate",
+    prompt = "TQS QA: prelight Phụ Âm, rồi xác nhận để đối thủ dùng Sát.",
+  })
+  if not gate then
+    fail("hidden-fuyin QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "fuyin") then
+    fail("hidden-fuyin must be prelighted before the TargetConfirmed branch")
+  end
+
+  local cardId = state.slotCards["fuyin-slash"]
+  if not cardId or not table.contains(state.target:getCardIds(Player.Hand), cardId) then
+    fail("hidden-fuyin must put the reserved Slash in the native source hand")
+  end
+
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_fuyin_damage",
+    prompt = "TQS QA: dùng Sát lên Phụ Ấm để kiểm tra TargetConfirmed.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.actor then
+    fail("hidden-fuyin must receive the reserved source Slash against the hidden actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "fuyin" and entry.player == state.actor.id
+  end)
+  local fuyinIsDeputy = state.scenario == "hidden-fuyin-deputy"
+  local revealedCorrectSlot = fuyinIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "zhugezhan"
+    or not fuyinIsDeputy and state.actor.general == "zhugezhan" and state.actor.deputyGeneral == "anjiang"
+  if not state.hiddenFuyinTargetConfirmed or not state.hiddenFuyinNullified or
+      state.actor.hp ~= actorHpBefore or not effect or effect.fake or not revealedCorrectSlot then
+    fail(string.format("prelighted hidden Fuyin must reveal Zhuge Zhan before nullifying TargetConfirmed Slash (target_confirmed=%s nullified=%s hp_before=%d hp_after=%d effect=%s fake=%s revealed=%s)",
+      tostring(state.hiddenFuyinTargetConfirmed), tostring(state.hiddenFuyinNullified), actorHpBefore,
+      state.actor.hp, tostring(effect ~= nil), tostring(effect and effect.fake), tostring(revealedCorrectSlot)))
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Phụ Âm: TargetConfirmed=%arg; SkillEffect=%arg2; vô hiệu Sát=%arg3; mở Gia Cát Chiêm=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = tostring(state.hiddenFuyinTargetConfirmed),
+    arg2 = tostring(effect ~= nil and not effect.fake),
+    arg3 = tostring(state.hiddenFuyinNullified),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = fuyinIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-fuyin target_confirmed=%s skill_effect=%s nullified=%s revealed=%s slot=%s revision=%s",
+    tostring(state.hiddenFuyinTargetConfirmed), tostring(effect ~= nil and not effect.fake),
+    tostring(state.hiddenFuyinNullified), tostring(revealedCorrectSlot),
+    fuyinIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
   room:gameOver("")
 end
 
@@ -3909,6 +4024,7 @@ director:addEffect(fk.SkillEffect, {
     local state = stateFor(player.room)
     return state and (state.scenario == "fazheng-enyuan" or state.scenario == "hidden-enyuan" or
       state.scenario == "hidden-enyuan-deputy" or state.scenario == "hidden-yiji" or
+      state.scenario == "hidden-fuyin" or state.scenario == "hidden-fuyin-deputy" or
       state.scenario == "hidden-yiji-deputy" or state.scenario == "hidden-jianxiong" or
       state.scenario == "hidden-rehide-yiji" or state.scenario == "hidden-rehide-yiji-deputy" or
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
@@ -4060,6 +4176,22 @@ director:addEffect(fk.TargetConfirmed, {
   end,
 })
 
+director:addEffect(fk.TargetConfirmed, {
+  global = true, priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-fuyin" or state.scenario == "hidden-fuyin-deputy") and
+      state.currentDamageStep and target == state.actor and data and data.card and
+      data.card.trueName == "slash" and data.from == state.target
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.hiddenFuyinTargetConfirmed = true
+    state.hiddenFuyinNullified = data.nullified == true or
+      (data.use and data.use.nullifiedTargets and table.contains(data.use.nullifiedTargets, state.actor))
+  end,
+})
+
 director:addEffect(fk.AfterCardsMove, {
   global = true, priority = -999,
   can_trigger = function(self, event, target, player, data)
@@ -4183,6 +4315,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenFankui(room, state)
     elseif scenario.trigger == "hidden-enyuan" then
       triggerHiddenEnyuan(room, state)
+    elseif scenario.trigger == "hidden-fuyin" then
+      triggerHiddenFuyin(room, state)
     elseif scenario.trigger == "hidden-kuanggu" then
       triggerHiddenKuanggu(room, state)
     elseif scenario.trigger == "hidden-liegong" then

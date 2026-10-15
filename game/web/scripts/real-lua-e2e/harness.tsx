@@ -329,6 +329,9 @@ const api = {
   acknowledgeMingshiPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'mingshi', ${prelight}}`));
   },
+  acknowledgeFuyinPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'fuyin', ${prelight}}`));
+  },
   acknowledgeGongqingPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'gongqing', ${prelight}}`));
   },
@@ -613,6 +616,23 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'mingshi', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_mingshi_gate', 'TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.'}");
+        break;
+      }
+      case 'hidden-fuyin':
+      case 'hidden-fuyin-deputy': {
+        // Fuyin is compulsory on TargetConfirmed. Keep the pair face-down and
+        // expose only the fake/prelight gate here; native QA owns the real
+        // source Slash, TargetConfirmed cancellation and slot reveal.
+        const deputy = scenarioId === 'hidden-fuyin-deputy';
+        const main = deputy ? 'hs__zhaoyun' : 'zhugezhan';
+        const deputyGeneral = deputy ? 'zhugezhan' : 'hs__zhaoyun';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'fuyin', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_fuyin_gate', 'TQS QA: prelight Phụ Âm, rồi xác nhận để nguồn úp dùng Sát.'}");
         break;
       }
       case 'hidden-gongqing':

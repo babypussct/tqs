@@ -98,7 +98,7 @@ export const VI_SKILL_TRANSLATIONS: Record<string, string> = {
   ":fuji": "Kỹ năng khóa, khi bạn sử dụng [Giết] hoặc thẻ mẹo thông thường, bạn sẽ khiến tất cả các nhân vật cách bạn 1 khoảng cách không thể phản ứng với thẻ này.",
   "fusong": "ca ngợi",
   ":fusong": "Khi bạn chết, bạn có thể khiến một nhân vật có giới hạn vật lý lớn hơn bạn chọn lấy [Fengzi] hoặc [Jizhan].",
-  "fuyin": "bóng mát của cha",
+  "fuyin": "Phụ Âm",
   ":fuyin": "Khóa kỹ năng, sau khi bạn trở thành mục tiêu của [Giết] hoặc [Trận đấu] lần đầu tiên trong mỗi vòng đấu, nếu số lá bài trên tay bạn không lớn hơn số lá bài của người dùng, lá bài này sẽ không có tác dụng với bạn.",
   "ganglie": "Cương Liệt",
   ":ganglie": "Sau khi bạn nhận sát thương, bạn có thẻ tiến hành phán xét: Nếu kết quả phán xét không phải chất <font color='red'>♥</font>, nguồn sát thương chọn 1 mục: Bỏ 2 lá trên tay, hoặc nhận 1 sát thương.",

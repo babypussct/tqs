@@ -21,6 +21,7 @@ const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pk
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const gongqingSkillPath = path.resolve(here, '../../../runtime/packages/tenyear/pkg/tenyear_xinghuo/skills/gongqing.lua');
 const enyuanSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/power/skills/enyuan.lua');
+const fuyinSkillPath = path.resolve(here, '../../../runtime/packages/shzl/pkg/thunder/skills/fuyin.lua');
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
@@ -385,6 +386,47 @@ test('hidden-enyuan locks TargetConfirmed Peach draw and hidden main/deputy reve
   assert.match(qaInit, /skill_name = "tqs_qa_hidden_enyuan_peach"[\s\S]*fix_targets = \{ state\.actor\.id \}/u);
   assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenEnyuanTargetConfirmed = true/u);
   assert.match(qaInit, /move\.skillName == "ld__enyuan"[\s\S]*hiddenEnyuanDrawCount/u);
+});
+
+test('hidden-fuyin locks TargetConfirmed Slash nullification and hidden main/deputy reveal', () => {
+  const expected = {
+    'hidden-fuyin': {
+      seed: 0x5d6e7fc2,
+      actor: { general: 'zhugezhan', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-fuyin-deputy': {
+      seed: 0x5d6e7fc3,
+      actor: { general: 'hs__zhaoyun', deputy: 'zhugezhan', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-fuyin', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'PlayCard', `${id} source-card command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'fuyin-slash', match: { trueName: 'slash' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const fuyin = fs.readFileSync(fuyinSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(fuyin, /name = "fuyin"/u);
+  assert.match(fuyin, /tags = \{Skill\.Compulsory\}/u);
+  assert.match(fuyin, /fuyin:addEffect\(fk\.TargetConfirmed/u);
+  assert.match(fuyin, /data\.card\.trueName\)/u);
+  assert.match(fuyin, /data\.from:getHandcardNum\(\) < player:getHandcardNum\(\)/u);
+  assert.match(fuyin, /data\.nullified = true/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*triggerHiddenFuyin\(room, state\)/u);
+  assert.match(qaInit, /skill_name = "tqs_qa_hidden_fuyin_damage"[\s\S]*exclusive_targets = \{ state\.actor\.id \}/u);
+  assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenFuyinTargetConfirmed = true/u);
+  assert.match(qaInit, /hiddenFuyinNullified = data\.nullified == true/u);
 });
 
 test('hidden-qianxun locks TargetConfirming cancellation for both slots', () => {

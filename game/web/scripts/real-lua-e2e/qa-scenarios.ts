@@ -79,7 +79,9 @@ export type QaScenarioId =
   | 'hidden-gongqing'
   | 'hidden-gongqing-deputy'
   | 'hidden-enyuan'
-  | 'hidden-enyuan-deputy';
+  | 'hidden-enyuan-deputy'
+  | 'hidden-fuyin'
+  | 'hidden-fuyin-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -135,7 +137,8 @@ export type QaScenarioTrigger =
   | 'hidden-kuanggu'
   | 'hidden-jueqing'
   | 'hidden-gongqing'
-  | 'hidden-enyuan';
+  | 'hidden-enyuan'
+  | 'hidden-fuyin';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -877,6 +880,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-enyuan',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-fuyin': {
+    version: 1,
+    id: 'hidden-fuyin',
+    title: 'Gia Cát Chiêm úp: Phụ Âm mở tướng trước TargetConfirmed và vô hiệu Sát',
+    seed: 0x5d6e7fc2,
+    drawSequence: [trueName('slash')],
+    slots: [slot('fuyin-slash', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-fuyin',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-fuyin-deputy': {
+    version: 1,
+    id: 'hidden-fuyin-deputy',
+    title: 'Gia Cát Chiêm phó tướng úp: Phụ Âm mở tướng trước TargetConfirmed và vô hiệu Sát',
+    seed: 0x5d6e7fc3,
+    drawSequence: [trueName('slash')],
+    slots: [slot('fuyin-slash', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-fuyin',
+    expectedCommand: 'PlayCard',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -907,6 +930,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-jueqing', 'hidden-jueqing-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
+  'hidden-fuyin', 'hidden-fuyin-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -1133,6 +1157,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'peach') {
       throw new QaScenarioError(`${plan.id} must reserve one opponent Peach for Ân Oán`);
+    }
+  }
+  if (plan.trigger === 'hidden-fuyin') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'fuyin-slash' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one opponent Slash for Phụ Âm`);
     }
   }
   if (plan.trigger === 'hidden-rehide-yiji' && plan.slots.length !== 0) {
