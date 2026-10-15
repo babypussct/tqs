@@ -127,6 +127,44 @@ local function validateHiddenJianxiongScenario(scenario)
   end
 end
 
+local function validateHiddenFankuiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-fankui scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-fankui-deputy"
+  local expectedMain = deputy and "hs__guojia" or "hs__simayi"
+  local expectedDeputy = deputy and "hs__simayi" or "hs__guojia"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wei" then
+    fail("hidden-fankui actor must use the catalogued Tư Mã Ý main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-fankui target must be Triệu Vân + Pháp Chính in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForCardChosen" then
+    fail("hidden-fankui must expose AskForCardChosen after the Damaged trigger")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-fankui must reserve one target Slash and one target Peach")
+  end
+  local damageCard, lootCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "fankui-damage" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      damageCard = card
+    elseif card.key == "fankui-loot" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "peach" then
+      lootCard = card
+    end
+  end
+  if not damageCard or not lootCard then
+    fail("hidden-fankui must reserve a target Slash and a target Peach")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -250,6 +288,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenYijiScenario(scenario)
   elseif scenario.trigger == "hidden-jianxiong" then
     validateHiddenJianxiongScenario(scenario)
+  elseif scenario.trigger == "hidden-fankui" then
+    validateHiddenFankuiScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -992,6 +1032,100 @@ local function triggerHiddenJianxiong(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenFankui(room, state)
+  -- Tư Mã Ý stays face-down while the public target uses a real Slash. The
+  -- catalog keeps a second target hand card so the Slash moves to Processing
+  -- and Phản Quỹ must choose the remaining hidden hand card.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-fankui actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("fankui") then
+    fail("hidden-fankui must attach the hidden Fankui skill")
+  end
+  if state.actor:hasSkill("fankui") then
+    fail("hidden-fankui must not be active before the prelighted effect")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_fankui_gate",
+    prompt = "TQS QA: prelight Phản Quỹ, rồi xác nhận để đối thủ dùng Sát.",
+  })
+  if not gate then
+    fail("hidden-fankui QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "fankui") then
+    fail("hidden-fankui must be prelighted before the damage branch")
+  end
+
+  local damageCardId = state.slotCards["fankui-damage"]
+  local lootCardId = state.slotCards["fankui-loot"]
+  if #state.target:getCardIds(Player.Hand) ~= 2 or
+      not table.contains(state.target:getCardIds(Player.Hand), damageCardId) or
+      not table.contains(state.target:getCardIds(Player.Hand), lootCardId) then
+    fail("hidden-fankui must start with the catalogued target Slash and Peach")
+  end
+
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { damageCardId },
+    skill_name = "tqs_qa_hidden_fankui_damage",
+    prompt = "TQS QA: dùng Sát lên Tư Mã Ý để kiểm tra Phản Quỹ.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= damageCardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.actor then
+    fail("hidden-fankui must receive the reserved target Slash against the hidden actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local invoked = observedSkill(state, 1, "fankui")
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "fankui" and entry.player == state.actor.id
+  end)
+  local fankuiIsDeputy = state.scenario == "hidden-fankui-deputy"
+  local revealedCorrectSlot = fankuiIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__simayi"
+    or not fankuiIsDeputy and state.actor.general == "hs__simayi" and state.actor.deputyGeneral == "anjiang"
+  local obtained = movedCount(state, 1, "fankui", state.target, state.actor)
+  local damage = 0
+  for _, entry in ipairs(state.damageEvents) do
+    if entry.step == 1 and entry.to == state.actor.id then damage = damage + entry.amount end
+  end
+
+  if damage ~= 1 or not invoked or not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Fankui must invoke, reveal Tư Mã Ý in its catalogued slot and run a real SkillEffect")
+  end
+  if obtained ~= 1 or room:getCardOwner(lootCardId) ~= state.actor or
+      not table.contains(state.actor:getCardIds(Player.Hand), lootCardId) then
+    fail("hidden Fankui must choose and obtain the remaining target hand card")
+  end
+
+  state.hiddenFankuiBranch = "positive-prelight-trigger-obtain"
+  room:sendLog{
+    type = "[TQS QA] Hidden Phản Quỹ: %arg; vị trí=%arg6; prelight=%arg2; SkillEffect=%arg3; mở tướng=%arg4; lấy bài=%arg5",
+    from = state.actor.id,
+    arg = state.hiddenFankuiBranch,
+    arg2 = "true",
+    arg3 = tostring(invoked),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(obtained),
+    arg6 = fankuiIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-fankui branch=%s slot=%s prelight=true invoked=%s revealed=%s obtained=%d revision=%s",
+    state.hiddenFankuiBranch, fankuiIsDeputy and "deputy" or "main", tostring(invoked),
+    tostring(revealedCorrectSlot), obtained, manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local function triggerHiddenReveal(room, state)
   -- The target is revealed to keep the public board deterministic. The actor
   -- remains face-down and must use the same active helper that the native
@@ -1363,7 +1497,8 @@ director:addEffect(fk.SkillEffect, {
     local state = stateFor(player.room)
     return state and (state.scenario == "fazheng-enyuan" or state.scenario == "hidden-yiji" or
       state.scenario == "hidden-yiji-deputy" or state.scenario == "hidden-jianxiong" or
-      state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-reveal" or
+      state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
+      state.scenario == "hidden-fankui-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
       state.scenario == "hidden-active-main" or state.scenario == "hidden-view-as" or
       state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual") and
@@ -1474,6 +1609,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenYiji(room, state)
     elseif scenario.trigger == "hidden-jianxiong" then
       triggerHiddenJianxiong(room, state)
+    elseif scenario.trigger == "hidden-fankui" then
+      triggerHiddenFankui(room, state)
     elseif scenario.trigger == "hidden-reveal" then
       triggerHiddenReveal(room, state)
     elseif scenario.trigger == "hidden-active" then

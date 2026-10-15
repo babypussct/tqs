@@ -312,6 +312,82 @@
         }
       ]
     },
+  {
+    "id": "hidden-fankui",
+    "title": "Hidden Tư Mã Ý Fankui prelight, damage and obtain a source card",
+    "seed": 1567522710,
+    "expectedCommand": "AskForCardChosen",
+    "trigger": "hidden-fankui",
+    "playerCount": 2,
+    "players": {
+      "actor": {
+        "general": "hs__simayi",
+        "deputy": "hs__guojia",
+        "kingdom": "wei"
+      },
+      "target": {
+        "general": "hs__zhaoyun",
+        "deputy": "ld__fazheng",
+        "kingdom": "shu"
+      }
+    },
+    "cards": [
+      {
+        "key": "fankui-damage",
+        "match": {
+          "trueName": "slash"
+        },
+        "owner": "target",
+        "area": "hand"
+      },
+      {
+        "key": "fankui-loot",
+        "match": {
+          "trueName": "peach"
+        },
+        "owner": "target",
+        "area": "hand"
+      }
+    ]
+  },
+  {
+    "id": "hidden-fankui-deputy",
+    "title": "Hidden deputy Tư Mã Ý Fankui reveals the deputy before obtain",
+    "seed": 1567522711,
+    "expectedCommand": "AskForCardChosen",
+    "trigger": "hidden-fankui",
+    "playerCount": 2,
+    "players": {
+      "actor": {
+        "general": "hs__guojia",
+        "deputy": "hs__simayi",
+        "kingdom": "wei"
+      },
+      "target": {
+        "general": "hs__zhaoyun",
+        "deputy": "ld__fazheng",
+        "kingdom": "shu"
+      }
+    },
+    "cards": [
+      {
+        "key": "fankui-damage",
+        "match": {
+          "trueName": "slash"
+        },
+        "owner": "target",
+        "area": "hand"
+      },
+      {
+        "key": "fankui-loot",
+        "match": {
+          "trueName": "peach"
+        },
+        "owner": "target",
+        "area": "hand"
+      }
+    ]
+  },
     {
       "id": "hidden-reveal",
       "title": "Hidden compulsory skill active reveal helper",
