@@ -500,11 +500,7 @@ function ServerPlayer:addFakeSkill(skill)
 
   -- TODO
   self:doNotify("AddSkill", { self.id, skill.name, true })
-  -- A hidden/replaced general can be re-attached as a fake skill while the
-  -- engine still retains its prelighted_skills entry.  Re-send the state after
-  -- AddSkill so the live native dashboard matches syncFakeSkills() on
-  -- reconnect; otherwise the server can trigger the skill while the UI shows
-  -- it as un-prelighted.
+  -- A hidden/replaced general can retain a prelighted skill when it becomes fake again.
   if table.contains(self.prelighted_skills, skill) then
     self:doNotify("PrelightSkill", { skill.name, true })
   end
@@ -536,9 +532,6 @@ function ServerPlayer:prelightSkill(skill, isPrelight)
 
   if isPrelight then
     -- self:addSkill(skill)
-    -- Keep this projection idempotent. The client uses insertIfNeed as well;
-    -- duplicate prelight requests must not leave a fake skill active after
-    -- the matching un-prelight request.
     table.insertIfNeed(self.prelighted_skills, skill)
     for _, s in ipairs(skill.related_skills) do
       table.insertIfNeed(self.prelighted_skills, s)
