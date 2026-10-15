@@ -382,6 +382,7 @@ test('hidden-enyuan locks TargetConfirmed Peach draw and hidden main/deputy reve
   assert.match(enyuan, /data\.from ~= player/u);
   assert.match(enyuan, /data\.from:drawCards\(1, enyuan\.name\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-enyuan"[\s\S]*triggerHiddenEnyuan\(room, state\)/u);
+  assert.match(qaInit, /skill_name = "tqs_qa_hidden_enyuan_peach"[\s\S]*fix_targets = \{ state\.actor\.id \}/u);
   assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenEnyuanTargetConfirmed = true/u);
   assert.match(qaInit, /move\.skillName == "ld__enyuan"[\s\S]*hiddenEnyuanDrawCount/u);
 });

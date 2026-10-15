@@ -1823,6 +1823,11 @@ local function triggerHiddenEnyuan(room, state)
     extra_data = {
       bypass_times = true, bypass_distances = true, extraUse = true,
       exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+      -- Peach defaults to its user as a fixed target.  The standard dying
+      -- rule supplies fix_targets for an external rescuer; mirror that
+      -- contract here so the reserved Peach remains selectable against the
+      -- wounded hidden actor.
+      fix_targets = { state.actor.id },
     },
     cancelable = true,
     skip = true,

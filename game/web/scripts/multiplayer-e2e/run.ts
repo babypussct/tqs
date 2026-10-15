@@ -1117,25 +1117,6 @@ try{
       'hidden-enyuan must expose the fake Enyuan trigger before the TargetConfirmed gate');
     console.log('PASS hidden-enyuan pre-gate: native fake Enyuan is visible before the TargetConfirmed gate');
   }
-  if (hiddenEnyuanScenario) {
-    const evidenceFiles = readdirSync(out)
-      .filter((name) => name.startsWith(`${candidateId}-${testScenario}-multiplayer-live-`))
-      .sort();
-    const evidencePath = evidenceFiles.at(-1);
-    assert.ok(evidencePath, 'hidden-enyuan evidence file must exist before enrichment');
-    const evidence = JSON.parse(readFileSync(path.join(out, evidencePath), 'utf8')) as Record<string, unknown>;
-    evidence.hiddenEnyuanGateReply = hiddenEnyuanGateReply;
-    evidence.hiddenEnyuanCardReply = hiddenEnyuanCardReply;
-    evidence.hiddenEnyuan = {
-      deputy: hiddenEnyuanDeputyScenario,
-      gate: hiddenEnyuanGateReply,
-      peach: hiddenEnyuanCardReply,
-      public: publicBotAudit,
-      trace: botAuditTrace,
-    };
-    evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ${hiddenEnyuanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
-  }
   if (hiddenKuangguScenario) {
     const hiddenKuangguDeadline = Date.now() + 12000;
     let hiddenKuangguOwner = -1;
@@ -1926,7 +1907,12 @@ try{
         const hiddenEnyuanPeach = hiddenEnyuanScenario &&
           /hidden_enyuan_peach|dùng Đào|恩怨|Ân Oán|enyuan/i.test(activePrompt);
         if (hiddenJizhiCard || hiddenMingshiCard || hiddenQianxunCard || hiddenKongchengCard || hiddenWeimuCard || hiddenTianxiangChoose || hiddenEnyuanPeach) {
-          const hand = actor.locator('.gameplay-hand button:enabled');
+          // The hidden Enyuan actor is the Peach target, but the real card is
+          // owned by the other seat.  Keep the request page explicit so a
+          // future selector/seat change cannot accidentally inspect the
+          // hidden actor's hand instead of the source player's hand.
+          const requestPage = hiddenEnyuanPeach ? pages[activeClient] : actor;
+          const hand = requestPage.locator('.gameplay-hand button:enabled');
           const preferredCard = hiddenTianxiangChoose
             ? hand.first()
             : hiddenEnyuanPeach
@@ -1945,8 +1931,8 @@ try{
           const card = await preferredCard.count() ? preferredCard : hand.first();
           assert.ok(await card.count(), `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must expose its reserved real card`);
           await card.click();
-          await chooseTargetIfNeeded(actor);
-          const ok = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+          await chooseTargetIfNeeded(requestPage);
+          const ok = requestPage.getByRole('region', { name: 'Điều khiển lượt chơi' })
             .getByRole('button', { name: 'Xác nhận', exact: true });
           assert.ok(await ok.count() && await ok.isEnabled(),
             `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must enable confirmation after selecting its real card`);
@@ -3212,6 +3198,26 @@ try{
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
+  if (hiddenEnyuanScenario) {
+    const evidenceFiles = readdirSync(out)
+      .filter((name) => name.startsWith(candidateId + '-' + testScenario + '-multiplayer-live-'))
+      .sort();
+    const evidencePath = evidenceFiles.at(-1);
+    assert.ok(evidencePath, 'hidden-enyuan evidence file must exist before enrichment');
+    const evidence = JSON.parse(readFileSync(path.join(out, evidencePath), 'utf8')) as Record<string, unknown>;
+    evidence.hiddenEnyuanGateReply = hiddenEnyuanGateReply;
+    evidence.hiddenEnyuanCardReply = hiddenEnyuanCardReply;
+    evidence.hiddenEnyuan = {
+      deputy: hiddenEnyuanDeputyScenario,
+      gate: hiddenEnyuanGateReply,
+      peach: hiddenEnyuanCardReply,
+      public: publicBotAudit,
+      trace: botAuditTrace,
+    };
+    evidence.scope = 'two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ' +
+      (hiddenEnyuanDeputyScenario ? 'deputy' : 'main') + ' prelight / no physical device';
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+  }
   if (hiddenKongchengScenario) {
     const evidenceFiles = readdirSync(out)
       .filter((name) => name.startsWith(`${candidateId}-${testScenario}-multiplayer-live-`))
