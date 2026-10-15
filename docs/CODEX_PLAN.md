@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 23:40 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md); hồ sơ vận hành Oracle/SSH nằm ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật 15/10/2026 23:47 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md); hồ sơ vận hành Oracle/SSH nằm ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
@@ -21,7 +21,7 @@
 | G4 card/target/skill | **PASS bounded** | Sát/target/OK, Vô Giải, reveal, Cường Tập trong live bot path. | T06–T08, response/view-as và native dialog matrix. |
 | G5 bot game | **PASS bounded** | Có ván bot C++ thật đi tới GameOver và về sảnh. | Một ván không chứng minh mọi luật/tướng/card. |
 | G6 multiplayer/reconnect | **PASS browser bounded** | Two-account và controlled reconnect đã có evidence. | Physical network waived; prompt-specific reconnect còn cần matrix; native hủy `AskForSkillInvoke` đang pending khi actor disconnect. |
-| G7 release | **CANDIDATE LIVE; bản mới đang triển khai** | Bundle hiện hành đã build/typecheck PASS; branch Render sẽ được deploy từ commit mới nhất sau khi push, rồi probe health/manifest/assets. Đây vẫn là candidate, không phải official. | Chờ deploy hoàn tất, full gameplay smoketest, official sign-off, cold-start/quota/rollback/SLA. |
+| G7 release | **CANDIDATE LIVE; artifact sync đã xác minh** | Deployment `dep-db8g67e7bikc73e11c8g` từ commit `ecd7143b` đã `Deploy succeeded | Live`; health `200 / ok`, public HTML/JS/CSS khớp build mới, runtime manifest `5.279` file. Đây vẫn là candidate, không phải official. | Full gameplay smoketest, hosted Render → Oracle proof nếu cần, official sign-off, cold-start/quota/rollback/SLA. |
 | `PLAYABLE_MOBILE` | **FALSE** | — | Chỉ đóng sau khi P0 gameplay/native interaction và release criteria pass. |
 
 ## Backlog ưu tiên

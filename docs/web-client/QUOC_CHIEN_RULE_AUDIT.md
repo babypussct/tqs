@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 15/10/2026 23:09 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 15/10/2026 23:47 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -21,8 +21,10 @@ Bản candidate hiện đạt **MVP browser có server thật**, nhưng chưa đ
 | Live bundle | 5.279 file |
 | Runtime MD5 | `c4704cd70bfbce3375c4c123a2443a3f` |
 | Bundle hash | `0183516d94e2865f` |
-| Release candidate | UI/dịch hotfix trên branch `codex/cp89-render-current`; deployment mới sẽ được ghi sau khi Render build xong |
-| Release status | Candidate để test, chưa official |
+| Render deployment | [`dep-db8g67e7bikc73e11c8g`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8g67e7bikc73e11c8g), commit `ecd7143b` |
+| Public web artifact | HTML SHA-256 `7c34d09358070e84c3e2b3bf078333b81d4fed17549d4e2d9a2f1c2ade1c8f99`; JS `index-DQ3WxHjJ.js`; CSS `index-7DaeryPw.css` |
+| Release candidate | UI/dịch hotfix trên branch `codex/cp89-render-current`; dashboard `Deploy succeeded | Live`, health `200 / ok` |
+| Release status | Candidate để smoke test, chưa official |
 | NATIVE-LOCAL identity hiện hành | C++ source pin `b8a2ad4…`; runtime `flist.txt` MD5 `4ab95597f67f54f9a789e8bdcc5aa160`; 14 package pin + server-only `tqs_qa`; browser artifact `dist/index.html` SHA-256 `7c34d09358070e84c3e2b3bf078333b81d4fed17549d4e2d9a2f1c2ade1c8f99`. `RELEASE.json` không pin đúng flist này, nên chỉ là local/unpinned |
 | NATIVE-LOCAL QA package evidence | Các scenario local giữ identity riêng trong từng evidence JSON; evidence staged gần nhất của Liệt Cung dùng revision `a3618958…`. Không dùng dòng này để suy ra identity Oracle. |
 | Evidence native-local trước đó | Các identity staged của Yiji/Xiaoji/Guanxing/Yingzi/Tiandu/Phản Gián… giữ trong từng evidence JSON; không lặp hash ở bảng này |
@@ -31,12 +33,12 @@ Bản candidate hiện đạt **MVP browser có server thật**, nhưng chưa đ
 | Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `07ef36b3316100f35479fc0436caa051`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening `verify-install.sh` PASS; `tqs_qa` revision `5218c2255ea14d3b9ac4c8cb5dd2ef9c2ff95f3f`, package SHA `6b8e5b7c9f8350ceef58503b01d5776c74a817328e8ef167a2c6a8fbde8c0dc4`, catalog SHA `887544d149394a7cfa1f686d024837fae53af1787cf05c76ce1cf850afc569e6`; service enabled/active, port 9527 reachable |
 | Oracle hidden-trigger QA | Isolated local gateway → Oracle replacement, web `dist/index.html` SHA-256 `7c34d09358070e84c3e2b3bf078333b81d4fed17549d4e2d9a2f1c8c2ade1c8f99`; bộ gốc **32/32 PASS** và thêm **19 run PASS** cho DrawNCards, EventPhaseStart, BeforeCardsMove, active/ViewAs, re-hide Di Kế, Song Hùng, Phản Gián và helper mở tướng. Evidence đầy đủ ở mục Oracle bên dưới. Đây là **Oracle native bounded**, chưa phải Render → Oracle route hoặc official release |
 | CP92 UI/runtime hotfix | Runtime/package baseline: Web 1.739 file; `RELEASE.json` v2 verify PASS (16.522 file); runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; root `dist/` đã dọn và đồng bộ từ `game/web/dist` |
-| CP96 UI hotfix | Artifact đã build/typecheck PASS; deployment mới đang chờ Render manual deploy và HTML/JS/CSS probe |
-| Hotfix đang triển khai | Branch `codex/cp89-render-current` đã build/typecheck PASS; deploy manual Render sẽ được ghi bằng deployment ID sau khi hoàn tất. Đây vẫn là candidate |
+| CP96 UI hotfix | Artifact đã build/typecheck/release-verify PASS; Render deployment `dep-db8g67e7bikc73e11c8g` và HTML/JS/CSS probe PASS |
+| Hotfix hiện hành | Commit `ecd7143b` đã Live trên Render; đây vẫn là candidate để smoke test, không phải official |
 
 `CP90` (pile/tay bài), `CP91` (skill dock/time bar/action row/sorter), CP93, CP94 và CP96 UI đã được đưa vào artifact candidate và được Render deploy.
 
-Probe public cũ `dep-db8cgp6q1p3s73acdhcg` đã trả `healthz=ok`, manifest/assets PASS. Bản deploy mới sẽ được ghi deployment ID, HTML/JS/CSS hash và manifest sau khi Render build xong; việc deploy không mở thêm phạm vi luật, không phải full gameplay acceptance hoặc official release.
+Probe public của deployment `dep-db8g67e7bikc73e11c8g` trả `healthz=ok`, HTML SHA-256 `7c34d093…`, asset mới `index-DQ3WxHjJ.js`/`index-7DaeryPw.css`, manifest `5.279` file với runtime MD5 `c4704cd7…`. Root `dist/` stale đã được dọn trước khi deploy. Việc deploy chỉ xác nhận artifact web/gateway candidate; không mở thêm phạm vi luật, không phải full gameplay acceptance hoặc official release.
 
 Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **34/34**, Wasmoon/React Lua E2E `63/63`, hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Oracle replacement có bộ bounded native QA ban đầu **32/32**, sau đó thêm 19 run PASS cho các nhánh DrawNCards, EventPhaseStart, BeforeCardsMove, active/ViewAs, re-hide Di Kế, Song Hùng, Phản Gián và helper mở tướng; rescue-normal, rescue-battle và founding request cũng PASS riêng. Ma trận effect native-local vẫn là `22/607` cặp trên `14/53` event kinds; các run này chưa phải full matrix hoặc Render → Oracle route. Run `fazheng-enyuan` mới nhất chưa qua assertion roster owner nên được giữ là OPEN harness, không suy diễn thành luật PASS/FAIL.
 
