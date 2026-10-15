@@ -16,7 +16,6 @@ import { VI_ADDITIONS } from '../../src/engine/vietnamese';
 import { GameConnection, type SocketHandlers } from '../../src/engine/connection';
 import { CLIENT_REPLY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../../src/engine/packet';
 import { useGameStore } from '../../src/store/gameStore';
-import { GAMEPLAY_REQUESTS } from '../../src/store/gameplayState';
 import {
   getQaScenario,
   resolveQaScenario,
@@ -148,6 +147,8 @@ const api = {
     return parsed;
   },
   boardState: () => useGameStore.getState().board,
+  store: useGameStore,
+  getConn: () => conn,
   boardNotify: (command: string, source: string) => serverNotify(command, serverCbor(source)),
   equipBot: () => {
     const id = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
@@ -220,6 +221,83 @@ const api = {
     }
     return { id, cardId };
   },
+  beginFakePrelight: () => {
+    const result = api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+    return result.id;
+  },
+  beginHiddenYijiDamage: () => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    // Model Quách Gia as the private main general while the public board keeps
+    // both slots face-down.  The private marks are consumed by native Lua;
+    // hostLua deliberately never forwards them to React.
+    serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'hs__guojia'}"));
+    serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'hs__simayi'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+    serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+  },
+  triggerHiddenYijiDamage: () => {
+    // Damage is a public state change. The native server opens
+    // AskForSkillInvoke only when the fake trigger is prelighted; mirror that
+    // gate here so the local regression covers both the negative and positive
+    // branches without fabricating a request for an unlit hidden skill.
+    const prelighted = conn.lua.eval<boolean>(`return table.find(Self.prelighted_skills or {}, function(skill)
+      return skill.name == 'hs__yiji'
+    end) ~= nil`);
+    serverNotify('PropertyUpdate', serverCbor("{17, 'hp', 3}"));
+    if (!prelighted) return null;
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForSkillInvoke', serverCbor(
+      "{'hs__yiji', 'Quách Gia bị thương: có muốn kích hoạt Di Kế không?'}",
+    ));
+    return id;
+  },
+  revealHiddenYiji: () => {
+    // revealBySkillName() makes the hidden projection disappear and the
+    // revealed skill become a regular skill before the Yiji effect continues.
+    serverNotify('LoseSkill', serverCbor("{17, 'hs__yiji', true}"));
+    serverNotify('AddSkill', serverCbor("{17, 'hs__yiji'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'hs__guojia'}"));
+  },
+  beginHiddenReveal: () => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    // Keep the client-side pair hidden while retaining the private general
+    // marks that reveal_skill& uses to build its interaction choices.  These
+    // private marks are consumed by Lua but are intentionally not projected to
+    // React by hostLua.
+    serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'hs__luxun'}"));
+    serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'hs__simayi'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+    serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+    // This is the exact native-client split for a hidden pair: the trigger
+    // stays in fakeSkills, while the active reveal helper is a regular skill.
+    serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+    serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
+    serverNotify('AddSkill', serverCbor("{17, 'reveal_skill&', true}"));
+    const id = ++nextId;
+    fixtureRequest(id, 'PlayCard', serverCbor('{}'));
+    return id;
+  },
+  acknowledgePrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__yiji', ${prelight}}`));
+  },
+  continueHiddenJianxiong: () => {
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForChoices', serverCbor(
+      "{{'hs__jianxiong-obtain', 'draw1'}, {'hs__jianxiong-obtain', 'draw1'}, {1, 1}, true, 'hs__jianxiong', '#hs__jianxiong', false, true}",
+    ));
+    return id;
+  },
+  acknowledgeJianxiongPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__jianxiong', ${prelight}}`));
+  },
+  prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
+    local previous = encoders.string
+    encoders.string = encoders.utf8string
+    local payload = cbor.encode('prelight,hs__yiji,true')
+    encoders.string = previous
+    return __host_bin2hex(payload)`),
   /** Put a real native hand large enough to exercise the gameplay art and
    * horizontal hand viewport in one deterministic browser fixture. */
   beginVisualHand: (count = 12) => {
@@ -358,6 +436,75 @@ const api = {
             {cardIds={${resolved.slotCards['actor-slash-1']}}, bypass_times=true,
              extraUse=true, bypass_distances=true, exclusive_targets={-1}, must_targets={-1}}}`);
         break;
+      case 'hidden-yiji':
+      case 'hidden-yiji-deputy':
+        // The native QA package uses the same request as a bounded pause while
+        // the real client may send PushRequest("prelight,..."). The local
+        // fixture does not execute native damage, but it keeps this scenario
+        // in the catalog so native/browser command contracts cannot drift.
+        serverNotify('AddSkill', serverCbor("{17, 'hs__yiji', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_yiji_gate', 'TQS QA: prelight Di Kế nếu muốn, rồi bấm Kích hoạt để tiếp tục.'}");
+        break;
+      case 'hidden-jianxiong':
+      case 'hidden-jianxiong-deputy': {
+        // Mirror the native prelight gate and the later AskForChoices request;
+        // the local fixture checks the React/Lua request chain, while native
+        // C++ remains the authority for the real damage/card movement effect.
+        const main = scenarioId === 'hidden-jianxiong-deputy' ? 'hs__simayi' : 'hs__caocao';
+        const deputy = scenarioId === 'hidden-jianxiong-deputy' ? 'hs__caocao' : 'hs__simayi';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__jianxiong', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_jianxiong_gate', 'TQS QA: prelight Gian Hùng, rồi xác nhận để đối thủ dùng Sát.'}");
+        break;
+      }
+      case 'hidden-reveal':
+      case 'hidden-reveal-deputy':
+        // The active helper must remain a regular skill while the compulsory
+        // Qianxun trigger stays in the fake/prelight dock.
+        serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'hs__luxun'}"));
+        serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'hs__sunquan'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
+        serverNotify('AddSkill', serverCbor("{17, 'reveal_skill&', true}"));
+        requestId = sendRequest('AskForUseActiveSkill',
+          "{'reveal_skill&', 'TQS QA: mở Lục Tốn bằng kỹ năng Tỏa định.', true, {skillName='reveal_skill&'}}");
+        break;
+      case 'hidden-active':
+      case 'hidden-active-main':
+        // The native server sends fake active skills with the fake marker, but
+        // upstream client.lua projects an ActiveSkill as a regular SkillButton
+        // so PlayCard can validate it. Keep both generals hidden here and
+        // exercise the same client-side request scene with one real Slash.
+        serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'hs__luxun'}"));
+        serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'hs__sunquan'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__zhiheng', true}"));
+        requestId = sendRequest('PlayCard', '{}');
+        break;
+      case 'hidden-view-as':
+      case 'hidden-view-as-main': {
+        // A hidden ViewAsSkill is projected as a regular PlayCard skill on
+        // the owner client.  Keep both general slots hidden and reserve one
+        // Jink so the real Lua card-selection path can prove Longdan's
+        // Jink-to-Slash conversion instead of merely clicking a fake button.
+        const main = scenarioId === 'hidden-view-as-main' ? 'hs__zhaoyun' : 'hs__guanyu';
+        const deputy = scenarioId === 'hidden-view-as-main' ? 'hs__guanyu' : 'hs__zhaoyun';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__longdan', true}"));
+        requestId = sendRequest('PlayCard', '{}');
+        break;
+      }
       default: {
         const unreachable: never = plan.trigger;
         throw new Error(`Unsupported QA trigger: ${unreachable}`);
@@ -372,7 +519,17 @@ const api = {
     serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'm_heg__dianwei'}"));
     serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
     serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
-    const summary = conn.lua.eval<string>('return __host_bin2hex(cbor.encode(ClientInstance:serialize()))');
+    // Build the same client-side serialized shape that a native reconnect
+    // receives for a hidden trigger and a hidden active skill: fake skills are
+    // restored from fake_skills, while player_skills remains the public list.
+    // The reconnect path must classify the direct snapshot exactly like the
+    // live Client:addSkill() callbacks and restore the prelight decision.
+    const summary = conn.lua.eval<string>(`local yiji = Fk.skills.hs__yiji
+      local zhiheng = Fk.skills.hs__zhiheng
+      Self.player_skills, Self.derivative_skills = {}, {}
+      Self._fake_skills, Self._manually_fake_skills = { yiji, zhiheng }, { yiji, zhiheng }
+      Self.prelighted_skills = { yiji }
+      return __host_bin2hex(cbor.encode(ClientInstance:serialize()))`);
     useGameStore.getState().update({ ownId: null });
     conn.connect();
     serverNotify('NetworkDelayTest', encodeTextArray([publicKeyPem]).subarray(1));
@@ -381,6 +538,8 @@ const api = {
     return { status: conn.getStatus().kind, phase: useGameStore.getState().phase,
       ownId: useGameStore.getState().ownId, players: useGameStore.getState().board.player,
       seats: useGameStore.getState().board.seats, request: useGameStore.getState().pendingRequest,
+      fakeSkills: useGameStore.getState().fakeSkills,
+      regularSkills: useGameStore.getState().regularSkills,
       errors: [...luaErrors], reconnectUiPayloadBytes };
   },
   beginNative: (kind: 'ag' | 'arrange' | 'generals' | 'options' | 'generalChoice' | 'boardMove' | 'skills' | 'generalOptions' | 'cardNames', expired = false) => {
@@ -638,6 +797,8 @@ const api = {
       status: conn?.getStatus().kind ?? 'booting',
       requestId: store.pendingRequest?.requestId ?? null,
       skill: store.skillInvoke,
+      fakeSkills: store.fakeSkills,
+      regularSkills: store.regularSkills,
       error: store.error,
       luaErrors: luaErrors.slice(),
       uiEvents: uiEvents.slice(),
@@ -691,6 +852,7 @@ function Fixture() {
   const phase = useGameStore((s) => s.phase);
   const request = useGameStore((s) => s.pendingRequest);
   const prompt = useGameStore((s) => s.skillInvoke);
+  const regularSkills = useGameStore((s) => s.regularSkills);
   const error = useGameStore((s) => s.error);
   const result = useGameStore((s) => s.result);
   const act = (choice: 'OK' | 'Cancel') => {
@@ -709,6 +871,13 @@ function Fixture() {
   };
   const gameAction = (action: () => void) => {
     if (busy || !request) return;
+    setBusy(true);
+    void Promise.resolve().then(action)
+      .catch((e: unknown) => useGameStore.getState().update({ error: String((e as Error).message) }))
+      .finally(() => setBusy(false));
+  };
+  const prelightAction = (action: () => void) => {
+    if (busy) return;
     setBusy(true);
     void Promise.resolve().then(action)
       .catch((e: unknown) => useGameStore.getState().update({ error: String((e as Error).message) }))
@@ -760,10 +929,14 @@ function Fixture() {
       key={`${request.requestId}-${request.receivedAt}`} request={request} prompt={request.cardsAndChoicePrompt}
       busy={busy} view={(selected) => conn.getCardsAndChoiceView(request.requestId, selected)}
       respond={(selected, choice, cancel) => gameAction(() => conn.respondToCardsAndChoice(request.requestId, selected, choice, cancel))} />}
-    {(!request || GAMEPLAY_REQUESTS.has(request.command)) && <GameBoardScreen busy={busy} leave={() => {}}
+    {/* The native dashboard keeps fake-skill/prelight controls visible while
+        AskForSkillInvoke is pending; the request panel is a separate layer. */}
+    <GameBoardScreen busy={busy} leave={() => {}}
       toggleTrust={() => gameAction(() => conn.toggleTrust())}
+      regularSkills={regularSkills}
+      prelightSkill={(skillName, prelight) => prelightAction(() => conn.prelightSkill(skillName, prelight))}
       dispatch={(kind, id, action, data) => gameAction(() => conn.updateRequestUI(request!.requestId, kind, id, action, data))}
-      direct={(id, data) => gameAction(() => conn.finishDirectInteraction(request!.requestId, id, data))} />}
+      direct={(id, data) => gameAction(() => conn.finishDirectInteraction(request!.requestId, id, data))} />
   </main>;
 }
 

@@ -60,7 +60,7 @@ export class GameAdapter {
     const generation = ++this.generation;
     const store = useGameStore.getState();
     store.update({ progress: 'Đang khởi tạo Lua WASM…', error: null,
-      phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], ownId: null, result: null, board: emptyBoard() });
+      phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], ownId: null, fakeSkills: [], regularSkills: [], result: null, board: emptyBoard() });
     useGameStore.getState().update({ gameplay: emptyGameplay() });
 
     // Keep credentials in the connection only. Neither Zustand nor browser
@@ -70,7 +70,7 @@ export class GameAdapter {
     let recovery: SessionRecovery;
     const endSession = (reason: string) => {
       recovery.stop();
-      useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, initialGeneral: null,
+      useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null,
         board: emptyBoard(), gameplay: emptyGameplay(), result: null,
         progress: '', error: useGameStore.getState().error || connectionError(reason) });
     };
@@ -122,7 +122,7 @@ export class GameAdapter {
       waiting: (attempt) => {
         if (generation !== this.generation) return;
         useGameStore.getState().update({ progress: `Mất kết nối. Đang thử khôi phục phiên (${attempt}/5)…`,
-          pendingRequest: null, skillInvoke: null, initialGeneral: null, gameplay: emptyGameplay(), board: emptyBoard() });
+          pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, gameplay: emptyGameplay(), board: emptyBoard() });
       },
       connect: () => { if (generation === this.generation) connection.connect(); },
       timeout: () => { if (generation === this.generation) connection.abortTransport('recovery timeout'); },
@@ -202,6 +202,11 @@ export class GameAdapter {
   toggleTrust() {
     if (useGameStore.getState().phase !== 'playing') throw new Error('BOT chơi hộ chỉ dùng trong ván đang chạy');
     this.requireConnection().toggleTrust();
+  }
+
+  prelightSkill(skillName: string, prelight: boolean) {
+    if (useGameStore.getState().phase !== 'playing') throw new Error('Prelight chỉ dùng trong ván đang chạy');
+    this.requireConnection().prelightSkill(skillName, prelight);
   }
 
   getModes(): GameModeInfo[] {

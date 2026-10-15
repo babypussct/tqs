@@ -5,11 +5,10 @@ import { useGameStore, type RoomPlayer } from './store/gameStore';
 import { GameplayControls, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
 import { GAMEPLAY_REQUESTS } from './store/gameplayState';
 import PlayerPhotoPanel from './PlayerPhotoPanel';
-
-// Native Request already leaves a short AI think interval. Keep public board
-// moments readable at the browser layer as well, without delaying replies or
-// changing the server's timeout/wire protocol.
-const PRESENTATION_MOMENT_INTERVAL_MS = 650;
+import { IdleHandCard, ResolvingCardView } from './HandCardItem';
+import FakeSkillDock from './FakeSkillDock';
+import RegularSkillDock from './RegularSkillDock';
+import type { RegularSkill } from './store/gameStore';
 
 function useIsMobile(query = '(max-width: 640px)'): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -32,8 +31,8 @@ export function getOpponentPosition(
 ): React.CSSProperties {
   const cX = 50;
   const cY = isMobile ? 38 : 38.5;
-  const rX = isMobile ? 38 : 41;
-  const rY = isMobile ? 24 : 27;
+  const rX = isMobile ? 38 : 42.5;
+  const rY = isMobile ? 24 : 26.5;
 
   let scale = 1;
   if (isMobile) {
@@ -42,9 +41,9 @@ export function getOpponentPosition(
     else if (totalSeats >= 4) scale = 0.72;
     else scale = 0.85;
   } else {
-    if (totalSeats >= 10) scale = 0.68;
-    else if (totalSeats >= 8) scale = 0.78;
-    else if (totalSeats >= 4) scale = 0.90;
+    if (totalSeats >= 10) scale = 0.58;
+    else if (totalSeats >= 8) scale = 0.65;
+    else if (totalSeats >= 4) scale = 0.85;
     else scale = 1.0;
   }
 
@@ -78,51 +77,27 @@ function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): stri
   return `${name} ${difference > 0 ? `hồi ${difference}` : `mất ${-difference}`} HP (${moment.before} → ${moment.after})`;
 }
 
-export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleTrust }: {
-  leave: () => void; busy: boolean; dispatch: GameplayDispatch; direct: GameplayDirect; toggleTrust?: () => void;
+export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleTrust, prelightSkill, regularSkills = [] }: {
+  leave: () => void; busy: boolean; dispatch: GameplayDispatch; direct: GameplayDirect;
+  toggleTrust?: () => void; prelightSkill: (skillName: string, prelight: boolean) => void;
+  regularSkills?: RegularSkill[];
 }) {
-  const { players, board, ownId, roomName, gameplay, pendingRequest } = useGameStore((s) => s);
+  const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills } = useGameStore((s) => s);
   const text = useDisplayText();
+  const isMobile = useIsMobile();
   const [showLogs, setShowLogs] = useState(true);
   const [followLogs, setFollowLogs] = useState(true);
   const [visibleMoments, setVisibleMoments] = useState<BoardMoment[]>([]);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
-  const momentQueue = useRef<BoardMoment[]>([]);
-  const seenMomentIds = useRef(new Set<number>());
-  const momentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scheduleMoment = () => {
-    if (momentTimer.current !== null || momentQueue.current.length === 0) return;
-    // A short presentation queue makes native bot turns readable without
-    // changing server timing, request deadlines, or wire replies.
-    momentTimer.current = setTimeout(() => {
-      momentTimer.current = null;
-      const next = momentQueue.current.shift();
-      if (next) setVisibleMoments((prior) => [next, ...prior].slice(0, 3));
-      scheduleMoment();
-    }, PRESENTATION_MOMENT_INTERVAL_MS);
-  };
   useEffect(() => {
     if (board.moments.length === 0) {
-      momentQueue.current = [];
-      seenMomentIds.current.clear();
       setVisibleMoments([]);
-      if (momentTimer.current !== null) {
-        clearTimeout(momentTimer.current);
-        momentTimer.current = null;
-      }
       return;
     }
-    for (const moment of board.moments) {
-      if (seenMomentIds.current.has(moment.id)) continue;
-      seenMomentIds.current.add(moment.id);
-      momentQueue.current.push(moment);
-    }
-    scheduleMoment();
+    // Instantly sync the latest up to 3 moments in lockstep with match logs
+    setVisibleMoments([...board.moments].slice(-3).reverse());
   }, [board.moments]);
-  useEffect(() => () => {
-    if (momentTimer.current !== null) clearTimeout(momentTimer.current);
-  }, []);
   const lastMomentId = board.moments.at(-1)?.id;
   useLayoutEffect(() => {
     if (showLogs && followLogs && logList.current) logList.current.scrollTop = logList.current.scrollHeight;
@@ -149,7 +124,6 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     };
   }, [showLogs, followLogs]);
   const markUserScroll = () => { userScrollUntil.current = performance.now() + 1500; };
-  const isMobile = useIsMobile();
   const seatOrder = relativeSeatOrder(board.seats, players.map((p) => p.id), ownId);
   const byId = new Map(players.map((p) => [p.id, p]));
   const self = ownId == null ? null : byId.get(ownId);
@@ -184,7 +158,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         </div>
       </header>
       {trusting && <p className="notice" role="status">Máy chủ đã bật BOT chơi hộ. Giữ trang mở để duy trì kết nối; bấm Tự chơi lại khi quay lại.</p>}
-      <div className="board-layout">
+      <div className={`board-layout ${showLogs ? 'has-logs-open' : 'logs-collapsed'}`}>
         <section className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
           <div className="board-log-heading">
             <strong>Nhật ký trận đấu ({board.logs.length})</strong>
@@ -247,7 +221,35 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           })}
         </div>
         <div className="board-center" aria-label="Khu vực bàn chơi">
-          <span className="board-center-symbol" aria-hidden="true">Quốc Chiến</span>
+          <div className="native-table-center" aria-label="Tâm bàn chơi">
+            {/* Chồng bài rút */}
+            <div className="native-deck-slot draw-pile" title="Chồng bài rút">
+              <span className="native-deck-badge">{board.drawPileCount ?? 100}</span>
+              <span className="native-deck-label">Rút</span>
+            </div>
+
+            {/* Vùng bài đang giải quyết hoặc watermark Quốc Chiến */}
+            <div className="native-table-pile" id="nativeProcessingArea">
+              {board.processingCards && board.processingCards.length > 0 ? (
+                board.processingCards.map((c, i) => (
+                  <ResolvingCardView key={i} card={c} />
+                ))
+              ) : null}
+              <span
+                className={`board-center-symbol${board.processingCards && board.processingCards.length > 0 ? ' sg-visually-hidden' : ''}`}
+                aria-hidden="true"
+              >
+                Quốc Chiến
+              </span>
+            </div>
+
+            {/* Chồng bài bỏ */}
+            <div className="native-deck-slot discard-pile" title="Chồng bài bỏ">
+              <span className="native-deck-badge">{board.discardPileCount ?? 0}</span>
+              <span className="native-deck-label">Bỏ</span>
+            </div>
+          </div>
+
           <p className="board-center-seat-count">{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
           <div className="board-moments" aria-label="Diễn biến mới nhất" aria-live="off">
             <strong>Diễn biến mới nhất</strong>
@@ -265,11 +267,42 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
           seat={seatNumbers.get(self.id) ?? 0} active={activeFor(self.id)} target={targetFor(self.id)}
           busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} /></div>}
+        {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill} />}
         {gameplayActive && <GameplayControls key={`${pendingRequest.requestId}-${pendingRequest.receivedAt}`}
-          scene={gameplay} request={pendingRequest} dispatch={dispatch} direct={direct} busy={busy} />}
-        {!gameplayActive && <div className="board-status" role="status">
-          Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
-        </div>}
+          scene={gameplay} request={pendingRequest} regularSkills={regularSkills}
+          dispatch={dispatch} direct={direct} busy={busy} toggleTrust={toggleTrust} trusting={trusting} />}
+        {!gameplayActive && (
+          <div className="board-local-idle-area">
+            <div className="sg-dashboard-left-tools" aria-label="Công cụ ngoài lượt">
+              {toggleTrust && (
+                <button
+                  type="button"
+                  className={`button small-button secondary sg-tool-btn${trusting ? ' active' : ''}`}
+                  onClick={toggleTrust}
+                  title={trusting ? 'Hủy BOT chơi hộ' : 'Bật BOT chơi hộ'}
+                >
+                  {trusting ? 'Hủy ủy thác' : 'Ủy thác'}
+                </button>
+              )}
+            </div>
+            {board.selfHandCards && board.selfHandCards.length > 0 && (
+              <div className="gameplay-hand sg-hand-fan sg-hand-idle gameplay-options" aria-label="Bài trên tay (ngoài lượt)">
+                {board.selfHandCards.map((card, index) => (
+                  <IdleHandCard
+                    key={card.id ?? index}
+                    card={card}
+                    index={index}
+                    totalCards={board.selfHandCards.length}
+                  />
+                ))}
+              </div>
+            )}
+            <div className="board-status" role="status">
+              Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
+            </div>
+            <RegularSkillDock skills={regularSkills} />
+          </div>
+        )}
       </div>
         </div>
       </div>

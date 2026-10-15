@@ -51,7 +51,7 @@ function suitInfo(card: BoardEquipment) {
 }
 
 function PortraitImage({
-  name, extension, text, deputy, backLabel, kingdom,
+  name, extension, text, deputy, backLabel, kingdom, unrevealed = false,
 }: {
   name: string | null;
   extension: string | null;
@@ -59,6 +59,7 @@ function PortraitImage({
   deputy: boolean;
   backLabel: string;
   kingdom?: string | null;
+  unrevealed?: boolean;
 }) {
   const candidates = useMemo(() => generalArtCandidates({ name, extension }), [name, extension]);
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -69,7 +70,7 @@ function PortraitImage({
     ? `/photo-assets/back/${kingdom}.png`
     : '/photo-assets/back/qun.png';
 
-  return <div className={`sg-portrait-slot native-general-slot ${deputy ? 'sg-portrait-deputy' : 'sg-portrait-main'} ${name ? '' : 'sg-portrait-hidden'}`}
+  return <div className={`sg-portrait-slot native-general-slot ${deputy ? 'sg-portrait-deputy' : 'sg-portrait-main'} ${name ? '' : 'sg-portrait-hidden'} ${unrevealed ? 'is-unrevealed sg-general-unrevealed' : ''}`}
     aria-label={displayName}>
     <div className="sg-portrait-art">
       {name && candidateIndex < candidates.length
@@ -79,6 +80,7 @@ function PortraitImage({
             <img src={backSrc} alt="" className="sg-portrait-card-back-img" aria-hidden="true" />
           </div>}
       {name && <span className={`sg-portrait-name sg-calligraphy-name native-calligraphy-name ${deputy ? 'right' : 'left'}`} title={displayName}>{displayName}</span>}
+      {unrevealed && <span className="sg-unrevealed-badge" aria-hidden="true">Chưa lật</span>}
     </div>
   </div>;
 }
@@ -243,10 +245,12 @@ export default function PlayerPhotoPanel({
   player, game, self, seat, active, target, busy, onTarget, style,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
-  const main = (game?.general || (self ? game?.selfGeneral : null)) ?? null;
-  const deputy = (game?.deputyGeneral || (self ? game?.selfDeputyGeneral : null)) ?? null;
-  const mainExtension = game?.general ? game.generalExtension : self ? game?.selfGeneralExtension ?? null : null;
-  const deputyExtension = game?.deputyGeneral ? game.deputyGeneralExtension : self ? game?.selfDeputyGeneralExtension ?? null : null;
+  const isMainRevealed = !!game?.general && game.general !== 'anjiang';
+  const isDeputyRevealed = !!game?.deputyGeneral && game.deputyGeneral !== 'anjiang';
+  const main = (isMainRevealed ? game.general : (self ? (game?.selfGeneral || (game?.general && game?.general !== 'anjiang' ? game?.general : null)) : null)) ?? null;
+  const deputy = (isDeputyRevealed ? game.deputyGeneral : (self ? (game?.selfDeputyGeneral || (game?.deputyGeneral && game?.deputyGeneral !== 'anjiang' ? game?.deputyGeneral : null)) : null)) ?? null;
+  const mainExtension = isMainRevealed ? game.generalExtension : self ? (game?.selfGeneralExtension ?? game?.generalExtension) ?? null : null;
+  const deputyExtension = isDeputyRevealed ? game.deputyGeneralExtension : self ? (game?.selfDeputyGeneralExtension ?? game?.deputyGeneralExtension) ?? null : null;
   const kingdom = game?.visibleKingdom || game?.kingdom;
   const exposedKingdom = (self || game?.roleShown) ? kingdom : null;
   const faction = factionClass(exposedKingdom);
@@ -267,6 +271,9 @@ export default function PlayerPhotoPanel({
   const deputyLabel = deputy ? text(deputy) : 'Phó tướng ẩn';
   const mainCompat = !main ? faceLabel : self && !game?.general ? `${faceLabel} · Chưa lật` : null;
   const deputyCompat = !deputy ? deputyLabel : self && !game?.deputyGeneral ? `${deputyLabel} · Chưa lật` : null;
+
+  const mainUnrevealed = self && !isMainRevealed && !!main;
+  const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
 
   return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
@@ -293,8 +300,8 @@ export default function PlayerPhotoPanel({
     {/* 2. FULL-BLEED DUAL GENERAL PORTRAIT FRAME */}
     <div className={`sg-portrait-frame native-portrait-canvas ${deputy ? 'has-deputy' : 'single'} ${game?.faceup === false ? 'is-face-turned' : ''}`}
       aria-label={`${faceLabel}; ${deputyLabel}`}>
-      <PortraitImage name={main} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} />
-      <PortraitImage name={deputy} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} />
+      <PortraitImage name={main} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={mainUnrevealed} />
+      <PortraitImage name={deputy} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={deputyUnrevealed} />
       {deputy && <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />}
       <PortraitOverlays game={game} self={self} />
 

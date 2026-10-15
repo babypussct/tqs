@@ -61,6 +61,11 @@ export interface BoardState {
   banners: Record<string, string | number | boolean>;
   logs: string[];
   moments: BoardMoment[];
+  drawPileCount: number | null;
+  discardPileCount: number | null;
+  topDiscardCard: BoardEquipment | null;
+  processingCards: BoardEquipment[];
+  selfHandCards: (BoardEquipment & { id: number })[];
 }
 
 /**
@@ -83,7 +88,18 @@ export function serverSeatNumbers(seats: number[], knownIds: number[] = []): Map
 }
 
 export function emptyBoard(): BoardState {
-  return { seats: [], player: {}, banners: {}, logs: [], moments: [] };
+  return {
+    seats: [],
+    player: {},
+    banners: {},
+    logs: [],
+    moments: [],
+    drawPileCount: null,
+    discardPileCount: null,
+    topDiscardCard: null,
+    processingCards: [],
+    selfHandCards: [],
+  };
 }
 
 function recordMoment(board: BoardState, moment: MomentInput): BoardMoment[] {
@@ -154,7 +170,8 @@ function optionalExtension(value: unknown): string | null {
 }
 
 /** Ignore unknown fields: server state can contain private Lua properties. */
-export function updateBoard(board: BoardState, command: string, data: unknown, knownIds: number[], ownId: number | null = null): BoardState {
+export function updateBoard(board: BoardState, command: string, data: unknown, knownIds: number[], ownId: number | null = null,
+  hiddenKingdomMode = false): BoardState {
   if (command === 'ArrangeSeats') {
     if (!Array.isArray(data) || data.length < 1 || data.length > 20 ||
         !data.every(validId) || new Set(data).size !== data.length) return board;
@@ -165,10 +182,39 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     return { ...board, logs: [...board.logs, data].slice(-MAX_BOARD_LOGS),
       moments: recordMoment(board, { kind: 'log', text: data }) };
   }
+  if (command === 'PilesUpdate') {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return board;
+    const p = data as Record<string, unknown>;
+    const draw = typeof p.draw === 'number' && Number.isInteger(p.draw) && p.draw >= 0 ? p.draw : board.drawPileCount;
+    const discard = typeof p.discard === 'number' && Number.isInteger(p.discard) && p.discard >= 0 ? p.discard : board.discardPileCount;
+    const topDiscard = publicCard(p.topDiscard) ?? (discard === 0 ? null : board.topDiscardCard);
+    const processing = Array.isArray(p.processing)
+      ? p.processing.map((c) => publicCard(c)!).filter(Boolean)
+      : board.processingCards;
+    return {
+      ...board,
+      drawPileCount: draw,
+      discardPileCount: discard,
+      topDiscardCard: topDiscard,
+      processingCards: processing,
+    };
+  }
   if (!Array.isArray(data)) return board;
+  if (command === 'SelfHand') {
+    const cards = data.map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const card = publicCard(item);
+      const id = (item as any).id;
+      return card && typeof id === 'number' ? { ...card, id } : null;
+    }).filter(Boolean) as (BoardEquipment & { id: number })[];
+    return { ...board, selfHandCards: cards };
+  }
   if (command === 'SelfGenerals') {
     const [id, main, deputy, mainExtension, deputyExtension] = data;
-    if (!validId(id) || id !== ownId || !knownIds.includes(id) ||
+    // SelfGenerals is a private projection emitted during reconnect/changeSelf.
+    // It can legitimately arrive before AddPlayer/ArrangeSeats rebuilds the
+    // public roster; ownId is the stronger privacy boundary here.
+    if (!validId(id) || id !== ownId ||
         typeof main !== 'string' || typeof deputy !== 'string' || main.length > 120 || deputy.length > 120) return board;
     return { ...board, player: { ...board.player, [id]: { ...(board.player[id] ?? newPlayer()),
       selfGeneral: publicGeneral(main), selfDeputyGeneral: publicGeneral(deputy),
@@ -263,10 +309,12 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
         ...(name === 'general' ? { generalExtension: null } : { deputyGeneralExtension: null }) }; break;
     case 'kingdom':
       if (typeof value !== 'string' || value.length > 120) return board;
+      if (hiddenKingdomMode && id !== ownId && !prior.roleShown && value !== '') return board;
       next = { ...prior, kingdom: value }; break;
     case 'role_shown':
       if (typeof value !== 'boolean') return board;
       next = { ...prior, roleShown: value,
+        kingdom: hiddenKingdomMode && !value && id !== ownId ? null : prior.kingdom,
         visibleKingdom: !value && id !== ownId ? null : prior.visibleKingdom }; break;
     case 'chained':
     case 'faceup':

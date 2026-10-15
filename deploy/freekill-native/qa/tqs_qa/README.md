@@ -69,6 +69,26 @@ runner must first verify the release manifest and hosted gateway identity; a
 stale or unpinned hosted candidate is a hard failure before any login or room
 creation.
 
+## `rescue-*` and `founding`: source-law fixtures
+
+The catalog owners are intentional and must not be swapped to make a UI test
+convenient:
+
+- `rescue-normal` puts an ordinary Peach in `actor`'s hand. `target` is put in
+  Dying and the native `game_rule.lua` asks other players for pattern `peach`.
+- `rescue-battle` enters New Battle Royal before Dying. The Peach belongs to
+  `target`, because only the dying player receives the extra `analeptic`
+  option; `new_battle_royal.lua` converts Peach to Analeptic/Wine and prohibits
+  an unconverted Peach.
+- `founding` marks `heg__jiananfeng` as wild, reveals it through the native
+  GeneralShown path, and expects the real kingdom `AskForChoices` request.
+
+These fixtures exercise the normal FreeKill request APIs; they do not inject a
+client reply or replace the server's rescue/founding state machine. Current
+native evidence and the exact runtime/package identity belong in the canonical
+audit, [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md),
+not in this README.
+
 ## `fazheng-enyuan`: three Slashes and a Longdan counterattack
 
 The two-seat roster is fixed: Wei Quách Gia + Tư Mã Ý (`hs__guojia` +
@@ -129,3 +149,180 @@ two cards for self, Fankui choosing a hidden source card, and the first native
 attack request shape. The second checks catalog/installer contracts and
 executes Lua startup validation with JSON/engine registration stubs. Neither
 command proves native C++ damage or live card-transfer outcomes.
+
+## `hidden-yiji`: Quách Gia úp, prelight, sát thương và mở tướng
+
+This is the dedicated native acceptance scenario for the hidden-trigger rule.
+The director fixes the actor as Quách Gia + Tư Mã Ý and the source as Triệu Vân
++ Pháp Chính, keeps the actor's two generals hidden, and pauses on a normal
+`AskForSkillInvoke` QA gate. While that gate is pending, the real browser must
+use the fake-skill dock to send the native `PushRequest("prelight,hs__yiji,true")`.
+The director then calls native `room:damage`; it does not inject an
+`AskForSkillInvoke` or reveal the general itself.
+
+Run one branch per clean room, with an explicit branch label in the evidence:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-yiji \
+TQS_LIVE_HIDDEN_YIJI_MODE=negative \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-yiji \
+TQS_LIVE_HIDDEN_YIJI_MODE=positive \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-yiji \
+TQS_LIVE_HIDDEN_YIJI_MODE=skip \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Expected native outcomes:
+
+| Branch | Client action | Required native result |
+| --- | --- | --- |
+| `negative` | Do not prelight; accept the QA gate | No Yiji request, no reveal, no Yiji card movement |
+| `positive` | Prelight, accept the gate, then Invoke Di Kế | `AskForSkillInvoke` → Quách Gia reveal → Yiji distributes two cards |
+| `skip` | Prelight, accept the gate, then Skip Di Kế | `AskForSkillInvoke`, but no reveal and no card movement |
+
+The multiplayer runner treats this readiness gate as a hard boundary. For
+hidden native scenarios it fails after 45 seconds by default (override with
+`TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS`, bounded to 10–180 seconds), or
+immediately when `GameOver` arrives before the gate. A missing gate is a
+server-only `tqs_qa` package/config failure diagnosis, not a React gameplay
+PASS or FAIL; the evidence records `nativeQaGateSeen` and the observed command.
+
+`hidden-yiji-deputy` dùng cùng gate/positive branch nhưng đổi roster thành Tư
+Mã Ý + Quách Gia, để xác nhận `revealBySkillName` mở phó tướng khi Di Kế nằm
+ở phó tướng.
+
+## `hidden-jianxiong`: trigger úp đi qua Invoke + Choices
+
+Ca này giữ Cao Cao úp, prelight `hs__jianxiong`, rồi để đối thủ dùng đúng một
+lá Sát thật. Browser phải trả `AskForSkillInvoke`, sau đó chọn
+`hs__jianxiong-obtain` trong `AskForChoices`. Native director kiểm tra Cao Cao
+được mở đúng chủ/phó tướng trước `SkillEffect` và lá Sát đang ở Processing
+được chuyển vào tay Cao Cao. `hidden-jianxiong-deputy` lặp lại cùng hiệu ứng với
+Cao Cao ở phó tướng; hai ca này bổ sung cho Di Kế bằng một trigger có choice,
+không thay thế ma trận Di Kế.
+
+The catalog, seed and expected command are checked against the browser QA
+catalog. A native package must be installed and verified again after this
+scenario changes; the source `package.manifest.json` in this checkout is
+deliberately `status: source` and is not evidence by itself. On 2026-10-15,
+the two Jianxiong slot branches were run through two browser clients, a local
+gateway and a real C++/Lua runtime after the installer wrote a verified
+server-only manifest. The sanitized evidence files are linked from
+`docs/web-client/QUOC_CHIEN_RULE_AUDIT.md`; this local result does not certify
+the hosted CP89 candidate or an official release.
+
+## `hidden-reveal`: active reveal helper for a hidden compulsory skill
+
+This companion scenario keeps Lục Tốn + Tôn Quyền hidden, exposes the fake
+`hs__qianxun` trigger and asks the real native `reveal_skill&` helper. The owner
+must select the Lua interaction `revealMain:::hs__luxun`; the server then reveals
+Lục Tốn, leaves the deputy hidden and activates Tỏa định. The opponent receives
+only the public log, not the private active-skill request.
+
+```bash
+TQS_LIVE_SCENARIO=hidden-reveal \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+This proves the active reveal/projection path and privacy boundary; it does not
+replace the three `hidden-yiji` branches above. The paired
+`hidden-reveal-deputy` scenario selects `revealDeputy:::hs__luxun` and checks
+the same rule when Lục Tốn is the deputy. Current native evidence is
+linked from [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
+
+## `hidden-active`: active skill of a hidden deputy
+
+This scenario checks the separate rule that a hidden general may have an active
+skill available when its activation condition is satisfied. The actor is
+Lục Tốn + Tôn Quyền with both generals hidden and one reserved Slash. The
+native client must project fake `hs__zhiheng` as a regular skill button (not as
+a prelight trigger), then the browser selects that skill and the Slash in a
+real `PlayCard` request.
+
+```bash
+TQS_LIVE_SCENARIO=hidden-active \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+The native director verifies the full result: Chế Hành receives exactly one
+card, reveals Tôn Quyền before `SkillEffect`, keeps Lục Tốn hidden, discards
+the reserved Slash and draws one replacement. The opponent sees only the
+public log and never receives the private `PlayCard` request. This scenario is
+also linked from [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
+
+## `hidden-view-as`: ViewAs skill of a hidden general
+
+This companion scenario keeps Triệu Vân hidden, projects fake `hs__longdan` as
+a regular skill, and reserves one Jink. The browser must select Longdan and
+the Jink in a native `PlayCard` request. FreeKill then reveals Triệu Vân in the
+slot that owns the skill before `SkillEffect`, converts Jink to Slash, and keeps
+the private request on the owner client. `hidden-view-as-main` repeats the same
+check with Triệu Vân in the main slot; `hidden-view-as` uses the deputy slot.
+
+## `hidden-dual`: trigger bắt buộc + ViewAs khi tướng còn úp
+
+Ca này giữ Nhan Lương/Văn Sửu + Viên Thiệu úp, prelight `hs__shuangxiong`,
+rồi phát động đúng `EventPhaseStart` ở pha Chơi. Song Hùng là trigger bắt buộc
+trong source gốc, nên sau gate chuẩn bị **không có** một `AskForSkillInvoke`
+thứ hai. Chuỗi native cần quan sát là:
+
+```text
+AskForSkillInvoke (QA gate) → AskForUseActiveSkill (chọn người)
+→ askToDiscard(cancelable=false) → PlayCard (ViewAs Duel)
+```
+
+Fixture đặt đúng một Jink đỏ ở tay mục tiêu và một Sát đen ở tay actor. Vì
+`askToDiscard` không cancel được và mục tiêu chỉ có một lá hợp lệ, native tự bỏ
+Jink trước khi gửi `PlayCard`; browser runner ghi nhận đây là `auto-discard`,
+không chờ một request UI thứ hai. Native director vẫn kiểm tra mark màu, hand
+movement, `hs__shuangxiong`, subcard và Duel thật trước khi kết thúc room.
+
+Chạy acceptance:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-dual \
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Đây là scenario bổ sung cho ma trận Di Kế/hidden-trigger; evidence và identity
+không chép lại ở README mà giữ tập trung trong
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
+
+### Slot mirror checks
+
+The same native director also runs the position mirrors below. They are kept
+as separate scenario IDs so the evidence cannot silently pass by opening the
+wrong slot:
+
+| Scenario | Mirror being proved |
+| --- | --- |
+| `hidden-yiji-deputy` | Quách Gia is the deputy; positive Di Kế opens the deputy. |
+| `hidden-jianxiong-deputy` | Cao Cao is the deputy; Jianxiong opens the deputy and obtains the damage card. |
+| `hidden-reveal-deputy` | Lục Tốn is the deputy; `revealDeputy` opens only the deputy. |
+| `hidden-active-main` | Tôn Quyền is the main; Chế Hành opens only the main. |
+| `hidden-view-as-main` | Triệu Vân is the main; Longdan opens only the main and converts Jink to Slash. |
+
+The current 12-case core NATIVE-LOCAL matrix is: `hidden-yiji` negative/positive/skip,
+`hidden-yiji-deputy`, `hidden-jianxiong` and `hidden-jianxiong-deputy`,
+`hidden-reveal` and `hidden-reveal-deputy`, `hidden-active` and
+`hidden-active-main`, plus `hidden-view-as` and `hidden-view-as-main`. The
+The staged `hidden-dual` add-on is tracked separately because it uses a newer
+QA package identity. The canonical evidence table and package identities remain in
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
+this README intentionally does not duplicate the full logs or hashes.

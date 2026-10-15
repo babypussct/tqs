@@ -33,6 +33,8 @@ type Snapshot = {
   status: string;
   requestId: number | null;
   skill: { skill: string; prompt: string } | null;
+  fakeSkills: { name: string; prelighted: boolean; enabled: boolean }[];
+  regularSkills: { name: string }[];
   error: string | null;
   luaErrors: string[];
   uiEvents: string[];
@@ -185,6 +187,107 @@ try {
       assert.equal(chosen.replies.at(-1)?.requestId, cardRequestId);
       assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), cardId);
       assert.deepEqual(chosen.luaErrors, []);
+    }],
+    ['real Lua fake-trigger dock sends prelight and survives damage', async (p) => {
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginFakePrelight());
+      const skill = p.locator('button.fake-skill-button').first();
+      await skill.waitFor();
+      assert.equal(await skill.getAttribute('aria-pressed'), 'false');
+      await skill.click();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((packet) =>
+        packet.command === 'PushRequest'));
+      const beforeAck = await snapshot(p);
+      const push = beforeAck.sent.find((packet) => packet.command === 'PushRequest');
+      assert.ok(push);
+      const expectedHex = await p.evaluate(() => window.__tqsRealLuaE2e.prelightWireHex());
+      assert.equal(push.hex, expectedHex);
+      await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgePrelight(true));
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+        skill.name === 'hs__yiji' && skill.prelighted));
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{17, 'hp', 3}"));
+      const afterDamage = await snapshot(p);
+      assert.equal(afterDamage.fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, true);
+      assert.deepEqual(afterDamage.luaErrors, []);
+    }],
+    ['hidden Quách Gia does not invoke Di Kế after damage without prelight', async (p) => {
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginHiddenYijiDamage());
+      const requestId = await p.evaluate(() => window.__tqsRealLuaE2e.triggerHiddenYijiDamage());
+      assert.equal(requestId, null);
+      const state = await snapshot(p);
+      assert.equal(state.requestId, null);
+      assert.equal(state.skill, null);
+      assert.equal(state.fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, false);
+      const board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
+      assert.equal(board.player[17].hp, 3);
+      assert.equal(board.player[17].general, null);
+      assert.deepEqual(state.luaErrors, []);
+    }],
+    ['hidden Quách Gia keeps prelight through damage and invokes Di Kế before reveal', async (p) => {
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginHiddenYijiDamage());
+      const fakeYiji = p.locator('button.fake-skill-button').first();
+      await fakeYiji.waitFor();
+      assert.equal(await fakeYiji.getAttribute('aria-pressed'), 'false');
+
+      await fakeYiji.click();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((packet) =>
+        packet.command === 'PushRequest'));
+      await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgePrelight(true));
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+        skill.name === 'hs__yiji' && skill.prelighted));
+
+      const id = await p.evaluate(() => window.__tqsRealLuaE2e.triggerHiddenYijiDamage());
+      await p.getByRole('heading', { name: 'Kích hoạt kỹ năng?' }).waitFor();
+      const damaged = await snapshot(p);
+      assert.equal(damaged.requestId, id);
+      assert.deepEqual(damaged.skill, {
+        skill: 'hs__yiji', prompt: 'Quách Gia bị thương: có muốn kích hoạt Di Kế không?',
+      });
+      assert.equal(damaged.fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, true,
+        'damage must not clear the prelight decision before the invoke reply');
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).player[17].hp, 3);
+
+      await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+      const invoked = await reply(p);
+      assert.equal(invoked.replies.at(-1)?.requestId, id);
+      assert.equal(invoked.replies.at(-1)?.hex, '4131');
+
+      await p.evaluate(() => window.__tqsRealLuaE2e.revealHiddenYiji());
+      await p.waitForFunction(() => {
+        const state = window.__tqsRealLuaE2e.snapshot();
+        const board = window.__tqsRealLuaE2e.boardState();
+        return !state.fakeSkills.some((skill) => skill.name === 'hs__yiji') &&
+          state.regularSkills.some((skill) => skill.name === 'hs__yiji') &&
+          board.player[17]?.general === 'hs__guojia';
+      });
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+    }],
+    ['real Lua separates hidden trigger and active reveal skills, then gates reveal through SkillButton', async (p) => {
+      const id = await p.evaluate(() => window.__tqsRealLuaE2e.beginHiddenReveal());
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().regularSkills.some((skill) =>
+        skill.name === 'reveal_skill&'));
+      const projected = await snapshot(p);
+      assert.deepEqual(projected.fakeSkills.map((skill) => skill.name), ['hs__yiji', 'hs__qianxun']);
+      assert.deepEqual(projected.regularSkills.map((skill) => skill.name), ['reveal_skill&']);
+
+      const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
+      const revealCount = await reveal.count();
+      assert.equal(revealCount, 1, `reveal button missing: ${JSON.stringify({
+        scene: (await snapshot(p)).scene,
+        buttons: await p.locator('button.sg-skill-button').allTextContents(),
+      })}`);
+      await reveal.waitFor();
+      assert.equal(await reveal.isEnabled(), true,
+        'native active reveal must become actionable only after Lua publishes SkillButton.enabled');
+      await reveal.click();
+      const choices = p.getByRole('combobox', { name: 'Chọn phương án' });
+      await choices.waitFor();
+      const optionValues = await choices.locator('option').evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value));
+      assert.deepEqual(optionValues, ['revealMain:::hs__luxun']);
+      await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const result = await reply(p);
+      assert.equal(result.replies.at(-1)?.requestId, id);
+      assert.deepEqual(result.luaErrors, []);
     }],
     ['Real Lua Cancel emits exact 485f5f63616e63656c reply', async (p) => {
       const id = await start(p);
@@ -942,14 +1045,14 @@ try {
           const log = document.querySelector('.board-log-panel')!.getBoundingClientRect();
           const main = document.querySelector('.board-main')!.getBoundingClientRect();
           return { scroll: document.documentElement.scrollWidth, width: window.innerWidth,
-            logLeft: log.left, logRight: log.right, mainLeft: main.left, mainTop: main.top, logTop: log.top };
+            logLeft: log.left, logRight: log.right, mainLeft: main.left, mainRight: main.right, mainTop: main.top, logTop: log.top };
         });
         assert.ok(metrics.scroll <= metrics.width, `UI-03 viewport ${width}px overflows: ${JSON.stringify(metrics)}`);
         assert.equal(await p.getByRole('button', { name: 'Theo dõi dòng mới' }).count(), 0,
           `viewport ${width}px must not disable automatic following`);
         assert.equal(await nearBottom(), true, `viewport ${width}px must keep latest log visible`);
         if (width >= 940) {
-          assert.ok(metrics.logRight <= metrics.mainLeft, `desktop log must sit on the left: ${JSON.stringify(metrics)}`);
+          assert.ok(metrics.mainRight <= metrics.logLeft, `desktop log must sit on the right: ${JSON.stringify(metrics)}`);
           assert.ok(Math.abs(metrics.logTop - metrics.mainTop) <= 2, 'desktop log and board must share the top row');
         } else {
           assert.ok(metrics.logTop < metrics.mainTop, `mobile log must appear above board: ${JSON.stringify(metrics)}`);
@@ -1180,6 +1283,8 @@ try {
       assert.equal(result.players[-1].selfGeneral, null);
       assert.equal(result.players[-1].general, null);
       assert.equal(result.players[17].handcardNum, 1);
+      assert.deepEqual(result.fakeSkills, [{ name: 'hs__yiji', prelighted: true, enabled: true }]);
+      assert.deepEqual(result.regularSkills, [{ name: 'hs__zhiheng' }]);
       assert.ok(result.reconnectUiPayloadBytes <= 64,
         `Reconnect UI projection must stay bounded, got ${result.reconnectUiPayloadBytes} bytes`);
       assert.deepEqual(result.errors, []);
@@ -1321,6 +1426,103 @@ try {
       assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
         card: { skill: 'userealcard_skill', subcards: [damageExchange.slotCards['actor-slash-1']] }, targets: [-1],
       });
+
+      const hiddenYiji = await startScenario('hidden-yiji');
+      // This fixture deliberately adds only hs__yiji; the translated label is
+      // package-dependent, so select the sole fake-skill button by role.
+      const fakeYiji = p.locator('button.fake-skill-button').first();
+      await fakeYiji.waitFor();
+      await fakeYiji.click();
+      await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgePrelight(true));
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+        skill.name === 'hs__yiji' && skill.prelighted));
+      await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+      const hiddenReply = await reply(p);
+      assert.equal(hiddenReply.replies[0].requestId, hiddenYiji.requestId);
+      assert.equal(hiddenReply.replies[0].hex, '4131');
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{17, 'hp', 3}"));
+      assert.equal((await snapshot(p)).fakeSkills.find((skill) => skill.name === 'hs__yiji')?.prelighted, true);
+
+      for (const scenarioId of ['hidden-jianxiong', 'hidden-jianxiong-deputy'] as const) {
+        const hiddenJianxiong = await startScenario(scenarioId);
+        const fakeJianxiong = p.locator('button.fake-skill-button').first();
+        await fakeJianxiong.waitFor();
+        await fakeJianxiong.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeJianxiongPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'hs__jianxiong' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const invokeReply = await reply(p);
+        assert.equal(invokeReply.replies.at(-1)?.requestId, hiddenJianxiong.requestId);
+        const choiceRequestId = await p.evaluate(() => window.__tqsRealLuaE2e.continueHiddenJianxiong());
+        const jianxiongChoices = p.getByRole('region', { name: 'Lựa chọn trong trận' });
+        await jianxiongChoices.waitFor();
+        const obtain = jianxiongChoices.locator('button.gameplay-choice:enabled')
+          .filter({ hasText: /hs__jianxiong-obtain|obtain|获得|lá Sát|gây sát thương/i }).first();
+        assert.ok(await obtain.count(), `${scenarioId} must render the native obtain-damage-card choice`);
+        // Native room:askToChoice() emits AskForChoices with single=true.
+        // ChoicePanel therefore replies on option click and intentionally does
+        // not render the multi-select confirmation button.
+        await obtain.click();
+        const choiceReply = await reply(p, 2);
+        assert.equal(choiceReply.replies.at(-1)?.requestId, choiceRequestId);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), ['hs__jianxiong-obtain']);
+        assert.deepEqual(choiceReply.luaErrors, []);
+      }
+
+      const hiddenReveal = await startScenario('hidden-reveal');
+      const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
+      await reveal.waitFor();
+      // AskForUseActiveSkill already selects reveal_skill& on the native
+      // request.  Its SkillButton remains visible but disabled; the legal
+      // action is the Lua-owned interaction choice below, not a second skill
+      // switch inside the active-skill scene.
+      assert.equal(await reveal.isDisabled(), true,
+        'hidden compulsory active reveal must not allow a second SkillButton switch');
+      const revealChoices = p.getByRole('combobox', { name: 'Chọn phương án' });
+      await revealChoices.waitFor();
+      assert.deepEqual(await revealChoices.locator('option').evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value)), ['revealMain:::hs__luxun']);
+      await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const revealReply = await reply(p);
+      assert.equal(revealReply.replies.at(-1)?.requestId, hiddenReveal.requestId);
+
+      const hiddenActive = await startScenario('hidden-active');
+      const activeControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+      const zhiheng = activeControls.locator('button.sg-skill-button')
+        .filter({ hasText: /Chế Hành|制衡|zhiheng/i }).first();
+      await zhiheng.waitFor();
+      assert.equal(await zhiheng.isEnabled(), true,
+        'hidden active skill must be a Lua-enabled PlayCard SkillButton');
+      await zhiheng.click();
+      await p.locator(`button[data-card-id="${hiddenActive.slotCards['zhiheng-card']}"]:enabled`).click();
+      await activeControls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const hiddenActiveReply = await reply(p);
+      assert.equal(hiddenActiveReply.replies.at(-1)?.requestId, hiddenActive.requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: { skill: 'hs__zhiheng', subcards: [hiddenActive.slotCards['zhiheng-card']] }, targets: [],
+      });
+
+      for (const scenarioId of ['hidden-view-as', 'hidden-view-as-main'] as const) {
+        const hiddenViewAs = await startScenario(scenarioId);
+        const viewAsControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+        const longdan = viewAsControls.locator('button.sg-skill-button')
+          .filter({ hasText: /Long Đảm|龙胆|longdan/i }).first();
+        await longdan.waitFor();
+        assert.equal(await longdan.isEnabled(), true,
+          `${scenarioId} must expose hidden Long Đảm as a Lua-enabled PlayCard SkillButton`);
+        await longdan.click();
+        await p.locator(`button[data-card-id="${hiddenViewAs.slotCards['longdan-card']}"]:enabled`).click();
+        const target = p.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+        await target.click();
+        await viewAsControls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+        const hiddenViewAsReply = await reply(p);
+        assert.equal(hiddenViewAsReply.replies.at(-1)?.requestId, hiddenViewAs.requestId);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+          card: { skill: 'hs__longdan', subcards: [hiddenViewAs.slotCards['longdan-card']] }, targets: [-1],
+        });
+        assert.deepEqual(hiddenViewAsReply.luaErrors, []);
+      }
     }],
   );
   tests.push(

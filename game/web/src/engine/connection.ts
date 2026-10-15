@@ -146,6 +146,16 @@ export class GameConnection {
     this.lua.call('__web_notify', 'Trust', '');
   }
 
+  /** Match the native dashboard's PushRequest("prelight,...") contract. */
+  prelightSkill(skillName: string, prelight: boolean) {
+    if (this.status.kind !== 'online' || !this.socket) throw new Error('Chưa xác thực với máy chủ');
+    if (typeof skillName !== 'string' || skillName.length === 0 || skillName.length > 150 ||
+        /[\u0000-\u001F\u007F,]/.test(skillName) || typeof prelight !== 'boolean') {
+      throw new Error('Tên kỹ năng prelight không hợp lệ');
+    }
+    this.lua.call('__web_notify', 'PushRequest', `prelight,${skillName},${prelight ? 'true' : 'false'}`);
+  }
+
   private clearRequest() {
     if (this.requestExpiryTimer !== null) {
       clearTimeout(this.requestExpiryTimer);

@@ -80,12 +80,33 @@ function Room:handlePrelight(id, data)
   local controller = self:getPlayerById(id)
   if not controller then return end
 
+  if type(data) ~= "table" or type(data[3]) ~= "string" or
+      (data[4] ~= "true" and data[4] ~= "false") then
+    return
+  end
+
+  local skill = Fk.skills[data[3]]
+  if not skill then return end
+
   local p = table.find(self.players, function(player)
     return table.contains(player._observers, controller._splayer)
   end)
-  if p then
-    p:prelightSkill(data[3], data[4] == "true")
+  if not p then return end
+
+  local isPrelight = data[4] == "true"
+  -- A browser/native client may only enable a fake skill currently attached
+  -- to this player's hidden generals. Disabling is a narrower stale-state
+  -- cleanup path: it is accepted only when the server still retains that
+  -- prelight choice (for example, a late click after reveal). Otherwise a
+  -- forged false request would still enter prelightSkill(), whose shared
+  -- setup path can register an unrelated skill in the room.
+  if isPrelight then
+    if not p:isFakeSkill(skill) then return end
+  elseif not table.contains(p.prelighted_skills, skill) then
+    return
   end
+
+  p:prelightSkill(skill, isPrelight)
 end
 
 function Room:handleUpdateMini(id, reqlist)

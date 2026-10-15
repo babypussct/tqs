@@ -29,9 +29,11 @@ domain, a CDN or a web gateway during the first phase.
 - `scripts/bootstrap-source.sh`: builds the pinned `freekill-asio` source on
   Linux, which is the path for Oracle A1/ARM64.
 - `scripts/install-packages.sh`: idempotently checks out the exact package
-  commits and records them in `packages/packages.db`.
+  commits, applies the three hidden-skill prelight hardenings, and records them
+  in `packages/packages.db`.
 - `scripts/verify-install.sh`: validates executable, JSON, all 14 pinned
-  package commits, enabled flags and package database hashes.
+  package commits, enabled flags, package database hashes and the hidden-skill
+  prelight source contract.
 - `scripts/run-server.sh`: starts the server with the interactive admin shell.
 - `scripts/backup.sh`: archives server state, packages and configuration.
 - `scripts/verify-backup.sh`: checks backup permissions, archive paths and the
@@ -104,6 +106,22 @@ For macOS client instructions, see `client-macos/README.md`. The official
 Windows and Android artifacts can be used by other group members; all clients
 should stay on the same FreeKill release line until an upgrade is tested.
 
+## Render candidate vs Oracle VM
+
+These are two separate layers and must be verified independently:
+
+| Layer | Current target | Responsibility | What it proves |
+| --- | --- | --- | --- |
+| Render | `tqs-mobile-candidate.onrender.com` | React web bundle, browser transport and hosted candidate release | The published web artifact and its bounded browser path are reachable |
+| Oracle VM | `168.110.36.224:9527` | FreeKill C++/Lua process, pinned packages, server state and native rules | The actual native server package and process are installed and responding |
+
+The intended path is **browser → Render web/gateway → FreeKill native on the
+VM**. A green Render health check does not prove that the VM has the expected
+native package or rule state; a healthy VM does not prove that Render serves the
+latest React bundle. For native package, process, or rule verification, use the
+VM access procedure below and record it as `LIVE` only after the VM itself is
+observed.
+
 ## Administrator access
 
 The owner retains administration through the VM's local FreeKill CLI. Port
@@ -113,6 +131,38 @@ The owner retains administration through the VM's local FreeKill CLI. Port
 ssh -i /path/to/ssh-key ubuntu@168.110.36.224
 sudo tmux attach -t freekill-native
 ```
+
+Trên máy phát triển hiện tại đã lưu một SSH profile cục bộ tên `tqs-native-qa`
+(`~/.ssh/config`, dùng key `~/.ssh/tqs-native-qa`). Có thể dùng lệnh ngắn sau
+sau khi public key tương ứng đã được thêm vào `ubuntu:~/.ssh/authorized_keys`:
+
+```sh
+ssh tqs-native-qa
+sudo tmux attach -t freekill-native
+```
+
+Việc tạo profile/key cục bộ không tự cấp quyền trên VM. Oracle Cloud đã được
+cấu hình dynamic group `tqs-freekill-run-command` (chỉ khớp instance
+`freekill-hegemony`) và policy `tqs-freekill-run-command-execution` cho
+`instance-agent-command-execution-family`. VM báo Ubuntu; Run Command cũ đã
+`EXPIRED`, nhưng health command mới đã `ACKED`/`SUCCEEDED`, exit code 0, và
+trả về user agent `ocarun` cùng hostname VM. Kiểm tra `sudo -n` cho thấy agent
+không có quyền root (`sudo: a password is required`), nên agent path không thể
+tự ghi `ubuntu:~/.ssh/authorized_keys`; guest admin credential hoặc recovery
+root shell vẫn cần thiết trước khi `ssh tqs-native-qa` có thể PASS. Instance
+Console Connection của OCI yêu cầu RSA public key riêng; không dùng key
+Ed25519 của alias SSH trực tiếp cho serial console. Connection mới dùng
+fingerprint đúng và đã vào login prompt Ubuntu; guest credential thử nghiệm bị
+từ chối. OCI cũng từ chối thay đổi `ssh_authorized_keys` sau khi instance đã tạo,
+kể cả khi giữ lại key RSA hiện hữu và nối thêm key Ed25519. Recovery reboot gần
+nhất không bắt được GRUB nhưng đã trở lại normal boot; chưa có guest file nào bị
+sửa và chưa xác nhận được `ssh tqs-native-qa`.
+
+> Bằng chứng vận hành hiện tại chỉ xác nhận `freekill-native.service` đang active
+> tại `/opt/freekill-hegemony/current` và cổng `9527` có listener. Package
+> identity, manifest và `tqs_qa` chưa được xác minh trực tiếp trên VM; không ghi
+> nhận deploy package trong phiên này. Vì vậy không gọi VM là `LIVE` cho tới khi
+> bootstrap được quyền guest và chạy `verify-install.sh` trên package thực tế.
 
 Useful commands in that console include `lsplayer`, `lsroom`, `msg`, `kick`,
 `tempban`, `tempmute`, `ban`, `unban`, `whitelist` and `stat`. The initial
@@ -132,7 +182,8 @@ sudo ./scripts/verify-install.sh
 
 This installs the build dependencies, checks out the pinned `freekill-asio`
 source commit, builds it locally, and then installs the same pinned packages
-as the amd64 path. The source path uses the system Lua 5.4 modules.
+as the amd64 path. The source path installs and verifies the system Lua 5.4
+interpreter plus LuaSocket and LuaFileSystem modules.
 
 ## AMD64 installation
 
@@ -146,7 +197,8 @@ sudo ./scripts/verify-install.sh
 
 The bootstrap installs the runtime under `/opt/freekill-hegemony`, downloads
 the pinned `freekill-asio` artifact, verifies its SHA-256, and checks out the
-  exact `freekill-core`, `utility` and `hegemony` commits.
+exact package commits plus the Lua 5.4, LuaSocket and LuaFileSystem system
+packages required by the room worker.
 
 Start the first server in a persistent SSH session such as `tmux` so the
 interactive FreeKill admin shell remains available:
@@ -154,9 +206,18 @@ interactive FreeKill admin shell remains available:
 ```sh
 sudo -s
 tmux new -s freekill-native
-cd /opt/freekill-hegemony/current
-/opt/freekill-hegemony/current/freekill-asio --port 9527
+cd /opt/freekill-hegemony/deploy
+./scripts/run-server.sh
 ```
+
+Always start through `scripts/run-server.sh`. The upstream native binary
+launches its room worker with the literal `lua5.4` command; the wrapper
+selects a verified Lua 5.4 executable, prepends the runtime-local module
+paths, and checks that LuaSocket and LuaFileSystem load before opening the game
+port. A generic `lua` command (including Lua 5.5) is intentionally rejected,
+so a version mismatch fails immediately instead of accepting logins and then
+crashing when the first room starts. `scripts/verify-install.sh` runs the same
+preflight.
 
 Detach with `Ctrl-b d` and reattach later with:
 

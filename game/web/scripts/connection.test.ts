@@ -84,6 +84,29 @@ test('heartbeat replies immediately without Lua dispatch or altering a pending r
   assert.equal(h.sockets[0].sent.length, 8);
 });
 
+test('prelightSkill uses the native PushRequest wire contract and validates skill names', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  const calls: unknown[][] = [];
+  h.conn.lua.call = <T>(name: string, ...args: unknown[]): T => {
+    calls.push([name, ...args]);
+    return true as T;
+  };
+
+  h.conn.prelightSkill('hs__yiji', true);
+  h.conn.prelightSkill('hs__yiji', false);
+  assert.deepEqual(calls, [
+    ['__web_notify', 'PushRequest', 'prelight,hs__yiji,true'],
+    ['__web_notify', 'PushRequest', 'prelight,hs__yiji,false'],
+  ]);
+  assert.throws(() => h.conn.prelightSkill('bad,name', true), /không hợp lệ/);
+  assert.equal(calls.length, 2);
+
+  const offline = harness();
+  assert.throws(() => offline.conn.prelightSkill('hs__yiji', true), /Chưa xác thực/);
+});
+
 test('malformed EnterLobby payload closes session without reporting online', () => {
   const h = harness();
   h.conn.connect();

@@ -26,7 +26,9 @@ command -v apt-get >/dev/null 2>&1 || die "This bootstrap currently expects Debi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends ca-certificates curl git sqlite3 tar tmux
+apt-get install -y --no-install-recommends \
+  ca-certificates curl git sqlite3 tar tmux \
+  lua5.4 lua-socket lua-filesystem
 
 ROOT="$FREEKILL_INSTALL_ROOT"
 RELEASE_DIR="$ROOT/releases/freekill-asio-static-$FREEKILL_ASIO_RELEASE-amd64"

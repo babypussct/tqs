@@ -24,7 +24,18 @@ export type QaScenarioId =
   | 'rescue-normal'
   | 'rescue-battle'
   | 'founding'
-  | 'fazheng-enyuan';
+  | 'fazheng-enyuan'
+  | 'hidden-yiji'
+  | 'hidden-yiji-deputy'
+  | 'hidden-jianxiong'
+  | 'hidden-jianxiong-deputy'
+  | 'hidden-reveal'
+  | 'hidden-reveal-deputy'
+  | 'hidden-active'
+  | 'hidden-active-main'
+  | 'hidden-view-as'
+  | 'hidden-view-as-main'
+  | 'hidden-dual';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -53,7 +64,13 @@ export type QaScenarioTrigger =
   | 'rescue-normal'
   | 'rescue-battle'
   | 'founding'
-  | 'damage-exchange';
+  | 'damage-exchange'
+  | 'hidden-yiji'
+  | 'hidden-jianxiong'
+  | 'hidden-reveal'
+  | 'hidden-active'
+  | 'hidden-view-as'
+  | 'hidden-dual';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -209,11 +226,128 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     // Wei: Quách Gia + Tư Mã Ý; Shu: Triệu Vân + Pháp Chính.
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-yiji': {
+    version: 1,
+    id: 'hidden-yiji',
+    title: 'Quách Gia úp: prelight Di Kế trước sát thương',
+    seed: 0x74d1c0de,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-yiji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-yiji-deputy': {
+    version: 1,
+    id: 'hidden-yiji-deputy',
+    title: 'Quách Gia úp ở phó tướng: prelight Di Kế trước sát thương',
+    seed: 0x74d1c0df,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-yiji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-jianxiong': {
+    version: 1,
+    id: 'hidden-jianxiong',
+    title: 'Cao Cao úp: prelight Gian Hùng, nhận sát thương và lấy lá Sát',
+    seed: 0x5d6e7f87,
+    drawSequence: [trueName('slash')],
+    slots: [slot('jianxiong-card', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-jianxiong',
+    expectedCommand: 'AskForChoices',
+  },
+  'hidden-jianxiong-deputy': {
+    version: 1,
+    id: 'hidden-jianxiong-deputy',
+    title: 'Cao Cao úp ở phó tướng: prelight Gian Hùng và lấy lá Sát',
+    seed: 0x5d6e7f88,
+    drawSequence: [trueName('slash')],
+    slots: [slot('jianxiong-card', trueName('slash'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-jianxiong',
+    expectedCommand: 'AskForChoices',
+  },
+  'hidden-reveal': {
+    version: 1,
+    id: 'hidden-reveal',
+    title: 'Tướng úp: dùng Mở tướng cho kỹ năng Tỏa định',
+    seed: 0x5d6e7f81,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-reveal',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-reveal-deputy': {
+    version: 1,
+    id: 'hidden-reveal-deputy',
+    title: 'Tướng phó úp: dùng Mở tướng cho kỹ năng Tỏa định',
+    seed: 0x5d6e7f83,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-reveal',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-active': {
+    version: 1,
+    id: 'hidden-active',
+    title: 'Tôn Quyền úp: Chế Hành mở tướng trước khi dùng',
+    seed: 0x5d6e7f82,
+    drawSequence: [trueName('slash')],
+    slots: [slot('zhiheng-card', trueName('slash'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-active',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-active-main': {
+    version: 1,
+    id: 'hidden-active-main',
+    title: 'Tôn Quyền úp ở chủ tướng: Chế Hành mở tướng trước khi dùng',
+    seed: 0x5d6e7f84,
+    drawSequence: [trueName('slash')],
+    slots: [slot('zhiheng-card', trueName('slash'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-active',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-view-as': {
+    version: 1,
+    id: 'hidden-view-as',
+    title: 'Triệu Vân phó tướng úp: Long Đảm đổi Thiểm thành Sát',
+    seed: 0x5d6e7f85,
+    drawSequence: [trueName('jink')],
+    slots: [slot('longdan-card', trueName('jink'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-view-as',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-view-as-main': {
+    version: 1,
+    id: 'hidden-view-as-main',
+    title: 'Triệu Vân chủ tướng úp: Long Đảm đổi Thiểm thành Sát',
+    seed: 0x5d6e7f86,
+    drawSequence: [trueName('jink')],
+    slots: [slot('longdan-card', trueName('jink'), 'self', 'hand', true, 0)],
+    trigger: 'hidden-view-as',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-dual': {
+    version: 1,
+    id: 'hidden-dual',
+    title: '颜良文丑 úp: Song Hùng trigger và Duel khác màu',
+    seed: 0x5d6e7f95,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      slot('shuangxiong-card', trueName('slash'), 'self', 'hand', true, 0),
+      slot('shuangxiong-discard', trueName('jink'), 'opponent', 'hand', false, 1),
+    ],
+    trigger: 'hidden-dual',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'draw-sequence', 'card-chosen', 'poxi', 'cards-and-choice',
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
+  'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
+  'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
+  'hidden-view-as', 'hidden-view-as-main',
+  'hidden-dual',
 ];
 
 export class QaScenarioError extends Error {
@@ -284,6 +418,35 @@ function validatePlan(plan: QaScenarioPlan): void {
     for (const key of ['actor-slash-1', 'actor-slash-2', 'actor-slash-3', 'actor-gift',
       'target-dodge', 'target-counter', 'target-loot']) {
       if (!keys.has(key)) throw new QaScenarioError(`${plan.id} must reserve ${key} for the four attacks`);
+    }
+  }
+  if (plan.trigger === 'hidden-active' || plan.trigger === 'hidden-active-main') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'zhiheng-card' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Slash for Chế Hành`);
+    }
+  }
+  if (plan.trigger === 'hidden-jianxiong') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'jianxiong-card' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one opponent Slash for Jianxiong`);
+    }
+  }
+  if (plan.trigger === 'hidden-view-as') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'longdan-card' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Jink for Long Đảm`);
+    }
+  }
+  if (plan.trigger === 'hidden-dual') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'shuangxiong-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'shuangxiong-discard' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve actor Slash and opponent Jink for Song Hùng`);
     }
   }
 }

@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TQS — Kế Hoạch Cải Tổ Chi Tiết & Preview Hình Ảnh Chuẩn Gốc QSGS / FreeKill</title>
+  <link rel="stylesheet" href="/src/styles.css">
+  <style>
+    :root {
+      --gold-hi: #d49b38;
+      --gold-bright: #ffe299;
+      --bg-dark: #090806;
+      --panel-dark: #14100c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-dark);
+      color: #f5eedc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .preview-card {
+      background: #14110d;
+      border: 2px solid var(--gold-hi);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      position: relative;
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(212, 155, 56, 0.3);
+      padding-bottom: 10px;
+    }
+    .preview-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--gold-bright);
+    }
+    .preview-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #2b1f13;
+      border: 1px solid var(--gold-hi);
+      color: #ffd97d;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .preview-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0d1a12 url('/photo-assets/bg-warroom.webp') center/cover no-repeat;
+      border-radius: 8px;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ========================================================
+       PREVIEW 1: GHẾ BẢN THÂN CHUẨN FREEKILL / QSGS (3:4)
+       ======================================================== */
+    .p1-seat-frame {
+      width: 131px;
+      height: 174px;
+      position: relative;
+      background: #1e1711;
+      border: 2px solid #a83838;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
+      overflow: hidden;
+    }
+    .p1-portraits {
+      position: absolute;
+      inset: 0;
+      display: flex;
+    }
+    .p1-general-half {
+      width: 50%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .p1-general-half img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .p1-split-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: url('/photo-assets/deputy-split.png') center/cover no-repeat;
+      z-index: 5;
+    }
+    .p1-name-left {
+      position: absolute;
+      top: 21px;
+      left: 4px;
+      width: 16px;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 1px 2px #000, 0 0 4px #000;
+      line-height: 12px;
+      z-index: 6;
+      writing-mode: vertical-rl;
+    }
+    .p1-name-right {
+      position: absolute;
+      top: 21px;
+      right: 4px;
+      width: 16px;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 1px 2px #000, 0 0 4px #000;
+      line-height: 12px;
+      z-index: 6;
+      writing-mode: vertical-rl;
+    }
+    .p1-top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 18px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 4px;
+      z-index: 10;
+    }
+    .p1-faction {
+      font-size: 8.5px;
+      font-weight: 900;
+      color: #ff9999;
+      background: rgba(168, 56, 56, 0.85);
+      padding: 1px 4px;
+      border-radius: 2px;
+      border: 1px solid #ff7777;
+    }
+    .p1-seat-num {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #d49b38;
+      color: #171005;
+      font-size: 9px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .p1-player-name {
+      font-size: 9px;
+      font-weight: bold;
+      color: #ffd97d;
+      text-shadow: 0 1px 2px #000;
+    }
+    .p1-hp-column {
+      position: absolute;
+      left: 4px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      z-index: 10;
+    }
+    .p1-hp-column img {
+      width: 14px;
+      height: 14px;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.9));
+    }
+    .p1-hand-badge {
+      position: absolute;
+      bottom: -2px;
+      left: -2px;
+      width: 32px;
+      height: 24px;
+      background: url('/photo-assets/handcard.png') center/contain no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000, 0 0 2px #000;
+      z-index: 15;
+    }
+    .p1-equip-plate {
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      right: 0;
+      height: 52px;
+      background: url('/photo-assets/equipbg.png') center/cover no-repeat, rgba(16, 12, 9, 0.88);
+      border-top: 1px solid rgba(212, 155, 56, 0.5);
+      border-left: 1px solid rgba(212, 155, 56, 0.5);
+      border-top-left-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      padding: 1px 3px;
+      z-index: 10;
+    }
+    .p1-eq-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 7px;
+      color: #ffd97d;
+      white-space: nowrap;
+      overflow: hidden;
+      line-height: 1;
+    }
+    .p1-eq-row .icon { font-size: 8px; }
+    .p1-eq-row .suit-red { color: #ff5555; font-weight: bold; }
+    .p1-eq-row .suit-black { color: #333; font-weight: bold; text-shadow: 0 0 1px #fff; }
+    .p1-eq-half {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    /* ========================================================
+       PREVIEW 2: DẢI BÀI TAY 130PX & SKILL AREA LƯỚI PHẲNG
+       ======================================================== */
+    .p2-dashboard-dock {
+      width: 820px;
+      height: 160px;
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      background: linear-gradient(180deg, rgba(32, 24, 18, 0.96) 0%, rgba(14, 11, 8, 0.99) 100%);
+      border: 2px solid var(--gold-hi);
+      border-radius: 12px;
+      padding: 10px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      position: relative;
+    }
+    .p2-hand-area {
+      flex: 1;
+      height: 130px;
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+      padding-bottom: 2px;
+    }
+    .p2-card {
+      width: 90px;
+      height: 126px;
+      background: #fbf5e6;
+      border: 1.5px solid #3d2f25;
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      margin-right: -24px;
+    }
+    .p2-card:last-child { margin-right: 0; }
+    .p2-card:hover {
+      transform: translateY(-8px);
+      z-index: 50;
+      border-color: #d49b38;
+      box-shadow: 0 8px 18px rgba(212, 155, 56, 0.4);
+    }
+    .p2-card.selected {
+      transform: translateY(-20px) !important;
+      z-index: 60;
+      border-color: #ffd97d;
+      box-shadow: 0 12px 24px rgba(255, 217, 125, 0.6), 0 0 0 2px #d49b38;
+    }
+    .p2-card-head {
+      height: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 4px;
+      font-size: 9px;
+      font-weight: bold;
+    }
+    .p2-card-art {
+      flex: 1;
+      overflow: hidden;
+      background: #2a221b;
+    }
+    .p2-card-art img { width: 100%; height: 100%; object-fit: cover; }
+    .p2-card-foot {
+      height: 18px;
+      background: #e6c88b;
+      color: #171005;
+      font-size: 8.5px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid #c9a45e;
+    }
+
+    .p2-skill-area {
+      width: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-self: flex-end;
+      padding-bottom: 6px;
+    }
+    .p2-skill-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .p2-skill-btn {
+      height: 34px;
+      background: linear-gradient(180deg, #2b2016 0%, #17110c 100%);
+      border: 1px solid #8c5816;
+      border-radius: 4px;
+      color: #dfd3bf;
+      font-family: Georgia, serif;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: inset 0 0 4px rgba(255, 217, 125, 0.1);
+      transition: all 140ms ease;
+    }
+    .p2-skill-btn:hover {
+      border-color: #d49b38;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(212, 155, 56, 0.4);
+    }
+    .p2-skill-btn.prelight {
+      border-color: #ffd97d;
+      color: #ffe299;
+      background: linear-gradient(180deg, #4d3319 0%, #26170a 100%);
+      box-shadow: 0 0 8px rgba(255, 217, 125, 0.6);
+      animation: pulseGlow 1.8s infinite alternate;
+    }
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 4px rgba(255, 217, 125, 0.3); }
+      to { box-shadow: 0 0 12px rgba(255, 217, 125, 0.8); }
+    }
+
+    /* ========================================================
+       PREVIEW 3: FLOATING CONTROLS HUD (LƠ LỬNG TRUNG TÂM)
+       ======================================================== */
+    .p3-hud-wrapper {
+      width: 580px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .p3-prompt-text {
+      font-family: Georgia, serif;
+      font-size: 15px;
+      font-weight: bold;
+      color: #f0e5da;
+      text-shadow: 0 2px 4px #000, 0 0 6px #3d2d1c;
+      letter-spacing: 0.5px;
+    }
+    .p3-progress-track {
+      width: 100%;
+      height: 12px;
+      background: #000;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(212, 155, 56, 0.4);
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .p3-progress-fill {
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff8c00 0%, #ff3300 30%, #ff3300 70%, #ff8c00 100%);
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(255, 69, 0, 0.8);
+      position: relative;
+    }
+    .p3-actions-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      position: relative;
+    }
+    .p3-btn-ok {
+      width: 136px;
+      height: 44px;
+      background: linear-gradient(180deg, #c26028 0%, #873812 100%);
+      border: 1px solid #e89158;
+      border-radius: 6px;
+      color: #f7dbcb;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      font-weight: bold;
+      text-shadow: 0 1px 2px #975a36;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(194, 96, 40, 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .p3-btn-cancel {
+      width: 136px;
+      height: 44px;
+      background: linear-gradient(180deg, #ae7842 0%, #694420 100%);
+      border: 1px solid #d4a770;
+      border-radius: 6px;
+      color: #f4dbc1;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      font-weight: bold;
+      text-shadow: 0 1px 2px #746c60;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .p3-btn-end {
+      position: absolute;
+      right: 0;
+      width: 110px;
+      height: 40px;
+      background: linear-gradient(180deg, #42b1b5 0%, #1e6366 100%);
+      border: 1px solid #72dbe0;
+      border-radius: 6px;
+      color: #d0eff0;
+      font-family: Georgia, serif;
+      font-size: 13px;
+      font-weight: bold;
+      text-shadow: 0 1px 2px #426b6d;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(66, 177, 181, 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+
+    /* ========================================================
+       PREVIEW 4: UNIFIED BOTTOM DASHBOARD (LIỀN MẠCH TOÀN BỘ ĐÁY)
+       ======================================================== */
+    .p4-stage {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      gap: 12px;
+    }
+    .p4-floating-hud {
+      width: 540px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      z-index: 40;
+    }
+    .p4-unified-dock {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(180deg, #1f1711 0%, #0d0a07 100%);
+      border: 2px solid #b8862d;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -8px 25px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,217,125,0.2);
+      display: flex;
+      align-items: flex-end;
+      padding: 8px 12px 10px 12px;
+      gap: 14px;
+      position: relative;
+    }
+    .p4-side-tools {
+      width: 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-self: center;
+    }
+    .p4-tool-btn {
+      height: 28px;
+      background: #231b13;
+      border: 1px solid #5a4022;
+      border-radius: 4px;
+      color: #dfd3bf;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+    .p4-tool-btn:hover {
+      border-color: #d49b38;
+      color: #fff;
+    }
+    .p4-hand-strip {
+      flex: 1;
+      height: 130px;
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+    }
+    .p4-skill-col {
+      width: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-self: flex-end;
+      padding-bottom: 4px;
+    }
+    .p4-seat-anchor {
+      flex: 0 0 131px;
+      height: 174px;
+      margin-bottom: -10px;
+      position: relative;
+      border: 2px solid #a83838;
+      border-radius: 6px 6px 0 0;
+      overflow: hidden;
+      background: #1a120b;
+      box-shadow: -4px -4px 16px rgba(0,0,0,0.7);
+    }
+
+    /* ========================================================
+       PREVIEW 5: FULL TABLE LAYOUT & RIGHT-SIDE MATCH LOG
+       ======================================================== */
+    .p5-full-board {
+      width: 100%;
+      max-width: 1040px;
+      height: 560px;
+      background: radial-gradient(ellipse at center, #1b3824 0%, #0d1e13 60%, #060d08 100%);
+      border: 2px solid #b8862d;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.9);
+      display: flex;
+    }
+    .p5-table-area {
+      flex: 1;
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .p5-opponents-arc {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 180px;
+      pointer-events: none;
+    }
+    .p5-opp-seat {
+      position: absolute;
+      width: 86px;
+      height: 114px;
+      background: #191410;
+      border: 1.5px solid #d49b38;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+    }
+    .p5-opp-seat img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .p5-opp-badge {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      font-size: 8px;
+      font-weight: bold;
+      background: rgba(0,0,0,0.8);
+      color: #ffd97d;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+    .p5-opp-hp {
+      position: absolute;
+      left: 2px;
+      bottom: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .p5-opp-hp img { width: 9px; height: 9px; }
+
+    .p5-center-pile {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .p5-decks-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .p5-deck-box {
+      width: 58px;
+      height: 82px;
+      border-radius: 4px;
+      border: 1.5px solid #8c5816;
+      background: #1f1711;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #ffd97d;
+      font-weight: bold;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.8);
+    }
+    .p5-resolving-card {
+      width: 66px;
+      height: 94px;
+      border-radius: 5px;
+      border: 2px solid #ffd97d;
+      box-shadow: 0 0 16px rgba(255,217,125,0.6);
+      overflow: hidden;
+      background: #fff;
+    }
+    .p5-resolving-card img { width: 100%; height: 100%; object-fit: cover; }
+    .p5-moments-ticker {
+      width: 340px;
+      height: 26px;
+      background: rgba(14, 11, 8, 0.9);
+      border: 1px solid rgba(212, 155, 56, 0.5);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      font-size: 11px;
+      color: #ffe299;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+
+    .p5-right-log {
+      width: 250px;
+      height: 100%;
+      background: #14100c;
+      border-left: 2px solid #5a4022;
+      display: flex;
+      flex-direction: column;
+      transition: width 200ms ease;
+      z-index: 50;
+    }
+    .p5-log-header {
+      height: 38px;
+      border-bottom: 1px solid #3d2b17;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ffd97d;
+      background: #1b1510;
+    }
+    .p5-log-toggle {
+      background: #2b1f13;
+      border: 1px solid #8c5816;
+      color: #ffd97d;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .p5-log-body {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #d1c5b4;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .p5-log-item {
+      padding-bottom: 4px;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+    }
+    .p5-log-item strong { color: #ffe299; }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       PREVIEW 1: GHẾ BẢN THÂN CHUẨN FREEKILL / QSGS (TỶ LỆ 3:4)
+       ======================================================== -->
+  <section class="preview-card" id="cardStep1">
+    <div class="preview-header">
+      <div>
+        <h2 class="preview-title">Hạng mục 1: Ô Ghế Bản Thân Chuẩn QSGS / FreeKill (Tỷ lệ 3:4)</h2>
+        <p style="font-size: 12px; color: #bdaa93; margin-top: 3px;">
+          Tham chiếu: PhotoBase.qml (131x174px) · HpBar.qml · EquipArea.qml (4 tầng tự co) · handcard.png
+        </p>
+      </div>
+      <span class="preview-badge">HẠNG MỤC 1</span>
+    </div>
+
+    <div class="preview-container">
+      <div class="p1-seat-frame" id="previewSeatAnatomy">
+        <!-- 1. Top bar -->
+        <div class="p1-top-bar">
+          <div style="display:flex; align-items:center; gap:3px;">
+            <span class="p1-faction">THỤC</span>
+            <span class="p1-seat-num">①</span>
+          </div>
+          <span class="p1-player-name">Bạn</span>
+        </div>
+
+        <!-- 2. Dual Portraits 50/50 -->
+        <div class="p1-portraits">
+          <div class="p1-general-half">
+            <img src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" />
+            <span class="p1-name-left">Quan Vũ</span>
+          </div>
+          <div class="p1-split-line"></div>
+          <div class="p1-general-half">
+            <img src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" />
+            <span class="p1-name-right">Triệu Vân</span>
+          </div>
+        </div>
+
+        <!-- 3. Vertical Magatama HP column -->
+        <div class="p1-hp-column">
+          <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+          <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+          <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+          <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+        </div>
+
+        <!-- 4. Handcard badge -->
+        <div class="p1-hand-badge">4</div>
+
+        <!-- 5. Equip Plate 4 rows -->
+        <div class="p1-equip-plate">
+          <div class="p1-eq-row">
+            <span class="icon">📿</span>
+            <span>Mộc Ngưu Lưu Mã</span>
+            <span class="suit-red">♦5</span>
+          </div>
+          <div class="p1-eq-row">
+            <span class="icon">⚔️</span>
+            <span>Thanh Long Đao</span>
+            <span class="suit-black">♠6</span>
+          </div>
+          <div class="p1-eq-row">
+            <span class="icon">🛡️</span>
+            <span>Bát Quái Trận</span>
+            <span class="suit-black">♣2</span>
+          </div>
+          <div class="p1-eq-row p1-eq-half">
+            <span>🐎 +1 Đích Lư</span>
+            <span style="color:#777;">🏹 -1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================================
+       PREVIEW 2: DẢI BÀI TAY 130PX & NGĂN KỸ NĂNG PHẲNG
+       ======================================================== -->
+  <section class="preview-card" id="cardStep2">
+    <div class="preview-header">
+      <div>
+        <h2 class="preview-title">Hạng mục 2: Dải Bài Tay 130px & Ngăn Kỹ Năng Lưới Phẳng (HandcardArea & SkillArea)</h2>
+        <p style="font-size: 12px; color: #bdaa93; margin-top: 3px;">
+          Tham chiếu: HandcardArea.qml (cao 130px, trồi lên 20px) · SkillArea.qml (lưới phẳng, không chữ Kỹ năng thừa)
+        </p>
+      </div>
+      <span class="preview-badge">HẠNG MỤC 2</span>
+    </div>
+
+    <div class="preview-container">
+      <div class="p2-dashboard-dock" id="previewDashboardDock">
+        <!-- Dải bài tay 130px -->
+        <div class="p2-hand-area">
+          <!-- Lá 1 -->
+          <div class="p2-card">
+            <div class="p2-card-head"><span style="color:#000;">♠ 8</span><span style="font-size:7.5px; color:#8c5816;">Cơ Bản</span></div>
+            <div class="p2-card-art"><img src="/card-catalog-art/slash.png" onerror="this.src='/photo-assets/back/wei.png'" /></div>
+            <div class="p2-card-foot">Băng Sát</div>
+          </div>
+          <!-- Lá 2 (ĐANG CHỌN: TRỒI LÊN 20PX) -->
+          <div class="p2-card selected">
+            <div class="p2-card-head"><span style="color:#ff3333;">♥ 7</span><span style="font-size:7.5px; color:#1e6b3c;">Cẩm Nang</span></div>
+            <div class="p2-card-art"><img src="/card-catalog-art/ex_nihilo.png" onerror="this.src='/photo-assets/back/shu.png'" /></div>
+            <div class="p2-card-foot">Vô Trung</div>
+          </div>
+          <!-- Lá 3 -->
+          <div class="p2-card">
+            <div class="p2-card-head"><span style="color:#000;">♣ 2</span><span style="font-size:7.5px; color:#427082;">Trang Bị</span></div>
+            <div class="p2-card-art"><img src="/card-catalog-art/eight_diagram.png" onerror="this.src='/photo-assets/back/wu.png'" /></div>
+            <div class="p2-card-foot">Bát Quái</div>
+          </div>
+          <!-- Lá 4 -->
+          <div class="p2-card">
+            <div class="p2-card-head"><span style="color:#ff3333;">♦ A</span><span style="font-size:7.5px; color:#427082;">Trang Bị</span></div>
+            <div class="p2-card-art"><img src="/card-catalog-art/crossbow.png" onerror="this.src='/photo-assets/back/qun.png'" /></div>
+            <div class="p2-card-foot">Gia Cát Nỏ</div>
+          </div>
+          <!-- Lá 5 -->
+          <div class="p2-card">
+            <div class="p2-card-head"><span style="color:#ff3333;">♥ 3</span><span style="font-size:7.5px; color:#8c5816;">Cơ Bản</span></div>
+            <div class="p2-card-art"><img src="/card-catalog-art/peach.png" onerror="this.src='/photo-assets/back/shu.png'" /></div>
+            <div class="p2-card-foot">Đào</div>
+          </div>
+        </div>
+
+        <!-- Ngăn kỹ năng SkillArea (lưới phẳng 2 cột, không chữ tiêu đề) -->
+        <div class="p2-skill-area">
+          <div class="p2-skill-grid">
+            <button class="p2-skill-btn prelight" type="button">Võ Thánh</button>
+            <button class="p2-skill-btn" type="button">Long Đảm</button>
+          </div>
+        </div>
+
+        <!-- Ghế bản thân ở mỏ neo phải (chuẩn FreeKill Dashboard) -->
+        <div style="flex: 0 0 131px; height: 140px; border: 1.5px solid #d49b38; border-radius: 6px; overflow: hidden; position: relative;">
+          <img src="/photo-assets/generals/guanyu.jpg" style="width:50%; height:100%; object-fit:cover; float:left;" />
+          <img src="/photo-assets/generals/zhaoyun.jpg" style="width:50%; height:100%; object-fit:cover; float:left;" />
+          <span style="position:absolute; bottom:4px; left:4px; font-size:9px; background:rgba(0,0,0,0.8); padding:1px 4px; border-radius:3px; color:#ffd97d;">Bạn (①)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================================
+       PREVIEW 3: FLOATING CONTROLS HUD (LƠ LỬNG TRUNG TÂM)
+       ======================================================== -->
+  <section class="preview-card" id="cardStep3">
+    <div class="preview-header">
+      <div>
+        <h2 class="preview-title">Hạng mục 3: Floating Controls HUD (Thanh Thời Gian & Cụm Nút Thao Tác Nổi)</h2>
+        <p style="font-size: 12px; color: #bdaa93; margin-top: 3px;">
+          Tham chiếu: Room.qml:273-460 (Floating Controls HUD bay lơ lửng ngay phía trên Dashboard, cân đối trung tâm)
+        </p>
+      </div>
+      <span class="preview-badge">HẠNG MỤC 3</span>
+    </div>
+
+    <div class="preview-container">
+      <div class="p3-hud-wrapper" id="previewFloatingHud">
+        <!-- 1. Dòng nhắc lệnh font thư pháp viền nổi -->
+        <div class="p3-prompt-text">#PlayCard: Giai đoạn ra bài của bạn (⏱ 28s)</div>
+
+        <!-- 2. Thanh thời gian ProgressBar 60% chuyển sắc cam - đỏ -->
+        <div class="p3-progress-track">
+          <div class="p3-progress-fill"></div>
+        </div>
+
+        <!-- 3. Cụm nút xác nhận OK/Cancel và nút Kết Thúc góc phải -->
+        <div class="p3-actions-row">
+          <button class="p3-btn-ok" type="button">Xác nhận</button>
+          <button class="p3-btn-cancel" type="button">Hủy</button>
+          <button class="p3-btn-end" type="button">Kết thúc lượt</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       PREVIEW 4: TÍCH HỢP BẢNG THAO TÁC LIỀN MẠCH (UNIFIED BOTTOM DASHBOARD)
+       ======================================================== -->
+  <section class="preview-card" id="cardStep4">
+    <div class="preview-header">
+      <div>
+        <h2 class="preview-title">Hạng mục 4: Tích Hợp Bảng Thao Tác & Ghế Bản Thân Liền Mạch (Unified Bottom Dashboard)</h2>
+        <p style="font-size: 12px; color: #bdaa93; margin-top: 3px;">
+          Tham chiếu: Dashboard.qml · Room.qml:264-276 (Ghế bản thân ghép vào khung đáy mỏ neo phải, bài tay và kỹ năng trải ngang, HUD nổi bên trên)
+        </p>
+      </div>
+      <span class="preview-badge">HẠNG MỤC 4</span>
+    </div>
+
+    <div class="preview-container" style="padding: 24px 16px;">
+      <div class="p4-stage" id="previewUnifiedDashboard">
+        <!-- Floating HUD nổi phía trên -->
+        <div class="p4-floating-hud">
+          <div class="p3-prompt-text">#PlayCard: Giai đoạn ra bài của bạn (⏱ 24s)</div>
+          <div class="p3-progress-track">
+            <div class="p3-progress-fill" style="width: 55%;"></div>
+          </div>
+          <div class="p3-actions-row">
+            <button class="p3-btn-ok" type="button">Xác nhận</button>
+            <button class="p3-btn-cancel" type="button">Hủy</button>
+            <button class="p3-btn-end" type="button">Kết thúc lượt</button>
+          </div>
+        </div>
+
+        <!-- Toàn bộ Dashboard đáy liền mạch thống nhất -->
+        <div class="p4-unified-dock">
+          <!-- 1. Cột trợ năng bên trái (DashboardBtn: Ủy thác, Sắp xếp, Chat) -->
+          <div class="p4-side-tools">
+            <button class="p4-tool-btn" type="button">Ủy thác</button>
+            <button class="p4-tool-btn" type="button">Sắp xếp</button>
+            <button class="p4-tool-btn" type="button">Chat</button>
+          </div>
+
+          <!-- 2. Dải bài tay 130px tự động xếp gối đầu linh hoạt -->
+          <div class="p4-hand-strip">
+            <div class="p2-card">
+              <div class="p2-card-head"><span style="color:#000;">♠ 8</span><span style="font-size:7.5px; color:#8c5816;">Cơ Bản</span></div>
+              <div class="p2-card-art"><img src="/card-catalog-art/slash.png" onerror="this.src='/photo-assets/back/wei.png'" /></div>
+              <div class="p2-card-foot">Băng Sát</div>
+            </div>
+            <div class="p2-card selected">
+              <div class="p2-card-head"><span style="color:#ff3333;">♥ 7</span><span style="font-size:7.5px; color:#1e6b3c;">Cẩm Nang</span></div>
+              <div class="p2-card-art"><img src="/card-catalog-art/ex_nihilo.png" onerror="this.src='/photo-assets/back/shu.png'" /></div>
+              <div class="p2-card-foot">Vô Trung</div>
+            </div>
+            <div class="p2-card">
+              <div class="p2-card-head"><span style="color:#000;">♣ 2</span><span style="font-size:7.5px; color:#427082;">Trang Bị</span></div>
+              <div class="p2-card-art"><img src="/card-catalog-art/eight_diagram.png" onerror="this.src='/photo-assets/back/wu.png'" /></div>
+              <div class="p2-card-foot">Bát Quái</div>
+            </div>
+            <div class="p2-card">
+              <div class="p2-card-head"><span style="color:#ff3333;">♦ A</span><span style="font-size:7.5px; color:#427082;">Trang Bị</span></div>
+              <div class="p2-card-art"><img src="/card-catalog-art/crossbow.png" onerror="this.src='/photo-assets/back/qun.png'" /></div>
+              <div class="p2-card-foot">Gia Cát Nỏ</div>
+            </div>
+            <div class="p2-card">
+              <div class="p2-card-head"><span style="color:#ff3333;">♥ 3</span><span style="font-size:7.5px; color:#8c5816;">Cơ Bản</span></div>
+              <div class="p2-card-art"><img src="/card-catalog-art/peach.png" onerror="this.src='/photo-assets/back/shu.png'" /></div>
+              <div class="p2-card-foot">Đào</div>
+            </div>
+          </div>
+
+          <!-- 3. Ngăn kỹ năng phẳng sơn mài (SkillArea) -->
+          <div class="p4-skill-col">
+            <div class="p2-skill-grid">
+              <button class="p2-skill-btn prelight" type="button">Võ Thánh</button>
+              <button class="p2-skill-btn" type="button">Long Đảm</button>
+            </div>
+          </div>
+
+          <!-- 4. Ghế bản thân neo liền mạch góc phải (Self Photo 3:4 Anatomy) -->
+          <div class="p4-seat-anchor">
+            <!-- Top bar -->
+            <div class="p1-top-bar">
+              <div style="display:flex; align-items:center; gap:3px;">
+                <span class="p1-faction">THỤC</span>
+                <span class="p1-seat-num">①</span>
+              </div>
+              <span class="p1-player-name">Bạn</span>
+            </div>
+            <!-- Dual Portraits 50/50 -->
+            <div class="p1-portraits">
+              <div class="p1-general-half">
+                <img src="/photo-assets/generals/guanyu.jpg" alt="Quan Vũ" />
+                <span class="p1-name-left">Quan Vũ</span>
+              </div>
+              <div class="p1-split-line"></div>
+              <div class="p1-general-half">
+                <img src="/photo-assets/generals/zhaoyun.jpg" alt="Triệu Vân" />
+                <span class="p1-name-right">Triệu Vân</span>
+              </div>
+            </div>
+            <!-- Vertical Magatama HP column -->
+            <div class="p1-hp-column">
+              <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+              <img src="/photo-assets/magatama/3-heg.png" alt="HP" />
+            </div>
+            <!-- Handcard badge -->
+            <div class="p1-hand-badge">5</div>
+            <!-- Equip Plate -->
+            <div class="p1-equip-plate">
+              <div class="p1-eq-row"><span class="icon">📿</span><span>Mộc Ngưu Lưu Mã</span><span class="suit-red">♦5</span></div>
+              <div class="p1-eq-row"><span class="icon">⚔️</span><span>Thanh Long Đao</span><span class="suit-black">♠6</span></div>
+              <div class="p1-eq-row"><span class="icon">🛡️</span><span>Bát Quái Trận</span><span class="suit-black">♣2</span></div>
+              <div class="p1-eq-row p1-eq-half"><span>🐎 +1 Đích Lư</span><span style="color:#777;">🏹 -1</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================================
+       PREVIEW 5: BỐ CỤC TOÀN BÀN CHƠI 8 NGƯỜI & BẢNG NHẬT KÝ BÊN PHẢI THU GỌN
+       ======================================================== -->
+  <section class="preview-card" id="cardStep5">
+    <div class="preview-header">
+      <div>
+        <h2 class="preview-title">Hạng mục 5: Bố Cục Toàn Bàn Chơi 8 Người & Nhật Ký Trận Đấu Bên Phải (Collapsible)</h2>
+        <p style="font-size: 12px; color: #bdaa93; margin-top: 3px;">
+          Tham chiếu: RoomBase.qml:1026-1060 (Horseshoe Arch 8 người) · Nhật ký nằm bên phải, thu gọn mở rộng không gian bàn chơi · Ticker diễn biến cố định 340px
+        </p>
+      </div>
+      <span class="preview-badge">HẠNG MỤC 5</span>
+    </div>
+
+    <div class="preview-container" style="padding: 16px;">
+      <div class="p5-full-board" id="previewFullBoard">
+        <!-- Khu vực bàn chơi chính -->
+        <div class="p5-table-area">
+          <!-- Vòm ghế đối thủ (7 người 1-7) -->
+          <div class="p5-opponents-arc">
+            <!-- Ghế 1 (Bên phải trên) -->
+            <div class="p5-opp-seat" style="top: 130px; right: 18px;">
+              <img src="/photo-assets/generals/caocao.jpg" />
+              <span class="p5-opp-badge">② Tào Tháo</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 2 -->
+            <div class="p5-opp-seat" style="top: 24px; right: 110px;">
+              <img src="/photo-assets/generals/sunquan.jpg" />
+              <span class="p5-opp-badge">③ Tôn Quyền</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 3 -->
+            <div class="p5-opp-seat" style="top: 10px; right: 230px;">
+              <img src="/photo-assets/generals/zhouyu.jpg" />
+              <span class="p5-opp-badge">④ Chu Du</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 4 (Đỉnh vòm trung tâm) -->
+            <div class="p5-opp-seat" style="top: 8px; left: 50%; transform: translateX(-50%);">
+              <img src="/photo-assets/generals/liubei.jpg" />
+              <span class="p5-opp-badge">⑤ Lưu Bị</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 5 -->
+            <div class="p5-opp-seat" style="top: 10px; left: 230px;">
+              <img src="/photo-assets/generals/lvbu.jpg" />
+              <span class="p5-opp-badge">⑥ Lữ Bố</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 6 -->
+            <div class="p5-opp-seat" style="top: 24px; left: 110px;">
+              <img src="/photo-assets/generals/diaochan.jpg" />
+              <span class="p5-opp-badge">⑦ Điêu Thuyền</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+            <!-- Ghế 7 (Bên trái) -->
+            <div class="p5-opp-seat" style="top: 130px; left: 18px;">
+              <img src="/photo-assets/generals/simayi.jpg" />
+              <span class="p5-opp-badge">⑧ Tư Mã Ý</span>
+              <div class="p5-opp-hp"><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /><img src="/photo-assets/magatama/3-heg.png" /></div>
+            </div>
+          </div>
+
+          <!-- Tâm bàn chơi (Chồng Rút, Chồng Đang Xử Lý, Chồng Bỏ & Ticker cố định) -->
+          <div class="p5-center-pile">
+            <div class="p5-decks-row">
+              <!-- Chồng rút -->
+              <div class="p5-deck-box">
+                <span style="font-size:16px;">84</span>
+                <span style="font-size:9px; color:#c7a26b; margin-top:2px;">Rút</span>
+              </div>
+              <!-- Chồng giải quyết bài -->
+              <div class="p5-resolving-card">
+                <img src="/card-catalog-art/ex_nihilo.png" onerror="this.src='/photo-assets/back/shu.png'" />
+              </div>
+              <!-- Chồng bài bỏ -->
+              <div class="p5-deck-box">
+                <span style="font-size:16px;">18</span>
+                <span style="font-size:9px; color:#c7a26b; margin-top:2px;">Bỏ</span>
+              </div>
+            </div>
+            <!-- Diễn biến mới nhất: chiều rộng cố định 340px, hiển thị tức thời -->
+            <div class="p5-moments-ticker">
+              <strong>Diễn biến:</strong>&nbsp;Bạn đã sử dụng [Vô Trung Sinh Hữu] rút 2 lá bài
+            </div>
+          </div>
+
+          <!-- Đáy bàn chơi: Ghế bản thân và Dashboard mini -->
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 145px; background: linear-gradient(180deg, rgba(20,15,10,0.95) 0%, rgba(10,8,6,0.98) 100%); border-top: 1.5px solid #d49b38; display: flex; align-items: flex-end; padding: 6px 12px; gap: 10px;">
+            <!-- Cột trợ năng -->
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span style="font-size:9px; background:#22180e; border:1px solid #6e481b; padding:2px 6px; border-radius:3px; color:#ffd97d;">Ủy thác</span>
+              <span style="font-size:9px; background:#22180e; border:1px solid #6e481b; padding:2px 6px; border-radius:3px; color:#ffd97d;">Sắp xếp</span>
+            </div>
+            <!-- Dải bài thu nhỏ -->
+            <div style="flex:1; display:flex; align-items:flex-end; height:110px;">
+              <div class="p2-card" style="width:72px; height:104px;"><div class="p2-card-head">♠8</div><div class="p2-card-art"><img src="/card-catalog-art/slash.png" /></div><div class="p2-card-foot">Băng Sát</div></div>
+              <div class="p2-card selected" style="width:72px; height:104px; transform:translateY(-14px)!important;"><div class="p2-card-head" style="color:red;">♥7</div><div class="p2-card-art"><img src="/card-catalog-art/ex_nihilo.png" /></div><div class="p2-card-foot">Vô Trung</div></div>
+              <div class="p2-card" style="width:72px; height:104px;"><div class="p2-card-head">♣2</div><div class="p2-card-art"><img src="/card-catalog-art/eight_diagram.png" /></div><div class="p2-card-foot">Bát Quái</div></div>
+              <div class="p2-card" style="width:72px; height:104px;"><div class="p2-card-head" style="color:red;">♥3</div><div class="p2-card-art"><img src="/card-catalog-art/peach.png" /></div><div class="p2-card-foot">Đào</div></div>
+            </div>
+            <!-- Kỹ năng -->
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <button class="p2-skill-btn prelight" style="width:70px; height:26px; font-size:10px;">Võ Thánh</button>
+              <button class="p2-skill-btn" style="width:70px; height:26px; font-size:10px;">Long Đảm</button>
+            </div>
+            <!-- Ghế bản thân -->
+            <div style="width:105px; height:138px; border:1.5px solid #d49b38; border-radius:4px; overflow:hidden; position:relative; background:#1b1510;">
+              <img src="/photo-assets/generals/guanyu.jpg" style="width:50%; height:100%; object-fit:cover; float:left;" />
+              <img src="/photo-assets/generals/zhaoyun.jpg" style="width:50%; height:100%; object-fit:cover; float:left;" />
+              <span style="position:absolute; top:2px; left:2px; font-size:8px; background:rgba(0,0,0,0.8); color:#ffd97d; padding:1px 3px;">① Bạn</span>
+              <div style="position:absolute; bottom:2px; left:2px; display:flex; flex-direction:column; gap:1px;">
+                <img src="/photo-assets/magatama/3-heg.png" style="width:9px; height:9px;" />
+                <img src="/photo-assets/magatama/3-heg.png" style="width:9px; height:9px;" />
+                <img src="/photo-assets/magatama/3-heg.png" style="width:9px; height:9px;" />
+                <img src="/photo-assets/magatama/3-heg.png" style="width:9px; height:9px;" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BẢNG NHẬT KÝ BÊN TAY PHẢI (Có nút Thu gọn) -->
+        <aside class="p5-right-log" id="previewRightLog">
+          <div class="p5-log-header">
+            <span>Nhật ký trận đấu (16)</span>
+            <button class="p5-log-toggle" type="button">Thu gọn ◀</button>
+          </div>
+          <div class="p5-log-body">
+            <div class="p5-log-item"><strong>Tào Tháo</strong> bắt đầu lượt chơi.</div>
+            <div class="p5-log-item"><strong>Tào Tháo</strong> sử dụng [Sát] lên <strong>Lưu Bị</strong>.</div>
+            <div class="p5-log-item"><strong>Lưu Bị</strong> kích hoạt [Bát Quái Trận] phán xét [♣5] Thất bại.</div>
+            <div class="p5-log-item"><strong>Lưu Bị</strong> sử dụng [Thiểm] né tránh thành công.</div>
+            <div class="p5-log-item"><strong>Tôn Quyền</strong> kết thúc lượt.</div>
+            <div class="p5-log-item"><strong>Bạn (Quan Vũ)</strong> bắt đầu lượt chơi.</div>
+            <div class="p5-log-item" style="color: #ffd97d;">▶ <strong>Bạn</strong> sử dụng [Vô Trung Sinh Hữu]...</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

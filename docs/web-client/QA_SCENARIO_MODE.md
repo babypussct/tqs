@@ -52,8 +52,21 @@ Mỗi `slot` có `drawIndex`, `owner`, `area` và `visible`. `drawIndex`
 bắt buộc để cùng một lá trong `drawSequence` được dùng đúng một lần;
 `visible=false` giữ đúng điều kiện lá úp của card selection. Sau khi dựng bàn,
 director phát request native tương ứng (`AskForCardChosen`, `AskForPoxi`,
-`AskForCardsAndChoice`, `AskForUseCard`, hoặc `AskForChoices`) với request
+`AskForCardsAndChoice`, `AskForUseCard`, `AskForChoices`, `PlayCard`,
+`AskForSkillInvoke` hoặc `AskForUseActiveSkill`) với request
 ID mới và payload CBOR qua cùng bridge production mà browser đang dùng.
+Riêng `hidden-yiji` không bơm trigger: native director giữ Quách Gia úp,
+chờ gate để client gửi prelight, rồi gọi `room:damage` thật; runner chạy riêng
+ba nhánh `negative`, `positive` và `skip`. `hidden-yiji-deputy` lặp nhánh
+positive với Quách Gia ở phó tướng. `hidden-reveal` giữ Lục Tốn + Tôn Quyền
+úp, yêu cầu `reveal_skill&` thật và kiểm combo `revealMain`;
+`hidden-reveal-deputy` kiểm `revealDeputy`. `hidden-active` giữ Lục Tốn + Tôn
+Quyền úp, để client chiếu Chế Hành thành regular skill, chọn một lá Sát trong
+`PlayCard`, rồi để native reveal Tôn Quyền ở phó tướng trước effect;
+`hidden-active-main` kiểm cùng luật khi Tôn Quyền ở chủ tướng. `hidden-view-as`
+giữ Triệu Vân úp, chiếu Long Đảm thành regular skill, chọn một lá Thiểm trong
+`PlayCard`, rồi để native đổi thành Sát sau khi mở đúng slot; bản `-main` kiểm
+Triệu Vân ở chủ tướng.
 
 ## Ma trận hiện tại
 
@@ -66,6 +79,15 @@ ID mới và payload CBOR qua cùng bridge production mà browser đang dùng.
 | `rescue-normal` | người khác 0 HP, `Đào` trong tay Self | `AskForUseCard` |
 | `rescue-battle` | Self 0 HP, banner/kỹ năng Quyết chiến mới, `Đào` | `AskForUseCard` sau view-as `Đào → Rượu` |
 | `founding` | thế lực dã tâm gia và danh sách quốc hiệu native | `AskForChoices` |
+| `fazheng-enyuan` | bốn bước Long Đảm/Ân Oán, Di Kế và Phản Quỹ sau khi đã mở tướng | `AskForUseActiveSkill` |
+| `hidden-yiji` | Quách Gia úp; native damage sau gate prelight | `AskForSkillInvoke` ở nhánh positive/skip; negative phải không có request Di Kế |
+| `hidden-yiji-deputy` | Quách Gia ở phó tướng úp; native damage sau gate prelight | Invoke Di Kế phải mở đúng phó tướng, không được mở chủ tướng |
+| `hidden-reveal` | Lục Tốn + Tôn Quyền úp; active helper native sau gate | `AskForUseActiveSkill` → `revealMain:::hs__luxun` |
+| `hidden-reveal-deputy` | Lục Tốn ở phó tướng úp; active helper native sau gate | `AskForUseActiveSkill` → `revealDeputy:::hs__luxun` |
+| `hidden-active` | Lục Tốn + Tôn Quyền úp; một lá Sát dự trữ | `PlayCard` → Chế Hành → mở Tôn Quyền, giữ Lục Tốn úp |
+| `hidden-active-main` | Tôn Quyền ở chủ tướng úp; một lá Sát dự trữ | `PlayCard` → Chế Hành → mở chủ tướng Tôn Quyền, giữ Lục Tốn úp |
+| `hidden-view-as` | Triệu Vân ở phó tướng úp; một lá Thiểm dự trữ | `PlayCard` → Long Đảm → mở phó tướng, đổi Thiểm thành Sát |
+| `hidden-view-as-main` | Triệu Vân ở chủ tướng úp; một lá Thiểm dự trữ | `PlayCard` → Long Đảm → mở chủ tướng, đổi Thiểm thành Sát |
 
 Kịch bản được kiểm tra bằng bài matrix duy nhất để không lẫn evidence giữa các
 ca. Bài này kiểm cả điều kiện đầu vào, request ID, thao tác UI và reply native;
@@ -133,7 +155,7 @@ các matcher card trong catalog, gắn skill thật của general, và gọi nat
 cầu. Nó không thêm client cheat command; room prefix, seed, allowlist, số
 ghế, quota và thời lượng đều bị kiểm ở server. Catalog native được test
 lockstep với id/seed/expected command của browser catalog bằng
-`npm run test:qa-server-contract`.
+`npm --prefix game/web run test:qa-server-contract`.
 
 Runner live hiện có identity gate độc lập: `TQS_RELEASE_MANIFEST` là bắt buộc
 theo mặc định; runner đối chiếu MD5 `flist`, danh sách package và hash
@@ -147,10 +169,19 @@ nhận là evidence release.
 
 Fixture local có thể phát `PrepareDrawPile` và native request vì nó đóng vai
 server packet fixture. Không được suy luận rằng query string hoặc `_mode` từ
-client có thể điều khiển draw pile trên FreeKill C++ thật. Với C++ thật, bước
-triển khai package đã có; bước live tiếp theo là cài package vào QA runtime
-riêng, verify cùng revision với source, rồi chạy room `TQSQA/...` qua runner
-đã pin release identity. Các điều kiện vận hành vẫn bắt buộc:
+client có thể điều khiển draw pile trên FreeKill C++ thật. Các evidence
+NATIVE-LOCAL trước đây được chạy sau khi `tqs_qa` đã được cài/verify trong một
+QA runtime cô lập; ma trận hidden khi đó đã chạy đủ ba nhánh Di Kế ở chủ tướng,
+cùng các ca đối xứng Di Kế phó tướng, Gian Hùng chủ/phó, active reveal
+chủ/phó, Chế Hành chủ/phó và Long Đảm ViewAs chủ/phó qua browser + gateway +
+C++ thật. Đây là **NATIVE-LOCAL bounded evidence**, không phải hosted/official
+release evidence. Checkout hiện tại không giữ executable/runtime QA hoàn chỉnh;
+lần rerun gần nhất không phát readiness gate, nên không được suy ra package đang
+được cài/bật hiện hành từ manifest tái dựng. Khi chạy lại, phải cài package vào
+QA runtime riêng, verify cùng revision với source, rồi chạy room `TQSQA/...`
+qua runner có release identity; `TQS_LIVE_ALLOW_UNPINNED=1` chỉ dành cho chẩn
+đoán local có chủ ý.
+Các điều kiện vận hành vẫn bắt buộc:
 
 1. package không nằm trong package production/mobile release mặc định;
 2. chỉ được load ở QA server riêng hoặc profile server tách biệt;
@@ -160,9 +191,10 @@ riêng, verify cùng revision với source, rồi chạy room `TQSQA/...` qua ru
    bị bỏ dở;
 6. log/evidence phải sanitize card ID, payload riêng tư, credential và token.
 
-Cho đến khi QA runtime native riêng được cài và có live evidence của từng
-scenario, bằng chứng của `QA Scenario Mode` vẫn được phân loại là **local
-browser + Wasmoon/Lua PASS**; package source/installer đã PASS syntax, catalog
-contract và fixture installer nhưng chưa chứng minh một hosted C++ room mới.
-Nó không thay đổi trạng thái official release, `PLAYABLE_MOBILE`, hay các gate
+Evidence NATIVE-LOCAL hiện hành của 12 ca hidden nằm trong
+[`scratch/evidence`](../../scratch/evidence/); chúng kiểm request count, public
+log, reveal đúng chủ/phó, card movement, `AskForChoices`/Gian Hùng, ViewAs conversion, GameOver và clean
+disconnect trên hai browser client. Các scenario khác trong ma trận vẫn chỉ có fixture/local
+evidence cho đến khi được chạy tương tự trên C++ thật. Evidence
+này không thay đổi trạng thái official release, `PLAYABLE_MOBILE`, hay các gate
 thiết bị/network đã được người dùng miễn.

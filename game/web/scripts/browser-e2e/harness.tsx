@@ -95,6 +95,16 @@ function prepareLua() {
       conn['sendFromLua']('reply', '', replyHex);
       return undefined as T;
     }
+    if (name === '__web_notify') {
+      if (args[0] !== 'PushRequest' || typeof args[1] !== 'string')
+        throw new Error('Unexpected simulated native notification');
+      const [kind, skillName, prelight] = args[1].split(',');
+      if (kind !== 'prelight' || !skillName || !['true', 'false'].includes(prelight))
+        throw new Error('Invalid simulated prelight payload');
+      actions.push(['PushRequest', args[1]]);
+      emit('PrelightSkill', [skillName, prelight === 'true']);
+      return undefined as T;
+    }
     if (name !== 'UpdateRequestUI') throw new Error(`Unexpected Lua call: ${name}`);
     actions.push(args);
     const [type, id, action, data] = args;
@@ -173,6 +183,9 @@ const api = {
   appActions: () => appActions.slice(),
   finishGame: () => emit('GameOver', '1'),
   replace: () => incoming(++nextId),
+  addFakeSkill: () => emit('AddSkill', [1, 'hs__yiji', true]),
+  addRegularSkill: () => emit('AddSkill', [1, 'hs__active']),
+  damageSelf: () => emit('PropertyUpdate', [1, 'hp', 3]),
   cancel: () => emit('CancelRequest', null),
   disconnect: () => sockets.at(-1)!.handlers.onClose('Mất kết nối thử nghiệm'),
   reconnectSameId: () => {
@@ -187,12 +200,18 @@ const api = {
     try { conn.updateRequestUI(requestId, 'Button', 'OK', 'click', null); return null; }
     catch (error) { return (error as Error).message; }
   },
+  attemptSkill: (requestId: number) => {
+    try { conn.updateRequestUI(requestId, 'SkillButton', 'hs__active', 'click', { selected: true }); return null; }
+    catch (error) { return (error as Error).message; }
+  },
   snapshot: () => {
     const state = useGameStore.getState();
     return {
       requestId: state.pendingRequest?.requestId ?? null,
       prompt: state.gameplay.prompt,
       scene: state.gameplay,
+      fakeSkills: state.fakeSkills,
+      regularSkills: state.regularSkills,
       actions: actions.map((values) => [...values]),
       sent: sentPackets(),
       replyCount: sentPackets().filter((packet) => packet.type === CLIENT_REPLY).length,
@@ -210,6 +229,7 @@ function Fixture() {
   const [busy, setBusy] = useState(false);
   const error = useGameStore((s) => s.error);
   const pending = useGameStore((s) => s.pendingRequest);
+  const regularSkills = useGameStore((s) => s.regularSkills);
   const run = (action: () => void) => {
     if (busy) return;
     setBusy(true);
@@ -222,6 +242,8 @@ function Fixture() {
     <h1>TQS browser E2E cục bộ</h1>
     {error && <div className="notice error-notice" role="alert">{error}</div>}
     <GameBoardScreen busy={busy} leave={() => {}}
+      regularSkills={regularSkills}
+      prelightSkill={(skillName, prelight) => run(() => conn.prelightSkill(skillName, prelight))}
       dispatch={(type, id, action, data) => {
         if (pending) run(() => conn.updateRequestUI(pending.requestId, type, id, action, data));
       }}

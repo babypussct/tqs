@@ -294,6 +294,112 @@ test('skill invoke accepts optional prompts and numeric-key Lua bridge records',
   assert.equal(reduceUiEvent(state, 'AskForSkillInvoke', { prompt: 'broken' }).skillInvoke?.skill, 'ex__fankui');
 });
 
+test('Hegemony fake trigger skills stay private and survive damage until prelight confirmation', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__yiji', true]);
+  assert.deepEqual(state.fakeSkills, [{ name: 'hs__yiji', prelighted: false, enabled: true }]);
+
+  // A two-field AddSkill is a regular local dashboard entry. It is visible,
+  // but remains disabled until the current Lua request creates SkillButton.
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__active']);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__active' }]);
+  assert.equal(reduceUiEvent(state, 'AddSkill', [-1, 'hs__opponent-active']), state);
+
+  // Fake-skill events for another seat must never expose that seat's hidden
+  // trigger to this player's React dashboard.
+  assert.equal(reduceUiEvent(state, 'AddSkill', [-1, 'hs__fankui', true]), state);
+
+  // Taking damage changes public board state, but does not remove the local
+  // prelight control. The server can therefore ask for Yiji immediately
+  // after the damage event and reveal the general by skill name.
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'hp', 3]);
+  assert.equal(state.fakeSkills[0].name, 'hs__yiji');
+  state = reduceUiEvent(state, 'PrelightSkill', ['hs__yiji', true]);
+  assert.equal(state.fakeSkills[0].prelighted, true);
+  assert.equal(reduceUiEvent(state, 'PrelightSkill', ['unknown_skill', true]), state);
+
+  // The native reconnect marker arrives after its fresh dashboard snapshot;
+  // it must not erase the reconstructed projection.
+  state = reduceUiEvent(state, 'Reconnect', null);
+  assert.deepEqual(state.fakeSkills, [{ name: 'hs__yiji', prelighted: true, enabled: true }]);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__active' }]);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__yiji', true]);
+  state = reduceUiEvent(state, 'LoseSkill', [17, 'hs__yiji', true]);
+  assert.deepEqual(state.fakeSkills, []);
+
+  // hide/transform/swap may attach the same fake skill again while native
+  // Player:prelighted_skills still retains the previous choice. The server
+  // now emits AddSkill(fake) followed by PrelightSkill=true; React must show
+  // the restored state without requiring a second user click.
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__yiji', true]);
+  state = reduceUiEvent(state, 'PrelightSkill', ['hs__yiji', true]);
+  assert.deepEqual(state.fakeSkills, [{ name: 'hs__yiji', prelighted: true, enabled: true }]);
+});
+
+test('Reconnect keeps the native hidden-skill snapshot after room rebuild events', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'stale_hidden_skill', true]);
+
+  // This is the order emitted by ClientBase:reconnect/loadRoomSummary before
+  // ClientPlayer:sendDataToUI() publishes the current skill dashboard.
+  state = reduceUiEvent(state, 'EnterLobby', '');
+  state = reduceUiEvent(state, 'EnterRoom', [2, 30, { roomName: 'QC', gameMode: 'new_heg_mode' }]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__yiji', true]);
+  state = reduceUiEvent(state, 'PrelightSkill', ['hs__yiji', true]);
+  // A fake ActiveSkill/ViewAsSkill is normalized by the host reconnect
+  // boundary to the same two-field regular event native Client:addSkill()
+  // emits during the live path.
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__zhiheng']);
+  state = reduceUiEvent(state, 'Reconnect', '{}');
+
+  assert.deepEqual(state.fakeSkills, [{ name: 'hs__yiji', prelighted: true, enabled: true }]);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__zhiheng' }]);
+  assert.equal(state.fakeSkills.some((skill) => skill.name === 'stale_hidden_skill'), false);
+});
+
+test('ChangeSelf updates the privacy owner before rebuilding the skill dashboard', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__yiji', true]);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__zhiheng']);
+  state = reduceUiEvent(state, 'ChangeSelf', 21);
+
+  assert.equal(state.ownId, 21);
+  assert.deepEqual(state.fakeSkills, []);
+  assert.deepEqual(state.regularSkills, []);
+  assert.equal(reduceUiEvent(state, 'AddSkill', [17, 'hs__leiji', true]), state);
+  state = reduceUiEvent(state, 'AddSkill', [21, 'hs__longdan']);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__longdan' }]);
+  assert.equal(reduceUiEvent(state, 'ChangeSelf', '21'), state);
+});
+
+test('React preserves the native dual projection when one hidden skill has trigger and active effects', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__dual', true]);
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__dual']);
+  assert.deepEqual(state.fakeSkills, [{ name: 'hs__dual', prelighted: false, enabled: true }]);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__dual' }]);
+
+  state = reduceUiEvent(state, 'LoseSkill', [17, 'hs__dual', true]);
+  assert.deepEqual(state.fakeSkills, []);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__dual' }]);
+  state = reduceUiEvent(state, 'LoseSkill', [17, 'hs__dual']);
+  assert.deepEqual(state.regularSkills, []);
+});
+
+test('React removes a regular fallback when native loses a delay-trigger fake skill', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  // client.lua currently adds a delay-trigger-only hidden skill as a regular
+  // fallback, but its fake LoseSkill path is still tagged true. The reducer
+  // must not leave that stale dashboard entry after the general is revealed.
+  state = reduceUiEvent(state, 'AddSkill', [17, 'hs__delay-only']);
+  assert.deepEqual(state.regularSkills, [{ name: 'hs__delay-only' }]);
+  state = reduceUiEvent(state, 'LoseSkill', [17, 'hs__delay-only', true]);
+  assert.deepEqual(state.fakeSkills, []);
+  assert.deepEqual(state.regularSkills, []);
+});
+
 test('board follows Lua seat order, preserves relative self position, and updates public stats', () => {
   let state = reduceUiEvent(initialSnapshot, 'EnterRoom', [4, 30, { roomName: 'QC', gameMode: 'new_heg_mode' }]);
   for (const id of [17, -1, 21, 22]) state = reduceUiEvent(state, 'AddNpc', [id, `P${id}`, '', false, 0]);
@@ -420,6 +526,41 @@ test('visible kingdom rejects hidden opponents, accepts public state and clears 
   assert.equal(reduceUiEvent(state, 'VisibleKingdom', [-1, 'heg_chu']).board, state.board);
   state = reduceUiEvent(state, 'EnterLobby', null);
   assert.deepEqual(state.board.player, {});
+});
+
+test('Hegemony hidden opponent kingdom is never retained before role reveal', () => {
+  let state = reduceUiEvent(initialSnapshot, 'EnterRoom', [2, 30, { roomName: 'QC', gameMode: 'new_heg_mode' }]);
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'AddPlayer', [-1, 'Máy', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'role_shown', false]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'kingdom', 'wei']);
+  assert.equal(state.board.player[-1].kingdom, null);
+  state = reduceUiEvent(state, 'VisibleKingdom', [-1, 'wei']);
+  assert.equal(state.board.player[-1].visibleKingdom, null);
+
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'role_shown', true]);
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'kingdom', 'wei']);
+  assert.equal(state.board.player[-1].kingdom, 'wei');
+  state = reduceUiEvent(state, 'PropertyUpdate', [-1, 'role_shown', false]);
+  assert.equal(state.board.player[-1].kingdom, null);
+  assert.equal(state.board.player[-1].visibleKingdom, null);
+});
+
+test('private SelfGenerals survives reconnect ordering before public roster rebuild', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'SelfGenerals', [17, 'hs__guojia', 'hs__simayi', 'hegemony', 'hegemony']);
+
+  // Reconnect can publish the private self pair before AddPlayer/ArrangeSeats.
+  // The event is still safe because the reducer accepts only ownId.
+  assert.equal(state.board.player[17].selfGeneral, 'hs__guojia');
+  assert.equal(state.board.player[17].selfDeputyGeneral, 'hs__simayi');
+  assert.equal(state.board.player[-1], undefined);
+
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  assert.equal(state.board.player[17].selfGeneral, 'hs__guojia');
+  assert.equal(state.board.player[17].selfDeputyGeneral, 'hs__simayi');
 });
 
 test('game logs retain a full match beyond 100 entries and board clears on lifecycle', () => {

@@ -603,3 +603,82 @@ export function HandCardItem({
     </button>
   );
 }
+
+/** Authentic Center In-Play Card Resolution (Table Pile / Processing Area) */
+export function ResolvingCardView({ card }: { card: { name: string; suit: number; number: number; extension?: string; picName?: string } }) {
+  const text = useDisplayText();
+  const suitInfo = getSuitInfo(card.suit);
+  const rank = formatRank(card.number);
+  const category = getCardCategory(card.name);
+  const { displayName } = resolveCardText(card, text);
+
+  return (
+    <div className="native-resolving-card" aria-label={`Đang xử lý: ${displayName} · ${suitInfo.name} ${rank}`}>
+      <div className="card-head">
+        <span className={suitInfo.colorClass}>{suitInfo.symbol} {rank}</span>
+        <span className="card-cat-badge">{category.label || 'Bài'}</span>
+      </div>
+      <div className="card-thumb">
+        <CardArt card={card} alt={displayName} />
+      </div>
+      <div className="card-foot">【 {displayName.toUpperCase()} 】</div>
+    </div>
+  );
+}
+
+/** Idle Hand Card for Bottom Dashboard (renders cards outside active turns) */
+export function IdleHandCard({
+  card,
+  index = 0,
+  totalCards = 1,
+}: {
+  card: { name: string; suit: number; number: number; extension?: string; picName?: string };
+  index?: number;
+  totalCards?: number;
+}) {
+  const text = useDisplayText();
+  const suitInfo = getSuitInfo(card.suit);
+  const rank = formatRank(card.number);
+  const categoryFromName = getCardCategory(card.name);
+  const category = categoryFromName.typeKey === 'unknown' ? getCardCategory((card as any).trueName) : categoryFromName;
+  const { displayName } = resolveCardText(card, text);
+
+  const overlapDesktop = index > 0 && totalCards > 4 ? Math.min(38, 16 + (totalCards - 4) * 3.5) : 0;
+  const overlapMobile = index > 0 && totalCards > 4 ? Math.min(42, 14 + (totalCards - 4) * 4.5) : 0;
+  const cardStyle = {
+    zIndex: index + 1,
+    '--card-overlap': `${overlapDesktop}px`,
+    '--card-overlap-desktop': `${overlapDesktop}px`,
+    '--card-overlap-mobile': `${overlapMobile}px`,
+    opacity: 0.88,
+    cursor: 'default',
+  } as CSSProperties;
+
+  return (
+    <div
+      className={`gameplay-choice sg-card-button sg-card-idle ${category.className}`}
+      style={cardStyle}
+      aria-label={`${displayName} · ${suitInfo.name} ${rank}`}
+    >
+      <div className="sg-card-badge-cluster">
+        <span className={`sg-card-suit ${suitInfo.colorClass}`} aria-hidden="true">
+          {suitInfo.symbol}
+        </span>
+        <span className={`sg-card-rank ${suitInfo.colorClass}`} aria-hidden="true">
+          {rank}
+        </span>
+        {category.label && (
+          <span className="sg-card-category" aria-hidden="true">
+            {category.label}
+          </span>
+        )}
+      </div>
+      <div className="sg-card-art-box">
+        <CardArt card={card} alt={displayName} />
+      </div>
+      <div className="sg-card-banner">
+        <span className="sg-card-name">{displayName}</span>
+      </div>
+    </div>
+  );
+}

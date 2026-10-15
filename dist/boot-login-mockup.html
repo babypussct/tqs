@@ -3,76 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TQS — Mockup Tương Tác: Màn Hình Tải File & Đăng Nhập</title>
-  <link rel="stylesheet" href="/assets/index-CpWTiRnN.css">
-  <link rel="stylesheet" href="/src/styles.css">
+  <title>Tam Quốc Sát Mobile — Mocktest Chuẩn Sanguosha Mobile</title>
   <style>
     :root {
-      --gold-main: #d49b38;
-      --gold-bright: #ffe299;
-      --bg-canvas: #0a0806;
-      --panel-dark: #140f0c;
+      --gold-hi: #fff2b2;
+      --gold-main: #f5c562;
+      --gold-dark: #9e6c1c;
+      --gold-border: #6d4b1a;
+      --bronze: #5a4228;
+      --bronze-dark: #3a281a;
+      --panel-bg: rgba(22, 16, 12, 0.94);
+      --font-calligraphy: "FZLBGBK", "STLiti", "Kaiti SC", "Noto Serif CJK SC", Georgia, serif;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--bg-canvas);
-      color: #f5eedc;
+      background: #080605;
+      color: #f7eed8;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
-      margin: 0;
-      padding: 0;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* TOP CONTROLS TOOLBAR */
+    /* TOP REVIEW TOOLBAR */
     .mockup-toolbar {
       position: sticky;
       top: 0;
-      z-index: 1000;
-      background: rgba(18, 14, 11, 0.98);
-      border-bottom: 2px solid var(--gold-main);
-      padding: 10px 18px;
+      z-index: 9999;
+      background: rgba(16, 12, 9, 0.98);
+      border-bottom: 2px solid #8c642e;
+      padding: 8px 16px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.85);
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.9);
       backdrop-filter: blur(8px);
     }
 
     .toolbar-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       flex-wrap: wrap;
     }
 
     .toolbar-label {
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--gold-bright);
+      letter-spacing: 0.6px;
+      color: var(--gold-main);
       font-weight: bold;
-      margin-right: 4px;
+      margin-right: 2px;
     }
 
     .toolbar-btn {
-      background: rgba(45, 32, 22, 0.85);
+      background: rgba(45, 30, 20, 0.85);
       border: 1px solid #73512b;
-      color: #f0e3cc;
-      padding: 5px 11px;
-      font-size: 12px;
+      color: #ebdcc2;
+      padding: 4px 10px;
+      font-size: 11px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.15s ease;
-      white-space: nowrap;
     }
 
     .toolbar-btn:hover {
-      background: rgba(90, 65, 40, 0.9);
+      background: rgba(90, 65, 40, 0.95);
       border-color: #ffd97d;
       color: #fff;
     }
@@ -85,959 +84,1337 @@
       box-shadow: 0 0 10px rgba(212, 155, 56, 0.5);
     }
 
-    /* CONTAINER LAYOUT */
-    .mockup-container {
+    /* MAIN STAGE WRAPPER */
+    .stage-wrapper {
       display: flex;
       justify-content: center;
-      gap: 28px;
-      padding: 24px 18px 48px;
-      max-width: 1600px;
-      margin: 0 auto;
-      transition: all 0.3s ease;
-    }
-
-    .mockup-column {
-      flex: 1;
-      max-width: 760px;
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 12px;
+      padding: 16px 10px 40px;
     }
 
-    .column-header {
-      width: 100%;
-      text-align: center;
-      padding: 8px 12px;
-      background: rgba(26, 19, 14, 0.85);
-      border: 1px solid #5a4228;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #e6c888;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .column-badge {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    .badge-old { background: #4a2c1f; color: #ffb599; border: 1px solid #85442a; }
-    .badge-new { background: #1c452b; color: #9cf0b3; border: 1px solid #338a53; }
-
-    /* VIEWPORT SIMULATOR WRAPPERS */
-    .viewport-box {
-      background: #0f1814;
-      border: 2px solid #4a3826;
-      border-radius: 14px;
+    /* DEVICE FRAMES */
+    .device-frame {
+      position: relative;
+      background: #000;
+      border: 3px solid #5a3e1b;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
-      position: relative;
-      transition: width 0.25s ease, height 0.25s ease;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,217,125,0.25);
+      transition: width 0.3s ease, height 0.3s ease;
     }
 
-    .viewport-390 { width: 390px; height: 844px; }
-    .viewport-360 { width: 360px; height: 780px; }
-    .viewport-desktop { width: 100%; min-width: 680px; height: 844px; }
-
-    /* INNER FRAME SIMULATION */
-    .frame-content {
-      width: 100%;
-      height: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
-      position: relative;
-      background: #101e1a;
-      display: flex;
-      flex-direction: column;
-    }
+    .frame-390 { width: 390px; height: 844px; }
+    .frame-360 { width: 360px; height: 780px; }
+    .frame-landscape { width: 844px; height: 420px; border-radius: 16px; }
+    .frame-desktop { width: 1040px; height: 680px; border-radius: 12px; }
 
     /* ============================================================== */
-    /* NEW HERO STYLES: SANGUOSHA MOBILE & FREEKILL AUTHENTIC DESIGN  */
+    /* WEBP ADAPTIVE BATTLEFIELD CANVAS                               */
     /* ============================================================== */
-    .sg-new-login-stage {
+    .sg-game-canvas {
       width: 100%;
       height: 100%;
-      min-height: 100%;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      align-items: center;
-      padding: 24px 18px 16px;
-      background: radial-gradient(circle at 50% 25%, #2a1b12 0%, #100b08 65%, #080605 100%);
       overflow: hidden;
+      user-select: none;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      transition: background-image 0.5s ease-in-out;
     }
 
-    /* Atmospheric Battlefield Vignette & Smoke */
-    .sg-new-login-stage::before {
+    /* THEME 1: BATTLEFIELD MIST (SA TRƯỜNG KHÓI LỬA) */
+    .theme-battlefield {
+      background-image:
+        radial-gradient(circle at 50% 30%, rgba(200, 110, 30, 0.3) 0%, transparent 65%),
+        linear-gradient(180deg, rgba(20, 14, 10, 0.45) 0%, rgba(10, 8, 6, 0.75) 100%),
+        url('/photo-assets/bg-battlefield.webp');
+    }
+
+    /* THEME 2: IMPERIAL PALACE GATE (HOÀNG THÀNH LẠC DƯƠNG) */
+    .theme-palace {
+      background-image:
+        radial-gradient(circle at 50% 35%, rgba(220, 120, 40, 0.35) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(26, 12, 12, 0.4) 0%, rgba(12, 6, 6, 0.78) 100%),
+        url('/photo-assets/bg-palace.webp');
+    }
+
+    /* THEME 3: STRATEGIC WAR ROOM (SA BÀN QUÂN TRƯỚNG) */
+    .theme-warroom {
+      background-image:
+        radial-gradient(circle at 50% 40%, rgba(190, 120, 40, 0.3) 0%, transparent 65%),
+        linear-gradient(180deg, rgba(18, 14, 10, 0.45) 0%, rgba(8, 6, 4, 0.8) 100%),
+        url('/photo-assets/bg-warroom.webp');
+    }
+
+    /* Classical Vignette Overlay */
+    .sg-game-canvas::after {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 50% 15%, rgba(212, 155, 56, 0.15) 0%, transparent 60%),
-        linear-gradient(180deg, rgba(10, 7, 5, 0.4) 0%, rgba(10, 7, 5, 0.85) 100%),
-        url('/photo-assets/back/qun.png') center/cover no-repeat;
-      opacity: 0.22;
-      filter: blur(2px);
+      box-shadow: inset 0 0 100px rgba(0,0,0,0.92);
       pointer-events: none;
+      z-index: 2;
     }
 
-    /* Ambient glow effect */
-    .sg-new-login-stage::after {
-      content: "";
-      position: absolute;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 320px;
-      height: 240px;
-      background: radial-gradient(circle, rgba(255, 217, 125, 0.22) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* TOP BRANDING & CALLIGRAPHIC TITLE */
-    .sg-hero-brand {
+    /* TOP ACCESSORY BAR */
+    .sg-top-bar {
       position: relative;
-      z-index: 10;
+      z-index: 50;
       display: flex;
-      flex-direction: column;
+      justify-content: flex-end;
       align-items: center;
-      text-align: center;
-      margin-top: 10px;
+      gap: 10px;
+      padding: 10px 14px;
     }
 
-    .sg-hero-kicker {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.24em;
-      color: #dfb260;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    .sg-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #3d2a1b 0%, #1a120b 100%);
+      border: 1.5px solid #a67c38;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,230,150,0.3);
+      color: #ffe699;
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .sg-hero-kicker::before,
-    .sg-hero-kicker::after {
-      content: "◆";
-      font-size: 8px;
-      color: #9c6c2e;
-    }
-
-    .sg-hero-title {
-      margin: 8px 0 4px;
-      font-family: "FZLBGBK", "STLiti", "Kaiti SC", "Noto Serif CJK SC", Georgia, serif;
-      font-size: clamp(2rem, 8vw, 2.75rem);
-      letter-spacing: 0.06em;
-      font-weight: 900;
-      background: linear-gradient(180deg, #fff7dc 0%, #ffd97d 45%, #d49b38 80%, #7d4e13 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 2px 0 #2b1809) drop-shadow(0 4px 14px rgba(212, 155, 56, 0.45));
-    }
-
-    .sg-hero-badge-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sg-hero-seal {
-      background: linear-gradient(135deg, #a62014 0%, #631008 100%);
-      color: #ffe6d4;
-      border: 1px solid #d45946;
-      border-radius: 4px;
-      padding: 2px 7px;
-      font-size: 11px;
-      font-weight: bold;
-      letter-spacing: 0.1em;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-
-    .sg-hero-protocol {
-      font-size: 11px;
-      color: rgba(220, 205, 180, 0.7);
-      letter-spacing: 0.05em;
-    }
-
-    /* CENTER ACTIVE CARD: BOOT OR LOGIN */
-    .sg-card-slot {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 360px;
-      margin: auto 0;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    /* PAVILION METAL BOX (BRONZE FILIGREE) */
-    .sg-pavilion-box {
-      position: relative;
-      background: linear-gradient(165deg, rgba(26, 20, 16, 0.94) 0%, rgba(14, 11, 9, 0.97) 100%);
-      border: 1px solid #6b4d2c;
-      border-radius: 10px;
-      padding: 22px 20px 20px;
-      box-shadow:
-        inset 0 0 0 1px rgba(255, 217, 125, 0.18),
-        inset 0 1px 0 rgba(255, 237, 174, 0.25),
-        0 20px 48px rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(12px);
-    }
-
-    /* Corner Bronze Filigree Ornaments */
-    .sg-pavilion-box::before {
-      content: "";
-      position: absolute;
-      inset: 6px;
-      border: 1px solid rgba(180, 140, 80, 0.32);
-      border-radius: 6px;
-      pointer-events: none;
-    }
-
-    .sg-filigree-corner {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border-style: solid;
-      border-color: #ffd97d;
-      pointer-events: none;
-    }
-    .sg-filigree-tl { top: 4px; left: 4px; border-width: 2px 0 0 2px; }
-    .sg-filigree-tr { top: 4px; right: 4px; border-width: 2px 2px 0 0; }
-    .sg-filigree-bl { bottom: 4px; left: 4px; border-width: 0 0 2px 2px; }
-    .sg-filigree-br { bottom: 4px; right: 4px; border-width: 0 2px 2px 0; }
-
-    /* CARD HEADER */
-    .sg-card-title-row {
-      text-align: center;
-      margin-bottom: 16px;
-      position: relative;
-    }
-
-    .sg-card-kicker {
-      display: block;
-      font-size: 10.5px;
-      color: #dfb260;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .sg-card-title {
-      margin: 4px 0 0;
-      color: #f7ede1;
-      font-family: "FZLBGBK", "STLiti", "Kaiti SC", Georgia, serif;
-      font-size: 1.35rem;
-      text-shadow: 0 2px 0 #21150b, 0 2px 8px rgba(0,0,0,0.8);
-      letter-spacing: 0.03em;
-    }
-
-    /* BOOT PROGRESS SPECIFICS */
-    .sg-dragon-track-wrap {
-      margin: 18px 0 12px;
-    }
-
-    .sg-track-stats {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #dfcaa7;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-
-    .sg-track-percent {
-      color: #ffe299;
-      font-weight: bold;
-      font-family: Georgia, serif;
-    }
-
-    .sg-dragon-track {
-      position: relative;
-      height: 16px;
-      background: #0d0907;
-      border: 1px solid #7a5833;
-      border-radius: 999px;
-      overflow: hidden;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.85), 0 1px 0 rgba(255,217,125,0.2);
-    }
-
-    .sg-dragon-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #186036 0%, #2ecc71 50%, #a9dfbf 90%, #f9e79f 100%);
-      border-radius: inherit;
-      box-shadow: 0 0 14px rgba(46, 204, 113, 0.65);
-      transition: width 0.3s cubic-bezier(0.2, 0.8, 0.4, 1);
-      position: relative;
-    }
-
-    .sg-dragon-fill::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 20px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7));
-      border-radius: inherit;
-    }
-
-    .sg-status-message {
-      text-align: center;
-      font-size: 12.5px;
-      color: #ffe299;
-      margin: 12px 0 8px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      min-height: 20px;
-    }
-
-    .sg-tips-box {
-      background: rgba(18, 14, 11, 0.65);
-      border: 1px dashed rgba(160, 125, 75, 0.4);
-      border-radius: 6px;
-      padding: 9px 12px;
-      margin-top: 14px;
-      text-align: center;
-      font-size: 11.5px;
-      line-height: 1.5;
-      color: #c9b89d;
-    }
-
-    .sg-tips-prefix {
-      color: #dfb260;
-      font-weight: bold;
-      display: block;
-      margin-bottom: 2px;
-    }
-
-    /* LOGIN FORM SPECIFICS */
-    .sg-login-form-inner {
-      display: flex;
-      flex-direction: column;
-      gap: 13px;
-    }
-
-    .sg-field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .sg-field-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #e8d9c2;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .sg-field-input-box {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .sg-input-icon {
-      position: absolute;
-      left: 12px;
-      color: #a68456;
-      font-size: 15px;
-      pointer-events: none;
-    }
-
-    .sg-field-input-box input {
-      width: 100%;
-      height: 44px;
-      padding: 8px 12px 8px 36px;
-      background: rgba(16, 12, 10, 0.88);
-      border: 1px solid #6b4d2c;
-      border-radius: 6px;
-      color: #fff9e9;
+      justify-content: center;
+      font-family: var(--font-calligraphy);
       font-size: 14px;
-      box-shadow: inset 0 2px 6px rgba(0,0,0,0.7);
+      font-weight: bold;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
 
-    .sg-field-input-box input:focus {
-      outline: none;
+    .sg-icon-btn:hover {
       border-color: #ffd97d;
-      box-shadow: inset 0 2px 6px rgba(0,0,0,0.7), 0 0 0 3px rgba(212, 155, 56, 0.25);
+      transform: scale(1.08);
+      box-shadow: 0 0 10px rgba(255,217,125,0.5);
     }
 
-    .sg-password-eye {
+    /* LOGO AREA */
+    .sg-logo-area {
+      position: relative;
+      z-index: 20;
+      text-align: center;
+      padding: 2px 16px 0;
+    }
+
+    .sg-logo-title {
+      font-family: var(--font-calligraphy);
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(180deg, #fff2b2 0%, #f3c25b 35%, #b57a1e 75%, #5e3b08 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.95)) drop-shadow(0 0 12px rgba(243, 194, 91, 0.45));
+      margin-bottom: 2px;
+    }
+
+    .sg-logo-ribbon {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 14px;
+      background: linear-gradient(90deg, transparent 0%, rgba(90, 55, 20, 0.85) 30%, rgba(120, 75, 25, 0.95) 50%, rgba(90, 55, 20, 0.85) 70%, transparent 100%);
+      border-top: 1px solid rgba(255, 217, 125, 0.45);
+      border-bottom: 1px solid rgba(255, 217, 125, 0.45);
+    }
+
+    .sg-logo-ribbon-text {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      color: #ffe699;
+      font-weight: 700;
+      text-transform: uppercase;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+
+    /* ============================================================== */
+    /* MAIN CONTENT VIEWPORT CONTAINER                                */
+    /* ============================================================== */
+    .sg-main-content {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
+      padding: 8px 16px;
+      width: 100%;
+    }
+
+    /* ============================================================== */
+    /* HERO SPOTLIGHT CARD (VÕ TƯỚNG XUẤT TRẬN / THẦN TƯỚNG)           */
+    /* ============================================================== */
+    .sg-hero-card-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 320px;
+      animation: heroBreathe 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes heroBreathe {
+      0% { transform: scale(1.0); }
+      100% { transform: scale(1.02); }
+    }
+
+    .sg-hero-frame {
+      position: relative;
+      width: 195px;
+      height: 245px;
+      border-radius: 12px;
+      border: 2px solid #caa055;
+      background: radial-gradient(circle, #2a1a10 0%, #120a05 100%);
+      box-shadow:
+        0 14px 40px rgba(0,0,0,0.95),
+        0 0 35px rgba(212, 155, 56, 0.45),
+        inset 0 0 0 1px rgba(255, 230, 150, 0.4);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .sg-hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      filter: contrast(1.08) brightness(1.02);
+      transition: opacity 0.3s ease;
+    }
+
+    /* God Kingdom Seal Badge (Thuần Việt) */
+    .sg-hero-faction-badge {
       position: absolute;
-      right: 12px;
-      background: none;
-      border: none;
-      color: #a68456;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 0;
+      top: 6px;
+      left: 6px;
+      padding: 3px 6px;
+      background: linear-gradient(135deg, #a8241a 0%, #5a100a 100%);
+      border: 1px solid #ffd97d;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+      color: #ffe699;
+      font-family: var(--font-calligraphy);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+      line-height: 1;
     }
 
-    .sg-remember-row {
+    /* Epithet Title Ribbon (Danh Hiệu Tướng Thuần Việt) */
+    .sg-hero-name-ribbon {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      background: linear-gradient(180deg, rgba(30, 15, 8, 0.94) 0%, rgba(60, 30, 12, 0.96) 100%);
+      border: 1px solid #caa055;
+      border-radius: 4px;
+      padding: 3px 7px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
       display: flex;
       align-items: center;
+      justify-content: center;
+    }
+
+    .sg-hero-title-tag {
+      font-family: var(--font-calligraphy);
+      font-size: 10px;
+      font-weight: 800;
+      color: #ffe699;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+      white-space: nowrap;
+    }
+
+    .sg-hero-name-vn {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffe8a1;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+      margin-bottom: 4px;
+    }
+
+    .sg-hero-quote-box {
+      background: rgba(25, 17, 12, 0.85);
+      border: 1px solid rgba(160, 115, 55, 0.5);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #ecdcc2;
+      text-align: center;
+      font-style: italic;
+      max-width: 290px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+      margin-bottom: 6px;
+    }
+
+    .sg-hero-switch-btn {
+      background: rgba(50, 35, 22, 0.85);
+      border: 1px solid #9e6c1c;
+      color: #ffd97d;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .sg-hero-switch-btn:hover {
+      background: rgba(90, 60, 30, 0.95);
+      border-color: #ffe299;
+      color: #fff;
+    }
+
+    /* ============================================================== */
+    /* VIEW 1: LOADING PROGRESS VIEW                                  */
+    /* ============================================================== */
+    .sg-loading-wrap {
+      width: 100%;
+      max-width: 330px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .sg-dragon-bar-head {
+      width: 100%;
+      display: flex;
       justify-content: space-between;
-      font-size: 12px;
-      color: #c9b89d;
-      margin: 2px 0 4px;
+      align-items: center;
+      margin-bottom: 5px;
+      padding: 0 4px;
+      font-size: 11px;
+      font-weight: bold;
     }
 
-    .sg-checkbox-label {
+    .sg-loading-status-text {
+      color: #f7eed8;
+      letter-spacing: 0.3px;
+    }
+
+    .sg-loading-percent-number {
+      color: #ffe699;
+      font-size: 12px;
+    }
+
+    .sg-dragon-bar-frame {
+      width: 100%;
+      height: 14px;
+      background: linear-gradient(180deg, #110c08 0%, #261910 100%);
+      border: 2px solid #8c642e;
+      border-radius: 8px;
+      padding: 1.5px;
+      position: relative;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.9), inset 0 2px 4px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    .sg-dragon-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #1e824c 0%, #2ecc71 50%, #a2f2b8 95%, #ffffff 100%);
+      box-shadow: 0 0 12px #2ecc71, inset 0 1px 0 rgba(255,255,255,0.6);
+      transition: width 0.3s ease;
+      position: relative;
+    }
+
+    .sg-dragon-bar-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+      animation: jadeShimmer 2.2s infinite;
+    }
+
+    @keyframes jadeShimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .sg-loading-note {
+      font-size: 10px;
+      color: rgba(220, 200, 170, 0.65);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* ============================================================== */
+    /* VIEW 2: TITLE SCREEN (CHẠM ĐỂ XUẤT CHINH - CHƯA BẬT BẢNG AUTH) */
+    /* ============================================================== */
+    .sg-title-action-wrap {
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 14px;
+      gap: 10px;
+    }
+
+    /* Remembered Account Pill */
+    .sg-remembered-account-pill {
+      background: rgba(30, 20, 14, 0.9);
+      border: 1px solid #9e6c1c;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: #ebdcc2;
       display: flex;
       align-items: center;
-      gap: 7px;
-      cursor: pointer;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
     }
 
-    .sg-checkbox-label input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
+    .sg-account-seal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      background: linear-gradient(135deg, #a8241a 0%, #6d120a 100%);
+      border: 1px solid #e6b042;
+      border-radius: 3px;
+      color: #fff2b2;
+      font-family: var(--font-calligraphy);
+      font-size: 11px;
+      font-weight: bold;
+      line-height: 1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+
+    .sg-switch-account-link {
+      color: #f5c562;
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    /* Pulsing Action Bar */
+    .sg-btn-enter-game {
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #ffe285 0%, #e6a832 20%, #9e6518 80%, #5c3506 100%);
+      border: 1.5px solid #fff2b2;
+      box-shadow:
+        0 6px 20px rgba(230, 168, 50, 0.5),
+        0 0 25px rgba(255, 230, 150, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      color: #1a0e05;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      animation: pulseGoldBtn 2.4s infinite ease-in-out;
+    }
+
+    @keyframes pulseGoldBtn {
+      0%, 100% {
+        transform: scale(1.0);
+        box-shadow: 0 6px 20px rgba(230, 168, 50, 0.5), 0 0 20px rgba(255, 230, 150, 0.3);
+      }
+      50% {
+        transform: scale(1.025);
+        box-shadow: 0 8px 26px rgba(230, 168, 50, 0.8), 0 0 35px rgba(255, 230, 150, 0.6);
+      }
+    }
+
+    .sg-btn-enter-game:hover {
+      filter: brightness(1.12);
+      transform: scale(1.04);
+    }
+
+    .sg-btn-enter-subtext {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #3d2005;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    /* ============================================================== */
+    /* VIEW 3: AUTH CARD (ĐĂNG NHẬP / ĐĂNG KÝ)                        */
+    /* ============================================================== */
+    .sg-auth-box {
+      width: 100%;
+      max-width: 340px;
+      background: linear-gradient(165deg, rgba(28, 20, 15, 0.96) 0%, rgba(14, 10, 8, 0.98) 100%);
+      border: 2px solid #8c642e;
+      border-radius: 12px;
+      padding: 16px 16px 14px;
+      box-shadow:
+        0 16px 40px rgba(0,0,0,0.95),
+        0 0 0 1px rgba(255, 217, 125, 0.25),
+        inset 0 0 40px rgba(0,0,0,0.85);
+      position: relative;
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Classical Decorative Corners */
+    .sg-corner {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-color: #ffd97d;
+      border-style: solid;
+      pointer-events: none;
+    }
+    .sg-corner-tl { top: 3px; left: 3px; border-width: 2px 0 0 2px; }
+    .sg-corner-tr { top: 3px; right: 3px; border-width: 2px 2px 0 0; }
+    .sg-corner-bl { bottom: 3px; left: 3px; border-width: 0 0 2px 2px; }
+    .sg-corner-br { bottom: 3px; right: 3px; border-width: 0 2px 2px 0; }
+
+    /* Close / Back to Showcase Button */
+    .sg-auth-close-btn {
+      position: absolute;
+      top: -12px;
+      right: -10px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #3d2a1b;
+      border: 1.5px solid #f5c562;
+      color: #fff;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    /* AUTH TABS */
+    .sg-auth-tabs {
+      display: flex;
+      background: rgba(14, 10, 8, 0.85);
+      border: 1px solid #5a3e1b;
+      border-radius: 6px;
+      padding: 3px;
+      margin-bottom: 12px;
+    }
+
+    .sg-tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: #a89478;
+      font-family: var(--font-calligraphy);
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      padding: 6px 0;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .sg-tab-btn.active {
+      background: linear-gradient(180deg, #7a5020 0%, #4a2e0e 100%);
+      color: #fff2b2;
+      border: 1px solid #cca250;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,230,150,0.3);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* FORM STACK & E2E CONTRACT SELECTORS */
+    .sg-form-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sg-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+
+    .sg-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e8d7bd;
+      letter-spacing: 0.3px;
+    }
+
+    .sg-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .sg-input-wrap input {
+      width: 100%;
+      height: 38px;
+      background: rgba(10, 8, 6, 0.9);
+      border: 1px solid #6b4c27;
+      border-radius: 6px;
+      padding: 0 12px;
+      color: #fff2b2;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.7);
+    }
+
+    .sg-input-wrap input[type="password"] {
+      padding: 0 52px 0 12px;
+    }
+
+    .sg-input-wrap input:focus {
+      border-color: #ffd97d;
+      box-shadow: 0 0 10px rgba(255,217,125,0.4), inset 0 2px 5px rgba(0,0,0,0.8);
+    }
+
+    .sg-eye-btn {
+      position: absolute;
+      right: 6px;
+      background: rgba(50, 35, 20, 0.9);
+      border: 1px solid #7a5020;
+      border-radius: 4px;
+      color: #e6b042;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 3px 8px;
+      letter-spacing: 0.5px;
+      transition: all 0.15s ease;
+    }
+
+    .sg-eye-btn:hover {
+      background: #7a5020;
+      color: #fff;
+    }
+
+    .sg-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #c9b89d;
+      margin-top: 2px;
+    }
+
+    .sg-remember-check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sg-remember-check input[type="checkbox"] {
       accent-color: #d49b38;
       cursor: pointer;
     }
 
-    /* ACTION BUTTONS */
-    .sg-btn-hero-primary {
-      width: 100%;
-      height: 48px;
+    .sg-forgot-link {
+      color: #f5c562;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .sg-btn-hero {
+      margin-top: 4px;
+      height: 42px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #f5c562 0%, #d49528 40%, #8c5412 100%);
       border: 1px solid #ffe299;
-      border-radius: 7px;
-      background: linear-gradient(180deg, #ffd97d 0%, #d49b38 48%, #8c5816 100%);
-      color: #2b1708;
-      font-family: "FZLBGBK", "STLiti", "Kaiti SC", Georgia, serif;
-      font-size: 17px;
+      box-shadow: 0 4px 14px rgba(212, 149, 40, 0.5), inset 0 1px 0 rgba(255,255,255,0.6);
+      color: #1a0e05;
+      font-family: var(--font-calligraphy);
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 0.05em;
-      text-shadow: 0 1px 0 rgba(255, 240, 190, 0.6);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -2px 0 rgba(50, 25, 5, 0.35),
-        0 6px 18px rgba(0, 0, 0, 0.45);
+      letter-spacing: 2px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.15s ease;
-      position: relative;
-      overflow: hidden;
+      transition: all 0.2s ease;
     }
 
-    .sg-btn-hero-primary:hover:not(:disabled) {
-      filter: brightness(1.08);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 0 16px rgba(255, 217, 125, 0.55);
+    .sg-btn-hero:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 6px 20px rgba(243, 186, 66, 0.65);
+      transform: translateY(-1px);
     }
 
-    .sg-btn-hero-primary:active:not(:disabled) {
-      transform: translateY(1px);
-      box-shadow: inset 0 2px 3px rgba(0,0,0,0.4), 0 3px 8px rgba(0,0,0,0.3);
-    }
-
-    .sg-btn-hero-secondary {
-      width: 100%;
-      height: 38px;
-      background: rgba(36, 26, 19, 0.85);
-      border: 1px solid #73512b;
-      border-radius: 6px;
-      color: #dfcaa7;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
+    /* FORGOT PASSWORD MODAL */
+    .sg-modal-backdrop {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: all 0.15s ease;
+      padding: 16px;
     }
 
-    .sg-btn-hero-secondary:hover {
-      background: rgba(60, 42, 30, 0.95);
-      border-color: #ffd97d;
-      color: #fff;
+    .sg-modal-backdrop.open { display: flex; }
+
+    .sg-dialog-card {
+      width: 100%;
+      max-width: 320px;
+      background: linear-gradient(165deg, #261b14 0%, #15100c 100%);
+      border: 1.5px solid #a67c38;
+      border-radius: 12px;
+      padding: 18px 16px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.95);
+      text-align: center;
     }
 
-    /* FOOTER BAR: SERVER & PING */
-    .sg-hero-footer {
-      position: relative;
-      z-index: 10;
+    .sg-dialog-title {
+      font-family: var(--font-calligraphy);
+      font-size: 16px;
+      font-weight: bold;
+      color: #ffe285;
+      margin-bottom: 8px;
+    }
+
+    .sg-dialog-desc {
+      font-size: 11px;
+      line-height: 1.55;
+      color: #d6c5ad;
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    .sg-dialog-actions {
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 6px;
-      margin-bottom: 4px;
     }
 
-    .sg-server-indicator {
+    .sg-dialog-btn-gold {
+      height: 38px;
+      background: linear-gradient(180deg, #d49b38 0%, #8c5816 100%);
+      border: 1px solid #ffe299;
+      border-radius: 6px;
+      color: #1a0e05;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .sg-dialog-btn-ghost {
+      height: 34px;
+      background: rgba(30, 22, 16, 0.8);
+      border: 1px solid #6b4d2c;
+      border-radius: 6px;
+      color: #c9b89d;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* FOOTER BAR: PING & VERSION */
+    .sg-bottom-footer {
+      position: relative;
+      z-index: 50;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 14px 10px;
+      font-size: 11px;
+      color: rgba(220, 200, 170, 0.55);
+    }
+
+    .sg-ping-box {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(18, 14, 11, 0.75);
-      border: 1px solid #5a4228;
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 11.5px;
-      color: #d6c6ad;
+      gap: 6px;
+      cursor: pointer;
     }
 
-    .sg-ping-dot {
+    .sg-ping-indicator-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #2ecc71;
       box-shadow: 0 0 8px #2ecc71;
-      display: inline-block;
+    }
+    .sg-ping-indicator-dot.yellow { background: #f39c12; box-shadow: 0 0 8px #f39c12; }
+    .sg-ping-indicator-dot.red { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
+
+    .sg-ping-text {
+      color: #d6c6ad;
+      font-weight: 500;
     }
 
-    .sg-ping-dot.yellow { background: #f39c12; box-shadow: 0 0 8px #f39c12; }
-    .sg-ping-dot.red { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
-
-    .sg-server-name {
-      font-weight: 600;
-      color: #ffe299;
+    /* ============================================================== */
+    /* RESPONSIVE LAYOUTS FOR LANDSCAPE & DESKTOP (SPLIT CANVAS AAA)  */
+    /* ============================================================== */
+    .frame-landscape .sg-main-content,
+    .frame-desktop .sg-main-content {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      padding: 10px 40px;
     }
 
-    .sg-server-change {
-      color: #a88a5b;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-left: 4px;
+    .frame-landscape .sg-hero-card-container,
+    .frame-desktop .sg-hero-card-container {
+      width: 45%;
+      max-width: 380px;
+      margin: 0;
+    }
+
+    .frame-landscape .sg-hero-frame,
+    .frame-desktop .sg-hero-frame {
+      width: 180px;
+      height: 225px;
+    }
+
+    .frame-desktop .sg-hero-frame {
+      width: 220px;
+      height: 275px;
+    }
+
+    .frame-landscape .sg-loading-wrap,
+    .frame-desktop .sg-loading-wrap,
+    .frame-landscape .sg-title-action-wrap,
+    .frame-desktop .sg-title-action-wrap,
+    .frame-landscape .sg-auth-box,
+    .frame-desktop .sg-auth-box {
+      width: 48%;
+      max-width: 380px;
+      margin: 0;
     }
   </style>
 </head>
 <body>
 
-  <!-- TOP TOOLBAR CONTROLS -->
+  <!-- TOP REVIEW TOOLBAR -->
   <header class="mockup-toolbar">
     <div class="toolbar-group">
       <span class="toolbar-label">Chế độ xem:</span>
-      <button class="toolbar-btn active" id="btnViewSplit">Chia đôi so sánh</button>
-      <button class="toolbar-btn" id="btnViewNewOnly">Chỉ xem Bản Mới</button>
-      <button class="toolbar-btn" id="btnViewOldOnly">Chỉ xem Hiện tại</button>
+      <button class="toolbar-btn active" id="btnModeLoading">1. Tải Trận (Boot + Tướng)</button>
+      <button class="toolbar-btn" id="btnModeTitle">2. Màn hình Chờ (Xuất Chinh)</button>
+      <button class="toolbar-btn" id="btnModeAuth">3. Bảng Tài Khoản (Auth)</button>
     </div>
 
     <div class="toolbar-group">
-      <span class="toolbar-label">Thiết bị:</span>
-      <button class="toolbar-btn active" id="btnDev390">iPhone 390px</button>
-      <button class="toolbar-btn" id="btnDev360">Android 360px</button>
-      <button class="toolbar-btn" id="btnDevDesktop">Desktop Web</button>
+      <span class="toolbar-label">Thần Tướng:</span>
+      <button class="toolbar-btn active" id="btnHeroZhaoyun">Triệu Vân</button>
+      <button class="toolbar-btn" id="btnHeroLvbu">Lã Bố</button>
+      <button class="toolbar-btn" id="btnHeroZhouyu">Chu Du</button>
+      <button class="toolbar-btn" id="btnHeroZhugeliang">Gia Cát</button>
     </div>
 
     <div class="toolbar-group">
-      <span class="toolbar-label">Giai đoạn:</span>
-      <button class="toolbar-btn active" id="btnStateBoot">1. Đang tải file (Boot)</button>
-      <button class="toolbar-btn" id="btnStateBootDone">2. Nạp xong 100%</button>
-      <button class="toolbar-btn" id="btnStateLogin">3. Đăng nhập (Login)</button>
-      <button class="toolbar-btn" id="btnStateConnecting">4. Đang xác thực…</button>
-      <button class="toolbar-btn" id="btnSimulateRun">▶ Mô phỏng tự động</button>
+      <span class="toolbar-label">Nền WebP:</span>
+      <button class="toolbar-btn active" id="btnThemeBattlefield">Sa Trường</button>
+      <button class="toolbar-btn" id="btnThemePalace">Hoàng Thành</button>
+      <button class="toolbar-btn" id="btnThemeWarroom">Sa Bàn</button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Bố cục:</span>
+      <button class="toolbar-btn active" id="btnDev390">Dọc 390px</button>
+      <button class="toolbar-btn" id="btnDev360">Dọc 360px</button>
+      <button class="toolbar-btn" id="btnDevLandscape">Ngang 844px</button>
+      <button class="toolbar-btn" id="btnDevDesktop">Desktop 1040px</button>
+    </div>
+
+    <div class="toolbar-group">
+      <button class="toolbar-btn" id="btnAutoSim">Mô phỏng tải 100%</button>
     </div>
   </header>
 
-  <!-- MAIN COMPARISON CANVAS -->
-  <main class="mockup-container" id="mockupContainer">
+  <!-- MAIN SIMULATOR STAGE -->
+  <main class="stage-wrapper">
+    <div class="device-frame frame-390" id="deviceFrame">
 
-    <!-- LEFT COLUMN: EXISTING BASELINE -->
-    <section class="mockup-column" id="colOld">
-      <div class="column-header">
-        <span>Hiện trạng trong Codebase (`game/web/`)</span>
-        <span class="column-badge badge-old">Baseline cũ</span>
-      </div>
+      <div class="sg-game-canvas theme-battlefield" id="gameCanvas">
 
-      <div class="viewport-box viewport-390" id="boxOld">
-        <div class="frame-content">
-          <!-- Shell with old header -->
-          <main class="shell sg-app-shell">
-            <header class="app-header">
-              <div>
-                <span class="eyebrow">TQS · Quốc Chiến</span>
-                <h1>Tam Quốc Sát <em>Mobile</em></h1>
-                <p class="intro">Chiến trường Quốc Chiến trên trình duyệt.</p>
-              </div>
-              <span class="status" id="oldStatusBadge">Chưa kết nối</span>
-            </header>
-
-            <!-- Boot panel -->
-            <div id="oldBootArea" class="sg-boot-screen">
-              <section class="panel sg-panel sg-boot-panel" aria-labelledby="boot-title">
-                <div class="sg-panel-mark" aria-hidden="true">TQS</div>
-                <span class="section-label sg-section-label">TQS · Quốc Chiến</span>
-                <h2 id="boot-title">Đang chuẩn bị tài nguyên…</h2>
-                <p class="muted">Tải và chuẩn bị dữ liệu võ tướng, thẻ bài trước khi vào trận.</p>
-                <div class="sg-progress-track" role="progressbar">
-                  <span class="sg-progress-fill"></span>
-                </div>
-              </section>
-            </div>
-
-            <!-- Login panel -->
-            <div id="oldLoginArea" style="display: none;">
-              <section class="panel sg-panel sg-login-panel">
-                <div class="sg-panel-mark" aria-hidden="true">TQS</div>
-                <span class="section-label sg-section-label">01 / Kết nối</span>
-                <h2 id="login-title">Đăng nhập Tam Quốc Sát</h2>
-                <p class="muted">Đăng nhập để xem sảnh và tạo phòng Quốc Chiến. Nếu chưa có tài khoản, hệ thống có thể tự đăng ký tài khoản mới.</p>
-                <form class="form-stack" onsubmit="event.preventDefault();">
-                  <label for="old_username">Tên tài khoản</label>
-                  <input id="old_username" value="" placeholder="Nhập tên tài khoản…" />
-                  <label for="old_password">Mật khẩu</label>
-                  <input id="old_password" type="password" value="" placeholder="Nhập mật khẩu…" />
-                  <button class="button primary" id="oldSubmitBtn" type="button">Vào sảnh</button>
-                </form>
-                <small class="muted">Thông tin đăng nhập chỉ được dùng trong phiên kết nối hiện tại.</small>
-              </section>
-            </div>
-          </main>
+        <!-- TOP ACCESSORY BAR (CLEAN VECTOR BUTTONS) -->
+        <div class="sg-top-bar">
+          <button class="sg-icon-btn" title="Cẩm nang & Binh thư">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </button>
+          <button class="sg-icon-btn" title="Âm lượng & Nhạc trận">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          </button>
+          <button class="sg-icon-btn" title="Hỗ trợ & Quản trị">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
         </div>
-      </div>
-    </section>
 
-    <!-- RIGHT COLUMN: PROPOSED SANGUOSHA MOBILE & FREEKILL STANDARD -->
-    <section class="mockup-column" id="colNew">
-      <div class="column-header">
-        <span>Đề xuất Chuẩn Sanguosha Mobile & FreeKill</span>
-        <span class="column-badge badge-new">Đại Tu Chuẩn Cổ Phong</span>
-      </div>
-
-      <div class="viewport-box viewport-390" id="boxNew">
-        <div class="frame-content">
-          <div class="sg-new-login-stage">
-
-            <!-- BRANDING HERO HEADER -->
-            <div class="sg-hero-brand">
-              <div class="sg-hero-kicker">Chiến Trường Quốc Chiến</div>
-              <h1 class="sg-hero-title">TAM QUỐC SÁT</h1>
-              <div class="sg-hero-badge-row">
-                <span class="sg-hero-seal">QUỐC CHIẾN</span>
-                <span class="sg-hero-protocol">FreeKill Core · Wasmoon Engine</span>
-              </div>
-            </div>
-
-            <!-- DYNAMIC ACTIVE CARD SLOT -->
-            <div class="sg-card-slot">
-
-              <!-- STATE A: BOOT SCREEN (FILE DOWNLOAD & VERIFY) -->
-              <div id="newBootCard" class="sg-pavilion-box">
-                <span class="sg-filigree-corner sg-filigree-tl"></span>
-                <span class="sg-filigree-corner sg-filigree-tr"></span>
-                <span class="sg-filigree-corner sg-filigree-bl"></span>
-                <span class="sg-filigree-corner sg-filigree-br"></span>
-
-                <div class="sg-card-title-row">
-                  <span class="sg-card-kicker">Khởi Binh Chuẩn Bị</span>
-                  <h2 class="sg-card-title">Nạp Binh Thư & Thẻ Bài</h2>
-                </div>
-
-                <div class="sg-dragon-track-wrap">
-                  <div class="sg-track-stats">
-                    <span id="newProgressStage">Đang tải package Lua…</span>
-                    <span class="sg-track-percent" id="newProgressPercent">45%</span>
-                  </div>
-                  <div class="sg-dragon-track">
-                    <div class="sg-dragon-fill" id="newProgressBar" style="width: 45%;"></div>
-                  </div>
-                </div>
-
-                <div class="sg-status-message" id="newStatusDesc">
-                  Đang điều chuyển quân nhu (3.8 MB / 8.5 MB)…
-                </div>
-
-                <div class="sg-tips-box">
-                  <span class="sg-tips-prefix">🏮 Binh Pháp Yếu Quyết:</span>
-                  <span id="newTipText">"Quốc Chiến tối kỵ: Khi chưa nắm rõ thế lực phe địch, chớ vội lật mặt lộ tướng!"</span>
-                </div>
-              </div>
-
-              <!-- STATE B: LOGIN SCREEN -->
-              <div id="newLoginCard" class="sg-pavilion-box" style="display: none;">
-                <span class="sg-filigree-corner sg-filigree-tl"></span>
-                <span class="sg-filigree-corner sg-filigree-tr"></span>
-                <span class="sg-filigree-corner sg-filigree-bl"></span>
-                <span class="sg-filigree-corner sg-filigree-br"></span>
-
-                <div class="sg-card-title-row">
-                  <span class="sg-card-kicker">Đại Doanh Điểm Tướng</span>
-                  <h2 class="sg-card-title">Đăng Nhập Chúa Công</h2>
-                </div>
-
-                <form class="sg-login-form-inner" onsubmit="event.preventDefault();">
-                  <div class="sg-field-group">
-                    <label class="sg-field-label" for="username">
-                      <span>Tên tài khoản (Chúa công)</span>
-                    </label>
-                    <div class="sg-field-input-box">
-                      <span class="sg-input-icon">📜</span>
-                      <input id="username" placeholder="Nhập tên tài khoản chúa công…" value="chua_cong_test" />
-                    </div>
-                  </div>
-
-                  <div class="sg-field-group">
-                    <label class="sg-field-label" for="password">
-                      <span>Mật khẩu</span>
-                    </label>
-                    <div class="sg-field-input-box">
-                      <span class="sg-input-icon">🔒</span>
-                      <input id="password" type="password" placeholder="Nhập mật khẩu…" value="123456" />
-                      <button type="button" class="sg-password-eye" id="togglePasswordBtn" title="Hiện/ẩn mật khẩu">👁️</button>
-                    </div>
-                  </div>
-
-                  <div class="sg-remember-row">
-                    <label class="sg-checkbox-label">
-                      <input type="checkbox" id="rememberAccount" checked />
-                      <span>Ghi nhớ chúa công trên máy</span>
-                    </label>
-                    <span style="font-size: 11px; color: #a88a5b; cursor: pointer;">Quên ấn tín?</span>
-                  </div>
-
-                  <button type="button" class="sg-btn-hero-primary" id="btnSubmitNew">
-                    <span>★</span>
-                    <span id="btnSubmitText">Vào sảnh</span>
-                    <span>★</span>
-                  </button>
-
-                  <button type="button" class="sg-btn-hero-secondary" id="btnQuickGuest">
-                    <span>⚔️</span>
-                    <span>Chơi Thử Nghiệm Với Bot (Khách)</span>
-                  </button>
-                </form>
-              </div>
-
-            </div>
-
-            <!-- BOTTOM SERVER & PING STATUS -->
-            <div class="sg-hero-footer">
-              <div class="sg-server-indicator">
-                <span class="sg-ping-dot" id="serverPingDot"></span>
-                <span>Chiến trường: <strong class="sg-server-name">Xích Bích C++</strong> (38ms)</span>
-                <span class="sg-server-change" id="btnChangeServer">Đổi</span>
-              </div>
-              <div style="font-size: 10px; color: rgba(200, 180, 150, 0.45);">
-                Đã xác minh 5.279 tệp · MD5 c4704cd70bfbce3375c4c123a2443a3f
-              </div>
-            </div>
-
+        <!-- AUTHENTIC SANGUOSHA EMBOSSED LOGO -->
+        <div class="sg-logo-area">
+          <h1 class="sg-logo-title">TAM QUỐC SÁT</h1>
+          <div class="sg-logo-ribbon">
+            <span class="sg-logo-ribbon-text">QUỐC CHIẾN DI ĐỘNG BẢN</span>
           </div>
         </div>
-      </div>
-    </section>
 
+        <!-- MAIN INTERACTIVE CONTENT AREA -->
+        <div class="sg-main-content">
+
+          <!-- ============================================== -->
+          <!-- HERO SPOTLIGHT WIDGET (TÂM ĐIỂM THỊ GIÁC)      -->
+          <!-- ============================================== -->
+          <div class="sg-hero-card-container" id="heroSpotlightContainer">
+            <div class="sg-hero-frame">
+              <div class="sg-hero-faction-badge">THẦN</div>
+              <div class="sg-hero-name-ribbon">
+                <span class="sg-hero-title-tag" id="heroTitleTag">LONG ĐẢM</span>
+              </div>
+              <img src="/photo-assets/generals/godzhaoyun.webp" alt="Thần Tướng" class="sg-hero-img" id="heroImg">
+            </div>
+
+            <div class="sg-hero-name-vn" id="heroVnName">Thần · Triệu Vân</div>
+            <div class="sg-hero-quote-box" id="heroQuote">
+              "Bạch mã ngân thương, một mình phá vây muôn trùng quân giặc!"
+            </div>
+
+            <button type="button" class="sg-hero-switch-btn" id="btnNextHero">
+              <span>Đổi Võ Tướng</span>
+            </button>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- VIEW 1: GAME LOADING PROGRESS (TẢI TÀI NGUYÊN)  -->
+          <!-- ============================================== -->
+          <div class="sg-loading-wrap" id="viewLoading">
+            <div class="sg-dragon-bar-head">
+              <span class="sg-loading-status-text" id="loadingStatusText">Đang tải tài nguyên trò chơi...</span>
+              <span class="sg-loading-percent-number" id="loadingPercent">62%</span>
+            </div>
+
+            <div class="sg-dragon-bar-frame">
+              <div class="sg-dragon-bar-fill" id="dragonBarFill" style="width: 62%;"></div>
+            </div>
+
+            <div class="sg-loading-note">
+              Vui lòng giữ kết nối mạng ổn định trong quá trình chuẩn bị chiến trường
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- VIEW 2: TITLE SCREEN (CHẠM ĐỂ XUẤT CHINH)      -->
+          <!-- ============================================== -->
+          <div class="sg-title-action-wrap" id="viewTitle" style="display: none;">
+            <div class="sg-remembered-account-pill">
+              <span class="sg-account-seal">ẤN</span>
+              <span>Ấn tín: <strong id="savedAccountName">ChuaCong_LongDau</strong></span>
+              <span class="sg-switch-account-link" id="linkSwitchAccount">Đổi ấn tín</span>
+            </div>
+
+            <button type="button" class="sg-btn-enter-game" id="btnEnterGameAction">
+              <span>TIẾN VÀO CHIẾN TRƯỜNG</span>
+              <span class="sg-btn-enter-subtext">Nhấn để xuất chinh</span>
+            </button>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- VIEW 3: AUTH CARD (ĐĂNG NHẬP / ĐĂNG KÝ)        -->
+          <!-- ============================================== -->
+          <div class="sg-auth-box" id="viewAuth" style="display: none;">
+            <span class="sg-corner sg-corner-tl"></span>
+            <span class="sg-corner sg-corner-tr"></span>
+            <span class="sg-corner sg-corner-bl"></span>
+            <span class="sg-corner sg-corner-br"></span>
+
+            <button type="button" class="sg-auth-close-btn" id="btnAuthClose" title="Quay lại màn hình ngắm tướng">✕</button>
+
+            <!-- TABS: [ĐĂNG NHẬP] & [ĐĂNG KÝ] -->
+            <div class="sg-auth-tabs">
+              <button type="button" class="sg-tab-btn active" id="tabLoginBtn">ĐĂNG NHẬP</button>
+              <button type="button" class="sg-tab-btn" id="tabRegisterBtn">ĐĂNG KÝ</button>
+            </div>
+
+            <!-- FORM 1: LOGIN (BẢO TOÀN E2E SELECTORS) -->
+            <form id="formLogin" class="sg-form-stack" onsubmit="event.preventDefault();">
+              <div class="sg-field">
+                <label class="sg-label" for="username">Tên tài khoản (Chúa công)</label>
+                <div class="sg-input-wrap">
+                  <input id="username" placeholder="Nhập tên tài khoản chúa công…" value="ChuaCong_LongDau" required />
+                </div>
+              </div>
+
+              <div class="sg-field">
+                <label class="sg-label" for="password">Mật khẩu</label>
+                <div class="sg-input-wrap">
+                  <input id="password" type="password" placeholder="Nhập mật khẩu…" value="123456" required />
+                  <button type="button" class="sg-eye-btn" id="togglePasswordBtn">Hiện</button>
+                </div>
+              </div>
+
+              <div class="sg-meta-row">
+                <label class="sg-remember-check">
+                  <input type="checkbox" id="rememberAccount" checked />
+                  <span>Ghi nhớ tài khoản</span>
+                </label>
+                <span class="sg-forgot-link" id="linkForgotPassword">Quên mật khẩu?</span>
+              </div>
+
+              <button type="button" class="sg-btn-hero" id="btnLoginSubmit">
+                <span id="btnLoginText">Vào sảnh</span>
+              </button>
+            </form>
+
+            <!-- FORM 2: REGISTER -->
+            <form id="formRegister" class="sg-form-stack" style="display: none;" onsubmit="event.preventDefault();">
+              <div class="sg-field">
+                <label class="sg-label" for="reg_username">Tên tài khoản mới</label>
+                <div class="sg-input-wrap">
+                  <input id="reg_username" placeholder="Tên nhân vật (2-20 ký tự)…" required />
+                </div>
+              </div>
+
+              <div class="sg-field">
+                <label class="sg-label" for="reg_password">Mật khẩu mới</label>
+                <div class="sg-input-wrap">
+                  <input id="reg_password" type="password" placeholder="Mật khẩu bảo vệ…" required />
+                </div>
+              </div>
+
+              <div class="sg-field">
+                <label class="sg-label" for="reg_confirm_password">Xác nhận lại mật khẩu</label>
+                <div class="sg-input-wrap">
+                  <input id="reg_confirm_password" type="password" placeholder="Nhập lại mật khẩu vừa đặt…" required />
+                </div>
+              </div>
+
+              <button type="button" class="sg-btn-hero" id="btnRegisterSubmit">
+                <span>ĐĂNG KÝ TÀI KHOẢN</span>
+              </button>
+            </form>
+
+          </div>
+
+        </div>
+
+        <!-- MODAL: FORGOT PASSWORD DIALOG -->
+        <div class="sg-modal-backdrop" id="modalForgot">
+          <div class="sg-dialog-card">
+            <h3 class="sg-dialog-title">Khôi Phục Ấn Tín Tài Khoản</h3>
+            <p class="sg-dialog-desc">
+              Hệ thống Tam Quốc Sát hiện tại bảo mật danh tính trực tiếp trên máy chủ và không thu thập email hay số điện thoại cá nhân.
+              <br><br>
+              Nếu quý chúa công quên mật khẩu, xin vui lòng liên hệ <strong>Quân Sư Quản Trị</strong> hoặc tạo nick mới để tiếp tục xuất chinh.
+            </p>
+            <div class="sg-dialog-actions">
+              <button type="button" class="sg-dialog-btn-gold" id="btnForgotCreateNew">Tạo tài khoản mới</button>
+              <button type="button" class="sg-dialog-btn-ghost" id="btnForgotClose">Đã hiểu</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER BAR: PING STATUS & GAME VERSION -->
+        <div class="sg-bottom-footer">
+          <div class="sg-ping-box" id="pingToggleBox" title="Bấm để mô phỏng ping mạng">
+            <span class="sg-ping-indicator-dot" id="pingDot"></span>
+            <span class="sg-ping-text" id="pingLabel">Máy chủ: Kết nối tốt (38ms)</span>
+          </div>
+          <span>Phiên bản: 2.4.1</span>
+        </div>
+
+      </div>
+
+    </div>
   </main>
 
   <script>
-    // State management for Mockup
-    let currentStage = 'boot'; // 'boot' | 'bootDone' | 'login' | 'connecting'
-    let simInterval = null;
-
-    const tips = [
-      '"Quốc Chiến tối kỵ: Khi chưa nắm rõ thế lực phe địch, chớ vội lật mặt lộ tướng!"',
-      '"Biết người biết ta, trăm trận trăm thắng. Binh quý thần tốc, không quý lâu dài."',
-      '"Dĩ dật đãi lao — Lấy nhàn rỗi đợi quân mỏi mệt. Giữ vững sinh lực chờ thời cơ."',
-      '"Hấp hối nguy nan, hãy kịp thời dùng Đào và Tửu bảo mệnh hoặc nhờ đồng minh ứng cứu!"'
+    // HERO DATABASE (100% THUẦN VIỆT)
+    const HEROES = [
+      {
+        id: 'zhaoyun',
+        name: 'Thần · Triệu Vân',
+        badgeTitle: 'LONG ĐẢM',
+        img: '/photo-assets/generals/godzhaoyun.webp',
+        quote: '"Bạch mã ngân thương, một mình phá vây muôn trùng quân giặc!"'
+      },
+      {
+        id: 'lvbu',
+        name: 'Thần · Lã Bố',
+        badgeTitle: 'VÔ SONG',
+        img: '/photo-assets/generals/godlvbu.webp',
+        quote: '"Chiến thần giáng thế, ai dám cùng ta tranh phong!"'
+      },
+      {
+        id: 'zhouyu',
+        name: 'Thần · Chu Du',
+        badgeTitle: 'XÍCH BÍCH',
+        img: '/photo-assets/generals/godzhouyu.webp',
+        quote: '"Binh quỷ quạt lông khăn lụa, cười đùa tro bay khói tan!"'
+      },
+      {
+        id: 'zhugeliang',
+        name: 'Thần · Gia Cát Lượng',
+        badgeTitle: 'NGỌA LONG',
+        img: '/photo-assets/generals/godzhugeliang.webp',
+        quote: '"Biết thiên thời, tường địa lợi, xoay vần càn khôn trong lòng bàn tay!"'
+      }
     ];
 
-    function setStage(stage) {
-      currentStage = stage;
+    let currentHeroIndex = 0;
+    const heroImg = document.getElementById('heroImg');
+    const heroTitleTag = document.getElementById('heroTitleTag');
+    const heroVnName = document.getElementById('heroVnName');
+    const heroQuote = document.getElementById('heroQuote');
 
-      // Update Toolbar buttons
-      document.querySelectorAll('#btnStateBoot, #btnStateBootDone, #btnStateLogin, #btnStateConnecting').forEach(b => b.classList.remove('active'));
-      if (stage === 'boot') document.getElementById('btnStateBoot').classList.add('active');
-      if (stage === 'bootDone') document.getElementById('btnStateBootDone').classList.add('active');
-      if (stage === 'login') document.getElementById('btnStateLogin').classList.add('active');
-      if (stage === 'connecting') document.getElementById('btnStateConnecting').classList.add('active');
+    function applyHero(index) {
+      currentHeroIndex = index % HEROES.length;
+      const h = HEROES[currentHeroIndex];
+      heroImg.src = h.img;
+      heroTitleTag.textContent = h.badgeTitle;
+      heroVnName.textContent = h.name;
+      heroQuote.textContent = h.quote;
 
-      // Update Left (Old)
-      const oldBootArea = document.getElementById('oldBootArea');
-      const oldLoginArea = document.getElementById('oldLoginArea');
-      const oldSubmitBtn = document.getElementById('oldSubmitBtn');
-      const oldStatusBadge = document.getElementById('oldStatusBadge');
+      document.querySelectorAll('#btnHeroZhaoyun, #btnHeroLvbu, #btnHeroZhouyu, #btnHeroZhugeliang').forEach(b => b.classList.remove('active'));
+      const btnMap = ['btnHeroZhaoyun', 'btnHeroLvbu', 'btnHeroZhouyu', 'btnHeroZhugeliang'];
+      document.getElementById(btnMap[currentHeroIndex]).classList.add('active');
+    }
 
-      if (stage === 'boot') {
-        oldBootArea.style.display = 'block';
-        oldLoginArea.style.display = 'none';
-        oldStatusBadge.textContent = 'Chưa kết nối';
-        oldStatusBadge.className = 'status';
-      } else if (stage === 'bootDone' || stage === 'login') {
-        oldBootArea.style.display = 'none';
-        oldLoginArea.style.display = 'block';
-        oldSubmitBtn.textContent = 'Vào sảnh';
-        oldSubmitBtn.disabled = false;
-        oldStatusBadge.textContent = 'Chưa kết nối';
-        oldStatusBadge.className = 'status';
-      } else if (stage === 'connecting') {
-        oldBootArea.style.display = 'none';
-        oldLoginArea.style.display = 'block';
-        oldSubmitBtn.textContent = 'Đang xác thực…';
-        oldSubmitBtn.disabled = true;
-        oldStatusBadge.textContent = 'Đang xác thực';
-        oldStatusBadge.className = 'status';
-      }
+    document.getElementById('btnNextHero').addEventListener('click', () => applyHero(currentHeroIndex + 1));
+    document.getElementById('btnHeroZhaoyun').addEventListener('click', () => applyHero(0));
+    document.getElementById('btnHeroLvbu').addEventListener('click', () => applyHero(1));
+    document.getElementById('btnHeroZhouyu').addEventListener('click', () => applyHero(2));
+    document.getElementById('btnHeroZhugeliang').addEventListener('click', () => applyHero(3));
 
-      // Update Right (New)
-      const newBootCard = document.getElementById('newBootCard');
-      const newLoginCard = document.getElementById('newLoginCard');
-      const newProgressPercent = document.getElementById('newProgressPercent');
-      const newProgressBar = document.getElementById('newProgressBar');
-      const newProgressStage = document.getElementById('newProgressStage');
-      const newStatusDesc = document.getElementById('newStatusDesc');
-      const btnSubmitText = document.getElementById('btnSubmitText');
-      const btnSubmitNew = document.getElementById('btnSubmitNew');
+    // THEME SWITCHER
+    const gameCanvas = document.getElementById('gameCanvas');
+    function setTheme(theme) {
+      gameCanvas.className = 'sg-game-canvas theme-' + theme;
+      document.querySelectorAll('#btnThemeBattlefield, #btnThemePalace, #btnThemeWarroom').forEach(b => b.classList.remove('active'));
+      if (theme === 'battlefield') document.getElementById('btnThemeBattlefield').classList.add('active');
+      else if (theme === 'palace') document.getElementById('btnThemePalace').classList.add('active');
+      else if (theme === 'warroom') document.getElementById('btnThemeWarroom').classList.add('active');
+    }
 
-      if (stage === 'boot') {
-        newBootCard.style.display = 'block';
-        newLoginCard.style.display = 'none';
-        newProgressPercent.textContent = '45%';
-        newProgressBar.style.width = '45%';
-        newProgressStage.textContent = 'Đang tải package Lua…';
-        newStatusDesc.textContent = 'Đang điều chuyển quân nhu (3.8 MB / 8.5 MB)…';
-      } else if (stage === 'bootDone') {
-        newBootCard.style.display = 'block';
-        newLoginCard.style.display = 'none';
-        newProgressPercent.textContent = '100%';
-        newProgressBar.style.width = '100%';
-        newProgressStage.textContent = 'Binh thư đã hoàn tất!';
-        newStatusDesc.textContent = '5.279 tệp đã xác minh toàn vẹn. Chuẩn bị vào trận!';
-      } else if (stage === 'login') {
-        newBootCard.style.display = 'none';
-        newLoginCard.style.display = 'block';
-        btnSubmitText.textContent = 'Vào sảnh';
-        btnSubmitNew.disabled = false;
-      } else if (stage === 'connecting') {
-        newBootCard.style.display = 'none';
-        newLoginCard.style.display = 'block';
-        btnSubmitText.textContent = 'Đang xác thực quân lệnh…';
-        btnSubmitNew.disabled = true;
+    document.getElementById('btnThemeBattlefield').addEventListener('click', () => setTheme('battlefield'));
+    document.getElementById('btnThemePalace').addEventListener('click', () => setTheme('palace'));
+    document.getElementById('btnThemeWarroom').addEventListener('click', () => setTheme('warroom'));
+
+    // SCREEN MODE SWITCHER: loading | title | auth
+    const viewLoading = document.getElementById('viewLoading');
+    const viewTitle = document.getElementById('viewTitle');
+    const viewAuth = document.getElementById('viewAuth');
+    const deviceFrame = document.getElementById('deviceFrame');
+    const dragonBarFill = document.getElementById('dragonBarFill');
+    const loadingPercent = document.getElementById('loadingPercent');
+    const loadingStatusText = document.getElementById('loadingStatusText');
+    const modalForgot = document.getElementById('modalForgot');
+
+    function setScreenMode(mode) {
+      document.querySelectorAll('#btnModeLoading, #btnModeTitle, #btnModeAuth').forEach(b => b.classList.remove('active'));
+      viewLoading.style.display = 'none';
+      viewTitle.style.display = 'none';
+      viewAuth.style.display = 'none';
+
+      if (mode === 'loading') {
+        document.getElementById('btnModeLoading').classList.add('active');
+        viewLoading.style.display = 'flex';
+      } else if (mode === 'title') {
+        document.getElementById('btnModeTitle').classList.add('active');
+        viewTitle.style.display = 'flex';
+      } else if (mode === 'auth') {
+        document.getElementById('btnModeAuth').classList.add('active');
+        viewAuth.style.display = 'block';
       }
     }
+
+    document.getElementById('btnModeLoading').addEventListener('click', () => setScreenMode('loading'));
+    document.getElementById('btnModeTitle').addEventListener('click', () => setScreenMode('title'));
+    document.getElementById('btnModeAuth').addEventListener('click', () => setScreenMode('auth'));
+
+    // Title screen interactions
+    document.getElementById('btnEnterGameAction').addEventListener('click', () => {
+      // If user has saved credentials, simulate entering lobby or show auth card
+      setScreenMode('auth');
+    });
+
+    document.getElementById('linkSwitchAccount').addEventListener('click', () => {
+      setScreenMode('auth');
+      setAuthTab('login');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    });
+
+    document.getElementById('btnAuthClose').addEventListener('click', () => {
+      setScreenMode('title');
+    });
+
+    // Auth Tabs Switcher: [ĐĂNG NHẬP] vs [ĐĂNG KÝ]
+    const tabLoginBtn = document.getElementById('tabLoginBtn');
+    const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    const formLogin = document.getElementById('formLogin');
+    const formRegister = document.getElementById('formRegister');
+
+    function setAuthTab(tab) {
+      if (tab === 'login') {
+        tabLoginBtn.classList.add('active');
+        tabRegisterBtn.classList.remove('active');
+        formLogin.style.display = 'flex';
+        formRegister.style.display = 'none';
+      } else {
+        tabLoginBtn.classList.remove('active');
+        tabRegisterBtn.classList.add('active');
+        formLogin.style.display = 'none';
+        formRegister.style.display = 'flex';
+      }
+    }
+
+    tabLoginBtn.addEventListener('click', () => setAuthTab('login'));
+    tabRegisterBtn.addEventListener('click', () => setAuthTab('register'));
 
     // Viewport switcher
     function setViewport(cls, btnId) {
-      document.querySelectorAll('#btnDev390, #btnDev360, #btnDevDesktop').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#btnDev390, #btnDev360, #btnDevLandscape, #btnDevDesktop').forEach(b => b.classList.remove('active'));
       document.getElementById(btnId).classList.add('active');
-      const bOld = document.getElementById('boxOld');
-      const bNew = document.getElementById('boxNew');
-      bOld.className = 'viewport-box ' + cls;
-      bNew.className = 'viewport-box ' + cls;
+      deviceFrame.className = 'device-frame ' + cls;
     }
 
-    document.getElementById('btnDev390').addEventListener('click', () => setViewport('viewport-390', 'btnDev390'));
-    document.getElementById('btnDev360').addEventListener('click', () => setViewport('viewport-360', 'btnDev360'));
-    document.getElementById('btnDevDesktop').addEventListener('click', () => setViewport('viewport-desktop', 'btnDevDesktop'));
+    document.getElementById('btnDev390').addEventListener('click', () => setViewport('frame-390', 'btnDev390'));
+    document.getElementById('btnDev360').addEventListener('click', () => setViewport('frame-360', 'btnDev360'));
+    document.getElementById('btnDevLandscape').addEventListener('click', () => setViewport('frame-landscape', 'btnDevLandscape'));
+    document.getElementById('btnDevDesktop').addEventListener('click', () => setViewport('frame-desktop', 'btnDevDesktop'));
 
-    // View split switcher
-    document.getElementById('btnViewSplit').addEventListener('click', () => {
-      document.querySelectorAll('#btnViewSplit, #btnViewNewOnly, #btnViewOldOnly').forEach(b => b.classList.remove('active'));
-      document.getElementById('btnViewSplit').classList.add('active');
-      document.getElementById('colOld').style.display = 'flex';
-      document.getElementById('colNew').style.display = 'flex';
-    });
-
-    document.getElementById('btnViewNewOnly').addEventListener('click', () => {
-      document.querySelectorAll('#btnViewSplit, #btnViewNewOnly, #btnViewOldOnly').forEach(b => b.classList.remove('active'));
-      document.getElementById('btnViewNewOnly').classList.add('active');
-      document.getElementById('colOld').style.display = 'none';
-      document.getElementById('colNew').style.display = 'flex';
-    });
-
-    document.getElementById('btnViewOldOnly').addEventListener('click', () => {
-      document.querySelectorAll('#btnViewSplit, #btnViewNewOnly, #btnViewOldOnly').forEach(b => b.classList.remove('active'));
-      document.getElementById('btnViewOldOnly').classList.add('active');
-      document.getElementById('colOld').style.display = 'flex';
-      document.getElementById('colNew').style.display = 'none';
-    });
-
-    // Stage button clicks
-    document.getElementById('btnStateBoot').addEventListener('click', () => { stopSim(); setStage('boot'); });
-    document.getElementById('btnStateBootDone').addEventListener('click', () => { stopSim(); setStage('bootDone'); });
-    document.getElementById('btnStateLogin').addEventListener('click', () => { stopSim(); setStage('login'); });
-    document.getElementById('btnStateConnecting').addEventListener('click', () => { stopSim(); setStage('connecting'); });
-
-    // Interactive buttons inside preview
-    document.getElementById('btnSubmitNew').addEventListener('click', () => {
-      setStage('connecting');
-      setTimeout(() => {
-        alert('Mô phỏng thành công: Server C++ gửi Setup + EnterLobby! Tiến vào Sảnh.');
-        setStage('login');
-      }, 1600);
-    });
-
-    document.getElementById('btnQuickGuest').addEventListener('click', () => {
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      document.getElementById('username').value = 'ChuaCong_' + rand;
-      document.getElementById('password').value = 'guest_pass';
-      setStage('connecting');
-      setTimeout(() => {
-        alert('Tạo tài khoản khách ChúaCong_' + rand + ' thành công! Đang tiến vào sảnh.');
-        setStage('login');
-      }, 1200);
-    });
-
+    // Eye button
     document.getElementById('togglePasswordBtn').addEventListener('click', () => {
       const p = document.getElementById('password');
-      p.type = p.type === 'password' ? 'text' : 'password';
-    });
-
-    // Ping switcher demo
-    let pingState = 0;
-    document.getElementById('btnChangeServer').addEventListener('click', () => {
-      pingState = (pingState + 1) % 3;
-      const dot = document.getElementById('serverPingDot');
-      const name = document.querySelector('.sg-server-name');
-      if (pingState === 0) {
-        dot.className = 'sg-ping-dot';
-        name.textContent = 'Xích Bích C++';
-        dot.nextSibling.textContent = ' (38ms)';
-      } else if (pingState === 1) {
-        dot.className = 'sg-ping-dot yellow';
-        name.textContent = 'Render Candidate';
-        dot.nextSibling.textContent = ' (185ms)';
+      const btn = document.getElementById('togglePasswordBtn');
+      if (p.type === 'password') {
+        p.type = 'text';
+        btn.textContent = 'Ẩn';
       } else {
-        dot.className = 'sg-ping-dot';
-        name.textContent = 'Localhost Gateway';
-        dot.nextSibling.textContent = ' (4ms)';
+        p.type = 'password';
+        btn.textContent = 'Hiện';
       }
     });
 
-    // Simulation loop
-    function stopSim() {
-      if (simInterval) { clearInterval(simInterval); simInterval = null; }
-      document.getElementById('btnSimulateRun').textContent = '▶ Mô phỏng tự động';
-    }
+    // Forgot Password Modal
+    document.getElementById('linkForgotPassword').addEventListener('click', () => modalForgot.classList.add('open'));
+    document.getElementById('btnForgotClose').addEventListener('click', () => modalForgot.classList.remove('open'));
+    document.getElementById('btnForgotCreateNew').addEventListener('click', () => {
+      modalForgot.classList.remove('open');
+      setAuthTab('register');
+    });
 
-    document.getElementById('btnSimulateRun').addEventListener('click', () => {
-      if (simInterval) {
-        stopSim();
+    // Submit actions
+    document.getElementById('btnLoginSubmit').addEventListener('click', () => {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if (!u || !p) {
+        alert('Vui lòng nhập đầy đủ tên tài khoản và mật khẩu!');
         return;
       }
-      document.getElementById('btnSimulateRun').textContent = '⏹ Dừng mô phỏng';
-      let step = 0;
-      setStage('boot');
+      const btn = document.getElementById('btnLoginText');
+      btn.textContent = 'Đang xác thực quân lệnh…';
+      document.getElementById('btnLoginSubmit').disabled = true;
+      setTimeout(() => {
+        alert('Xác thực thành công! Đang chuyển tiếp vào Đại Sảnh Quốc Chiến.');
+        btn.textContent = 'Vào sảnh';
+        document.getElementById('btnLoginSubmit').disabled = false;
+        document.getElementById('savedAccountName').textContent = u;
+      }, 1000);
+    });
 
-      let pct = 0;
-      simInterval = setInterval(() => {
-        pct += 15;
-        if (pct <= 90) {
-          document.getElementById('newProgressPercent').textContent = pct + '%';
-          document.getElementById('newProgressBar').style.width = pct + '%';
-          document.getElementById('newStatusDesc').textContent = 'Đang nạp binh thư: ' + (pct * 0.085).toFixed(1) + ' MB / 8.5 MB…';
-        } else if (pct < 100) {
-          setStage('bootDone');
-        } else if (pct === 105) {
-          setStage('login');
-        } else if (pct >= 135) {
-          stopSim();
+    document.getElementById('btnRegisterSubmit').addEventListener('click', () => {
+      const u = document.getElementById('reg_username').value.trim();
+      const p1 = document.getElementById('reg_password').value;
+      const p2 = document.getElementById('reg_confirm_password').value;
+      if (!u || !p1) {
+        alert('Vui lòng nhập tên tài khoản và mật khẩu mới!');
+        return;
+      }
+      if (p1 !== p2) {
+        alert('Mật khẩu xác nhận không khớp! Vui lòng kiểm tra lại.');
+        return;
+      }
+      alert('Đăng ký tài khoản [' + u + '] thành công! Hệ thống tự động chuyển vào trận.');
+      setAuthTab('login');
+      document.getElementById('username').value = u;
+      document.getElementById('password').value = p1;
+      document.getElementById('savedAccountName').textContent = u;
+    });
+
+    // Ping toggle simulator
+    let pingStep = 0;
+    document.getElementById('pingToggleBox').addEventListener('click', () => {
+      pingStep = (pingStep + 1) % 3;
+      const dot = document.getElementById('pingDot');
+      const label = document.getElementById('pingLabel');
+      if (pingStep === 0) {
+        dot.className = 'sg-ping-indicator-dot';
+        label.textContent = 'Máy chủ: Kết nối tốt (38ms)';
+      } else if (pingStep === 1) {
+        dot.className = 'sg-ping-indicator-dot yellow';
+        label.textContent = 'Máy chủ: Độ trễ cao (185ms)';
+      } else {
+        dot.className = 'sg-ping-indicator-dot red';
+        label.textContent = 'Mất kết nối máy chủ';
+      }
+    });
+
+    // Auto Simulation
+    let simTimer = null;
+    document.getElementById('btnAutoSim').addEventListener('click', () => {
+      if (simTimer) {
+        clearInterval(simTimer);
+        simTimer = null;
+        document.getElementById('btnAutoSim').textContent = 'Mô phỏng tải 100%';
+        return;
+      }
+      document.getElementById('btnAutoSim').textContent = 'Dừng mô phỏng';
+      setScreenMode('loading');
+      let p = 10;
+      simTimer = setInterval(() => {
+        p += 15;
+        if (p <= 95) {
+          loadingPercent.textContent = p + '%';
+          dragonBarFill.style.width = p + '%';
+          if (p < 35) loadingStatusText.textContent = 'Đang kiểm tra tài nguyên trò chơi...';
+          else if (p < 75) loadingStatusText.textContent = 'Đang tải tài nguyên võ tướng và thẻ bài...';
+          else loadingStatusText.textContent = 'Đang bố trí trận địa chiến trường...';
+        } else if (p < 105) {
+          loadingPercent.textContent = '100%';
+          dragonBarFill.style.width = '100%';
+          loadingStatusText.textContent = 'Chuẩn bị hoàn tất, sẵn sàng xuất chinh!';
+        } else {
+          clearInterval(simTimer);
+          simTimer = null;
+          document.getElementById('btnAutoSim').textContent = 'Mô phỏng tải 100%';
+          setScreenMode('title');
         }
-      }, 600);
+      }, 500);
     });
   </script>
 </body>

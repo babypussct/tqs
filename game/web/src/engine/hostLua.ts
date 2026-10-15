@@ -337,7 +337,104 @@ local function project_card_item(value)
   value.card = card
 end
 
+-- ClientPlayer:sendDataToUI() is the native reconnect/observer snapshot path.
+-- Unlike Client:addSkill(), it calls the C++ notifyUI bridge directly and
+-- therefore sends every manually attached fake skill as {id, name, true}
+-- without first splitting trigger and active/ViewAs projections.  Preserve
+-- the native dashboard contract for React by wrapping that snapshot method
+-- after EnterRoom has created the mode-specific ClientPlayer class.  Live
+-- AddSkill/LoseSkill callbacks are already classified by client.lua and do
+-- not pass through this flag, so they must not be normalized a second time.
+local web_projecting_reconnect_fake_skills = false
+local web_wrapped_clientplayer_class = nil
+local web_reconnect_fake_skill_names = {}
+
+local function install_reconnect_skill_projection()
+  local client = rawget(_G, 'ClientInstance')
+  local klass = client and client.clientplayer_klass
+  if not klass or web_wrapped_clientplayer_class == klass or type(klass.sendDataToUI) ~= 'function' then return end
+
+  local native_send_data_to_ui = klass.sendDataToUI
+  klass.sendDataToUI = function(player, ...)
+    local previous = web_projecting_reconnect_fake_skills
+    local previous_fake_skill_names = web_reconnect_fake_skill_names
+    web_projecting_reconnect_fake_skills = true
+    web_reconnect_fake_skill_names = {}
+    local fake_skills = rawget(player, '_manually_fake_skills') or rawget(player, '_fake_skills') or {}
+    for _, skill in ipairs(fake_skills) do
+      if skill and type(skill.name) == 'string' then
+        web_reconnect_fake_skill_names[skill.name] = true
+      end
+    end
+    local ok, result = pcall(native_send_data_to_ui, player, ...)
+    web_projecting_reconnect_fake_skills = previous
+    web_reconnect_fake_skill_names = previous_fake_skill_names
+    if not ok then error(result, 0) end
+    return result
+  end
+  web_wrapped_clientplayer_class = klass
+end
+
+local function notify_reconnect_skill_projection(command, data)
+  -- ClientPlayer:sendDataToUI() may emit a fake skill once through
+  -- player_skills and once through _manually_fake_skills. The native QML
+  -- dashboard collapses that snapshot identity; React keeps fake and regular
+  -- docks separate, so suppress the duplicate regular event before the fake
+  -- entry is classified below.
+  if web_projecting_reconnect_fake_skills and command == 'AddSkill' and
+      type(data) == 'table' and data[3] ~= true and type(data[2]) == 'string' and
+      web_reconnect_fake_skill_names[data[2]] then
+    return true
+  end
+  if not web_projecting_reconnect_fake_skills or
+      (command ~= 'AddSkill' and command ~= 'LoseSkill') or
+      type(data) ~= 'table' or data[3] ~= true or
+      type(data[1]) ~= 'number' or type(data[2]) ~= 'string' then
+    return false
+  end
+
+  local skill = Fk.skills[data[2]]
+  if not skill then return false end
+  local skills = { table.unpack(skill.related_skills or Util.DummyTable) }
+  table.insert(skills, skill)
+  local has_trigger = false
+  local has_usable_trigger = false
+  local has_active = false
+  for _, related in ipairs(skills) do
+    if related:isInstanceOf(TriggerSkill) then
+      has_trigger = true
+      if not related.is_delay_effect then has_usable_trigger = true end
+    end
+    if related:isInstanceOf(ActiveSkill) or related:isInstanceOf(ViewAsSkill) then
+      has_active = true
+    end
+  end
+
+  local id, name = data[1], data[2]
+  local emitted = false
+  if command == 'AddSkill' and has_usable_trigger then
+    J.ui(command, to_json({ id, name, true }))
+    emitted = true
+  elseif command == 'LoseSkill' and has_trigger then
+    -- Native LoseSkill checks any TriggerSkill, including delay effects.
+    J.ui(command, to_json({ id, name, true }))
+    emitted = true
+  end
+  if has_active then
+    J.ui(command, to_json({ id, name }))
+    emitted = true
+  end
+  if not emitted then
+    -- This is client.lua's visible fallback for a fake skill with no trigger,
+    -- active or ViewAs projection.  It keeps the regular dashboard marker.
+    J.ui(command, to_json({ id, name }))
+  end
+  return true
+end
+
 function FClient:notifyUI(command, data)
+  if command == 'EnterRoom' then install_reconnect_skill_projection() end
+  if notify_reconnect_skill_projection(command, data) then return end
   -- ClientBase:reconnect() has already consumed this complete room snapshot
   -- to rebuild the native/Lua state and then emits the same event for QML.
   -- React does not use that private snapshot (the individual EnterRoom,
@@ -478,6 +575,36 @@ function __host_recv(command, hex, is_request)
         if projected then table.insert(delayed_tricks, projected) end
       end
       J.ui('EquipmentUpdate', to_json({player.id, equipment, delayed_tricks}))
+    end
+    local draw_num = (ClientInstance and ClientInstance.draw_pile) and #ClientInstance.draw_pile or 0
+    local discard_num = (ClientInstance and ClientInstance.discard_pile) and #ClientInstance.discard_pile or 0
+    local top_discard = nil
+    if ClientInstance and ClientInstance.discard_pile and #ClientInstance.discard_pile > 0 then
+      local top_id = ClientInstance.discard_pile[#ClientInstance.discard_pile]
+      local top_card = Fk:getCardById(top_id)
+      top_discard = project_public_card(top_card, nil)
+    end
+    local processing_cards = {}
+    if ClientInstance and ClientInstance.processing_area then
+      for _, id in ipairs(ClientInstance.processing_area) do
+        local c = Fk:getCardById(id)
+        local proj = project_public_card(c, nil)
+        if proj then table.insert(processing_cards, proj) end
+      end
+    end
+    J.ui('PilesUpdate', to_json({draw = draw_num, discard = discard_num, topDiscard = top_discard, processing = processing_cards}))
+
+    if Self and ClientInstance and table.contains(ClientInstance.players, Self) then
+      local self_hand = {}
+      for _, id in ipairs(Self:getCardIds('h')) do
+        local c = Fk:getCardById(id)
+        local proj = project_public_card(c, Self)
+        if proj then
+          proj.id = id
+          table.insert(self_hand, proj)
+        end
+      end
+      J.ui('SelfHand', to_json(self_hand))
     end
   end
   -- Hegemony uses anjiang publicly and private marks for the actual pair.

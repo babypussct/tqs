@@ -75,7 +75,7 @@
       "expectedCommand": "AskForUseCard",
       "trigger": "rescue-battle",
       "cards": [
-        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" }
+        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" }
       ]
     },
     {
@@ -207,6 +207,310 @@
             "fankui"
           ],
           "expectedEffect": "longdan-jink-as-slash; yiji-two-to-self; fankui-one-from-source"
+        }
+      ]
+    },
+    {
+      "id": "hidden-yiji",
+      "title": "Hidden Quách Gia Yiji prelight, invoke and skip",
+      "seed": 1959903454,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-yiji-deputy",
+      "title": "Hidden deputy Quách Gia Yiji reveals the deputy before invoke",
+      "seed": 1959903455,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-jianxiong",
+      "title": "Hidden Cao Cao Jianxiong prelight, invoke and obtain the damage card",
+      "seed": 1567522695,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-jianxiong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianxiong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jianxiong-deputy",
+      "title": "Hidden deputy Cao Cao Jianxiong reveals the deputy before choice",
+      "seed": 1567522696,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-jianxiong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__caocao",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianxiong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-reveal",
+      "title": "Hidden compulsory skill active reveal helper",
+      "seed": 1567522689,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-reveal",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-reveal-deputy",
+      "title": "Hidden deputy compulsory skill active reveal helper",
+      "seed": 1567522691,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-reveal",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-active",
+      "title": "Hidden Tôn Quyền Chế Hành reveals before PlayCard",
+      "seed": 1567522690,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-active",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiheng-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-active-main",
+      "title": "Hidden main Tôn Quyền Chế Hành reveals before PlayCard",
+      "seed": 1567522692,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-active",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiheng-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-view-as",
+      "title": "Hidden deputy Triệu Vân Longdan converts Jink to Slash",
+      "seed": 1567522693,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-view-as",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guanyu",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "longdan-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-view-as-main",
+      "title": "Hidden main Triệu Vân Longdan converts Jink to Slash",
+      "seed": 1567522694,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-view-as",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__guanyu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "longdan-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-dual",
+      "title": "Hidden 颜良文丑 双雄 trigger and color-opposite Duel",
+      "seed": 1567522709,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dual",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__yanliangwenchou",
+          "deputy": "hs__yuanshao",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "shuangxiong-card",
+          "match": {
+            "trueName": "slash",
+            "color": "black"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "shuangxiong-discard",
+          "match": {
+            "trueName": "jink",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
         }
       ]
     }

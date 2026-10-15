@@ -15,11 +15,14 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
-  testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding or fazheng-enyuan');
+  testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
+  testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy' || testScenario === 'hidden-reveal' ||
+  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' ||
+  testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main' || testScenario === 'hidden-dual',
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-view-as, hidden-view-as-main or hidden-dual');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
@@ -30,6 +33,23 @@ const nativeQa = process.env.TQS_LIVE_NATIVE_QA === '1';
 assert.ok(!nativeQa || !!testScenario, 'TQS_LIVE_NATIVE_QA=1 requires TQS_LIVE_SCENARIO');
 assert.ok(testScenario !== 'fazheng-enyuan' || (nativeQa && process.argv.includes('--manual')),
   'fazheng-enyuan requires native QA and --manual to select both optional reactions');
+assert.ok(!['hidden-yiji', 'hidden-yiji-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-yiji scenarios require native QA and --manual to control the prelight gate');
+assert.ok(!['hidden-jianxiong', 'hidden-jianxiong-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-jianxiong scenarios require native QA and --manual to control the prelight and choice path');
+assert.ok(!['hidden-reveal', 'hidden-reveal-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-reveal scenarios require native QA and --manual to control the active reveal helper');
+assert.ok(!['hidden-active', 'hidden-active-main'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-active scenarios require native QA and --manual to control the native PlayCard skill selection');
+assert.ok(!['hidden-view-as', 'hidden-view-as-main'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-view-as scenarios require native QA and --manual to control the native PlayCard skill selection');
+assert.ok(testScenario !== 'hidden-dual' || (nativeQa && process.argv.includes('--manual')),
+  'hidden-dual requires native QA and --manual to control the prelight, target, discard and PlayCard path');
+const hiddenYijiMode = process.env.TQS_LIVE_HIDDEN_YIJI_MODE ?? 'positive';
+assert.ok(hiddenYijiMode === 'negative' || hiddenYijiMode === 'positive' || hiddenYijiMode === 'skip',
+  'TQS_LIVE_HIDDEN_YIJI_MODE must be negative, positive or skip');
+assert.ok(!['hidden-yiji', 'hidden-yiji-deputy'].includes(testScenario) || process.env.TQS_LIVE_HIDDEN_YIJI_MODE,
+  'hidden-yiji scenarios require an explicit TQS_LIVE_HIDDEN_YIJI_MODE so the evidence names its branch');
 
 const web = fileURLToPath(new URL('../../',import.meta.url));
 const repo = path.resolve(web,'../..');
@@ -101,7 +121,8 @@ const currentSockets: unknown[] = [];
 const transportOpen = [false,false];
 let scenarioClient = 0;
 const progressTimer = setInterval(() => console.log(JSON.stringify({stage:finished?'finished':gameStarted?'playing':'login',recovered,
-  packets:traces.map(t=>t.length),lastIncoming:traces.map(t=>t.filter(p=>p.direction==='incoming').at(-1)?.command ?? null),errors:errors.length})),60000);
+  packets:traces.map(t=>t.length),lastIncoming:traces.map(t=>t.filter(p=>p.direction==='incoming').at(-1)?.command ?? null),
+  nativeQaGateSeen,errors:errors.length})),60000);
 progressTimer.unref();
 const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   general: RegExp; generalId: string; skill: RegExp | null; pack: RegExp; packId: string; requiredCommand: string;
@@ -111,7 +132,7 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
   'cards-and-choice': { general: /Tưởng Khâm|蒋钦|Jiang\s*Qin/i, generalId: 'ld__jiangqin', skill: /shangyi|尚义|Thượng nghĩa/i, pack: /^formation$/i, packId: 'formation', requiredCommand: 'AskForCardsAndChoice' },
   'poxi': { general: /Đặng Chi|邓芝|Deng\s*Zhi/i, generalId: 'ty_heg__dengzhi', skill: /weimeng|危盟|Nguy minh/i, pack: /^tenyear_heg$/i, packId: 'tenyear_heg', requiredCommand: 'AskForPoxi' },
-  'rescue-normal': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', sameKingdom: true, capacity: 4, requiresGeneral: false },
+  'rescue-normal': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', sameKingdom: true, capacity: 2, requiresGeneral: false },
   'rescue-battle': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /new_battle_royal|Quyết chiến|鏖战|Rượu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', qaMode: 'battle-royal-new', requiresGeneral: true },
   // Jianan Feng is an unmapped wild caller. Keep this as an explicit probe of
   // the server's real reveal/founding path; it is not evidence until the
@@ -121,9 +142,46 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // is intentionally unused for this scenario; the regexes document the
   // roster expected on the real board after the director reveals it.
   'fazheng-enyuan': { general: /Pháp Chính|法正|Fa\s*Zheng/i, generalId: 'ld__fazheng', skill: /Ân Oán|恩怨|enyuan|Di Kế|遗计|yiji|Phản Quỹ|反馈|fankui/i, pack: /^(?:power|hegemony_standard)$/i, packId: 'power', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  // Native QA keeps the actor hidden. The browser selects the branch by
+  // prelighting Yiji before the QA gate and then invoking or skipping it.
+  'hidden-yiji': { general: /Quách Gia|郭嘉|Guo\s*Jia/i, generalId: 'hs__guojia', skill: /Di Kế|遗计|yiji|hs__yiji/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  'hidden-yiji-deputy': { general: /Quách Gia|郭嘉|Guo\s*Jia/i, generalId: 'hs__guojia', skill: /Di Kế|遗计|yiji|hs__yiji/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  // Jianxiong adds a second native request after the optional trigger invoke:
+  // AskForChoices must select the Processing damage card and the effect must
+  // reveal Cao Cao in the slot that owns the hidden skill.
+  'hidden-jianxiong': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForChoices', requiresGeneral: false },
+  'hidden-jianxiong-deputy': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForChoices', requiresGeneral: false },
+  // Native QA keeps Lục Tốn hidden and asks the real active reveal helper;
+  // the compulsory Qianxun trigger must remain a fake skill until reveal.
+  'hidden-reveal': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: /Mở tướng|亮将|reveal_skill&/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  'hidden-reveal-deputy': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: /Mở tướng|亮将|reveal_skill&/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  // Native QA keeps both generals hidden and sends a real PlayCard request.
+  // The server must reveal Tôn Quyền before running the active Chế Hành effect.
+  'hidden-active': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  'hidden-active-main': { general: /Tôn Quyền|孙权|Sun\s*Quan/i, generalId: 'hs__sunquan', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  'hidden-view-as': { general: /Triệu Vân|赵云|Zhao\s*Yun/i, generalId: 'hs__zhaoyun', skill: /Long Đảm|龙胆|longdan|hs__longdan/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  'hidden-view-as-main': { general: /Triệu Vân|赵云|Zhao\s*Yun/i, generalId: 'hs__zhaoyun', skill: /Long Đảm|龙胆|longdan|hs__longdan/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  // The dual projection is exercised through the real trigger -> choose-player
+  // -> discard -> ViewAs chain, not by clicking a regular skill in isolation.
+  'hidden-dual': { general: /Nhan Lương|颜良文丑|Yan\s*Liang|Shuangxiong|Song Hùng/i, generalId: 'hs__yanliangwenchou', skill: /Song Hùng|双雄|shuangxiong|hs__shuangxiong/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
 const damageExchangeScenario = testScenario === 'fazheng-enyuan';
+const hiddenYijiScenario = testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy';
+const hiddenYijiDeputyScenario = testScenario === 'hidden-yiji-deputy';
+const hiddenJianxiongScenario = testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy';
+const hiddenJianxiongDeputyScenario = testScenario === 'hidden-jianxiong-deputy';
+const hiddenRevealScenario = testScenario === 'hidden-reveal' || testScenario === 'hidden-reveal-deputy';
+const hiddenRevealDeputyScenario = testScenario === 'hidden-reveal-deputy';
+const hiddenActiveScenario = testScenario === 'hidden-active' || testScenario === 'hidden-active-main';
+const hiddenActiveMainScenario = testScenario === 'hidden-active-main';
+const hiddenViewAsScenario = testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main';
+const hiddenViewAsMainScenario = testScenario === 'hidden-view-as-main';
+const hiddenDualScenario = testScenario === 'hidden-dual';
+const hiddenScenario = hiddenYijiScenario || hiddenJianxiongScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenViewAsScenario || hiddenDualScenario;
+const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
+assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
+  'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
 const nativeQaCatalog = nativeQa
   ? JSON.parse(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'), 'utf8')) as {
       scenarios: { id: string; seed: number; expectedCommand: string }[];
@@ -167,6 +225,28 @@ let scenarioYijiInvoked = false;
 let scenarioSlashReplies = 0;
 let scenarioLongdanDefenseReply = false;
 let scenarioLongdanAttackReply = false;
+let hiddenGateReply = false;
+let nativeQaGateSeen = false;
+let nativeQaGateCommand: string | null = null;
+let nativeQaGateFailureObserved = false;
+let hiddenYijiAsked = false;
+let hiddenYijiInvoked = false;
+let hiddenYijiReply = false;
+let hiddenJianxiongGateReply = false;
+let hiddenJianxiongDamageReply = false;
+let hiddenJianxiongInvoked = false;
+let hiddenJianxiongChoiceReply = false;
+let hiddenRevealGateReply = false;
+let hiddenRevealReply = false;
+let hiddenActiveGateReply = false;
+let hiddenActiveReply = false;
+let hiddenViewAsGateReply = false;
+let hiddenViewAsReply = false;
+let hiddenDualGateReply = false;
+let hiddenDualChooseReply = false;
+let hiddenDualDiscardReply = false;
+let hiddenDualDiscardAuto = false;
+let hiddenDualUseReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
 
 type PublicBotAudit = {
@@ -245,16 +325,43 @@ async function chooseTargetIfNeeded(page: Page) {
 }
 
 async function observeBattleRoyal(page: Page) {
+  if (testScenario !== 'rescue-battle') return;
   const banner = await page.locator('.board-banners').innerText().catch(() => '');
-  if (/Quyết chiến|BattleRoyal|鏖战/i.test(banner)) scenarioBattleRoyalObserved = true;
+  const skillText = await page.locator('.regular-skill-button, .sg-skill-button').allTextContents().catch(() => []);
+  const disabledReasons = await page.locator('.gameplay-controls .notice').allTextContents().catch(() => []);
+  if (/Quyết chiến|BattleRoyal|new_battle_royal|鏖战/i.test(`${banner}\n${skillText.join('\n')}\n${disabledReasons.join('\n')}`)) {
+    scenarioBattleRoyalObserved = true;
+  }
 }
 
 /** Complete the real Lua active-skill scene without inspecting private payloads. */
 async function completeActiveSkill(page: Page, client: number, requestId: number, prefer: RegExp | null) {
   const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
   const skillHeading = controls.locator('h3').filter({ hasText: 'Kỹ năng' });
-  const skillButtons = skillHeading.locator('..').getByRole('button');
+  const skillButtons = skillHeading.locator('..').locator('..').getByRole('button');
   const count = await skillButtons.count();
+
+  // The native reveal helper is an InteractionPicker rather than a plain
+  // SkillButton: Lua publishes a combo containing revealMain/revealDeputy,
+  // then the normal OK button submits the selected branch.  Exercise that
+  // production path so the live QA does not confuse an active request with a
+  // regular skill-dock click.
+  if (hiddenRevealScenario && prefer) {
+    const picker = controls.getByRole('combobox', { name: 'Chọn phương án', exact: true });
+    if (await picker.count()) {
+      const option = hiddenRevealDeputyScenario
+        ? picker.locator('option').filter({ hasText: /Lật phó tướng|revealDeputy|副将/i }).first()
+        : picker.locator('option').filter({ hasText: /Lật chủ tướng|revealMain|主将/i }).first();
+      assert.ok(await option.count(), `hidden-reveal must expose the ${hiddenRevealDeputyScenario ? 'deputy' : 'main'} Lục Tốn option`);
+      await picker.selectOption(await option.getAttribute('value') as string);
+      const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+      assert.ok(await ok.isEnabled(), 'hidden-reveal must enable confirmation after choosing revealMain');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) scenarioActiveSkillReply = true;
+      return replied;
+    }
+  }
   let clicked = false;
   for (let i = 0; i < count; i++) {
     const button = skillButtons.nth(i);
@@ -361,15 +468,37 @@ async function completeDamageExchangeUseCard(page: Page, client: number, request
 async function completeUseCard(page: Page, client: number, requestId: number) {
   const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
   const sceneText = await controls.innerText().catch(() => '');
-  const rescue = /hấp hối|cần hồi|#AskForPeaches|peach|đào/i.test(sceneText);
+  // The native server can publish AskForUseCard before the translated prompt
+  // delta reaches React.  The battle-royal QA room has exactly one expected
+  // AskForUseCard path, so keep that request classified as rescue even during
+  // the short prompt-rendering window.
+  const rescue = testScenario === 'rescue-battle' || /hấp hối|cần hồi|#AskForPeaches|peach|đào/i.test(sceneText);
   let peach = false;
   let viewAs = false;
   let blocked = false;
+  const hand = controls.locator('.gameplay-hand button[data-card-id]');
   if (rescue && testScenario === 'rescue-battle') {
-    const skills = controls.locator('h3').filter({ hasText: 'Kỹ năng' }).locator('..').getByRole('button');
-    for (let i = 0; i < await skills.count(); i++) {
+    await page.waitForTimeout(100);
+    const skills = controls.locator('button.sg-skill-button');
+    if (/Quyết chiến|BattleRoyal|new_battle_royal|鏖战/i.test(sceneText)) scenarioBattleRoyalObserved = true;
+    // In the native AskForUseCard scene, Peach -> Wine is exposed as a
+    // SpecialSkills action attached to the card, not as a SkillButton.  The
+    // former is rendered as a plain gameplay-choice button labelled
+    // “Quyết chiến”.
+    const battleRoyalAction = controls.locator('button.gameplay-choice:not(.sg-skill-button)')
+      .filter({ hasText: /^Quyết chiến$/i }).first();
+    let specialViewAsSelected = false;
+    if (await battleRoyalAction.count() && await battleRoyalAction.isEnabled()) {
+      scenarioBattleRoyalObserved = true;
+      await battleRoyalAction.click();
+      viewAs = true;
+      specialViewAsSelected = true;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+    for (let i = 0; i < await skills.count() && !specialViewAsSelected; i++) {
       const button = skills.nth(i);
       if (await button.isEnabled() && /Quyết chiến|new_battle_royal|鏖战/i.test(await button.innerText())) {
+        scenarioBattleRoyalObserved = true;
         await button.click();
         viewAs = true;
         await new Promise((resolve) => setTimeout(resolve, 150));
@@ -377,35 +506,45 @@ async function completeUseCard(page: Page, client: number, requestId: number) {
       }
     }
   }
-  const hand = controls.locator('.gameplay-hand button');
-  const candidates: number[] = [];
-  for (let i = 0; i < await hand.count(); i++) {
-    const label = await hand.nth(i).innerText();
-    if (/Đào|Peach|桃/i.test(label)) candidates.push(i);
-  }
+  // The native request can update the hand while this helper is selecting a
+  // card.  Filter the live locator by face text instead of caching numeric
+  // indexes, otherwise a removed/re-rendered card makes nth(i) stale.
+  const peachCards = hand.filter({ hasText: /Đào|Peach|桃/i });
+  const candidateCount = await peachCards.count();
+  const candidates = candidateCount > 0;
   if (rescue) {
     // Playwright's Locator.isEnabled() is async; keep the selection loop
     // explicit so a battle-royal Peach remains observable while disabled.
-    let selected = -1;
-    for (const index of candidates) {
-      if (await hand.nth(index).isEnabled()) { selected = index; break; }
+    let selected = false;
+    for (let index = 0; index < await peachCards.count(); index++) {
+      if (await peachCards.nth(index).isEnabled()) {
+        await peachCards.nth(index).click();
+        selected = true;
+        break;
+      }
     }
-    if (selected >= 0) {
-      await hand.nth(selected).click();
-      peach = true;
-    } else {
-      blocked = candidates.length > 0;
-    }
+    peach = selected;
+    blocked = !selected && candidates;
   } else if (await hand.locator(':enabled').count()) {
     await hand.locator(':enabled').first().click();
   }
-  if (rescue && !peach && !blocked) blocked = candidates.length === 0;
+  if (rescue && !peach && !blocked) blocked = !candidates;
   if (!rescue) await chooseTargetIfNeeded(page);
   const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
   if (await ok.count() && await ok.isEnabled()) await ok.click();
   else {
     const cancel = controls.getByRole('button', { name: 'Hủy', exact: true });
-    if (await cancel.count() && await cancel.isEnabled()) await cancel.click();
+    if (await cancel.count() && await cancel.isEnabled()) {
+      try {
+        await cancel.click({ timeout: 3000 });
+      } catch (error) {
+        // Native Lua may resolve/replace the request synchronously while the
+        // React button is being clicked.  Accept that only when the exact
+        // native request has actually produced its reply; otherwise retain the
+        // original failure instead of hiding a lost response.
+        if (!await waitForReply(client, requestId, 3000)) throw error;
+      }
+    }
   }
   const replied = await waitForReply(client, requestId);
   return { replied, rescue, peach, viewAs, blocked };
@@ -566,11 +705,11 @@ try{
   if (playerCapacity > 2) {
     for (let n = 2; n < playerCapacity; n++) {
       await a.getByRole('button',{name:'+ Thêm bot',exact:true}).click();
-      await a.waitForFunction((expected) => document.querySelectorAll('.player-item').length === expected, n + 1, { timeout: 30000 });
+      await a.waitForFunction((expected) => document.querySelectorAll('.player-item:not(.sg-seat-empty)').length === expected, n + 1, { timeout: 30000 });
     }
   }
-  await Promise.all(pages.map(p=>p.waitForFunction((expected)=>document.querySelectorAll('.player-item').length===expected, playerCapacity,{timeout:30000})));
-  assert.equal(await a.locator('.player-item').count(),playerCapacity);assert.equal(await b.locator('.player-item').count(),playerCapacity);
+  await Promise.all(pages.map(p=>p.waitForFunction((expected)=>document.querySelectorAll('.player-item:not(.sg-seat-empty)').length===expected, playerCapacity,{timeout:30000})));
+  assert.equal(await a.locator('.player-item:not(.sg-seat-empty)').count(),playerCapacity);assert.equal(await b.locator('.player-item:not(.sg-seat-empty)').count(),playerCapacity);
   await b.getByRole('button',{name:'Sẵn sàng',exact:true}).click();await a.getByRole('button',{name:'Bắt đầu',exact:true}).click();gameStarted=true;
   if (selectedScenario && !nativeQa) {
     if (selectedScenario.requiresGeneral !== false) {
@@ -584,7 +723,7 @@ try{
   }
   await Promise.all(pages.map((page, index) => selectPair(page,
     !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
-  for(const p of pages){await p.locator('.game-board').waitFor({timeout:90000});
+  if (!hiddenScenario) for(const p of pages){await p.locator('.game-board').waitFor({timeout:90000});
     await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
     const opponent=p.locator('.board-player:not(.board-self)');assert.equal(await opponent.count(),playerCapacity - 1);
     assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(),0,'opponent hand IDs must not render');}
@@ -597,8 +736,68 @@ try{
       'Native damage scenario must reveal Triệu Vân + Pháp Chính for the second account');
     console.log('PASS fazheng-enyuan roster: Wei Quách Gia/Tư Mã Ý versus Shu Triệu Vân/Pháp Chính');
   }
-  if (testBotAudit || damageExchangeScenario) await Promise.all(pages.map(installPublicBotAudit));
-  if (selectedScenario) {
+  if (hiddenYijiScenario) {
+    await pages[0].waitForFunction(() => document.querySelectorAll('button.fake-skill-button').length > 0, null, { timeout: 30000 });
+    console.log('PASS hidden-yiji pre-gate: native fake-skill dock is visible before the QA damage gate');
+  }
+  if (hiddenJianxiongScenario) {
+    // The native QA director binds the actor by the allowlisted screen name,
+    // not by browser-tab order. Discover the private owner from the actual
+    // fake-skill projection so the test remains valid if the two authenticated
+    // accounts are assigned to room seats in the opposite order.
+    const hiddenJianxiongDeadline = Date.now() + 12000;
+    let hiddenJianxiongOwner = -1;
+    let hiddenJianxiongFallbackOwner = -1;
+    while (Date.now() < hiddenJianxiongDeadline && hiddenJianxiongOwner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        const fake = pages[client].locator('button.fake-skill-button');
+        if (await fake.count()) {
+          if (hiddenJianxiongFallbackOwner < 0) hiddenJianxiongFallbackOwner = client;
+          if (await fake.filter({ hasText: /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i }).count()) {
+            hiddenJianxiongOwner = client;
+            break;
+          }
+        }
+      }
+      if (hiddenJianxiongOwner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (hiddenJianxiongOwner < 0) hiddenJianxiongOwner = hiddenJianxiongFallbackOwner;
+    assert.ok(hiddenJianxiongOwner >= 0, 'hidden-jianxiong must expose a fake trigger before the damage gate');
+    scenarioClient = hiddenJianxiongOwner;
+    const hiddenJianxiongFake = pages[scenarioClient].locator('button.fake-skill-button')
+      .filter({ hasText: /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i }).first();
+    assert.ok(await hiddenJianxiongFake.count(),
+      'hidden-jianxiong must expose the fake Jianxiong trigger before the damage gate');
+    console.log('PASS hidden-jianxiong pre-gate: native fake-skill dock is visible before the QA damage gate');
+  }
+  if (hiddenRevealScenario) {
+    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
+    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/i }).count(),
+      'hidden-reveal must expose the native active reveal helper in the regular skill dock');
+    console.log('PASS hidden-reveal pre-request: native fake Qianxun and active reveal dock are visible');
+  }
+  if (hiddenActiveScenario) {
+    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
+    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Chế Hành|制衡|zhiheng/i }).count(),
+      'hidden-active must project native fake active Chế Hành as a regular skill before PlayCard');
+    console.log('PASS hidden-active pre-request: native active Chế Hành is projected while both generals remain hidden');
+  }
+  if (hiddenViewAsScenario) {
+    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
+    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Long Đảm|龙胆|longdan/i }).count(),
+      'hidden-view-as must project native fake Longdan as a regular skill before PlayCard');
+    console.log('PASS hidden-view-as pre-request: native Longdan is projected while Triệu Vân remains hidden');
+  }
+  if (hiddenDualScenario) {
+    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
+    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Song Hùng|双雄|shuangxiong/i }).count(),
+      'hidden-dual must project native fake dual skill as a regular skill before the trigger gate');
+    assert.ok(await pages[0].locator('button.fake-skill-button').filter({ hasText: /Song Hùng|双雄|shuangxiong/i }).count(),
+      'hidden-dual must retain the native fake dual skill in the private dock before reveal');
+    console.log('PASS hidden-dual pre-request: dual trigger/ViewAs skill is projected while both actor generals remain hidden');
+  }
+  if (testBotAudit || damageExchangeScenario || hiddenScenario) await Promise.all(pages.map(installPublicBotAudit));
+  if (selectedScenario && !hiddenScenario) {
     const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
     console.log(`Scenario ${testScenario}: ${nativeQa ? 'native QA package injected the server-side precondition; ' : ''}selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
   }
@@ -607,10 +806,12 @@ try{
     let actor = pages[scenarioClient];
     let actorTrace = traces[scenarioClient];
     const botPage = pages[1 - scenarioClient];
-    if (!damageExchangeScenario) await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
+    const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
+    if (!damageExchangeScenario && !hiddenScenario && !rescueScenario) {
+      await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
+    }
     const deadline=Date.now()+manualDeadlineMs;
     let printedScenarioSkills = false;
-    const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
     const selectActiveClient = async () => {
       if (nativeQa) {
         const nativeCommands = new Set(['PlayCard', 'AskForChoices', 'AskForSkillInvoke', 'AskForUseActiveSkill',
@@ -638,8 +839,44 @@ try{
       (testScenario === 'rescue-battle' && scenarioRescueReply && scenarioRescuePeach && scenarioViewAsReply && scenarioBattleRoyalObserved) ||
       (testScenario === 'founding' && scenarioFoundingReply) ||
       (damageExchangeScenario && scenarioSlashReplies === 3 && scenarioLongdanDefenseReply &&
-        scenarioLongdanAttackReply && scenarioEnyuanReply && scenarioYijiInvoked && scenarioYijiReply && scenarioFankuiReply);
-    while(Date.now()<deadline && (damageExchangeScenario ? !scenarioDone() : (!manualCardReply || !scenarioDone()))) {
+        scenarioLongdanAttackReply && scenarioEnyuanReply && scenarioYijiInvoked && scenarioYijiReply && scenarioFankuiReply) ||
+      (hiddenYijiScenario && hiddenGateReply &&
+        (hiddenYijiMode === 'negative'
+          ? !hiddenYijiAsked
+          : hiddenYijiAsked && (hiddenYijiMode === 'positive' ? hiddenYijiInvoked && hiddenYijiReply : !hiddenYijiInvoked)) &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenJianxiongScenario && hiddenJianxiongGateReply && hiddenJianxiongDamageReply &&
+        hiddenJianxiongInvoked && hiddenJianxiongChoiceReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenRevealScenario && hiddenRevealReply &&
+        hiddenRevealGateReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenActiveScenario && hiddenActiveGateReply && hiddenActiveReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenViewAsScenario && hiddenViewAsGateReply && hiddenViewAsReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenDualScenario && hiddenDualGateReply && hiddenDualChooseReply &&
+        (hiddenDualDiscardReply || hiddenDualDiscardAuto) && hiddenDualUseReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver')));
+    const rescueOrFoundingScenario = testScenario === 'rescue-normal' ||
+      testScenario === 'rescue-battle' || testScenario === 'founding';
+    const nativeQaGateDeadline = Date.now() + nativeQaGateTimeoutMs;
+    const failIfNativeQaGateMissing = () => {
+      if (!nativeQa || !hiddenScenario || nativeQaGateSeen) return;
+      const gameOverObserved = traces.some((trace) => trace.some((packet) =>
+        packet.direction === 'incoming' && packet.command === 'GameOver'));
+      if (!gameOverObserved && Date.now() < nativeQaGateDeadline) return;
+      nativeQaGateFailureObserved = true;
+      const reason = gameOverObserved
+        ? 'GameOver arrived before the readiness gate'
+        : `no readiness gate arrived within ${nativeQaGateTimeoutMs}ms after StartGame`;
+      throw new Error(`Native QA ${testScenario} did not emit its server-only readiness AskForSkillInvoke gate: ${reason}; ` +
+        'verify the installed tqs_qa package and tqsQa server config before treating this as gameplay evidence');
+    };
+    while(Date.now()<deadline && (damageExchangeScenario || hiddenScenario
+      ? !scenarioDone()
+      : rescueOrFoundingScenario ? !scenarioDone() : (!manualCardReply || !scenarioDone()))) {
+      failIfNativeQaGateMissing();
       const activeClient = await selectActiveClient();
       actor = pages[activeClient];
       actorTrace = traces[activeClient];
@@ -656,20 +893,44 @@ try{
         const choices=actor.getByRole('region',{name:'Lựa chọn trong trận'});
         const choiceText = await choices.innerText().catch(() => '');
         if(await choices.count()) {
-          const preferred = (selectedScenario && !(testScenario === 'cards-and-choice' && scenarioActiveSkillReply))
+          const hiddenJianxiongChoice = hiddenJianxiongScenario &&
+            /jianxiong|奸雄|Gian Hùng|obtain|获得|damage card|lá Sát|gây sát thương/i.test(choiceText);
+          const preferred = hiddenJianxiongChoice
+            ? choices.locator('button.gameplay-choice:enabled')
+              .filter({ hasText: /hs__jianxiong-obtain|jianxiong-obtain|obtain|获得|damage.*card|lá Sát|gây sát thương/i }).first()
+            : (selectedScenario && !(testScenario === 'cards-and-choice' && scenarioActiveSkillReply))
             ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /revealMain|Lật chủ tướng|主将|main/i }).first()
             : testScenario === 'cards-and-choice'
             ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /shangyi_card|观看手牌|Xem bài.*tay|bài trên tay/i }).first()
             : choices.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
           const option = await preferred.count() ? preferred : choices.locator('button.gameplay-choice:enabled:not([aria-pressed="true"])').first();
-          if(await option.count())await option.click();
+          if (hiddenJianxiongChoice) assert.ok(await preferred.count(),
+            'hidden-jianxiong must expose the native obtain-damage-card choice');
+          let submitted = false;
           const confirm=choices.getByRole('button',{name:'Xác nhận lựa chọn',exact:true});
-          if(await confirm.count() && await confirm.isEnabled()) {
-            await confirm.click();
+          if(await option.count()) {
+            await option.click();
+            if (await confirm.count() && await confirm.isEnabled()) {
+              await confirm.click();
+              submitted = true;
+            } else if (!(await confirm.count())) {
+              // ChoicePanel's single=true path removes itself after sending.
+              submitted = true;
+            }
+          }
+          // AskForChoices with single=true is auto-confirmed by ChoicePanel
+          // when the option is clicked, so it has no separate confirm button.
+          // Multi-select keeps the explicit confirm path above. In both cases
+          // the runner must wait for the exact native reply before recording
+          // the scenario assertion.
+          if (submitted) {
             const replied = await waitForReply(activeClient, latest.requestId);
-            if (replied && /lập quốc|quốc hiệu|founding|wild-choose|建国/i.test(choiceText)) scenarioFoundingReply = true;
-            scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
-              detail: /lập quốc|quốc hiệu|founding|wild-choose|建国/i.test(choiceText) ? 'founding-kingdom' :
+            if (replied && (testScenario === 'founding' ||
+              /lập quốc|quốc hiệu|founding|wild-choose|建国|Dã tâm/i.test(choiceText))) scenarioFoundingReply = true;
+            if (hiddenJianxiongChoice && replied) hiddenJianxiongChoiceReply = true;
+            if (replied) scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
+            detail: testScenario === 'founding' || /lập quốc|quốc hiệu|founding|wild-choose|建国|Dã tâm/i.test(choiceText) ? 'founding-kingdom' :
+                hiddenJianxiongChoice ? 'hidden-jianxiong-obtain' :
                 testScenario === 'cards-and-choice' ? 'shangyi_card choice' : 'choice'});
           }
         }
@@ -677,10 +938,49 @@ try{
         const invokeText = await actor.locator('.request-panel').innerText().catch(() => '');
         const isCardChosenInvoke = /jianchu|鞬出|Kiền xuất/i.test(invokeText);
         const isScenarioSkillInvoke = !!selectedScenario?.skill && selectedScenario.skill.test(invokeText);
+        const isHiddenGate = hiddenYijiScenario && /TQS QA|prelight|tqs_qa_hidden_yiji_gate/i.test(invokeText);
+        const isHiddenJianxiongGate = hiddenJianxiongScenario && /TQS QA|prelight|tqs_qa_hidden_jianxiong_gate/i.test(invokeText);
+        const isHiddenRevealGate = hiddenRevealScenario && /TQS QA|Mở tướng|reveal_skill&|hidden_reveal_gate/i.test(invokeText);
+        const isHiddenActiveGate = hiddenActiveScenario && /TQS QA|Chế Hành|zhiheng|hidden_active_gate/i.test(invokeText);
+        const isHiddenViewAsGate = hiddenViewAsScenario && /TQS QA|Long Đảm|longdan|hidden_view_as_gate/i.test(invokeText);
+        const isHiddenDualGate = hiddenDualScenario && /TQS QA|Song Hùng|双雄|shuangxiong|hidden_dual_gate/i.test(invokeText);
+        const isHiddenYijiInvoke = hiddenYijiScenario && !isHiddenGate && /Di Kế|遗计|yiji|hs__yiji/i.test(invokeText);
+        const isHiddenJianxiongInvoke = hiddenJianxiongScenario && !isHiddenJianxiongGate && /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i.test(invokeText);
+        if (isHiddenGate || isHiddenJianxiongGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate) {
+          nativeQaGateSeen = true;
+          nativeQaGateCommand = latest.command;
+        }
+        if (isHiddenGate && hiddenYijiMode !== 'negative') {
+          const fakeYiji = actor.locator('button.fake-skill-button').filter({ hasText: /Di Kế|遗计|yiji/i }).first();
+          await fakeYiji.waitFor({ timeout: 10000 });
+          if (await fakeYiji.getAttribute('aria-pressed') !== 'true') await fakeYiji.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
+        if (isHiddenJianxiongGate) {
+          const fakeJianxiong = actor.locator('button.fake-skill-button').filter({ hasText: /Gian Hùng|奸雄|jianxiong/i }).first();
+          await fakeJianxiong.waitFor({ timeout: 10000 });
+          if (await fakeJianxiong.getAttribute('aria-pressed') !== 'true') await fakeJianxiong.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
+        if (isHiddenDualGate) {
+          const fakeDual = actor.locator('button.fake-skill-button').filter({ hasText: /Song Hùng|双雄|shuangxiong/i }).first();
+          await fakeDual.waitFor({ timeout: 10000 });
+          if (await fakeDual.getAttribute('aria-pressed') !== 'true') await fakeDual.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
         // A manual run may encounter unrelated optional skills while the
         // target prompt is still pending. Only invoke the requested caller
         // skill; cancel everything else so it cannot starve a native choice.
-        const shouldInvoke = testScenario === 'card-chosen'
+        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenViewAsGate || isHiddenDualGate
+          ? true
+          : isHiddenYijiInvoke
+          ? hiddenYijiMode === 'positive'
+          : isHiddenJianxiongInvoke
+          ? true
+          : testScenario === 'card-chosen'
           ? isCardChosenInvoke
           : isScenarioSkillInvoke;
         const choice = shouldInvoke
@@ -688,25 +988,106 @@ try{
           : actor.locator('.request-panel').getByRole('button', { name: /^(Bỏ qua|Hủy)$/ });
         if(await choice.count() && await choice.isEnabled())await choice.click();
         const replied = await waitForReply(activeClient, latest.requestId);
+        if (hiddenYijiScenario && isHiddenGate && replied) hiddenGateReply = true;
+        if (hiddenJianxiongScenario && isHiddenJianxiongGate && replied) hiddenJianxiongGateReply = true;
+        if (hiddenRevealScenario && isHiddenRevealGate && replied) hiddenRevealGateReply = true;
+        if (hiddenActiveScenario && isHiddenActiveGate && replied) hiddenActiveGateReply = true;
+        if (hiddenViewAsScenario && isHiddenViewAsGate && replied) hiddenViewAsGateReply = true;
+        if (hiddenDualScenario && isHiddenDualGate && replied) hiddenDualGateReply = true;
+        if (hiddenYijiScenario && isHiddenYijiInvoke && replied) {
+          hiddenYijiAsked = true;
+          hiddenYijiInvoked = shouldInvoke;
+        }
+        if (hiddenJianxiongScenario && isHiddenJianxiongInvoke && replied) hiddenJianxiongInvoked = shouldInvoke;
         if (damageExchangeScenario && isScenarioSkillInvoke && replied) {
           if (/Phản Quỹ|反馈|fankui/i.test(invokeText)) scenarioFankuiInvoked = shouldInvoke;
           if (/Di Kế|遗计|yiji/i.test(invokeText)) scenarioYijiInvoked = shouldInvoke;
         }
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
-          detail: shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
+          detail: isHiddenRevealGate ? 'hidden-reveal-readiness-gate' :
+            isHiddenActiveGate ? 'hidden-active-readiness-gate' :
+            isHiddenViewAsGate ? 'hidden-view-as-readiness-gate' :
+            isHiddenDualGate ? 'hidden-dual-readiness-gate' :
+            isHiddenJianxiongGate ? 'hidden-jianxiong-readiness-gate' :
+            isHiddenJianxiongInvoke ? 'invoke-hidden-jianxiong' :
+            shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
       } else if(latest?.command==='AskForUseActiveSkill') {
-        if (damageExchangeScenario) {
+        const activePrompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+        const hiddenYijiActive = hiddenYijiScenario && /Di Kế|遗计|yiji|hs__yiji/i.test(activePrompt);
+        const hiddenJianxiongDamage = hiddenJianxiongScenario &&
+          /hidden_jianxiong_damage|dùng Sát lên Cao Cao|kiểm tra Gian Hùng/i.test(activePrompt);
+        const hiddenRevealActive = hiddenRevealScenario && /Mở tướng|亮将|reveal_skill&/i.test(activePrompt);
+        const hiddenDualChoose = hiddenDualScenario &&
+          /hs__shuangxiong-choose|Song Hùng.*chọn một người|双雄.*令一名|chọn.*Song Hùng/i.test(activePrompt);
+        const hiddenDualDiscard = hiddenDualScenario &&
+          /hs__shuangxiong-discard|Song Hùng.*hãy bỏ|双雄.*请弃置|hãy bỏ.*Song Hùng/i.test(activePrompt);
+        if (hiddenDualChoose) {
+          await chooseTargetIfNeeded(actor);
+          const ok = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await ok.count() && await ok.isEnabled(),
+            'hidden-dual must enable target confirmation after choosing the discard target');
+          await ok.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) hiddenDualChooseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'hidden-dual-choose-discard-target' });
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        } else if (hiddenDualDiscard) {
+          const card = actor.locator('.gameplay-hand button:enabled')
+            .filter({ hasText: /Thiểm|Jink|闪/i }).first();
+          assert.ok(await card.count(), 'hidden-dual must expose the reserved target Jink for discard');
+          await card.click();
+          const ok = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await ok.count() && await ok.isEnabled(),
+            'hidden-dual must enable confirmation after selecting the reserved target Jink');
+          await ok.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) hiddenDualDiscardReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'hidden-dual-discard-red-card' });
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        } else if (hiddenJianxiongDamage) {
+          // Room:askToUseRealCard() is implemented by the native server as an
+          // AskForUseActiveSkill request for userealcard_skill. The native
+          // handler owns that skill selection implicitly; the production
+          // scene exposes only the eligible real card and target controls.
+          const slash = actor.locator('.gameplay-hand button:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          assert.ok(await slash.count(), 'hidden-jianxiong must expose the reserved target Slash');
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          assert.ok(await target.count(), 'hidden-jianxiong must expose the hidden Cao Cao target');
+          await target.click();
+          const ok = actor.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await ok.isEnabled(), 'hidden-jianxiong must enable confirmation after selecting the reserved Slash');
+          await ok.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) {
+            hiddenJianxiongDamageReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'hidden-jianxiong-damage-slash' });
+          }
+        } else if (damageExchangeScenario || hiddenYijiActive || hiddenRevealActive) {
           const prompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
-          const replied = await completeDamageExchangeActiveSkill(actor, activeClient, latest.requestId);
+          const replied = hiddenRevealActive
+            ? await completeActiveSkill(actor, activeClient, latest.requestId, /Mở tướng|亮将|reveal_skill&/i)
+            : await completeDamageExchangeActiveSkill(actor, activeClient, latest.requestId);
           // The engine's prompts are translated from the real skill names; the
           // exact card/target payload remains inside the client and is not
           // persisted by this runner.
           if (/Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt)) scenarioEnyuanReply = replied;
           else if (/Di Kế|遗计|yiji|hs__yiji/i.test(prompt)) scenarioYijiReply = replied;
           else if (/Sát lần|tqs_qa-slash/i.test(prompt) && replied) scenarioSlashReplies++;
+          if (hiddenYijiActive && replied) hiddenYijiReply = true;
+          if (hiddenRevealActive && replied) hiddenRevealReply = true;
           scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
             detail: /Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt) ? 'enyuan-give-card' :
-              /Di Kế|遗计|yiji|hs__yiji/i.test(prompt) ? 'yiji-distribute' : 'damage-exchange-active'});
+              /Di Kế|遗计|yiji|hs__yiji/i.test(prompt) ? hiddenYijiActive ? 'hidden-yiji-distribute' : 'yiji-distribute' :
+              hiddenRevealActive ? 'hidden-reveal-active' : 'damage-exchange-active'});
           await new Promise((resolve) => setTimeout(resolve, 250));
           continue;
         }
@@ -801,15 +1182,98 @@ try{
         await completeNativeDialog(actor, activeClient, latest.requestId);
       } else if(latest?.command==='PlayCard') {
         const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
-        const skillHeading=controls.locator('h3').filter({hasText:'Kỹ năng'});
+        const skillButtons=controls.locator('button.sg-skill-button');
         if (selectedScenario && !printedScenarioSkills) {
           printedScenarioSkills = true;
-          console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillHeading.locator('..').getByRole('button').allTextContents()).join(' | ') || '(none)'}`);
+          console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillButtons.allTextContents()).join(' | ') || '(none)'}`);
+        }
+        if (hiddenJianxiongScenario) {
+          const card = controls.locator('.gameplay-hand button:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          assert.ok(await card.count(), 'hidden-jianxiong must expose the reserved target Slash');
+          await card.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          assert.ok(await target.count(), 'hidden-jianxiong must expose the hidden Cao Cao target');
+          await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await confirm.isEnabled(), 'hidden-jianxiong must enable PlayCard confirmation after selecting the reserved Slash');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) {
+            hiddenJianxiongDamageReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'hidden-jianxiong-damage-slash' });
+          }
+          await new Promise(r=>setTimeout(r,250));
+          continue;
         }
         const activeScenario = testScenario === 'card-chosen' ? null : selectedScenario;
-        const desiredSkill=activeScenario?.skill ? skillHeading.locator('..').getByRole('button').filter({hasText:activeScenario.skill}).first() : null;
+        const desiredSkill=activeScenario?.skill ? skillButtons.filter({hasText:activeScenario.skill}).first() : null;
         if(desiredSkill && await desiredSkill.count() && await desiredSkill.isEnabled()) {
           await desiredSkill.click();
+          if (hiddenActiveScenario) {
+            const card = controls.locator('.gameplay-hand button:enabled').first();
+            assert.ok(await card.count(), 'hidden-active must expose the reserved actor Slash after selecting Chế Hành');
+            await card.click();
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            assert.ok(await confirm.isEnabled(), 'hidden-active must enable PlayCard confirmation after selecting Chế Hành and one card');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) {
+              hiddenActiveReply = true;
+              scenarioActiveSkillReply = true;
+              scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+                detail: 'hidden-active-zhiheng' });
+            }
+            await new Promise(r=>setTimeout(r,250));
+            continue;
+          }
+          if (hiddenViewAsScenario) {
+            const card = controls.locator('.gameplay-hand button:enabled')
+              .filter({ hasText: /Thiểm|Jink|闪/i }).first();
+            assert.ok(await card.count(), 'hidden-view-as must expose the reserved actor Jink after selecting Long Đảm');
+            await card.click();
+            const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+            assert.ok(await target.count(), 'hidden-view-as must expose an opponent target after converting Jink to Slash');
+            await target.click();
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            assert.ok(await confirm.isEnabled(), 'hidden-view-as must enable PlayCard confirmation after selecting Long Đảm, Jink and a target');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) {
+              hiddenViewAsReply = true;
+              scenarioActiveSkillReply = true;
+              scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+                detail: 'hidden-view-as-longdan' });
+            }
+            await new Promise(r=>setTimeout(r,250));
+            continue;
+          }
+          if (hiddenDualScenario) {
+            // With exactly one legal card and a non-cancelable native
+            // askToDiscard, FreeKill auto-discards before sending the next
+            // PlayCard request. There is therefore no second browser request
+            // to click; the native QA log/effect assertion is the authority
+            // for the discard and color mark.
+            if (hiddenDualChooseReply && !hiddenDualDiscardReply) hiddenDualDiscardAuto = true;
+            const card = controls.locator('.gameplay-hand button:enabled')
+              .filter({ hasText: /Sát|Slash|杀/i }).first();
+            assert.ok(await card.count(), 'hidden-dual must expose the reserved opposite-color Slash after Song Hùng');
+            await card.click();
+            await chooseTargetIfNeeded(actor);
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            assert.ok(await confirm.isEnabled(), 'hidden-dual must enable PlayCard confirmation after selecting Song Hùng, Slash and target');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) {
+              hiddenDualUseReply = true;
+              scenarioActiveSkillReply = true;
+              scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+                detail: 'hidden-dual-shuangxiong-duel' });
+            }
+            await new Promise(r=>setTimeout(r,250));
+            continue;
+          }
           await chooseTargetIfNeeded(actor);
           const confirm=controls.getByRole('button',{name:'Xác nhận',exact:true});
           if(await confirm.count() && await confirm.isEnabled())await confirm.click();
@@ -857,7 +1321,53 @@ try{
       assert.ok(scenarioFankuiInvoked && scenarioFankuiReply,
         'fazheng-enyuan manual mode must invoke Phản Quỹ and answer its source-card request');
       console.log('PASS fazheng-enyuan requests: three Wei Slashes, both Longdan conversions, Enyuan gift, optional Yiji/Fankui invoked');
-    } else {
+    } else if (hiddenYijiScenario) {
+      assert.ok(hiddenGateReply, 'hidden-yiji must complete the native prelight gate');
+      assert.equal(hiddenYijiInvoked, hiddenYijiMode === 'positive',
+        `hidden-yiji ${hiddenYijiMode} branch invoked mismatch`);
+      if (hiddenYijiMode === 'positive') {
+        assert.ok(hiddenYijiAsked && hiddenYijiReply,
+          'positive hidden-yiji branch must receive AskForSkillInvoke and complete native Yiji distribution');
+      } else if (hiddenYijiMode === 'skip') {
+        assert.ok(hiddenYijiAsked, 'skip hidden-yiji branch must still receive AskForSkillInvoke');
+        assert.equal(hiddenYijiReply, false, 'skip hidden-yiji branch must not enter Yiji distribution');
+      } else {
+        assert.equal(hiddenYijiAsked, false, 'negative hidden-yiji branch must not ask an unprelighted Yiji');
+      }
+      console.log(`PASS hidden-yiji ${hiddenYijiMode}: native hidden-trigger branch completed with ` +
+        `${hiddenYijiAsked ? 'AskForSkillInvoke' : 'no Yiji request'}, ` +
+        `${hiddenYijiInvoked ? 'Invoke' : 'Skip/no-prelight'}`);
+    } else if (hiddenJianxiongScenario) {
+      assert.ok(hiddenJianxiongGateReply, 'hidden-jianxiong must complete the native prelight gate');
+      assert.ok(hiddenJianxiongDamageReply, 'hidden-jianxiong must complete the target Slash request');
+      assert.ok(hiddenJianxiongInvoked, 'hidden-jianxiong must invoke the prelighted trigger');
+      assert.ok(hiddenJianxiongChoiceReply, 'hidden-jianxiong must answer the native obtain-card choice');
+      console.log('PASS hidden-jianxiong: native hidden-trigger branch invoked and answered the obtain-damage-card choice');
+    } else if (hiddenRevealScenario) {
+      assert.ok(hiddenRevealReply,
+        'hidden-reveal must complete the native reveal_skill& active request and reveal Lục Tốn');
+      console.log('PASS hidden-reveal: native reveal_skill& request opened Lục Tốn and activated hidden Qianxun');
+    } else if (hiddenActiveScenario) {
+      assert.ok(hiddenActiveGateReply,
+        'hidden-active must complete the native readiness gate before PlayCard');
+      assert.ok(hiddenActiveReply,
+        'hidden-active must complete the native PlayCard request with Chế Hành and one card');
+      console.log('PASS hidden-active: native PlayCard selected Chế Hành while hidden and completed the skill path');
+    } else if (hiddenViewAsScenario) {
+      assert.ok(hiddenViewAsGateReply,
+        'hidden-view-as must complete the native readiness gate before PlayCard');
+      assert.ok(hiddenViewAsReply,
+        'hidden-view-as must complete the native PlayCard request with Long Đảm and one Jink');
+      console.log('PASS hidden-view-as: native PlayCard selected Long Đảm while Triệu Vân was hidden and converted Jink to Slash');
+    } else if (hiddenDualScenario) {
+      assert.ok(hiddenDualGateReply, 'hidden-dual must complete the native prelight gate');
+      assert.ok(hiddenDualChooseReply, 'hidden-dual must choose the native discard target');
+      assert.ok(hiddenDualDiscardReply || hiddenDualDiscardAuto,
+        'hidden-dual must discard the target card, either through the native request or the non-cancelable auto path');
+      assert.ok(hiddenDualUseReply, 'hidden-dual must complete the native PlayCard Duel request');
+      console.log(`PASS hidden-dual: native hidden trigger revealed Song Hùng, discarded the color source ` +
+        `(${hiddenDualDiscardAuto ? 'auto' : 'interactive'}) and converted Slash to Duel`);
+    } else if (testScenario !== 'rescue-normal' && testScenario !== 'rescue-battle' && testScenario !== 'founding') {
       assert.ok(manualCardReply,'A native PlayCard must receive one user-selected card/target/OK reply');
       console.log('PASS manual native PlayCard: offered card, Lua-enabled target/OK and one exact client reply');
     }
@@ -883,8 +1393,12 @@ try{
       assert.ok(scenarioFoundingReply, 'founding scenario must receive and answer the native kingdom choice');
       console.log('PASS founding scenario: real wild general reached the native Vietnamese kingdom choice');
     }
-    if (!damageExchangeScenario) {
-      const trust=actor.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
+    if (!damageExchangeScenario && !hiddenScenario) {
+      const cleanupPages = rescueScenario ? pages : [actor];
+      for (const page of cleanupPages) {
+        const trust = page.getByRole('button', { name: 'BOT chơi hộ', exact: true });
+        if (await trust.isVisible()) await trust.click();
+      }
     }
   } else await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
   if (testRecovery) {
@@ -913,7 +1427,7 @@ try{
     console.log(testGatewayRestart ? 'PASS gateway restart: first account reauthenticates/native Reconnect/private board, independent peer stays connected' : 'PASS controlled transport loss: same account automatically authenticates, receives native Reconnect and restores the two-seat board');
   }
   await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));finished=true;
-  let publicBotAudit = (testBotAudit || damageExchangeScenario)
+  let publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
     ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
     : [];
   if (testBotAudit) {
@@ -934,6 +1448,7 @@ try{
     return {
       gameOver: incoming.filter((packet) => packet.command === 'GameOver').length,
       gameLog: incoming.filter((packet) => packet.command === 'GameLog').length,
+      playCard: incoming.filter((packet) => packet.command === 'PlayCard').length,
       addSkillUseHistory: incoming.filter((packet) => packet.command === 'AddSkillUseHistory').length,
       setSkillUseHistory: incoming.filter((packet) => packet.command === 'SetSkillUseHistory').length,
       setSkillBranchUseHistory: incoming.filter((packet) => packet.command === 'SetSkillBranchUseHistory').length,
@@ -965,6 +1480,88 @@ try{
         `Each native client must observe verified outcome ${result}`);
     }
     console.log('PASS fazheng-enyuan public audit: all four native HP/card-transfer outcomes verified and visible to both clients');
+  } else if (hiddenYijiScenario) {
+    const expectedBranch = hiddenYijiMode === 'positive' ? 'positive-prelight-invoke'
+      : hiddenYijiMode === 'skip' ? 'skip-prelight' : 'negative-no-prelight';
+    const expectedPosition = hiddenYijiDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) => log.includes(`Hidden Di Kế`) && log.includes(expectedBranch))),
+      `Both native clients must observe the ${expectedBranch} QA outcome`);
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) => log.includes(`Hidden Di Kế`) && log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Di Kế in the ${expectedPosition} slot`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-yiji must finish after its one native damage branch');
+    const expectedInvokes = hiddenYijiMode === 'negative' ? 1 : 2;
+    const observedInvokes = botAuditTrace.reduce((total, trace) => total + trace.askForSkillInvoke, 0);
+    assert.equal(observedInvokes, expectedInvokes,
+      `hidden-yiji ${hiddenYijiMode} must expose exactly ${expectedInvokes} AskForSkillInvoke request(s)`);
+    if (hiddenYijiMode === 'positive') {
+      assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) => log.includes('Hidden Di Kế') &&
+        !log.includes('mở tướng=false') && log.includes('chuyển bài=2'))),
+        'positive hidden-yiji must reveal the skill owner and move two Yiji cards');
+    } else {
+      assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) => log.includes('Hidden Di Kế') &&
+        (hiddenYijiMode === 'skip' ? log.includes('mở tướng=false') : log.includes('prelight=false')) &&
+        log.includes('chuyển bài=0'))),
+        `${hiddenYijiMode} hidden-yiji must retain the hidden owner without Yiji movement`);
+    }
+    console.log(`PASS hidden-yiji public audit: both native clients observed ${expectedBranch}, ` +
+      `one damage and the expected AskForSkillInvoke count`);
+  } else if (hiddenJianxiongScenario) {
+    const expectedPosition = hiddenJianxiongDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Gian Hùng/iu.test(log) && /positive-prelight-invoke-obtain/iu.test(log) &&
+      /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) && /lấy bài=1/iu.test(log) &&
+      log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Jianxiong obtaining the damage card after revealing Cao Cao as ${expectedPosition}`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-jianxiong must finish after its native choice/effect branch');
+    assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 2,
+      'hidden-jianxiong owner must receive the readiness gate and the real trigger invoke');
+    console.log('PASS hidden-jianxiong public audit: both native clients observed Cao Cao reveal, choice and card obtain');
+  } else if (hiddenRevealScenario) {
+    const expectedPosition = hiddenRevealDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Mở tướng|reveal_skill&/iu.test(log) && /Lục Tốn đã mở=true/iu.test(log) &&
+      log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe the hidden reveal helper opening Lục Tốn as ${expectedPosition}`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-reveal must finish after its native active reveal branch');
+    assert.ok(botAuditTrace[scenarioClient].askForUseActiveSkill >= 1,
+      'hidden-reveal owner must receive the private AskForUseActiveSkill request');
+    assert.equal(botAuditTrace[1 - scenarioClient].askForUseActiveSkill, 0,
+      'hidden-reveal must keep the private active-skill request away from the opponent client');
+    console.log('PASS hidden-reveal public audit: both native clients observed reveal_skill& and active Qianxun; ' +
+      'only the hidden owner received the private active request');
+  } else if (hiddenActiveScenario) {
+    const expectedPosition = hiddenActiveMainScenario ? 'chủ tướng' : 'phó tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Chế Hành/iu.test(log) && /SkillEffect=true/iu.test(log) &&
+      /Tôn Quyền đã mở=true/iu.test(log) && /Lục Tốn còn úp=true/iu.test(log) &&
+      log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Chế Hành after Sun Quan revealed as ${expectedPosition}`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-active must finish after its native PlayCard skill branch');
+    assert.ok(botAuditTrace[scenarioClient].playCard >= 1,
+      'hidden-active owner must receive the private native PlayCard request');
+    assert.equal(botAuditTrace[1 - scenarioClient].playCard, 0,
+      'hidden-active must keep the private PlayCard request away from the opponent client');
+    console.log('PASS hidden-active public audit: both native clients observed Chế Hành, ' +
+      'Sun Quan reveal and Lục Tốn remaining hidden; only the owner received PlayCard');
+  } else if (hiddenViewAsScenario) {
+    const expectedPosition = hiddenViewAsMainScenario ? 'chủ tướng' : 'phó tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Long Đảm/iu.test(log) && /SkillEffect=true/iu.test(log) &&
+      /Triệu Vân đã mở=true/iu.test(log) && /Thiểm→Sát=true/iu.test(log) &&
+      log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Long Đảm after Triệu Vân revealed as ${expectedPosition}`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-view-as must finish after its native PlayCard skill branch');
+    assert.ok(botAuditTrace[scenarioClient].playCard >= 1,
+      'hidden-view-as owner must receive the private native PlayCard request');
+    assert.equal(botAuditTrace[1 - scenarioClient].playCard, 0,
+      'hidden-view-as must keep the private PlayCard request away from the opponent client');
+    console.log('PASS hidden-view-as public audit: both native clients observed Long Đảm, ' +
+      'Triệu Vân reveal and Jink→Slash conversion; only the owner received PlayCard');
   }
   const scenarioBoardStates = damageExchangeScenario
     ? await Promise.all(pages.map(async (page) => {
@@ -998,7 +1595,7 @@ try{
     await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / native Reconnect / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / native Trust; no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / Trust; no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native server bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
     distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
@@ -1015,11 +1612,11 @@ try{
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));
-  if(gameStarted && !finished){
+  if(gameStarted && !finished && !nativeQaGateFailureObserved){
     console.error('Preserving the connected test browser and candidate processes until GameOver; no forced mid-game disconnect');
     for(const p of pages)await p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click({timeout:3000}).catch(()=>{});
     // GameOver belongs to the shared room. A disconnected participant may never
@@ -1033,6 +1630,8 @@ try{
     while (!traces.some(t=>t.some(p=>p.direction==='incoming' && p.command==='GameOver')) &&
       transportOpen.some((open,i)=>open && !backInLobby(i)))
       await new Promise(resolve=>setTimeout(resolve,1000));
+  } else if (nativeQaGateFailureObserved) {
+    console.error('Native QA readiness gate was not observed; skipping GameOver wait because server/package setup is already the failing boundary');
   }
   process.exitCode=1;
 }finally{

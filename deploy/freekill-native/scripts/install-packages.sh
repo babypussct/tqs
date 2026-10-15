@@ -82,6 +82,49 @@ fi
 grep -Fq 'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }' "$HEGEMONY_OVERSEAS_INIT" ||
   die "Pinned overseas Duan Wei declaration repair did not apply"
 
+# Evidence-backed server hardening. The pinned core client already uses
+# insertIfNeed for prelight projection, while the upstream ServerPlayer copy
+# still appends duplicates. A repeated true request followed by one false
+# request would then leave the hidden skill active on the server. Keep the
+# native server aligned with the client and the vendored runtime; fail closed
+# if the upstream function shape changes instead of patching an unknown body.
+CORE_SERVERPLAYER="$PACKAGES_DIR/freekill-core/ltk/server/serverplayer.lua"
+if grep -Fq 'table.insert(self.prelighted_skills, skill)' "$CORE_SERVERPLAYER" &&
+    grep -Fq 'table.insert(self.prelighted_skills, s)' "$CORE_SERVERPLAYER"; then
+  perl -0pi -e 's/table\.insert\(self\.prelighted_skills, skill\)/table.insertIfNeed(self.prelighted_skills, skill)/g; s/table\.insert\(self\.prelighted_skills, s\)/table.insertIfNeed(self.prelighted_skills, s)/g' "$CORE_SERVERPLAYER"
+fi
+grep -Fq 'table.insertIfNeed(self.prelighted_skills, skill)' "$CORE_SERVERPLAYER" ||
+  die "Native ServerPlayer prelight projection hardening did not apply"
+grep -Fq 'table.insertIfNeed(self.prelighted_skills, s)' "$CORE_SERVERPLAYER" ||
+  die "Native ServerPlayer related prelight projection hardening did not apply"
+
+# A hidden/changed general can re-attach a previously prelighted skill as a
+# fake skill. Re-emit the retained prelight state after AddSkill so the live
+# dashboard agrees with syncFakeSkills() on reconnect and with server hasSkill.
+if grep -Fq 'self:doNotify("AddSkill", { self.id, skill.name, true })' "$CORE_SERVERPLAYER" &&
+    ! grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER"; then
+  perl -0pi -e 's{  self:doNotify\("AddSkill", \{ self\.id, skill\.name, true \}\)\nend}{  self:doNotify("AddSkill", { self.id, skill.name, true })\n  -- A hidden/replaced general can retain a prelighted skill when it becomes fake again.\n  if table.contains(self.prelighted_skills, skill) then\n    self:doNotify("PrelightSkill", { skill.name, true })\n  end\nend}s' "$CORE_SERVERPLAYER"
+fi
+grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER" ||
+  die "Native ServerPlayer retained prelight notification hardening did not apply"
+
+# The browser/native dashboard is not an authority for skill ownership. Only
+# accept a true prelight request for a fake skill currently attached to the
+# player's hidden generals. A false request is only stale-state cleanup for a
+# choice the server still retains; otherwise prelightSkill() could register
+# an unrelated skill in the room even though no projection existed.
+CORE_ROOM="$PACKAGES_DIR/freekill-core/ltk/server/room.lua"
+if grep -Fq 'p:prelightSkill(data[3], data[4] == "true")' "$CORE_ROOM"; then
+  perl -0pi -e 's{function Room:handlePrelight\(id, data\)\n  local controller = self:getPlayerById\(id\)\n  if not controller then return end\n\n  local p = table\.find\(self\.players, function\(player\)\n    return table\.contains\(player\._observers, controller\._splayer\)\n  end\)\n  if p then\n    p:prelightSkill\(data\[3\], data\[4\] == "true"\)\n  end\nend}{function Room:handlePrelight(id, data)\n  local controller = self:getPlayerById(id)\n  if not controller then return end\n\n  if type(data) ~= "table" or type(data[3]) ~= "string" or\n      (data[4] ~= "true" and data[4] ~= "false") then\n    return\n  end\n\n  local skill = Fk.skills[data[3]]\n  if not skill then return end\n\n  local p = table.find(self.players, function(player)\n    return table.contains(player._observers, controller._splayer)\n  end)\n  if not p then return end\n\n  local isPrelight = data[4] == "true"\n  -- A browser/native client may only toggle a fake skill currently attached\n  -- to this player\x27s hidden generals.\n  if isPrelight and not p:isFakeSkill(skill) then return end\n\n  p:prelightSkill(skill, isPrelight)\nend}s' "$CORE_ROOM"
+fi
+if grep -Fq 'if isPrelight and not p:isFakeSkill(skill) then return end' "$CORE_ROOM"; then
+  perl -0pi -e 's/  if isPrelight and not p:isFakeSkill\(skill\) then return end/  if isPrelight then\n    if not p:isFakeSkill(skill) then return end\n  elseif not table.contains(p.prelighted_skills, skill) then\n    return\n  end/' "$CORE_ROOM"
+fi
+grep -Fq 'if not p:isFakeSkill(skill) then return end' "$CORE_ROOM" ||
+  die "Native Room fake-skill ownership hardening did not apply"
+grep -Fq 'elseif not table.contains(p.prelighted_skills, skill) then' "$CORE_ROOM" ||
+  die "Native Room stale-prelight cleanup hardening did not apply"
+
 sqlite3 "$PACKAGE_DB" < "$PACKAGES_DIR/init.sql"
 sqlite3 "$PACKAGE_DB" <<SQL
 DELETE FROM packages WHERE name IN ('freekill-core', 'utility', 'hegemony', 'gamemode', 'standard_ex', 'shzl', 'yj', 'mobile', 'sp', 'tenyear', 'overseas', 'mougong', 'jsrg', 'ol');

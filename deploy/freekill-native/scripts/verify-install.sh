@@ -6,6 +6,9 @@ DEPLOY_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 # shellcheck disable=SC1091
 source "$DEPLOY_DIR/versions.env"
 
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lua-runtime.sh"
+
 die() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1
@@ -18,6 +21,8 @@ PACKAGE_DB="$RUNTIME_DIR/packages/packages.db"
 [[ -f "$RUNTIME_DIR/freekill.server.config.json" ]] || die "Missing server config"
 [[ -f "$PACKAGE_DB" ]] || die "Missing package database"
 command -v sqlite3 >/dev/null 2>&1 || die "sqlite3 is required"
+lua54_prepare "$RUNTIME_DIR" || die 'Lua 5.4 runtime preflight failed'
+printf '%s\n' "Lua runtime: $TQS_LUA54_BIN with LuaSocket/LuaFileSystem loaded"
 
 if command -v python3 >/dev/null 2>&1; then
   python3 -m json.tool "$RUNTIME_DIR/freekill.server.config.json" >/dev/null || die "Invalid server config JSON"
@@ -60,6 +65,35 @@ verify_package jsrg "$JSRG_COMMIT"
 verify_package ol "$OL_COMMIT"
 
 printf '%s\n' 'Pinned package registry: 14/14 commits and enabled flags verified'
+
+# Keep the server-side prelight projection aligned with the native client. The
+# installer applies this exact source hardening after the pinned checkout; a
+# clean-looking Git commit alone is insufficient evidence that the running
+# server has the idempotent body.
+CORE_SERVERPLAYER="$RUNTIME_DIR/packages/freekill-core/ltk/server/serverplayer.lua"
+[[ -f "$CORE_SERVERPLAYER" ]] || die "Missing ServerPlayer source: $CORE_SERVERPLAYER"
+prelight_source="$(sed -n '/^function ServerPlayer:prelightSkill(skill, isPrelight)/,/^---@param isDeputy?/p' "$CORE_SERVERPLAYER")"
+grep -Fq 'table.insertIfNeed(self.prelighted_skills, skill)' <<<"$prelight_source" ||
+  die 'ServerPlayer prelight skill projection is not idempotent'
+grep -Fq 'table.insertIfNeed(self.prelighted_skills, s)' <<<"$prelight_source" ||
+  die 'ServerPlayer related prelight projection is not idempotent'
+if grep -Fq 'table.insert(self.prelighted_skills, ' <<<"$prelight_source"; then
+  die 'ServerPlayer prelight function still contains duplicate-unsafe append'
+fi
+printf '%s\n' 'ServerPlayer prelight projection: idempotent source hardening verified'
+
+fake_skill_source="$(sed -n '/^function ServerPlayer:addFakeSkill(skill)/,/^---@param skill string | Skill/p' "$CORE_SERVERPLAYER")"
+grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' <<<"$fake_skill_source" ||
+  die 'ServerPlayer fake-skill reattach does not resync retained prelight state'
+printf '%s\n' 'ServerPlayer fake-skill reattach: retained prelight state verified'
+
+CORE_ROOM="$RUNTIME_DIR/packages/freekill-core/ltk/server/room.lua"
+[[ -f "$CORE_ROOM" ]] || die "Missing Room source: $CORE_ROOM"
+grep -Fq 'if not p:isFakeSkill(skill) then return end' "$CORE_ROOM" ||
+  die 'Room prelight handler does not reject unattached fake skills'
+grep -Fq 'elseif not table.contains(p.prelighted_skills, skill) then' "$CORE_ROOM" ||
+  die 'Room prelight handler does not reject unknown false cleanup'
+printf '%s\n' 'Room prelight ownership: fake-skill and stale-cleanup checks verified'
 
 db_rows="$(sqlite3 "$PACKAGE_DB" "SELECT name || ' @ ' || hash || ' enabled=' || enabled FROM packages ORDER BY name;")"
 printf '%s\n' 'FreeKill native deployment verification: PASS'

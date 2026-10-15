@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tam Quốc Sát Mobile — Thiết Kế Đại Sảnh & Phòng Chờ</title>
+  <style>
+    :root {
+      --gold-hi: #fff2b2;
+      --gold-main: #f5c562;
+      --gold-dark: #9e6c1c;
+      --gold-border: #6d4b1a;
+      --bronze: #5a4228;
+      --bronze-dark: #3a281a;
+      --panel-bg: rgba(22, 16, 12, 0.94);
+      --font-calligraphy: "FZLBGBK", "STLiti", "Kaiti SC", "Noto Serif CJK SC", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080605;
+      color: #f7eed8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* TOP REVIEW TOOLBAR */
+    .mockup-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: rgba(16, 12, 9, 0.98);
+      border-bottom: 2px solid #8c642e;
+      padding: 8px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.9);
+      backdrop-filter: blur(8px);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--gold-main);
+      font-weight: bold;
+      margin-right: 2px;
+    }
+
+    .toolbar-btn {
+      background: rgba(45, 30, 20, 0.85);
+      border: 1px solid #73512b;
+      color: #ebdcc2;
+      padding: 4px 10px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .toolbar-btn:hover {
+      background: rgba(90, 65, 40, 0.95);
+      border-color: #ffd97d;
+      color: #fff;
+    }
+
+    .toolbar-btn.active {
+      background: linear-gradient(180deg, #d49b38 0%, #8c5816 100%);
+      border-color: #ffe299;
+      color: #1a0e05;
+      font-weight: bold;
+      box-shadow: 0 0 10px rgba(212, 155, 56, 0.5);
+    }
+
+    /* STAGE WRAPPER */
+    .stage-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px 10px 40px;
+    }
+
+    /* DEVICE FRAMES */
+    .device-frame {
+      position: relative;
+      background: #000;
+      border: 3px solid #5a3e1b;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,217,125,0.25);
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    .frame-390 { width: 390px; height: 844px; }
+    .frame-360 { width: 360px; height: 780px; }
+    .frame-landscape { width: 844px; height: 440px; border-radius: 16px; }
+    .frame-desktop { width: 1040px; height: 700px; border-radius: 12px; }
+
+    /* ============================================================== */
+    /* WAR ROOM CANVAS (SA BÀN QUÂN TRƯỚNG)                           */
+    /* ============================================================== */
+    .sg-game-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      overflow-y: auto;
+      user-select: none;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-image:
+        radial-gradient(circle at 50% 25%, rgba(190, 120, 40, 0.28) 0%, transparent 65%),
+        linear-gradient(180deg, rgba(18, 14, 10, 0.55) 0%, rgba(8, 6, 4, 0.88) 100%),
+        url('/photo-assets/bg-warroom.webp');
+    }
+
+    .sg-game-canvas::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.92);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* TOP LORD STATUS BAR (THANH QUÂN CƠ TRÊN CÙNG) */
+    .sg-lord-header {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(28, 18, 12, 0.95) 0%, rgba(16, 11, 8, 0.8) 100%);
+      border-bottom: 1.5px solid #8c642e;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+
+    .sg-lord-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sg-lord-avatar-frame {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1.5px solid #d49b38;
+      background: #1a0f08;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,230,150,0.4);
+      flex: none;
+    }
+
+    .sg-lord-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .sg-lord-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .sg-lord-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sg-lord-name {
+      font-weight: 800;
+      font-size: 13px;
+      color: #ffe699;
+      letter-spacing: 0.5px;
+    }
+
+    .sg-lord-seal-badge {
+      display: inline-block;
+      padding: 1px 5px;
+      background: linear-gradient(135deg, #a8241a 0%, #6d120a 100%);
+      border: 1px solid #e6b042;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      color: #fff2b2;
+      line-height: 1.2;
+    }
+
+    .sg-lord-rank-text {
+      font-size: 10px;
+      color: #cbb89e;
+    }
+
+    .sg-top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sg-top-icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #3d2a1b 0%, #1a120b 100%);
+      border: 1.2px solid #a67c38;
+      color: #ffe699;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    .sg-top-icon-btn:hover {
+      border-color: #ffd97d;
+      transform: scale(1.06);
+    }
+
+    /* SCREEN HEADING BANNER */
+    .sg-screen-heading-banner {
+      position: relative;
+      z-index: 20;
+      text-align: center;
+      padding: 8px 14px 4px;
+    }
+
+    .sg-screen-title {
+      font-family: var(--font-calligraphy);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(180deg, #fff2b2 0%, #f3c25b 40%, #b57a1e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9));
+    }
+
+    .sg-screen-subtitle {
+      font-size: 11px;
+      color: #c9b89d;
+      letter-spacing: 1px;
+    }
+
+    /* MAIN VIEW CONTENT CONTAINER */
+    .sg-main-content-scroll {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      padding: 8px 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ============================================================== */
+    /* LOBBY VIEW: TẠO PHÒNG & DANH SÁCH PHÒNG                        */
+    /* ============================================================== */
+    .sg-lobby-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* CLASSICAL METAL PANEL */
+    .sg-classical-panel {
+      background: linear-gradient(165deg, rgba(28, 20, 15, 0.94) 0%, rgba(14, 10, 8, 0.97) 100%);
+      border: 1.5px solid #8c642e;
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.85), inset 0 0 25px rgba(0,0,0,0.7);
+      position: relative;
+    }
+
+    .sg-panel-corner {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-color: #ffd97d;
+      border-style: solid;
+      pointer-events: none;
+    }
+    .sg-panel-corner-tl { top: 3px; left: 3px; border-width: 2px 0 0 2px; }
+    .sg-panel-corner-tr { top: 3px; right: 3px; border-width: 2px 2px 0 0; }
+    .sg-panel-corner-bl { bottom: 3px; left: 3px; border-width: 0 0 2px 2px; }
+    .sg-panel-corner-br { bottom: 3px; right: 3px; border-width: 0 2px 2px 0; }
+
+    .sg-panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(140, 100, 46, 0.4);
+      padding-bottom: 6px;
+    }
+
+    .sg-panel-title {
+      font-family: var(--font-calligraphy);
+      font-size: 16px;
+      font-weight: bold;
+      color: #ffe285;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sg-panel-kicker {
+      font-size: 10px;
+      color: #f5c562;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+
+    .sg-refresh-btn {
+      background: rgba(45, 30, 20, 0.85);
+      border: 1px solid #8c642e;
+      color: #ffd97d;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .sg-refresh-btn:hover {
+      background: #7a5020;
+      color: #fff;
+    }
+
+    /* FORM STACK */
+    .sg-form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sg-form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .sg-form-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      text-align: left;
+    }
+
+    .sg-field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e8d7bd;
+    }
+
+    .sg-text-input,
+    .sg-select-input {
+      width: 100%;
+      height: 34px;
+      background: rgba(10, 8, 6, 0.9);
+      border: 1px solid #6b4c27;
+      border-radius: 5px;
+      padding: 0 10px;
+      color: #fff2b2;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .sg-text-input:focus,
+    .sg-select-input:focus {
+      border-color: #ffd97d;
+      box-shadow: 0 0 8px rgba(255,217,125,0.4);
+    }
+
+    /* POOL ACCORDION & TACTICAL WOODEN TOGGLES (MỘC THẺ TRẬN PHÁP) */
+    .sg-pool-details {
+      margin-top: 5px;
+      background: rgba(14, 10, 7, 0.88);
+      border: 1px solid rgba(160, 115, 55, 0.45);
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 11px;
+    }
+
+    .sg-pool-summary-line {
+      cursor: pointer;
+      color: #ffd97d;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      padding-bottom: 3px;
+    }
+
+    .sg-pool-help-text {
+      font-size: 10px;
+      color: #bfa888;
+      line-height: 1.35;
+      margin: 3px 0 6px;
+    }
+
+    .pool-group {
+      border: 1px solid rgba(140, 100, 46, 0.4);
+      border-radius: 6px;
+      padding: 5px 8px;
+      margin-top: 6px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .pool-group legend {
+      padding: 0 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #e5cf96;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pool-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    /* Mộc Thẻ Trận Pháp (Tactical Wooden Chip) */
+    .pool-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: linear-gradient(180deg, #2c1d12 0%, #1a100a 100%);
+      border: 1px solid #73512b;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+      position: relative;
+    }
+
+    .pool-option:hover {
+      border-color: #ffd97d;
+      background: linear-gradient(180deg, #382518 0%, #24160d 100%);
+    }
+
+    .pool-option:active {
+      transform: scale(0.98);
+    }
+
+    .pool-option.active {
+      border-color: #f5c562;
+      box-shadow: 0 0 8px rgba(245, 197, 98, 0.25), inset 0 0 8px rgba(245, 197, 98, 0.1);
+      background: linear-gradient(180deg, #382518 0%, #22150d 100%);
+    }
+
+    .pool-option.disabled {
+      opacity: 0.55;
+      background: #15100d;
+      border-color: #3d2c1e;
+      filter: grayscale(0.5);
+    }
+
+    .pool-option input[type="checkbox"] {
+      width: 16px !important;
+      height: 16px !important;
+      min-height: 16px !important;
+      flex: none;
+      accent-color: #2ecc71;
+      cursor: pointer;
+    }
+
+    .sg-pool-option-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .sg-pool-pack-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff2b2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pool-option.disabled .sg-pool-pack-name {
+      color: #8c7b66;
+    }
+
+    .sg-pool-pack-count {
+      font-size: 10px;
+      padding: 1px 6px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 217, 125, 0.25);
+      border-radius: 10px;
+      color: #e6b042;
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
+
+    .pool-option.disabled .sg-pool-pack-count {
+      color: #665747;
+      border-color: rgba(100, 80, 60, 0.2);
+    }
+
+    /* Live Pool Summary Line */
+    .pool-summary {
+      margin-top: 7px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      font-size: 10.5px;
+      line-height: 1.4;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .pool-summary.ok {
+      background: rgba(30, 22, 14, 0.88);
+      border-left: 3px solid #2ecc71;
+      color: #ecd5a0;
+    }
+
+    .pool-summary.pool-warning {
+      background: rgba(45, 12, 10, 0.92);
+      border-left: 3px solid #e74c3c;
+      color: #ff998f;
+    }
+
+    /* ACTION BUTTON */
+    .sg-create-btn {
+      width: 100%;
+      height: 38px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #f5c562 0%, #d49528 40%, #8c5412 100%);
+      border: 1px solid #ffe299;
+      box-shadow: 0 3px 10px rgba(212, 149, 40, 0.45);
+      color: #1a0e05;
+      font-family: var(--font-calligraphy);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .sg-create-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    /* ROOM LIST (DANH SÁCH PHÒNG) */
+    .sg-room-cards-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .room-item {
+      background: linear-gradient(180deg, rgba(32, 22, 16, 0.92) 0%, rgba(18, 12, 9, 0.95) 100%);
+      border: 1.2px solid #73512b;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+      transition: all 0.2s ease;
+    }
+
+    .room-item:hover {
+      border-color: #ffd97d;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(212, 155, 56, 0.35);
+    }
+
+    .sg-room-meta-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .sg-room-title-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sg-room-name-text {
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffe699;
+    }
+
+    .sg-room-badge-mode {
+      padding: 1px 6px;
+      background: linear-gradient(135deg, #1e5a32 0%, #0d3018 100%);
+      border: 1px solid #2ecc71;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      color: #a2f2b8;
+    }
+
+    .sg-room-subtext {
+      font-size: 11px;
+      color: #c9b89d;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sg-room-pill-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .sg-status-open { color: #2ecc71; }
+    .sg-status-full { color: #e74c3c; }
+
+    .sg-room-right-action {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sg-room-capacity-counter {
+      font-family: var(--font-calligraphy);
+      font-size: 14px;
+      font-weight: bold;
+      color: #ffd97d;
+      background: rgba(14, 10, 8, 0.8);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #6b4c27;
+      white-space: nowrap;
+    }
+
+    .sg-btn-join-room {
+      height: 32px;
+      background: linear-gradient(180deg, #d49b38 0%, #8c5816 100%);
+      border: 1px solid #ffe299;
+      border-radius: 5px;
+      color: #1a0e05;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      padding: 0 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .sg-btn-join-room:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: scale(1.02);
+    }
+
+    .sg-btn-join-room:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ============================================================== */
+    /* WAITING ROOM VIEW (TRƯỚNG CHỈ HUY QUÂN SỰ)                    */
+    /* ============================================================== */
+    .sg-waiting-room-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* SEAT ROSTER CONTAINER */
+    .sg-roster-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      list-style: none;
+    }
+
+    .sg-seat-card {
+      background: linear-gradient(165deg, rgba(32, 22, 16, 0.96) 0%, rgba(16, 11, 8, 0.98) 100%);
+      border: 1.5px solid #8c642e;
+      border-radius: 8px;
+      padding: 8px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.8);
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .sg-seat-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .sg-seat-index-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #7a5020 0%, #4a2e0e 100%);
+      border: 1px solid #ffd97d;
+      color: #fff2b2;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+
+    .sg-seat-identity-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .sg-tag-you {
+      padding: 1px 5px;
+      background: #a8241a;
+      border: 1px solid #ffd97d;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .sg-tag-owner {
+      padding: 1px 5px;
+      background: #8c5816;
+      border: 1px solid #ffe299;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      color: #fff2b2;
+      white-space: nowrap;
+    }
+
+    .sg-tag-bot {
+      padding: 1px 5px;
+      background: #2b3a42;
+      border: 1px solid #5a7b8c;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: bold;
+      color: #b8d4e3;
+      white-space: nowrap;
+    }
+
+    .sg-seat-player-body {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .sg-seat-avatar {
+      width: 42px;
+      height: 50px;
+      border-radius: 6px;
+      border: 1.5px solid #d49b38;
+      background: #110c08;
+      overflow: hidden;
+      flex: none;
+    }
+
+    .sg-seat-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .sg-seat-player-names {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sg-seat-player-name {
+      font-size: 11.5px;
+      font-weight: bold;
+      color: #ffe699;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sg-seat-player-sub {
+      font-size: 10px;
+      color: #bda98e;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* SEAT STATUS SEAL */
+    .sg-seat-seal-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .sg-seal-ready {
+      background: linear-gradient(135deg, rgba(30, 90, 50, 0.9) 0%, rgba(13, 48, 24, 0.95) 100%);
+      border: 1px solid #2ecc71;
+      color: #a2f2b8;
+    }
+
+    .sg-seal-not-ready {
+      background: rgba(30, 20, 15, 0.8);
+      border: 1px solid #6b4d2c;
+      color: #c9b89d;
+    }
+
+    /* EMPTY SEAT */
+    .sg-seat-empty {
+      border-style: dashed;
+      border-color: #6b4d2c;
+      background: rgba(14, 10, 8, 0.6);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 110px;
+    }
+
+    .sg-empty-seat-desc {
+      font-size: 11px;
+      color: #8c765c;
+      margin-top: 4px;
+    }
+
+    /* COMMAND BUTTONS FOOTER FOR WAITING ROOM */
+    .sg-waiting-actions-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sg-action-btn-gold {
+      flex: 1;
+      height: 42px;
+      background: linear-gradient(180deg, #f5c562 0%, #d49528 40%, #8c5412 100%);
+      border: 1px solid #ffe299;
+      border-radius: 6px;
+      color: #1a0e05;
+      font-family: var(--font-calligraphy);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(212, 149, 40, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .sg-action-btn-gold:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+
+    .sg-action-btn-gold:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .sg-action-btn-secondary {
+      height: 42px;
+      padding: 0 16px;
+      background: rgba(45, 30, 20, 0.9);
+      border: 1px solid #9e6c1c;
+      border-radius: 6px;
+      color: #ffd97d;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .sg-action-btn-secondary:hover {
+      background: #7a5020;
+      color: #fff;
+    }
+
+    .sg-action-btn-ghost {
+      height: 42px;
+      padding: 0 14px;
+      background: transparent;
+      border: 1px solid #6b4d2c;
+      border-radius: 6px;
+      color: #c9b89d;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .sg-action-btn-ghost:hover {
+      background: rgba(90, 20, 15, 0.6);
+      border-color: #a8241a;
+      color: #fff;
+    }
+
+    /* BOTTOM PING BAR */
+    .sg-bottom-footer-bar {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px 10px;
+      font-size: 11px;
+      color: rgba(220, 200, 170, 0.55);
+      border-top: 1px solid rgba(140, 100, 46, 0.25);
+    }
+
+    .sg-ping-cluster {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sg-ping-green {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2ecc71;
+      box-shadow: 0 0 8px #2ecc71;
+    }
+
+    /* ============================================================== */
+    /* RESPONSIVE LAYOUT (LANDSCAPE & DESKTOP)                         */
+    /* ============================================================== */
+    .frame-landscape .sg-lobby-grid,
+    .frame-desktop .sg-lobby-grid {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .frame-landscape .sg-create-panel,
+    .frame-desktop .sg-create-panel {
+      width: 40%;
+      max-width: 380px;
+    }
+
+    .frame-landscape .sg-list-panel,
+    .frame-desktop .sg-list-panel {
+      flex: 1;
+    }
+
+    .frame-landscape .sg-roster-grid,
+    .frame-desktop .sg-roster-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP REVIEW TOOLBAR -->
+  <header class="mockup-toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Chế độ xem:</span>
+      <button class="toolbar-btn active" id="btnModeLobby">1. Đại Sảnh (Lobby)</button>
+      <button class="toolbar-btn" id="btnModeWaitingRoom">2. Phòng Chờ (Trướng Chỉ Huy)</button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Bố cục thiết bị:</span>
+      <button class="toolbar-btn active" id="btnDev390">Mobile Dọc 390px</button>
+      <button class="toolbar-btn" id="btnDev360">Mobile Dọc 360px</button>
+      <button class="toolbar-btn" id="btnDevLandscape">Mobile Ngang 844px</button>
+      <button class="toolbar-btn" id="btnDevDesktop">Desktop 1040px</button>
+    </div>
+  </header>
+
+  <!-- STAGE WRAPPER -->
+  <main class="stage-wrapper">
+    <div class="device-frame frame-390" id="deviceFrame">
+
+      <div class="sg-game-canvas">
+
+        <!-- TOP LORD STATUS BAR -->
+        <header class="sg-lord-header">
+          <div class="sg-lord-info">
+            <div class="sg-lord-avatar-frame">
+              <img src="/photo-assets/generals/godzhaoyun.webp" alt="Avatar" class="sg-lord-avatar-img" />
+            </div>
+            <div class="sg-lord-meta">
+              <div class="sg-lord-name-row">
+                <span class="sg-lord-name" id="lordUsername">ChuaCong_LongDau</span>
+                <span class="sg-lord-seal-badge">THẦN</span>
+              </div>
+              <span class="sg-lord-rank-text">Đại Đô Đốc · Quân Giai Cấp 1</span>
+            </div>
+          </div>
+
+          <div class="sg-top-controls">
+            <button type="button" class="sg-top-icon-btn" title="Binh Thư Tân Thủ">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </button>
+            <button type="button" class="sg-top-icon-btn" title="Âm Thanh">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
+            <button type="button" class="sg-top-icon-btn" title="Hỗ Trợ">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- SCREEN HEADING BANNER -->
+        <div class="sg-screen-heading-banner">
+          <h1 class="sg-screen-title" id="screenTitle">SẢNH QUỐC CHIẾN</h1>
+          <p class="sg-screen-subtitle" id="screenSubtitle">Bố trí phòng đấu và điểm tướng xuất chinh</p>
+        </div>
+
+        <!-- MAIN SCROLLABLE CONTENT -->
+        <div class="sg-main-content-scroll">
+
+          <!-- ============================================== -->
+          <!-- VIEW 1: LOBBY SCREEN (SẢNH ĐIỀU BINH)          -->
+          <!-- ============================================== -->
+          <div class="sg-lobby-grid" id="viewLobby">
+
+            <!-- PANEL 1: TẠO PHÒNG MỚI (E2E CONTRACT MATCH) -->
+            <section class="sg-classical-panel sg-create-panel" aria-labelledby="create-title">
+              <span class="sg-panel-corner sg-panel-corner-tl"></span>
+              <span class="sg-panel-corner sg-panel-corner-tr"></span>
+              <span class="sg-panel-corner sg-panel-corner-bl"></span>
+              <span class="sg-panel-corner sg-panel-corner-br"></span>
+
+              <div class="sg-panel-head">
+                <div>
+                  <span class="sg-panel-kicker">Khai Lập Trận Địa</span>
+                  <h2 id="create-title" class="sg-panel-title">Tạo phòng mới</h2>
+                </div>
+              </div>
+
+              <form class="sg-form-grid" onsubmit="event.preventDefault();">
+                <div class="sg-form-col">
+                  <label class="sg-field-label" for="room-name">Tên phòng</label>
+                  <input id="room-name" class="sg-text-input" value="Quốc Chiến Mobile #1" required maxLength="80" />
+                </div>
+
+                <div class="sg-form-row">
+                  <div class="sg-form-col">
+                    <label class="sg-field-label" for="capacity">Số người</label>
+                    <select id="capacity" class="sg-select-input">
+                      <option value="2">2 người</option>
+                      <option value="4" selected>4 người</option>
+                      <option value="6">6 người</option>
+                      <option value="8">8 người</option>
+                    </select>
+                  </div>
+                  <div class="sg-form-col">
+                    <label class="sg-field-label" for="timeout">Thời gian lượt</label>
+                    <select id="timeout" class="sg-select-input">
+                      <option value="15">15 giây</option>
+                      <option value="30" selected>30 giây</option>
+                      <option value="60">60 giây</option>
+                    </select>
+                  </div>
+                </div>
+
+                <details class="sg-pool-details pool-editor sg-create-pool" open>
+                  <summary class="sg-pool-summary-line">
+                    <span>Chọn bể tướng và bể bài</span>
+                    <span class="sg-accordion-caret" aria-hidden="true">▾</span>
+                  </summary>
+                  <p class="sg-pool-help-text">
+                    Bỏ chọn gói để loại toàn bộ tướng hoặc bài thuộc gói đó khỏi ván đấu.
+                  </p>
+
+                  <fieldset class="pool-group" aria-label="Bể tướng">
+                    <legend>Bể tướng (3)</legend>
+                    <div class="pool-options">
+                      <label class="pool-option active" data-pack-id="standard_generals">
+                        <input type="checkbox" data-pack-id="standard_generals" data-pack-type="generals" checked />
+                        <div class="sg-pool-option-content">
+                          <span class="sg-pool-pack-name">Gói Tiêu Chuẩn</span>
+                          <span class="sg-pool-pack-count">25 tướng</span>
+                        </div>
+                      </label>
+                      <label class="pool-option active" data-pack-id="formation_generals">
+                        <input type="checkbox" data-pack-id="formation_generals" data-pack-type="generals" checked />
+                        <div class="sg-pool-option-content">
+                          <span class="sg-pool-pack-name">Gói Trận Pháp</span>
+                          <span class="sg-pool-pack-count">12 tướng</span>
+                        </div>
+                      </label>
+                      <label class="pool-option active" data-pack-id="transformation_generals">
+                        <input type="checkbox" data-pack-id="transformation_generals" data-pack-type="generals" checked />
+                        <div class="sg-pool-option-content">
+                          <span class="sg-pool-pack-name">Gói Biến Cục</span>
+                          <span class="sg-pool-pack-count">14 tướng</span>
+                        </div>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="pool-group" aria-label="Bể bài">
+                    <legend>Bể bài (1)</legend>
+                    <div class="pool-options">
+                      <label class="pool-option active" data-pack-id="standard_cards">
+                        <input type="checkbox" data-pack-id="standard_cards" data-pack-type="cards" checked />
+                        <div class="sg-pool-option-content">
+                          <span class="sg-pool-pack-name">Bài Quốc Chiến Cơ Bản</span>
+                          <span class="sg-pool-pack-count">108 lá</span>
+                        </div>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <p class="pool-summary ok" id="mockPoolSummary" role="status">
+                    51 tướng khác tên · 108 lá bài. Cần tối thiểu 20 tướng và 16 lá cho 4 người.
+                  </p>
+                </details>
+
+                <button type="button" class="sg-create-btn" id="btnSubmitCreateRoom">
+                  Tạo phòng Quốc Chiến
+                </button>
+              </form>
+            </section>
+
+            <!-- PANEL 2: DANH SÁCH PHÒNG (E2E CONTRACT MATCH) -->
+            <section class="sg-classical-panel sg-list-panel" aria-labelledby="list-title">
+              <span class="sg-panel-corner sg-panel-corner-tl"></span>
+              <span class="sg-panel-corner sg-panel-corner-tr"></span>
+              <span class="sg-panel-corner sg-panel-corner-bl"></span>
+              <span class="sg-panel-corner sg-panel-corner-br"></span>
+
+              <div class="sg-panel-head">
+                <div>
+                  <span class="sg-panel-kicker">Chiến Trường Khả Dụng</span>
+                  <h2 id="list-title" class="sg-panel-title">Danh sách phòng</h2>
+                </div>
+                <button type="button" class="sg-refresh-btn" id="btnRefreshRooms">
+                  Làm mới
+                </button>
+              </div>
+
+              <ul class="sg-room-cards-list">
+                <!-- ROOM 1 -->
+                <li class="room-item">
+                  <div class="sg-room-meta-left">
+                    <div class="sg-room-title-line">
+                      <span class="sg-room-name-text">Quốc Chiến Quyết Đấu</span>
+                      <span class="sg-room-badge-mode">Quốc Chiến</span>
+                    </div>
+                    <div class="sg-room-subtext">
+                      <span class="sg-room-pill-status sg-status-open">● Còn 2 chỗ</span>
+                      <span>· Lượt: 30s</span>
+                    </div>
+                  </div>
+                  <div class="sg-room-right-action">
+                    <span class="sg-room-capacity-counter">2/4</span>
+                    <button type="button" class="sg-btn-join-room" onclick="switchToWaitingRoom('Quốc Chiến Quyết Đấu')">
+                      Vào phòng
+                    </button>
+                  </div>
+                </li>
+
+                <!-- ROOM 2 -->
+                <li class="room-item">
+                  <div class="sg-room-meta-left">
+                    <div class="sg-room-title-line">
+                      <span class="sg-room-name-text">Song Hùng Tranh Bá</span>
+                      <span class="sg-room-badge-mode">Quốc Chiến</span>
+                    </div>
+                    <div class="sg-room-subtext">
+                      <span class="sg-room-pill-status sg-status-open">● Còn 1 chỗ</span>
+                      <span>· Lượt: 60s</span>
+                    </div>
+                  </div>
+                  <div class="sg-room-right-action">
+                    <span class="sg-room-capacity-counter">1/2</span>
+                    <button type="button" class="sg-btn-join-room" onclick="switchToWaitingRoom('Song Hùng Tranh Bá')">
+                      Vào phòng
+                    </button>
+                  </div>
+                </li>
+
+                <!-- ROOM 3 -->
+                <li class="room-item">
+                  <div class="sg-room-meta-left">
+                    <div class="sg-room-title-line">
+                      <span class="sg-room-name-text">Xích Bích Liệt Hỏa</span>
+                      <span class="sg-room-badge-mode">Quốc Chiến</span>
+                    </div>
+                    <div class="sg-room-subtext">
+                      <span class="sg-room-pill-status sg-status-full">■ Đã đầy</span>
+                      <span>· Lượt: 15s</span>
+                    </div>
+                  </div>
+                  <div class="sg-room-right-action">
+                    <span class="sg-room-capacity-counter">4/4</span>
+                    <button type="button" class="sg-btn-join-room" disabled>
+                      Đã đầy
+                    </button>
+                  </div>
+                </li>
+              </ul>
+            </section>
+
+          </div>
+
+          <!-- ============================================== -->
+          <!-- VIEW 2: WAITING ROOM SCREEN (TRƯỚNG CHỈ HUY)   -->
+          <!-- ============================================== -->
+          <div class="sg-waiting-room-layout" id="viewWaitingRoom" style="display: none;">
+
+            <!-- ROOM SUMMARY CARD -->
+            <section class="sg-classical-panel" aria-labelledby="waiting-title">
+              <span class="sg-panel-corner sg-panel-corner-tl"></span>
+              <span class="sg-panel-corner sg-panel-corner-tr"></span>
+              <span class="sg-panel-corner sg-panel-corner-bl"></span>
+              <span class="sg-panel-corner sg-panel-corner-br"></span>
+
+              <div class="sg-panel-head">
+                <div>
+                  <span class="sg-panel-kicker">Trướng Chỉ Huy Chiến Trận</span>
+                  <h2 id="waiting-title" class="sg-panel-title">Phòng Quốc Chiến #1</h2>
+                </div>
+                <span class="sg-room-badge-mode">Quốc Chiến · 4 người</span>
+              </div>
+
+              <!-- ROSTER TITLE -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 id="players-title" style="font-size: 13px; color: #ffe699; font-weight: bold;">Danh sách người chơi</h3>
+                <span style="font-size: 11px; color: #cbb89e;">3/4 tướng lĩnh</span>
+              </div>
+
+              <!-- SEAT CARDS GRID -->
+              <ul class="sg-roster-grid">
+                <!-- SEAT 1: HOST / YOU -->
+                <li class="sg-seat-card">
+                  <div class="sg-seat-header-row">
+                    <span class="sg-seat-index-badge">1</span>
+                    <div class="sg-seat-identity-tags">
+                      <span class="sg-tag-you">Bạn</span>
+                      <span class="sg-tag-owner">Chủ phòng</span>
+                    </div>
+                  </div>
+                  <div class="sg-seat-player-body">
+                    <div class="sg-seat-avatar">
+                      <img src="/photo-assets/generals/godzhaoyun.webp" alt="Zhao Yun" />
+                    </div>
+                    <div class="sg-seat-player-names">
+                      <span class="sg-seat-player-name">ChuaCong_LongDau</span>
+                      <span class="sg-seat-player-sub">Chủ Tướng</span>
+                    </div>
+                  </div>
+                  <div class="sg-seat-seal-status sg-seal-ready">
+                    <span>SẴN SÀNG</span>
+                  </div>
+                </li>
+
+                <!-- SEAT 2: OTHER PLAYER -->
+                <li class="sg-seat-card">
+                  <div class="sg-seat-header-row">
+                    <span class="sg-seat-index-badge">2</span>
+                  </div>
+                  <div class="sg-seat-player-body">
+                    <div class="sg-seat-avatar">
+                      <img src="/photo-assets/generals/godzhouyu.webp" alt="Zhou Yu" />
+                    </div>
+                    <div class="sg-seat-player-names">
+                      <span class="sg-seat-player-name">DongNgo_DoDoc</span>
+                      <span class="sg-seat-player-sub">Đồng minh</span>
+                    </div>
+                  </div>
+                  <div class="sg-seat-seal-status sg-seal-ready">
+                    <span>SẴN SÀNG</span>
+                  </div>
+                </li>
+
+                <!-- SEAT 3: BOT -->
+                <li class="sg-seat-card">
+                  <div class="sg-seat-header-row">
+                    <span class="sg-seat-index-badge">3</span>
+                    <div class="sg-seat-identity-tags">
+                      <span class="sg-tag-bot">Bot</span>
+                    </div>
+                  </div>
+                  <div class="sg-seat-player-body">
+                    <div class="sg-seat-avatar">
+                      <img src="/photo-assets/generals/godlvbu.webp" alt="Lv Bu" />
+                    </div>
+                    <div class="sg-seat-player-names">
+                      <span class="sg-seat-player-name">Binh Sĩ Máy #1</span>
+                      <span class="sg-seat-player-sub">Tự động</span>
+                    </div>
+                  </div>
+                  <div class="sg-seat-seal-status sg-seal-ready">
+                    <span>SẴN SÀNG</span>
+                  </div>
+                </li>
+
+                <!-- SEAT 4: EMPTY SEAT -->
+                <li class="sg-seat-card sg-seat-empty">
+                  <span class="sg-seat-index-badge" style="border-color: #6b4d2c; background: #261910;">4</span>
+                  <div style="font-size: 12px; font-weight: bold; color: #a89478; margin-top: 4px;">Ghế trống</div>
+                  <div class="sg-empty-seat-desc">Đang chờ tướng lĩnh vào…</div>
+                </li>
+              </ul>
+
+              <!-- WAITING ROOM ACTIONS BAR -->
+              <div class="sg-waiting-actions-bar" style="margin-top: 14px;">
+                <button type="button" class="sg-action-btn-secondary" id="btnToggleReady">
+                  Bỏ sẵn sàng
+                </button>
+                <button type="button" class="sg-action-btn-secondary" id="btnAddBot">
+                  + Thêm bot
+                </button>
+                <button type="button" class="sg-action-btn-gold" id="btnStartGame">
+                  Bắt đầu
+                </button>
+                <button type="button" class="sg-action-btn-ghost" onclick="switchToLobby()">
+                  Rời phòng
+                </button>
+              </div>
+
+            </section>
+
+          </div>
+
+        </div>
+
+        <!-- BOTTOM PING BAR -->
+        <footer class="sg-bottom-footer-bar">
+          <div class="sg-ping-cluster">
+            <span class="sg-ping-green"></span>
+            <span>Máy chủ: Kết nối tốt (32ms)</span>
+          </div>
+          <span>Quốc Chiến · Bản 2.4.1</span>
+        </footer>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const btnModeLobby = document.getElementById('btnModeLobby');
+    const btnModeWaitingRoom = document.getElementById('btnModeWaitingRoom');
+    const viewLobby = document.getElementById('viewLobby');
+    const viewWaitingRoom = document.getElementById('viewWaitingRoom');
+    const screenTitle = document.getElementById('screenTitle');
+    const screenSubtitle = document.getElementById('screenSubtitle');
+
+    const deviceFrame = document.getElementById('deviceFrame');
+    const devBtns = {
+      '390': document.getElementById('btnDev390'),
+      '360': document.getElementById('btnDev360'),
+      'landscape': document.getElementById('btnDevLandscape'),
+      'desktop': document.getElementById('btnDevDesktop')
+    };
+
+    function switchToLobby() {
+      btnModeLobby.classList.add('active');
+      btnModeWaitingRoom.classList.remove('active');
+      viewLobby.style.display = 'flex';
+      viewWaitingRoom.style.display = 'none';
+      screenTitle.textContent = 'SẢNH QUỐC CHIẾN';
+      screenSubtitle.textContent = 'Bố trí phòng đấu và điểm tướng xuất chinh';
+    }
+
+    function switchToWaitingRoom(roomName = 'Phòng Quốc Chiến #1') {
+      btnModeWaitingRoom.classList.add('active');
+      btnModeLobby.classList.remove('active');
+      viewLobby.style.display = 'none';
+      viewWaitingRoom.style.display = 'flex';
+      screenTitle.textContent = 'TRƯỚNG CHỈ HUY';
+      screenSubtitle.textContent = roomName + ' · Bố trí trận hình sẵn sàng xuất chiến';
+      const titleElem = document.getElementById('waiting-title');
+      if (titleElem) titleElem.textContent = roomName;
+    }
+
+    btnModeLobby.addEventListener('click', switchToLobby);
+    btnModeWaitingRoom.addEventListener('click', () => switchToWaitingRoom());
+
+    function setDevice(size) {
+      Object.values(devBtns).forEach(b => b.classList.remove('active'));
+      devBtns[size].classList.add('active');
+      deviceFrame.className = 'device-frame frame-' + size;
+    }
+
+    devBtns['390'].addEventListener('click', () => setDevice('390'));
+    devBtns['360'].addEventListener('click', () => setDevice('360'));
+    devBtns['landscape'].addEventListener('click', () => setDevice('landscape'));
+    devBtns['desktop'].addEventListener('click', () => setDevice('desktop'));
+
+    // Simulation interactions
+    const btnToggleReady = document.getElementById('btnToggleReady');
+    let isReady = true;
+    if (btnToggleReady) {
+      btnToggleReady.addEventListener('click', () => {
+        isReady = !isReady;
+        btnToggleReady.textContent = isReady ? 'Bỏ sẵn sàng' : 'Sẵn sàng';
+      });
+    }
+
+    // Interactive Pool Calculation & Toggle
+    const packItems = [
+      { id: 'standard_generals', type: 'generals', count: 25 },
+      { id: 'formation_generals', type: 'generals', count: 12 },
+      { id: 'transformation_generals', type: 'generals', count: 14 },
+      { id: 'standard_cards', type: 'cards', count: 108 }
+    ];
+
+    const capacitySelect = document.getElementById('capacity');
+    const poolSummary = document.getElementById('mockPoolSummary');
+    const btnSubmitCreateRoom = document.getElementById('btnSubmitCreateRoom');
+
+    function updatePoolStatus() {
+      const cap = parseInt(capacitySelect ? capacitySelect.value : '4', 10) || 4;
+      const minGenerals = cap * 5;
+      const minCards = cap * 4;
+
+      let totalGenerals = 0;
+      let totalCards = 0;
+
+      packItems.forEach(item => {
+        const input = document.querySelector(`input[data-pack-id="${item.id}"]`);
+        const label = input ? input.closest('.pool-option') : null;
+        if (input && input.checked) {
+          if (item.type === 'generals') totalGenerals += item.count;
+          if (item.type === 'cards') totalCards += item.count;
+          if (label) {
+            label.classList.add('active');
+            label.classList.remove('disabled');
+          }
+        } else if (label) {
+          label.classList.remove('active');
+          label.classList.add('disabled');
+        }
+      });
+
+      const isValid = totalGenerals >= minGenerals && totalCards >= minCards;
+
+      if (poolSummary) {
+        if (isValid) {
+          poolSummary.className = 'pool-summary ok';
+          poolSummary.textContent = `${totalGenerals} tướng khác tên · ${totalCards} lá bài. Cần tối thiểu ${minGenerals} tướng và ${minCards} lá cho ${cap} người.`;
+          if (btnSubmitCreateRoom) {
+            btnSubmitCreateRoom.disabled = false;
+            btnSubmitCreateRoom.style.opacity = '1';
+            btnSubmitCreateRoom.style.cursor = 'pointer';
+          }
+        } else {
+          poolSummary.className = 'pool-summary pool-warning';
+          poolSummary.textContent = `${totalGenerals} tướng khác tên · ${totalCards} lá bài. Thiếu điều kiện! Cần tối thiểu ${minGenerals} tướng và ${minCards} lá cho ${cap} người.`;
+          if (btnSubmitCreateRoom) {
+            btnSubmitCreateRoom.disabled = true;
+            btnSubmitCreateRoom.style.opacity = '0.45';
+            btnSubmitCreateRoom.style.cursor = 'not-allowed';
+          }
+        }
+      }
+    }
+
+    document.querySelectorAll('.pool-option input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updatePoolStatus);
+    });
+    if (capacitySelect) {
+      capacitySelect.addEventListener('change', updatePoolStatus);
+    }
+  </script>
+</body>
+</html>

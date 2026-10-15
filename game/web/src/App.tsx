@@ -65,7 +65,7 @@ export default function App() {
 
   const disconnect = () => {
     adapter.disconnect();
-    useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], ownId: null, pendingRequest: null, skillInvoke: null, initialGeneral: null, result: null, board: emptyBoard(), progress: '', error: null });
+    useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], ownId: null, pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, result: null, board: emptyBoard(), progress: '', error: null });
   };
 
   const shellVariant = snapshot.phase === 'playing'
@@ -74,6 +74,10 @@ export default function App() {
     ? 'sg-app-shell sg-lobby-shell'
     : snapshot.phase === 'room'
     ? 'sg-app-shell sg-room-shell'
+    : snapshot.phase === 'boot'
+    ? 'sg-app-shell sg-boot-shell'
+    : snapshot.phase === 'login'
+    ? 'sg-app-shell sg-login-shell'
     : 'sg-app-shell';
 
   return (
@@ -106,6 +110,8 @@ export default function App() {
       {snapshot.phase === 'room' && <WaitingRoomScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'playing' && <GameBoardScreen busy={busy} leave={() => setExitAction('leave')}
         toggleTrust={() => run(() => adapter.toggleTrust())}
+        regularSkills={snapshot.regularSkills}
+        prelightSkill={(skillName, prelight) => run(() => adapter.prelightSkill(skillName, prelight))}
         direct={(id, data) => {
           const request = snapshot.pendingRequest;
           if (request && GAMEPLAY_REQUESTS.has(request.command)) run(() => {

@@ -203,6 +203,41 @@ local function validateHiddenViewAsScenario(scenario)
   end
 end
 
+local function validateHiddenDualScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-dual scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "hs__yanliangwenchou" or
+      actor.deputy ~= "hs__yuanshao" or actor.kingdom ~= "qun" then
+    fail("hidden-dual actor must use the catalogued Yan Liang/Wen Chou + Yuan Shao pair")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-dual target must be Triệu Vân + Pháp Chính in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-dual must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-dual must reserve exactly one actor Slash and one target Jink")
+  end
+  local actorCard, targetCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "shuangxiong-card" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" and card.match.color == "black" then
+      actorCard = card
+    elseif card.key == "shuangxiong-discard" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" and card.match.color == "red" then
+      targetCard = card
+    end
+  end
+  if not actorCard or not targetCard then
+    fail("hidden-dual must reserve a black actor Slash and red target Jink")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -221,6 +256,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenActiveScenario(scenario)
   elseif scenario.trigger == "hidden-view-as" then
     validateHiddenViewAsScenario(scenario)
+  elseif scenario.trigger == "hidden-dual" then
+    validateHiddenDualScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -323,6 +360,9 @@ local function cardMatches(card, matcher)
     return false
   end
   if matcher.type == "equip" and card.type ~= Card.TypeEquip then
+    return false
+  end
+  if matcher.color and card:getColorString() ~= matcher.color then
     return false
   end
   return true
@@ -476,6 +516,7 @@ end
 local function setupCards(room, state, scenario)
   local reserved = {}
   state.fixedHands = {}
+  state.deferredHands = {}
   state.slotCards = {}
   for _, spec in ipairs(scenario.cards) do
     local owner = playerForRole(state, spec.owner)
@@ -484,8 +525,25 @@ local function setupCards(room, state, scenario)
     if spec.area == "equip" then
       room:moveCardTo(id, Card.PlayerEquip, owner, fk.ReasonJustMove, "tqs_qa", nil, true, owner)
     elseif spec.area == "hand" then
-      state.fixedHands[owner.id] = state.fixedHands[owner.id] or {}
-      table.insert(state.fixedHands[owner.id], id)
+      -- The core's DrawInitialCards fixture path can notify a private hand
+      -- card with from=nil/fromArea=Player.Hand.  That is invalid input for
+      -- the client known-card tracker (and is especially easy to hit when
+      -- the reserved hand belongs to the opponent).  Keep this Jianxiong
+      -- card out of the initial draw entirely, then move it into the target
+      -- hand through the normal MoveCards path immediately before the real
+      -- Slash request.  The gameplay assertion remains the same while the
+      -- QA setup no longer fabricates a malformed private-hand move.
+      if scenario.trigger == "hidden-jianxiong" and spec.owner == "target" then
+        -- Use the normal move path here as well.  Mutating draw_pile/void
+        -- directly would leave each client believing this ID is still in
+        -- DrawPile, so the later Void -> target-hand move would be ignored
+        -- by CardManager:applyMoveInfo on the browser client.
+        room:moveCardTo(id, Card.Void, nil, fk.ReasonJustMove, "tqs_qa", nil, false)
+        state.deferredHands[spec.key] = id
+      else
+        state.fixedHands[owner.id] = state.fixedHands[owner.id] or {}
+        table.insert(state.fixedHands[owner.id], id)
+      end
     else
       fail("unsupported catalog card area: " .. tostring(spec.area))
     end
@@ -865,6 +923,12 @@ local function triggerHiddenJianxiong(room, state)
   end
 
   local cardId = state.slotCards["jianxiong-card"]
+  local deferredCardId = state.deferredHands["jianxiong-card"]
+  if deferredCardId ~= cardId then
+    fail("hidden-jianxiong must retain its catalogued Slash as a deferred target-hand card")
+  end
+  room:moveCardTo(cardId, Card.PlayerHand, state.target, fk.ReasonJustMove,
+    "tqs_qa", nil, false, state.target)
   if not cardId or not table.contains(state.target:getCardIds(Player.Hand), cardId) then
     fail("hidden-jianxiong must put its reserved Slash in the target hand")
   end
@@ -1174,6 +1238,120 @@ local function triggerHiddenViewAs(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenDual(room, state)
+  -- The actor remains face-down while the real trigger is prelighted. The
+  -- target is public and owns exactly one red Jink so the source color and the
+  -- later opposite-color ViewAs card are deterministic.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-dual actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__shuangxiong") then
+    fail("hidden-dual must attach the hidden dual trigger/ViewAs skill")
+  end
+  if state.actor:hasSkill("hs__shuangxiong") then
+    fail("hidden-dual must not be active before the prelighted phase trigger")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_dual_gate",
+    prompt = "TQS QA: xác nhận dock Song Hùng đã sẵn sàng, rồi kích hoạt trigger úp.",
+  })
+  if not gate then
+    fail("hidden-dual readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__shuangxiong") then
+    fail("hidden-dual must be prelighted before the EventPhaseStart branch")
+  end
+
+  local actorCardId = state.slotCards["shuangxiong-card"]
+  local discardCardId = state.slotCards["shuangxiong-discard"]
+  local targetInitialHand = #state.target:getCardIds(Player.Hand)
+  if targetInitialHand ~= 1 or not table.contains(state.actor:getCardIds(Player.Hand), actorCardId) or
+      not table.contains(state.target:getCardIds(Player.Hand), discardCardId) then
+    fail("hidden-dual must start with exactly the catalogued actor Slash and target Jink")
+  end
+
+  -- Reproduce the engine's phase-start contract without running a full random
+  -- turn. The source skill itself still owns the real cost/effect chain below.
+  room:setPlayerProperty(state.actor, "phase", Player.Play)
+  room:broadcastProperty(state.actor, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor,
+    phase = Player.Play,
+  })
+
+  local triggerEffects = table.filter(state.skillEffects, function(entry)
+    return entry.skill == "hs__shuangxiong" and entry.player == state.actor.id
+  end)
+  if #triggerEffects < 1 then
+    fail("hidden-dual prelighted EventPhaseStart must execute a native SkillEffect")
+  end
+  local triggerEffect = triggerEffects[1]
+  if triggerEffect.fake then
+    fail("hidden-dual must reveal before the native trigger SkillEffect")
+  end
+  if state.actor.general ~= "hs__yanliangwenchou" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-dual must reveal Yan Liang/Wen Chou in the catalogued main slot")
+  end
+  if state.actor:isFakeSkill("hs__shuangxiong") or not state.actor:hasSkill("hs__shuangxiong") then
+    fail("hidden-dual must convert the dual skill from fake to active before its cost chain")
+  end
+
+  local mark = state.actor:getMark("@hs__shuangxiong-turn")
+  if mark ~= Fk:getCardById(discardCardId):getColorString() or mark ~= "red" then
+    fail("hidden-dual must record the discarded red card color before ViewAs")
+  end
+  if #state.target:getCardIds(Player.Hand) ~= 0 then
+    fail("hidden-dual target must discard the catalogued Jink")
+  end
+
+  local request = Request:new(state.actor, "PlayCard")
+  request.timeout = room.timeout
+  local result = request:getResult(state.actor)
+  if result == "" or type(result) ~= "table" or type(result.card) ~= "table" then
+    fail("hidden-dual must receive a native PlayCard ViewAs reply")
+  end
+  if result.card.skill ~= "hs__shuangxiong" then
+    fail("hidden-dual PlayCard must select hs__shuangxiong")
+  end
+  if type(result.card.subcards) ~= "table" or #result.card.subcards ~= 1 or
+      result.card.subcards[1] ~= actorCardId then
+    fail("hidden-dual PlayCard must select exactly the catalogued opposite-color Slash")
+  end
+
+  local useResult = room:handleUseCardReply(state.actor, result, {
+    extra_data = { bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id } },
+  })
+  if type(useResult) ~= "table" or not useResult.card or useResult.card.trueName ~= "duel" or
+      not table.contains(useResult.card.skillNames or {}, "hs__shuangxiong") or
+      not table.contains(useResult.card.subcards or {}, actorCardId) then
+    fail("hidden-dual must convert the opposite-color Slash into a native Duel")
+  end
+  room:useCard(useResult)
+
+  local effectsAfter = table.filter(state.skillEffects, function(entry)
+    return entry.skill == "hs__shuangxiong" and entry.player == state.actor.id
+  end)
+  if #effectsAfter < 2 or table.contains(state.actor:getCardIds(Player.Hand), actorCardId) then
+    fail("hidden-dual must execute the ViewAs Duel and consume the catalogued Slash")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Song Hùng: trigger SkillEffect=%arg; mở chủ=%arg2; bỏ bài đỏ=%arg3; Duel khác màu=%arg4",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-dual skill=hs__shuangxiong trigger=true view_as_duel=true slot=main revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -1188,7 +1366,7 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
       state.scenario == "hidden-active-main" or state.scenario == "hidden-view-as" or
-      state.scenario == "hidden-view-as-main") and
+      state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -1302,6 +1480,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenActive(room, state)
     elseif scenario.trigger == "hidden-view-as" then
       triggerHiddenViewAs(room, state)
+    elseif scenario.trigger == "hidden-dual" then
+      triggerHiddenDual(room, state)
     end
   end,
 })

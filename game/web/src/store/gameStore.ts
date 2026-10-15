@@ -39,6 +39,24 @@ export interface GameResult {
   };
 }
 
+/**
+ * A fake skill is the client-side representation of a skill attached to a
+ * still-hidden general. It is intentionally scoped to the local player: the
+ * native client only adds/loses these dashboard entries when the event's id
+ * equals Cpp.self.id.
+ */
+export interface FakeSkill {
+  name: string;
+  prelighted: boolean;
+  enabled: boolean;
+}
+
+/** A regular skill visible on the local native dashboard. Actionability is
+ * owned by the current Lua request scene, not by this projection list. */
+export interface RegularSkill {
+  name: string;
+}
+
 function gameResult(state: GameSnapshot, data: unknown): GameResult {
   if (data === '') return { outcome: 'draw', winners: [] };
   const ids = typeof data === 'string' ? data.split('+') : [];
@@ -79,6 +97,8 @@ export interface GameSnapshot {
   ownId: number | null;
   pendingRequest: RequestInfo | null;
   skillInvoke: SkillInvokePrompt | null;
+  fakeSkills: FakeSkill[];
+  regularSkills: RegularSkill[];
   initialGeneral: InitialGeneralPrompt | null;
   board: BoardState;
   gameplay: GameplayScene;
@@ -91,6 +111,8 @@ export const initialSnapshot: GameSnapshot = {
   progress: '', error: null, rooms: [], roomName: '', roomMode: '',
   roomDisabledPacks: [], roomDisabledGenerals: [],
   capacity: 0, players: [], ownId: null, pendingRequest: null, skillInvoke: null,
+  fakeSkills: [],
+  regularSkills: [],
   initialGeneral: null,
   board: emptyBoard(),
   gameplay: emptyGameplay(),
@@ -112,10 +134,20 @@ function parseRooms(data: unknown): LobbyRoom[] {
   });
 }
 
+function validSkillName(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 150 &&
+    !/[\u0000-\u001F\u007F]/.test(value);
+}
+
+function clearSkillState(state: GameSnapshot): GameSnapshot {
+  return state.fakeSkills.length || state.regularSkills.length
+    ? { ...state, fakeSkills: [], regularSkills: [] } : state;
+}
+
 /** Pure reducer: the Lua client has already decoded and handled this event. */
 export function reduceUiEvent(state: GameSnapshot, command: string, data: unknown): GameSnapshot {
   if (command === 'SelfIdentity') return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
-    ? { ...state, ownId: data } : state;
+    ? { ...state, ownId: data, ...(state.ownId === data ? {} : { fakeSkills: [], regularSkills: [] }) } : state;
   const arr = entries(data);
   switch (command) {
     case 'DisplayTranslations':
@@ -131,6 +163,8 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         roomDisabledPacks: [], roomDisabledGenerals: [],
         result: null,
         capacity: 0, players: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
+        fakeSkills: [],
+        regularSkills: [],
         board: emptyBoard(), gameplay: emptyGameplay() };
     case 'CancelRequest':
       return { ...state, pendingRequest: null, skillInvoke: null, initialGeneral: null,
@@ -163,6 +197,8 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         roomDisabledPacks: Array.isArray(settings.disabledPack) ? settings.disabledPack.filter((p): p is string => typeof p === 'string') : [],
         roomDisabledGenerals: Array.isArray(settings.disabledGenerals) ? settings.disabledGenerals.filter((p): p is string => typeof p === 'string') : [],
         capacity: Number(arr[0]) || 0, pendingRequest: null, skillInvoke: null, initialGeneral: null,
+        fakeSkills: [],
+        regularSkills: [],
         board: emptyBoard(), gameplay: emptyGameplay() };
     }
     case 'AddPlayer':
@@ -184,11 +220,74 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'StartGame':
       return { ...state, phase: 'playing', pendingRequest: null,
         result: null,
-        skillInvoke: null, initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
+        skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
     case 'GameOver':
       return { ...state, phase: 'room', pendingRequest: null, skillInvoke: null,
         result: completedResult(state, data),
-        initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
+        fakeSkills: [], regularSkills: [], initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
+    case 'Reconnect':
+      // Native ClientBase:reconnect() emits EnterLobby/EnterRoom/StartGame,
+      // then ClientPlayer:sendDataToUI() rebuilds the current dashboard, and
+      // only after that emits the Reconnect marker.  The marker is therefore
+      // a transport boundary, not a skill-state reset.  Clearing here would
+      // discard the freshly restored hidden trigger/regular projection.
+      return state;
+    case 'ChangeSelf':
+      // Native Client:changeSelf() changes Lua Self before rebuilding the
+      // dashboard. Keep the privacy boundary aligned with that identity
+      // switch: discard the old player's hidden/regular skills and accept
+      // subsequent AddSkill events only for the new Self.
+      return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
+        ? clearSkillState({ ...state, ownId: data })
+        : state;
+    case 'AddSkill': {
+      const [id, skillName, prelight] = arr;
+      if (id !== state.ownId || !Number.isSafeInteger(id) || !validSkillName(skillName))
+        return state;
+      if (prelight === true) {
+        const current = state.fakeSkills.find((skill) => skill.name === skillName);
+        const next: FakeSkill = current ?? { name: skillName, prelighted: false, enabled: true };
+        return current ? state : { ...state, fakeSkills: [...state.fakeSkills, next] };
+      }
+      if (prelight !== undefined && prelight !== false) return state;
+      const current = state.regularSkills.find((skill) => skill.name === skillName);
+      return current ? state : { ...state,
+        regularSkills: [...state.regularSkills, { name: skillName }] };
+    }
+    case 'LoseSkill': {
+      const [id, skillName, prelight] = arr;
+      if (id !== state.ownId || !Number.isSafeInteger(id) || !validSkillName(skillName))
+        return state;
+      if (prelight === true) {
+        const hasFakeProjection = state.fakeSkills.some((skill) => skill.name === skillName);
+        const fakeSkills = state.fakeSkills.filter((skill) => skill.name !== skillName);
+        // Native client.lua can emit a fake LoseSkill for a delay-trigger
+        // fallback even though its AddSkill projection was regular-only.
+        // Remove that stale regular entry only when no fake projection was
+        // present; for a true dual projection, the following regular
+        // LoseSkill event owns the regular entry.
+        const regularSkills = hasFakeProjection
+          ? state.regularSkills
+          : state.regularSkills.filter((skill) => skill.name !== skillName);
+        return fakeSkills.length === state.fakeSkills.length &&
+          regularSkills.length === state.regularSkills.length
+          ? state : { ...state, fakeSkills, regularSkills };
+      }
+      if (prelight !== undefined && prelight !== false) return state;
+      const regularSkills = state.regularSkills.filter((skill) => skill.name !== skillName);
+      return regularSkills.length === state.regularSkills.length ? state : { ...state, regularSkills };
+    }
+    case 'PrelightSkill': {
+      const [skillName, prelight] = arr;
+      if (!validSkillName(skillName) || typeof prelight !== 'boolean') return state;
+      let changed = false;
+      const fakeSkills = state.fakeSkills.map((skill) => {
+        if (skill.name !== skillName) return skill;
+        changed = true;
+        return { ...skill, prelighted: prelight, enabled: true };
+      });
+      return changed ? { ...state, fakeSkills } : state;
+    }
     case 'ArrangeSeats':
     case 'PropertyUpdate':
     case 'SelfGenerals':
@@ -198,7 +297,10 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'SetPlayerMark':
     case 'SetBanner':
     case 'GameLog':
-      return { ...state, board: updateBoard(state.board, command, data, state.players.map((p) => p.id), state.ownId) };
+    case 'PilesUpdate':
+    case 'SelfHand':
+      return { ...state, board: updateBoard(state.board, command, data, state.players.map((p) => p.id), state.ownId,
+        state.roomMode === 'new_heg_mode') };
     case 'NetStateChanged': {
       const [id, netState] = entries(data);
       if (!Number.isInteger(id) || typeof netState !== 'string' ||
