@@ -29,6 +29,8 @@ export type QaScenarioId =
   | 'hidden-yiji-deputy'
   | 'hidden-jianxiong'
   | 'hidden-jianxiong-deputy'
+  | 'hidden-fankui'
+  | 'hidden-fankui-deputy'
   | 'hidden-reveal'
   | 'hidden-reveal-deputy'
   | 'hidden-active'
@@ -67,6 +69,7 @@ export type QaScenarioTrigger =
   | 'damage-exchange'
   | 'hidden-yiji'
   | 'hidden-jianxiong'
+  | 'hidden-fankui'
   | 'hidden-reveal'
   | 'hidden-active'
   | 'hidden-view-as'
@@ -266,6 +269,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-jianxiong',
     expectedCommand: 'AskForChoices',
   },
+  'hidden-fankui': {
+    version: 1,
+    id: 'hidden-fankui',
+    title: 'Tư Mã Ý úp: prelight Phản Quỹ trước sát thương',
+    seed: 0x5d6e7f96,
+    drawSequence: [trueName('slash'), trueName('peach')],
+    slots: [
+      slot('fankui-damage', trueName('slash'), 'opponent', 'hand', false, 0),
+      slot('fankui-loot', trueName('peach'), 'opponent', 'hand', false, 1),
+    ],
+    trigger: 'hidden-fankui',
+    expectedCommand: 'AskForCardChosen',
+  },
+  'hidden-fankui-deputy': {
+    version: 1,
+    id: 'hidden-fankui-deputy',
+    title: 'Tư Mã Ý úp ở phó tướng: prelight Phản Quỹ trước sát thương',
+    seed: 0x5d6e7f97,
+    drawSequence: [trueName('slash'), trueName('peach')],
+    slots: [
+      slot('fankui-damage', trueName('slash'), 'opponent', 'hand', false, 0),
+      slot('fankui-loot', trueName('peach'), 'opponent', 'hand', false, 1),
+    ],
+    trigger: 'hidden-fankui',
+    expectedCommand: 'AskForCardChosen',
+  },
   'hidden-reveal': {
     version: 1,
     id: 'hidden-reveal',
@@ -346,6 +375,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
   'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
+  'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
   'hidden-dual',
 ];
@@ -431,6 +461,16 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one opponent Slash for Jianxiong`);
+    }
+  }
+  if (plan.trigger === 'hidden-fankui') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'fankui-damage' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'fankui-loot' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'peach') {
+      throw new QaScenarioError(`${plan.id} must reserve opponent Slash and Peach for Phản Quỹ`);
     }
   }
   if (plan.trigger === 'hidden-view-as') {

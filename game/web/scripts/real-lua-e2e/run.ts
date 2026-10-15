@@ -1470,6 +1470,21 @@ try {
         assert.deepEqual(choiceReply.luaErrors, []);
       }
 
+      for (const scenarioId of ['hidden-fankui', 'hidden-fankui-deputy'] as const) {
+        const hiddenFankui = await startScenario(scenarioId);
+        const fakeFankui = p.locator('button.fake-skill-button').filter({ hasText: /Phản Quỹ|反馈|fankui/i }).first();
+        await fakeFankui.waitFor();
+        await fakeFankui.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeFankuiPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'fankui' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenFankui.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       const hiddenReveal = await startScenario('hidden-reveal');
       const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
       await reveal.waitFor();

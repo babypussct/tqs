@@ -292,6 +292,9 @@ const api = {
   acknowledgeJianxiongPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__jianxiong', ${prelight}}`));
   },
+  acknowledgeFankuiPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'fankui', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -460,6 +463,22 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__jianxiong', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_jianxiong_gate', 'TQS QA: prelight Gian Hùng, rồi xác nhận để đối thủ dùng Sát.'}");
+        break;
+      }
+      case 'hidden-fankui':
+      case 'hidden-fankui-deputy': {
+        // Fankui is a compulsory fk.Damaged trigger in the native source. The
+        // fixture only mirrors the hidden fake-skill/prelight gate; native C++
+        // remains authoritative for the later AskForCardChosen obtain path.
+        const main = scenarioId === 'hidden-fankui-deputy' ? 'hs__guojia' : 'hs__simayi';
+        const deputy = scenarioId === 'hidden-fankui-deputy' ? 'hs__simayi' : 'hs__guojia';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'fankui', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_fankui_gate', 'TQS QA: prelight Phản Quỹ, rồi xác nhận để tiếp tục.'}");
         break;
       }
       case 'hidden-reveal':

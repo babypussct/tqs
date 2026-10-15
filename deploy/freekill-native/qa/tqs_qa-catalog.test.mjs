@@ -15,6 +15,7 @@ const hegemonyModePath = path.resolve(here, '../../../runtime/packages/hegemony/
 const battleRoyalPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/gamemodes/skills/new_battle_royal.lua');
 const gameRulePath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/aux_skills_dir/game_rule.lua');
 const yijiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/yiji.lua');
+const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -136,6 +137,45 @@ test('hidden-jianxiong locks the hidden Cao Cao choice/effect contract', () => {
   assert.deepEqual(scenario.cards, [
     { key: 'jianxiong-card', match: { trueName: 'slash' }, owner: 'target', area: 'hand' },
   ]);
+});
+
+test('hidden-fankui locks compulsory Damaged reveal and source-card obtain for both slots', () => {
+  const expected = {
+    'hidden-fankui': {
+      seed: 0x5d6e7f96,
+      actor: { general: 'hs__simayi', deputy: 'hs__guojia', kingdom: 'wei' },
+    },
+    'hidden-fankui-deputy': {
+      seed: 0x5d6e7f97,
+      actor: { general: 'hs__guojia', deputy: 'hs__simayi', kingdom: 'wei' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-fankui', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForCardChosen', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'fankui-damage', match: { trueName: 'slash' }, owner: 'target', area: 'hand' },
+      { key: 'fankui-loot', match: { trueName: 'peach' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  // Fankui is compulsory on fk.Damaged; its only user choice is the source
+  // card to obtain. The QA gate is deliberately outside the source-law path
+  // and exists only to let the browser prelight the hidden skill first.
+  const fankui = fs.readFileSync(fankuiSkillPath, 'utf8');
+  assert.match(fankui, /fankui:addEffect\(fk\.Damaged/u);
+  assert.match(fankui, /room:askToChooseCard\(player/u);
+  assert.match(fankui, /room:obtainCard\(player, card/u);
+  assert.doesNotMatch(fankui, /askToSkillInvoke\(player, fankui/u,
+    'fankui must not add a second optional invoke gate to the native Damaged trigger');
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {

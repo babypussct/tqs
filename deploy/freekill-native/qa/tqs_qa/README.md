@@ -221,6 +221,35 @@ server-only manifest. The sanitized evidence files are linked from
 `docs/web-client/QUOC_CHIEN_RULE_AUDIT.md`; this local result does not certify
 the hosted CP89 candidate or an official release.
 
+## `hidden-fankui`: trigger `Damaged` khi Tư Mã Ý còn úp
+
+`fankui.lua` uses a compulsory `fk.Damaged` effect. The QA gate only pauses the
+room so the browser can send `PrelightSkill=true`; it is not a second gameplay
+invoke. The real path is:
+
+```text
+prelight → real Slash damage → SkillEffect → reveal the owning slot
+→ AskForCardChosen → obtain one card from the source
+```
+
+Both `hidden-fankui` and `hidden-fankui-deputy` reserve a target Slash and
+Peach, then require Tư Mã Ý to reveal in the correct main/deputy slot and obtain
+exactly one card. Run each branch on a clean room:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-fankui \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-fankui-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Current native-local evidence and package identity are kept only in
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
+this README intentionally does not duplicate hashes or logs.
+
 ## `hidden-reveal`: active reveal helper for a hidden compulsory skill
 
 This companion scenario keeps Lục Tốn + Tôn Quyền hidden, exposes the fake
