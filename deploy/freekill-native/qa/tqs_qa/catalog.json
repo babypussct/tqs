@@ -1477,6 +1477,82 @@
         }
       },
       "cards": []
+    },
+    {
+      "id": "hidden-kuanggu",
+      "title": "Hidden 魏延 狂骨 reveals before the native Damage choice",
+      "seed": 1567522744,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-kuanggu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__weiyan",
+          "deputy": "hs__huangzhong",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kuanggu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "kuanggu-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-kuanggu-deputy",
+      "title": "Hidden deputy 魏延 狂骨 reveals before the native Damage choice",
+      "seed": 1567522745,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-kuanggu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangzhong",
+          "deputy": "hs__weiyan",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kuanggu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "kuanggu-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

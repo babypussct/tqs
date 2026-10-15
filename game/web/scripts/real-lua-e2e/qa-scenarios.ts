@@ -69,7 +69,9 @@ export type QaScenarioId =
   | 'hidden-tianxiang'
   | 'hidden-tianxiang-deputy'
   | 'hidden-duanchang'
-  | 'hidden-duanchang-deputy';
+  | 'hidden-duanchang-deputy'
+  | 'hidden-kuanggu'
+  | 'hidden-kuanggu-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -120,7 +122,8 @@ export type QaScenarioTrigger =
   | 'hidden-guanxing'
   | 'hidden-tianxiang'
   | 'hidden-yingzi'
-  | 'hidden-duanchang';
+  | 'hidden-duanchang'
+  | 'hidden-kuanggu';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -750,6 +753,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-duanchang',
     expectedCommand: 'AskForChoices',
   },
+  'hidden-kuanggu': {
+    version: 1,
+    id: 'hidden-kuanggu',
+    title: '魏延 úp: Cuồng Cốt mở tướng trước lựa chọn sau sát thương',
+    seed: 0x5d6e7fb8,
+    drawSequence: [],
+    slots: [
+      { key: 'kuanggu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'kuanggu-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-kuanggu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-kuanggu-deputy': {
+    version: 1,
+    id: 'hidden-kuanggu-deputy',
+    title: '魏延 phó tướng úp: Cuồng Cốt mở tướng trước lựa chọn sau sát thương',
+    seed: 0x5d6e7fb9,
+    drawSequence: [],
+    slots: [
+      { key: 'kuanggu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'kuanggu-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-kuanggu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -775,6 +804,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-yingzi', 'hidden-yingzi-deputy',
   'hidden-tianxiang', 'hidden-tianxiang-deputy',
   'hidden-duanchang', 'hidden-duanchang-deputy',
+  'hidden-kuanggu', 'hidden-kuanggu-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -971,6 +1001,16 @@ function validatePlan(plan: QaScenarioPlan): void {
   }
   if (plan.trigger === 'hidden-duanchang' && plan.slots.length !== 0) {
     throw new QaScenarioError(`${plan.id} must not reserve cards; native 断肠 owns the death/choice path`);
+  }
+  if (plan.trigger === 'hidden-kuanggu') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'kuanggu-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'kuanggu-target-card' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'peach') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Slash and a target Peach for 狂骨`);
+    }
   }
   if (plan.trigger === 'hidden-rehide-yiji' && plan.slots.length !== 0) {
     throw new QaScenarioError(`${plan.id} must not reserve cards; native Di Kế owns the reveal/re-hide path`);

@@ -28,6 +28,7 @@ const fanjianSkillPath = path.resolve(here, '../../../runtime/packages/standard_
 const tianxiangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua');
 const duanchangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
+const kuangguSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/kuanggu.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -886,6 +887,47 @@ test('hidden-tiandu locks FinishJudge obtain and reveal-before-effect for both s
   assert.ok(effectCallbackIndex > revealIndex,
     'SkillEffect must reveal the matching slot before running the FinishJudge effect');
   assert.match(qaInit, /scenario\.trigger == "hidden-tiandu"[\s\S]*triggerHiddenTiandu\(room, state\)/u);
+});
+
+test('hidden-kuanggu locks close-range Damage marker, choice and reveal-before-effect for both slots', () => {
+  const expected = {
+    'hidden-kuanggu': {
+      seed: 0x5d6e7fb8,
+      actor: { general: 'hs__weiyan', deputy: 'hs__huangzhong', kingdom: 'shu' },
+    },
+    'hidden-kuanggu-deputy': {
+      seed: 0x5d6e7fb9,
+      actor: { general: 'hs__huangzhong', deputy: 'hs__weiyan', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-kuanggu', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'kuanggu-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
+      { key: 'kuanggu-target-card', match: { trueName: 'peach' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const kuanggu = fs.readFileSync(kuangguSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(kuanggu, /name = "hs__kuanggu"/u);
+  assert.match(kuanggu, /kuanggu:addEffect\(fk\.Damage/u);
+  assert.match(kuanggu, /data\.extra_data.*kuanggucheck/u);
+  assert.match(kuanggu, /room:askToChoice/u);
+  assert.match(kuanggu, /player:drawCards\(1, kuanggu\.name\)/u);
+  assert.match(kuanggu, /kuanggu:addEffect\(fk\.BeforeHpChanged/u);
+  assert.match(kuanggu, /data\.damageEvent\.extra_data.*kuanggucheck/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-kuanggu"[\s\S]*triggerHiddenKuanggu\(room, state\)/u);
+  assert.match(qaInit, /hidden-kuanggu[\s\S]*BeforeHpChanged[\s\S]*fk\.Damage/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {

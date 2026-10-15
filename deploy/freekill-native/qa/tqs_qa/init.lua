@@ -190,6 +190,44 @@ local function validateHiddenFankuiScenario(scenario)
   end
 end
 
+local function validateHiddenKuangguScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-kuanggu scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-kuanggu-deputy"
+  local expectedMain = deputy and "hs__huangzhong" or "hs__weiyan"
+  local expectedDeputy = deputy and "hs__weiyan" or "hs__huangzhong"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-kuanggu actor must use the catalogued Wei Yan main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-kuanggu target must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-kuanggu must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-kuanggu must reserve one actor Slash and one target Peach")
+  end
+  local actorCard, targetCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "kuanggu-card" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      actorCard = card
+    elseif card.key == "kuanggu-target-card" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "peach" then
+      targetCard = card
+    end
+  end
+  if not actorCard or not targetCard then
+    fail("hidden-kuanggu must reserve an actor Slash and a target Peach")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -706,6 +744,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenJianxiongScenario(scenario)
   elseif scenario.trigger == "hidden-fankui" then
     validateHiddenFankuiScenario(scenario)
+  elseif scenario.trigger == "hidden-kuanggu" then
+    validateHiddenKuangguScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1054,6 +1094,8 @@ local function setupState(room, scenario, seed)
     skillMoves = {},
     damageEvents = {},
     drawEvents = {},
+    kuangguBeforeHpChanged = false,
+    kuangguDamage = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -1590,6 +1632,102 @@ local function triggerHiddenFankui(room, state)
   fk.qInfo(string.format("[tqs_qa] hidden-fankui branch=%s slot=%s prelight=true invoked=%s revealed=%s obtained=%d revision=%s",
     state.hiddenFankuiBranch, fankuiIsDeputy and "deputy" or "main", tostring(invoked),
     tostring(revealedCorrectSlot), obtained, manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenKuanggu(room, state)
+  -- 狂骨 has two linked source effects: BeforeHpChanged marks a close-range
+  -- damage event, then Damage asks the hidden owner whether to draw or heal.
+  -- Keep Wei Yan face-down until the real SkillEffect path resolves so this
+  -- scenario proves both the prelight gate and reveal-before-effect ordering.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-kuanggu actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__kuanggu") then
+    fail("hidden-kuanggu must attach the hidden Kuanggu skill")
+  end
+  if state.actor:hasSkill("hs__kuanggu") then
+    fail("hidden-kuanggu must not be active before the prelighted damage effect")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_kuanggu_gate",
+    prompt = "TQS QA: prelight Cuồng Cốt, rồi xác nhận để đối thủ nhận sát thương.",
+  })
+  if not gate then
+    fail("hidden-kuanggu QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__kuanggu") then
+    fail("hidden-kuanggu must be prelighted before the damage branch")
+  end
+
+  local cardId = state.slotCards["kuanggu-card"]
+  local targetCardId = state.slotCards["kuanggu-target-card"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) or
+      not targetCardId or not table.contains(state.target:getCardIds(Player.Hand), targetCardId) then
+    fail("hidden-kuanggu must put the reserved Slash and target Peach in the native hands")
+  end
+  if #state.actor:getCardIds(Player.Hand) ~= 1 or #state.target:getCardIds(Player.Hand) ~= 1 then
+    fail("hidden-kuanggu must keep the actor and target hands deterministic")
+  end
+
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_kuanggu_damage",
+    prompt = "TQS QA: dùng Sát lên đối thủ để kiểm tra Cuồng Cốt.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-kuanggu must receive the reserved actor Slash against the target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__kuanggu" and entry.player == state.actor.id
+  end)
+  local kuangguIsDeputy = state.scenario == "hidden-kuanggu-deputy"
+  local revealedCorrectSlot = kuangguIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__weiyan"
+    or not kuangguIsDeputy and state.actor.general == "hs__weiyan" and state.actor.deputyGeneral == "anjiang"
+  local damage = 0
+  for _, entry in ipairs(state.damageEvents) do
+    if entry.step == 1 and entry.to == state.target.id then damage = damage + entry.amount end
+  end
+  local moved = movedCount(state, 1, "hs__kuanggu", nil, state.actor)
+
+  if not state.kuangguBeforeHpChanged or not state.kuangguDamage or damage ~= 1 or
+      not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Kuanggu must mark close-range damage, reveal Wei Yan and run a real SkillEffect")
+  end
+  if moved ~= 1 then
+    fail("hidden Kuanggu must execute the native draw1 choice and move one card to the actor hand")
+  end
+
+  state.hiddenKuangguBranch = "positive-prelight-damage-draw"
+  room:sendLog{
+    type = "[TQS QA] Hidden Cuồng Cốt: BeforeHpChanged=%arg; Damage=%arg2; SkillEffect=%arg3; mở tướng=%arg4; bốc bài=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(moved == 1),
+    arg6 = kuangguIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-kuanggu before_hp_changed=true damage=true skill_effect=true moved=%d slot=%s main=%s deputy=%s revision=%s",
+    moved, kuangguIsDeputy and "deputy" or "main", state.actor.general, state.actor.deputyGeneral,
+    manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -3259,13 +3397,40 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-tianxiang" or
       state.scenario == "hidden-tianxiang-deputy" or
       state.scenario == "hidden-duanchang" or
-      state.scenario == "hidden-duanchang-deputy") and
+      state.scenario == "hidden-duanchang-deputy" or
+      state.scenario == "hidden-kuanggu" or
+      state.scenario == "hidden-kuanggu-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
     recordSkillEffect(stateFor(player.room), player, data)
   end,
 })
+
+for _, eventName in ipairs({fk.BeforeHpChanged, fk.Damage}) do
+  director:addEffect(eventName, {
+    global = true, priority = -1000,
+    can_trigger = function(self, event, target, player, data)
+      local state = stateFor(player.room)
+      if not state or (state.scenario ~= "hidden-kuanggu" and state.scenario ~= "hidden-kuanggu-deputy") or
+          not state.currentDamageStep or player ~= player.room.players[1] or not data then
+        return false
+      end
+      if eventName == fk.BeforeHpChanged then
+        return data.damageEvent and data.damageEvent.from == state.actor
+      end
+      return data.from == state.actor
+    end,
+    on_trigger = function(self, event, target, player, data)
+      local state = stateFor(player.room)
+      if eventName == fk.BeforeHpChanged then
+        state.kuangguBeforeHpChanged = true
+      else
+        state.kuangguDamage = true
+      end
+    end,
+  })
+end
 
 -- Observe engine events once per room; no card ids are published in QA logs.
 for _, eventName in ipairs({fk.CardUsing, fk.CardResponding}) do
@@ -3391,6 +3556,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenJianxiong(room, state)
     elseif scenario.trigger == "hidden-fankui" then
       triggerHiddenFankui(room, state)
+    elseif scenario.trigger == "hidden-kuanggu" then
+      triggerHiddenKuanggu(room, state)
     elseif scenario.trigger == "hidden-reveal" then
       triggerHiddenReveal(room, state)
     elseif scenario.trigger == "hidden-active" then

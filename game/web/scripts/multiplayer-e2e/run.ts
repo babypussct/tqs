@@ -15,7 +15,7 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-rehide-yiji' | 'hidden-rehide-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-fanjian' | 'hidden-fanjian-deputy' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-tiandu' | 'hidden-tiandu-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy' | 'hidden-xiaoji' | 'hidden-xiaoji-deputy' | 'hidden-guanxing' | 'hidden-guanxing-deputy' | 'hidden-yingzi' | 'hidden-yingzi-deputy' | 'hidden-tianxiang' | 'hidden-tianxiang-deputy' | 'hidden-duanchang' | 'hidden-duanchang-deputy';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-rehide-yiji' | 'hidden-rehide-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-fanjian' | 'hidden-fanjian-deputy' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-tiandu' | 'hidden-tiandu-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy' | 'hidden-xiaoji' | 'hidden-xiaoji-deputy' | 'hidden-guanxing' | 'hidden-guanxing-deputy' | 'hidden-yingzi' | 'hidden-yingzi-deputy' | 'hidden-tianxiang' | 'hidden-tianxiang-deputy' | 'hidden-duanchang' | 'hidden-duanchang-deputy' | 'hidden-kuanggu' | 'hidden-kuanggu-deputy';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
@@ -35,8 +35,9 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-guanxing' || testScenario === 'hidden-guanxing-deputy' ||
   testScenario === 'hidden-yingzi' || testScenario === 'hidden-yingzi-deputy' ||
   testScenario === 'hidden-tianxiang' || testScenario === 'hidden-tianxiang-deputy' ||
-  testScenario === 'hidden-duanchang' || testScenario === 'hidden-duanchang-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang or hidden-duanchang-deputy');
+  testScenario === 'hidden-duanchang' || testScenario === 'hidden-duanchang-deputy' ||
+  testScenario === 'hidden-kuanggu' || testScenario === 'hidden-kuanggu-deputy',
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-kuanggu or hidden-kuanggu-deputy');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
@@ -89,6 +90,8 @@ assert.ok(!['hidden-tianxiang', 'hidden-tianxiang-deputy'].includes(testScenario
   'hidden-tianxiang scenarios require native QA and --manual to control the prelight, card/target and choice path');
 assert.ok(!['hidden-duanchang', 'hidden-duanchang-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
   'hidden-duanchang scenarios require native QA and --manual to control the prelight and death-choice path');
+assert.ok(!['hidden-kuanggu', 'hidden-kuanggu-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-kuanggu scenarios require native QA and --manual to control the prelight, damage and choice path');
 const hiddenYijiMode = process.env.TQS_LIVE_HIDDEN_YIJI_MODE ?? 'positive';
 assert.ok(hiddenYijiMode === 'negative' || hiddenYijiMode === 'positive' || hiddenYijiMode === 'skip',
   'TQS_LIVE_HIDDEN_YIJI_MODE must be negative, positive or skip');
@@ -284,6 +287,11 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // separate AskForSkillInvoke readiness gate to synchronize prelight.
   'hidden-duanchang': { general: /蔡文姬|Thái Văn Cơ|Cai\s*Wenji|Đoạn Trường|断肠|duanchang/i, generalId: 'hs__caiwenji', skill: /断肠|Đoạn Trường|duanchang|hs__duanchang/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForChoices', capacity: 4, requiresGeneral: false },
   'hidden-duanchang-deputy': { general: /蔡文姬|Thái Văn Cơ|Cai\s*Wenji|Đoạn Trường|断肠|duanchang/i, generalId: 'hs__caiwenji', skill: /断肠|Đoạn Trường|duanchang|hs__duanchang/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForChoices', capacity: 4, requiresGeneral: false },
+  // Kuanggu has a compulsory BeforeHpChanged marker followed by an optional
+  // Damage choice. The native QA gate owns only prelight; the real Slash and
+  // the source-defined draw choice must still travel through production UI.
+  'hidden-kuanggu': { general: /魏延|Ngụy Diên|Wei\s*Yan/i, generalId: 'hs__weiyan', skill: /狂骨|Cuồng Cốt|kuanggu|hs__kuanggu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  'hidden-kuanggu-deputy': { general: /魏延|Ngụy Diên|Wei\s*Yan/i, generalId: 'hs__weiyan', skill: /狂骨|Cuồng Cốt|kuanggu|hs__kuanggu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
 const damageExchangeScenario = testScenario === 'fazheng-enyuan';
@@ -332,7 +340,9 @@ const hiddenTianxiangScenario = testScenario === 'hidden-tianxiang' || testScena
 const hiddenTianxiangDeputyScenario = testScenario === 'hidden-tianxiang-deputy';
 const hiddenDuanchangScenario = testScenario === 'hidden-duanchang' || testScenario === 'hidden-duanchang-deputy';
 const hiddenDuanchangDeputyScenario = testScenario === 'hidden-duanchang-deputy';
-const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenFanjianScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario || hiddenTianduScenario || hiddenJizhiScenario || hiddenMingshiScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenWeimuScenario || hiddenXiaojiScenario || hiddenGuanxingScenario || hiddenYingziScenario || hiddenTianxiangScenario || hiddenDuanchangScenario;
+const hiddenKuangguScenario = testScenario === 'hidden-kuanggu' || testScenario === 'hidden-kuanggu-deputy';
+const hiddenKuangguDeputyScenario = testScenario === 'hidden-kuanggu-deputy';
+const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenFanjianScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario || hiddenTianduScenario || hiddenJizhiScenario || hiddenMingshiScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenWeimuScenario || hiddenXiaojiScenario || hiddenGuanxingScenario || hiddenYingziScenario || hiddenTianxiangScenario || hiddenDuanchangScenario || hiddenKuangguScenario;
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
@@ -433,6 +443,9 @@ let hiddenTianxiangInvoked = false;
 let hiddenTianxiangChoiceReply = false;
 let hiddenDuanchangGateReply = false;
 let hiddenDuanchangChoiceReply = false;
+let hiddenKuangguGateReply = false;
+let hiddenKuangguDamageReply = false;
+let hiddenKuangguChoiceReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
 
 type PublicBotAudit = {
@@ -1007,6 +1020,32 @@ try{
       'hidden-fankui must expose the fake Fankui trigger before the damage gate');
     console.log('PASS hidden-fankui pre-gate: native fake-skill dock is visible before the QA damage gate');
   }
+  if (hiddenKuangguScenario) {
+    const hiddenKuangguDeadline = Date.now() + 12000;
+    let hiddenKuangguOwner = -1;
+    let hiddenKuangguFallbackOwner = -1;
+    while (Date.now() < hiddenKuangguDeadline && hiddenKuangguOwner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        const fake = pages[client].locator('button.fake-skill-button');
+        if (await fake.count()) {
+          if (hiddenKuangguFallbackOwner < 0) hiddenKuangguFallbackOwner = client;
+          if (await fake.filter({ hasText: /狂骨|Cuồng Cốt|kuanggu/i }).count()) {
+            hiddenKuangguOwner = client;
+            break;
+          }
+        }
+      }
+      if (hiddenKuangguOwner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (hiddenKuangguOwner < 0) hiddenKuangguOwner = hiddenKuangguFallbackOwner;
+    assert.ok(hiddenKuangguOwner >= 0, 'hidden-kuanggu must expose a fake trigger before the damage gate');
+    scenarioClient = hiddenKuangguOwner;
+    const hiddenKuangguFake = pages[scenarioClient].locator('button.fake-skill-button')
+      .filter({ hasText: /狂骨|Cuồng Cốt|kuanggu/i }).first();
+    assert.ok(await hiddenKuangguFake.count(),
+      'hidden-kuanggu must expose the fake Kuanggu trigger before the damage gate');
+    console.log('PASS hidden-kuanggu pre-gate: native fake-skill dock is visible before the QA damage gate');
+  }
   if (hiddenLuoshenScenario) {
     const hiddenLuoshenDeadline = Date.now() + 12000;
     let hiddenLuoshenOwner = -1;
@@ -1175,6 +1214,8 @@ try{
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenFankuiScenario && hiddenFankuiGateReply && hiddenFankuiDamageReply && hiddenFankuiChoiceReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (hiddenKuangguScenario && hiddenKuangguGateReply && hiddenKuangguDamageReply && hiddenKuangguChoiceReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenRevealScenario && hiddenRevealReply &&
         hiddenRevealGateReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
@@ -1255,6 +1296,8 @@ try{
             /tianxiang|天香|Thiên Hương|loseHp|失去1点体力|mất 1 điểm|nhận.*bài/i.test(choiceText);
           const hiddenDuanchangChoice = hiddenDuanchangScenario &&
             /duanchang|断肠|Đoạn Trường|hs__caocao|Cao Cao|Tào Tháo|曹操/i.test(choiceText);
+          const hiddenKuangguChoice = hiddenKuangguScenario &&
+            /kuanggu|狂骨|Cuồng Cốt|draw1|rút|bốc|draw card/i.test(choiceText);
           const preferred = hiddenJianxiongChoice
             ? choices.locator('button.gameplay-choice:enabled')
               .filter({ hasText: /hs__jianxiong-obtain|jianxiong-obtain|obtain|获得|damage.*card|lá Sát|gây sát thương/i }).first()
@@ -1267,6 +1310,9 @@ try{
             : hiddenDuanchangChoice
             ? choices.locator('button.gameplay-choice:enabled')
               .filter({ hasText: /hs__caocao|Cao Cao|Tào Tháo|曹操|mainGeneral|chủ tướng/i }).first()
+            : hiddenKuangguChoice
+            ? choices.locator('button.gameplay-choice:enabled')
+              .filter({ hasText: /draw1|rút|bốc|draw card|摸一张|Bốc 1/i }).first()
             : (selectedScenario && !(testScenario === 'cards-and-choice' && scenarioActiveSkillReply))
             ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /revealMain|Lật chủ tướng|主将|main/i }).first()
             : testScenario === 'cards-and-choice'
@@ -1281,6 +1327,8 @@ try{
             'hidden-tianxiang must expose the native lose-HP-and-return-card choice');
           if (hiddenDuanchangChoice) assert.ok(await preferred.count(),
             'hidden-duanchang must expose the native Cao Cao/main-general choice');
+          if (hiddenKuangguChoice) assert.ok(await preferred.count(),
+            'hidden-kuanggu must expose the native draw1 choice');
           let submitted = false;
           const confirm=choices.getByRole('button',{name:'Xác nhận lựa chọn',exact:true});
           if(await option.count()) {
@@ -1306,12 +1354,14 @@ try{
             if (hiddenFanjianChoice && replied) hiddenFanjianChoiceReply = true;
             if (hiddenTianxiangChoice && replied) hiddenTianxiangChoiceReply = true;
             if (hiddenDuanchangChoice && replied) hiddenDuanchangChoiceReply = true;
+            if (hiddenKuangguChoice && replied) hiddenKuangguChoiceReply = true;
             if (replied) scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
             detail: testScenario === 'founding' || /lập quốc|quốc hiệu|founding|wild-choose|建国|Dã tâm/i.test(choiceText) ? 'founding-kingdom' :
                 hiddenJianxiongChoice ? 'hidden-jianxiong-obtain' :
                 hiddenFanjianChoice ? 'hidden-fanjian-lose-hp' :
                 hiddenTianxiangChoice ? 'hidden-tianxiang-lose-hp-return-card' :
                 hiddenDuanchangChoice ? 'hidden-duanchang-lose-main-skills' :
+                hiddenKuangguChoice ? 'hidden-kuanggu-draw1' :
                 testScenario === 'cards-and-choice' ? 'shangyi_card choice' : 'choice'});
           }
         }
@@ -1342,13 +1392,14 @@ try{
         const isHiddenYingziGate = hiddenYingziScenario && /TQS QA|prelight|tqs_qa_hidden_yingzi_gate/i.test(invokeText);
         const isHiddenTianxiangGate = hiddenTianxiangScenario && /TQS QA|prelight|tqs_qa_hidden_tianxiang_gate/i.test(invokeText);
         const isHiddenDuanchangGate = hiddenDuanchangScenario && /TQS QA|prelight|tqs_qa_hidden_duanchang_gate/i.test(invokeText);
+        const isHiddenKuangguGate = hiddenKuangguScenario && /TQS QA|prelight|tqs_qa_hidden_kuanggu_gate/i.test(invokeText);
         const isHiddenYijiInvoke = (hiddenYijiScenario || hiddenRehideYijiScenario) && !isHiddenGate && /Di Kế|遗计|yiji|hs__yiji/i.test(invokeText);
         const isHiddenJianxiongInvoke = hiddenJianxiongScenario && !isHiddenJianxiongGate && /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i.test(invokeText);
         const isHiddenLuoshenInvoke = hiddenLuoshenScenario && !isHiddenLuoshenGate && /洛神|Lạc Thần|luoshen|hs__luoshen/i.test(invokeText);
         const isHiddenJizhiInvoke = hiddenJizhiScenario && !isHiddenJizhiGate && /Tập Trí|集智|jizhi|hs__jizhi/i.test(invokeText);
         const isHiddenGuanxingInvoke = hiddenGuanxingScenario && !isHiddenGuanxingGate && /Quan Tinh|观星|guanxing|hs__guanxing/i.test(invokeText);
         const isHiddenTianxiangInvoke = hiddenTianxiangScenario && !isHiddenTianxiangGate && /Thiên Hương|天香|tianxiang|hs__tianxiang/i.test(invokeText);
-        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate) {
+        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenKuangguGate) {
           nativeQaGateSeen = true;
           nativeQaGateCommand = latest.command;
         }
@@ -1476,10 +1527,18 @@ try{
           await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
             null, { timeout: 10000 });
         }
+        if (isHiddenKuangguGate) {
+          const fakeKuanggu = actor.locator('button.fake-skill-button')
+            .filter({ hasText: /狂骨|Cuồng Cốt|kuanggu/i }).first();
+          await fakeKuanggu.waitFor({ timeout: 10000 });
+          if (await fakeKuanggu.getAttribute('aria-pressed') !== 'true') await fakeKuanggu.click();
+          await actor.waitForFunction(() => document.querySelector('button.fake-skill-button[aria-pressed="true"]') !== null,
+            null, { timeout: 10000 });
+        }
         // A manual run may encounter unrelated optional skills while the
         // target prompt is still pending. Only invoke the requested caller
         // skill; cancel everything else so it cannot starve a native choice.
-        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate
+        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenKuangguGate
           ? true
           : isHiddenYijiInvoke
           ? hiddenRehideYijiScenario || hiddenYijiMode === 'positive'
@@ -1521,6 +1580,7 @@ try{
         if (hiddenYingziScenario && isHiddenYingziGate && replied) hiddenYingziGateReply = true;
         if (hiddenTianxiangScenario && isHiddenTianxiangGate && replied) hiddenTianxiangGateReply = true;
         if (hiddenDuanchangScenario && isHiddenDuanchangGate && replied) hiddenDuanchangGateReply = true;
+        if (hiddenKuangguScenario && isHiddenKuangguGate && replied) hiddenKuangguGateReply = true;
         if ((hiddenYijiScenario || hiddenRehideYijiScenario) && isHiddenYijiInvoke && replied) {
           hiddenYijiAsked = true;
           hiddenYijiInvoked = shouldInvoke;
@@ -1554,6 +1614,7 @@ try{
             isHiddenXiaojiGate ? 'hidden-xiaoji-readiness-gate' :
             isHiddenYingziGate ? 'hidden-yingzi-readiness-gate' :
             isHiddenTianxiangGate ? 'hidden-tianxiang-readiness-gate' :
+            isHiddenKuangguGate ? 'hidden-kuanggu-readiness-gate' :
             isHiddenJianxiongGate ? 'hidden-jianxiong-readiness-gate' :
             isHiddenJizhiInvoke ? 'invoke-hidden-jizhi' :
             isHiddenJianxiongInvoke ? 'invoke-hidden-jianxiong' :
@@ -1567,6 +1628,8 @@ try{
           /hidden_jianxiong_damage|dùng Sát lên Cao Cao|kiểm tra Gian Hùng/i.test(activePrompt);
         const hiddenFankuiDamage = hiddenFankuiScenario &&
           /hidden_fankui_damage|dùng Sát lên Tư Mã Ý|kiểm tra Phản Quỹ/i.test(activePrompt);
+        const hiddenKuangguDamage = hiddenKuangguScenario &&
+          /hidden_kuanggu_damage|kiểm tra Cuồng Cốt|狂骨|kuanggu/i.test(activePrompt);
         const hiddenRevealActive = hiddenRevealScenario && /Mở tướng|亮将|reveal_skill&/i.test(activePrompt);
         const hiddenDualChoose = hiddenDualScenario &&
           /hs__shuangxiong-choose|Song Hùng.*chọn một người|双雄.*令一名|chọn.*Song Hùng/i.test(activePrompt);
@@ -1700,6 +1763,25 @@ try{
             hiddenFankuiDamageReply = true;
             scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
               detail: 'hidden-fankui-damage-slash' });
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        } else if (hiddenKuangguDamage) {
+          const slash = actor.locator('.gameplay-hand button:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          assert.ok(await slash.count(), 'hidden-kuanggu must expose the reserved actor Slash');
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          assert.ok(await target.count(), 'hidden-kuanggu must expose the native target');
+          await target.click();
+          const ok = actor.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await ok.isEnabled(), 'hidden-kuanggu must enable confirmation after selecting the reserved Slash');
+          await ok.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) {
+            hiddenKuangguDamageReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'hidden-kuanggu-damage-slash' });
           }
           await new Promise((resolve) => setTimeout(resolve, 250));
           continue;
@@ -1892,6 +1974,26 @@ try{
           await new Promise(r=>setTimeout(r,250));
           continue;
         }
+        if (hiddenKuangguScenario) {
+          const card = controls.locator('.gameplay-hand button:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          assert.ok(await card.count(), 'hidden-kuanggu must expose the reserved actor Slash');
+          await card.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          assert.ok(await target.count(), 'hidden-kuanggu must expose the native target');
+          await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await confirm.isEnabled(), 'hidden-kuanggu must enable PlayCard confirmation after selecting the reserved Slash');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) {
+            hiddenKuangguDamageReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'hidden-kuanggu-damage-slash' });
+          }
+          await new Promise(r=>setTimeout(r,250));
+          continue;
+        }
         const activeScenario = testScenario === 'card-chosen' ? null : selectedScenario;
         const desiredSkill=activeScenario?.skill ? skillButtons.filter({hasText:activeScenario.skill}).first() : null;
         if(desiredSkill && await desiredSkill.count() && await desiredSkill.isEnabled()) {
@@ -2059,6 +2161,11 @@ try{
       assert.ok(hiddenFankuiDamageReply, 'hidden-fankui must complete the target Slash request');
       assert.ok(hiddenFankuiChoiceReply, 'hidden-fankui must answer the native source-card choice');
       console.log('PASS hidden-fankui: native hidden Damaged trigger revealed Tư Mã Ý and answered the source-card choice');
+    } else if (hiddenKuangguScenario) {
+      assert.ok(hiddenKuangguGateReply, 'hidden-kuanggu must complete the native prelight gate');
+      assert.ok(hiddenKuangguDamageReply, 'hidden-kuanggu must complete the actor Slash request');
+      assert.ok(hiddenKuangguChoiceReply, 'hidden-kuanggu must answer the native draw1 choice');
+      console.log(`PASS hidden-kuanggu: native hidden BeforeHpChanged/Damage branch revealed Wei Yan and completed draw1 in the ${hiddenKuangguDeputyScenario ? 'deputy' : 'main'} slot`);
     } else if (hiddenLuoshenScenario) {
       assert.ok(hiddenLuoshenGateReply, 'hidden-luoshen must complete the native prelight gate');
       assert.ok(hiddenLuoshenInvoked, 'hidden-luoshen must invoke the prelighted phase-start trigger');
@@ -2327,6 +2434,21 @@ try{
     assert.ok(botAuditTrace[1 - scenarioClient].askForUseActiveSkill + botAuditTrace[1 - scenarioClient].playCard >= 1,
       'hidden-fankui source player must receive the native real-Slash request');
     console.log('PASS hidden-fankui public audit: both native clients observed Tư Mã Ý reveal, SkillEffect and one card obtain');
+  } else if (hiddenKuangguScenario) {
+    const expectedPosition = hiddenKuangguDeputyScenario ? 'phó tướng' : 'chủ tướng';
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /Hidden Cuồng Cốt|Hidden 狂骨/iu.test(log) && /BeforeHpChanged=true/iu.test(log) &&
+      /Damage=true/iu.test(log) && /SkillEffect=true/iu.test(log) &&
+      /mở tướng=true/iu.test(log) && /bốc bài=true/iu.test(log) &&
+      log.includes(`vị trí=${expectedPosition}`))),
+      `Both native clients must observe Kuanggu BeforeHpChanged/Damage, reveal and draw in the ${expectedPosition} slot`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'hidden-kuanggu must finish after its native damage/effect/choice branch');
+    assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 1,
+      'hidden-kuanggu owner must receive the native prelight readiness gate');
+    assert.ok(botAuditTrace[1 - scenarioClient].askForUseActiveSkill + botAuditTrace[1 - scenarioClient].playCard >= 1,
+      'hidden-kuanggu source player must receive the private real-Slash request');
+    console.log(`PASS hidden-kuanggu public audit: both native clients observed close-range damage, reveal and draw1 in the ${expectedPosition} slot`);
   } else if (hiddenLuoshenScenario) {
     const expectedPosition = hiddenLuoshenDeputyScenario ? 'phó tướng' : 'chủ tướng';
     assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
@@ -2643,6 +2765,27 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-kongcheng TargetConfirming Duel cancellation ${hiddenKongchengDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+  }
+  if (hiddenKuangguScenario) {
+    const evidenceFiles = readdirSync(out)
+      .filter((name) => name.startsWith(`${candidateId}-${testScenario}-multiplayer-live-`))
+      .sort();
+    const evidencePath = evidenceFiles.at(-1);
+    assert.ok(evidencePath, 'hidden-kuanggu evidence file must exist before enrichment');
+    const evidence = JSON.parse(readFileSync(path.join(out, evidencePath), 'utf8')) as Record<string, unknown>;
+    evidence.hiddenKuangguGateReply = hiddenKuangguGateReply;
+    evidence.hiddenKuangguDamageReply = hiddenKuangguDamageReply;
+    evidence.hiddenKuangguChoiceReply = hiddenKuangguChoiceReply;
+    evidence.hiddenKuanggu = {
+      deputy: hiddenKuangguDeputyScenario,
+      gate: hiddenKuangguGateReply,
+      damage: hiddenKuangguDamageReply,
+      choice: hiddenKuangguChoiceReply,
+      public: publicBotAudit,
+      trace: botAuditTrace,
+    };
+    evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-kuanggu BeforeHpChanged→Damage close-range Slash and draw1 choice ${hiddenKuangguDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
     writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
   }
   if (hiddenWeimuScenario) {
