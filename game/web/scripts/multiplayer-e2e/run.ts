@@ -937,7 +937,7 @@ try{
         (hiddenDualDiscardReply || hiddenDualDiscardAuto) && hiddenDualUseReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenLuoshenScenario && hiddenLuoshenGateReply && hiddenLuoshenInvoked &&
-        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))));
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver')));
     const rescueOrFoundingScenario = testScenario === 'rescue-normal' ||
       testScenario === 'rescue-battle' || testScenario === 'founding';
     const nativeQaGateDeadline = Date.now() + nativeQaGateTimeoutMs;
