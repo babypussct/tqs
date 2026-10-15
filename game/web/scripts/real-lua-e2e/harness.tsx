@@ -744,6 +744,23 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__zhiheng', true}"));
         requestId = sendRequest('PlayCard', '{}');
         break;
+      case 'hidden-fanjian':
+      case 'hidden-fanjian-deputy': {
+        // Phản Gián is an ordinary native ActiveSkill.  The hidden pair stays
+        // face-down while the projected fake skill is selected in PlayCard;
+        // the native server-side scenario separately proves revealBySkillName
+        // and the target's follow-up choice.
+        const deputy = scenarioId === 'hidden-fanjian-deputy';
+        const main = deputy ? 'hs__daqiao' : 'hs__zhouyu';
+        const deputyGeneral = deputy ? 'hs__zhouyu' : 'hs__daqiao';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'ex__fanjian', true}"));
+        requestId = sendRequest('PlayCard', '{}');
+        break;
+      }
       case 'hidden-view-as':
       case 'hidden-view-as-main': {
         // A hidden ViewAsSkill is projected as a regular PlayCard skill on

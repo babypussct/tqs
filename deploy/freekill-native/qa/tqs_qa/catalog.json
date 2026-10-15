@@ -533,6 +533,82 @@
       ]
     },
     {
+      "id": "hidden-fanjian",
+      "title": "Hidden Chu Du Fanjian reveals before PlayCard and resolves target choice",
+      "seed": 1567522740,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fanjian",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fanjian-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "fanjian-target-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fanjian-deputy",
+      "title": "Hidden deputy Chu Du Fanjian reveals before PlayCard and resolves target choice",
+      "seed": 1567522741,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fanjian",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__daqiao",
+          "deputy": "hs__zhouyu",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fanjian-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "fanjian-target-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
       "id": "hidden-view-as",
       "title": "Hidden deputy Triệu Vân Longdan converts Jink to Slash",
       "seed": 1567522693,

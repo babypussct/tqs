@@ -238,6 +238,44 @@ local function validateHiddenActiveScenario(scenario)
   end
 end
 
+local function validateHiddenFanjianScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-fanjian scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-fanjian-deputy"
+  local expectedMain = deputy and "hs__daqiao" or "hs__zhouyu"
+  local expectedDeputy = deputy and "hs__zhouyu" or "hs__daqiao"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wu" then
+    fail("hidden-fanjian actor must use the catalogued Chu Du main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-fanjian target must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "PlayCard" then
+    fail("hidden-fanjian must expose the native PlayCard request")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-fanjian must reserve one actor Peach and one hidden target Jink")
+  end
+  local actorCard, targetCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "fanjian-card" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "peach" then
+      actorCard = card
+    elseif card.key == "fanjian-target-card" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      targetCard = card
+    end
+  end
+  if not actorCard or not targetCard then
+    fail("hidden-fanjian must reserve an actor Peach and a target Jink")
+  end
+end
+
 local function validateHiddenViewAsScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-view-as scenarios must define exactly two players")
@@ -647,6 +685,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
     validateHiddenActiveScenario(scenario)
+  elseif scenario.trigger == "hidden-fanjian" then
+    validateHiddenFanjianScenario(scenario)
   elseif scenario.trigger == "hidden-view-as" then
     validateHiddenViewAsScenario(scenario)
   elseif scenario.trigger == "hidden-dual" then
@@ -1680,6 +1720,103 @@ local function triggerHiddenActive(room, state)
   fk.qInfo(string.format("[tqs_qa] hidden-active skill=hs__zhiheng effect=true slot=%s main=%s deputy=%s hand=%d->%d revision=%s",
     activeIsMain and "main" or "deputy", state.actor.general, state.actor.deputyGeneral, beforeHand, afterHand,
     manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenFanjian(room, state)
+  -- Chu Du's active skill is a real PlayCard action.  Keep both Wu generals
+  -- hidden until the native SkillEffect runs; the SkillEffect itself must
+  -- reveal only the slot that owns ex__fanjian before on_use gives the Peach
+  -- and asks the target for the source-defined choice.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-fanjian actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("ex__fanjian") then
+    fail("hidden-fanjian must attach the hidden active Phản Gián skill")
+  end
+  if state.actor:hasSkill("ex__fanjian") then
+    fail("hidden-fanjian Phản Gián must not be active before PlayCard")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_fanjian_gate",
+    prompt = "TQS QA: xác nhận dock Phản Gián đã sẵn sàng, rồi bấm Kích hoạt.",
+  })
+  if not gate then
+    fail("hidden-fanjian readiness gate was cancelled")
+  end
+
+  local cardId = state.slotCards["fanjian-card"]
+  local targetCardId = state.slotCards["fanjian-target-card"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) then
+    fail("hidden-fanjian must put its reserved Peach in the actor hand")
+  end
+  if not targetCardId or not table.contains(state.target:getCardIds(Player.Hand), targetCardId) then
+    fail("hidden-fanjian must put its reserved Jink in the target hand")
+  end
+
+  local request = Request:new(state.actor, "PlayCard")
+  request.timeout = room.timeout
+  local result = request:getResult(state.actor)
+  if result == "" or type(result) ~= "table" or type(result.card) ~= "table" then
+    fail("hidden-fanjian must receive a native PlayCard skill reply")
+  end
+  if result.card.skill ~= "ex__fanjian" then
+    fail("hidden-fanjian PlayCard must select ex__fanjian")
+  end
+  if type(result.card.subcards) ~= "table" or #result.card.subcards ~= 1 or
+      result.card.subcards[1] ~= cardId or type(result.targets) ~= "table" or
+      #result.targets ~= 1 or result.targets[1] ~= state.target.id then
+    fail("hidden-fanjian must select exactly the reserved Peach and the native target")
+  end
+
+  local beforeActorHand = #state.actor:getCardIds(Player.Hand)
+  local beforeTargetHp = state.target.hp
+  local useResult = room:handleUseCardReply(state.actor, result)
+  if type(useResult) == "table" then
+    room:useCard(useResult)
+  end
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "ex__fanjian" and entry.player == state.actor.id
+  end)
+  local fanjianIsDeputy = state.scenario == "hidden-fanjian-deputy"
+  local revealedCorrectSlot = fanjianIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__zhouyu"
+    or not fanjianIsDeputy and state.actor.general == "hs__zhouyu" and state.actor.deputyGeneral == "anjiang"
+  local targetKeptGift = room:getCardOwner(cardId) == state.target and
+    table.contains(state.target:getCardIds(Player.Hand), cardId)
+  local targetKeptOriginal = table.contains(state.target:getCardIds(Player.Hand), targetCardId)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("hidden-fanjian must reveal Chu Du in its catalogued slot before a real SkillEffect")
+  end
+  if state.actor:isFakeSkill("ex__fanjian") or not state.actor:hasSkill("ex__fanjian") then
+    fail("hidden-fanjian must convert Phản Gián from fake to active after reveal")
+  end
+  if beforeActorHand ~= 1 or table.contains(state.actor:getCardIds(Player.Hand), cardId) or
+      not targetKeptGift or not targetKeptOriginal then
+    fail("hidden-fanjian must give the selected Peach to the target and preserve the target Jink")
+  end
+  if state.target.hp ~= beforeTargetHp - 1 then
+    fail("hidden-fanjian QA must select the native loseHp branch after the gift")
+  end
+
+  state.hiddenFanjianBranch = "positive-active-reveal-lose-hp"
+  room:sendLog{
+    type = "[TQS QA] Hidden Phản Gián: SkillEffect=%arg; vị trí=%arg6; mở Chu Du=%arg2; fake=%arg3; tặng bài=%arg4; mất HP=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(effect.fake),
+    arg4 = tostring(targetKeptGift),
+    arg5 = tostring(state.target.hp == beforeTargetHp - 1),
+    arg6 = fanjianIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-fanjian skill=ex__fanjian effect=true slot=%s main=%s deputy=%s target_hp=%d->%d revision=%s",
+    fanjianIsDeputy and "deputy" or "main", state.actor.general, state.actor.deputyGeneral,
+    beforeTargetHp, state.target.hp, manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -2999,7 +3136,8 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
       state.scenario == "hidden-fankui-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
-      state.scenario == "hidden-active-main" or state.scenario == "hidden-view-as" or
+      state.scenario == "hidden-active-main" or state.scenario == "hidden-fanjian" or
+      state.scenario == "hidden-fanjian-deputy" or state.scenario == "hidden-view-as" or
       state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual" or
       state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy" or
       state.scenario == "hidden-jizhi" or state.scenario == "hidden-jizhi-deputy" or
@@ -3158,6 +3296,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenReveal(room, state)
     elseif scenario.trigger == "hidden-active" then
       triggerHiddenActive(room, state)
+    elseif scenario.trigger == "hidden-fanjian" then
+      triggerHiddenFanjian(room, state)
     elseif scenario.trigger == "hidden-view-as" then
       triggerHiddenViewAs(room, state)
     elseif scenario.trigger == "hidden-dual" then

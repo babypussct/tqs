@@ -23,6 +23,7 @@ const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pk
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
 const guanxingSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua');
 const yingziSkillPath = path.resolve(here, '../../../runtime/packages/standard_ex/pkg/general/skills/yingzi.lua');
+const fanjianSkillPath = path.resolve(here, '../../../runtime/packages/standard_ex/pkg/general/skills/fanjian.lua');
 const tianxiangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua');
 const duanchangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
@@ -694,6 +695,49 @@ test('hidden-active locks native PlayCard reveal-before-SkillEffect contract', (
   assert.deepEqual(scenario.cards, [
     { key: 'zhiheng-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
   ]);
+});
+
+test('hidden-fanjian locks active PlayCard reveal, gift and target-choice contract for both slots', () => {
+  const expected = {
+    'hidden-fanjian': {
+      seed: 0x5d6e7fb4,
+      actor: { general: 'hs__zhouyu', deputy: 'hs__daqiao', kingdom: 'wu' },
+    },
+    'hidden-fanjian-deputy': {
+      seed: 0x5d6e7fb5,
+      actor: { general: 'hs__daqiao', deputy: 'hs__zhouyu', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-fanjian', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'PlayCard', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2, `${id} player-count drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'fanjian-card', match: { trueName: 'peach' }, owner: 'actor', area: 'hand' },
+      { key: 'fanjian-target-card', match: { trueName: 'jink' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const fanjian = fs.readFileSync(fanjianSkillPath, 'utf8');
+  const hegemonyStandard = fs.readFileSync(
+    path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/init.lua'), 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(fanjian, /name = "ex__fanjian"/u);
+  assert.match(fanjian, /fanjian:addEffect\("active"/u);
+  assert.match(fanjian, /usedSkillTimes\(fanjian\.name, Player\.HistoryPhase\)/u);
+  assert.match(fanjian, /room:obtainCard\(target, cid/u);
+  assert.match(fanjian, /room:askToChoice\(target/u);
+  assert.match(fanjian, /room:loseHp\(target, 1, fanjian\.name\)/u);
+  assert.match(hegemonyStandard, /hs__zhouyu[\s\S]*addSkills\{ "ex__yingzi", "ex__fanjian" \}/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-fanjian"[\s\S]*triggerHiddenFanjian\(room, state\)/u);
+  assert.match(qaInit, /hidden-fanjian[\s\S]*SkillEffect[\s\S]*ex__fanjian/iu);
 });
 
 test('hidden slot mirrors lock main/deputy placement instead of relying on one roster order', () => {

@@ -1703,6 +1703,26 @@ try {
         card: { skill: 'hs__zhiheng', subcards: [hiddenActive.slotCards['zhiheng-card']] }, targets: [],
       });
 
+      for (const scenarioId of ['hidden-fanjian', 'hidden-fanjian-deputy'] as const) {
+        const hiddenFanjian = await startScenario(scenarioId);
+        const fanjianControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+        const fanjian = fanjianControls.locator('button.sg-skill-button')
+          .filter({ hasText: /Phản Gián|反间|fanjian/i }).first();
+        await fanjian.waitFor();
+        assert.equal(await fanjian.isEnabled(), true,
+          `${scenarioId} must expose hidden Phản Gián as a Lua-enabled PlayCard SkillButton`);
+        await fanjian.click();
+        await p.locator(`button[data-card-id="${hiddenFanjian.slotCards['fanjian-card']}"]:enabled`).click();
+        await p.locator('.board-player:not(.board-self) .gameplay-target:enabled').first().click();
+        await fanjianControls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+        const hiddenFanjianReply = await reply(p);
+        assert.equal(hiddenFanjianReply.replies.at(-1)?.requestId, hiddenFanjian.requestId);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+          card: { skill: 'ex__fanjian', subcards: [hiddenFanjian.slotCards['fanjian-card']] }, targets: [-1],
+        });
+        assert.deepEqual(hiddenFanjianReply.luaErrors, []);
+      }
+
       for (const scenarioId of ['hidden-view-as', 'hidden-view-as-main'] as const) {
         const hiddenViewAs = await startScenario(scenarioId);
         const viewAsControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });

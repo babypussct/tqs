@@ -37,6 +37,8 @@ export type QaScenarioId =
   | 'hidden-reveal-deputy'
   | 'hidden-active'
   | 'hidden-active-main'
+  | 'hidden-fanjian'
+  | 'hidden-fanjian-deputy'
   | 'hidden-view-as'
   | 'hidden-view-as-main'
   | 'hidden-dual'
@@ -102,6 +104,7 @@ export type QaScenarioTrigger =
   | 'hidden-fankui'
   | 'hidden-reveal'
   | 'hidden-active'
+  | 'hidden-fanjian'
   | 'hidden-view-as'
   | 'hidden-dual'
   | 'hidden-luoshen'
@@ -397,6 +400,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     drawSequence: [trueName('slash')],
     slots: [slot('zhiheng-card', trueName('slash'), 'self', 'hand', true, 0)],
     trigger: 'hidden-active',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-fanjian': {
+    version: 1,
+    id: 'hidden-fanjian',
+    title: 'Chu Du úp: Phản Gián mở đúng slot trước khi dùng PlayCard',
+    seed: 0x5d6e7fb4,
+    drawSequence: [trueName('peach'), trueName('jink')],
+    slots: [
+      slot('fanjian-card', trueName('peach'), 'self', 'hand', true, 0),
+      slot('fanjian-target-card', trueName('jink'), 'opponent', 'hand', false, 1),
+    ],
+    trigger: 'hidden-fanjian',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-fanjian-deputy': {
+    version: 1,
+    id: 'hidden-fanjian-deputy',
+    title: 'Chu Du phó tướng úp: Phản Gián mở đúng slot trước khi dùng PlayCard',
+    seed: 0x5d6e7fb5,
+    drawSequence: [trueName('peach'), trueName('jink')],
+    slots: [
+      slot('fanjian-card', trueName('peach'), 'self', 'hand', true, 0),
+      slot('fanjian-target-card', trueName('jink'), 'opponent', 'hand', false, 1),
+    ],
+    trigger: 'hidden-fanjian',
     expectedCommand: 'PlayCard',
   },
   'hidden-view-as': {
@@ -705,6 +734,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
   'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
+  'hidden-fanjian', 'hidden-fanjian-deputy',
   'hidden-rehide-yiji', 'hidden-rehide-yiji-deputy',
   'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
@@ -801,6 +831,16 @@ function validatePlan(plan: QaScenarioPlan): void {
     if (plan.slots.length !== 1 || plan.slots[0].key !== 'zhiheng-card' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for Chế Hành`);
+    }
+  }
+  if (plan.trigger === 'hidden-fanjian') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'fanjian-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'peach' ||
+        plan.slots[1].key !== 'fanjian-target-card' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Peach and one hidden target Jink for Phản Gián`);
     }
   }
   if (plan.trigger === 'hidden-jianxiong') {
