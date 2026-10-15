@@ -228,6 +228,99 @@ test('native client projection distinguishes usable triggers, active companions 
     'fake LoseSkill must remove the native trigger projection');
 });
 
+test('hidden ActiveSkill/ViewAsSkill uses regular PlayCard and reveals before its effect', async () => {
+  const client = readRuntime('ltk/client/client.lua');
+  const addSkill = section(client, 'function Client:addSkill', 'function Client:prelightSkill', 'Client:addSkill');
+  assertOrder(addSkill, [
+    'local active = table.filter(sks, function(s)',
+    'return s:isInstanceOf(ActiveSkill) or s:isInstanceOf(ViewAsSkill)',
+    'if #active > 0 then',
+    'self:notifyUI("AddSkill", {\n        id, skill_name,\n      })',
+  ], 'hidden active/ViewAs projection');
+
+  // ReqActiveSkill sends a structured card payload. This is the payload that
+  // the browser returns when a hidden regular skill is selected in PlayCard;
+  // it must not be confused with the numeric-card special_skill path used by
+  // card-owned helpers such as recast.
+  const activeRequest = readRuntime('ltk/core/request_type/active_skill.lua');
+  const doOk = section(activeRequest, 'function ReqActiveSkill:doOKButton', 'function ReqActiveSkill:doCancelButton', 'ReqActiveSkill:doOKButton');
+  assert.match(doOk, /local cardstr = \{\s*skill = self\.skill_name,\s*subcards = self\.pendings\s*\}/su,
+    'active-skill reply must carry the selected general skill name');
+  assert.match(doOk, /card = cardstr/u,
+    'active-skill reply must use the structured card branch');
+
+  const room = readRuntime('ltk/server/room.lua');
+  const reply = section(room, 'function Room:handleUseCardReply', 'function Room:askToUseRealCard', 'Room:handleUseCardReply');
+  const activeBranch = section(reply, 'if skill:isInstanceOf(ActiveSkill)', 'elseif skill:isInstanceOf(ViewAsSkill)', 'ActiveSkill reply branch');
+  const viewAsBranch = section(reply, 'elseif skill:isInstanceOf(ViewAsSkill)', 'elseif type(card) == "number"', 'ViewAsSkill reply branch');
+  assertOrder(activeBranch, [
+    'local use_data = skill:handleCostData(player, use_spec, extra_data)',
+    'self:useSkill(player, skill, function()',
+    'skill:onUse(self, use_data)',
+  ], 'hidden ActiveSkill server route');
+  assertOrder(viewAsBranch, [
+    'local use_data = skill:handleCostData(player, use_spec, extra_data)',
+    'self:useSkill(player, skill, function()',
+    'skill:onUse(self, use_data, c, params)',
+  ], 'hidden ViewAsSkill server route');
+
+  const skillEvents = readRuntime('ltk/server/events/skill.lua');
+  const skillEffect = section(skillEvents, 'function SkillEffect:main', 'function SkillEffect:clear', 'SkillEffect:main');
+  assertOrder(skillEffect, [
+    'player:revealBySkillName(main_skill.name)',
+    'logic:trigger(fk.SkillEffect, player, data)',
+    'effect_cb()',
+  ], 'hidden active/ViewAs reveal-before-effect');
+
+  // Guard the class boundary for the complete pinned general inventory: a
+  // general-owned ActiveSkill/ViewAsSkill must never be marked cardSkill,
+  // because SkillEffect intentionally skips reveal for card-owned effects.
+  const files = loadUpstreamFiles(upstreamRoot, UPSTREAM_PACKAGE_NAMES);
+  const runtime = new LuaRuntime({ files, callbacks: {
+    send: () => {}, setup: () => {}, ui: () => {}, log: () => {},
+  }});
+  try {
+    await runtime.start();
+    const inventory = await runtime.eval<{ active: number; viewAs: number; cardSkills: string[] }>(String.raw`
+      local result = { active = 0, viewAs = 0, cardSkills = {} }
+      local seen = {}
+      local disabled = Fk.game_mode_disabled["new_heg_mode"] or Util.DummyTable
+      for _, general in pairs(Fk.generals) do
+        local package = general.package
+        if package and not table.contains(disabled, package.name) and
+            not general.hidden and not general.total_hidden then
+          for _, skillName in ipairs(general:getSkillNameList(true)) do
+            local skill = Fk.skills[skillName]
+            local effects = skill and { skill } or Util.DummyTable
+            if skill then
+              for _, related in ipairs(skill.related_skills or Util.DummyTable) do
+                effects[#effects + 1] = related
+              end
+            end
+            for _, effect in ipairs(effects) do
+              local key = tostring(effect.name)
+              if not seen[key] and (effect:isInstanceOf(ActiveSkill) or effect:isInstanceOf(ViewAsSkill)) then
+                seen[key] = true
+                if effect:isInstanceOf(ActiveSkill) then result.active = result.active + 1 end
+                if effect:isInstanceOf(ViewAsSkill) then result.viewAs = result.viewAs + 1 end
+                if effect.cardSkill then result.cardSkills[#result.cardSkills + 1] = key end
+              end
+            end
+          end
+        end
+      end
+      table.sort(result.cardSkills)
+      return result
+    `);
+    assert.ok(inventory.active > 0, 'pinned general inventory must contain ActiveSkill effects');
+    assert.ok(inventory.viewAs > 0, 'pinned general inventory must contain ViewAsSkill effects');
+    assert.deepEqual(inventory.cardSkills, [],
+      'general-owned active/view-as effects must use the revealable SkillEffect path, not cardSkill');
+  } finally {
+    runtime.close();
+  }
+});
+
 test('every custom hidden trigger predicate keeps a skill-visibility gate or a recorded follow-up state', async () => {
   assert.ok(existsSync(upstreamRoot), `Missing pinned upstream checkout: ${upstreamRoot}`);
   const files = loadUpstreamFiles(upstreamRoot, UPSTREAM_PACKAGE_NAMES);
