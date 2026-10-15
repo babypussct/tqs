@@ -1238,6 +1238,7 @@ local function setupState(room, scenario, seed)
     jueqingPreDamage = false,
     hiddenEnyuanTargetConfirmed = false,
     hiddenEnyuanDrawCount = 0,
+    hiddenEnyuanDrawCards = {},
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -4071,7 +4072,16 @@ director:addEffect(fk.AfterCardsMove, {
     for _, move in ipairs(data) do
       if move.skillName == "ld__enyuan" and move.to == state.target and
           move.toArea == Card.PlayerHand then
-        state.hiddenEnyuanDrawCount = state.hiddenEnyuanDrawCount + #(move.moveInfo or {})
+        -- A single native draw can be represented by more than one
+        -- moveInfo entry while the move is normalized.  Count card ids,
+        -- not raw entries, so the QA assertion measures the actual card
+        -- movement rather than an intermediate duplicate.
+        for _, info in ipairs(move.moveInfo or {}) do
+          if info.cardId then
+            table.insertIfNeed(state.hiddenEnyuanDrawCards, info.cardId)
+          end
+        end
+        state.hiddenEnyuanDrawCount = #state.hiddenEnyuanDrawCards
       end
     end
   end,
