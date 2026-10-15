@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 16:15 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
+> Cập nhật handoff: 15/10/2026 16:20 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
 
 ## Mục tiêu và phạm vi
 
@@ -8,8 +8,8 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Trạng thái hiện hành
 
-- Bản live hiện là Render candidate [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com), identity **CP96 UI hotfix trên runtime CP92**: source `0cc0d346`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 14 package, 5.279 file trong bundle, bundle hash `0183516d94e2865f`. Deployment `dep-db899l7avr4c73amj8u0` đã báo `Deploy succeeded | Live`; public health và asset probe đều PASS. Đây là candidate để test, chưa phải official release.
-- **CP96 UI hotfix** đã được push và deploy thủ công từ `origin/codex/cp89-render-current`: build game web có 1.739 file, root `dist/` được đồng bộ sạch từ `game/web/dist`, gồm tooltip card qua portal, IdleHandCard đồng nhất 4 lớp, dịch prompt/log còn sót, chất `NoSuit`, điều chỉnh vị trí/kích thước seat và tăng khả năng đọc trên bàn mobile. HTML live dùng `index-B7bZuyxk.js` và `index-7DaeryPw.css`; HTML SHA-256 `4e7ab8fb6305ef969ec820d6fda7a1944c2d8b0b89169ff433200e48be1f5566`, JS `7d8ddd939fe409748aea0f1f51ce1f96a31c9131aceb639041f4c994e6c40638`, CSS `34aa37b8e49449193553c24de4b34392617e5e95e05556d112605407d63b6b75`. Auto-deploy vẫn tắt; source và artifact đã đối chiếu byte với live.
+- Bản live hiện là Render candidate [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com), effective identity **CP96 UI hotfix trên runtime CP92**: UI artifact `0cc0d346`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, 14 package, 5.279 file trong bundle, bundle hash `0183516d94e2865f`. Latest redeploy `dep-db89kson74is73eakr6g` từ HEAD `74a7b30e` đã báo `Deploy succeeded | Live`; HEAD chỉ chứa QA/docs/harness, không đổi `game/web/src`, `dist`, `gateway` hoặc `runtime`. Public health và asset probe PASS; đây là candidate để test, chưa phải official release.
+- **CP96 UI hotfix** đã được push và deploy thủ công từ `origin/codex/cp89-render-current`: build game web có 1.739 file, root `dist/` được đồng bộ sạch từ `game/web/dist`, gồm tooltip card qua portal, IdleHandCard đồng nhất 4 lớp, dịch prompt/log còn sót, chất `NoSuit`, điều chỉnh vị trí/kích thước seat và tăng khả năng đọc trên bàn mobile. HTML live dùng `index-B7bZuyxk.js` và `index-7DaeryPw.css`; HTML SHA-256 `4e7ab8fb6305ef969ec820d6fda7a1944c2d8b0b89169ff433200e48be1f5566`, JS `7d8ddd939fe409748aea0f1f51ce1f96a31c9131aceb639041f4c994e6c40638`, CSS `34aa37b8e49449193553c24de4b34392617e5e95e05556d112605407d63b6b75`. Latest redeploy `dep-db89kson74is73eakr6g` từ HEAD `74a7b30e` giữ nguyên byte identity; auto-deploy vẫn tắt.
 - Commit UI `0cc0d346` đã push thành công; người dùng có thể tiếp tục smoketest trên URL candidate. Runtime/package identity không đổi so với CP92.
 - Đã có browser → Wasmoon/Lua → gateway → FreeKill C++ live path: login/lobby/room/bot, một ván bot hoàn chỉnh, GameOver, về sảnh và disconnect sạch. Đây là bounded evidence, không phải full rule parity.
 - CP90/CP91, các hotfix UI CP93/CP94/CP96 và các sửa bridge/runtime đã được đưa vào artifact candidate; identity hosted đã được đối chiếu. Smoke test gameplay nhiều bước và official sign-off vẫn mở.
@@ -69,7 +69,7 @@ Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC
 - Đã thử reconnect native khi readiness `AskForSkillInvoke` của Di Kế còn pending: FreeKill hủy request khi actor disconnect rồi cho login lại, nên không coi đây là React regression; prompt-specific reconnect vẫn **OPEN** và phải kiểm riêng theo semantics request.
 - Oracle VM chỉ mới được xác nhận ở mức process/port: service `freekill-native` active và 9527 reachable, nhưng chưa đọc được manifest/hash trong guest. SSH vẫn bị từ chối, Run Command chạy dưới `ocarun` không có root, OCI không cho sửa `ssh_authorized_keys`, recovery chưa vào được root shell. **Không có bằng chứng phiên này đã deploy package hiện hành lên VM.**
 - Hai rerun Oracle/ngoài trước (`reconnect-failure-1792002124241.json`, `1792002605900.json`) fail trước QA gate do thiếu/chưa xác định `tqs_qa`; runner đã fail-fast đúng boundary package/config. Không dùng chúng để kết luận lỗi luật React.
-- Hotfix CP96 đã package, deploy và probe PASS trên Render; `PLAYABLE_MOBILE=false`, full parity/P0 live interaction/rescue/wild/founding và official release vẫn mở.
+- Hotfix CP96 đã package, deploy và probe PASS trên Render; latest redeploy không thay đổi UI/runtime identity; `PLAYABLE_MOBILE=false`, full parity/P0 live interaction/rescue/wild/founding và official release vẫn mở.
 - Invariant quan trọng sau reveal: source gốc gỡ fake skill và chuyển sang regular trước `SkillEffect`, không tự xóa `prelighted_skills`; tài liệu canonical đã ghi để tránh review nhầm hide/transform/swap.
 
 ## Việc còn mở theo thứ tự
@@ -93,8 +93,8 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T09:15:50.423Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `926de6cbd78f`.
+- Ghi lúc: 2026-10-15T09:21:29.920Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `74a7b30efa14`.
 - File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -111,9 +111,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+74a7b30e docs: align final QA handoff timestamps
 926de6cb docs: checkpoint hidden yingzi verification
 187d6147 qa: verify hidden yingzi across slots
-6ed7e311 docs: document hidden yingzi QA
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

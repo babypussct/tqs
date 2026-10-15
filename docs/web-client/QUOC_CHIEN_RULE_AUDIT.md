@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 15/10/2026 16:14 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 15/10/2026 16:20 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -21,7 +21,7 @@ Bản candidate hiện đạt **MVP browser có server thật**, nhưng chưa đ
 | Live bundle | 5.279 file |
 | Runtime MD5 | `c4704cd70bfbce3375c4c123a2443a3f` |
 | Bundle hash | `0183516d94e2865f` |
-| Release candidate | CP96 UI hotfix trên runtime CP92, source commit `0cc0d346` |
+| Release candidate | CP96 UI hotfix trên runtime CP92, UI artifact commit `0cc0d346`; latest redeploy từ HEAD `74a7b30e` |
 | Release status | Candidate để test, chưa official |
 | NATIVE-LOCAL runtime vừa dùng cho Xiaoji | C++ source pin `b8a2ad48305aea7b55ccca325fcbeb100cb8a01a`, runtime **flist MD5** `0cc149d0fb6b8bd68ae640e9bd7c281e`, 14 package pin + `tqs_qa`, browser artifact SHA-256 `d432f717a938665fab8ae81a6a903aa11f1cfeaa84d5cc0fd62f07572e436893`; `RELEASE.json` không pin đúng flist này nên chỉ ghi nhận là local/unpinned |
 | NATIVE-LOCAL QA package vừa dùng cho Xiaoji | QA source `ec6d35ae043a1e5ceda54e333e66661193feb5ec`; manifest SHA-256 `073b25f3f3e1331a1012c87f764c4f35fe19c7a0dbf1064352e91043c433c65d`, package SHA-256 `f95c1b9d0f69db951b8e529064cc9fea08fb8b9ab5dd4589ffd484717fa4fd66`, catalog SHA-256 `d11617ab98a54607aed71cf03546da2c0b1a01458caa9d4d6b4fc319b4c7e9f9`; chứng minh `hs__xiaoji` `AfterCardsMove` ở cả main/deputy |
@@ -34,11 +34,11 @@ Bản candidate hiện đạt **MVP browser có server thật**, nhưng chưa đ
 | Cài đặt native local | Lua 5.4 + `luasocket`/`luafilesystem` và package QA; ca Thiên Hương dùng runtime cô lập `flist MD5 79ef20f9a8fff39dc92310500269add0`, ca Đoạn Trường dùng `flist MD5 cc9ffae8858f3fff68f4b4f4c3d1bc9b`; chỉ phục vụ kiểm thử cục bộ, **không phải Oracle/production** |
 | Oracle VM package identity | **Chưa xác định / chưa chứng minh đã deploy source hiện hành**; service và cổng 9527 từng reachable nhưng chưa đọc được manifest/hash trong guest |
 | CP92 UI/runtime hotfix | Runtime/package baseline: Web 1.739 file; `RELEASE.json` v2 verify PASS (16.522 file); runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`; root `dist/` đã dọn và đồng bộ từ `game/web/dist` |
-| CP96 UI hotfix | Commit UI `0cc0d346`; deployment `dep-db899l7avr4c73amj8u0` Live; HTML `index-B7bZuyxk.js`/`index-7DaeryPw.css`; HTML/JS/CSS byte probes PASS |
+| CP96 UI hotfix | UI artifact commit `0cc0d346`; latest redeploy `dep-db89kson74is73eakr6g` từ HEAD `74a7b30e` Live; HEAD chỉ thêm QA/docs/harness, không đổi `game/web/src`, `dist`, `gateway` hoặc `runtime`; HTML `index-B7bZuyxk.js`/`index-7DaeryPw.css`; HTML/JS/CSS byte probes PASS |
 
 `CP90` (pile/tay bài), `CP91` (skill dock/time bar/action row/sorter), CP93, CP94 và CP96 UI đã được đưa vào artifact candidate và được Render deploy.
 
-Probe public sau deployment `dep-db899l7avr4c73amj8u0` (15/10/2026 15:56 GMT+7) trả `healthz=ok`, manifest `fileCount=5279`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, bundle hash `0183516d94e2865f`, HTML trỏ `index-B7bZuyxk.js` và `index-7DaeryPw.css`; HTML SHA-256 `4e7ab8fb6305ef969ec820d6fda7a1944c2d8b0b89169ff433200e48be1f5566`, JS `7d8ddd939fe409748aea0f1f51ce1f96a31c9131aceb639041f4c994e6c40638`, CSS `34aa37b8e49449193553c24de4b34392617e5e95e05556d112605407d63b6b75`; asset probes PASS. Đây là bằng chứng **LIVE candidate identity**, không phải full gameplay acceptance hoặc official release.
+Probe public sau latest redeploy `dep-db89kson74is73eakr6g` (15/10/2026 16:20 GMT+7) trả `healthz=ok`, manifest `fileCount=5279`, runtime MD5 `c4704cd70bfbce3375c4c123a2443a3f`, bundle hash `0183516d94e2865f`, HTML trỏ `index-B7bZuyxk.js` và `index-7DaeryPw.css`; HTML SHA-256 `4e7ab8fb6305ef969ec820d6fda7a1944c2d8b0b89169ff433200e48be1f5566`, JS `7d8ddd939fe409748aea0f1f51ce1f96a31c9131aceb639041f4c994e6c40638`, CSS `34aa37b8e49449193553c24de4b34392617e5e95e05556d112605407d63b6b75`; asset probes PASS. Đây là bằng chứng **LIVE candidate identity**; redeploy này không mở thêm phạm vi luật, không phải full gameplay acceptance hoặc official release.
 
 Re-validation local/native sau CP96 UI (15/10/2026 16:14) giữ nguyên kết luận: catalog/source scenarios `49/49`, `test:qa-server-contract` `30/30` subtests, Wasmoon/React Lua E2E `63/63`, hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Regression hidden-rehide-yiji và hidden-yingzi đều đã PASS NATIVE-LOCAL `2/2` main/deputy; đây là kiểm hồi quy/source evidence, không nâng candidate thành Oracle/hosted LIVE và không thay đổi runtime identity.
 
