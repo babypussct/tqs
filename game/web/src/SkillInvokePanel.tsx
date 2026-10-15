@@ -32,7 +32,10 @@ export default function SkillInvokePanel({ busy, request, prompt, onRespond }: {
       </div>
       {prompt ? <>
         <p className="skill-name">{text(prompt.skill)}</p>
-        <p className="muted">{text(prompt.prompt) || `Bạn có muốn kích hoạt ${text(prompt.skill)}?`}</p>
+        <p className="muted">{(() => {
+          const promptText = prompt.prompt ? text(prompt.prompt) : '';
+          return promptText && !promptText.startsWith('#') ? promptText : `Bạn có muốn kích hoạt ${text(prompt.skill)}?`;
+        })()}</p>
       </> : <p className="muted">Đang tải thông tin kỹ năng từ Lua…</p>}
       <div className="request-actions">
         <button type="button" className="button primary" disabled={busy || expired || !prompt} onClick={() => onRespond('OK')}>Kích hoạt</button>

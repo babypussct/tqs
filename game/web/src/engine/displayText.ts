@@ -23,18 +23,59 @@ export function plainText(text: string): string {
 
 export function displayText(text: string, translations: Record<string, string>, players: { id: number; name: string }[] = []): string {
   const [key, src, dest, ...args] = text.split(':');
-  const baseKey = key.includes('__') ? key.replace(/^.*__/, '') : key;
+  const lookup = (k: string | undefined): string | undefined => {
+    if (!k) return undefined;
+    return translations[k] ?? VI_ADDITIONS[k];
+  };
+
+  const prefixMatch = key.match(/^([#:]?)[a-zA-Z0-9]+__(.+)$/);
+  const baseKey = prefixMatch ? (prefixMatch[1] ?? '') + prefixMatch[2] : (key.includes('__') ? key.replace(/^.*__/, '') : key);
+  const rawKey = prefixMatch ? prefixMatch[2] : undefined;
+  const withoutHashKey = key.startsWith('#') ? key.slice(1) : undefined;
+  const withoutHashBaseKey = baseKey.startsWith('#') ? baseKey.slice(1) : undefined;
   const baseText = text.includes('__') && !text.startsWith(':') ? text.replace(/^.*__/, '') : text;
+
   // A full key wins (e.g. descriptions beginning with ':').
-  const translated = translations[text] ?? translations[key] ?? translations[baseText] ?? translations[baseKey] ?? text;
-  const playerName = (value: string | undefined) => players.find((p) => String(p.id) === value)?.name ?? value ?? '';
+  let translated = lookup(text)
+    ?? lookup(key)
+    ?? lookup(baseKey)
+    ?? lookup(rawKey)
+    ?? lookup(withoutHashKey)
+    ?? lookup(withoutHashBaseKey)
+    ?? lookup(baseText);
+
+  // Fallback for skill invoke prompts like #m_ex__fenji-invoke or #fenji-invoke
+  if (!translated && key.endsWith('-invoke')) {
+    const skillToken = key.replace(/^[#:]/, '').replace(/-invoke$/, '');
+    const skillBaseToken = skillToken.replace(/^[a-zA-Z0-9]+__/, '');
+    const skillTitle = lookup(skillToken) ?? lookup(skillBaseToken) ?? skillBaseToken;
+    if (dest) {
+      translated = `${skillTitle}: Bạn có muốn kích hoạt lên %dest không?`;
+    } else {
+      translated = `Bạn có muốn kích hoạt kỹ năng ${skillTitle}?`;
+    }
+  }
+
+  const playerName = (value: string | undefined) => {
+    if (!value) return '';
+    const num = Number(value);
+    if (!Number.isNaN(num)) {
+      const p = players.find((pl) => pl.id === num || (num < 0 && pl.id === Math.abs(num)));
+      if (p) return p.name;
+      return num < 0 ? 'mục tiêu' : `Người chơi ${num}`;
+    }
+    return players.find((p) => String(p.id) === value)?.name ?? value ?? '';
+  };
+
   const name = (value: string | undefined) => {
     if (!value) return '';
     const base = value.includes('__') ? value.replace(/^.*__/, '') : value;
-    const tr = translations[value] ?? translations[base] ?? value;
+    const tr = lookup(value) ?? lookup(base) ?? value;
     return plainText(tr);
   };
-  if (translated === text && !translations[key] && !translations[baseKey]) return plainText(text);
+
+  if (!translated) translated = text;
+  if (translated === text && !lookup(key) && !lookup(baseKey)) return plainText(text);
   return plainText(translated).replace(/%(arg\d*|src|dest|from|to)\b/g, (_token, parameter: string) => {
     if (parameter.startsWith('arg')) {
       const index = parameter === 'arg' ? 0 : Number(parameter.slice(3)) - 1;

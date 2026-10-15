@@ -174,9 +174,10 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .board-center-symbol { font-family: Georgia, serif; font-size: clamp(2rem, 6vw, 4.5rem); color: #ddba76; opacity: .8; letter-spacing: .16em; }
 .board-center p { margin: 6px 0; font-size: .83rem; }
 .board-moments {
-  width: 340px;
-  min-width: 340px;
-  max-width: min(340px, 88vw);
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  min-height: 78px;
   box-sizing: border-box;
   border: 1px solid rgba(200, 166, 98, .52);
   border-radius: 8px;
@@ -1708,7 +1709,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .sg-board-table .board-center {
     pointer-events: none;
     position: absolute;
-    top: 38.5%;
+    top: 48%;
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -1721,8 +1722,10 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     background: none;
     border: none;
     box-shadow: none;
-    width: max-content;
-    max-width: 45%;
+    width: 340px;
+    min-width: 340px;
+    max-width: min(340px, 88vw);
+    box-sizing: border-box;
     text-align: center;
   }
   .sg-board-table .board-center-symbol {
@@ -1809,7 +1812,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     scroll-snap-align: center;
     touch-action: manipulation;
   }
-  .sg-hand-fan .sg-card-popover-tooltip { display: none; }
+  .sg-hand-fan .sg-card-popover-tooltip,
+  .sg-card-popover-portal { display: none !important; }
   .sg-game-shell .board-health { gap: 5px; }
   .sg-game-shell .board-magatama { gap: 2px; }
   .sg-game-shell .magatama { width: 7px; height: 10px; }
@@ -2026,18 +2030,23 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   left: 50%;
   transform: translateX(-50%);
   width: max-content;
-  max-width: 220px;
+  max-width: 260px;
   padding: 8px 12px;
   background: rgba(18, 13, 9, 0.96);
   border: 1.5px solid var(--sg-gold-hi);
   border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
   pointer-events: none;
-  z-index: 100;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   gap: 3px;
   text-align: left;
+}
+.sg-card-popover-tooltip.sg-card-popover-portal {
+  position: fixed;
+  bottom: auto;
+  margin: 0;
 }
 .sg-tip-title {
   color: var(--sg-gold-hi);
@@ -2192,19 +2201,21 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .sg-board-table .board-center {
   position: absolute;
-  top: 38.5%;
+  top: 48%;
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   user-select: none;
   text-align: center;
-  width: max-content;
-  max-width: 45%;
+  width: 340px;
+  min-width: 340px;
+  max-width: min(340px, 88vw);
+  box-sizing: border-box;
 }
 .sg-board-table .board-opponents {
   position: absolute;
@@ -3535,13 +3546,15 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-logs li { margin: 2px 0; }
   .sg-board-table .board-center {
     position: absolute;
-    top: 45%;
+    top: 48%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: min(240px, 60%);
-    max-width: 60%;
+    width: 290px;
+    min-width: 290px;
+    max-width: min(290px, 86vw);
+    box-sizing: border-box;
     padding: 2px;
-    z-index: 1;
+    z-index: 2;
     pointer-events: none;
   }
   .sg-board-table .board-center-symbol {
@@ -3595,13 +3608,14 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     padding: 1px;
   }
   .sg-board-table .board-moments {
-    width: 290px;
-    min-width: 290px;
-    max-width: min(290px, 86vw);
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
     margin: 16px auto 0;
     padding: 3px 6px;
     font-size: 0.68rem;
+    min-height: 70px;
     max-height: 85px;
     overflow-y: auto;
     line-height: 1.25;

@@ -1,4 +1,5 @@
 import { useId, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties, ReactNode } from 'react';
 import { useDisplayText } from './engine/displayText';
 import { objectValue } from './engine/gameplayInteraction';
@@ -636,6 +637,8 @@ export function HandCardItem({
 
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const suitInfo = getSuitInfo(card?.suit);
   const rank = formatRank(card?.number);
@@ -664,8 +667,16 @@ export function HandCardItem({
     '--card-overlap-desktop': `${overlapDesktop}px`,
     '--card-overlap-mobile': `${overlapMobile}px`,
   } as CSSProperties;
+
+  const updateRect = () => {
+    if (buttonRef.current) {
+      setRect(buttonRef.current.getBoundingClientRect());
+    }
+  };
+
   return (
     <button
+      ref={buttonRef}
       type="button"
       className={`gameplay-choice sg-card-button ${category.className} ${
         item.selected ? 'selected' : ''
@@ -677,9 +688,9 @@ export function HandCardItem({
       aria-describedby={describedBy}
       disabled={disabled}
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { updateRect(); setHovered(true); }}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
+      onFocus={() => { updateRect(); setFocused(true); }}
       onBlur={() => setFocused(false)}
     >
       <span id={metadataId} className="sg-visually-hidden">
@@ -708,22 +719,47 @@ export function HandCardItem({
         <span className="sg-card-name">{displayName}</span>
       </div>
 
-      {/* Desktop Tooltip for Hover / Keyboard Focus */}
+      {/* Desktop Tooltip for Hover / Keyboard Focus via Portal */}
       {showTooltip && (
-        <span
-          id={tooltipId}
-          className="sg-card-popover-tooltip"
-          role="tooltip"
-          aria-hidden={!showTooltip}
-        >
-          <strong className="sg-tip-title">
-            {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
-          </strong>
-          {category.label && (
-            <span className="sg-tip-category">[{category.label}]</span>
-          )}
-          <span className="sg-tip-desc">{description}</span>
-        </span>
+        typeof document !== 'undefined' ? createPortal(
+          <div
+            id={tooltipId}
+            className="sg-card-popover-tooltip sg-card-popover-portal"
+            role="tooltip"
+            style={rect ? {
+              position: 'fixed',
+              left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
+              top: rect.top - 8,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 99999,
+              pointerEvents: 'none',
+            } : undefined}
+          >
+            <strong className="sg-tip-title">
+              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
+            </strong>
+            {category.label && (
+              <span className="sg-tip-category">[{category.label}]</span>
+            )}
+            <span className="sg-tip-desc">{description}</span>
+          </div>,
+          document.body
+        ) : (
+          <span
+            id={tooltipId}
+            className="sg-card-popover-tooltip"
+            role="tooltip"
+            aria-hidden={!showTooltip}
+          >
+            <strong className="sg-tip-title">
+              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
+            </strong>
+            {category.label && (
+              <span className="sg-tip-category">[{category.label}]</span>
+            )}
+            <span className="sg-tip-desc">{description}</span>
+          </span>
+        )
       )}
     </button>
   );
