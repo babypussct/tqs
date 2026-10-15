@@ -31,12 +31,17 @@
 
 ## Acceptance current CP09
 
+- Hidden Di Kế chủ tướng: Quách Gia còn úp, fake skill hiển thị trước gate;
+  sau damage → `AskForSkillInvoke` → invoke, native mở đúng chủ tướng và chuyển
+  2 lá. Evidence: [`cp08-hidden-yiji-multiplayer-live-1792097106182.json`](../../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792097106182.json).
+- Hidden Di Kế phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence:
+  [`cp08-hidden-yiji-deputy-multiplayer-live-1792097120803.json`](../../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792097120803.json).
 - Hidden Fuyin chủ tướng: actor còn úp nhưng đã prelight; native
   `TargetConfirmed` nhận Sát, mở Gia Cát Chiêm đúng ô chủ tướng và vô hiệu lá
   Sát. Evidence: [`cp08-hidden-fuyin-multiplayer-live-1792096610323.json`](../../../scratch/evidence/cp08-hidden-fuyin-multiplayer-live-1792096610323.json).
 - Hidden Fuyin phó tướng: cùng hợp đồng ở ô phó tướng. Evidence:
   [`cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json`](../../../scratch/evidence/cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json).
-- Cả hai run đều PASS candidate identity, native QA gate, login/lobby/room,
+- Cả bốn run đều PASS candidate identity, native QA gate, login/lobby/room,
   GameOver và clean disconnect. Các batch hidden-trigger CP08 bên dưới dùng
   identity cũ; không gộp chúng vào current proof.
 
@@ -65,7 +70,7 @@
 - Batch current hosted bổ sung 32 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Tôn Thượng Hương/Xiaoji, Guanxing, Anh Tư, Thiên Hương, Phản Gián) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
 Kết luận CP08: các ca bên dưới là **historical bounded evidence** của identity
-cũ. Current CP09 chỉ kết luận Fuyin chủ/phó đã PASS trên Render → Oracle; full
+cũ. Current CP09 đã kết luận Di Kế positive và Fuyin chủ/phó PASS trên Render → Oracle; full
 rule parity, native interaction còn lại, cold-start/rollback/SLA và official
 sign-off vẫn OPEN.
 

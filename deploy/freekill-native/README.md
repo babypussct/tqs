@@ -118,9 +118,9 @@ These are two separate layers and must be verified independently:
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
 `FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09 health,
-manifest, login and hidden Fuyin main/deputy have verified the route on the
-current release identity. This is bounded parity, not exhaustive rule coverage
-or an official release.
+manifest, login, hidden Di Kế positive main/deputy and hidden Fuyin main/deputy
+have verified the route on the current release identity. This is bounded
+parity, not exhaustive rule coverage or an official release.
 
 ## Administrator access
 
@@ -217,7 +217,7 @@ SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; Fuyin current CP09 main/deputy PASS;
+                 main/deputy PASS; Di Kế/Fuyin current CP09 main/deputy PASS;
                  full parity OPEN
 ```
 
@@ -251,8 +251,8 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 `run-server.sh` creates a broken runtime-only symlink while the native process
 calculates the public `flist.txt` MD5, then activates the symlink after port
 9527 is listening. This lets the QA director load on Oracle without changing
-the public Render/Oracle release identity. The current CP09 Fuyin main/deputy
-proof passes with this arrangement; the earlier 51-run corpus remains
+the public Render/Oracle release identity. The current CP09 Di Kế/Fuyin
+main/deputy proof passes with this arrangement; the earlier 51-run corpus remains
 historical and does not close the exhaustive 607-pair rule matrix.
 
 ```sh
