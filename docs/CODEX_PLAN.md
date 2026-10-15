@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 15:47 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
+> Cập nhật 15/10/2026 16:15 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
