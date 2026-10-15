@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 19:11 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
+> Cập nhật handoff: 15/10/2026 19:23 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
 ## Mục tiêu và phạm vi
 
@@ -12,6 +12,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. Quách Gia úp → prelight Di Kế → nhận sát thương → invoke → mở đúng chủ/phó → chạy Di Kế đã PASS NATIVE-LOCAL ở nhánh negative/positive/skip và re-hide main/deputy. Đây chưa phải evidence Render/Oracle.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
 - **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, nhưng native-local effect evidence mới `18/607`. `hidden-tiandu` và `hidden-fanjian` mới đạt source/catalog/browser contract, chưa tính native C++ gameplay.
+- **Native probe mới nhất:** đã cài/verify `tqs_qa` hiện hành vào scratch runtime và tạo release manifest đúng với UI CP96; identity gate PASS, hai account vào được phòng `hidden-tiandu`, nhưng host không phát fake Thiên Đố và `nativeQaGateSeen=false` (cặp tướng ngẫu nhiên), nên probe dừng trước gameplay. Evidence: [`reconnect-failure-1792066870927.json`](../scratch/evidence/reconnect-failure-1792066870927.json). Không dùng kết quả này để kết luận `FinishJudge` sai; remote package/config vẫn chưa xác định.
 - **Gate vừa chạy PASS:** source-law contract `test:hidden-rule-contract` 7/7; `audit:hidden-skills`; `audit:hidden-effects`; `test:qa-server-contract` 32/32; `typecheck`; các gate trước đó gồm `test:store` 40/40 và `test:e2e:lua` 63/63. Các fixture/local gate không thay thế native hosted evidence.
 - **Lua ABI:** launcher và installer đã fail-closed với Lua 5.5, chọn Lua 5.4 và preflight `socket`/`lfs`; native-local đã verify. Oracle chưa được verify lại package hiện hành.
 - **Oracle/SSH:** profile `tqs-native-qa` và public key local tồn tại nhưng `ssh -o BatchMode=yes tqs-native-qa true` vẫn `Permission denied (publickey)`. Chưa có quyền guest để đọc manifest hoặc cài `tqs_qa`; không ghi nhận deploy trên VM và không dùng NATIVE-LOCAL để suy ra LIVE.
@@ -43,16 +44,18 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Tập trung guest access/recovery để có thể chạy native QA trên đúng target hosted; song song giữ Render CP96 cho smoke test UI. Không deploy lại QA/docs-only commit và không đánh dấu goal hoàn tất khi exhaustive effect matrix hoặc hosted native identity còn mở.
+Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên đúng target remote, rồi rerun cả `hidden-tiandu` main/deputy; song song giữ Render CP96 cho smoke test UI. Không deploy lại QA/docs-only commit và không đánh dấu goal hoàn tất khi exhaustive effect matrix hoặc hosted native identity còn mở.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:13:22.206Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `252e5b4ad92f`.
-- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T12:24:15.433Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `6992a895e2c5`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
@@ -64,9 +67,9 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 Ba commit gần nhất:
 
 ```text
+6992a895 docs: checkpoint hidden trigger gate
 252e5b4a qa: reject global hidden trigger predicates
 33266636 docs: refresh hidden-trigger checkpoint
-47af998c qa: audit custom hidden trigger gates
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
