@@ -55,8 +55,8 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T13:58:42.381Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `93b707502ec2`.
+- Ghi lúc: 2026-10-15T14:17:15.622Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `f3c0cfed9d01`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -66,9 +66,9 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 Ba commit gần nhất:
 
 ```text
-93b70750 docs: record kuanggu native evidence and release gates
-eb4e9570 test: fix kuanggu owner trace assertion
-c8078be2 qa: cover hidden kuanggu damage reveal path
+f3c0cfed docs: record hidden liegong native evidence
+a3618958 qa: cover hidden liegong reveal damage path
+70b18b18 docs: refresh codex checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
