@@ -1575,7 +1575,10 @@ try {
         assert.deepEqual(gateReply.luaErrors, []);
       }
 
-      for (const scenarioId of ['hidden-weimu', 'hidden-weimu-deputy'] as const) {
+      for (const scenarioId of [
+        'hidden-weimu', 'hidden-weimu-deputy',
+        'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy',
+      ] as const) {
         const hiddenWeimu = await startScenario(scenarioId);
         const fakeWeimu = p.locator('button.fake-skill-button').filter({ hasText: /帷幕|tấm màn|Vi Mộ|weimu/i }).first();
         await fakeWeimu.waitFor();

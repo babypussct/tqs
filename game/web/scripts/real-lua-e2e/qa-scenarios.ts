@@ -51,7 +51,9 @@ export type QaScenarioId =
   | 'hidden-kongcheng'
   | 'hidden-kongcheng-deputy'
   | 'hidden-weimu'
-  | 'hidden-weimu-deputy';
+  | 'hidden-weimu-deputy'
+  | 'hidden-weimu-indulgence'
+  | 'hidden-weimu-indulgence-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -535,6 +537,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-weimu',
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-weimu-indulgence': {
+    version: 1,
+    id: 'hidden-weimu-indulgence',
+    title: 'Giả Hủ úp cùng Bàng Đức: 帷幕 chặn Lạc Bất Tư Thục đen vào phán xét',
+    seed: 0x5d6e7fa6,
+    drawSequence: [trueName('indulgence', 'black')],
+    slots: [slot('weimu-indulgence', trueName('indulgence', 'black'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-weimu',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-weimu-indulgence-deputy': {
+    version: 1,
+    id: 'hidden-weimu-indulgence-deputy',
+    title: 'Giả Hủ phó tướng úp cùng Bàng Đức: 帷幕 chặn Lạc Bất Tư Thục đen vào phán xét',
+    seed: 0x5d6e7fa7,
+    drawSequence: [trueName('indulgence', 'black')],
+    slots: [slot('weimu-indulgence', trueName('indulgence', 'black'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-weimu',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -551,6 +573,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-qianxun-indulgence', 'hidden-qianxun-indulgence-deputy',
   'hidden-kongcheng', 'hidden-kongcheng-deputy',
   'hidden-weimu', 'hidden-weimu-deputy',
+  'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -703,11 +726,15 @@ function validatePlan(plan: QaScenarioPlan): void {
     }
   }
   if (plan.trigger === 'hidden-weimu') {
-    if (plan.slots.length !== 1 || plan.slots[0].key !== 'weimu-duel' ||
+    const indulgenceScenario = plan.id === 'hidden-weimu-indulgence' ||
+      plan.id === 'hidden-weimu-indulgence-deputy';
+    const expectedKey = indulgenceScenario ? 'weimu-indulgence' : 'weimu-duel';
+    const expectedTrueName = indulgenceScenario ? 'indulgence' : 'duel';
+    if (plan.slots.length !== 1 || plan.slots[0].key !== expectedKey ||
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
-        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== expectedTrueName ||
         plan.slots[0].match.color !== 'black') {
-      throw new QaScenarioError(`${plan.id} must reserve one black opponent Duel for 帷幕`);
+      throw new QaScenarioError(`${plan.id} must reserve one black opponent ${indulgenceScenario ? 'Indulgence' : 'Duel'} for 帷幕`);
     }
   }
 }

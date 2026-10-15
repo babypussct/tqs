@@ -15,7 +15,7 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
@@ -28,8 +28,9 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-qianxun' || testScenario === 'hidden-qianxun-deputy' ||
   testScenario === 'hidden-qianxun-indulgence' || testScenario === 'hidden-qianxun-indulgence-deputy' ||
   testScenario === 'hidden-kongcheng' || testScenario === 'hidden-kongcheng-deputy' ||
-  testScenario === 'hidden-weimu' || testScenario === 'hidden-weimu-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu or hidden-weimu-deputy');
+  testScenario === 'hidden-weimu' || testScenario === 'hidden-weimu-deputy' ||
+  testScenario === 'hidden-weimu-indulgence' || testScenario === 'hidden-weimu-indulgence-deputy',
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence or hidden-weimu-indulgence-deputy');
 // These scenarios deliberately require an explicit opt-in: an interrupted
 // active room can create a server-side runner and trigger the upstream IP
 // temporary-ban policy. Local fixtures remain enabled independently.
@@ -64,8 +65,8 @@ assert.ok(!['hidden-qianxun', 'hidden-qianxun-deputy', 'hidden-qianxun-indulgenc
   'hidden-qianxun scenarios require native QA and --manual to control the prelight and Snatch/Indulgence cancellation path');
 assert.ok(!['hidden-kongcheng', 'hidden-kongcheng-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
   'hidden-kongcheng scenarios require native QA and --manual to control the prelight and Duel cancellation path');
-assert.ok(!['hidden-weimu', 'hidden-weimu-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
-  'hidden-weimu scenarios require native QA and --manual to control the prelight and black Duel cancellation path');
+assert.ok(!['hidden-weimu', 'hidden-weimu-deputy', 'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'hidden-weimu scenarios require native QA and --manual to control the prelight and black Trick cancellation path');
 const hiddenYijiMode = process.env.TQS_LIVE_HIDDEN_YIJI_MODE ?? 'positive';
 assert.ok(hiddenYijiMode === 'negative' || hiddenYijiMode === 'positive' || hiddenYijiMode === 'skip',
   'TQS_LIVE_HIDDEN_YIJI_MODE must be negative, positive or skip');
@@ -221,6 +222,10 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // slot and cancellation ordering on both main and deputy placements.
   'hidden-weimu': { general: /贾诩|Giả Hủ|Jia\s*Xu|帷幕|tấm màn|Vi Mộ|weimu/i, generalId: 'hs__jiaxu', skill: /帷幕|tấm màn|Vi Mộ|weimu|hs__weimu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
   'hidden-weimu-deputy': { general: /贾诩|Giả Hủ|Jia\s*Xu|帷幕|tấm màn|Vi Mộ|weimu/i, generalId: 'hs__jiaxu', skill: /帷幕|tấm màn|Vi Mộ|weimu|hs__weimu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  // Weimu's second source branch is BeforeCardsMove: a black Indulgence
+  // must be discarded instead of entering the actor's Judge area.
+  'hidden-weimu-indulgence': { general: /贾诩|Giả Hủ|Jia\s*Xu|帷幕|tấm màn|Vi Mộ|weimu/i, generalId: 'hs__jiaxu', skill: /帷幕|tấm màn|Vi Mộ|weimu|hs__weimu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  'hidden-weimu-indulgence-deputy': { general: /贾诩|Giả Hủ|Jia\s*Xu|帷幕|tấm màn|Vi Mộ|weimu/i, generalId: 'hs__jiaxu', skill: /帷幕|tấm màn|Vi Mộ|weimu|hs__weimu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
 };
 const selectedScenario = testScenario ? scenarioConfig[testScenario] : null;
 const damageExchangeScenario = testScenario === 'fazheng-enyuan';
@@ -249,8 +254,10 @@ const hiddenQianxunDeputyScenario = testScenario === 'hidden-qianxun-deputy' || 
 const hiddenQianxunIndulgenceScenario = testScenario === 'hidden-qianxun-indulgence' || testScenario === 'hidden-qianxun-indulgence-deputy';
 const hiddenKongchengScenario = testScenario === 'hidden-kongcheng' || testScenario === 'hidden-kongcheng-deputy';
 const hiddenKongchengDeputyScenario = testScenario === 'hidden-kongcheng-deputy';
-const hiddenWeimuScenario = testScenario === 'hidden-weimu' || testScenario === 'hidden-weimu-deputy';
-const hiddenWeimuDeputyScenario = testScenario === 'hidden-weimu-deputy';
+const hiddenWeimuScenario = testScenario === 'hidden-weimu' || testScenario === 'hidden-weimu-deputy' ||
+  testScenario === 'hidden-weimu-indulgence' || testScenario === 'hidden-weimu-indulgence-deputy';
+const hiddenWeimuDeputyScenario = testScenario === 'hidden-weimu-deputy' || testScenario === 'hidden-weimu-indulgence-deputy';
+const hiddenWeimuIndulgenceScenario = testScenario === 'hidden-weimu-indulgence' || testScenario === 'hidden-weimu-indulgence-deputy';
 const hiddenScenario = hiddenYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario || hiddenJizhiScenario || hiddenMingshiScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenWeimuScenario;
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
@@ -1310,13 +1317,15 @@ try{
         const hiddenKongchengCard = hiddenKongchengScenario &&
           /hidden_kongcheng_duel|dùng Quyết Đấu|决斗|Không Thành|空城|kongcheng/i.test(activePrompt);
         const hiddenWeimuCard = hiddenWeimuScenario &&
-          /hidden_weimu_duel|Quyết Đấu đen|黑色.*决斗|帷幕|tấm màn|Vi Mộ|weimu/i.test(activePrompt);
+          /hidden_weimu_(?:duel|indulgence)|Quyết Đấu đen|Lạc Bất Tư Thục đen|黑色.*(?:决斗|乐不思蜀)|帷幕|tấm màn|Vi Mộ|weimu/i.test(activePrompt);
         if (hiddenJizhiCard || hiddenMingshiCard || hiddenQianxunCard || hiddenKongchengCard || hiddenWeimuCard) {
           const hand = actor.locator('.gameplay-hand button:enabled');
           const preferredCard = hiddenKongchengCard
             ? hand.filter({ hasText: /Quyết Đấu|决斗|Duel/i }).first()
             : hiddenWeimuCard
-            ? hand.filter({ hasText: /Quyết Đấu|决斗|Duel/i }).first()
+            ? hand.filter({ hasText: hiddenWeimuIndulgenceScenario
+              ? /Lạc Bất Tư Thục|乐不思蜀|Indulgence/i
+              : /Quyết Đấu|决斗|Duel/i }).first()
             : hiddenQianxunCard
             ? hand.filter({ hasText: hiddenQianxunIndulgenceScenario
               ? /Lạc Bất Tư Thục|乐不思蜀|Indulgence/i
@@ -1339,7 +1348,8 @@ try{
           if (hiddenWeimuCard && replied) hiddenWeimuCardReply = true;
           scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
             detail: hiddenJizhiCard ? 'hidden-jizhi-duel' : hiddenMingshiCard ? 'hidden-mingshi-hidden-source-slash' :
-              hiddenKongchengCard ? 'hidden-kongcheng-duel' : hiddenWeimuCard ? 'hidden-weimu-black-duel' :
+              hiddenKongchengCard ? 'hidden-kongcheng-duel' : hiddenWeimuCard
+                ? (hiddenWeimuIndulgenceScenario ? 'hidden-weimu-black-indulgence' : 'hidden-weimu-black-duel') :
               hiddenQianxunIndulgenceScenario ? 'hidden-qianxun-indulgence' : 'hidden-qianxun-snatch' });
           await new Promise((resolve) => setTimeout(resolve, 250));
           continue;
@@ -1773,8 +1783,12 @@ try{
       console.log('PASS hidden-kongcheng: native hidden TargetConfirming branch accepted Duel while empty-handed and cancelled the actor target');
     } else if (hiddenWeimuScenario) {
       assert.ok(hiddenWeimuGateReply, 'hidden-weimu must complete the native prelight gate');
-      assert.ok(hiddenWeimuCardReply, 'hidden-weimu must complete the source black Duel request');
-      console.log('PASS hidden-weimu: native hidden TargetConfirming branch accepted black Duel and cancelled the actor target');
+      assert.ok(hiddenWeimuCardReply, hiddenWeimuIndulgenceScenario
+        ? 'hidden-weimu-indulgence must complete the source black Indulgence request'
+        : 'hidden-weimu must complete the source black Duel request');
+      console.log(hiddenWeimuIndulgenceScenario
+        ? 'PASS hidden-weimu-indulgence: native hidden BeforeCardsMove branch accepted black Indulgence and mirrored it to discard'
+        : 'PASS hidden-weimu: native hidden TargetConfirming branch accepted black Duel and cancelled the actor target');
     } else if (hiddenRevealScenario) {
       assert.ok(hiddenRevealReply,
         'hidden-reveal must complete the native reveal_skill& active request and reveal Lục Tốn');
@@ -2048,18 +2062,33 @@ try{
     console.log('PASS hidden-kongcheng public audit: both native clients observed empty-hand Duel cancellation and Zhuge Liang reveal');
   } else if (hiddenWeimuScenario) {
     const expectedPosition = hiddenWeimuDeputyScenario ? 'phó tướng' : 'chủ tướng';
-    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
-      /Hidden 帷幕/iu.test(log) && /TargetConfirming Quyết Đấu đen=true/iu.test(log) &&
-      /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
-      /hủy mục tiêu=true/iu.test(log) && log.includes(`vị trí=${expectedPosition}`))),
-      `Both native clients must observe Weimu cancelling a black Duel after revealing Jia Xu in the ${expectedPosition} slot`);
+    if (hiddenWeimuIndulgenceScenario) {
+      assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+        /Hidden 帷幕/iu.test(log) && /BeforeCardsMove Lạc Bất Tư Thục đen=true/iu.test(log) &&
+        /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
+        /vào phán xét=false/iu.test(log) && /chuyển bỏ=true/iu.test(log) &&
+        log.includes(`vị trí=${expectedPosition}`))),
+        `Both native clients must observe Weimu discarding black Indulgence before Judge after revealing Jia Xu in the ${expectedPosition} slot`);
+    } else {
+      assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+        /Hidden 帷幕/iu.test(log) && /TargetConfirming Quyết Đấu đen=true/iu.test(log) &&
+        /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
+        /hủy mục tiêu=true/iu.test(log) && log.includes(`vị trí=${expectedPosition}`))),
+        `Both native clients must observe Weimu cancelling a black Duel after revealing Jia Xu in the ${expectedPosition} slot`);
+    }
     assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
-      'hidden-weimu must finish after its native TargetConfirming cancellation branch');
+      hiddenWeimuIndulgenceScenario
+        ? 'hidden-weimu-indulgence must finish after its native BeforeCardsMove cancellation branch'
+        : 'hidden-weimu must finish after its native TargetConfirming cancellation branch');
     assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 1,
       'hidden-weimu owner must receive the native prelight readiness gate');
     assert.ok(botAuditTrace[1 - scenarioClient].askForUseActiveSkill + botAuditTrace[1 - scenarioClient].playCard >= 1,
-      'hidden-weimu source player must receive the private real black Duel request');
-    console.log('PASS hidden-weimu public audit: both native clients observed black Trick cancellation and Jia Xu reveal');
+      hiddenWeimuIndulgenceScenario
+        ? 'hidden-weimu-indulgence source player must receive the private real black Indulgence request'
+        : 'hidden-weimu source player must receive the private real black Duel request');
+    console.log(hiddenWeimuIndulgenceScenario
+      ? 'PASS hidden-weimu public audit: both native clients observed black Indulgence judge cancellation, discard mirror and Jia Xu reveal'
+      : 'PASS hidden-weimu public audit: both native clients observed black Trick cancellation and Jia Xu reveal');
   } else if (hiddenRevealScenario) {
     const expectedPosition = hiddenRevealDeputyScenario ? 'phó tướng' : 'chủ tướng';
     assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
@@ -2170,13 +2199,14 @@ try{
     evidence.hiddenWeimuGateReply = hiddenWeimuGateReply;
     evidence.hiddenWeimuCardReply = hiddenWeimuCardReply;
     evidence.hiddenWeimu = {
+      indulgence: hiddenWeimuIndulgenceScenario,
       deputy: hiddenWeimuDeputyScenario,
       gate: hiddenWeimuGateReply,
       card: hiddenWeimuCardReply,
       public: publicBotAudit,
       trace: botAuditTrace,
     };
-    evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
+    evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu ${hiddenWeimuIndulgenceScenario ? 'BeforeCardsMove black Indulgence discard mirror' : 'TargetConfirming black Duel cancellation'} ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
     writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
   }
   assert.deepEqual(errors,[]);

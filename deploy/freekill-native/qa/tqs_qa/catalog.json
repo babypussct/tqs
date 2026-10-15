@@ -1009,6 +1009,68 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-weimu-indulgence",
+      "title": "Hidden 贾诩 帷幕 cancels a black Indulgence judge move",
+      "seed": 1567522726,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiaxu",
+          "deputy": "hs__pangde",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-indulgence",
+          "match": {
+            "trueName": "indulgence",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu-indulgence-deputy",
+      "title": "Hidden deputy 贾诩 帷幕 cancels a black Indulgence judge move",
+      "seed": 1567522727,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__pangde",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-indulgence",
+          "match": {
+            "trueName": "indulgence",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

@@ -585,11 +585,13 @@ const api = {
         break;
       }
       case 'hidden-weimu':
-      case 'hidden-weimu-deputy': {
+      case 'hidden-weimu-deputy':
+      case 'hidden-weimu-indulgence':
+      case 'hidden-weimu-indulgence-deputy': {
         // Weimu is a compulsory TargetConfirming branch for black Trick
         // cards. The local fixture mirrors only the hidden fake-skill/prelight
-        // gate; native QA owns the real black Duel cancellation and reveal.
-        const deputy = scenarioId === 'hidden-weimu-deputy';
+        // gate; native QA owns the real black Duel/Indulgence branch and reveal.
+        const deputy = scenarioId === 'hidden-weimu-deputy' || scenarioId === 'hidden-weimu-indulgence-deputy';
         const main = deputy ? 'hs__pangde' : 'hs__jiaxu';
         const deputyGeneral = deputy ? 'hs__jiaxu' : 'hs__pangde';
         serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
@@ -598,7 +600,7 @@ const api = {
         serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
         serverNotify('AddSkill', serverCbor("{17, 'hs__weimu', true}"));
         requestId = sendRequest('AskForSkillInvoke',
-          "{'tqs_qa_hidden_weimu_gate', 'TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng Quyết Đấu đen.'}");
+          `{\'tqs_qa_hidden_weimu_gate\', \'TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục đen' : 'Quyết Đấu đen'}.\'}`);
         break;
       }
       case 'hidden-reveal':

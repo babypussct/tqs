@@ -400,6 +400,44 @@ test('hidden-weimu locks black Trick TargetConfirming cancellation for both slot
   assert.match(qaInit, /scenario\.trigger == "hidden-weimu"[\s\S]*triggerHiddenWeimu\(room, state\)/u);
 });
 
+test('hidden-weimu locks black delayed Trick BeforeCardsMove cancellation for both slots', () => {
+  const expected = {
+    'hidden-weimu-indulgence': {
+      seed: 0x5d6e7fa6,
+      actor: { general: 'hs__jiaxu', deputy: 'hs__pangde', kingdom: 'qun' },
+    },
+    'hidden-weimu-indulgence-deputy': {
+      seed: 0x5d6e7fa7,
+      actor: { general: 'hs__pangde', deputy: 'hs__jiaxu', kingdom: 'qun' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-weimu', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} black Indulgence source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'weimu-indulgence', match: { trueName: 'indulgence', color: 'black' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const weimu = fs.readFileSync(weimuSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(weimu, /weimu:addEffect\(fk\.BeforeCardsMove/u);
+  assert.match(weimu, /move\.toArea == Card\.PlayerJudge/u);
+  assert.match(weimu, /c\.sub_type == Card\.SubtypeDelayedTrick/u);
+  assert.match(weimu, /c\.color == Card\.Black/u);
+  assert.match(weimu, /player\.room:cancelMove/u);
+  assert.match(weimu, /mirror_move\.toArea = Card\.DiscardPile/u);
+  assert.match(qaInit, /hidden-weimu-indulgence[\s\S]*weimu-indulgence/u);
+  assert.match(qaInit, /before_cards_move=black_indulgence/u);
+});
+
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'hidden-reveal');
   assert.ok(scenario, 'hidden-reveal catalog entry is required');
