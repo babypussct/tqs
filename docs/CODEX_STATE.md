@@ -69,8 +69,8 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T04:01:31.215Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `023db7de2a7f`.
+- Ghi lúc: 2026-10-15T04:13:01.227Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `a430d7751d7a`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -80,9 +80,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
-023db7de docs: record CP92 Render live probe
-c40e36a7 docs: record Render hotfix deployment boundary
-f039e228 hotfix: publish current UI and native bridge to Render
+a430d775 test: verify hidden fankui native path
+2b26c784 test: add native hidden fankui scenario
+179fd1bd docs: refresh codex checkpoint after Render probe
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
