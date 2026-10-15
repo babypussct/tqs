@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 19:37 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
+> Cập nhật handoff: 15/10/2026 19:45 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
 ## Mục tiêu và phạm vi
 
@@ -13,7 +13,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
 - **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, nhưng native-local effect evidence mới `18/607`. `hidden-tiandu` và `hidden-fanjian` mới đạt source/catalog/browser contract, chưa tính native C++ gameplay.
 - **Native probe mới nhất:** đã cài/verify `tqs_qa` hiện hành vào scratch runtime và tạo release manifest đúng với UI CP96; identity gate PASS, hai account vào được phòng `hidden-tiandu`, nhưng host không phát fake Thiên Đố và `nativeQaGateSeen=false` (cặp tướng ngẫu nhiên), nên probe dừng trước gameplay. Evidence: [`reconnect-failure-1792066870927.json`](../scratch/evidence/reconnect-failure-1792066870927.json). Không dùng kết quả này để kết luận `FinishJudge` sai; remote package/config vẫn chưa xác định.
-- **Gate vừa chạy PASS:** source-law contract `test:hidden-rule-contract` 8/8 (thêm đường ActiveSkill/ViewAsSkill → regular PlayCard → `useSkill` → reveal-before-effect); `audit:hidden-skills`; `audit:hidden-effects`; `test:qa-server-contract` 32/32; `typecheck`; các gate trước đó gồm `test:store` 40/40 và `test:e2e:lua` 63/63. Các fixture/local gate không thay thế native hosted evidence.
+- **Gate vừa chạy PASS:** fresh `npm --prefix game/web run test:e2e:lua` **63/63**, gồm đúng ca Quách Gia/Di Kế: ẩn chưa prelight thì damage không hỏi/không mở; đã prelight thì damage hỏi, chấp nhận mở trước khi chạy effect. Cùng với đó `test:hidden-rule-contract` 8/8 (thêm đường ActiveSkill/ViewAsSkill → regular PlayCard → `useSkill` → reveal-before-effect); `audit:hidden-skills`; `audit:hidden-effects`; `test:qa-server-contract` 32/32; `typecheck`. Đây là bằng chứng browser + Wasmoon + React fixture/local, không thay thế native hosted evidence.
 - **Lua ABI:** launcher và installer đã fail-closed với Lua 5.5, chọn Lua 5.4 và preflight `socket`/`lfs`; native-local đã verify. Oracle chưa được verify lại package hiện hành.
 - **Oracle/SSH:** profile `tqs-native-qa` và public key local tồn tại nhưng `ssh -o BatchMode=yes tqs-native-qa true` vẫn `Permission denied (publickey)`. Chưa có quyền guest để đọc manifest hoặc cài `tqs_qa`; không ghi nhận deploy trên VM và không dùng NATIVE-LOCAL để suy ra LIVE.
 
@@ -49,25 +49,31 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:37:57.650Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `1a47bebcfefc`.
-- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T12:45:29.513Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `679c9f1bf48b`.
+- File thay đổi hiển thị: 12 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.md
 ?? docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
+?? game/web/scripts/clean-csv.ts
+?? game/web/scripts/compare-names.ts
+?? game/web/scripts/compile-translations.ts
 ?? game/web/scripts/export-all-zh.ts
+?? game/web/scripts/validate-csv.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+679c9f1b docs: refresh Render hotfix checkpoint
 1a47bebc docs: record Render hotfix redeploy
 568f69bb docs: checkpoint hidden active skill gate
-857ee0f2 qa: lock hidden active skill reveal path
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

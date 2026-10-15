@@ -1,6 +1,6 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-> Cập nhật 15/10/2026 19:37 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
+> Cập nhật 15/10/2026 19:45 (giờ Việt Nam). Đây là bảng gate và backlog hiện hành, không phải nhật ký commit. Phân tích luật canonical nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); handoff ngắn nằm ở [`CODEX_STATE.md`](CODEX_STATE.md).
 
 ## Phạm vi và quy ước nghiệm thu
 
@@ -45,7 +45,7 @@
 - **Hidden-skill source projection/lifecycle/slot route:** build audit 301 tướng active/602 vị trí, 1.039 reference, 520 skill ID; native `AddSkill` và `LoseSkill` đều 520/520 PASS, replay event qua React 521/521, privacy Add/Lose 1.042/1.042, helper `reveal_skill&` 105/105 Add/Lose, 205/205 `canUse` theo slot, route `revealBySkillName` 155.168/155.168 trên cặp hợp lệ, 403/403 prelight sync, 520/520 reconnect snapshot projection trên toàn bộ hidden skill ID, 520/520 actual `Client:addSkill` state và 520/520 actual `Client:loseSkill` lifecycle (regular/trigger/dual), gồm 15 delay-fallback loss paths. Inventory runtime thêm 92 active, 31 ViewAs, 418 trigger effect, 92 status effect trên 57 event kinds để làm checklist native tiếp theo. `audit:hidden-effects` tách effect parity: 607 non-delay `skill × event` pairs/403 skill ID/53 event kinds, native-local evidence map 18/607. Đây là projection/lifecycle/route coverage, không phải full live effect coverage.
 - **GAME-03D NATIVE-LOCAL:** evidence 12/12 hidden-trigger/prelight lõi, cộng staged add-on Qianxun `TargetConfirming`/Thuận Thủ, `BeforeCardsMove`/Lạc Bất Tư Thục, Kongcheng `TargetConfirming`/Quyết Đấu, Weimu cả `TargetConfirming`/Quyết Đấu đen lẫn `BeforeCardsMove`/Lạc Bất Tư Thục đen, Xiaoji `AfterCardsMove`, Guanxing `EventPhaseStart` → `AskForArrangeCards`, Thiên Hương `DetermineDamageInflicted`, Đoạn Trường `fk.Death` và Di Kế re-hide `SkillEffect` → `hideGeneral()`, đều ở cả main/deputy; evidence được giữ duy nhất trong [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md), chưa đại diện hosted/official hoặc exhaustive effect matrix.
 - **GAME-03C NATIVE-LOCAL bounded:** normal rescue, Battle Royal rescue/view-as và founding request đã PASS trên cùng runtime/package identity `5dcd…`; evidence chi tiết nằm ở audit, không coi là hosted/Oracle.
-- **CP96 candidate:** Latest Render deployment `dep-db89kson74is73eakr6g` từ `74a7b30e`, health, 14-package manifest, bundle hash và HTML/JS/CSS byte probes; runtime/package/UI artifact identity giữ nguyên từ CP96/CP92.
+- **CP96 candidate:** Latest Render deployment `dep-db8cgp6q1p3s73acdhcg` từ `568f69bb`, health, 14-package manifest, bundle hash và HTML/JS/CSS byte probes; runtime/package/UI artifact identity giữ nguyên từ CP96/CP92.
 
 Các evidence trên chỉ đóng đúng phạm vi ghi ở đây. Khi runtime MD5, package list, bundle hoặc server pin đổi, phải chạy lại acceptance tương ứng.
 
