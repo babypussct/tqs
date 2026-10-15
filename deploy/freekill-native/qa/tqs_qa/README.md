@@ -250,6 +250,35 @@ Current native-local evidence and package identity are kept only in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate hashes or logs.
 
+## `hidden-luoshen`: EventPhaseStart và phán xét khi 甄姬 còn úp
+
+`luoshen.lua` uses the real `fk.EventPhaseStart` trigger. The QA gate only
+pauses before the phase event so the browser can send `PrelightSkill=true`; it
+does not replace the native trigger, judge, reveal or obtain path. The observed
+sequence is:
+
+```text
+prelight → Player.Start / EventPhaseStart → SkillEffect → reveal owning slot
+→ judge black → obtain the black card → judge red → stop
+```
+
+Both `hidden-luoshen` and `hidden-luoshen-deputy` verify that 甄姬 is revealed
+in the correct main/deputy slot and obtains exactly one black judgment card.
+Run each branch on a clean room:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-luoshen \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-luoshen-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Evidence, package hashes and the NATIVE-LOCAL scope remain centralized in
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
+
 ## `hidden-reveal`: active reveal helper for a hidden compulsory skill
 
 This companion scenario keeps Lục Tốn + Tôn Quyền hidden, exposes the fake
@@ -346,12 +375,14 @@ wrong slot:
 | `hidden-reveal-deputy` | Lục Tốn is the deputy; `revealDeputy` opens only the deputy. |
 | `hidden-active-main` | Tôn Quyền is the main; Chế Hành opens only the main. |
 | `hidden-view-as-main` | Triệu Vân is the main; Longdan opens only the main and converts Jink to Slash. |
+| `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
+| `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
 
 The current 12-case core NATIVE-LOCAL matrix is: `hidden-yiji` negative/positive/skip,
 `hidden-yiji-deputy`, `hidden-jianxiong` and `hidden-jianxiong-deputy`,
 `hidden-reveal` and `hidden-reveal-deputy`, `hidden-active` and
 `hidden-active-main`, plus `hidden-view-as` and `hidden-view-as-main`. The
-The staged `hidden-dual` add-on is tracked separately because it uses a newer
-QA package identity. The canonical evidence table and package identities remain in
+staged `hidden-dual`, `hidden-fankui` and `hidden-luoshen` add-ons are tracked
+separately because they use newer QA package identities. The canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.
