@@ -542,19 +542,23 @@ const api = {
         break;
       }
       case 'hidden-qianxun':
-      case 'hidden-qianxun-deputy': {
-        // Qianxun is compulsory on TargetConfirming. The local fixture mirrors
-        // only the private fake-skill/prelight gate; native QA owns the real
-        // Snatch target-cancellation and card-area assertion.
-        const main = scenarioId === 'hidden-qianxun-deputy' ? 'hs__sunquan' : 'hs__luxun';
-        const deputy = scenarioId === 'hidden-qianxun-deputy' ? 'hs__luxun' : 'hs__sunquan';
+      case 'hidden-qianxun-deputy':
+      case 'hidden-qianxun-indulgence':
+      case 'hidden-qianxun-indulgence-deputy': {
+        // Qianxun is compulsory on both TargetConfirming and BeforeCardsMove.
+        // The local fixture mirrors only the private fake-skill/prelight gate;
+        // native QA owns the real Snatch/Indulgence outcome and card-area
+        // assertion.
+        const deputy = scenarioId === 'hidden-qianxun-deputy' || scenarioId === 'hidden-qianxun-indulgence-deputy';
+        const main = deputy ? 'hs__sunquan' : 'hs__luxun';
+        const deputyGeneral = deputy ? 'hs__luxun' : 'hs__sunquan';
         serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
-        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
         serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
         serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
         serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
         requestId = sendRequest('AskForSkillInvoke',
-          "{'tqs_qa_hidden_qianxun_gate', 'TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng Thuận Thủ.'}");
+          `{\'tqs_qa_hidden_qianxun_gate\', \'TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục' : 'Thuận Thủ'}.\'}`);
         break;
       }
       case 'hidden-reveal':

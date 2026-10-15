@@ -45,7 +45,9 @@ export type QaScenarioId =
   | 'hidden-mingshi'
   | 'hidden-mingshi-deputy'
   | 'hidden-qianxun'
-  | 'hidden-qianxun-deputy';
+  | 'hidden-qianxun-deputy'
+  | 'hidden-qianxun-indulgence'
+  | 'hidden-qianxun-indulgence-deputy';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -466,6 +468,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-qianxun',
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-qianxun-indulgence': {
+    version: 1,
+    id: 'hidden-qianxun-indulgence',
+    title: 'Lục Tốn úp: Khiêm Tốn chặn Lạc Bất Tư Thục vào vùng phán xét',
+    seed: 0x5d6e7fa0,
+    drawSequence: [trueName('indulgence')],
+    slots: [slot('qianxun-indulgence', trueName('indulgence'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-qianxun',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-qianxun-indulgence-deputy': {
+    version: 1,
+    id: 'hidden-qianxun-indulgence-deputy',
+    title: 'Lục Tốn phó tướng úp: Khiêm Tốn chặn Lạc Bất Tư Thục vào vùng phán xét',
+    seed: 0x5d6e7fa1,
+    drawSequence: [trueName('indulgence')],
+    slots: [slot('qianxun-indulgence', trueName('indulgence'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-qianxun',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -479,6 +501,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-jizhi', 'hidden-jizhi-deputy',
   'hidden-mingshi', 'hidden-mingshi-deputy',
   'hidden-qianxun', 'hidden-qianxun-deputy',
+  'hidden-qianxun-indulgence', 'hidden-qianxun-indulgence-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -605,7 +628,13 @@ function validatePlan(plan: QaScenarioPlan): void {
     }
   }
   if (plan.trigger === 'hidden-qianxun') {
-    if (plan.slots.length !== 2 || plan.slots[0].key !== 'qianxun-snatch' ||
+    if (plan.id === 'hidden-qianxun-indulgence' || plan.id === 'hidden-qianxun-indulgence-deputy') {
+      if (plan.slots.length !== 1 || plan.slots[0].key !== 'qianxun-indulgence' ||
+          plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+          !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'indulgence') {
+        throw new QaScenarioError(`${plan.id} must reserve one opponent Indulgence for Khiêm Tốn`);
+      }
+    } else if (plan.slots.length !== 2 || plan.slots[0].key !== 'qianxun-snatch' ||
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'snatch' ||
         plan.slots[1].key !== 'qianxun-victim' || plan.slots[1].owner !== 'self' ||

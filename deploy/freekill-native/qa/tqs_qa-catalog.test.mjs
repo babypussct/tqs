@@ -290,6 +290,42 @@ test('hidden-qianxun locks TargetConfirming cancellation for both slots', () => 
   assert.match(qaInit, /scenario\.trigger == "hidden-qianxun"[\s\S]*triggerHiddenQianxun\(room, state\)/u);
 });
 
+test('hidden-qianxun locks BeforeCardsMove cancellation of Indulgence for both slots', () => {
+  const expected = {
+    'hidden-qianxun-indulgence': {
+      seed: 0x5d6e7fa0,
+      actor: { general: 'hs__luxun', deputy: 'hs__sunquan', kingdom: 'wu' },
+    },
+    'hidden-qianxun-indulgence-deputy': {
+      seed: 0x5d6e7fa1,
+      actor: { general: 'hs__sunquan', deputy: 'hs__luxun', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-qianxun', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} Indulgence source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'qianxun-indulgence', match: { trueName: 'indulgence' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const qianxun = fs.readFileSync(qianxunSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qianxun, /qianxun:addEffect\(fk\.BeforeCardsMove/u);
+  assert.match(qianxun, /move\.toArea == Card\.PlayerJudge/u);
+  assert.match(qianxun, /c\.trueName == "indulgence"/u);
+  assert.match(qianxun, /player\.room:cancelMove\(data/u);
+  assert.match(qianxun, /mirror_move\.toArea = Card\.DiscardPile/u);
+  assert.match(qaInit, /hidden-qianxun-indulgence[\s\S]*qianxun-indulgence/u);
+});
+
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'hidden-reveal');
   assert.ok(scenario, 'hidden-reveal catalog entry is required');

@@ -363,7 +363,8 @@ local function validateHiddenQianxunScenario(scenario)
   end
   local actor = scenario.players.actor
   local target = scenario.players.target
-  local deputy = scenario.id == "hidden-qianxun-deputy"
+  local deputy = scenario.id == "hidden-qianxun-deputy" or
+    scenario.id == "hidden-qianxun-indulgence-deputy"
   local expectedMain = deputy and "hs__sunquan" or "hs__luxun"
   local expectedDeputy = deputy and "hs__luxun" or "hs__sunquan"
   if type(actor) ~= "table" or actor.general ~= expectedMain or
@@ -377,21 +378,33 @@ local function validateHiddenQianxunScenario(scenario)
   if scenario.expectedCommand ~= "AskForUseActiveSkill" then
     fail("hidden-qianxun must expose AskForUseActiveSkill for the real Snatch request")
   end
-  if #scenario.cards ~= 2 then
-    fail("hidden-qianxun must reserve one source Snatch and one actor Peach")
-  end
-  local snatchCard, victimCard
-  for _, card in ipairs(scenario.cards) do
-    if card.key == "qianxun-snatch" and card.owner == "target" and card.area == "hand" and
-        type(card.match) == "table" and card.match.trueName == "snatch" then
-      snatchCard = card
-    elseif card.key == "qianxun-victim" and card.owner == "actor" and card.area == "hand" and
-        type(card.match) == "table" and card.match.trueName == "peach" then
-      victimCard = card
+  local indulgenceScenario = scenario.id == "hidden-qianxun-indulgence" or
+    scenario.id == "hidden-qianxun-indulgence-deputy"
+  if indulgenceScenario then
+    if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+        scenario.cards[1].key ~= "qianxun-indulgence" or
+        scenario.cards[1].owner ~= "target" or scenario.cards[1].area ~= "hand" or
+        type(scenario.cards[1].match) ~= "table" or
+        scenario.cards[1].match.trueName ~= "indulgence" then
+      fail("hidden-qianxun indulgence scenarios must reserve one source Indulgence")
     end
-  end
-  if not snatchCard or not victimCard then
-    fail("hidden-qianxun must reserve a target Snatch and actor Peach")
+  else
+    if #scenario.cards ~= 2 then
+      fail("hidden-qianxun must reserve one source Snatch and one actor Peach")
+    end
+    local snatchCard, victimCard
+    for _, card in ipairs(scenario.cards) do
+      if card.key == "qianxun-snatch" and card.owner == "target" and card.area == "hand" and
+          type(card.match) == "table" and card.match.trueName == "snatch" then
+        snatchCard = card
+      elseif card.key == "qianxun-victim" and card.owner == "actor" and card.area == "hand" and
+          type(card.match) == "table" and card.match.trueName == "peach" then
+        victimCard = card
+      end
+    end
+    if not snatchCard or not victimCard then
+      fail("hidden-qianxun must reserve a target Snatch and actor Peach")
+    end
   end
 end
 
@@ -1883,6 +1896,8 @@ local function triggerHiddenQianxun(room, state)
   -- 谦逊 is compulsory on TargetConfirming. The actor remains face-down while
   -- a real Snatch has a legal Peach target; the native effect must reveal only
   -- the Lục Tốn slot and cancel that target before Snatch can obtain anything.
+  local indulgenceScenario = state.scenario == "hidden-qianxun-indulgence" or
+    state.scenario == "hidden-qianxun-indulgence-deputy"
   state.target:revealGenerals()
   if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
     fail("hidden-qianxun actor must start with both generals hidden")
@@ -1896,13 +1911,77 @@ local function triggerHiddenQianxun(room, state)
 
   local gate = room:askToSkillInvoke(state.actor, {
     skill_name = "tqs_qa_hidden_qianxun_gate",
-    prompt = "TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng Thuận Thủ.",
+    prompt = indulgenceScenario
+      and "TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng Lạc Bất Tư Thục."
+      or "TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng Thuận Thủ.",
   })
   if not gate then
     fail("hidden-qianxun readiness gate was cancelled")
   end
   if not isPrelighted(state.actor, "hs__qianxun") then
     fail("hidden-qianxun must be prelighted before TargetConfirming")
+  end
+
+  if indulgenceScenario then
+    local indulgenceId = state.slotCards["qianxun-indulgence"]
+    if not indulgenceId or not table.contains(state.target:getCardIds(Player.Hand), indulgenceId) then
+      fail("hidden-qianxun indulgence must put its reserved Indulgence in the source hand")
+    end
+
+    state.currentDamageStep = 1
+    local use = room:askToUseRealCard(state.target, {
+      pattern = { indulgenceId },
+      skill_name = "tqs_qa_hidden_qianxun_indulgence",
+      prompt = "TQS QA: dùng Lạc Bất Tư Thục lên Lục Tốn để kiểm tra Khiêm Tốn.",
+      extra_data = {
+        bypass_times = true, bypass_distances = true, extraUse = true,
+        exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+      },
+      cancelable = true,
+      skip = true,
+    })
+    if not use or not use.card or use.card.id ~= indulgenceId or
+        use.card.trueName ~= "indulgence" or #use.tos ~= 1 or use.tos[1] ~= state.actor then
+      fail("hidden-qianxun indulgence must receive the reserved card against the actor")
+    end
+    use.extraUse = true
+    room:useCard(use)
+    state.currentDamageStep = nil
+
+    local effect = table.find(state.skillEffects, function(entry)
+      return entry.step == 1 and entry.skill == "hs__qianxun" and entry.player == state.actor.id
+    end)
+    local qianxunIsDeputy = state.scenario == "hidden-qianxun-indulgence-deputy"
+    local revealedCorrectSlot = qianxunIsDeputy
+      and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__luxun"
+      or not qianxunIsDeputy and state.actor.general == "hs__luxun" and state.actor.deputyGeneral == "anjiang"
+    local cancelledJudgeMove = room:getCardArea(indulgenceId) == Card.DiscardPile and
+      #state.actor:getCardIds(Player.Judge) == 0
+    if not effect or effect.fake or not revealedCorrectSlot then
+      fail("prelighted hidden Qianxun must run a real SkillEffect and reveal Lục Tốn in its catalogued slot")
+    end
+    if not cancelledJudgeMove then
+      fail("hidden Qianxun must cancel the Indulgence judge move and discard the card")
+    end
+    if state.actor:isFakeSkill("hs__qianxun") or not state.actor:hasSkill("hs__qianxun") then
+      fail("hidden Qianxun must convert from fake to active after reveal")
+    end
+
+    room:sendLog{
+      type = "[TQS QA] Hidden Khiêm Tốn: BeforeCardsMove Lạc Bất Tư Thục=%arg; SkillEffect=%arg2; mở tướng=%arg3; vào phán xét=%arg4; chuyển bỏ=%arg5; vị trí=%arg6",
+      from = state.actor.id,
+      arg = "true",
+      arg2 = "true",
+      arg3 = tostring(revealedCorrectSlot),
+      arg4 = "false",
+      arg5 = tostring(cancelledJudgeMove),
+      arg6 = qianxunIsDeputy and "phó tướng" or "chủ tướng",
+    }
+    fk.qInfo(string.format("[tqs_qa] hidden-qianxun before_cards_move=indulgence effect=true slot=%s revealed=%s judge_move_cancelled=%s discarded=true revision=%s",
+      qianxunIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), tostring(cancelledJudgeMove), manifest.sourceRevision))
+    state.gameOverRequested = true
+    room:gameOver("")
+    return
   end
 
   local snatchId = state.slotCards["qianxun-snatch"]
@@ -1988,7 +2067,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy" or
       state.scenario == "hidden-jizhi" or state.scenario == "hidden-jizhi-deputy" or
       state.scenario == "hidden-mingshi" or state.scenario == "hidden-mingshi-deputy" or
-      state.scenario == "hidden-qianxun" or state.scenario == "hidden-qianxun-deputy") and
+      state.scenario == "hidden-qianxun" or state.scenario == "hidden-qianxun-deputy" or
+      state.scenario == "hidden-qianxun-indulgence" or
+      state.scenario == "hidden-qianxun-indulgence-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
