@@ -217,8 +217,9 @@ SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 current Yiji native + hosted PASS; Jueqing/Jianxiong and
-                 30-variant native-QA + hosted main/deputy PASS; full parity OPEN
+                 current Yiji/Di Kế + Ân Oán native/hosted PASS;
+                 Jueqing/Jianxiong and 30-variant native-QA + hosted
+                 main/deputy PASS; full parity OPEN
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
@@ -235,19 +236,19 @@ recreate the exact runner without guessing:
 ```text
 Runtime:          /opt/freekill-hegemony/current
 Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: fc7357dd585b614312a6894eb16552be
+Runtime flist MD5: ae598a4c946040df3a458ddeb4771999
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      8b7b69388824b35e53f71d00aa5edf4fa151b4f5
-QA package SHA:   006e541b1b9ed670de6275075b30bb8a6f6703545f9ff055b1ecd04162dd303d
-QA catalog SHA:   5ad80f767a27f3d10db0917e85e124d7a8e95519dfa311ba9beb0d5a2338189a
+QA revision:      f80d346ed2ad727358615fb03650db2132a9fb02
+QA package SHA:   7145a6466704910fc95c06ed3b3a95e7979f49cc368bd7151dce57e244a03905
+QA catalog SHA:   ac0be89dfc06f50fc9ec9bdbd7551d36307c3564463b86210fa796784d13c2bc
 QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
 Service:          freekill-native.service enabled/active; TCP 9527 reachable
 ```
 
 Current acceptance on this replacement identity is intentionally concise: the
-native and hosted Render → Oracle Yiji positive paths pass for both main and
-deputy; the hosted Render → Oracle Jueqing, Jianxiong and 30-variant
+native and hosted Render → Oracle Yiji/Di Kế and Ân Oán paths pass for both main
+and deputy; the hosted Render → Oracle Jueqing, Jianxiong and 30-variant
 native-QA paths pass for both main and deputy, with the evidence index in the
 canonical audit; hosted Gongqing also passes both slots. The earlier 51-run bounded corpus used the
 previous QA identity (`7787544e…`, runtime `0e2e6585…`) and is retained as

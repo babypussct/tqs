@@ -8,7 +8,7 @@
 | Thành phần | Giá trị |
 | --- | --- |
 | Web/gateway | `https://tqs-mobile-candidate.onrender.com` |
-| Render deployment | [`dep-db8hu43ncjis73b3u1r0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8hu43ncjis73b3u1r0), commit `cc5d4ea6` |
+| Render deployment | [`dep-db8iptu7bikc73e8p100`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8iptu7bikc73e8p100), commit `93b9f652` |
 | Native replacement | `161.33.209.212:9527`, VM `freekill-hegemony-qa` |
 | Cấu hình bền vững | `render.yaml` và service env cùng ghim `FK_HOST` vào replacement; `FK_PORT=9527` |
 | Vai trò | Render phục vụ React/gateway; Oracle chạy FreeKill C++/Lua và state server |
@@ -18,11 +18,13 @@
 - Health public: `200 / ok`.
 - Gateway manifest: 14 package, 5.279 file, bundle hash
   `0b4c3d1ea4f5eae7`, runtime MD5
-  `fc7357dd585b614312a6894eb16552be`.
+  `ae598a4c946040df3a458ddeb4771999`.
 - Public HTML SHA-256: `fa42af15…`; JS
   `index-DXmKDLu9.js`; CSS `index-7DaeryPw.css`.
+- Public release snapshot: 16.522 file, 14 package; `dist/index.html` SHA-256
+  `fa42af15a4591bc5cf252d1834c9175c2d629a8a6c0328447e2518a3ed21f68b`.
 - Oracle: Lua 5.4.8, service enabled/active, port 9527; current QA revision
-  `8b7b6938…`, package SHA `006e541b…`, catalog SHA `5ad80f76…`; identity đã
+  `f80d346e…`, package SHA `7145a646…`, catalog SHA `ac0be89d…`; identity đã
   được verify trên VM.
 
 ## Acceptance đã PASS
@@ -36,6 +38,8 @@
 - Hidden Yiji chủ tướng: Quách Gia còn úp → prelight Di Kế → nhận damage →
   invoke → mở đúng chủ tướng → chuyển 2 lá. Evidence: [`cp08-hidden-yiji-multiplayer-live-1792088748424.json`](../../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792088748424.json).
 - Hidden Yiji phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json`](../../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json).
+- Hidden Ân Oán chủ tướng: prelight trước `TargetConfirmed`, request Peach riêng tới actor đang úp, mở Pháp Chính và rút đúng 1 lá. Evidence: [`cp08-hidden-enyuan-multiplayer-live-1792093571889.json`](../../../scratch/evidence/cp08-hidden-enyuan-multiplayer-live-1792093571889.json).
+- Hidden Ân Oán phó tướng: cùng hợp đồng và mở đúng slot phó. Evidence: [`cp08-hidden-enyuan-deputy-multiplayer-live-1792093587237.json`](../../../scratch/evidence/cp08-hidden-enyuan-deputy-multiplayer-live-1792093587237.json).
 - Hidden Jueqing chủ tướng: tướng còn ẩn + prelight → `PreDamage` → mở Trương Xuân Hoa ở chủ tướng → mất đúng 1 HP và chặn `DamageEvent`. Evidence: [`cp08-hidden-jueqing-multiplayer-live-1792090046211.json`](../../../scratch/evidence/cp08-hidden-jueqing-multiplayer-live-1792090046211.json).
 - Hidden Jueqing phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json`](../../../scratch/evidence/cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json).
 - Hidden Jianxiong chủ tướng: tướng còn ẩn + prelight → `Damaged` → mở Tào Tháo ở chủ tướng → chọn/nhận 1 lá sát thương. Evidence: [`cp08-hidden-jianxiong-multiplayer-live-1792090284132.json`](../../../scratch/evidence/cp08-hidden-jianxiong-multiplayer-live-1792090284132.json).
@@ -48,7 +52,7 @@
 - Batch current hosted bổ sung 32 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Tôn Thượng Hương/Xiaoji, Guanxing, Anh Tư, Thiên Hương, Phản Gián) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
 Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
-identity, login, hidden Gongqing, hidden Yiji, hidden Jueqing, hidden Jianxiong, hidden Phản Gián, Lạc Thần, Đoạn Trường, ActiveSkill/ViewAs main/deputy, dual, reveal và batch 32 slot/nhánh hidden-trigger ở các slot đã nêu. Đây chưa
+identity, login, hidden Gongqing, hidden Yiji/Di Kế, hidden Ân Oán, hidden Jueqing, hidden Jianxiong, hidden Phản Gián, Lạc Thần, Đoạn Trường, ActiveSkill/ViewAs main/deputy, dual, reveal và batch 32 slot/nhánh hidden-trigger ở các slot đã nêu. Đây chưa
 phải full rule parity; ma trận effect, native interaction còn lại,
 cold-start/rollback/SLA và official sign-off vẫn OPEN. Corpus 51 run trước đó
 thuộc identity cũ và không được gộp vào bằng chứng current identity.
