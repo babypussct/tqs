@@ -1631,6 +1631,15 @@ try{
       assert.ok(hiddenLuoshenInvokeCount >= 2,
         'hidden-luoshen must expose the readiness gate and the real trigger/continuation invoke');
       console.log('PASS hidden-luoshen: native hidden EventPhaseStart trigger revealed Zhen Ji and completed judgment continuation');
+    } else if (hiddenJizhiScenario) {
+      assert.ok(hiddenJizhiGateReply, 'hidden-jizhi must complete the native prelight gate');
+      assert.ok(hiddenJizhiCardReply, 'hidden-jizhi must complete the native Duel/CardUsing request');
+      assert.ok(hiddenJizhiInvoked, 'hidden-jizhi must invoke the optional prelighted CardUsing effect');
+      console.log('PASS hidden-jizhi: native hidden CardUsing branch accepted Duel, invoked Tập Trí and completed its draw effect');
+    } else if (hiddenMingshiScenario) {
+      assert.ok(hiddenMingshiGateReply, 'hidden-mingshi must complete the native prelight gate');
+      assert.ok(hiddenMingshiCardReply, 'hidden-mingshi must complete the hidden-source Slash request');
+      console.log('PASS hidden-mingshi: native hidden DamageInflicted branch accepted the hidden-source Slash and reduced damage to zero');
     } else if (hiddenRevealScenario) {
       assert.ok(hiddenRevealReply,
         'hidden-reveal must complete the native reveal_skill& active request and reveal Lục Tốn');
