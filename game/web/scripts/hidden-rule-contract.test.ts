@@ -237,6 +237,9 @@ test('every custom hidden trigger predicate keeps a skill-visibility gate or a r
   try {
     await runtime.start();
     const report = await runtime.eval<{ rows: TriggerGateRow[] }>(LUA_HIDDEN_TRIGGER_GATE_AUDIT);
+    const globalCustomRows = report.rows.filter((row) => row.custom && row.global);
+    assert.deepEqual(globalCustomRows, [],
+      'hidden trigger inventory must not introduce a global custom predicate outside the owner visibility audit');
     const customRows = report.rows.filter((row) => row.custom && !row.global);
     const missingGate: string[] = [];
     const decoder = new TextDecoder();
