@@ -59,24 +59,20 @@ Giữ Render candidate và Oracle replacement theo cùng release identity; hiệ
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T20:46:35.875Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `17bfe58e25f4`.
-- File thay đổi hiển thị: 5 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T20:46:43.313Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `0938f5c9f21b`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M docs/CODEX_PLAN.md
- M docs/web-client/MOBILE_PLAYABLE_MASTER_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
- M docs/web-client/hosting/CP08_RENDER.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+0938f5c9 docs: record current hidden Yiji proof
 17bfe58e docs: refresh codex checkpoint
 e6f61404 docs: record CP09 Render Oracle Fuyin proof
-56812877 test: verify hidden Fuyin on native turn
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
