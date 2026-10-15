@@ -570,6 +570,35 @@ the reserved Slash and draws one replacement. The opponent sees only the
 public log and never receives the private `PlayCard` request. This scenario is
 also linked from [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
+## `hidden-fanjian`: ActiveSkill khi Chu Du còn úp
+
+`ex__fanjian` trong [`fanjian.lua`](../../../../runtime/packages/standard_ex/pkg/general/skills/fanjian.lua)
+là ActiveSkill thật. Điều kiện nguồn là một lần trong `HistoryPhase`, chọn một
+lá trên tay và một mục tiêu khác; effect native sau đó lộ lá, tặng lá cho mục
+tiêu và để mục tiêu chọn lộ suit hoặc mất 1 HP. QA không tự thực hiện effect:
+browser chỉ chọn fake/regular projection và gửi `PlayCard`; `SkillEffect` native
+phải gọi `revealBySkillName` trước `on_use`, mở đúng slot chứa Chu Du.
+
+Hai mirror phải chạy ở room sạch:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-fanjian \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-fanjian-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance native bắt buộc: actor còn úp cả hai tướng trước `PlayCard`; browser
+chọn đúng Peach và target; native mở Chu Du ở chủ/phó tương ứng, tặng Peach,
+target chọn `loseHp`, target giảm đúng 1 HP và cả hai client thấy log công khai
+cùng `GameOver`. Browser/Lua contract hiện PASS; nếu server không phát
+`tqs_qa_hidden_fanjian_gate`, runner phải dừng ở package/config boundary và
+không được ghi nhận là PASS gameplay. README này không chép package hash/log;
+identity và trạng thái probe giữ tập trung trong audit canonical.
+
 ## `hidden-view-as`: ViewAs skill of a hidden general
 
 This companion scenario keeps Triệu Vân hidden, projects fake `hs__longdan` as
@@ -624,6 +653,8 @@ wrong slot:
 | `hidden-jianxiong-deputy` | Cao Cao is the deputy; Jianxiong opens the deputy and obtains the damage card. |
 | `hidden-reveal-deputy` | Lục Tốn is the deputy; `revealDeputy` opens only the deputy. |
 | `hidden-active-main` | Tôn Quyền is the main; Chế Hành opens only the main. |
+| `hidden-fanjian` | Chu Du is the main; `PlayCard` opens only the main, gifts Peach and asks the target for the native lose-HP choice. |
+| `hidden-fanjian-deputy` | Chu Du is the deputy; the same ActiveSkill path opens only the deputy. |
 | `hidden-view-as-main` | Triệu Vân is the main; Longdan opens only the main and converts Jink to Slash. |
 | `hidden-jizhi` | Hoàng Nguyệt Anh is the main; `CardUsing` opens only the main and draws one card. |
 | `hidden-jizhi-deputy` | Hoàng Nguyệt Anh is the deputy; `CardUsing` opens only the deputy and draws one card. |
@@ -661,7 +692,8 @@ negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
 `hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
 `hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors, both
 Weimu mirrors, both Xiaoji mirrors, both Guanxing mirrors and both Duanchang
-mirrors. Slot mirrors remain separate scenario IDs because each must prove
+mirrors. The Fanjian pair is currently contract/browser-only until the remote
+server has an installed and verified `tqs_qa` package. Slot mirrors remain separate scenario IDs because each must prove
 the owning main/deputy slot; the canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.

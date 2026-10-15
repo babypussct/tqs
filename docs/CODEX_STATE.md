@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 15/10/2026 16:20 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
+> Cập nhật handoff: 15/10/2026 16:34 (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Audit luật chi tiết nằm ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); không lặp lại ma trận/evidence ở đây.
 
 ## Mục tiêu và phạm vi
 
@@ -14,7 +14,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - Đã có browser → Wasmoon/Lua → gateway → FreeKill C++ live path: login/lobby/room/bot, một ván bot hoàn chỉnh, GameOver, về sảnh và disconnect sạch. Đây là bounded evidence, không phải full rule parity.
 - CP90/CP91, các hotfix UI CP93/CP94/CP96 và các sửa bridge/runtime đã được đưa vào artifact candidate; identity hosted đã được đối chiếu. Smoke test gameplay nhiều bước và official sign-off vẫn mở.
 - `PLAYABLE_MOBILE` vẫn `false`. Thiết bị vật lý và mất mạng vật lý được người dùng miễn trong scope hiện tại; trạng thái là `DEFERRED/WAIVED_BY_USER`, không phải PASS.
-- Audit P0 hidden-general: Lua/C++ gốc cho phép trigger skill khi tướng úp nếu đã prelight. React đã triển khai fake-skill dock, privacy/lifecycle reducer, regular-skill gate và wire `PushRequest("prelight,...")`. Native QA **PASS NATIVE-LOCAL bounded** cho ma trận lõi 12/12, các staged add-on trước đó, Xiaoji `2/2`, Guanxing `2/2`, 英姿 `2/2`, Thiên Hương `2/2`, Đoạn Trường `2/2` và regression Di Kế re-hide `2/2` main/deputy. Regression mới đã khóa `SkillEffect` reveal đúng slot → Di Kế chuyển 2 lá → `hideGeneral()` → fake `hs__yiji` vẫn prelight, `hasSkill` đúng và không có regular duplicate; 英姿 khóa `DrawNCards` `2→3` và rút thật 3 lá. Catalog/source scenarios hiện **49/49**, `test:qa-server-contract` **30/30** subtests. Không gộp add-on vào identity lõi. Source projection/lifecycle/slot-route audit vẫn PASS theo số liệu canonical ở [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Hosted/official release matrix và exhaustive live effect matrix vẫn chưa đóng.
+- Audit P0 hidden-general: Lua/C++ gốc cho phép trigger skill khi tướng úp nếu đã prelight. React đã triển khai fake-skill dock, privacy/lifecycle reducer, regular-skill gate và wire `PushRequest("prelight,...")`. Native QA **PASS NATIVE-LOCAL bounded** cho ma trận lõi 12/12, các staged add-on trước đó, Xiaoji `2/2`, Guanxing `2/2`, 英姿 `2/2`, Thiên Hương `2/2`, Đoạn Trường `2/2` và regression Di Kế re-hide `2/2` main/deputy. Regression mới đã khóa `SkillEffect` reveal đúng slot → Di Kế chuyển 2 lá → `hideGeneral()` → fake `hs__yiji` vẫn prelight, `hasSkill` đúng và không có regular duplicate; 英姿 khóa `DrawNCards` `2→3` và rút thật 3 lá. Catalog/source scenarios hiện **51/51**, `test:qa-server-contract` **31/31** subtests. `hidden-fanjian` main/deputy đã PASS source/browser contract và wire PlayCard, nhưng native C++ remote probe dừng trước readiness gate vì host chưa có `tqs_qa`; không tính vào PASS native. Không gộp add-on vào identity lõi. Source projection/lifecycle/slot-route audit vẫn PASS theo số liệu canonical ở [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md). Hosted/official release matrix và exhaustive live effect matrix vẫn chưa đóng.
 - Fake trigger và fake active đã tách đúng: `AddSkill/LoseSkill` chỉ nhận skill của Self; dock idle bị khóa; chỉ `SkillButton` do Lua gửi mới được kích hoạt. Native matrix đã chứng minh Di Kế, `reveal_skill&`, Chế Hành và Long Đảm ViewAs đều mở đúng slot chủ/phó trước effect.
 
 ## Evidence đã được xác nhận
@@ -22,7 +22,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 | Tầng | Kết quả | Ý nghĩa |
 | --- | --- | --- |
 | Source/runtime | PASS | Runtime có 14 package; source contract skill/card/equipment và native caller audit không có invalid contract trong active pool. |
-| Local browser/Lua | PASS | Native dialogs 7/7, cards-and-choice 3/3, card selection 4/4, store 38/38, connection 28/28, gameplay 16/16, browser E2E 20/20, Wasmoon/React E2E 63/63, catalog/source scenarios 49/49 và `test:qa-server-contract` 30/30 subtests; gồm Xiaoji, Guanxing, 英姿, Thiên Hương, Đoạn Trường, Di Kế re-hide, Jizhi, Mingshi, Qianxun, Kongcheng, Weimu, launcher Lua 5.4 fail-closed/module preflight và lifecycle/reconnect audits; fixture không thay thế live C++. |
+| Local browser/Lua | PASS | Native dialogs 7/7, cards-and-choice 3/3, card selection 4/4, store 38/38, connection 28/28, gameplay 16/16, browser E2E 20/20, Wasmoon/React E2E 63/63, catalog/source scenarios 51/51 và `test:qa-server-contract` 31/31 subtests; gồm Xiaoji, Guanxing, 英姿, Thiên Hương, Đoạn Trường, Di Kế re-hide, Phản Gián contract main/deputy, Jizhi, Mingshi, Qianxun, Kongcheng, Weimu, launcher Lua 5.4 fail-closed/module preflight và lifecycle/reconnect audits; fixture không thay thế live C++. |
 | Native caller inventory | PASS ở contract | 17 request families trên 5.264 Lua files được ánh xạ; chưa đồng nghĩa mọi caller đã chạy live. |
 | Live core gameplay | PASS bounded | Ván bot C++ thật đã qua reveal, Vô Giải, Sát/target/OK, Cường Tập và GameOver. |
 | Live targeted gameplay | PARTIAL | Normal rescue và một số CardChosen/Poxi/CardsAndChoice đã có evidence; cancellation/expiry/reconnect và caller còn lại chưa exhaustive. |
@@ -62,9 +62,10 @@ Nguồn và ma trận đầy đủ: [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC
 - Native C++/Lua local vừa chạy Đoạn Trường main/deputy trên runtime cô lập `flist MD5 cc9ffae8858f3fff68f4b4f4c3d1bc9b`, QA package revision `51bb9d2d…`: [`1792052232281`](../scratch/evidence/cp08-hidden-duanchang-multiplayer-live-1792052232281.json) và [`1792052245231`](../scratch/evidence/cp08-hidden-duanchang-deputy-multiplayer-live-1792052245231.json) đều PASS với hai browser client + hai native bot, fake skill khi actor còn úp, prelight gate, `fk.Death`, `AskForChoices` chọn Cao Cao ở chủ tướng killer, gỡ `Gian Hùng` nhưng giữ `Phản Quỹ`, reveal đúng chủ/phó và cleanup sạch. Đây là **NATIVE-LOCAL staged**, không phải Render/Oracle/production.
 - Native C++/Lua local vừa chạy regression Di Kế re-hide main/deputy trên runtime cô lập `flist MD5 3966a400db61802cd94b8d87b4cc54d5`, QA revision `18969850eab0334778a284869de68de07f04a25f`: [`1792054011035`](../scratch/evidence/cp95-hidden-rehide-yiji-multiplayer-live-1792054011035.json) và [`1792054024731`](../scratch/evidence/cp95-hidden-rehide-yiji-deputy-multiplayer-live-1792054024731.json) đều PASS với hai browser client. Cả hai kiểm damage thật → `AskForSkillInvoke` → Di Kế chuyển 2 lá → reveal đúng slot → `hideGeneral()` → fake/prelight retention, không regular duplicate, GameOver/result/lobby/disconnect sạch. Đây là **NATIVE-LOCAL staged**, không phải Render/Oracle/production.
 - Native C++/Lua local vừa chạy `ex__yingzi` main/deputy trên runtime cô lập `flist MD5 e3fa7be9a38d083d09c562dcf1d546d2`, QA revision `6ed7e3110fb57335d8805fbc70a7a307b099da88`: [`1792055572502`](../scratch/evidence/cp98-hidden-yingzi-multiplayer-live-1792055572502.json) và [`1792055583385`](../scratch/evidence/cp98-hidden-yingzi-deputy-multiplayer-live-1792055583385.json) đều PASS với hai browser client. Cả hai kiểm gate prelight → draw phase native → `DrawNCards` `2→3` → rút thật 3 lá → `AfterDrawNCards`, `SkillEffect` mở đúng chủ/phó, fake→active và GameOver/result/lobby/disconnect sạch. Đây là **NATIVE-LOCAL staged**, không phải Render/Oracle/production; hash package/catalog canonical nằm ở `QUOC_CHIEN_RULE_AUDIT.md`.
+- Commit `ea8faeb7` bổ sung contract `hidden-fanjian`/`hidden-fanjian-deputy`: Phản Gián active phải đi qua PlayCard khi Chu Du còn úp, mở đúng slot trước effect, tặng Peach và để mục tiêu chọn mất HP. Browser/Lua QA và `test:qa-server-contract` PASS; probe C++ remote dừng trước gate `tqs_qa`, nên chưa có native PASS/evidence gameplay cho hai mirror.
 - Evidence Jizhi/Mingshi và các staged add-on trước vẫn giữ trong audit canonical; STATE chỉ giữ kết luận ngắn để tránh lẫn identity.
 - Evidence staged cũ (`hidden-dual`, `hidden-fankui`, `hidden-luoshen`) được giữ ở audit canonical; STATE không lặp hash/log để tránh review nhầm identity.
-- Re-validation native/local trước CP94 (15/10/2026 15:18) là mốc lịch sử: catalog/source scenarios 45/45, `test:qa-server-contract` 28/28 subtests, `test:e2e:lua` 63/63, `audit:hidden-skills` (520/520 lifecycle, 155.168 route, 0 hard failure), `audit:skill-activation` (0 hard failure), `typecheck`; ca Quách Gia đã xác nhận negative/positive/skip, Thiên Hương và Đoạn Trường native main/deputy. Mốc hiện hành sau regression re-hide và 英姿 là 49/49 và 30/30 ở audit canonical; tất cả vẫn bounded/local, không thay thế LIVE.
+- Re-validation native/local trước CP94 (15/10/2026 15:18) là mốc lịch sử: catalog/source scenarios 45/45, `test:qa-server-contract` 28/28 subtests, `test:e2e:lua` 63/63, `audit:hidden-skills` (520/520 lifecycle, 155.168 route, 0 hard failure), `audit:skill-activation` (0 hard failure), `typecheck`; ca Quách Gia đã xác nhận negative/positive/skip, Thiên Hương và Đoạn Trường native main/deputy. Mốc hiện hành sau re-hide, 英姿 và Phản Gián contract là 51/51 và 31/31 ở audit canonical; tất cả vẫn bounded/local, không thay thế LIVE.
 - Kiểm tra cài đặt lại từ máy phát triển: profile/key `tqs-native-qa` tồn tại đúng quyền local nhưng `ssh -o BatchMode=yes tqs-native-qa true` vẫn trả `Permission denied (publickey)` (exit 255). Chưa có quyền guest nên chưa cài/verify package QA hiện hành trên Oracle và không ghi nhận deploy.
 - Đã thử reconnect native khi readiness `AskForSkillInvoke` của Di Kế còn pending: FreeKill hủy request khi actor disconnect rồi cho login lại, nên không coi đây là React regression; prompt-specific reconnect vẫn **OPEN** và phải kiểm riêng theo semantics request.
 - Oracle VM chỉ mới được xác nhận ở mức process/port: service `freekill-native` active và 9527 reachable, nhưng chưa đọc được manifest/hash trong guest. SSH vẫn bị từ chối, Run Command chạy dưới `ocarun` không có root, OCI không cho sửa `ssh_authorized_keys`, recovery chưa vào được root shell. **Không có bằng chứng phiên này đã deploy package hiện hành lên VM.**
@@ -93,11 +94,14 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T09:21:43.961Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `dd5208c3762c`.
-- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T09:36:10.184Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `ea8faeb7b3b6`.
+- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/tqs_qa/README.md
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
@@ -109,9 +113,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+ea8faeb7 qa: cover hidden fanjian active reveal path
+e8e12acd docs: refresh Render handoff snapshot
 dd5208c3 docs: record Render hotfix redeploy
-74a7b30e docs: align final QA handoff timestamps
-926de6cb docs: checkpoint hidden yingzi verification
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
