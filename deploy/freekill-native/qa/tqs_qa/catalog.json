@@ -751,6 +751,82 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-qianxun",
+      "title": "Hidden 陆逊 谦逊 cancels a valid Snatch target",
+      "seed": 1567522718,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-snatch",
+          "match": {
+            "trueName": "snatch"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "qianxun-victim",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-qianxun-deputy",
+      "title": "Hidden deputy 陆逊 谦逊 cancels a valid Snatch target",
+      "seed": 1567522719,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-snatch",
+          "match": {
+            "trueName": "snatch"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "qianxun-victim",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

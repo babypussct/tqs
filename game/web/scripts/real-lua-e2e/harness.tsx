@@ -304,6 +304,9 @@ const api = {
   acknowledgeMingshiPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'mingshi', ${prelight}}`));
   },
+  acknowledgeQianxunPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__qianxun', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -536,6 +539,22 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'mingshi', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_mingshi_gate', 'TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.'}");
+        break;
+      }
+      case 'hidden-qianxun':
+      case 'hidden-qianxun-deputy': {
+        // Qianxun is compulsory on TargetConfirming. The local fixture mirrors
+        // only the private fake-skill/prelight gate; native QA owns the real
+        // Snatch target-cancellation and card-area assertion.
+        const main = scenarioId === 'hidden-qianxun-deputy' ? 'hs__sunquan' : 'hs__luxun';
+        const deputy = scenarioId === 'hidden-qianxun-deputy' ? 'hs__luxun' : 'hs__sunquan';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_qianxun_gate', 'TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng Thuận Thủ.'}");
         break;
       }
       case 'hidden-reveal':

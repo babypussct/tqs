@@ -18,6 +18,7 @@ const yijiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg
 const luoshenSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/luoshen.lua');
 const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua');
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
+const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -250,6 +251,43 @@ test('hidden-mingshi locks compulsory DamageInflicted reduction from a hidden so
   assert.match(mingshi, /data\.from\.general == "anjiang"/u);
   assert.match(mingshi, /data:changeDamage\(-1\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-mingshi"[\s\S]*triggerHiddenMingshi\(room, state\)/u);
+});
+
+test('hidden-qianxun locks TargetConfirming cancellation for both slots', () => {
+  const expected = {
+    'hidden-qianxun': {
+      seed: 0x5d6e7f9e,
+      actor: { general: 'hs__luxun', deputy: 'hs__sunquan', kingdom: 'wu' },
+    },
+    'hidden-qianxun-deputy': {
+      seed: 0x5d6e7f9f,
+      actor: { general: 'hs__sunquan', deputy: 'hs__luxun', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-qianxun', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} Snatch source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'qianxun-snatch', match: { trueName: 'snatch' }, owner: 'target', area: 'hand' },
+      { key: 'qianxun-victim', match: { trueName: 'peach' }, owner: 'actor', area: 'hand' },
+    ]);
+  }
+
+  const qianxun = fs.readFileSync(qianxunSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qianxun, /name = "hs__qianxun"/u);
+  assert.match(qianxun, /tags = \{Skill\.Compulsory\}/u);
+  assert.match(qianxun, /qianxun:addEffect\(fk\.TargetConfirming/u);
+  assert.match(qianxun, /data\.card\.trueName == "snatch"/u);
+  assert.match(qianxun, /data:cancelTarget\(player\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-qianxun"[\s\S]*triggerHiddenQianxun\(room, state\)/u);
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {

@@ -43,7 +43,9 @@ export type QaScenarioId =
   | 'hidden-jizhi'
   | 'hidden-jizhi-deputy'
   | 'hidden-mingshi'
-  | 'hidden-mingshi-deputy';
+  | 'hidden-mingshi-deputy'
+  | 'hidden-qianxun'
+  | 'hidden-qianxun-deputy';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -82,7 +84,8 @@ export type QaScenarioTrigger =
   | 'hidden-dual'
   | 'hidden-luoshen'
   | 'hidden-jizhi'
-  | 'hidden-mingshi';
+  | 'hidden-mingshi'
+  | 'hidden-qianxun';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -437,6 +440,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-mingshi',
     expectedCommand: 'PlayCard',
   },
+  'hidden-qianxun': {
+    version: 1,
+    id: 'hidden-qianxun',
+    title: 'Lục Tốn úp: Khiêm Tốn hủy mục tiêu Thuận Thủ',
+    seed: 0x5d6e7f9e,
+    drawSequence: [trueName('snatch'), trueName('peach')],
+    slots: [
+      slot('qianxun-snatch', trueName('snatch'), 'opponent', 'hand', true, 0),
+      slot('qianxun-victim', trueName('peach'), 'self', 'hand', true, 1),
+    ],
+    trigger: 'hidden-qianxun',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-qianxun-deputy': {
+    version: 1,
+    id: 'hidden-qianxun-deputy',
+    title: 'Lục Tốn phó tướng úp: Khiêm Tốn hủy mục tiêu Thuận Thủ',
+    seed: 0x5d6e7f9f,
+    drawSequence: [trueName('snatch'), trueName('peach')],
+    slots: [
+      slot('qianxun-snatch', trueName('snatch'), 'opponent', 'hand', true, 0),
+      slot('qianxun-victim', trueName('peach'), 'self', 'hand', true, 1),
+    ],
+    trigger: 'hidden-qianxun',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -449,6 +478,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-dual', 'hidden-luoshen', 'hidden-luoshen-deputy',
   'hidden-jizhi', 'hidden-jizhi-deputy',
   'hidden-mingshi', 'hidden-mingshi-deputy',
+  'hidden-qianxun', 'hidden-qianxun-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -572,6 +602,16 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one hidden-source Slash for Danh Sĩ`);
+    }
+  }
+  if (plan.trigger === 'hidden-qianxun') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'qianxun-snatch' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'snatch' ||
+        plan.slots[1].key !== 'qianxun-victim' || plan.slots[1].owner !== 'self' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'peach') {
+      throw new QaScenarioError(`${plan.id} must reserve an opponent Snatch and actor Peach for Khiêm Tốn`);
     }
   }
 }
