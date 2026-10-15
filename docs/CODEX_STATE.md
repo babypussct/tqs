@@ -9,6 +9,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 ## Handoff ngắn
 
 - **Render candidate:** [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com) đang **Live** từ deployment [`dep-db8g67e7bikc73e11c8g`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8g67e7bikc73e11c8g), commit `ecd7143b`. Probe public: health `200 / ok`, HTML SHA-256 `7c34d093…`, asset `index-DQ3WxHjJ.js` và `index-7DaeryPw.css`; runtime manifest `5.279` file, MD5 `c4704cd7…`. Đây là candidate cho smoke test, chưa phải official.
+- **Ước tính tiến độ:** mục tiêu candidate mobile để người dùng smoke test đạt khoảng **60–65%**, còn **35–40%** đến mốc public/official. Đây là ước tính theo các gate, không phải tỷ lệ số file. Riêng exhaustive rule parity còn xa hơn: native-local mới có direct effect evidence **22/607** cặp (**14/53** event kinds), Oracle có **51 bounded PASS** nhưng chưa có hosted Render → Oracle proof; không quy đổi 22/607 thành tỷ lệ hoàn thiện toàn goal vì projection/lifecycle/source contract đã pass.
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. Quách Gia úp → prelight Di Kế → nhận sát thương → invoke → mở đúng chủ/phó → chạy Di Kế đã PASS NATIVE-LOCAL ở nhánh negative/positive/skip và re-hide main/deputy. Đây chưa phải evidence Render/Oracle.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
 - **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, native-local effect evidence hiện **22/607** trên **14/53** event kinds. Oracle replacement có **51 run bounded PASS**, gồm bộ 32 run ban đầu và các nhánh DrawNCards, EventPhaseStart, BeforeCardsMove, active/ViewAs, re-hide Di Kế, Song Hùng, Phản Gián và helper mở tướng; rescue/founding request cũng PASS riêng. Render hosted route và exhaustive matrix vẫn mở.
@@ -58,21 +59,20 @@ Tập trung vào hosted route nếu cần: giữ Render candidate và Oracle rep
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T16:47:56.649Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `ecd7143bb0bf`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T16:48:34.599Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `af72b8ac9a3e`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+af72b8ac docs: record live render artifact probe
 ecd7143b build: sync render web artifact
 1a57e2cf qa: record oracle bounded coverage and render candidate
-d48b4a90 docs: refresh codex checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
