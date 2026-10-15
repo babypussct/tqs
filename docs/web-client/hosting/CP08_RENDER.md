@@ -40,9 +40,10 @@
 - Hidden Jueqing phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json`](../../../scratch/evidence/cp08-hidden-jueqing-deputy-multiplayer-live-1792090065108.json).
 - Hidden Jianxiong chủ tướng: tướng còn ẩn + prelight → `Damaged` → mở Tào Tháo ở chủ tướng → chọn/nhận 1 lá sát thương. Evidence: [`cp08-hidden-jianxiong-multiplayer-live-1792090284132.json`](../../../scratch/evidence/cp08-hidden-jianxiong-multiplayer-live-1792090284132.json).
 - Hidden Jianxiong phó tướng: cùng hợp đồng và mở đúng phó tướng. Evidence: [`cp08-hidden-jianxiong-deputy-multiplayer-live-1792090299019.json`](../../../scratch/evidence/cp08-hidden-jianxiong-deputy-multiplayer-live-1792090299019.json).
+- Batch current hosted bổ sung 30 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Xiaoji, Guanxing, Anh Tư, Thiên Hương) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
 Kết luận hiện hành: **Render → Oracle replacement parity đã PASS bounded** cho
-identity, login, hidden Gongqing, hidden Yiji, hidden Jueqing và hidden Jianxiong ở cả main/deputy. Đây chưa
+identity, login, hidden Gongqing, hidden Yiji, hidden Jueqing, hidden Jianxiong và batch 30 slot/nhánh hidden-trigger ở cả main/deputy. Đây chưa
 phải full rule parity; ma trận effect, native interaction còn lại,
 cold-start/rollback/SLA và official sign-off vẫn OPEN. Corpus 51 run trước đó
 thuộc identity cũ và không được gộp vào bằng chứng current identity.

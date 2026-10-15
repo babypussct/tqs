@@ -118,9 +118,9 @@ These are two separate layers and must be verified independently:
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
 `FK_HOST=161.33.209.212` in `render.yaml` and the Render service; public
-health/manifest, login, hidden Gongqing, hidden Yiji, hidden Jueqing and
-hidden Jianxiong main/deputy runs have verified the route on one release
-identity. This is
+health/manifest, login, hidden Gongqing, hidden Yiji, hidden Jueqing, hidden
+Jianxiong and a 30-variant hidden-trigger batch have verified the route on one
+release identity. This is
 bounded parity, not exhaustive rule coverage or an official release.
 
 ## Administrator access
@@ -217,8 +217,8 @@ SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 current Yiji native + hosted PASS; Jueqing/Jianxiong native-QA
-                 + hosted main/deputy PASS; full parity OPEN
+                 current Yiji native + hosted PASS; Jueqing/Jianxiong and
+                 30-variant native-QA + hosted main/deputy PASS; full parity OPEN
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
@@ -247,9 +247,9 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 
 Current acceptance on this replacement identity is intentionally concise: the
 native and hosted Render → Oracle Yiji positive paths pass for both main and
-deputy; the hosted Render → Oracle Jueqing and Jianxiong native-QA paths pass
-for both main and deputy, with the evidence links in the canonical audit;
-hosted Gongqing also passes both slots. The earlier 51-run bounded corpus used the
+deputy; the hosted Render → Oracle Jueqing, Jianxiong and 30-variant
+native-QA paths pass for both main and deputy, with the evidence index in the
+canonical audit; hosted Gongqing also passes both slots. The earlier 51-run bounded corpus used the
 previous QA identity (`7787544e…`, runtime `0e2e6585…`) and is retained as
 historical reference only; it must not be presented as current-identity proof
 until rerun. None of these bounded results closes the exhaustive 607-pair rule
