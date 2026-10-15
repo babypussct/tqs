@@ -146,7 +146,7 @@ function publicCard(value: unknown): BoardEquipment | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const card = value as Record<string, unknown>;
   if (typeof card.name !== 'string' || card.name.length > 120 ||
-      !Number.isInteger(card.suit) || (card.suit as number) < 0 || (card.suit as number) > 4 ||
+      !Number.isInteger(card.suit) || (card.suit as number) < 0 || (card.suit as number) > 5 ||
       !Number.isInteger(card.number) || (card.number as number) < 0 || (card.number as number) > 13) return null;
   const result: BoardEquipment = {
     name: card.name,

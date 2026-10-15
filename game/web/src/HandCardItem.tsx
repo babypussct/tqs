@@ -802,44 +802,104 @@ export function IdleHandCard({
   const rank = formatRank(card.number);
   const categoryFromName = getCardCategory(card.name);
   const category = categoryFromName.typeKey === 'unknown' ? getCardCategory((card as any).trueName) : categoryFromName;
-  const { displayName } = resolveCardText(card, text);
+  const { displayName, description } = resolveCardText(card, text);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const reactId = useId().replace(/:/g, '');
+  const tooltipId = `card-tip-idle-${reactId}`;
+  const metadataId = `card-meta-idle-${reactId}`;
+  const cardMetadata = [suitInfo.name, rank, category.label].filter(Boolean).join(' · ');
+  const showTooltip = hovered || focused;
 
   const overlapDesktop = index > 0 && totalCards > 4 ? Math.min(38, 16 + (totalCards - 4) * 3.5) : 0;
   const overlapMobile = index > 0 && totalCards > 4 ? Math.min(42, 14 + (totalCards - 4) * 4.5) : 0;
   const cardStyle = {
-    zIndex: index + 1,
+    zIndex: showTooltip ? 100 : index + 1,
     '--card-overlap': `${overlapDesktop}px`,
     '--card-overlap-desktop': `${overlapDesktop}px`,
     '--card-overlap-mobile': `${overlapMobile}px`,
-    opacity: 0.88,
-    cursor: 'default',
+    opacity: 0.95,
+    cursor: 'pointer',
   } as CSSProperties;
+
+  const updateRect = () => {
+    if (cardRef.current) {
+      setRect(cardRef.current.getBoundingClientRect());
+    }
+  };
 
   return (
     <div
+      ref={cardRef}
+      tabIndex={0}
+      role="button"
       className={`gameplay-choice sg-card-button sg-card-idle ${category.className}`}
       style={cardStyle}
       aria-label={`${displayName} · ${suitInfo.name} ${rank}`}
+      aria-describedby={showTooltip ? tooltipId : metadataId}
+      onMouseEnter={() => { updateRect(); setHovered(true); }}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => { updateRect(); setFocused(true); }}
+      onBlur={() => setFocused(false)}
     >
-      <div className="sg-card-badge-cluster">
-        <span className={`sg-card-suit ${suitInfo.colorClass}`} aria-hidden="true">
+      <span id={metadataId} className="sg-visually-hidden">
+        {cardMetadata ? `${cardMetadata}. ` : ''}{description}
+      </span>
+      {/* Layer 1: Top-Left Suit & Rank */}
+      <div className="sg-card-top-left" aria-hidden="true">
+        <span className="sg-card-rank">{rank || ' '}</span>
+        <span className={`sg-card-suit ${suitInfo.colorClass}`}>
           {suitInfo.symbol}
         </span>
-        <span className={`sg-card-rank ${suitInfo.colorClass}`} aria-hidden="true">
-          {rank}
+      </div>
+
+      {/* Layer 2: Top-Right Category Badge */}
+      {category.badge && (
+        <span className="sg-card-type-badge" aria-hidden="true">
+          {category.badge}
         </span>
-        {category.label && (
-          <span className="sg-card-category" aria-hidden="true">
-            {category.label}
-          </span>
-        )}
-      </div>
-      <div className="sg-card-art-box">
-        <CardArt card={card} alt={displayName} />
-      </div>
+      )}
+
+      {/* Layer 3: Central Illustration (Native Asset or Neutral Frame) */}
+      <CardArt card={card} />
+
+      {/* Layer 4: Card Name Banner */}
       <div className="sg-card-banner">
         <span className="sg-card-name">{displayName}</span>
       </div>
+      {showTooltip && (
+        typeof document !== 'undefined' ? createPortal(
+          <div
+            id={tooltipId}
+            className="sg-card-popover-tooltip sg-card-popover-portal"
+            role="tooltip"
+            style={rect ? {
+              position: 'fixed',
+              left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
+              top: rect.top - 8,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 99999,
+              pointerEvents: 'none',
+            } : undefined}
+          >
+            <strong className="sg-tip-title">
+              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
+            </strong>
+            {category.label && (
+              <span className="sg-tip-category">[{category.label}]</span>
+            )}
+            <span className="sg-tip-desc">{description}</span>
+          </div>,
+          document.body
+        ) : (
+          <span id={tooltipId} className="sg-card-popover-tooltip" role="tooltip">
+            <strong className="sg-tip-title">{displayName}</strong>
+            <span className="sg-tip-desc">{description}</span>
+          </span>
+        )
+      )}
     </div>
   );
 }

@@ -32,18 +32,19 @@ export function getOpponentPosition(
   const cX = 50;
   const cY = isMobile ? 38 : 38.5;
   const rX = isMobile ? 38 : 42.5;
-  const rY = isMobile ? 24 : 26.5;
+  const rY = isMobile ? 24.5 : 28;
 
   let scale = 1;
   if (isMobile) {
-    if (totalSeats >= 10) scale = 0.48;
-    else if (totalSeats >= 8) scale = 0.58;
-    else if (totalSeats >= 4) scale = 0.72;
-    else scale = 0.85;
+    if (totalSeats >= 10) scale = 0.50;
+    else if (totalSeats >= 8) scale = 0.62;
+    else if (totalSeats >= 4) scale = 0.75;
+    else scale = 0.88;
   } else {
-    if (totalSeats >= 10) scale = 0.58;
-    else if (totalSeats >= 8) scale = 0.65;
-    else if (totalSeats >= 4) scale = 0.85;
+    if (totalSeats >= 10) scale = 0.60;
+    else if (totalSeats >= 8) scale = 0.72;
+    else if (totalSeats >= 6) scale = 0.80;
+    else if (totalSeats >= 4) scale = 0.88;
     else scale = 1.0;
   }
 

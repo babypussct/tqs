@@ -2499,8 +2499,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .native-calligraphy-name,
 .sg-calligraphy-name {
   position: absolute;
-  top: 18px;
-  font-size: 8px;
+  top: 19px;
+  font-size: 9.5px;
   font-weight: 900;
   color: #fff;
   text-shadow: 0 1px 3px #000, 0 0 2px #000;
@@ -2577,13 +2577,13 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
 .native-seat-badge-circle,
 .sg-seat-badge-circle {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 800;
   color: #ffd97d;
   background: rgba(0,0,0,0.6);
   border-radius: 50%;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2591,14 +2591,14 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   border: 1px solid rgba(255,217,125,0.4);
 }
 .native-seat-player-name {
-  font-size: 7.5px;
+  font-size: 8.5px;
   color: #f0e2cd;
   font-weight: 700;
   text-shadow: 0 1px 2px #000;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 42px;
+  max-width: 50px;
   margin: 0;
   display: block;
 }
@@ -2656,8 +2656,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   pointer-events: none;
 }
 .native-heg-hp-disc-v {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.85));
@@ -2668,7 +2668,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   flex-direction: column;
   align-items: center;
   line-height: 0.95;
-  font-size: 7.5px;
+  font-size: 8.5px;
   font-weight: 900;
   color: #7de8a8;
   text-shadow: 0 1px 2px #000, 0 0 3px #000;
@@ -2680,7 +2680,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .native-hp-vertical-fraction.hp-danger,
 .sg-hp-vertical-fraction.hp-danger  { color: #ff5252; }
 .hp-slash {
-  font-size: 6px;
+  font-size: 7px;
   opacity: 0.7;
   transform: rotate(20deg);
 }
@@ -2691,8 +2691,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   position: absolute;
   left: -2px;
   bottom: -2px;
-  width: 26px;
-  height: 20px;
+  width: 27px;
+  height: 21px;
   z-index: 8;
   pointer-events: none;
   display: flex;
@@ -2716,8 +2716,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   position: absolute;
   right: 0;
   bottom: 0;
-  left: 22px;
-  height: 46px;
+  left: 23px;
+  height: 48px;
   z-index: 6;
   background: url('/photo-assets/equipbg.png') right bottom/cover no-repeat,
               linear-gradient(180deg, rgba(20,16,12,0.3) 0%, rgba(10,8,6,0.92) 100%);
@@ -2733,9 +2733,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 6.5px;
+  font-size: 7.5px;
   line-height: 1;
-  height: 9.5px;
+  height: 10px;
   padding: 0 1px;
   border-radius: 1px;
 }
@@ -2746,9 +2746,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   opacity: 0.35;
 }
 .native-eq-icon {
-  font-size: 7px;
+  font-size: 7.5px;
   flex: none;
-  width: 10px;
+  width: 11px;
   text-align: center;
 }
 .native-eq-name {
@@ -2761,7 +2761,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   margin: 0 2px;
 }
 .native-eq-suit {
-  font-size: 6.5px;
+  font-size: 7px;
   font-weight: 900;
   flex: none;
 }
@@ -2779,7 +2779,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   align-items: center;
   justify-content: center;
   gap: 1px;
-  font-size: 6.5px;
+  font-size: 7px;
   font-weight: 800;
   color: #e6c88b;
   background: rgba(255,255,255,0.06);
@@ -2924,20 +2924,20 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 131px;
-  width: 131px;
-  height: 174px;
-  min-width: 131px;
-  min-height: 174px;
+  flex: 0 0 124px;
+  width: 124px;
+  height: 166px;
+  min-width: 124px;
+  min-height: 166px;
   order: 10;
   border-radius: 6px;
   box-shadow: -4px -4px 16px rgba(0,0,0,0.7);
 }
 .board-local-seat .sg-photo-panel {
-  width: 131px;
-  height: 174px;
-  min-width: 131px;
-  min-height: 174px;
+  width: 124px;
+  height: 166px;
+  min-width: 124px;
+  min-height: 166px;
   max-width: none;
   border-radius: 6px;
 }
@@ -3040,8 +3040,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     background: linear-gradient(180deg, rgba(20, 15, 10, 0.96) 0%, rgba(10, 8, 6, 0.99) 100%) !important;
   }
   .board-local-dashboard .sg-photo-panel {
-    width: 131px;
-    height: 174px;
+    width: 124px;
+    height: 166px;
     position: relative;
   }
   .board-log-panel.sg-board-log-panel {

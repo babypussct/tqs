@@ -25,7 +25,7 @@ export function displayText(text: string, translations: Record<string, string>, 
   const [key, src, dest, ...args] = text.split(':');
   const lookup = (k: string | undefined): string | undefined => {
     if (!k) return undefined;
-    return translations[k] ?? VI_ADDITIONS[k];
+    return translations[k];
   };
 
   const prefixMatch = key.match(/^([#:]?)[a-zA-Z0-9]+__(.+)$/);
@@ -35,6 +35,12 @@ export function displayText(text: string, translations: Record<string, string>, 
   const withoutHashBaseKey = baseKey.startsWith('#') ? baseKey.slice(1) : undefined;
   const baseText = text.includes('__') && !text.startsWith(':') ? text.replace(/^.*__/, '') : text;
 
+  const stripSkill = (k: string | undefined) => (k && k.endsWith('_skill') ? k.replace(/_skill$/, '') : undefined);
+  const withoutSkillKey = stripSkill(key);
+  const withoutSkillBaseKey = stripSkill(baseKey);
+  const withoutHashWithoutSkillKey = stripSkill(withoutHashKey);
+  const withoutHashWithoutSkillBaseKey = stripSkill(withoutHashBaseKey);
+
   // A full key wins (e.g. descriptions beginning with ':').
   let translated = lookup(text)
     ?? lookup(key)
@@ -42,6 +48,10 @@ export function displayText(text: string, translations: Record<string, string>, 
     ?? lookup(rawKey)
     ?? lookup(withoutHashKey)
     ?? lookup(withoutHashBaseKey)
+    ?? lookup(withoutSkillKey)
+    ?? lookup(withoutSkillBaseKey)
+    ?? lookup(withoutHashWithoutSkillKey)
+    ?? lookup(withoutHashWithoutSkillBaseKey)
     ?? lookup(baseText);
 
   // Fallback for skill invoke prompts like #m_ex__fenji-invoke or #fenji-invoke
@@ -148,6 +158,13 @@ export function localizedGameLog(raw: string): string {
     .replace(/^(.+?) 使用的 (.+?) 取消了目标 (.+)$/,
       (_match, source: string, card: string, target: string) =>
         `Mục tiêu ${target} đã bị hủy khỏi lá ${card} do ${source} sử dụng.`)
+    .replace(/^由于 (.+?)，(.+?) 即将对 (.+?) 造成的 (\d+) 点\s*(.*?)\s*伤害被防止了$/,
+      (_match, reason: string, source: string, target: string, amount: string, type?: string) =>
+        `Do ${reason}, ${amount} điểm sát thương${type ? ` ${type}` : ''} do ${source} sắp gây ra cho ${target} đã được ngăn chặn.`)
+    .replace(/^由于 (.+?)，(.+?) 即将受到的 (\d+) 点\s*(.*?)\s*伤害被防止了$/,
+      (_match, reason: string, target: string, amount: string, type?: string) =>
+        `Do ${reason}, ${amount} điểm sát thương${type ? ` ${type}` : ''} mà ${target} sắp phải chịu đã được ngăn chặn.`)
+    .replace(/^已重新洗牌，牌堆现有 (\d+) 张牌$/, 'Đã xáo lại chồng bài, chồng bài hiện có $1 lá bài.')
     .replace(/#(\d+)(\(you\))?/g, (_match, seat: string, you?: string) => `Ghế ${seat}${you ? ' (bạn)' : ''}`)
     .replaceAll('(you)', ' (bạn)');
   // Some old C++ GameLog variants omit the skill marker but keep the phrase
