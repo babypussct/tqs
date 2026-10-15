@@ -603,6 +603,23 @@ const api = {
           `{\'tqs_qa_hidden_weimu_gate\', \'TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục đen' : 'Quyết Đấu đen'}.\'}`);
         break;
       }
+      case 'hidden-xiaoji':
+      case 'hidden-xiaoji-deputy': {
+        // Xiaoji is an AfterCardsMove trigger. The local fixture only mirrors
+        // the hidden fake-skill/prelight readiness gate; native QA owns the
+        // real equipment-loss, reveal and draw outcome.
+        const deputy = scenarioId === 'hidden-xiaoji-deputy';
+        const main = deputy ? 'hs__sunquan' : 'hs__sunshangxiang';
+        const deputyGeneral = deputy ? 'hs__sunshangxiang' : 'hs__sunquan';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__xiaoji', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_xiaoji_gate', 'TQS QA: prelight 枭姬, rồi xác nhận để mất trang bị thật.'}");
+        break;
+      }
       case 'hidden-reveal':
       case 'hidden-reveal-deputy':
         // The active helper must remain a regular skill while the compulsory

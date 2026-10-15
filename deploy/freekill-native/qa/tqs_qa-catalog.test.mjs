@@ -20,6 +20,7 @@ const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pk
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
+const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -436,6 +437,42 @@ test('hidden-weimu locks black delayed Trick BeforeCardsMove cancellation for bo
   assert.match(weimu, /mirror_move\.toArea = Card\.DiscardPile/u);
   assert.match(qaInit, /hidden-weimu-indulgence[\s\S]*weimu-indulgence/u);
   assert.match(qaInit, /before_cards_move=black_indulgence/u);
+});
+
+test('hidden-xiaoji locks equipment-loss AfterCardsMove draw for both slots', () => {
+  const expected = {
+    'hidden-xiaoji': {
+      seed: 0x5d6e7fa8,
+      actor: { general: 'hs__sunshangxiang', deputy: 'hs__sunquan', kingdom: 'wu' },
+    },
+    'hidden-xiaoji-deputy': {
+      seed: 0x5d6e7fa9,
+      actor: { general: 'hs__sunquan', deputy: 'hs__sunshangxiang', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-xiaoji', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'xiaoji-equip', match: { type: 'equip' }, owner: 'actor', area: 'equip' },
+    ]);
+  }
+
+  const xiaoji = fs.readFileSync(xiaojiSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(xiaoji, /name = "hs__xiaoji"/u);
+  assert.match(xiaoji, /xiaoji:addEffect\(fk\.AfterCardsMove/u);
+  assert.match(xiaoji, /info\.fromArea == Card\.PlayerEquip/u);
+  assert.match(xiaoji, /player:drawCards\(player\.room\.current == player and 1 or 3, xiaoji\.name\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-xiaoji"[\s\S]*triggerHiddenXiaoji\(room, state\)/u);
+  assert.match(qaInit, /after_cards_move=equipment/u);
 });
 
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {

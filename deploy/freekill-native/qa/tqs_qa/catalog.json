@@ -1071,6 +1071,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-xiaoji",
+      "title": "Hidden 孙尚香 枭姬 draws after losing an equipment",
+      "seed": 1567522728,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-xiaoji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunshangxiang",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "xiaoji-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "actor",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "hidden-xiaoji-deputy",
+      "title": "Hidden deputy 孙尚香 枭姬 draws after losing an equipment",
+      "seed": 1567522729,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-xiaoji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__sunshangxiang",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "xiaoji-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "actor",
+          "area": "equip"
+        }
+      ]
     }
   ]
 }

@@ -363,6 +363,32 @@ phán xét=false`, `chuyển bỏ=true`; card thật ở DiscardPile, vùng Judg
 actor rỗng, và GameOver kết thúc scenario. Đây là `NATIVE-LOCAL staged`, chưa
 phải Render/Oracle LIVE.
 
+## `hidden-xiaoji`: `AfterCardsMove` khi mất trang bị
+
+[`xiaoji.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua)
+được kiểm tra với một trang bị thật đã nằm trong vùng Equip của Tôn Thượng
+Hương đang úp. Gate chỉ cho browser thời gian gửi `PrelightSkill=true`; sau đó
+native `room:throwCard` mới làm phát sinh `fk.AfterCardsMove`. Skill phải mở
+đúng slot trước `SkillEffect`, chuyển từ fake sang active, rồi bốc `1` lá nếu
+đang là lượt của actor hoặc `3` lá ngoài lượt theo chính source law.
+
+Chạy hai mirror trên room sạch:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-xiaoji \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-xiaoji-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: card trang bị thật rời Equip vào DiscardPile, log native
+ghi `AfterCardsMove`, `SkillEffect=true`, reveal đúng chủ/phó và số lá bốc đúng
+`1`/`3`; cả hai client thấy GameOver. Đây là `NATIVE-LOCAL staged`, chưa phải
+Render/Oracle LIVE.
+
 ## `hidden-fankui`: trigger `Damaged` khi Tư Mã Ý còn úp
 
 `fankui.lua` uses a compulsory `fk.Damaged` effect. The QA gate only pauses the
@@ -531,6 +557,8 @@ wrong slot:
 | `hidden-weimu-deputy` | Giả Hủ is the deputy; black-Trick `TargetConfirming` opens only the deputy and cancels a valid Duel target. |
 | `hidden-weimu-indulgence` | Giả Hủ is the main; black delayed-Trick `BeforeCardsMove` opens only the main and mirrors Indulgence to discard. |
 | `hidden-weimu-indulgence-deputy` | Giả Hủ is the deputy; black delayed-Trick `BeforeCardsMove` opens only the deputy and mirrors Indulgence to discard. |
+| `hidden-xiaoji` | Tôn Thượng Hương is the main; equipment-loss `AfterCardsMove` opens only the main and draws by native turn rule. |
+| `hidden-xiaoji-deputy` | Tôn Thượng Hương is the deputy; equipment-loss `AfterCardsMove` opens only the deputy and draws by native turn rule. |
 | `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
 | `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
 
@@ -541,7 +569,7 @@ negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
 `hidden-view-as-main`. The staged add-on set now also includes
 `hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
 `hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors and both
-Weimu mirrors. Slot mirrors remain separate scenario IDs because each must prove
+Weimu mirrors and both Xiaoji mirrors. Slot mirrors remain separate scenario IDs because each must prove
 the owning main/deputy slot; the canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.

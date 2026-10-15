@@ -471,6 +471,34 @@ local function validateHiddenWeimuScenario(scenario)
   end
 end
 
+local function validateHiddenXiaojiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-xiaoji scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-xiaoji-deputy"
+  local expectedMain = deputy and "hs__sunquan" or "hs__sunshangxiang"
+  local expectedDeputy = deputy and "hs__sunshangxiang" or "hs__sunquan"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wu" then
+    fail("hidden-xiaoji actor must use the catalogued Sun Shangxiang main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-xiaoji source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-xiaoji must expose AskForSkillInvoke for the prelight gate")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "xiaoji-equip" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "equip" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.type ~= "equip" then
+    fail("hidden-xiaoji must reserve exactly one actor equipment")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -505,6 +533,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenKongchengScenario(scenario)
   elseif scenario.trigger == "hidden-weimu" then
     validateHiddenWeimuScenario(scenario)
+  elseif scenario.trigger == "hidden-xiaoji" then
+    validateHiddenXiaojiScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -2359,6 +2389,86 @@ local function triggerHiddenWeimu(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenXiaoji(room, state)
+  -- 枭姬 is an AfterCardsMove trigger. The actor remains face-down while a
+  -- real equipment card is moved out of PlayerEquip; the native effect must
+  -- reveal Sun Shangxiang in the owning slot before drawing.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-xiaoji actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__xiaoji") then
+    fail("hidden-xiaoji must attach the hidden Xiaoji skill")
+  end
+  if state.actor:hasSkill("hs__xiaoji") then
+    fail("hidden-xiaoji must not be active before AfterCardsMove")
+  end
+
+  local equipId = state.slotCards["xiaoji-equip"]
+  if not equipId or room:getCardArea(equipId) ~= Card.PlayerEquip or
+      not table.contains(state.actor:getCardIds(Player.Equip), equipId) then
+    fail("hidden-xiaoji must put its reserved equipment in the actor equipment area")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_xiaoji_gate",
+    prompt = "TQS QA: prelight 枭姬, rồi xác nhận để mất trang bị thật.",
+  })
+  if not gate then
+    fail("hidden-xiaoji QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__xiaoji") then
+    fail("hidden-xiaoji must be prelighted before the equipment-loss branch")
+  end
+
+  local beforeHand = #state.actor:getCardIds(Player.Hand)
+  local expectedDraw = room.current == state.actor and 1 or 3
+  state.currentDamageStep = 1
+  room:throwCard(equipId, "tqs_qa_hidden_xiaoji", state.actor, state.actor)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__xiaoji" and entry.player == state.actor.id
+  end)
+  local xiaojiIsDeputy = state.scenario == "hidden-xiaoji-deputy"
+  local revealedCorrectSlot = xiaojiIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__sunshangxiang"
+    or not xiaojiIsDeputy and state.actor.general == "hs__sunshangxiang" and state.actor.deputyGeneral == "anjiang"
+  local drawn = 0
+  for _, move in ipairs(state.skillMoves) do
+    if move.step == 1 and move.skill == "hs__xiaoji" and move.to == state.actor.id and
+        move.fromArea == Card.DrawPile then
+      drawn = drawn + move.count
+    end
+  end
+  local afterHand = #state.actor:getCardIds(Player.Hand)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Xiaoji must run a real SkillEffect and reveal Sun Shangxiang in its catalogued slot")
+  end
+  if room:getCardArea(equipId) ~= Card.DiscardPile or drawn ~= expectedDraw or
+      afterHand ~= beforeHand + expectedDraw then
+    fail(string.format("hidden Xiaoji must discard the equipment and draw %d card(s)", expectedDraw))
+  end
+  if state.actor:isFakeSkill("hs__xiaoji") or not state.actor:hasSkill("hs__xiaoji") then
+    fail("hidden Xiaoji must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden 枭姬: AfterCardsMove mất trang bị=%arg; SkillEffect=%arg2; mở tướng=%arg3; bốc bài=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(revealedCorrectSlot),
+    arg4 = tostring(drawn),
+    arg5 = xiaojiIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-xiaoji after_cards_move=equipment effect=true slot=%s revealed=%s drawn=%d expected=%d revision=%s",
+    xiaojiIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), drawn, expectedDraw,
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -2386,7 +2496,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-weimu" or
       state.scenario == "hidden-weimu-deputy" or
       state.scenario == "hidden-weimu-indulgence" or
-      state.scenario == "hidden-weimu-indulgence-deputy") and
+      state.scenario == "hidden-weimu-indulgence-deputy" or
+      state.scenario == "hidden-xiaoji" or
+      state.scenario == "hidden-xiaoji-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -2516,6 +2628,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenKongcheng(room, state)
     elseif scenario.trigger == "hidden-weimu" then
       triggerHiddenWeimu(room, state)
+    elseif scenario.trigger == "hidden-xiaoji" then
+      triggerHiddenXiaoji(room, state)
     end
   end,
 })

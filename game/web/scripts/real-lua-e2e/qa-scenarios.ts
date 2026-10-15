@@ -53,7 +53,9 @@ export type QaScenarioId =
   | 'hidden-weimu'
   | 'hidden-weimu-deputy'
   | 'hidden-weimu-indulgence'
-  | 'hidden-weimu-indulgence-deputy';
+  | 'hidden-weimu-indulgence-deputy'
+  | 'hidden-xiaoji'
+  | 'hidden-xiaoji-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -95,7 +97,8 @@ export type QaScenarioTrigger =
   | 'hidden-mingshi'
   | 'hidden-qianxun'
   | 'hidden-kongcheng'
-  | 'hidden-weimu';
+  | 'hidden-weimu'
+  | 'hidden-xiaoji';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -557,6 +560,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-weimu',
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-xiaoji': {
+    version: 1,
+    id: 'hidden-xiaoji',
+    title: 'Tôn Thượng Hương úp: Kiêu Cơ bốc bài sau khi mất trang bị',
+    seed: 0x5d6e7fa8,
+    drawSequence: [equip()],
+    slots: [slot('xiaoji-equip', equip(), 'self', 'equip', true, 0)],
+    trigger: 'hidden-xiaoji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-xiaoji-deputy': {
+    version: 1,
+    id: 'hidden-xiaoji-deputy',
+    title: 'Tôn Thượng Hương phó tướng úp: Kiêu Cơ bốc bài sau khi mất trang bị',
+    seed: 0x5d6e7fa9,
+    drawSequence: [equip()],
+    slots: [slot('xiaoji-equip', equip(), 'self', 'equip', true, 0)],
+    trigger: 'hidden-xiaoji',
+    expectedCommand: 'AskForSkillInvoke',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -574,6 +597,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-kongcheng', 'hidden-kongcheng-deputy',
   'hidden-weimu', 'hidden-weimu-deputy',
   'hidden-weimu-indulgence', 'hidden-weimu-indulgence-deputy',
+  'hidden-xiaoji', 'hidden-xiaoji-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -735,6 +759,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== expectedTrueName ||
         plan.slots[0].match.color !== 'black') {
       throw new QaScenarioError(`${plan.id} must reserve one black opponent ${indulgenceScenario ? 'Indulgence' : 'Duel'} for 帷幕`);
+    }
+  }
+  if (plan.trigger === 'hidden-xiaoji') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'xiaoji-equip' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'equip' ||
+        !('type' in plan.slots[0].match) || plan.slots[0].match.type !== 'equip') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor equipment for 枭姬`);
     }
   }
 }
