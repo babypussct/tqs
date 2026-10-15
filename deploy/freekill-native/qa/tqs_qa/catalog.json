@@ -253,6 +253,48 @@
       "cards": []
     },
     {
+      "id": "hidden-rehide-yiji",
+      "title": "Hidden Quách Gia Yiji reattaches as prelighted fake after re-hide",
+      "seed": 1567522736,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-rehide-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-rehide-yiji-deputy",
+      "title": "Hidden deputy Quách Gia Yiji reattaches as prelighted fake after re-hide",
+      "seed": 1567522737,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-rehide-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
       "id": "hidden-jianxiong",
       "title": "Hidden Cao Cao Jianxiong prelight, invoke and obtain the damage card",
       "seed": 1567522695,
@@ -1169,6 +1211,108 @@
         "target": {
           "general": "hs__zhangliao",
           "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-tianxiang",
+      "title": "Hidden 小乔 天香 redirects damage after choosing a heart card",
+      "seed": 1567522732,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tianxiang",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__xiaoqiao",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "tianxiang-heart",
+          "match": {
+            "suit": "heart"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-tianxiang-deputy",
+      "title": "Hidden deputy 小乔 天香 redirects damage after choosing a heart card",
+      "seed": 1567522733,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tianxiang",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__xiaoqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "tianxiang-heart",
+          "match": {
+            "suit": "heart"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-duanchang",
+      "title": "Hidden 蔡文姬 断肠 removes killer's chosen main-general skills",
+      "seed": 1567522734,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-duanchang",
+      "playerCount": 4,
+      "players": {
+        "actor": {
+          "general": "hs__caiwenji",
+          "deputy": "hs__yuanshao",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-duanchang-deputy",
+      "title": "Hidden deputy 蔡文姬 断肠 removes killer's chosen main-general skills",
+      "seed": 1567522735,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-duanchang",
+      "playerCount": 4,
+      "players": {
+        "actor": {
+          "general": "hs__yuanshao",
+          "deputy": "hs__caiwenji",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
           "kingdom": "wei"
         }
       },

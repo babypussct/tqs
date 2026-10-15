@@ -415,6 +415,34 @@ Acceptance bắt buộc: cả hai client thấy `AskForSkillInvoke` của gate v
 reveal đúng chủ/phó, hai lá đã trở lại DrawPile và GameOver. Đây là
 `NATIVE-LOCAL staged`, chưa phải Render/Oracle LIVE.
 
+## `hidden-duanchang`: `fk.Death` khi Thái Văn Cơ còn úp
+
+[`duanchang.lua`](../../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua)
+đăng ký trigger bắt buộc `fk.Death`; skill fake chỉ đủ điều kiện khi đã được
+prelight, còn effect native mới reveal người chết và hỏi `AskForChoices` để
+chọn chủ/phó tướng của killer. QA dùng room bốn ghế để GameOverJudge không kết
+thúc trận trước `fk.Death`, giữ Thái Văn Cơ úp cả hai slot, rồi gọi
+`room:killPlayer` thật. Browser prelight qua fake-skill dock; runner chọn Cao
+Cao ở chủ tướng của killer và native phải gỡ `Gian Hùng` nhưng giữ `Phản Quỹ`.
+
+Chạy hai mirror trên room sạch:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-duanchang \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-duanchang-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Acceptance bắt buộc: fake skill hiện khi actor còn úp; có gate prelight,
+`fk.Death`/`SkillEffect` thật, reveal đúng chủ/phó, lựa chọn native, chỉ mất
+kỹ năng chủ của killer, cả hai client thấy log công khai và GameOver. Đây là
+`NATIVE-LOCAL staged`; evidence/identity chi tiết chỉ giữ trong
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
+
 ## `hidden-fankui`: trigger `Damaged` khi Tư Mã Ý còn úp
 
 `fankui.lua` uses a compulsory `fk.Damaged` effect. The QA gate only pauses the
@@ -565,6 +593,8 @@ wrong slot:
 | Scenario | Mirror being proved |
 | --- | --- |
 | `hidden-yiji-deputy` | Quách Gia is the deputy; positive Di Kế opens the deputy. |
+| `hidden-rehide-yiji` | Quách Gia is the main; native Di Kế reveals it, then `hideGeneral(false)` must reattach fake Di Kế with `PrelightSkill=true` and no regular duplicate. |
+| `hidden-rehide-yiji-deputy` | Quách Gia is the deputy; the same reveal → effect → re-hide retention check is applied to the deputy slot. |
 | `hidden-jianxiong-deputy` | Cao Cao is the deputy; Jianxiong opens the deputy and obtains the damage card. |
 | `hidden-reveal-deputy` | Lục Tốn is the deputy; `revealDeputy` opens only the deputy. |
 | `hidden-active-main` | Tôn Quyền is the main; Chế Hành opens only the main. |
@@ -587,8 +617,15 @@ wrong slot:
 | `hidden-xiaoji-deputy` | Tôn Thượng Hương is the deputy; equipment-loss `AfterCardsMove` opens only the deputy and draws by native turn rule. |
 | `hidden-guanxing` | Gia Cát Lượng is the main; `EventPhaseStart` opens only the main and completes native `AskForArrangeCards`. |
 | `hidden-guanxing-deputy` | Gia Cát Lượng is the deputy; `EventPhaseStart` opens only the deputy and completes native `AskForArrangeCards`. |
+| `hidden-duanchang` | Thái Văn Cơ is the main; `fk.Death` opens only the main and the native choice removes the killer's main-general skills. |
+| `hidden-duanchang-deputy` | Thái Văn Cơ is the deputy; `fk.Death` opens only the deputy and preserves the killer's deputy skill. |
 | `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
 | `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
+
+The `hidden-rehide-yiji` pair is a focused lifecycle regression rather than a
+new gameplay effect: it proves native Di Kế can reveal from a hidden slot,
+complete its real card distribution, then call `hideGeneral()` and retain the
+prelight choice on the reattached fake skill without a regular-skill duplicate.
 
 The 12-case core NATIVE-LOCAL matrix remains: `hidden-yiji`
 negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
@@ -597,7 +634,8 @@ negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
 `hidden-view-as-main`. The staged add-on set now also includes
 `hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
 `hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors, both
-Weimu mirrors, both Xiaoji mirrors and both Guanxing mirrors. Slot mirrors remain separate scenario IDs because each must prove
+Weimu mirrors, both Xiaoji mirrors, both Guanxing mirrors and both Duanchang
+mirrors. Slot mirrors remain separate scenario IDs because each must prove
 the owning main/deputy slot; the canonical evidence table and package identities remain in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md);
 this README intentionally does not duplicate the full logs or hashes.

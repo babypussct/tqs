@@ -22,6 +22,8 @@ const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
 const guanxingSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua');
+const tianxiangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua');
+const duanchangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
@@ -128,6 +130,46 @@ test('hidden-yiji locks the hidden Quách Gia prelight branch contract', () => {
   const revealBySkillName = serverPlayer.slice(serverPlayer.indexOf('function ServerPlayer:revealBySkillName'));
   assert.match(revealBySkillName, /getMark\("__heg_general"\)[\s\S]*revealGeneral\(false\)/u);
   assert.match(revealBySkillName, /getMark\("__heg_deputy"\)[\s\S]*revealGeneral\(true\)/u);
+});
+
+test('hidden-rehide-yiji locks prelight retention across reveal and hideGeneral for both slots', () => {
+  const expected = {
+    'hidden-rehide-yiji': {
+      seed: 0x5d6e7fb0,
+      actor: { general: 'hs__guojia', deputy: 'hs__simayi', kingdom: 'wei' },
+    },
+    'hidden-rehide-yiji-deputy': {
+      seed: 0x5d6e7fb1,
+      actor: { general: 'hs__simayi', deputy: 'hs__guojia', kingdom: 'wei' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-rehide-yiji', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} command drift`);
+    assert.equal(scenario.playerCount, 2, `${id} player count drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu',
+    }, `${id} target roster drift`);
+    assert.deepEqual(scenario.cards, []);
+  }
+
+  const serverPlayer = fs.readFileSync(serverPlayerPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const hideStart = serverPlayer.indexOf('function ServerPlayer:hideGeneral');
+  const hideEnd = serverPlayer.indexOf('\n\n--- 获取下家', hideStart);
+  assert.ok(hideStart >= 0 && hideEnd > hideStart, 'ServerPlayer:hideGeneral source not found');
+  const hideSource = serverPlayer.slice(hideStart, hideEnd);
+  assert.match(hideSource, /handleAddLoseSkills\(self, "-" \.\. sname/u);
+  assert.match(hideSource, /self:addFakeSkill\(s\)/u);
+  assert.match(serverPlayer, /if table\.contains\(self\.prelighted_skills, skill\) then[\s\S]*doNotify\("PrelightSkill", \{ skill\.name, true \}\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-rehide-yiji"[\s\S]*validateHiddenRehideYijiScenario/u);
+  assert.match(qaInit, /state\.rehideAfterYiji = true[\s\S]*triggerHiddenYiji\(room, state\)/u);
+  assert.match(qaInit, /state\.actor:hideGeneral\(yijiIsDeputy\)[\s\S]*isFakeSkill\("hs__yiji"\)[\s\S]*isPrelighted\(state\.actor, "hs__yiji"\)/u);
+  assert.match(qaInit, /regularDuplicate = table\.contains\(state\.actor\.player_skills, Fk\.skills\.hs__yiji\)/u);
 });
 
 test('hidden-jianxiong locks the hidden Cao Cao choice/effect contract', () => {
@@ -510,6 +552,81 @@ test('hidden-guanxing locks EventPhaseStart reveal and native arrange for both s
   assert.match(qaInit, /hidden-guanxing[\s\S]*AskForArrangeCards/iu);
 });
 
+test('hidden-tianxiang locks damage redirect, card/target selection and reveal for both slots', () => {
+  const expected = {
+    'hidden-tianxiang': {
+      seed: 0x5d6e7fac,
+      actor: { general: 'hs__xiaoqiao', deputy: 'hs__sunquan', kingdom: 'wu' },
+    },
+    'hidden-tianxiang-deputy': {
+      seed: 0x5d6e7fad,
+      actor: { general: 'hs__sunquan', deputy: 'hs__xiaoqiao', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-tianxiang', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'tianxiang-heart', match: { suit: 'heart' }, owner: 'actor', area: 'hand' },
+    ]);
+  }
+
+  const tianxiang = fs.readFileSync(tianxiangSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(tianxiang, /name = "hs__tianxiang"/u);
+  assert.match(tianxiang, /tianxiang:addEffect\(fk\.DetermineDamageInflicted/u);
+  assert.match(tianxiang, /pattern = ".\|\.\|heart\|hand"/u);
+  assert.match(tianxiang, /room:askToChooseCardsAndPlayers/u);
+  assert.match(tianxiang, /room:throwCard/u);
+  assert.match(tianxiang, /room:loseHp/u);
+  assert.match(tianxiang, /room:obtainCard/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-tianxiang"[\s\S]*triggerHiddenTianxiang\(room, state\)/u);
+  assert.match(qaInit, /determine_damage_inflicted=true[\s\S]*choice=lose_hp/iu);
+});
+
+test('hidden-duanchang locks compulsory Death choice and chosen-slot skill loss for both slots', () => {
+  const expected = {
+    'hidden-duanchang': {
+      seed: 0x5d6e7fae,
+      actor: { general: 'hs__caiwenji', deputy: 'hs__yuanshao', kingdom: 'qun' },
+    },
+    'hidden-duanchang-deputy': {
+      seed: 0x5d6e7faf,
+      actor: { general: 'hs__yuanshao', deputy: 'hs__caiwenji', kingdom: 'qun' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-duanchang', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForChoices', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 4, `${id} must reserve four seats before fk.Death`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__caocao', deputy: 'hs__simayi', kingdom: 'wei',
+    }, `${id} killer roster drift`);
+    assert.deepEqual(scenario.cards, []);
+  }
+
+  const duanchang = fs.readFileSync(duanchangSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(duanchang, /name = "hs__duanchang"/u);
+  assert.match(duanchang, /duanchang:addEffect\(fk\.Death/u);
+  assert.match(duanchang, /player:hasSkill\(duanchang\.name, false, true\)/u);
+  assert.match(duanchang, /room:askToChoice/u);
+  assert.match(duanchang, /room:handleAddLoseSkills/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-duanchang"[\s\S]*triggerHiddenDuanchang\(room, state\)/u);
+  assert.match(qaInit, /hidden-duanchang[\s\S]*AskForChoices/iu);
+});
+
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'hidden-reveal');
   assert.ok(scenario, 'hidden-reveal catalog entry is required');
@@ -544,6 +661,14 @@ test('hidden slot mirrors lock main/deputy placement instead of relying on one r
   const expected = {
     'hidden-yiji-deputy': {
       trigger: 'hidden-yiji',
+      actor: { general: 'hs__simayi', deputy: 'hs__guojia', kingdom: 'wei' },
+    },
+    'hidden-rehide-yiji': {
+      trigger: 'hidden-rehide-yiji',
+      actor: { general: 'hs__guojia', deputy: 'hs__simayi', kingdom: 'wei' },
+    },
+    'hidden-rehide-yiji-deputy': {
+      trigger: 'hidden-rehide-yiji',
       actor: { general: 'hs__simayi', deputy: 'hs__guojia', kingdom: 'wei' },
     },
     'hidden-jianxiong-deputy': {

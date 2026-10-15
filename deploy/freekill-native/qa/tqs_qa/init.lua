@@ -99,6 +99,31 @@ local function validateHiddenYijiScenario(scenario)
   end
 end
 
+local function validateHiddenRehideYijiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-rehide-yiji scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-rehide-yiji-deputy"
+  local expectedMain = deputy and "hs__simayi" or "hs__guojia"
+  local expectedDeputy = deputy and "hs__guojia" or "hs__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wei" then
+    fail("hidden-rehide-yiji actor must use the catalogued Quách Gia main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-rehide-yiji target must be Triệu Vân + Pháp Chính in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-rehide-yiji must expose AskForSkillInvoke before the native damage interaction")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-rehide-yiji must not reserve cards; native Di Kế owns the draw/move path")
+  end
+end
+
 local function validateHiddenJianxiongScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-jianxiong scenarios must define exactly two players")
@@ -524,6 +549,59 @@ local function validateHiddenGuanxingScenario(scenario)
   end
 end
 
+local function validateHiddenTianxiangScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-tianxiang scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-tianxiang-deputy"
+  local expectedMain = deputy and "hs__sunquan" or "hs__xiaoqiao"
+  local expectedDeputy = deputy and "hs__xiaoqiao" or "hs__sunquan"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wu" then
+    fail("hidden-tianxiang actor must use the catalogued Xiao Qiao main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-tianxiang source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-tianxiang must expose AskForSkillInvoke before its native damage interaction")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "tianxiang-heart" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.suit ~= "heart" then
+    fail("hidden-tianxiang must reserve exactly one actor heart hand card")
+  end
+end
+
+local function validateHiddenDuanchangScenario(scenario)
+  if scenario.playerCount ~= 4 or type(scenario.players) ~= "table" then
+    fail("hidden-duanchang scenarios must define exactly four players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-duanchang-deputy"
+  local expectedMain = deputy and "hs__yuanshao" or "hs__caiwenji"
+  local expectedDeputy = deputy and "hs__caiwenji" or "hs__yuanshao"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "qun" then
+    fail("hidden-duanchang actor must use the catalogued Cai Wenji main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__caocao" or
+      target.deputy ~= "hs__simayi" or target.kingdom ~= "wei" then
+    fail("hidden-duanchang killer must be Cao Cao + Sima Yi in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForChoices" then
+    fail("hidden-duanchang must expose AskForChoices for the killer slot choice")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-duanchang must not reserve cards")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -534,6 +612,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateDamageExchangeScenario(scenario)
   elseif scenario.trigger == "hidden-yiji" then
     validateHiddenYijiScenario(scenario)
+  elseif scenario.trigger == "hidden-rehide-yiji" then
+    validateHiddenRehideYijiScenario(scenario)
   elseif scenario.trigger == "hidden-jianxiong" then
     validateHiddenJianxiongScenario(scenario)
   elseif scenario.trigger == "hidden-fankui" then
@@ -562,6 +642,10 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenXiaojiScenario(scenario)
   elseif scenario.trigger == "hidden-guanxing" then
     validateHiddenGuanxingScenario(scenario)
+  elseif scenario.trigger == "hidden-tianxiang" then
+    validateHiddenTianxiangScenario(scenario)
+  elseif scenario.trigger == "hidden-duanchang" then
+    validateHiddenDuanchangScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -667,6 +751,9 @@ local function cardMatches(card, matcher)
     return false
   end
   if matcher.color and card:getColorString() ~= matcher.color then
+    return false
+  end
+  if matcher.suit and card:getSuitString() ~= matcher.suit then
     return false
   end
   return true
@@ -1153,7 +1240,7 @@ local function triggerHiddenYiji(room, state)
 
   local invoked = observedSkill(state, 1, "hs__yiji")
   local revealed = state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang"
-  local yijiIsDeputy = state.scenario == "hidden-yiji-deputy"
+  local yijiIsDeputy = state.scenario == "hidden-yiji-deputy" or state.scenario == "hidden-rehide-yiji-deputy"
   local moved = movedCount(state, 1, "hs__yiji", nil, state.actor)
   local damage = 0
   for _, entry in ipairs(state.damageEvents) do
@@ -1175,7 +1262,28 @@ local function triggerHiddenYiji(room, state)
     if not revealed or not revealedCorrectSlot or moved ~= 2 then
       fail("prelighted and invoked hidden Yiji must reveal Quách Gia in its catalogued slot and give two cards")
     end
-    state.hiddenYijiBranch = "positive-prelight-invoke"
+    state.hiddenYijiBranch = state.rehideAfterYiji and "positive-prelight-invoke-rehide" or "positive-prelight-invoke"
+
+    if state.rehideAfterYiji then
+      -- Source-law regression: a revealed slot may be hidden again by another
+      -- rule.  FreeKill must reattach the skill as fake while retaining the
+      -- player's prelight choice, so the next legal trigger can still invoke
+      -- it.  Do not accept a regular duplicate in the private skill list.
+      state.actor:hideGeneral(yijiIsDeputy)
+      local hiddenCorrectSlot = yijiIsDeputy
+        and state.actor.general == "anjiang" and state.actor.deputyGeneral == "anjiang"
+        or not yijiIsDeputy and state.actor.general == "anjiang" and state.actor.deputyGeneral == "anjiang"
+      local fake = state.actor:isFakeSkill("hs__yiji")
+      local retainedPrelight = isPrelighted(state.actor, "hs__yiji")
+      local activeAgain = state.actor:hasSkill("hs__yiji")
+      local regularDuplicate = table.contains(state.actor.player_skills, Fk.skills.hs__yiji)
+      if not hiddenCorrectSlot or not fake or not retainedPrelight or not activeAgain or regularDuplicate then
+        fail(string.format("hidden-rehide-yiji must reattach fake prelighted Di Kế without a regular duplicate (slot=%s fake=%s prelight=%s active=%s regular=%s)",
+          yijiIsDeputy and "deputy" or "main", tostring(fake), tostring(retainedPrelight),
+          tostring(activeAgain), tostring(regularDuplicate)))
+      end
+      state.rehideVerified = true
+    end
   else
     if revealed or moved ~= 0 then
       fail("skipped hidden Yiji must remain hidden and move no cards")
@@ -1184,7 +1292,7 @@ local function triggerHiddenYiji(room, state)
   end
 
   room:sendLog{
-    type = "[TQS QA] Hidden Di Kế: %arg; vị trí=%arg6; prelight=%arg2; SkillEffect=%arg3; mở tướng=%arg4; chuyển bài=%arg5",
+    type = "[TQS QA] Hidden Di Kế: %arg; vị trí=%arg6; prelight=%arg2; SkillEffect=%arg3; mở tướng=%arg4; chuyển bài=%arg5; úp lại=%arg7",
     from = state.actor.id,
     arg = state.hiddenYijiBranch,
     arg2 = tostring(prelighted),
@@ -1192,10 +1300,11 @@ local function triggerHiddenYiji(room, state)
     arg4 = tostring(revealed),
     arg5 = tostring(moved),
     arg6 = yijiIsDeputy and "phó tướng" or "chủ tướng",
+    arg7 = tostring(state.rehideVerified == true),
   }
-  fk.qInfo(string.format("[tqs_qa] hidden-yiji branch=%s slot=%s prelight=%s invoked=%s revealed=%s moved=%d revision=%s",
+  fk.qInfo(string.format("[tqs_qa] hidden-yiji branch=%s slot=%s prelight=%s invoked=%s revealed=%s moved=%d rehide=%s revision=%s",
     state.hiddenYijiBranch, yijiIsDeputy and "deputy" or "main", tostring(prelighted), tostring(invoked), tostring(revealed), moved,
-    manifest.sourceRevision))
+    tostring(state.rehideVerified == true), manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -2577,6 +2686,182 @@ local function triggerHiddenGuanxing(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenTianxiang(room, state)
+  -- 天香 is a real DetermineDamageInflicted interaction: the hidden owner
+  -- must remain fake until the player has selected a heart card and a target.
+  -- SkillEffect then reveals Xiao Qiao before the source effect prevents the
+  -- incoming damage and asks for the native lose-HP/damage branch.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-tianxiang actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__tianxiang") then
+    fail("hidden-tianxiang must attach the hidden Tianxiang skill")
+  end
+  if state.actor:hasSkill("hs__tianxiang") then
+    fail("hidden-tianxiang must not be active before the damage trigger")
+  end
+
+  local cardId = state.slotCards["tianxiang-heart"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) or
+      Fk:getCardById(cardId):getSuitString() ~= "heart" then
+    fail("hidden-tianxiang must put the reserved heart card in the actor hand")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_tianxiang_gate",
+    prompt = "TQS QA: prelight Thiên Hương, rồi xác nhận để nhận sát thương.",
+  })
+  if not gate then
+    fail("hidden-tianxiang QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__tianxiang") then
+    fail("hidden-tianxiang must be prelighted before DetermineDamageInflicted")
+  end
+
+  local actorHp = state.actor.hp
+  local targetHp = state.target.hp
+  state.currentDamageStep = 1
+  room:damage({
+    from = state.target,
+    to = state.actor,
+    damage = 1,
+    skillName = "tqs_qa_hidden_tianxiang_damage",
+  })
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__tianxiang" and entry.player == state.actor.id
+  end)
+  local tianxiangIsDeputy = state.scenario == "hidden-tianxiang-deputy"
+  local revealedCorrectSlot = tianxiangIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__xiaoqiao"
+    or not tianxiangIsDeputy and state.actor.general == "hs__xiaoqiao" and state.actor.deputyGeneral == "anjiang"
+  local cardObtained = table.contains(state.target:getCardIds(Player.Hand), cardId) and
+    not table.contains(state.actor:getCardIds(Player.Hand), cardId)
+  local damagePrevented = state.actor.hp == actorHp
+  local targetLostHp = state.target.hp == targetHp - 1
+
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Tianxiang must run a real SkillEffect and reveal Xiao Qiao in its catalogued slot")
+  end
+  if not damagePrevented or not targetLostHp or not cardObtained then
+    fail("hidden Tianxiang must prevent the incoming damage, make the target lose 1 HP and return the heart card")
+  end
+  if state.actor:isFakeSkill("hs__tianxiang") or not state.actor:hasSkill("hs__tianxiang") then
+    fail("hidden Tianxiang must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Thiên Hương: DetermineDamageInflicted=%arg; AskForUseActiveSkill=%arg2; AskForChoices=%arg3; SkillEffect=%arg4; sát thương bị chặn=%arg5; mục tiêu mất HP=%arg6; trả bài=%arg7; mở tướng=%arg8; vị trí=%arg9",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = "true",
+    arg5 = tostring(damagePrevented),
+    arg6 = tostring(targetLostHp),
+    arg7 = tostring(cardObtained),
+    arg8 = tostring(revealedCorrectSlot),
+    arg9 = tianxiangIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-tianxiang determine_damage_inflicted=true choose_card_target=true choice=lose_hp effect=true prevented=%s target_lost_hp=%s card_returned=%s slot=%s revealed=%s revision=%s",
+    tostring(damagePrevented), tostring(targetLostHp), tostring(cardObtained),
+    tianxiangIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenDuanchang(room, state)
+  -- 断肠 is a compulsory fk.Death trigger.  Keep 蔡文姬 hidden and
+  -- prelighted until the real death event; the native GameOverJudge may
+  -- reveal a dead player before fk.Death, but it must not skip the trigger.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-duanchang actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__duanchang") then
+    fail("hidden-duanchang must attach the hidden Duanchang skill")
+  end
+  if state.actor:hasSkill("hs__duanchang") then
+    fail("hidden-duanchang must not be active before the death trigger")
+  end
+  if not state.target:hasSkill("hs__jianxiong") or not state.target:hasSkill("fankui") then
+    fail("hidden-duanchang killer must expose Cao Cao Jianxiong and Sima Yi Fankui")
+  end
+
+  -- With four seats, GameOverJudge must not decide the match before fk.Death.
+  -- Pin an additional living bot to Shu so the Wei killer cannot be the only
+  -- surviving kingdom by accident.
+  for _, player in ipairs(room.alive_players) do
+    if player ~= state.actor and player ~= state.target then
+      room:setPlayerProperty(player, "kingdom", "shu")
+      player.role = "shu"
+      room:setPlayerMark(player, "__heg_kingdom", "shu")
+      room:broadcastProperty(player, "kingdom")
+      room:broadcastProperty(player, "role")
+    end
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_duanchang_gate",
+    prompt = "TQS QA: prelight Đoạn Trường, rồi xác nhận để xử lý khi chết.",
+  })
+  if not gate then
+    fail("hidden-duanchang QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__duanchang") then
+    fail("hidden-duanchang must be prelighted before fk.Death")
+  end
+
+  state.currentDamageStep = 1
+  room:killPlayer({
+    who = state.actor,
+    killer = state.target,
+  })
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__duanchang" and entry.player == state.actor.id
+  end)
+  local duanchangIsDeputy = state.scenario == "hidden-duanchang-deputy"
+  local expectedMain = duanchangIsDeputy and "hs__yuanshao" or "hs__caiwenji"
+  local expectedDeputy = duanchangIsDeputy and "hs__caiwenji" or "hs__yuanshao"
+  local actorRevealed = state.actor.dead and state.actor.general == expectedMain and
+    state.actor.deputyGeneral == expectedDeputy
+  local mark = state.target:getMark("@hs__duanchang")
+  local killerMainChosen = type(mark) == "table" and table.contains(mark, "hs__caocao")
+  local killerMainSkillsLost = not state.target:hasSkill("hs__jianxiong")
+  local killerDeputySkillsRetained = state.target:hasSkill("fankui")
+
+  if not effect or effect.fake then
+    fail("prelighted hidden Duanchang must run a real SkillEffect on fk.Death")
+  end
+  if not actorRevealed then
+    fail("hidden Duanchang death must reveal the catalogued Cai Wenji slot pair")
+  end
+  if not killerMainChosen or not killerMainSkillsLost or not killerDeputySkillsRetained then
+    fail("hidden Duanchang must remove only the killer's chosen Cao Cao skills")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Đoạn Trường: Death=%arg; SkillEffect=%arg2; người chết mở tướng=%arg3; killer chọn chủ tướng=%arg4; killer mất kỹ năng chủ=%arg5; kỹ năng phó còn lại=%arg6; vị trí=%arg7",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(actorRevealed),
+    arg4 = tostring(killerMainChosen),
+    arg5 = tostring(killerMainSkillsLost),
+    arg6 = tostring(killerDeputySkillsRetained),
+    arg7 = duanchangIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-duanchang death=true skill_effect=true choice=main_general killer_main_skills_lost=%s killer_deputy_skills_retained=%s actor_revealed=%s slot=%s revision=%s",
+    tostring(killerMainSkillsLost), tostring(killerDeputySkillsRetained), tostring(actorRevealed),
+    duanchangIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -2588,6 +2873,7 @@ director:addEffect(fk.SkillEffect, {
     local state = stateFor(player.room)
     return state and (state.scenario == "fazheng-enyuan" or state.scenario == "hidden-yiji" or
       state.scenario == "hidden-yiji-deputy" or state.scenario == "hidden-jianxiong" or
+      state.scenario == "hidden-rehide-yiji" or state.scenario == "hidden-rehide-yiji-deputy" or
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
       state.scenario == "hidden-fankui-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
@@ -2608,7 +2894,11 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-xiaoji" or
       state.scenario == "hidden-xiaoji-deputy" or
       state.scenario == "hidden-guanxing" or
-      state.scenario == "hidden-guanxing-deputy") and
+      state.scenario == "hidden-guanxing-deputy" or
+      state.scenario == "hidden-tianxiang" or
+      state.scenario == "hidden-tianxiang-deputy" or
+      state.scenario == "hidden-duanchang" or
+      state.scenario == "hidden-duanchang-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -2714,6 +3004,9 @@ director:addEffect(fk.GameStart, {
       triggerDamageExchange(room, state)
     elseif scenario.trigger == "hidden-yiji" then
       triggerHiddenYiji(room, state)
+    elseif scenario.trigger == "hidden-rehide-yiji" then
+      state.rehideAfterYiji = true
+      triggerHiddenYiji(room, state)
     elseif scenario.trigger == "hidden-jianxiong" then
       triggerHiddenJianxiong(room, state)
     elseif scenario.trigger == "hidden-fankui" then
@@ -2742,6 +3035,10 @@ director:addEffect(fk.GameStart, {
       triggerHiddenXiaoji(room, state)
     elseif scenario.trigger == "hidden-guanxing" then
       triggerHiddenGuanxing(room, state)
+    elseif scenario.trigger == "hidden-tianxiang" then
+      triggerHiddenTianxiang(room, state)
+    elseif scenario.trigger == "hidden-duanchang" then
+      triggerHiddenDuanchang(room, state)
     end
   end,
 })
