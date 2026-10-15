@@ -1631,6 +1631,66 @@
       ]
     },
     {
+      "id": "hidden-jueqing",
+      "title": "Hidden 张春华 绝情 converts PreDamage into HP loss",
+      "seed": 1567522750,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jueqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "zhangchunhua",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jueqing-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jueqing-deputy",
+      "title": "Hidden deputy 张春华 绝情 converts PreDamage into HP loss",
+      "seed": 1567522751,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jueqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "zhangchunhua",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jueqing-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
       "id": "hidden-gongqing",
       "title": "Hidden 潘濬 公清 proves both attack-range damage branches",
       "seed": 1567522746,

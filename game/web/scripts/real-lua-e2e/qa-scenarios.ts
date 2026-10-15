@@ -72,6 +72,8 @@ export type QaScenarioId =
   | 'hidden-duanchang-deputy'
   | 'hidden-liegong'
   | 'hidden-liegong-deputy'
+  | 'hidden-jueqing'
+  | 'hidden-jueqing-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -129,6 +131,7 @@ export type QaScenarioTrigger =
   | 'hidden-duanchang'
   | 'hidden-liegong'
   | 'hidden-kuanggu'
+  | 'hidden-jueqing'
   | 'hidden-gongqing';
 
 export interface QaScenarioPlan {
@@ -811,6 +814,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-kuanggu',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-jueqing': {
+    version: 1,
+    id: 'hidden-jueqing',
+    title: '张春华 úp: Tuyệt Tình chuyển PreDamage thành mất máu',
+    seed: 0x5d6e7fbe,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'jueqing-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-jueqing',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-jueqing-deputy': {
+    version: 1,
+    id: 'hidden-jueqing-deputy',
+    title: '张春华 phó tướng úp: Tuyệt Tình chuyển PreDamage thành mất máu',
+    seed: 0x5d6e7fbf,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'jueqing-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-jueqing',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -858,6 +881,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-duanchang', 'hidden-duanchang-deputy',
   'hidden-liegong', 'hidden-liegong-deputy',
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
+  'hidden-jueqing', 'hidden-jueqing-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
 ];
 
@@ -1064,6 +1088,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
         plan.slots[1].match.trueName !== 'peach') {
       throw new QaScenarioError(`${plan.id} must reserve an actor Slash and a target Peach for 狂骨`);
+    }
+  }
+  if (plan.trigger === 'hidden-jueqing') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'jueqing-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 绝情`);
     }
   }
   if (plan.trigger === 'hidden-gongqing') {
