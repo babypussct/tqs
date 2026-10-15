@@ -2446,7 +2446,7 @@ try{
       'hidden-kuanggu must finish after its native damage/effect/choice branch');
     assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 1,
       'hidden-kuanggu owner must receive the native prelight readiness gate');
-    assert.ok(botAuditTrace[1 - scenarioClient].askForUseActiveSkill + botAuditTrace[1 - scenarioClient].playCard >= 1,
+    assert.ok(botAuditTrace[scenarioClient].askForUseActiveSkill + botAuditTrace[scenarioClient].playCard >= 1,
       'hidden-kuanggu source player must receive the private real-Slash request');
     console.log(`PASS hidden-kuanggu public audit: both native clients observed close-range damage, reveal and draw1 in the ${expectedPosition} slot`);
   } else if (hiddenLuoshenScenario) {
