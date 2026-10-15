@@ -1529,6 +1529,21 @@ try {
         assert.deepEqual(gateReply.luaErrors, []);
       }
 
+      for (const scenarioId of ['hidden-tiandu', 'hidden-tiandu-deputy'] as const) {
+        const hiddenTiandu = await startScenario(scenarioId);
+        const fakeTiandu = p.locator('button.fake-skill-button').filter({ hasText: /Thiên Đố|天妒|tiandu/i }).first();
+        await fakeTiandu.waitFor();
+        await fakeTiandu.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeTianduPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'tiandu' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenTiandu.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       for (const scenarioId of ['hidden-jizhi', 'hidden-jizhi-deputy'] as const) {
         const hiddenJizhi = await startScenario(scenarioId);
         const fakeJizhi = p.locator('button.fake-skill-button').filter({ hasText: /集智|Tập Trí|jizhi/i }).first();

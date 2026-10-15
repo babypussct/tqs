@@ -44,6 +44,8 @@ export type QaScenarioId =
   | 'hidden-dual'
   | 'hidden-luoshen'
   | 'hidden-luoshen-deputy'
+  | 'hidden-tiandu'
+  | 'hidden-tiandu-deputy'
   | 'hidden-jizhi'
   | 'hidden-jizhi-deputy'
   | 'hidden-mingshi'
@@ -108,6 +110,7 @@ export type QaScenarioTrigger =
   | 'hidden-view-as'
   | 'hidden-dual'
   | 'hidden-luoshen'
+  | 'hidden-tiandu'
   | 'hidden-jizhi'
   | 'hidden-mingshi'
   | 'hidden-qianxun'
@@ -481,6 +484,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-luoshen',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-tiandu': {
+    version: 1,
+    id: 'hidden-tiandu',
+    title: 'Quách Gia úp: Thiên Đố mở đúng slot trước khi lấy lá phán xét',
+    seed: 0x5d6e7fb6,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-tiandu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-tiandu-deputy': {
+    version: 1,
+    id: 'hidden-tiandu-deputy',
+    title: 'Quách Gia phó tướng úp: Thiên Đố mở phó tướng trước khi lấy lá phán xét',
+    seed: 0x5d6e7fb7,
+    drawSequence: [],
+    slots: [],
+    trigger: 'hidden-tiandu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-jizhi': {
     version: 1,
     id: 'hidden-jizhi',
@@ -739,6 +762,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-fankui', 'hidden-fankui-deputy',
   'hidden-view-as', 'hidden-view-as-main',
   'hidden-dual', 'hidden-luoshen', 'hidden-luoshen-deputy',
+  'hidden-tiandu', 'hidden-tiandu-deputy',
   'hidden-jizhi', 'hidden-jizhi-deputy',
   'hidden-mingshi', 'hidden-mingshi-deputy',
   'hidden-qianxun', 'hidden-qianxun-deputy',

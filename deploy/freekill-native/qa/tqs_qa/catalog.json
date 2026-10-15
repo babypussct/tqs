@@ -751,6 +751,48 @@
       "cards": []
     },
     {
+      "id": "hidden-tiandu",
+      "title": "Hidden Quách Gia Thiên Đố reveals before FinishJudge obtain",
+      "seed": 1567522742,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tiandu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-tiandu-deputy",
+      "title": "Hidden deputy Quách Gia Thiên Đố reveals before FinishJudge obtain",
+      "seed": 1567522743,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tiandu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
       "id": "hidden-jizhi",
       "title": "Hidden 黄月英 集智 reveals before CardUsing and draws",
       "seed": 1567522714,

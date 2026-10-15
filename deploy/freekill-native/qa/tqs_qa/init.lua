@@ -364,6 +364,31 @@ local function validateHiddenLuoshenScenario(scenario)
   end
 end
 
+local function validateHiddenTianduScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-tiandu scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-tiandu-deputy"
+  local expectedMain = deputy and "hs__simayi" or "hs__guojia"
+  local expectedDeputy = deputy and "hs__guojia" or "hs__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wei" then
+    fail("hidden-tiandu actor must use the catalogued Guo Jia main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-tiandu target must be Triệu Vân + Pháp Chính in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-tiandu must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-tiandu must not reserve hand cards; the judged card comes from the native pile")
+  end
+end
+
 local function validateHiddenJizhiScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-jizhi scenarios must define exactly two players")
@@ -693,6 +718,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenDualScenario(scenario)
   elseif scenario.trigger == "hidden-luoshen" then
     validateHiddenLuoshenScenario(scenario)
+  elseif scenario.trigger == "hidden-tiandu" then
+    validateHiddenTianduScenario(scenario)
   elseif scenario.trigger == "hidden-jizhi" then
     validateHiddenJizhiScenario(scenario)
   elseif scenario.trigger == "hidden-mingshi" then
@@ -2048,6 +2075,77 @@ local function moveJudgmentColorsToTop(room)
   return blackId, redId
 end
 
+local function triggerHiddenTiandu(room, state)
+  -- Thiên Đố is a mandatory FinishJudge effect. The only client-controlled
+  -- gate here is the native prelight request; the actual judge and obtain
+  -- path must remain the source skill's real SkillEffect flow.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-tiandu actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("tiandu") then
+    fail("hidden-tiandu must attach the hidden Tiandu skill")
+  end
+  if state.actor:hasSkill("tiandu") then
+    fail("hidden-tiandu must not be active before the prelighted FinishJudge")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_tiandu_gate",
+    prompt = "TQS QA: prelight Thiên Đố, rồi xác nhận để bắt đầu phán xét.",
+  })
+  if not gate then
+    fail("hidden-tiandu readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "tiandu") then
+    fail("hidden-tiandu must be prelighted before the FinishJudge branch")
+  end
+
+  local judgedId = moveJudgmentColorsToTop(room)
+  state.currentDamageStep = 1
+  local judge = {
+    who = state.actor,
+    reason = "tiandu",
+    pattern = ".",
+  }
+  room:judge(judge)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "tiandu" and entry.player == state.actor.id
+  end)
+  local tianduIsDeputy = state.scenario == "hidden-tiandu-deputy"
+  local revealedCorrectSlot = tianduIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__guojia"
+    or not tianduIsDeputy and state.actor.general == "hs__guojia" and state.actor.deputyGeneral == "anjiang"
+  local obtained = movedFromArea(state, 1, "tiandu", state.actor, Card.Processing)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Tiandu must run a real SkillEffect and reveal Guo Jia in its catalogued slot")
+  end
+  if not judge.card or judge.card:getEffectiveId() ~= judgedId or obtained ~= 1 or
+      not table.contains(state.actor:getCardIds(Player.Hand), judgedId) then
+    fail("hidden Tiandu must obtain the judged card from Card.Processing")
+  end
+  if state.actor:isFakeSkill("tiandu") or not state.actor:hasSkill("tiandu") then
+    fail("hidden Tiandu must convert from fake to active after reveal")
+  end
+
+  local position = tianduIsDeputy and "phó tướng" or "chủ tướng"
+  room:sendLog{
+    type = "[TQS QA] Hidden Thiên Đố: FinishJudge=%arg; SkillEffect=%arg2; lấy lá phán xét=%arg3; mở tướng=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(obtained == 1),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = position,
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-tiandu finish_judge=true skill_effect=true obtained=%d revealed=%s slot=%s revision=%s",
+    obtained, tostring(revealedCorrectSlot), tianduIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local function triggerHiddenLuoshen(room, state)
   state.target:revealGenerals()
   if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
@@ -3140,6 +3238,7 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-fanjian-deputy" or state.scenario == "hidden-view-as" or
       state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual" or
       state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy" or
+      state.scenario == "hidden-tiandu" or state.scenario == "hidden-tiandu-deputy" or
       state.scenario == "hidden-jizhi" or state.scenario == "hidden-jizhi-deputy" or
       state.scenario == "hidden-mingshi" or state.scenario == "hidden-mingshi-deputy" or
       state.scenario == "hidden-qianxun" or state.scenario == "hidden-qianxun-deputy" or
@@ -3304,6 +3403,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenDual(room, state)
     elseif scenario.trigger == "hidden-luoshen" then
       triggerHiddenLuoshen(room, state)
+    elseif scenario.trigger == "hidden-tiandu" then
+      triggerHiddenTiandu(room, state)
     elseif scenario.trigger == "hidden-jizhi" then
       triggerHiddenJizhi(room, state)
     elseif scenario.trigger == "hidden-mingshi" then

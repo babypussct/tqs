@@ -527,6 +527,37 @@ npm run test:e2e:multiplayer -- --manual
 Evidence, package hashes and the NATIVE-LOCAL scope remain centralized in
 [`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md).
 
+## `hidden-tiandu`: `FinishJudge` khi Quách Gia còn úp
+
+[`tiandu.lua`](../../../../runtime/packages/freekill-core/standard/pkg/skills/tiandu.lua)
+là hiệu ứng bắt buộc trên `fk.FinishJudge`: sau khi một lá phán xét thật vào
+`Card.Processing`, Thiên Đố phải mở đúng slot Quách Gia rồi lấy chính lá đó.
+QA chỉ dùng `AskForSkillInvoke` để dừng cho browser prelight; `room:judge` và
+`obtainCard` vẫn do native/source skill thực hiện:
+
+```text
+prelight → native FinishJudge → SkillEffect → mở slot sở hữu
+→ lấy 1 lá từ Card.Processing → GameOver
+```
+
+Hai mirror `hidden-tiandu` (chủ tướng) và `hidden-tiandu-deputy` (phó tướng)
+đều phải kiểm tra đúng vị trí mở tướng và đúng lá phán xét được nhận. Chạy mỗi
+nhánh trên một room sạch:
+
+```bash
+TQS_LIVE_SCENARIO=hidden-tiandu \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+
+TQS_LIVE_SCENARIO=hidden-tiandu-deputy \
+TQS_LIVE_NATIVE_QA=1 TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 \
+npm run test:e2e:multiplayer -- --manual
+```
+
+Evidence, package hashes và phạm vi NATIVE-LOCAL chỉ ghi ở
+[`QUOC_CHIEN_RULE_AUDIT.md`](../../../../docs/web-client/QUOC_CHIEN_RULE_AUDIT.md),
+không nhân bản trong README.
+
 ## `hidden-reveal`: active reveal helper for a hidden compulsory skill
 
 This companion scenario keeps Lục Tốn + Tôn Quyền hidden, exposes the fake
@@ -678,6 +709,8 @@ wrong slot:
 | `hidden-duanchang-deputy` | Thái Văn Cơ is the deputy; `fk.Death` opens only the deputy and preserves the killer's deputy skill. |
 | `hidden-luoshen` | 甄姬 is the main; `EventPhaseStart` opens only the main and obtains the black judgment card. |
 | `hidden-luoshen-deputy` | 甄姬 is the deputy; `EventPhaseStart` opens only the deputy and obtains the black judgment card. |
+| `hidden-tiandu` | Quách Gia is the main; `FinishJudge` opens only the main and obtains the judged card. |
+| `hidden-tiandu-deputy` | Quách Gia is the deputy; `FinishJudge` opens only the deputy and obtains the judged card. |
 
 The `hidden-rehide-yiji` pair is a focused lifecycle regression rather than a
 new gameplay effect: it proves native Di Kế can reveal from a hidden slot,
@@ -689,7 +722,7 @@ negative/positive/skip, `hidden-yiji-deputy`, `hidden-jianxiong` and
 `hidden-jianxiong-deputy`, `hidden-reveal` and `hidden-reveal-deputy`,
 `hidden-active` and `hidden-active-main`, plus `hidden-view-as` and
 `hidden-view-as-main`. The staged add-on set now also includes
-`hidden-dual`, `hidden-fankui`, `hidden-luoshen`, `hidden-jizhi`,
+`hidden-dual`, `hidden-fankui`, `hidden-luoshen`, both Tiandu mirrors, `hidden-jizhi`,
 `hidden-mingshi`, both Qianxun branches, both Kongcheng mirrors, both
 Weimu mirrors, both Xiaoji mirrors, both Guanxing mirrors and both Duanchang
 mirrors. The Fanjian pair is currently contract/browser-only until the remote

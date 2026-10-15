@@ -320,6 +320,9 @@ const api = {
   acknowledgeLuoshenPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__luoshen', ${prelight}}`));
   },
+  acknowledgeTianduPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'tiandu', ${prelight}}`));
+  },
   acknowledgeJizhiPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__jizhi', ${prelight}}`));
   },
@@ -559,6 +562,22 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__luoshen', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_luoshen_gate', 'TQS QA: prelight 洛神, rồi xác nhận để bắt đầu pha chuẩn bị.'}");
+        break;
+      }
+      case 'hidden-tiandu':
+      case 'hidden-tiandu-deputy': {
+        // Tiandu is compulsory on FinishJudge. The local fixture mirrors the
+        // hidden fake-skill/prelight gate; native C++ remains authoritative
+        // for the real judge, reveal-before-SkillEffect and obtain path.
+        const main = scenarioId === 'hidden-tiandu-deputy' ? 'hs__simayi' : 'hs__guojia';
+        const deputy = scenarioId === 'hidden-tiandu-deputy' ? 'hs__guojia' : 'hs__simayi';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputy}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'tiandu', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_tiandu_gate', 'TQS QA: prelight Thiên Đố, rồi xác nhận để bắt đầu phán xét.'}");
         break;
       }
       case 'hidden-jizhi':

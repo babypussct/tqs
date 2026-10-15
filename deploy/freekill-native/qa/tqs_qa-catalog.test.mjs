@@ -16,6 +16,7 @@ const battleRoyalPath = path.resolve(here, '../../../runtime/packages/hegemony/p
 const gameRulePath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/aux_skills_dir/game_rule.lua');
 const yijiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/yiji.lua');
 const luoshenSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/luoshen.lua');
+const tianduSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/tiandu.lua');
 const jizhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/jizhi.lua');
 const mingshiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/mingshi.lua');
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
@@ -845,6 +846,46 @@ test('hidden-luoshen locks phase-start prelight, reveal and judgment obtain for 
   assert.match(luoshen, /room:askToSkillInvoke\(player/u);
   assert.match(luoshen, /room:moveCardTo\(cards, Card\.PlayerHand/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-luoshen"[\s\S]*triggerHiddenLuoshen\(room, state\)/u);
+});
+
+test('hidden-tiandu locks FinishJudge obtain and reveal-before-effect for both slots', () => {
+  const expected = {
+    'hidden-tiandu': {
+      seed: 0x5d6e7fb6,
+      actor: { general: 'hs__guojia', deputy: 'hs__simayi', kingdom: 'wei' },
+    },
+    'hidden-tiandu-deputy': {
+      seed: 0x5d6e7fb7,
+      actor: { general: 'hs__simayi', deputy: 'hs__guojia', kingdom: 'wei' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-tiandu', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+    });
+    assert.deepEqual(scenario.cards, []);
+  }
+
+  const tiandu = fs.readFileSync(tianduSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(tiandu, /tiandu:addEffect\(fk\.FinishJudge/u);
+  assert.match(tiandu, /target == player and player:hasSkill\(tiandu\.name\)/u);
+  assert.match(tiandu, /getCardArea\(data\.card\) == Card\.Processing/u);
+  assert.match(tiandu, /obtainCard\(player, data\.card, true, fk\.ReasonJustMove, player, tiandu\.name\)/u);
+  const skillEvent = fs.readFileSync(skillEventPath, 'utf8');
+  const revealIndex = skillEvent.indexOf('player:revealBySkillName(main_skill.name)');
+  const effectCallbackIndex = skillEvent.indexOf('effect_cb()');
+  assert.ok(revealIndex >= 0, 'SkillEffect must reveal the hidden general by skill name before Tiandu');
+  assert.ok(effectCallbackIndex > revealIndex,
+    'SkillEffect must reveal the matching slot before running the FinishJudge effect');
+  assert.match(qaInit, /scenario\.trigger == "hidden-tiandu"[\s\S]*triggerHiddenTiandu\(room, state\)/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {
