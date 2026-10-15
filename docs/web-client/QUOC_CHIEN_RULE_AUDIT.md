@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 16/10/2026 00:38 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 16/10/2026 01:33 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -9,7 +9,7 @@ React hiện tại là client của FreeKill, không phải một bản port lu�
 1. Server còn chạy luật gốc không? — Có, trong phạm vi runtime/package đang được bundle.
 2. React có render và trả lời được mọi state/request do luật gốc phát sinh không? — Chưa.
 
-Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Render → Oracle replacement đã đạt parity identity/vận hành và gameplay bounded** (login + hidden Gongqing chủ/phó), nhưng chưa đạt **full rule parity**, chưa đóng `PLAYABLE_MOBILE` và chưa phải official release.
+Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Render → Oracle replacement đã đạt parity identity/vận hành và gameplay bounded** (login + hidden Gongqing và hidden Yiji ở cả chủ/phó), nhưng chưa đạt **full rule parity**, chưa đóng `PLAYABLE_MOBILE` và chưa phải official release.
 
 ## Identity đang kiểm tra
 
@@ -19,28 +19,28 @@ Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Rende
 | Live health | `200 / ok` |
 | Runtime package | 14 package |
 | Live bundle | 5.279 file |
-| Runtime MD5 | `0e2e6585bb80a8145ac71208258196f0` |
+| Runtime MD5 | `c0bef6508553205941d64c4994a4fd21` |
 | Bundle hash | `0b4c3d1ea4f5eae7` |
-| Render deployment | [`dep-db8gqkavcj2c73abuqs0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8gqkavcj2c73abuqs0), commit `1ac5603f` |
+| Render deployment | [`dep-db8hmd1srm7s73ecuhgg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8hmd1srm7s73ecuhgg), commit `d015189c` |
 | Public web artifact | HTML SHA-256 `fa42af15a4591bc5cf252d1834c9175c2d629a8a6c0328447e2518a3ed21f68b`; JS `index-DXmKDLu9.js`; CSS `index-7DaeryPw.css` |
 | Release candidate | UI/dịch hotfix trên branch `codex/cp89-render-current`; dashboard `Deploy succeeded | Live`, health `200 / ok` |
-| Render → Oracle hosted route | Gateway `:10000 -> 161.33.209.212:9527`; login/lobby PASS; hidden Gongqing main/deputy PASS trên đúng identity này |
+| Render → Oracle hosted route | Gateway `:10000 -> 161.33.209.212:9527`; login/lobby PASS; hidden Gongqing và hidden Yiji main/deputy PASS trên đúng identity này |
 | Release status | Candidate để smoke test, chưa official |
 | NATIVE-LOCAL identity hiện hành | C++ source pin `b8a2ad4…`; runtime `flist.txt` MD5 `4ab95597f67f54f9a789e8bdcc5aa160`; 14 package pin + server-only `tqs_qa`; browser artifact `dist/index.html` SHA-256 `7c34d09358070e84c3e2b3bf078333b81d4fed17549d4e2d9a2f1c2ade1c8f99`. `RELEASE.json` không pin đúng flist này, nên chỉ là local/unpinned |
 | NATIVE-LOCAL QA package evidence | Các scenario local giữ identity riêng trong từng evidence JSON; evidence staged gần nhất của Liệt Cung dùng revision `a3618958…`. Không dùng dòng này để suy ra identity Oracle. |
 | Evidence native-local trước đó | Các identity staged của Yiji/Xiaoji/Guanxing/Yingzi/Tiandu/Phản Gián… giữ trong từng evidence JSON; không lặp hash ở bảng này |
 | Probe native remote cũ cho Thiên Đố | Lượt thử trước replacement bị dừng trước readiness gate (`nativeQaGateSeen=false`); evidence [`1792066870927`](../../scratch/evidence/reconnect-failure-1792066870927.json). Đây là **diagnostic lịch sử**, không dùng để đánh giá `FinishJudge`; đã được supersede bởi identity Oracle replacement bên dưới |
 | Cài đặt native local | Lua 5.4 + `luasocket`/`luafilesystem` và package QA; ca Thiên Hương dùng runtime cô lập `flist MD5 79ef20f9a8fff39dc92310500269add0`, ca Đoạn Trường dùng `flist MD5 cc9ffae8858f3fff68f4b4f4c3d1bc9b`; chỉ phục vụ kiểm thử cục bộ, **không phải Oracle/production** |
-| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `0e2e6585bb80a8145ac71208258196f0`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; `tqs_qa` revision `7787544e21f1871c944558992edf9dcb97801ce2`, package SHA `d8b3d5789c97b418b41a2af576038de9f75b21d0a95a5328b04efba1bce03d80`, catalog SHA `9a06fb21c37e5885a1b0dee47feb7c8daaee7bf7521669019e9974a5b575a48c`; service enabled/active, port 9527 reachable |
-| Oracle hidden-trigger QA | Isolated local gateway → Oracle replacement: **51 bounded run PASS** trên identity hiện hành; đây là native bounded, tách khỏi hosted evidence |
+| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `c0bef6508553205941d64c4994a4fd21`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; current `tqs_qa` revision `87cf88536e6b21adfa8460198e70faa0b8e2e71d`, package SHA `50dc215536933406d62d5ae894417c346b13dd6c5afa3477871dd75a369219e9`, catalog SHA `5ad80f767a27f3d10db0917e85e124d7a8e95519dfa311ba9beb0d5a2338189a`; service enabled/active, port 9527 reachable |
+| Oracle hidden-trigger QA | Current identity: hidden Yiji main/deputy native + hosted PASS. The earlier 51-run corpus belongs to the previous identity and is historical until rerun |
 | CP92/CP96 UI + lifecycle hotfix | Artifact đã build/typecheck/release-verify PASS; root `dist/` đồng bộ `game/web/dist`; deployment cuối và byte probe được ghi ở các dòng trên |
-| Hotfix hiện hành | Commit `1ac5603f` đã Live trên Render; đây vẫn là candidate để smoke test, không phải official |
+| Hotfix hiện hành | Commit `d015189c` đã Live trên Render; đây vẫn là candidate để smoke test, không phải official |
 
 `CP90` (pile/tay bài), `CP91` (skill dock/time bar/action row/sorter), CP93, CP94 và CP96 UI đã được đưa vào artifact candidate và được Render deploy.
 
-Probe public của deployment `dep-db8gqkavcj2c73abuqs0` trả `healthz=ok`, HTML SHA-256 `fa42af15…`, asset `index-DXmKDLu9.js`/`index-7DaeryPw.css`, manifest `5.279` file với runtime MD5 `0e2e6585…`. Login thật và hai scenario hidden Gongqing đã đi xuyên gateway tới Oracle replacement; đây là hosted bounded acceptance, không phải full gameplay acceptance hoặc official release.
+Probe public của deployment `dep-db8hmd1srm7s73ecuhgg` trả `healthz=ok`, HTML SHA-256 `fa42af15…`, asset `index-DXmKDLu9.js`/`index-7DaeryPw.css`, manifest `5.279` file với runtime MD5 `c0bef650…`. Login thật và các scenario hidden Gongqing + hidden Yiji main/deputy đã đi xuyên gateway tới Oracle replacement; đây là hosted bounded acceptance, không phải full gameplay acceptance hoặc official release.
 
-Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **35/35**, Wasmoon/React Lua E2E `63/63`, hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Oracle replacement có **51 run bounded PASS**; hosted Render → Oracle có login và Gongqing main/deputy PASS. Ma trận effect native-local vẫn là `22/607` cặp trên `14/53` event kinds; các run hosted chỉ là bounded scenarios, chưa phải full matrix. Run `fazheng-enyuan` mới nhất chưa qua assertion roster owner nên được giữ là OPEN harness, không suy diễn thành luật PASS/FAIL.
+Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **35/35**, Wasmoon/React Lua E2E `63/63`, hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Current Oracle identity có direct Yiji main/deputy PASS; hosted Render → Oracle có login, Gongqing và Yiji main/deputy PASS. Corpus 51 run của identity cũ chỉ là historical reference; không dùng để nâng current coverage. Ma trận effect native-local vẫn là `22/607` cặp trên `14/53` event kinds; các run hosted chỉ là bounded scenarios, chưa phải full matrix. Run `fazheng-enyuan` mới nhất chưa qua assertion roster owner và probe Jueqing hiện tại chưa qua QA assertion nên đều giữ là OPEN, không suy diễn thành luật PASS/FAIL.
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local và Oracle replacement; native verifier và hosted identity đều PASS. `render.yaml` đã ghim `FK_HOST` vào replacement, nên các deployment sau tiếp tục đi cùng tuyến Render → Oracle này.
 
@@ -53,7 +53,7 @@ Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract`
 - `freekill-asio` gọi worker bằng tên literal `lua5.4`; `scripts/lua-runtime.sh` chỉ nhận binary `lua5.4`/`lua-5.4`, kiểm tra chính xác `_VERSION == Lua 5.4`, rồi đặt lại `PATH` cho child process.
 - Helper đặt `LUA_PATH`/`LUA_CPATH` tới tree Lua 5.4 của runtime và fail-closed nếu không load được `socket` hoặc `lfs`. Vì vậy Lua 5.5 hoặc Lua 5.4 thiếu module không thể mở server rồi mới crash ở room đầu tiên.
 - `scripts/run-server.sh` và `scripts/verify-install.sh` dùng cùng helper; vận hành native phải đi qua `run-server.sh`, không gọi binary trực tiếp.
-- Bằng chứng local hiện hành: catalog/source scenarios **57/57**, `test:qa-server-contract` **35/35** subtests, launcher preflight PASS, Lua 5.4 + 18 extension; các scenario hidden main/deputy đã có evidence được liệt kê duy nhất ở bảng bên dưới. Oracle replacement có **51 run bounded PASS**; Render → Oracle có login và Gongqing main/deputy bounded PASS. Full matrix và official LIVE vẫn mở.
+- Bằng chứng local hiện hành: catalog/source scenarios **57/57**, `test:qa-server-contract` **35/35** subtests, launcher preflight PASS, Lua 5.4 + 18 extension; các scenario hidden main/deputy đã có evidence được liệt kê duy nhất ở bảng bên dưới. Current Oracle identity có Yiji main/deputy native + hosted PASS; Render → Oracle có login, Gongqing và Yiji bounded PASS. Corpus 51 run cũ được tách khỏi current proof. Full matrix và official LIVE vẫn mở.
 
 Ghi chú môi trường: native local được biên dịch từ commit C++ pin trên macOS. Harness tạm ngoài repository chỉ thay cách kiểm tra tiến trình con (`waitpid`) vì upstream dùng `/proc`, vốn không có trên macOS; patch này không nằm trong source/deploy và không được coi là thay đổi production/Oracle. Kết quả native local chứng minh vòng đời Lua/C++ và bridge của các scenario, không chứng minh binary Linux đang chạy trên VM.
 
@@ -157,7 +157,7 @@ Luật gốc trong [`tianxiang.lua`](../../runtime/packages/hegemony/pkg/standar
 
 QA native chạy bằng C++/Lua thật, hai browser client và runtime cô lập `flist MD5 79ef20f9a8fff39dc92310500269add0`: **main PASS** [`1792050881499`](../../scratch/evidence/cp93-hidden-tianxiang-multiplayer-live-1792050881499.json), **deputy PASS** [`1792050897211`](../../scratch/evidence/cp93-hidden-tianxiang-deputy-multiplayer-live-1792050897211.json). Cả hai evidence đều ghi gate prelight, chọn bài tim + mục tiêu, `SkillEffect`, damage bị chặn, mục tiêu mất HP, trả bài, mở đúng chủ/phó, GameOver/lobby/disconnect sạch. Đây là **NATIVE-LOCAL staged/local-unpinned**, không phải Render/Oracle LIVE.
 
-Hosted probe trước replacement đã fail trước readiness gate — server trả GameOver mà không phát gate `tqs_qa` ([`1792050441784`](../../scratch/evidence/reconnect-failure-1792050441784.json)). Kết luận đó chỉ áp dụng cho endpoint/runtime cũ; không phải lỗi Thiên Hương hay lỗi React. Replacement hiện đã được pin lại và route mới đã có hosted login + Gongqing main/deputy PASS; evidence cũ không được dùng cho release identity hiện hành.
+Hosted probe trước replacement đã fail trước readiness gate — server trả GameOver mà không phát gate `tqs_qa` ([`1792050441784`](../../scratch/evidence/reconnect-failure-1792050441784.json)). Kết luận đó chỉ áp dụng cho endpoint/runtime cũ; không phải lỗi Thiên Hương hay lỗi React. Replacement hiện đã được pin lại và route mới đã có hosted login + Gongqing/Yiji main/deputy PASS; evidence cũ không được dùng cho release identity hiện hành.
 
 ### Case bổ sung — Thái Văn Cơ úp và Đoạn Trường khi chết
 
@@ -320,17 +320,25 @@ Trong **inventory native-local** còn trống/rủi ro cao gồm `TargetSpecifie
 
 Ngày 16/10/2026, replacement `freekill-hegemony-qa` (`161.33.209.212`)
 được kiểm tra trực tiếp bằng SSH và đúng runtime đang chạy trên VM. Identity
-gate của runner PASS với runtime MD5 `0e2e6585bb80a8145ac71208258196f0`, 14
+gate của runner PASS với current runtime MD5 `c0bef6508553205941d64c4994a4fd21`, 14
 package, web `dist/index.html` SHA-256
 `fa42af15a4591bc5cf252d1834c9175c2d629a8a6c0328447e2518a3ed21f68b`, QA
-revision `7787544e21f1871c944558992edf9dcb97801ce2`, package SHA
-`d8b3d5789c97b418b41a2af576038de9f75b21d0a95a5328b04efba1bce03d80` và
-catalog SHA `9a06fb21c37e5885a1b0dee47feb7c8daaee7bf7521669019e9974a5b575a48c`.
+revision `87cf88536e6b21adfa8460198e70faa0b8e2e71d`, package SHA
+`50dc215536933406d62d5ae894417c346b13dd6c5afa3477871dd75a369219e9` và
+catalog SHA `5ad80f767a27f3d10db0917e85e124d7a8e95519dfa311ba9beb0d5a2338189a`.
 `verify-install.sh`, `verify-qa-package.sh`, Lua 5.4.8 + Socket/FileSystem,
 service enabled/active và TCP 9527 đều PASS.
 
-Runner dùng isolated local gateway với `FK_HOST=161.33.209.212`, hai browser
-client thật và không ghi credential/allowlist name vào evidence:
+Current-identity proof dùng isolated local gateway với `FK_HOST=161.33.209.212`,
+hai browser client thật và không ghi credential/allowlist name vào evidence:
+
+- **Yiji chủ tướng:** Quách Gia còn úp → prelight Di Kế → nhận damage → `AskForSkillInvoke` → invoke → mở đúng chủ tướng và chuyển 2 lá. [`cp08-hidden-yiji-multiplayer-live-1792088748424.json`](../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792088748424.json).
+- **Yiji phó tướng:** cùng hợp đồng và mở đúng phó tướng. [`cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json`](../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json).
+- **Jueqing hiện tại:** probe đã vào được native scenario sau khi sửa identity, nhưng chưa qua QA assertion reveal/HP-loss; giữ **OPEN**, không gộp vào PASS Di Kế.
+
+Các evidence bên dưới là **historical corpus** của identity trước
+(`7787544e…`, runtime `0e2e6585…`, package/catalog cũ). Giữ link để truy vết,
+nhưng không dùng 51 run này làm bằng chứng current identity:
 
 - **Positive chủ tướng:** [`cp08-hidden-yiji-multiplayer-live-1792079207247.json`](../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792079207247.json) — fake Di Kế hiển thị khi Quách Gia còn úp → prelight → nhận damage → `AskForSkillInvoke` → invoke → reveal/effect và chuyển 2 lá.
 - **Negative chủ tướng:** [`cp08-hidden-yiji-multiplayer-live-1792079225253.json`](../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792079225253.json) — có damage nhưng không prelight → không hỏi Di Kế/không reveal/không chuyển bài.
@@ -351,20 +359,18 @@ client thật và không ghi credential/allowlist name vào evidence:
 - **Tiểu Kiều/Thiên Hương chủ/phó:** [`cp08-hidden-tianxiang-multiplayer-live-1792080381670.json`](../../scratch/evidence/cp08-hidden-tianxiang-multiplayer-live-1792080381670.json) và [`cp08-hidden-tianxiang-deputy-multiplayer-live-1792080392476.json`](../../scratch/evidence/cp08-hidden-tianxiang-deputy-multiplayer-live-1792080392476.json) — `DetermineDamageInflicted` → chọn bài tim/mục tiêu → mở đúng slot → chặn damage và trả bài.
 - **Thái Văn Cơ/Đoạn Trường chủ/phó:** [`cp08-hidden-duanchang-multiplayer-live-1792080404621.json`](../../scratch/evidence/cp08-hidden-duanchang-multiplayer-live-1792080404621.json) và [`cp08-hidden-duanchang-deputy-multiplayer-live-1792080417358.json`](../../scratch/evidence/cp08-hidden-duanchang-deputy-multiplayer-live-1792080417358.json) — `Death` → mở đúng slot → chọn kỹ năng chủ của killer để gỡ.
 
-Bộ gốc ba mươi hai run và 19 run mở rộng đều ghi `result: PASS` với native gate,
-hai client quan sát được audit công khai; các scenario kết thúc ván có
-GameOver → result → lobby → disconnect sạch, còn founding dừng đúng tại source
-choice theo semantics của scenario. Đây là
-**ORACLE QA BOUNDED** cho identity/native rule và browser bridge; phần Render
-→ Oracle hosted bounded được ghi riêng dưới đây, không thay thế toàn bộ `607`
-effect pairs, device acceptance hay official release.
+Bộ 51 run này trước đây đều ghi `result: PASS` với native gate và hai client
+quan sát được audit công khai; tuy nhiên chúng thuộc identity cũ. Đây là
+**ORACLE QA BOUNDED — HISTORICAL** cho identity/native rule và browser bridge;
+phần current identity chỉ lấy các ca Yiji nêu ở trên. Không thay thế toàn bộ
+`607` effect pairs, device acceptance hay official release.
 
 ### Render → Oracle replacement — hosted bounded acceptance
 
-Deployment [`dep-db8gqkavcj2c73abuqs0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8gqkavcj2c73abuqs0), commit
-`1ac5603f`, đã chạy gateway tới replacement `161.33.209.212:9527`.
+Deployment [`dep-db8hmd1srm7s73ecuhgg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8hmd1srm7s73ecuhgg), commit
+`d015189c`, đã chạy gateway tới replacement `161.33.209.212:9527`.
 Health, public manifest, HTML artifact và login/lobby đều khớp identity:
-runtime MD5 `0e2e6585…`, bundle hash `0b4c3d1ea4f5eae7`, HTML
+runtime MD5 `c0bef650…`, bundle hash `0b4c3d1ea4f5eae7`, HTML
 `fa42af15…`, 14 package/5.279 file.
 
 - **Gongqing chủ tướng:** PASS — fake trigger xuất hiện trước damage gate;
@@ -373,10 +379,14 @@ runtime MD5 `0e2e6585…`, bundle hash `0b4c3d1ea4f5eae7`, HTML
   [`cp08-hidden-gongqing-multiplayer-live-1792085727624.json`](../../scratch/evidence/cp08-hidden-gongqing-multiplayer-live-1792085727624.json).
 - **Gongqing phó tướng:** PASS — cùng hợp đồng ở slot phó; evidence
   [`cp08-hidden-gongqing-deputy-multiplayer-live-1792085744289.json`](../../scratch/evidence/cp08-hidden-gongqing-deputy-multiplayer-live-1792085744289.json).
+- **Yiji chủ tướng:** PASS — prelight → damage → invoke → reveal chủ tướng →
+  chuyển 2 lá; evidence [`cp08-hidden-yiji-multiplayer-live-1792088748424.json`](../../scratch/evidence/cp08-hidden-yiji-multiplayer-live-1792088748424.json).
+- **Yiji phó tướng:** PASS — cùng hợp đồng ở slot phó; evidence [`cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json`](../../scratch/evidence/cp08-hidden-yiji-deputy-multiplayer-live-1792088763447.json).
 
-Kết luận: **parity tuyến Render → Oracle đã PASS bounded** cho login và hai
-slot Gongqing trên cùng release identity. Đây chưa phải chứng nhận full rule
-parity; các hidden-effect family khác và ma trận `607` cặp vẫn là OPEN.
+Kết luận: **parity tuyến Render → Oracle đã PASS bounded** cho login, hai slot
+Gongqing và hai slot Yiji trên current release identity. Đây chưa phải chứng
+nhận full rule parity; các hidden-effect family khác và ma trận `607` cặp vẫn
+là OPEN. Probe Jueqing current identity vẫn OPEN.
 
 ## Mức bao phủ hiện tại
 
@@ -389,7 +399,7 @@ parity; các hidden-effect family khác và ma trận `607` cặp vẫn là OPEN
 | Privacy/public projection | **Đạt một phần tốt** | Có public/private boundary; Self hidden data và đối thủ hidden data được tách. |
 | Native request mapping | **Đạt ở source contract** | 17 request families được ánh xạ; audit không thay thế live matrix. |
 | Hidden-skill source projection/lifecycle/slot route | **Đạt SOURCE/LOCAL** | 301 tướng active, 602 vị trí, 1.039 reference, 520 skill ID; native `AddSkill`/`LoseSkill` 520/520, replay event qua React 521/521, privacy Add/Lose 1.042/1.042, helper `reveal_skill&` 105/105, `canUse` theo slot 205/205, route `revealBySkillName` 155.168/155.168 trên cặp hợp lệ, prelight sync 403/403, reconnect projection 520/520 và probe state thật `Client:addSkill`/`Client:loseSkill` đều 520/520; chưa chứng minh effect/live parity. |
-| Hidden-trigger/prelight + active reveal | **Đạt RENDER → ORACLE bounded + ORACLE/NATIVE-LOCAL mở rộng** | Oracle replacement có **51 run bounded PASS**; hosted Render → Oracle thêm Gongqing main/deputy PASS. Native-local còn các staged add-on ở cả main/deputy. Exhaustive effect matrix vẫn mở; `fazheng-enyuan` owner-roster harness còn OPEN. |
+| Hidden-trigger/prelight + active reveal | **Đạt RENDER → ORACLE bounded + ORACLE/NATIVE-LOCAL mở rộng** | Current identity có Yiji main/deputy native + hosted PASS; hosted Render → Oracle thêm Gongqing main/deputy PASS. Corpus 51 run thuộc identity cũ và cần rerun nếu muốn tái sử dụng. Native-local còn các staged add-on; exhaustive effect matrix vẫn mở; `fazheng-enyuan` và Jueqing current probe còn OPEN. |
 | Lua runtime launcher/module ABI | **Đạt RENDER → ORACLE bounded** | Oracle replacement chạy Lua 5.4.8, nạp `socket`/`lfs`; hosted login và Gongqing main/deputy đã đi qua cùng runtime MD5; old VM vẫn là rollback/reference. |
 | Regular-skill dashboard gate | **Đạt NATIVE-LOCAL bounded** | `AddSkill/LoseSkill` của Self, fake active Chế Hành và fake ViewAs Long Đảm → regular dock → native `PlayCard` đã PASS; Phản Gián main/deputy cũng đã PASS native-local theo chuỗi ActiveSkill đầy đủ; các active/ViewAs skill khác chưa có live matrix và hosted/Oracle chưa được verify. |
 | Local dialog/skill/card audits | **Đạt local** | Native dialogs 7/7, cards-and-choice 3/3, card selection 4/4, store 40/40, connection 28/28, gameplay 16/16, browser E2E 20/20, Wasmoon/React E2E 63/63, catalog/source scenarios 57/57 và `test:qa-server-contract` 35/35 subtests; các fixture/pipeline contract này không thay thế C++ live. |
