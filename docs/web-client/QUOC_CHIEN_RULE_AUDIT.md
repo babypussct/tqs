@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 15/10/2026 19:02 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 15/10/2026 19:11 (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -45,7 +45,7 @@ Re-validation local/native sau CP96 UI: mốc lịch sử trước commit Phản
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local; `verify-install.sh` và `verify-qa-package.sh` PASS trước các ca hiện hành. Candidate hosted và Oracle VM chưa được package/deploy lại nên không được gắn evidence này cho LIVE.
 
-Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract` hiện **6/6 PASS**. Gate này khóa đúng thứ tự và ownership của luật gốc: fake skill phải prelight mới qua `Player:hasSkill`; trigger phải vào `room:useSkill`; `SkillEffect` gọi `revealBySkillName` trước `fk.SkillEffect`/callback; route chủ được ưu tiên rồi mới fallback phó; prelight `true` chỉ nhận fake skill của đúng player; và `hideGeneral()` re-attach phải phát lại `PrelightSkill=true`. Đây là **SOURCE contract regression**, không phải 607 effect cases native.
+Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract` hiện **7/7 PASS**. Gate này khóa đúng thứ tự và ownership của luật gốc: fake skill phải prelight mới qua `Player:hasSkill`; trigger phải vào `room:useSkill`; `SkillEffect` gọi `revealBySkillName` trước `fk.SkillEffect`/callback; route chủ được ưu tiên rồi mới fallback phó; prelight `true` chỉ nhận fake skill của đúng player; `hideGeneral()` re-attach phải phát lại `PrelightSkill=true`; và toàn bộ **607/607** trigger pair non-delay không có custom predicate ungated. Bốn continuation hậu-kích hoạt (`耀武`/`Deathed`, `闺秀`/`GeneralRemoved`, `除害`/`TurnEnd`, `放权`/`TurnEnd`) được allowlist bằng marker state cụ thể, không phải ngoại lệ im lặng. Đây là **SOURCE contract regression**, không phải 607 effect cases native.
 
 ## Hợp đồng runtime Lua native
 
