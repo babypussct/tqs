@@ -8,7 +8,7 @@ Các lệnh bên dưới chạy trong `game/web/`, dùng Node 22+, Chrome và pa
 npm run configure:live
 ```
 
-Mặc định nối `168.110.36.224:9527`. Có thể đặt `TQS_LIVE_HOST` / `TQS_LIVE_PORT` để chọn server thử khác, và `TQS_PACKAGE_SOURCE` để chọn thư mục chứa ba checkout `freekill-core`, `hegemony`, `utility`.
+Mặc định nối replacement VM `161.33.209.212:9527`. Có thể đặt `TQS_LIVE_HOST` / `TQS_LIVE_PORT` để chọn server thử khác, và `TQS_PACKAGE_SOURCE` để chọn thư mục chứa ba checkout `freekill-core`, `hegemony`, `utility`.
 
 Script lấy `UpdatePackage` bằng một handshake có MD5 cố ý sai. Theo source FreeKill được pin, server kiểm tra MD5 **trước** kiểm tra mật khẩu/đăng ký; bước dò package không tạo tài khoản. Script đối chiếu enabled packages, commit và trạng thái Git, xuất các blob Lua/JSON/QML/JS từ Git rồi sinh `flist.txt` theo thuật toán C++. Snapshot nằm riêng trong `scratch/live-web-test/`.
 
@@ -25,7 +25,7 @@ npm run test:e2e:login
 Runner tự đọc cấu hình private, phục vụ bundle từ snapshot, chạy React trong Chrome ở viewport 390×844 và gửi `Setup` qua Gateway đến FreeKill C++. Điều kiện PASS gồm challenge RSA, đúng một `Setup`, server phản hồi `Setup` + `EnterLobby`, Lua xử lý thành công, React hiển thị sảnh/đã kết nối, gửi `RefreshRoomList`, không có lỗi JS/Lua/application, rồi nút ngắt kết nối đưa UI về login. Bài này không tạo/vào phòng hoặc bắt đầu ván.
 
 ```sh
-TQS_LIVE_HOST=168.110.36.224 npm run test:e2e:live
+TQS_LIVE_HOST=161.33.209.212 npm run test:e2e:live
 ```
 
 Lệnh trên chỉ kiểm tra **pre-auth**: gói `Setup` bị chặn tại browser, dùng MD5 fixture; PASS không chứng minh đăng nhập. Không có `--login`, runner luôn chặn gửi dữ liệu tới server.
@@ -33,7 +33,7 @@ Lệnh trên chỉ kiểm tra **pre-auth**: gói `Setup` bị chặn tại brows
 ## Nghiệm thu live bộ tướng/bài UI-02 — 11/10/2026
 
 ```sh
-TQS_LIVE_HOST=168.110.36.224 npm run test:e2e:live -- --room-pools
+TQS_LIVE_HOST=161.33.209.212 npm run test:e2e:live -- --room-pools
 ```
 
 Runner dùng cấu hình test riêng đã có và Chrome mobile + Lua/Wasmoon + Gateway + FreeKill C++ thật. Bài này chủ động tạo phòng Quốc Chiến, tắt `hegemony_standard` (GeneralPack) và `hegemony_cards` (CardPack), kiểm tra `CreateRoom`/`EnterRoom` máy chủ echo đúng, chọn cặp tướng hợp lệ, kiểm tra từng tướng được cung cấp và ID bài trong `PrepareDrawPile` bằng Lua upstream. Sau đó bật Trust để BOT chơi đến `GameOver`, bấm về sảnh và ngắt sạch; cần dành thời gian cho cả ván và không chạy trùng tài khoản đang sử dụng.
@@ -45,7 +45,7 @@ Runner dùng cấu hình test riêng đã có và Chrome mobile + Lua/Wasmoon + 
 Đặt `TQS_LIVE_URL` để runner mở chính bản build đóng băng và dùng `/gateway` của deployment. Chế độ này không khởi tạo gateway/Vite thứ hai và không cần import source trong trang. Dùng `--ui-translations` để tạo ván bot thật, chọn tướng, bật native Trust, chờ GameOver, về sảnh và ngắt sạch. Không chạy cùng tài khoản đang chơi.
 
 ```sh
-TQS_LIVE_HOST=168.110.36.224 \
+TQS_LIVE_HOST=161.33.209.212 \
 TQS_LIVE_URL=https://pvc-gotta-soundtrack-buses.trycloudflare.com \
 TQS_UI01_EVIDENCE_DIR=../../scratch/evidence/new-deployment-verification \
 npm run test:e2e:live -- --ui-translations
@@ -111,7 +111,7 @@ Client cung cấp BOT chơi hộ bằng native Trust (server xác nhận NetStat
 Kiểm chứng login/heartbeat lâu hơn giới hạn TTL mặc định của source C++ (6 nhịp 30 giây):
 
 ```bash
-TQS_LIVE_HOST=168.110.36.224 TQS_LIVE_IDLE_SECONDS=210 npm run test:e2e:login
+TQS_LIVE_HOST=161.33.209.212 TQS_LIVE_IDLE_SECONDS=210 npm run test:e2e:login
 ```
 
 Runner chờ ở sảnh, không tạo ván; yêu cầu mỗi Heartbeat thật có đúng một notification đáp lại và UI vẫn online, sau đó ngắt sạch ở sảnh. Có thể đặt `TQS_LIVE_EVIDENCE_PATH` trỏ đến PNG trong scratch để lưu ảnh sảnh sau khi đã bảo đảm không còn trường tài khoản/mật khẩu trong DOM. Không chạy cùng account đang chơi.

@@ -521,6 +521,34 @@ local function validateHiddenMingshiScenario(scenario)
   end
 end
 
+local function validateHiddenGongqingScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-gongqing scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-gongqing-deputy"
+  local expectedMain = deputy and "hs__sunquan" or "panjun"
+  local expectedDeputy = deputy and "panjun" or "hs__sunquan"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wu" then
+    fail("hidden-gongqing actor must use the catalogued Pan Jun main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-gongqing source must be Zhao Yun + Fazheng in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-gongqing must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "gongqing-bow" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.name ~= "kylin_bow" then
+    fail("hidden-gongqing must reserve exactly one source Kylin Bow in hand")
+  end
+end
+
 local function validateHiddenQianxunScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-qianxun scenarios must define exactly two players")
@@ -804,6 +832,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenJizhiScenario(scenario)
   elseif scenario.trigger == "hidden-mingshi" then
     validateHiddenMingshiScenario(scenario)
+  elseif scenario.trigger == "hidden-gongqing" then
+    validateHiddenGongqingScenario(scenario)
   elseif scenario.trigger == "hidden-qianxun" then
     validateHiddenQianxunScenario(scenario)
   elseif scenario.trigger == "hidden-kongcheng" then
@@ -2662,6 +2692,125 @@ local function triggerHiddenMingshi(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenGongqing(room, state)
+  -- 公清 has two independent DamageInflicted paths in the source package:
+  -- low attack range collapses damage to 1 through DetermineDamageInflicted,
+  -- while high attack range adds one through DamageInflicted.  Keep 潘濬
+  -- hidden until the first native effect so this also proves slot ownership
+  -- and fake-skill conversion on both main/deputy placements.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-gongqing actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("gongqing") then
+    fail("hidden-gongqing must attach the hidden Gongqing skill")
+  end
+  if state.actor:hasSkill("gongqing") then
+    fail("hidden-gongqing must not be active before the first damage branch")
+  end
+
+  -- The paired roster can otherwise start at three HP, while the two source
+  -- branches intentionally deal 1 + 2 damage. Increase only the QA actor's
+  -- life total so the second native branch completes without entering Dying.
+  room:setPlayerProperty(state.actor, "maxHp", 5)
+  room:setPlayerProperty(state.actor, "hp", 5)
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_gongqing_gate",
+    prompt = "TQS QA: prelight Công Thanh, rồi xác nhận để kiểm tra hai nhánh tầm đánh.",
+  })
+  if not gate then
+    fail("hidden-gongqing readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "gongqing") then
+    fail("hidden-gongqing must be prelighted before the damage branches")
+  end
+
+  local bowId = state.slotCards["gongqing-bow"]
+  if not bowId or not table.contains(state.target:getCardIds(Player.Hand), bowId) then
+    fail("hidden-gongqing must put the reserved Kylin Bow in the source hand")
+  end
+  local lowRange = state.target:getAttackRange() < 3
+  local beforeLowHp = state.actor.hp
+  state.currentDamageStep = 1
+  room:damage({
+    from = state.target,
+    to = state.actor,
+    damage = 2,
+    skillName = "tqs_qa_hidden_gongqing_low_range",
+  })
+  state.currentDamageStep = nil
+
+  if not lowRange or not state.actor:hasSkill("gongqing") or state.actor:isFakeSkill("gongqing") then
+    fail("hidden-gongqing must reveal and activate before the low-range damage effect")
+  end
+  if not table.contains(state.target:getCardIds(Player.Hand), bowId) then
+    fail("hidden-gongqing source Kylin Bow must remain available for the high-range branch")
+  end
+
+  room:moveCardTo(bowId, Card.PlayerEquip, state.target, fk.ReasonJustMove, "tqs_qa", nil, true, state.target)
+  local highRange = state.target:getAttackRange() > 3
+  if not highRange then
+    fail("hidden-gongqing Kylin Bow must raise the source attack range above 3")
+  end
+
+  local beforeHighHp = state.actor.hp
+  state.currentDamageStep = 2
+  room:damage({
+    from = state.target,
+    to = state.actor,
+    damage = 1,
+    skillName = "tqs_qa_hidden_gongqing_high_range",
+  })
+  state.currentDamageStep = nil
+
+  local lowDamage = 0
+  local highDamage = 0
+  for _, entry in ipairs(state.damageEvents) do
+    if entry.to == state.actor.id and entry.step == 1 then
+      lowDamage = lowDamage + entry.amount
+    elseif entry.to == state.actor.id and entry.step == 2 then
+      highDamage = highDamage + entry.amount
+    end
+  end
+  local lowEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "gongqing" and entry.player == state.actor.id
+  end)
+  local highEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 2 and entry.skill == "gongqing" and entry.player == state.actor.id
+  end)
+  local gongqingIsDeputy = state.scenario == "hidden-gongqing-deputy"
+  local revealedCorrectSlot = gongqingIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "panjun"
+    or not gongqingIsDeputy and state.actor.general == "panjun" and state.actor.deputyGeneral == "anjiang"
+  if not lowEffect or lowEffect.fake or not highEffect or highEffect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Gongqing must run both real SkillEffects and reveal Pan Jun in its catalogued slot")
+  end
+  if lowDamage ~= 1 or highDamage ~= 2 or beforeLowHp - state.actor.hp ~= 3 or
+      beforeLowHp - beforeHighHp ~= 1 or beforeHighHp - state.actor.hp ~= 2 then
+    fail(string.format("hidden Gongqing must resolve low/high damage as 1/2, observed %d/%d", lowDamage, highDamage))
+  end
+  if state.actor:isFakeSkill("gongqing") or not state.actor:hasSkill("gongqing") then
+    fail("hidden Gongqing must remain active after both native damage branches")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Công Thanh: DetermineDamageInflicted=%arg; DamageInflicted=%arg2; SkillEffect=%arg3; mở tướng=%arg4; sát thương thấp=%arg5; sát thương xa=%arg6; vị trí=%arg7",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(not lowEffect.fake and not highEffect.fake),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(lowDamage),
+    arg6 = tostring(highDamage),
+    arg7 = gongqingIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-gongqing determine_damage_inflicted=true damage_inflicted=true effects=2 damage_low=%d damage_high=%d slot=%s revealed=%s revision=%s",
+    lowDamage, highDamage, gongqingIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local function triggerHiddenQianxun(room, state)
   -- 谦逊 is compulsory on TargetConfirming. The actor remains face-down while
   -- a real Snatch has a legal Peach target; the native effect must reveal only
@@ -3515,6 +3664,7 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-tiandu" or state.scenario == "hidden-tiandu-deputy" or
       state.scenario == "hidden-jizhi" or state.scenario == "hidden-jizhi-deputy" or
       state.scenario == "hidden-mingshi" or state.scenario == "hidden-mingshi-deputy" or
+      state.scenario == "hidden-gongqing" or state.scenario == "hidden-gongqing-deputy" or
       state.scenario == "hidden-qianxun" or state.scenario == "hidden-qianxun-deputy" or
       state.scenario == "hidden-qianxun-indulgence" or
       state.scenario == "hidden-qianxun-indulgence-deputy" or
@@ -3736,6 +3886,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenJizhi(room, state)
     elseif scenario.trigger == "hidden-mingshi" then
       triggerHiddenMingshi(room, state)
+    elseif scenario.trigger == "hidden-gongqing" then
+      triggerHiddenGongqing(room, state)
     elseif scenario.trigger == "hidden-qianxun" then
       triggerHiddenQianxun(room, state)
     elseif scenario.trigger == "hidden-kongcheng" then

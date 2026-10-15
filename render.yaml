@@ -11,7 +11,7 @@ services:
     healthCheckPath: /gateway/healthz
     envVars:
       - key: FK_HOST
-        value: 168.110.36.224
+        value: 161.33.209.212
       - key: FK_PORT
         value: '9527'
       - key: MAX_CONNECTIONS

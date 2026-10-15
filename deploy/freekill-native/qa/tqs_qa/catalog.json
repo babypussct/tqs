@@ -1629,6 +1629,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-gongqing",
+      "title": "Hidden 潘濬 公清 proves both attack-range damage branches",
+      "seed": 1567522746,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-gongqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "panjun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "gongqing-bow",
+          "match": {
+            "name": "kylin_bow"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-gongqing-deputy",
+      "title": "Hidden deputy 潘濬 公清 proves both attack-range damage branches",
+      "seed": 1567522747,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-gongqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "panjun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "gongqing-bow",
+          "match": {
+            "name": "kylin_bow"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

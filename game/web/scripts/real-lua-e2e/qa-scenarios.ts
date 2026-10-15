@@ -73,7 +73,9 @@ export type QaScenarioId =
   | 'hidden-liegong'
   | 'hidden-liegong-deputy'
   | 'hidden-kuanggu'
-  | 'hidden-kuanggu-deputy';
+  | 'hidden-kuanggu-deputy'
+  | 'hidden-gongqing'
+  | 'hidden-gongqing-deputy';
 
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
@@ -126,7 +128,8 @@ export type QaScenarioTrigger =
   | 'hidden-yingzi'
   | 'hidden-duanchang'
   | 'hidden-liegong'
-  | 'hidden-kuanggu';
+  | 'hidden-kuanggu'
+  | 'hidden-gongqing';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -787,7 +790,7 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     id: 'hidden-kuanggu',
     title: '魏延 úp: Cuồng Cốt mở tướng trước lựa chọn sau sát thương',
     seed: 0x5d6e7fb8,
-    drawSequence: [],
+    drawSequence: [trueName('slash'), trueName('peach')],
     slots: [
       { key: 'kuanggu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
       { key: 'kuanggu-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
@@ -800,12 +803,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     id: 'hidden-kuanggu-deputy',
     title: '魏延 phó tướng úp: Cuồng Cốt mở tướng trước lựa chọn sau sát thương',
     seed: 0x5d6e7fb9,
-    drawSequence: [],
+    drawSequence: [trueName('slash'), trueName('peach')],
     slots: [
       { key: 'kuanggu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
       { key: 'kuanggu-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
     ],
     trigger: 'hidden-kuanggu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-gongqing': {
+    version: 1,
+    id: 'hidden-gongqing',
+    title: '潘濬 úp: Công Thanh kiểm tra cả hai nhánh tầm đánh',
+    seed: 0x5d6e7fba,
+    drawSequence: [named('kylin_bow')],
+    slots: [{ key: 'gongqing-bow', match: { name: 'kylin_bow' }, drawIndex: 0, owner: 'opponent', area: 'hand', visible: true }],
+    trigger: 'hidden-gongqing',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-gongqing-deputy': {
+    version: 1,
+    id: 'hidden-gongqing-deputy',
+    title: '潘濬 phó tướng úp: Công Thanh kiểm tra cả hai nhánh tầm đánh',
+    seed: 0x5d6e7fbb,
+    drawSequence: [named('kylin_bow')],
+    slots: [{ key: 'gongqing-bow', match: { name: 'kylin_bow' }, drawIndex: 0, owner: 'opponent', area: 'hand', visible: true }],
+    trigger: 'hidden-gongqing',
     expectedCommand: 'AskForSkillInvoke',
   },
 };
@@ -835,6 +858,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-duanchang', 'hidden-duanchang-deputy',
   'hidden-liegong', 'hidden-liegong-deputy',
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
+  'hidden-gongqing', 'hidden-gongqing-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -1040,6 +1064,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
         plan.slots[1].match.trueName !== 'peach') {
       throw new QaScenarioError(`${plan.id} must reserve an actor Slash and a target Peach for 狂骨`);
+    }
+  }
+  if (plan.trigger === 'hidden-gongqing') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'gongqing-bow' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('name' in plan.slots[0].match) || plan.slots[0].match.name !== 'kylin_bow') {
+      throw new QaScenarioError(`${plan.id} must reserve one opponent Kylin Bow for 公清`);
     }
   }
   if (plan.trigger === 'hidden-rehide-yiji' && plan.slots.length !== 0) {

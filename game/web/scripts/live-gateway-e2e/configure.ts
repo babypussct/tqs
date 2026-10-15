@@ -16,7 +16,7 @@ import { buildSnapshot, PACKAGES } from './snapshot';
 import { packageSpec } from '../upstream-packages';
 
 const repo = fileURLToPath(new URL('../../../../', import.meta.url));
-const host = process.env.TQS_LIVE_HOST ?? '168.110.36.224';
+const host = process.env.TQS_LIVE_HOST ?? '161.33.209.212';
 const port = Number(process.env.TQS_LIVE_PORT ?? 9527);
 assert.ok(/^[\w.:-]+$/.test(host) && Number.isInteger(port) && port > 0 && port <= 65535,
   'Invalid live server endpoint');

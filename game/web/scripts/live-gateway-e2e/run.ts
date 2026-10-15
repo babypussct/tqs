@@ -6,7 +6,7 @@
  * --login: use a matching snapshot and dedicated test account, send Setup,
  * verify real EnterLobby in Lua and React, then disconnect from the lobby.
  *
- * TQS_LIVE_HOST=168.110.36.224 npm run test:e2e:live
+ * TQS_LIVE_HOST=161.33.209.212 npm run test:e2e:live
  */
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';

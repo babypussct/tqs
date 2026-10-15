@@ -329,6 +329,9 @@ const api = {
   acknowledgeMingshiPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'mingshi', ${prelight}}`));
   },
+  acknowledgeGongqingPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'gongqing', ${prelight}}`));
+  },
   acknowledgeQianxunPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__qianxun', ${prelight}}`));
   },
@@ -610,6 +613,23 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'mingshi', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_mingshi_gate', 'TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.'}");
+        break;
+      }
+      case 'hidden-gongqing':
+      case 'hidden-gongqing-deputy': {
+        // Gongqing has two native damage-range branches. The local fixture
+        // mirrors only the hidden fake-skill/prelight gate; native C++ owns
+        // the low-range reduction, high-range increase and slot reveal.
+        const deputy = scenarioId === 'hidden-gongqing-deputy';
+        const main = deputy ? 'hs__sunquan' : 'panjun';
+        const deputyGeneral = deputy ? 'panjun' : 'hs__sunquan';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'gongqing', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_gongqing_gate', 'TQS QA: prelight Công Thanh, rồi xác nhận để kiểm tra hai nhánh tầm đánh.'}");
         break;
       }
       case 'hidden-qianxun':

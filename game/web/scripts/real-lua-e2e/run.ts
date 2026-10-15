@@ -1574,6 +1574,22 @@ try {
         assert.deepEqual(gateReply.luaErrors, []);
       }
 
+      for (const scenarioId of ['hidden-gongqing', 'hidden-gongqing-deputy'] as const) {
+        const hiddenGongqing = await startScenario(scenarioId);
+        const fakeGongqing = p.locator('button.fake-skill-button')
+          .filter({ hasText: /公清|Công Thanh|gongqing/i }).first();
+        await fakeGongqing.waitFor();
+        await fakeGongqing.click();
+        await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeGongqingPrelight(true));
+        await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
+          skill.name === 'gongqing' && skill.prelighted));
+        await p.getByRole('button', { name: 'Kích hoạt', exact: true }).click();
+        const gateReply = await reply(p);
+        assert.equal(gateReply.replies.at(-1)?.requestId, hiddenGongqing.requestId);
+        assert.equal(gateReply.replies.at(-1)?.hex, '4131');
+        assert.deepEqual(gateReply.luaErrors, []);
+      }
+
       for (const scenarioId of ['hidden-qianxun', 'hidden-qianxun-deputy'] as const) {
         const hiddenQianxun = await startScenario(scenarioId);
         const fakeQianxun = p.locator('button.fake-skill-button').filter({ hasText: /谦逊|Khiêm Tốn|qianxun/i }).first();
