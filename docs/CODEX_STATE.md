@@ -93,13 +93,11 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T09:21:29.920Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `74a7b30efa14`.
-- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T09:21:43.961Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `dd5208c3762c`.
+- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
  M game/web/scripts/card-display.test.ts
  M game/web/scripts/store.test.ts
 ?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
@@ -111,9 +109,9 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 Ba commit gần nhất:
 
 ```text
+dd5208c3 docs: record Render hotfix redeploy
 74a7b30e docs: align final QA handoff timestamps
 926de6cb docs: checkpoint hidden yingzi verification
-187d6147 qa: verify hidden yingzi across slots
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
