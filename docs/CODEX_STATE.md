@@ -93,25 +93,25 @@ Dùng [`QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md) và hư�
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T08:58:56.589Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `7bc7dad6a8c7`.
+- Ghi lúc: 2026-10-15T09:14:55.663Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `187d6147ddc7`.
 - File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M game/web/scripts/card-display.test.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/qa-scenarios.ts
- M game/web/scripts/real-lua-e2e/run.ts
  M game/web/scripts/store.test.ts
+?? docs/translations/ZH_CN_ORIGINAL_CATALOG.json
+?? docs/translations/ZH_CN_ORIGINAL_CATALOG.md
+?? docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
+?? game/web/scripts/export-all-zh.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
-7bc7dad6 docs: record CP96 Render hotfix evidence
-0cc0d346 hotfix: publish card tooltip and board polish
-18969850 qa: cover hidden yiji re-hide prelight retention
+187d6147 qa: verify hidden yingzi across slots
+6ed7e311 docs: document hidden yingzi QA
+5a83813a qa: cover hidden yingzi draw trigger
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
