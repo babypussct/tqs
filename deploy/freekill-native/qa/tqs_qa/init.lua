@@ -24,7 +24,7 @@ local function readJson(path)
   return value
 end
 
-local manifest = readJson("packages/tqs_qa/package.manifest.json")
+local manifest = readJson("qa_packages/tqs_qa/package.manifest.json")
 if manifest.schemaVersion ~= 1 or manifest.package ~= "tqs_qa" or
     manifest.status ~= "verified" or type(manifest.sourceRevision) ~= "string" or
     manifest.sourceRevision == "" or manifest.sourceRevision == "UNRELEASED" or
@@ -33,7 +33,7 @@ if manifest.schemaVersion ~= 1 or manifest.package ~= "tqs_qa" or
   fail("refusing to load an unverified package manifest")
 end
 
-local catalog = readJson("packages/tqs_qa/catalog.json")
+local catalog = readJson("qa_packages/tqs_qa/catalog.json")
 if catalog.schemaVersion ~= 1 or catalog.package ~= "tqs_qa" or
     type(catalog.scenarios) ~= "table" or #catalog.scenarios == 0 then
   fail("invalid scenario catalog")

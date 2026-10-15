@@ -127,6 +127,16 @@ if __quickStartConfig then
 end
 Fk:loadPackages()
 
+-- The deterministic QA director is deliberately outside `packages/` so the
+-- native server's public flist/MD5 stays identical to the mobile release.
+-- It is loaded only on an explicitly enabled, separately installed QA VM.
+if ServerConfig.tqsQa and ServerConfig.tqsQa.enabled then
+  local qaPackage = dofile "qa_packages/tqs_qa/init.lua"
+  assert(qaPackage and qaPackage.extensionName == "tqs_qa",
+    "enabled tqsQa package did not return the verified tqs_qa extension")
+  Fk:loadPackage(qaPackage)
+end
+
 local boardgameCount = 0
 for _, game in pairs(Fk.boardgames) do
   local engine = game.engine

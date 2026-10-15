@@ -28,7 +28,7 @@ done
 [[ -n "$source_dir" && -n "$runtime_dir" ]] || usage
 source_dir="$(CDPATH= cd -- "$source_dir" && pwd -P)"
 runtime_dir="$(CDPATH= cd -- "$runtime_dir" && pwd -P)"
-destination="$runtime_dir/packages/tqs_qa"
+destination="$runtime_dir/qa_packages/tqs_qa"
 config_path="$runtime_dir/freekill.server.config.json"
 package_db="$runtime_dir/packages/packages.db"
 

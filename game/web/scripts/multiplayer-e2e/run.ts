@@ -139,7 +139,7 @@ assert.ok(!testGatewayRestart || !deploymentUrl,'Gateway restart test requires a
 if (deploymentUrl) assert.equal(new URL(deploymentUrl).protocol,'https:');
 const base=deploymentUrl?.replace(/\/$/,'') ?? `http://127.0.0.1:${webPort}`;
 const qaPackageIdentity = nativeQa ? verifyQaPackageManifest({
-  manifestPath: process.env.TQS_QA_PACKAGE_MANIFEST ?? path.join(runtime, 'packages/tqs_qa/package.manifest.json'),
+  manifestPath: process.env.TQS_QA_PACKAGE_MANIFEST ?? path.join(runtime, 'qa_packages/tqs_qa/package.manifest.json'),
   expectedRevision: process.env.TQS_QA_EXPECTED_REVISION,
 }) : null;
 if (qaPackageIdentity) {

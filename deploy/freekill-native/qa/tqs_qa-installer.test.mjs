@@ -38,7 +38,7 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
 
     run('bash', [installer, '--source', source, '--runtime', runtime, '--allow-user', 'qa-a,qa-b', '--expected-revision', revision], repo);
     run('bash', [verifier, '--source', source, '--runtime', runtime, '--expected-revision', revision], repo);
-    const manifest = JSON.parse(readFileSync(path.join(runtime, 'packages/tqs_qa/package.manifest.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(path.join(runtime, 'qa_packages/tqs_qa/package.manifest.json'), 'utf8'));
     assert.equal(manifest.status, 'verified');
     assert.equal(manifest.sourceRevision, revision);
     const config = JSON.parse(readFileSync(path.join(runtime, 'freekill.server.config.json'), 'utf8'));

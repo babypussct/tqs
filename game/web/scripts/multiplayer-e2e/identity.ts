@@ -60,6 +60,15 @@ function sortedPackageNames(runtime: string) {
     .sort();
 }
 
+function sortedServerOnlyPackageNames(runtime: string) {
+  const root = path.join(runtime, 'qa_packages');
+  if (!existsSync(root) || !statSync(root).isDirectory()) return [];
+  return readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name)
+    .sort();
+}
+
 function assertSortedUnique(values: unknown, label: string): asserts values is string[] {
   if (!Array.isArray(values) || values.some((value) => typeof value !== 'string') ||
       new Set(values).size !== values.length || [...values].sort().join('\0') !== values.join('\0')) {
@@ -142,9 +151,9 @@ export async function verifyCandidateIdentity(options: {
   if (!existsSync(flistPath) || !statSync(flistPath).isFile()) throw new Error(`Candidate runtime flist.txt is missing: ${flistPath}`);
   if (!existsSync(indexPath) || !statSync(indexPath).isFile()) throw new Error(`Candidate web dist/index.html is missing: ${indexPath}`);
 
-  const localPackagesAll = sortedPackageNames(runtime);
-  const localServerOnlyPackages = localPackagesAll.filter((name) => SERVER_ONLY_PACKAGES.has(name));
-  const localPackages = localPackagesAll.filter((name) => !SERVER_ONLY_PACKAGES.has(name));
+  const localPackages = sortedPackageNames(runtime);
+  const localServerOnlyPackages = sortedServerOnlyPackageNames(runtime)
+    .filter((name) => SERVER_ONLY_PACKAGES.has(name));
   const runtimeMD5 = md5(readFileSync(flistPath));
   const distIndexSha256 = sha256(readFileSync(indexPath));
   const manifestPath = options.releaseManifestPath ? path.resolve(options.releaseManifestPath) : null;

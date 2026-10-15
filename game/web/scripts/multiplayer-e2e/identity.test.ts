@@ -21,7 +21,7 @@ function fixture() {
   const runtime = path.join(root, 'runtime');
   const dist = path.join(root, 'dist');
   mkdirSync(path.join(runtime, 'packages', 'freekill-core'), { recursive: true });
-  mkdirSync(path.join(runtime, 'packages', 'tqs_qa'), { recursive: true });
+  mkdirSync(path.join(runtime, 'qa_packages', 'tqs_qa'), { recursive: true });
   mkdirSync(dist, { recursive: true });
   const flist = 'fixture-flist\n';
   const index = '<!doctype html><title>candidate</title>\n';

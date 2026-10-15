@@ -44,6 +44,7 @@ const nativeInstallVerifierPath = path.resolve(here, '../scripts/verify-install.
 const nativeRunServerPath = path.resolve(here, '../scripts/run-server.sh');
 const nativeAmd64BootstrapPath = path.resolve(here, '../scripts/bootstrap-amd64.sh');
 const nativeLuaRuntimePath = path.resolve(here, '../scripts/lua-runtime.sh');
+const nativeFreekillPath = path.resolve(here, '../../../runtime/packages/freekill-core/lua/freekill.lua');
 
 test('native tqs_qa catalog keeps the browser scenario ids, seeds and commands in lockstep', () => {
   for (const scenario of nativeCatalog.scenarios) {
@@ -1319,12 +1320,13 @@ test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () 
   assert.match(verifier, /lua54_prepare "\$RUNTIME_DIR"/u);
 });
 
-test('native launcher keeps server-only QA packages out of the public MD5 flist', () => {
+test('native launcher preserves the native MD5 and loads QA outside public packages', () => {
   const launcher = fs.readFileSync(nativeRunServerPath, 'utf8');
-  assert.match(launcher, /publicize_flist/u);
-  assert.match(launcher, /packages\/tqs_qa\//u);
-  assert.match(launcher, /wait_for_public_flist "\$RUNTIME_DIR\/flist\.txt"/u);
-  assert.match(launcher, /server-only QA entries removed/u);
+  const freekill = fs.readFileSync(nativeFreekillPath, 'utf8');
+  assert.doesNotMatch(launcher, /publicize_flist|wait_for_public_flist/u);
+  assert.match(launcher, /exec "\$RUNTIME_DIR\/freekill-asio" --port "\$FREEKILL_PORT"/u);
+  assert.match(freekill, /dofile "qa_packages\/tqs_qa\/init\.lua"/u);
+  assert.doesNotMatch(freekill, /dofile "packages\/tqs_qa\/init\.lua"/u);
 });
 
 // Execute the package's actual startup validation/registration in Lua. JSON
@@ -1342,7 +1344,7 @@ function loadNativeCatalog(catalog) {
   try {
     const manifest = { schemaVersion: 1, package: 'tqs_qa', status: 'verified',
       sourceRevision: 'fixture', catalogSha256: 'fixture', packageSha256: 'fixture' };
-    const dir = path.join(root, 'packages/tqs_qa');
+    const dir = path.join(root, 'qa_packages/tqs_qa');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'package.manifest.json'), JSON.stringify(manifest));
     fs.writeFileSync(path.join(dir, 'catalog.json'), JSON.stringify(catalog));

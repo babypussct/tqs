@@ -50,7 +50,9 @@ done
 source_dir="$(CDPATH= cd -- "$source_dir" && pwd -P)"
 runtime_dir="$(CDPATH= cd -- "$runtime_dir" && pwd -P)"
 packages_dir="$runtime_dir/packages"
-destination="$packages_dir/tqs_qa"
+qa_packages_dir="$runtime_dir/qa_packages"
+destination="$qa_packages_dir/tqs_qa"
+legacy_destination="$packages_dir/tqs_qa"
 config_path="$runtime_dir/freekill.server.config.json"
 package_db="$packages_dir/packages.db"
 
@@ -58,12 +60,15 @@ assert_regular_tree "$source_dir"
 [[ -f "$source_dir/init.lua" && -f "$source_dir/catalog.json" ]] ||
   die "QA source must contain init.lua and catalog.json"
 [[ -d "$packages_dir" ]] || die "missing runtime packages directory: $packages_dir"
+mkdir -p "$qa_packages_dir"
 [[ -f "$package_db" ]] || die "missing package database: $package_db"
 command -v sqlite3 >/dev/null 2>&1 || die "sqlite3 is required"
 
 if [[ "$(sqlite3 "$package_db" "SELECT COUNT(*) FROM packages WHERE name='tqs_qa';")" != "0" ]]; then
   die "packages.db already contains tqs_qa; remove the server-only row before installing"
 fi
+[[ ! -e "$legacy_destination" ]] ||
+  die "legacy server-only package path exists; move packages/tqs_qa to qa_packages/tqs_qa before installing"
 
 revision="$(source_revision_for "$source_dir")"
 if [[ -n "$expected_revision" && "$revision" != "$expected_revision" ]]; then
@@ -75,7 +80,7 @@ for value in "$max_players" "$max_active_rooms" "$max_duration_seconds" "$max_ru
 done
 [[ "$room_prefix" == TQSQA/* ]] || die "room prefix must start with TQSQA/"
 
-temp_dir="$packages_dir/.tqs_qa-staging.$$"
+temp_dir="$qa_packages_dir/.tqs_qa-staging.$$"
 trap 'rm -rf -- "$temp_dir"' EXIT
 [[ ! -e "$temp_dir" ]] || die "staging path already exists: $temp_dir"
 mkdir -p "$temp_dir"
@@ -89,7 +94,7 @@ write_verified_manifest "$temp_dir" "$revision" "$catalog_hash" "$package_hash"
 rm -f -- "$tree_hash_input"
 
 if [[ -e "$destination" ]]; then
-  [[ "$destination" == "$packages_dir/tqs_qa" ]] || die "refusing to replace unexpected package path"
+  [[ "$destination" == "$qa_packages_dir/tqs_qa" ]] || die "refusing to replace unexpected package path"
   rm -rf -- "$destination"
 fi
 mv -- "$temp_dir" "$destination"
@@ -99,4 +104,4 @@ configure_qa_runtime "$config_path" "$allow_users" "$room_prefix" "$max_players"
 
 printf 'Installed verified tqs_qa package at %s\n' "$destination"
 printf 'QA source revision: %s\n' "$revision"
-printf 'QA server-only mode: enabled (not registered in packages.db)\n'
+printf 'QA server-only mode: enabled outside public packages/ (not registered in packages.db)\n'
