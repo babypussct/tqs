@@ -48,8 +48,8 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T12:05:46.433Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `c21aab539a14`.
+- Ghi lúc: 2026-10-15T12:12:03.203Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `47af998cc97b`.
 - File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -64,9 +64,9 @@ Tập trung guest access/recovery để có thể chạy native QA trên đúng 
 Ba commit gần nhất:
 
 ```text
+47af998c qa: audit custom hidden trigger gates
+2afccf83 docs: refresh hidden-rule checkpoint
 c21aab53 qa: lock hidden-general reveal contract
-2194267a docs: streamline hidden-skill QA handoff
-c73f6e04 docs: checkpoint hidden tiandu QA
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
