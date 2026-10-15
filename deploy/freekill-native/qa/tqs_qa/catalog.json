@@ -1479,6 +1479,82 @@
       "cards": []
     },
     {
+      "id": "hidden-liegong",
+      "title": "Hidden 黄忠 烈弓 reveals before the native damage-plus-one choice",
+      "seed": 1567522740,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-liegong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangzhong",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "liegong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "liegong-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-liegong-deputy",
+      "title": "Hidden deputy 黄忠 烈弓 reveals before the native damage-plus-one choice",
+      "seed": 1567522741,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-liegong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__huangzhong",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "liegong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "liegong-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
       "id": "hidden-kuanggu",
       "title": "Hidden 魏延 狂骨 reveals before the native Damage choice",
       "seed": 1567522744,

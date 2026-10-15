@@ -70,6 +70,8 @@ export type QaScenarioId =
   | 'hidden-tianxiang-deputy'
   | 'hidden-duanchang'
   | 'hidden-duanchang-deputy'
+  | 'hidden-liegong'
+  | 'hidden-liegong-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy';
 
@@ -123,6 +125,7 @@ export type QaScenarioTrigger =
   | 'hidden-tianxiang'
   | 'hidden-yingzi'
   | 'hidden-duanchang'
+  | 'hidden-liegong'
   | 'hidden-kuanggu';
 
 export interface QaScenarioPlan {
@@ -753,6 +756,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-duanchang',
     expectedCommand: 'AskForChoices',
   },
+  'hidden-liegong': {
+    version: 1,
+    id: 'hidden-liegong',
+    title: '黄忠 úp: Liệt Cung mở tướng trước lựa chọn tăng sát thương',
+    seed: 0x5d6e7fb4,
+    drawSequence: [trueName('slash'), trueName('peach')],
+    slots: [
+      { key: 'liegong-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'liegong-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-liegong',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-liegong-deputy': {
+    version: 1,
+    id: 'hidden-liegong-deputy',
+    title: '黄忠 phó tướng úp: Liệt Cung mở tướng trước lựa chọn tăng sát thương',
+    seed: 0x5d6e7fb5,
+    drawSequence: [trueName('slash'), trueName('peach')],
+    slots: [
+      { key: 'liegong-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'liegong-target-card', match: { trueName: 'peach' }, drawIndex: 1, owner: 'opponent', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-liegong',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-kuanggu': {
     version: 1,
     id: 'hidden-kuanggu',
@@ -804,6 +833,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-yingzi', 'hidden-yingzi-deputy',
   'hidden-tianxiang', 'hidden-tianxiang-deputy',
   'hidden-duanchang', 'hidden-duanchang-deputy',
+  'hidden-liegong', 'hidden-liegong-deputy',
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
 ];
 

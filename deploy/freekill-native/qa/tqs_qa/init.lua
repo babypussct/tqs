@@ -228,6 +228,44 @@ local function validateHiddenKuangguScenario(scenario)
   end
 end
 
+local function validateHiddenLiegongScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-liegong scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-liegong-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "hs__huangzhong"
+  local expectedDeputy = deputy and "hs__huangzhong" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-liegong actor must use the catalogued Huang Zhong main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-liegong target must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-liegong must expose AskForSkillInvoke as its prelight gate")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-liegong must reserve one actor Slash and one target Peach")
+  end
+  local actorCard, targetCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "liegong-card" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      actorCard = card
+    elseif card.key == "liegong-target-card" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "peach" then
+      targetCard = card
+    end
+  end
+  if not actorCard or not targetCard then
+    fail("hidden-liegong must reserve an actor Slash and a target Peach")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -746,6 +784,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenFankuiScenario(scenario)
   elseif scenario.trigger == "hidden-kuanggu" then
     validateHiddenKuangguScenario(scenario)
+  elseif scenario.trigger == "hidden-liegong" then
+    validateHiddenLiegongScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1096,6 +1136,8 @@ local function setupState(room, scenario, seed)
     drawEvents = {},
     kuangguBeforeHpChanged = false,
     kuangguDamage = false,
+    liegongTargetSpecified = false,
+    liegongDamage = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -1728,6 +1770,100 @@ local function triggerHiddenKuanggu(room, state)
   fk.qInfo(string.format("[tqs_qa] hidden-kuanggu before_hp_changed=true damage=true skill_effect=true moved=%d slot=%s main=%s deputy=%s revision=%s",
     moved, kuangguIsDeputy and "deputy" or "main", state.actor.general, state.actor.deputyGeneral,
     manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenLiegong(room, state)
+  -- 烈弓 is a TargetSpecified trigger.  Keep Huang Zhong face-down until the
+  -- real Slash reaches the native choice, then prove that the damage branch
+  -- adds one point and reveals only the slot owning the prelighted skill.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-liegong actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__liegong") then
+    fail("hidden-liegong must attach the hidden Liegong skill")
+  end
+  if state.actor:hasSkill("hs__liegong") then
+    fail("hidden-liegong must not be active before the prelighted target branch")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_liegong_gate",
+    prompt = "TQS QA: prelight Liệt Cung, rồi xác nhận để dùng Sát.",
+  })
+  if not gate then
+    fail("hidden-liegong QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__liegong") then
+    fail("hidden-liegong must be prelighted before the TargetSpecified branch")
+  end
+
+  local cardId = state.slotCards["liegong-card"]
+  local targetCardId = state.slotCards["liegong-target-card"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) or
+      not targetCardId or not table.contains(state.target:getCardIds(Player.Hand), targetCardId) then
+    fail("hidden-liegong must put the reserved Slash and target Peach in the native hands")
+  end
+  if #state.actor:getCardIds(Player.Hand) ~= 1 or #state.target:getCardIds(Player.Hand) ~= 1 then
+    fail("hidden-liegong must keep the actor and target hands deterministic")
+  end
+  if state.actor.hp ~= state.target.hp then
+    fail("hidden-liegong must start with equal full HP so its source predicate is true")
+  end
+
+  local targetHpBefore = state.target.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_liegong_damage",
+    prompt = "TQS QA: dùng Sát lên đối thủ để kiểm tra Liệt Cung.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-liegong must receive the reserved actor Slash against the target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__liegong" and entry.player == state.actor.id
+  end)
+  local liegongIsDeputy = state.scenario == "hidden-liegong-deputy"
+  local revealedCorrectSlot = liegongIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__huangzhong"
+    or not liegongIsDeputy and state.actor.general == "hs__huangzhong" and state.actor.deputyGeneral == "anjiang"
+  local damage = 0
+  for _, entry in ipairs(state.damageEvents) do
+    if entry.step == 1 and entry.to == state.target.id then damage = damage + entry.amount end
+  end
+
+  if not state.liegongTargetSpecified or not state.liegongDamage or damage ~= 2 or
+      targetHpBefore - state.target.hp ~= 2 or not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Liegong must mark TargetSpecified/Damage, reveal Huang Zhong and add one damage")
+  end
+
+  state.hiddenLiegongBranch = "positive-prelight-target-specified-damage-plus-one"
+  room:sendLog{
+    type = "[TQS QA] Hidden Liệt Cung: TargetSpecified=%arg; Damage=%arg2; SkillEffect=%arg3; sát thương=2; mở tướng=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = liegongIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-liegong target_specified=true damage=2 skill_effect=true revealed=%s slot=%s main=%s deputy=%s revision=%s",
+    tostring(revealedCorrectSlot), liegongIsDeputy and "deputy" or "main", state.actor.general,
+    state.actor.deputyGeneral, manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -3399,7 +3535,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-duanchang" or
       state.scenario == "hidden-duanchang-deputy" or
       state.scenario == "hidden-kuanggu" or
-      state.scenario == "hidden-kuanggu-deputy") and
+      state.scenario == "hidden-kuanggu-deputy" or
+      state.scenario == "hidden-liegong" or
+      state.scenario == "hidden-liegong-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -3412,7 +3550,8 @@ for _, eventName in ipairs({fk.BeforeHpChanged, fk.Damage}) do
     global = true, priority = -1000,
     can_trigger = function(self, event, target, player, data)
       local state = stateFor(player.room)
-      if not state or (state.scenario ~= "hidden-kuanggu" and state.scenario ~= "hidden-kuanggu-deputy") or
+      if not state or (state.scenario ~= "hidden-kuanggu" and state.scenario ~= "hidden-kuanggu-deputy" and
+          state.scenario ~= "hidden-liegong" and state.scenario ~= "hidden-liegong-deputy") or
           not state.currentDamageStep or player ~= player.room.players[1] or not data then
         return false
       end
@@ -3424,13 +3563,32 @@ for _, eventName in ipairs({fk.BeforeHpChanged, fk.Damage}) do
     on_trigger = function(self, event, target, player, data)
       local state = stateFor(player.room)
       if eventName == fk.BeforeHpChanged then
-        state.kuangguBeforeHpChanged = true
+        if state.scenario == "hidden-kuanggu" or state.scenario == "hidden-kuanggu-deputy" then
+          state.kuangguBeforeHpChanged = true
+        end
       else
-        state.kuangguDamage = true
+        if state.scenario == "hidden-kuanggu" or state.scenario == "hidden-kuanggu-deputy" then
+          state.kuangguDamage = true
+        elseif state.scenario == "hidden-liegong" or state.scenario == "hidden-liegong-deputy" then
+          state.liegongDamage = true
+        end
       end
     end,
   })
 end
+
+director:addEffect(fk.TargetSpecified, {
+  global = true, priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-liegong" or state.scenario == "hidden-liegong-deputy") and
+      state.currentDamageStep and player == player.room.players[1] and data and data.from == state.actor and
+      data.card and data.card.trueName == "slash"
+  end,
+  on_trigger = function(self, event, target, player, data)
+    stateFor(player.room).liegongTargetSpecified = true
+  end,
+})
 
 -- Observe engine events once per room; no card ids are published in QA logs.
 for _, eventName in ipairs({fk.CardUsing, fk.CardResponding}) do
@@ -3558,6 +3716,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenFankui(room, state)
     elseif scenario.trigger == "hidden-kuanggu" then
       triggerHiddenKuanggu(room, state)
+    elseif scenario.trigger == "hidden-liegong" then
+      triggerHiddenLiegong(room, state)
     elseif scenario.trigger == "hidden-reveal" then
       triggerHiddenReveal(room, state)
     elseif scenario.trigger == "hidden-active" then

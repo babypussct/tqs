@@ -29,6 +29,7 @@ const tianxiangSkillPath = path.resolve(here, '../../../runtime/packages/hegemon
 const duanchangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
 const kuangguSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/kuanggu.lua');
+const liegongSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/liegong.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -928,6 +929,45 @@ test('hidden-kuanggu locks close-range Damage marker, choice and reveal-before-e
   assert.match(kuanggu, /data\.damageEvent\.extra_data.*kuanggucheck/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-kuanggu"[\s\S]*triggerHiddenKuanggu\(room, state\)/u);
   assert.match(qaInit, /hidden-kuanggu[\s\S]*BeforeHpChanged[\s\S]*fk\.Damage/u);
+});
+
+test('hidden-liegong locks TargetSpecified damage-plus-one and reveal-before-effect for both slots', () => {
+  const expected = {
+    'hidden-liegong': {
+      seed: 0x5d6e7fb4,
+      actor: { general: 'hs__huangzhong', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-liegong-deputy': {
+      seed: 0x5d6e7fb5,
+      actor: { general: 'hs__zhaoyun', deputy: 'hs__huangzhong', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-liegong', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'liegong-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
+      { key: 'liegong-target-card', match: { trueName: 'peach' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const liegong = fs.readFileSync(liegongSkillPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(liegong, /name = "hs__liegong"/u);
+  assert.match(liegong, /liegong:addEffect\(fk\.TargetSpecified/u);
+  assert.match(liegong, /data\.additionalDamage = \(data\.additionalDamage or 0\) \+ 1/u);
+  assert.match(liegong, /hs__liegong_damage/u);
+  assert.match(liegong, /room:askToChoice/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-liegong"[\s\S]*triggerHiddenLiegong\(room, state\)/u);
+  assert.match(qaInit, /hidden-liegong[\s\S]*fk\.TargetSpecified[\s\S]*liegongTargetSpecified/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {
