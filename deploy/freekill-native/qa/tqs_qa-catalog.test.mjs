@@ -22,6 +22,7 @@ const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
 const guanxingSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua');
+const yingziSkillPath = path.resolve(here, '../../../runtime/packages/standard_ex/pkg/general/skills/yingzi.lua');
 const tianxiangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua');
 const duanchangSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/duanchang.lua');
 const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/standard/pkg/skills/fankui.lua');
@@ -550,6 +551,44 @@ test('hidden-guanxing locks EventPhaseStart reveal and native arrange for both s
   assert.match(guanxing, /room:askToGuanxing\(player/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-guanxing"[\s\S]*triggerHiddenGuanxing\(room, state\)/u);
   assert.match(qaInit, /hidden-guanxing[\s\S]*AskForArrangeCards/iu);
+});
+
+test('hidden-yingzi locks compulsory DrawNCards reveal and extra draw for both slots', () => {
+  const expected = {
+    'hidden-yingzi': {
+      seed: 0x5d6e7fb2,
+      actor: { general: 'hs__zhouyu', deputy: 'hs__daqiao', kingdom: 'wu' },
+    },
+    'hidden-yingzi-deputy': {
+      seed: 0x5d6e7fb3,
+      actor: { general: 'hs__daqiao', deputy: 'hs__zhouyu', kingdom: 'wu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-yingzi', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} readiness command drift`);
+    assert.equal(scenario.playerCount, 2, `${id} player count drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} source roster drift`);
+    assert.deepEqual(scenario.cards, []);
+  }
+
+  const yingzi = fs.readFileSync(yingziSkillPath, 'utf8');
+  const hegemonyStandard = fs.readFileSync(
+    path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/init.lua'), 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(yingzi, /name = "ex__yingzi"/u);
+  assert.match(yingzi, /tags = \{ Skill\.Compulsory \}/u);
+  assert.match(yingzi, /yingzi:addEffect\(fk\.DrawNCards/u);
+  assert.match(yingzi, /data\.n = data\.n \+ 1/u);
+  assert.match(hegemonyStandard, /hs__zhouyu[\s\S]*addSkills\{ "ex__yingzi", "ex__fanjian" \}/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-yingzi"[\s\S]*triggerHiddenYingzi\(room, state\)/u);
+  assert.match(qaInit, /hidden-yingzi[\s\S]*fk\.AfterDrawNCards[\s\S]*after_draw_n/u);
 });
 
 test('hidden-tianxiang locks damage redirect, card/target selection and reveal for both slots', () => {

@@ -549,6 +549,31 @@ local function validateHiddenGuanxingScenario(scenario)
   end
 end
 
+local function validateHiddenYingziScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-yingzi scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-yingzi-deputy"
+  local expectedMain = deputy and "hs__daqiao" or "hs__zhouyu"
+  local expectedDeputy = deputy and "hs__zhouyu" or "hs__daqiao"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "wu" then
+    fail("hidden-yingzi actor must use the catalogued Zhou Yu main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-yingzi source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-yingzi must expose AskForSkillInvoke only for the prelight readiness gate")
+  end
+  if #scenario.cards ~= 0 then
+    fail("hidden-yingzi must let the native DrawNCards event own the draw")
+  end
+end
+
 local function validateHiddenTianxiangScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-tianxiang scenarios must define exactly two players")
@@ -642,6 +667,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenXiaojiScenario(scenario)
   elseif scenario.trigger == "hidden-guanxing" then
     validateHiddenGuanxingScenario(scenario)
+  elseif scenario.trigger == "hidden-yingzi" then
+    validateHiddenYingziScenario(scenario)
   elseif scenario.trigger == "hidden-tianxiang" then
     validateHiddenTianxiangScenario(scenario)
   elseif scenario.trigger == "hidden-duanchang" then
@@ -959,6 +986,7 @@ local function setupState(room, scenario, seed)
     cardEvents = {},
     skillMoves = {},
     damageEvents = {},
+    drawEvents = {},
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2686,6 +2714,100 @@ local function triggerHiddenGuanxing(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenYingzi(room, state)
+  -- 英姿 is compulsory on fk.DrawNCards. The QA pause is deliberately
+  -- separate from that source event: it gives the browser a real chance to
+  -- prelight the hidden skill while both general slots are still anjiang.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-yingzi actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("ex__yingzi") then
+    fail("hidden-yingzi must attach the hidden ex__yingzi skill")
+  end
+  if state.actor:hasSkill("ex__yingzi") then
+    fail("hidden-yingzi must not be active before the prelighted draw trigger")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_yingzi_gate",
+    prompt = "TQS QA: prelight 英姿, rồi xác nhận để bắt đầu pha rút bài.",
+  })
+  if not gate then
+    fail("hidden-yingzi readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "ex__yingzi") then
+    fail("hidden-yingzi must be prelighted before the DrawNCards branch")
+  end
+
+  local beforeHand = #state.actor:getCardIds(Player.Hand)
+  state.currentDamageStep = 1
+  room:setPlayerProperty(state.actor, "phase", Player.Draw)
+  room:broadcastProperty(state.actor, "phase")
+  local phaseData = {
+    who = state.actor,
+    reason = "game_rule",
+    phase = Player.Draw,
+  }
+  room.logic:trigger(fk.EventPhaseStart, state.actor, phaseData)
+  room.logic:trigger(fk.EventPhaseProceeding, state.actor, phaseData)
+
+  -- This is the same draw-phase sequence used by the native Phase event:
+  -- base count 2 -> fk.DrawNCards modifiers -> actual draw -> AfterDrawNCards.
+  local drawData = {
+    who = state.actor,
+    reason = "game_rule",
+    phase = Player.Draw,
+    n = 2,
+  }
+  room.logic:trigger(fk.DrawNCards, state.actor, drawData)
+  if drawData.n > 0 then
+    room:drawCards(state.actor, drawData.n, "phase_draw")
+  end
+  room.logic:trigger(fk.AfterDrawNCards, state.actor, drawData)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "ex__yingzi" and entry.player == state.actor.id
+  end)
+  local drawEvent = table.find(state.drawEvents, function(entry)
+    return entry.step == 1 and entry.player == state.actor.id and entry.stage == "after"
+  end)
+  local yingziIsDeputy = state.scenario == "hidden-yingzi-deputy"
+  local revealedCorrectSlot = yingziIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__zhouyu"
+    or not yingziIsDeputy and state.actor.general == "hs__zhouyu" and state.actor.deputyGeneral == "anjiang"
+  local afterHand = #state.actor:getCardIds(Player.Hand)
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Yingzi must run a real SkillEffect and reveal Zhou Yu in its catalogued slot")
+  end
+  if not drawEvent or drawEvent.n ~= 3 then
+    fail(string.format("hidden Yingzi must raise DrawNCards from 2 to 3, observed %s", drawEvent and drawEvent.n or "none"))
+  end
+  if afterHand ~= beforeHand + 3 then
+    fail(string.format("hidden Yingzi must draw three cards, hand changed from %d to %d", beforeHand, afterHand))
+  end
+  if state.actor:isFakeSkill("ex__yingzi") or not state.actor:hasSkill("ex__yingzi") then
+    fail("hidden Yingzi must convert from fake to active after the native DrawNCards effect")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden 英姿: DrawNCards=%arg; AfterDrawNCards=%arg2; SkillEffect=%arg3; mở tướng=%arg4; bốc bài=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = tostring(drawEvent ~= nil),
+    arg3 = "true",
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(drawEvent and drawEvent.n or 0),
+    arg6 = yingziIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-yingzi draw_n_cards=true after_draw_n=%d effect=true slot=%s revealed=%s drawn=%d revision=%s",
+    drawEvent.n, yingziIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), drawEvent.n,
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local function triggerHiddenTianxiang(room, state)
   -- 天香 is a real DetermineDamageInflicted interaction: the hidden owner
   -- must remain fake until the player has selected a heart card and a target.
@@ -2895,6 +3017,8 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-xiaoji-deputy" or
       state.scenario == "hidden-guanxing" or
       state.scenario == "hidden-guanxing-deputy" or
+      state.scenario == "hidden-yingzi" or
+      state.scenario == "hidden-yingzi-deputy" or
       state.scenario == "hidden-tianxiang" or
       state.scenario == "hidden-tianxiang-deputy" or
       state.scenario == "hidden-duanchang" or
@@ -2954,6 +3078,25 @@ director:addEffect(fk.AfterCardsMove, {
     end
   end,
 })
+
+for _, eventName in ipairs({fk.DrawNCards, fk.AfterDrawNCards}) do
+  director:addEffect(eventName, {
+    global = true, priority = -1000,
+    can_trigger = function(self, event, target, player, data)
+      local state = stateFor(player.room)
+      return state and state.currentDamageStep and target == state.actor and player == player.room.players[1]
+    end,
+    on_trigger = function(self, event, target, player, data)
+      local state = stateFor(player.room)
+      table.insert(state.drawEvents, {
+        step = state.currentDamageStep,
+        stage = eventName == fk.DrawNCards and "before" or "after",
+        player = target.id,
+        n = data.n,
+      })
+    end,
+  })
+end
 
 director:addEffect(fk.GamePrepared, {
   global = true,
@@ -3035,6 +3178,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenXiaoji(room, state)
     elseif scenario.trigger == "hidden-guanxing" then
       triggerHiddenGuanxing(room, state)
+    elseif scenario.trigger == "hidden-yingzi" then
+      triggerHiddenYingzi(room, state)
     elseif scenario.trigger == "hidden-tianxiang" then
       triggerHiddenTianxiang(room, state)
     elseif scenario.trigger == "hidden-duanchang" then

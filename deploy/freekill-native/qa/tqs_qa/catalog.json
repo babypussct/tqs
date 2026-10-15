@@ -1317,6 +1317,48 @@
         }
       },
       "cards": []
+    },
+    {
+      "id": "hidden-yingzi",
+      "title": "Hidden 周瑜 英姿 modifies the native DrawNCards count",
+      "seed": 1567522738,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yingzi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-yingzi-deputy",
+      "title": "Hidden deputy 周瑜 英姿 modifies the native DrawNCards count",
+      "seed": 1567522739,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yingzi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__daqiao",
+          "deputy": "hs__zhouyu",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
     }
   ]
 }
