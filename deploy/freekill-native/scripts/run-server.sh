@@ -38,11 +38,13 @@ publicize_flist() {
 
 wait_for_public_flist() {
   local flist="$1"
+  local owner_pid="${2:-$$}"
   local before=''
   if [[ -f "$flist" ]]; then
     before="$(stat -c '%s:%Y:%y' "$flist" 2>/dev/null || true)"
   fi
   for _ in $(seq 1 100); do
+    kill -0 "$owner_pid" 2>/dev/null || return 1
     [[ -f "$flist" ]] || { sleep 0.1; continue; }
     local first second
     first="$(stat -c '%s:%Y:%y' "$flist" 2>/dev/null || true)"
@@ -55,7 +57,10 @@ wait_for_public_flist() {
   done
   # A pre-existing public flist is still safe; a server that never produced a
   # flist is not, because clients cannot pass the MD5 handshake.
-  publicize_flist "$flist"
+  publicize_flist "$flist" || {
+    kill -TERM "$owner_pid" 2>/dev/null || true
+    return 1
+  }
 }
 
 RUNTIME_DIR="${FREEKILL_RUNTIME_DIR:-$FREEKILL_INSTALL_ROOT/current}"
@@ -69,25 +74,9 @@ cd "$RUNTIME_DIR"
 lua54_prepare "$RUNTIME_DIR" || die 'Lua 5.4 runtime preflight failed; server was not started'
 printf 'Lua runtime: %s\n' "$TQS_LUA54_BIN"
 
-if command -v setsid >/dev/null 2>&1; then
-  setsid "$RUNTIME_DIR/freekill-asio" --port "$FREEKILL_PORT" &
-else
-  "$RUNTIME_DIR/freekill-asio" --port "$FREEKILL_PORT" &
-fi
-server_pid=$!
-
-stop_server() {
-  if kill -0 "$server_pid" 2>/dev/null; then
-    kill -TERM -- "-$server_pid" 2>/dev/null || kill -TERM "$server_pid" 2>/dev/null || true
-  fi
-}
-trap stop_server INT TERM HUP
-
-wait_for_public_flist "$RUNTIME_DIR/flist.txt" || {
-  stop_server
-  wait "$server_pid" 2>/dev/null || true
-  die 'native server did not produce a public flist.txt'
-}
-
-trap - INT TERM HUP
-wait "$server_pid"
+# Keep the tmux pseudo-TTY attached: freekill-asio exposes an interactive CLI
+# and exits when its stdin is detached.  The watcher runs beside the native
+# process while this shell is replaced by exec, so signals still reach the
+# original native foreground process exactly as before.
+wait_for_public_flist "$RUNTIME_DIR/flist.txt" "$$" &
+exec "$RUNTIME_DIR/freekill-asio" --port "$FREEKILL_PORT"
