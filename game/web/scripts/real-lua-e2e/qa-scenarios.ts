@@ -47,7 +47,9 @@ export type QaScenarioId =
   | 'hidden-qianxun'
   | 'hidden-qianxun-deputy'
   | 'hidden-qianxun-indulgence'
-  | 'hidden-qianxun-indulgence-deputy';
+  | 'hidden-qianxun-indulgence-deputy'
+  | 'hidden-kongcheng'
+  | 'hidden-kongcheng-deputy';
 
 export type QaCardMatcher =
   | { trueName: string }
@@ -87,7 +89,8 @@ export type QaScenarioTrigger =
   | 'hidden-luoshen'
   | 'hidden-jizhi'
   | 'hidden-mingshi'
-  | 'hidden-qianxun';
+  | 'hidden-qianxun'
+  | 'hidden-kongcheng';
 
 export interface QaScenarioPlan {
   version: 1;
@@ -488,6 +491,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-qianxun',
     expectedCommand: 'AskForUseActiveSkill',
   },
+  'hidden-kongcheng': {
+    version: 1,
+    id: 'hidden-kongcheng',
+    title: 'Gia Cát Lượng úp và hết bài: Không Thành hủy mục tiêu Quyết Đấu',
+    seed: 0x5d6e7fa2,
+    drawSequence: [trueName('duel')],
+    slots: [slot('kongcheng-duel', trueName('duel'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-kongcheng',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'hidden-kongcheng-deputy': {
+    version: 1,
+    id: 'hidden-kongcheng-deputy',
+    title: 'Gia Cát Lượng phó tướng úp và hết bài: Không Thành hủy mục tiêu Quyết Đấu',
+    seed: 0x5d6e7fa3,
+    drawSequence: [trueName('duel')],
+    slots: [slot('kongcheng-duel', trueName('duel'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-kongcheng',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
 };
 
 export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
@@ -502,6 +525,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-mingshi', 'hidden-mingshi-deputy',
   'hidden-qianxun', 'hidden-qianxun-deputy',
   'hidden-qianxun-indulgence', 'hidden-qianxun-indulgence-deputy',
+  'hidden-kongcheng', 'hidden-kongcheng-deputy',
 ];
 
 export class QaScenarioError extends Error {
@@ -641,6 +665,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
         plan.slots[1].match.trueName !== 'peach') {
       throw new QaScenarioError(`${plan.id} must reserve an opponent Snatch and actor Peach for Khiêm Tốn`);
+    }
+  }
+  if (plan.trigger === 'hidden-kongcheng') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'kongcheng-duel' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel') {
+      throw new QaScenarioError(`${plan.id} must reserve one opponent Duel for Không Thành`);
     }
   }
 }

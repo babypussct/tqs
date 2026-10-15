@@ -307,6 +307,9 @@ const api = {
   acknowledgeQianxunPrelight: (prelight: boolean) => {
     serverNotify('PrelightSkill', serverCbor(`{'hs__qianxun', ${prelight}}`));
   },
+  acknowledgeKongchengPrelight: (prelight: boolean) => {
+    serverNotify('PrelightSkill', serverCbor(`{'hs__kongcheng', ${prelight}}`));
+  },
   prelightWireHex: () => conn.lua.eval<string>(`local encoders = cbor.type_encoders
     local previous = encoders.string
     encoders.string = encoders.utf8string
@@ -559,6 +562,23 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__qianxun', true}"));
         requestId = sendRequest('AskForSkillInvoke',
           `{\'tqs_qa_hidden_qianxun_gate\', \'TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục' : 'Thuận Thủ'}.\'}`);
+        break;
+      }
+      case 'hidden-kongcheng':
+      case 'hidden-kongcheng-deputy': {
+        // Kongcheng is compulsory on TargetConfirming only after the actor's
+        // hand is empty. The local fixture mirrors the hidden pair and its
+        // prelight gate; native QA owns the real empty-hand Duel outcome.
+        const deputy = scenarioId === 'hidden-kongcheng-deputy';
+        const main = deputy ? 'hs__zhaoyun' : 'hs__zhugeliang';
+        const deputyGeneral = deputy ? 'hs__zhugeliang' : 'hs__zhaoyun';
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_general', '${main}'}`));
+        serverNotify('SetPlayerMark', serverCbor(`{17, '__heg_deputy', '${deputyGeneral}'}`));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));
+        serverNotify('PropertyUpdate', serverCbor("{17, 'deputyGeneral', 'anjiang'}"));
+        serverNotify('AddSkill', serverCbor("{17, 'hs__kongcheng', true}"));
+        requestId = sendRequest('AskForSkillInvoke',
+          "{'tqs_qa_hidden_kongcheng_gate', 'TQS QA: prelight Không Thành, rồi xác nhận để đối thủ dùng Quyết Đấu.'}");
         break;
       }
       case 'hidden-reveal':

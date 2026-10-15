@@ -408,6 +408,34 @@ local function validateHiddenQianxunScenario(scenario)
   end
 end
 
+local function validateHiddenKongchengScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-kongcheng scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-kongcheng-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "hs__zhugeliang"
+  local expectedDeputy = deputy and "hs__zhugeliang" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-kongcheng actor must use the catalogued Zhuge Liang main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-kongcheng source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" then
+    fail("hidden-kongcheng must expose AskForUseActiveSkill for the real Duel request")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "kongcheng-duel" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "duel" then
+    fail("hidden-kongcheng must reserve one source Duel")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -438,6 +466,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenMingshiScenario(scenario)
   elseif scenario.trigger == "hidden-qianxun" then
     validateHiddenQianxunScenario(scenario)
+  elseif scenario.trigger == "hidden-kongcheng" then
+    validateHiddenKongchengScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -2048,6 +2078,96 @@ local function triggerHiddenQianxun(room, state)
   room:gameOver("")
 end
 
+local function triggerHiddenKongcheng(room, state)
+  -- 空城's TargetConfirming branch is conditional on a genuinely empty hand.
+  -- Empty the actor through the native move path before the real Duel so the
+  -- scenario proves the source predicate instead of merely proving reveal.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-kongcheng actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("hs__kongcheng") then
+    fail("hidden-kongcheng must attach the hidden Kongcheng skill")
+  end
+  if state.actor:hasSkill("hs__kongcheng") then
+    fail("hidden-kongcheng must not be active before TargetConfirming")
+  end
+  state.actor:throwAllCards("h", "tqs_qa")
+  if not state.actor:isKongcheng() then
+    fail("hidden-kongcheng actor must be empty-handed before the Duel gate")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_kongcheng_gate",
+    prompt = "TQS QA: prelight Không Thành, rồi xác nhận để đối thủ dùng Quyết Đấu.",
+  })
+  if not gate then
+    fail("hidden-kongcheng readiness gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "hs__kongcheng") then
+    fail("hidden-kongcheng must be prelighted before TargetConfirming")
+  end
+
+  local duelId = state.slotCards["kongcheng-duel"]
+  if not duelId or not table.contains(state.target:getCardIds(Player.Hand), duelId) then
+    fail("hidden-kongcheng must put its reserved Duel in the source hand")
+  end
+
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { duelId },
+    skill_name = "tqs_qa_hidden_kongcheng_duel",
+    prompt = "TQS QA: dùng Quyết Đấu lên Gia Cát Lượng để kiểm tra Không Thành.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= duelId or use.card.trueName ~= "duel" or
+      #use.tos ~= 1 or use.tos[1] ~= state.actor then
+    fail("hidden-kongcheng must receive the reserved Duel against the actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "hs__kongcheng" and entry.player == state.actor.id
+  end)
+  local kongchengIsDeputy = state.scenario == "hidden-kongcheng-deputy"
+  local revealedCorrectSlot = kongchengIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "hs__zhugeliang"
+    or not kongchengIsDeputy and state.actor.general == "hs__zhugeliang" and state.actor.deputyGeneral == "anjiang"
+  local targetCancelled = room:getCardArea(duelId) == Card.DiscardPile and
+    state.actor:isKongcheng()
+  if not effect or effect.fake or not revealedCorrectSlot then
+    fail("prelighted hidden Kongcheng must run a real SkillEffect and reveal Zhuge Liang in its catalogued slot")
+  end
+  if not targetCancelled then
+    fail("hidden Kongcheng must cancel the valid Duel target while empty-handed")
+  end
+  if state.actor:isFakeSkill("hs__kongcheng") or not state.actor:hasSkill("hs__kongcheng") then
+    fail("hidden Kongcheng must convert from fake to active after reveal")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Không Thành: TargetConfirming Quyết Đấu=%arg; SkillEffect=%arg2; hết bài=%arg3; mở tướng=%arg4; hủy mục tiêu=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(state.actor:isKongcheng()),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = tostring(targetCancelled),
+    arg6 = kongchengIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-kongcheng target_confirming=duel effect=true empty_hand=true slot=%s revealed=%s cancelled=%s revision=%s",
+    kongchengIsDeputy and "deputy" or "main", tostring(revealedCorrectSlot), tostring(targetCancelled), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local director = fk.CreateSkill {
   name = "tqs_qa_director&",
 }
@@ -2069,7 +2189,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-mingshi" or state.scenario == "hidden-mingshi-deputy" or
       state.scenario == "hidden-qianxun" or state.scenario == "hidden-qianxun-deputy" or
       state.scenario == "hidden-qianxun-indulgence" or
-      state.scenario == "hidden-qianxun-indulgence-deputy") and
+      state.scenario == "hidden-qianxun-indulgence-deputy" or
+      state.scenario == "hidden-kongcheng" or
+      state.scenario == "hidden-kongcheng-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -2195,6 +2317,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenMingshi(room, state)
     elseif scenario.trigger == "hidden-qianxun" then
       triggerHiddenQianxun(room, state)
+    elseif scenario.trigger == "hidden-kongcheng" then
+      triggerHiddenKongcheng(room, state)
     end
   end,
 })

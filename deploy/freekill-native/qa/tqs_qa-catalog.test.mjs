@@ -326,6 +326,42 @@ test('hidden-qianxun locks BeforeCardsMove cancellation of Indulgence for both s
   assert.match(qaInit, /hidden-qianxun-indulgence[\s\S]*qianxun-indulgence/u);
 });
 
+test('hidden-kongcheng locks empty-hand TargetConfirming cancellation for both slots', () => {
+  const expected = {
+    'hidden-kongcheng': {
+      seed: 0x5d6e7fa2,
+      actor: { general: 'hs__zhugeliang', deputy: 'hs__zhaoyun', kingdom: 'shu' },
+    },
+    'hidden-kongcheng-deputy': {
+      seed: 0x5d6e7fa3,
+      actor: { general: 'hs__zhaoyun', deputy: 'hs__zhugeliang', kingdom: 'shu' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-kongcheng', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill', `${id} acceptance command drift`);
+    assert.deepEqual(scenario.players.actor, contract.actor, `${id} actor slot drift`);
+    assert.deepEqual(scenario.players.target, {
+      general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei',
+    }, `${id} Duel source roster drift`);
+    assert.deepEqual(scenario.cards, [
+      { key: 'kongcheng-duel', match: { trueName: 'duel' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const kongcheng = fs.readFileSync(path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/kongcheng.lua'), 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(kongcheng, /name = "hs__kongcheng"/u);
+  assert.match(kongcheng, /player:isKongcheng()/u);
+  assert.match(kongcheng, /kongcheng:addEffect\(fk\.TargetConfirming/u);
+  assert.match(kongcheng, /data\.card\.trueName == "slash" or data\.card\.name == "duel"/u);
+  assert.match(kongcheng, /data:cancelTarget\(player\)/u);
+  assert.match(qaInit, /scenario\.trigger == "hidden-kongcheng"[\s\S]*triggerHiddenKongcheng\(room, state\)/u);
+});
+
 test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'hidden-reveal');
   assert.ok(scenario, 'hidden-reveal catalog entry is required');
