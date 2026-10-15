@@ -54,21 +54,20 @@ Tập trung guest access/recovery để cài và đọc manifest `tqs_qa` trên 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T13:58:32.233Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `eb4e9570f57a`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T13:58:42.381Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `93b707502ec2`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+93b70750 docs: record kuanggu native evidence and release gates
 eb4e9570 test: fix kuanggu owner trace assertion
 c8078be2 qa: cover hidden kuanggu damage reveal path
-d28a0679 hotfix: publish official Vietnamese translation catalog
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
