@@ -59,23 +59,20 @@ Giữ Render candidate và Oracle replacement theo cùng release identity; hiệ
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-15T19:01:44.970Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `a1dde287b387`.
-- File thay đổi hiển thị: 4 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-15T19:01:50.397Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `529aa83e38f2`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
- M docs/web-client/hosting/CP08_RENDER.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+529aa83e docs: index current hidden trigger hosted batch
 a1dde287 docs: refresh codex handoff snapshot
 ee8bd8f8 docs: record current jianxiong hosted parity
-8f149537 docs: refresh codex handoff snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
