@@ -154,6 +154,9 @@ export function localizedGameLog(raw: string): string {
     .replaceAll('星启', VI_ADDITIONS.os__xingqi)
     .replaceAll('〖巨贾〗', `〖${VI_ADDITIONS.ofl_heg__jugu}〗`)
     .replaceAll('〖资援〗', `〖${VI_ADDITIONS.ofl_heg__ziyuan}〗`)
+    // C++ may expand the Hegemony wild marker before the browser receives
+    // the log. The Lua key is @!!wild, so keep this alias display-only.
+    .replaceAll('〖野心家〗', `〖${VI_ADDITIONS['@!!wild']}〗`)
     // Already-expanded public C++ GameLog skill names from the pinned variants.
     // Match skill markers only; never translate unknown text or wire identifiers.
     .replaceAll('〖祸水〗', `〖${VI_ADDITIONS.huoshui}〗`)

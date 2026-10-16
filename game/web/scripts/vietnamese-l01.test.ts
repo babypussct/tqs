@@ -81,6 +81,8 @@ test('C01 public log is localized only in exact skill markers', () => {
       'Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Họa Thủy〗'],
     ['Trâu Thị/Sĩ Nhiếp đã phát động kỹ năng〖倾城〗 và〖避乱〗',
       'Trâu Thị / Sĩ Nhiếp đã phát động kỹ năng〖Khuynh Thành〗 và〖Tị Loạn〗'],
+    ['Tôn Sâm / Tướng ẩn nhận 〖野心家〗',
+      'Tôn Sâm / Tướng ẩn nhận 〖Dã tâm gia〗'],
   ] as const;
   for (const [source, expected] of examples) assert.equal(localizedGameLog(source), expected);
   assert.equal(localizedGameLog('Trâu Thị đã phát động kỹ năng 礼下'), 'Trâu Thị đã phát động kỹ năng Lễ Hạ');
