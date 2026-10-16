@@ -5144,6 +5144,9 @@ director:addEffect(fk.EventPhaseStart, {
   on_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
     state.hiddenFuyinPending = false
+    -- Let the real clients finish applying the initial hand/draw-pile move
+    -- notifications before the deferred synchronization request is sent.
+    player.room:delay(1500)
     -- Hegemony reveals the first player's pair before EventPhaseStart. Re-hide
     -- the catalogued slots here so the actual TargetConfirmed test begins in
     -- the same hidden-general state as a player who kept both generals down.
@@ -5164,6 +5167,7 @@ director:addEffect(fk.EventPhaseStart, {
   on_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
     state.hiddenJilixPending = false
+    player.room:delay(1500)
     -- Hegemony reveals the first player's pair before EventPhaseStart. Re-hide
     -- both slots so the test reaches the source TargetConfirmed branch with
     -- the same hidden state as a real player who kept both generals down.
