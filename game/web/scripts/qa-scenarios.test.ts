@@ -12,16 +12,20 @@ import {
 
 function fakeCards(): QaCardDescriptor[] {
   return [
-    { id: 1, name: 'slash', trueName: 'slash', type: 'basic' },
-    { id: 2, name: 'peach', trueName: 'peach', type: 'basic' },
-    { id: 3, name: 'heg__nullification', trueName: 'nullification', type: 'trick' },
-    { id: 4, name: 'blade', trueName: 'blade', type: 'equip' },
-    { id: 5, name: 'jink', trueName: 'jink', type: 'basic' },
-    { id: 6, name: 'duel', trueName: 'duel', type: 'trick' },
-    { id: 7, name: 'fire_attack', trueName: 'fire_attack', type: 'trick' },
-    { id: 8, name: 'wine', trueName: 'analeptic', type: 'basic' },
-    ...[9, 10, 11].map((id) => ({ id, name: 'slash', trueName: 'slash', type: 'basic' })),
-    { id: 12, name: 'peach', trueName: 'peach', type: 'basic' },
+    { id: 1, name: 'slash', trueName: 'slash', color: 'red', type: 'basic' },
+    { id: 2, name: 'peach', trueName: 'peach', color: 'red', type: 'basic' },
+    { id: 3, name: 'heg__nullification', trueName: 'nullification', color: 'black', type: 'trick' },
+    { id: 4, name: 'blade', trueName: 'blade', color: 'red', type: 'equip' },
+    { id: 5, name: 'jink', trueName: 'jink', color: 'red', type: 'basic' },
+    { id: 6, name: 'duel', trueName: 'duel', color: 'black', type: 'trick' },
+    { id: 7, name: 'fire_attack', trueName: 'fire_attack', color: 'red', type: 'trick' },
+    { id: 8, name: 'wine', trueName: 'analeptic', color: 'red', type: 'basic' },
+    ...[9, 10, 11].map((id) => ({ id, name: 'slash', trueName: 'slash', color: 'red', type: 'basic' })),
+    { id: 12, name: 'peach', trueName: 'peach', color: 'red', type: 'basic' },
+    { id: 13, name: 'snatch', trueName: 'snatch', color: 'black', type: 'trick' },
+    { id: 14, name: 'indulgence', trueName: 'indulgence', color: 'black', type: 'trick' },
+    { id: 15, name: 'kylin_bow', trueName: 'kylin_bow', color: 'red', type: 'equip' },
+    { id: 16, name: 'slash', trueName: 'slash', color: 'red', suit: 'heart', type: 'basic' },
   ];
 }
 

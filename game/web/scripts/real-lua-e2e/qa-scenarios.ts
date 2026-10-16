@@ -74,6 +74,8 @@ export type QaScenarioId =
   | 'hidden-liegong-deputy'
   | 'hidden-jueqing'
   | 'hidden-jueqing-deputy'
+  | 'hidden-ejue'
+  | 'hidden-ejue-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -136,6 +138,7 @@ export type QaScenarioTrigger =
   | 'hidden-liegong'
   | 'hidden-kuanggu'
   | 'hidden-jueqing'
+  | 'hidden-ejue'
   | 'hidden-gongqing'
   | 'hidden-enyuan'
   | 'hidden-fuyin';
@@ -840,6 +843,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-jueqing',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-ejue': {
+    version: 1,
+    id: 'hidden-ejue',
+    title: '张春华 úp: Ách Tuyệt tăng sát thương lên thế lực chưa xác định',
+    seed: 0x5d6e7fc0,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'ejue-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-ejue',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-ejue-deputy': {
+    version: 1,
+    id: 'hidden-ejue-deputy',
+    title: '张春华 phó tướng úp: Ách Tuyệt tăng sát thương lên thế lực chưa xác định',
+    seed: 0x5d6e7fc1,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'ejue-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-ejue',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -928,6 +951,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-liegong', 'hidden-liegong-deputy',
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
   'hidden-jueqing', 'hidden-jueqing-deputy',
+  'hidden-ejue', 'hidden-ejue-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
   'hidden-fuyin', 'hidden-fuyin-deputy',
@@ -1143,6 +1167,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 绝情`);
+    }
+  }
+  if (plan.trigger === 'hidden-ejue') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'ejue-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 扼绝`);
     }
   }
   if (plan.trigger === 'hidden-gongqing') {

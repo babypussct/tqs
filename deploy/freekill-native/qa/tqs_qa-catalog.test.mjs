@@ -34,6 +34,7 @@ const fankuiSkillPath = path.resolve(here, '../../../runtime/packages/freekill-c
 const kuangguSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/kuanggu.lua');
 const liegongSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/liegong.lua');
 const jueqingSkillPath = path.resolve(here, '../../../runtime/packages/yj/pkg/yj2011/skills/jueqing.lua');
+const ejueSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zqdl/skills/ejue.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -1136,6 +1137,50 @@ test('hidden-jueqing locks PreDamage HP-loss conversion and reveal-before-effect
   assert.match(skillEvent, /player:revealBySkillName\(main_skill\.name\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-jueqing"[\s\S]*triggerHiddenJueqing\(room, state\)/u);
   assert.match(qaInit, /hidden-jueqing[\s\S]*fk\.PreDamage[\s\S]*jueqingPreDamage/u);
+});
+
+test('hidden-ejue locks DamageCaused damage+1 and reveal-before-effect for both slots', () => {
+  const expected = {
+    'hidden-ejue': {
+      seed: 0x5d6e7fc0,
+      actor: { general: 'heg__zhangchunhua', deputy: 'heg__simayi', kingdom: 'jin' },
+    },
+    'hidden-ejue-deputy': {
+      seed: 0x5d6e7fc1,
+      actor: { general: 'heg__simayi', deputy: 'heg__zhangchunhua', kingdom: 'jin' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-ejue', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'ejue-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
+    ]);
+  }
+
+  const ejue = fs.readFileSync(ejueSkillPath, 'utf8');
+  const skillEvent = fs.readFileSync(skillEventPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(ejue, /name = "heg__ejue"/u);
+  assert.match(ejue, /ejue:addEffect\(fk\.DamageCaused/u);
+  assert.match(ejue, /data:changeDamage\(1\)/u);
+  assert.match(ejue, /data\.card\.trueName == "slash"/u);
+  assert.match(ejue, /data\.to\.kingdom == "unknown"/u);
+  const revealIndex = skillEvent.indexOf('player:revealBySkillName(main_skill.name)');
+  const effectCallbackIndex = skillEvent.indexOf('effect_cb()');
+  assert.ok(revealIndex >= 0, 'SkillEffect must reveal the hidden general by skill name');
+  assert.ok(effectCallbackIndex > revealIndex,
+    'SkillEffect must reveal the matching slot before running Ejue effect');
+  assert.match(qaInit, /scenario\.trigger == "hidden-ejue"[\s\S]*triggerHiddenEjue\(room, state\)/u);
+  assert.match(qaInit, /hidden-ejue[\s\S]*fk\.DamageCaused[\s\S]*hiddenEjueDamageCaused/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {

@@ -1869,6 +1869,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-ejue",
+      "title": "Hidden main 张春华 Ách Tuyệt adds damage against unknown kingdom",
+      "seed": 1567522752,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-ejue",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__zhangchunhua",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "ejue-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-ejue-deputy",
+      "title": "Hidden deputy 张春华 Ách Tuyệt adds damage against unknown kingdom",
+      "seed": 1567522753,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-ejue",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__zhangchunhua",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "ejue-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

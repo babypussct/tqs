@@ -301,6 +301,34 @@ local function validateHiddenJueqingScenario(scenario)
   end
 end
 
+local function validateHiddenEjueScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-ejue scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-ejue-deputy"
+  local expectedMain = deputy and "heg__simayi" or "heg__zhangchunhua"
+  local expectedDeputy = deputy and "heg__zhangchunhua" or "heg__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "jin" then
+    fail("hidden-ejue actor must use the catalogued Zhang Chunhua main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "ld__fazheng" or target.kingdom ~= "shu" then
+    fail("hidden-ejue source must be Zhao Yun + Fa Zheng in Shu before QA marks it unknown")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-ejue must expose AskForSkillInvoke before the DamageCaused Slash")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "ejue-card" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "slash" then
+    fail("hidden-ejue must reserve exactly one actor Slash")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -907,6 +935,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenLiegongScenario(scenario)
   elseif scenario.trigger == "hidden-jueqing" then
     validateHiddenJueqingScenario(scenario)
+  elseif scenario.trigger == "hidden-ejue" then
+    validateHiddenEjueScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1284,6 +1314,7 @@ local function setupState(room, scenario, seed)
     hiddenEnyuanDrawCards = {},
     hiddenFuyinTargetConfirmed = false,
     hiddenFuyinNullified = false,
+    hiddenEjueDamageCaused = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2280,6 +2311,96 @@ local function triggerHiddenJueqing(room, state)
   fk.qInfo(string.format("[tqs_qa] hidden-jueqing pre_damage=true damage_event=false skill_effect=true hp_loss=%d revealed=%s slot=%s main=%s deputy=%s revision=%s",
     targetHpLoss, tostring(revealedCorrectSlot), jueqingIsDeputy and "deputy" or "main",
     state.actor.general, state.actor.deputyGeneral, manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenEjue(room, state)
+  -- 扼绝 is a compulsory fk.DamageCaused effect. Keep Zhang Chunhua hidden
+  -- until the real Slash reaches the source-side damage hook, then prove the
+  -- native predicate (Slash + unknown kingdom) and the +1 damage mutation.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-ejue actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("heg__ejue") then
+    fail("hidden-ejue must attach the hidden Ejue skill")
+  end
+  if state.actor:hasSkill("heg__ejue") then
+    fail("hidden-ejue must not be active before the prelighted effect")
+  end
+
+  -- The source skill itself requires data.to.kingdom == unknown. This is a
+  -- test fixture for that native state, not a production rule change.
+  room:setPlayerProperty(state.target, "kingdom", "unknown")
+  room:broadcastProperty(state.target, "kingdom")
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_ejue_gate",
+    prompt = "TQS QA: prelight Ách Tuyệt, rồi xác nhận để dùng Sát lên người chưa rõ thế lực.",
+  })
+  if not gate then
+    fail("hidden-ejue QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "heg__ejue") then
+    fail("hidden-ejue must be prelighted before the DamageCaused branch")
+  end
+
+  local cardId = state.slotCards["ejue-card"]
+  if not cardId or #state.actor:getCardIds(Player.Hand) ~= 1 or
+      not table.contains(state.actor:getCardIds(Player.Hand), cardId) then
+    fail("hidden-ejue must put exactly the reserved Slash in the actor hand")
+  end
+
+  local targetHpBefore = state.target.hp
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_ejue_damage",
+    prompt = "TQS QA: dùng Sát lên đối thủ để kiểm tra Ách Tuyệt.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-ejue must receive the reserved actor Slash against the unknown target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "heg__ejue" and entry.player == state.actor.id
+  end)
+  local ejueIsDeputy = state.scenario == "hidden-ejue-deputy"
+  local revealedCorrectSlot = ejueIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "heg__zhangchunhua"
+    or not ejueIsDeputy and state.actor.general == "heg__zhangchunhua" and state.actor.deputyGeneral == "anjiang"
+  local targetHpLoss = targetHpBefore - state.target.hp
+  if not state.hiddenEjueDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
+      targetHpLoss ~= 2 or actorHpBefore ~= state.actor.hp then
+    fail("prelighted hidden Ejue must enter DamageCaused, reveal Zhang Chunhua and add one damage")
+  end
+  if state.actor:isFakeSkill("heg__ejue") or not state.actor:hasSkill("heg__ejue") then
+    fail("hidden Ejue must be a real active skill after SkillEffect")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Ách Tuyệt: DamageCaused=%arg; sát thương=%arg2; SkillEffect=%arg3; mở tướng=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = tostring(state.hiddenEjueDamageCaused),
+    arg2 = tostring(targetHpLoss),
+    arg3 = tostring(effect ~= nil and not effect.fake),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = ejueIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-ejue damage_caused=true damage=%d skill_effect=true revealed=%s slot=%s revision=%s",
+    targetHpLoss, tostring(revealedCorrectSlot), ejueIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -4077,7 +4198,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-liegong" or
       state.scenario == "hidden-liegong-deputy" or
       state.scenario == "hidden-jueqing" or
-      state.scenario == "hidden-jueqing-deputy") and
+      state.scenario == "hidden-jueqing-deputy" or
+      state.scenario == "hidden-ejue" or
+      state.scenario == "hidden-ejue-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4100,6 +4223,19 @@ director:addEffect(fk.PreDamage, {
   end,
   on_trigger = function(self, event, target, player, data)
     stateFor(player.room).jueqingPreDamage = true
+  end,
+})
+
+director:addEffect(fk.DamageCaused, {
+  global = true,
+  priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-ejue" or state.scenario == "hidden-ejue-deputy") and
+      state.currentDamageStep and data and data.from == state.actor and data.to == state.target
+  end,
+  on_trigger = function(self, event, target, player, data)
+    stateFor(player.room).hiddenEjueDamageCaused = true
   end,
 })
 
@@ -4377,6 +4513,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenDuanchang(room, state)
     elseif scenario.trigger == "hidden-jueqing" then
       triggerHiddenJueqing(room, state)
+    elseif scenario.trigger == "hidden-ejue" then
+      triggerHiddenEjue(room, state)
     end
   end,
 })
