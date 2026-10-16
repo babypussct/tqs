@@ -361,6 +361,29 @@ export const VI_ADDITIONS: Record<string, string> = {
   '#AskForChooseCard': '%arg: hãy chọn một lá bài của %src',
   '#AskForChooseCards': '%arg: hãy chọn từ %arg2 đến %arg3 lá bài của %src',
   ...VI_NAMES,
+  // A few dependency translations are machine-generated and override the
+  // base-name table for prefixed generals. Keep the runtime IDs intact, but
+  // expose the reviewed Vietnamese labels in every visible variant.
+  'm_ex__guohuai': 'Giới Quách Hoài',
+  'mou__guohuai': 'Mưu Quách Hoài',
+  'ofl_heg__guohuai': 'Quách Hoài',
+  'ol__guohuai': 'Quách Hoài',
+  'os_heg__guohuai': 'Quách Hoài',
+  'ol_ex__guohuai': 'Giới Quách Hoài',
+  'os_ex__guohuai': 'Giới Quách Hoài',
+  'ty_ex__guohuai': 'Giới Quách Hoài',
+  'mou__yangwan': 'Mưu Dương Uyển',
+  'ol__yangwan': 'Dương Uyển',
+  'ty__yangwan': 'Dương Uyển',
+  'ty_heg__yangwan': 'Dương Uyển',
+  // Hegemony lord-card names are absent from the pinned official vi_VN
+  // table. These entries are also used by public GameLog expansion below.
+  peace_spell: 'Thái Bình Yếu Thuật',
+  ':peace_spell': 'Trang bị · Phòng cụ, Kỳ Trân.',
+  '#peace_spell_skill': 'Thái Bình Yếu Thuật',
+  js__peace_spell: 'Thái Bình Yếu Thuật',
+  ':js__peace_spell': 'Trang bị · Phòng cụ.',
+  '#js__peace_spell_skill': 'Thái Bình Yếu Thuật',
   // Pinned hegemony/pkg/standard: Zou Shi (hs__zoushi).
   // Keep these rules separate from any other variant sharing a skill label.
   hs__zoushi: 'Trâu Thị',

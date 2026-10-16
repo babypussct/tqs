@@ -131,6 +131,11 @@ export function localizedGameLog(raw: string): string {
     .replaceAll('天禄', VI_ADDITIONS.tianlu)
     .replaceAll('遁甲天书', VI_ADDITIONS.dunjia_book)
     .replaceAll('九州鼎', VI_ADDITIONS.nine_tripod_cauldrons)
+    // The C++ GameLog may arrive after Lua has already expanded card/skill
+    // identifiers into their Chinese face names. Resolve only reviewed
+    // names; unknown text remains untouched.
+    .replaceAll('太平要术', VI_ADDITIONS.peace_spell)
+    .replaceAll('星启', VI_ADDITIONS.os__xingqi)
     .replaceAll('〖巨贾〗', `〖${VI_ADDITIONS.ofl_heg__jugu}〗`)
     .replaceAll('〖资援〗', `〖${VI_ADDITIONS.ofl_heg__ziyuan}〗`)
     // Already-expanded public C++ GameLog skill names from the pinned variants.
@@ -139,6 +144,12 @@ export function localizedGameLog(raw: string): string {
     .replaceAll('〖礼下〗', `〖${VI_ADDITIONS.ld__lixia}〗`)
     .replaceAll('〖倾城〗', `〖${VI_ADDITIONS.qingcheng}〗`)
     .replaceAll('〖避乱〗', `〖${VI_ADDITIONS.ld__biluan}〗`)
+    .replace(/〖([^〖〗]{1,160})〗/g, (match, token: string) => {
+      const translated = VI_ADDITIONS[token]
+        ?? VI_ADDITIONS[token.replace(/^#/, '')]
+        ?? VI_ADDITIONS[token.replace(/_skill$/, '')];
+      return translated ? `〖${translated}〗` : match;
+    })
     .replaceAll('#new_battle_royal_event&', VI_ADDITIONS['#new_battle_royal_event&'])
     .replaceAll('鏖战', VI_ADDITIONS['#new_battle_royal_event&'])
     .replaceAll('Triblade', VI_ADDITIONS.triblade)
@@ -181,6 +192,10 @@ export function localizedGameLog(raw: string): string {
     .replace(/\brút\s+(?:liễu|liêu)\s+(\d+)\s+l(?:á|a)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
     .replace(/\brút\s+(?:liễu|liêu)\s+(\d+)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
     .replace(/\brút\s+(\d+)\s+l(?:á|a)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
+    .replace(/\btá zai liễu\b/giu, 'được trang bị')
+    .replace(/\bphát động liễu\b/giu, 'phát động')
+    .replace(/\bmất liễu\b/giu, 'mất')
+    .replace(/\bLượt Phục liễu\b/giu, 'hồi phục')
     .replaceAll('Điên Vi', 'Điển Vi')
     // Public dual-general labels are written as "main/deputy" upstream.
     // Normalize only letter-to-letter separators so numeric fractions and

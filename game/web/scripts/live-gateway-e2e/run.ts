@@ -224,7 +224,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     console.log(`PASS C++ EnterRoom echoed disabledPack ${disabled.join(' + ')}; pool preview ${original.generals}/${original.cards} -> ${filtered.generals}/${filtered.cards}`);
 
     await page.getByRole('button', { name: '+ Thêm bot' }).click();
-    await page.getByText('2/2 người chơi').waitFor({ timeout: 15_000 });
+    await page.getByText('2/2 tướng lĩnh', { exact: true }).waitFor({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Bắt đầu' }).click();
     gameStarted = true;
     await page.getByRole('heading', { name: 'Chọn chủ tướng và phó tướng' }).waitFor({ timeout: 60_000 });
@@ -391,7 +391,7 @@ async function verifyUiTranslations(page: Page) {
     await page.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
     await page.getByRole('heading', { name: roomName }).waitFor({ timeout: 30_000 });
     await page.getByRole('button', { name: '+ Thêm bot' }).click();
-    await page.getByText('2/2 người chơi').waitFor({ timeout: 15_000 });
+    await page.getByText('2/2 tướng lĩnh', { exact: true }).waitFor({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Bắt đầu' }).click();
     gameStarted = true;
     await page.getByRole('heading', { name: 'Chọn chủ tướng và phó tướng' }).waitFor({ timeout: 60_000 });
@@ -467,7 +467,8 @@ async function verifyUiTranslations(page: Page) {
     const censor = (value: string) => value.replaceAll(username!, '[test-account]');
     const samples = visible.map(censor);
     const translatedNames = observedNames.map(censor);
-    const unresolved = samples.filter((value) => /&#(?:x[0-9a-f]+|\d+);|(?:[a-z]+__)[a-z_]+|#[A-Za-z_]+|[\u3400-\u9fff]/iu.test(value));
+    const unresolvedPattern = /&#(?:x[0-9a-f]+|\d+);|(?:[a-z]+__)[a-z_]+|#[A-Za-z_]+|[\u3400-\u9fff]|Quách vài|Dương uyển/iu;
+    const unresolved = [...new Set([...samples, ...translatedNames].filter((value) => unresolvedPattern.test(value)))];
     writeFileSync(path.join(evidenceDir, `ui-01-live-cpp-${evidenceTag}.json`), JSON.stringify({
       date: evidenceDate, observedAt: new Date().toISOString(), mode: 'new_heg_mode', server: `${host}:${tcpPort}`,
       context: 'Chrome 390px + React/Wasmoon/Lua + Gateway + real FreeKill C++',

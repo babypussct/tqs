@@ -87,6 +87,18 @@ test('C01 public log is localized only in exact skill markers', () => {
   assert.equal(localizedGameLog('Biện Phu Nhân/Điên Vi (bạn) rút liễu 1 lá lá bài Sát[♠5]'),
     'Biện Phu Nhân / Điển Vi (bạn) rút 1 lá bài Sát[♠5]');
   assert.equal(localizedGameLog('Điên Vi rút liêu 2 lá bài'), 'Điển Vi rút 2 lá bài');
+  assert.equal(localizedGameLog('Tướng ẩn / Vương Lăng (bạn) phát động liễu 〖os__mibei〗'),
+    'Tướng ẩn / Vương Lăng (bạn) phát động 〖Mật Bị〗');
+  assert.equal(localizedGameLog('Tào Hồng / Vương Lăng (bạn) rút 2 lá bài 太平要术[♥3], Thiểm[♥J] (Giai đoạn rút bài)'),
+    'Tào Hồng / Vương Lăng (bạn) rút 2 lá bài Thái Bình Yếu Thuật[♥3], Thiểm[♥J] (Giai đoạn rút bài)');
+  assert.equal(localizedGameLog('Tào Hồng / Vương Lăng (bạn) tá zai liễu 太平要术[♥3]'),
+    'Tào Hồng / Vương Lăng (bạn) được trang bị Thái Bình Yếu Thuật[♥3]');
+  assert.equal(localizedGameLog('Tào Hồng / Vương Lăng (bạn) mất liễu 1 máu (太平要术)'),
+    'Tào Hồng / Vương Lăng (bạn) mất 1 máu (Thái Bình Yếu Thuật)');
+  assert.equal(localizedGameLog('Tào Hồng / Vương Lăng (bạn) Lượt Phục liễu 1 máu (星启)'),
+    'Tào Hồng / Vương Lăng (bạn) hồi phục 1 máu (Tinh Khởi)');
+  assert.equal(VI_ADDITIONS.ol__guohuai, 'Quách Hoài');
+  assert.equal(VI_ADDITIONS.ty_heg__yangwan, 'Dương Uyển');
 });
 
 test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden data/replies',
