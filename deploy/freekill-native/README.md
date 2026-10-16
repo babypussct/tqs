@@ -245,29 +245,30 @@ Native port:     9527
 SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
-Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
-                 Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; CP15 Ký Ly/Jilix current package
-                 main/deputy PASS; CP14 Phụ Âm current package main/deputy PASS;
-                 CP13 Chế Man pre-refresh package main/deputy PASS;
-                 Di Kế/Ách Tuyệt/Độc Phu/Gian Chí bounded proof retained
-                 from earlier QA revisions; Fuyin pre-CP14 retained as historical;
-                 full parity OPEN
+Status:          CP15/QA verify PASS before CP16; source-build transition
+                 interrupted by VM resource exhaustion before runtime switch;
+                 service/SSH require recovery. Backup archive verified;
+                 CP15 Ký Ly/Jilix current package main/deputy PASS; CP14 Phụ Âm
+                 current package main/deputy PASS; CP13 Chế Man pre-refresh
+                 package main/deputy PASS; full parity OPEN. Do not delete the
+                 old VM until this replacement is healthy and reconnect PASS.
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
 presence of `tqs-native-qa@tqs` in `/home/ubuntu/.ssh/authorized_keys` all
-passed. The replacement now has Lua 5.4.8, the pinned 14-package registry,
-the verified server-only `tqs_qa` package and an enabled `freekill-native`
-service listening on port 9527. The old VM remains untouched and is the
-rollback/reference host. It is a **QA-verified native target**, not an
-official/public release.
+passed before CP16. The replacement had Lua 5.4.8, the pinned 14-package
+registry, the verified server-only `tqs_qa` package and an enabled
+`freekill-native` service listening on port 9527. The old VM remains untouched
+and is the rollback/reference host. It is a **QA-verified native target**, not
+an official/public release; after the interrupted source compile, service/port
+must be reverified before deleting the old VM.
 
 The verified replacement identity is recorded here so a later session can
 recreate the exact runner without guessing:
 
 ```text
-Runtime:          /opt/freekill-hegemony/current
+Runtime:          /opt/freekill-hegemony/current (last verified static release;
+                  source transition not yet active)
 Static release:   freekill-asio v0.1.17 amd64
 Runtime flist MD5: 29653b06f1db4a1cece2941f79cbe648
 Package registry: 14/14 pinned commits and enabled flags verified
@@ -275,12 +276,17 @@ Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
 QA revision:      a6c47982d6f0140eaa2869cbaa6c5a780d688396
 QA package SHA:   5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2
 QA catalog SHA:   945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe
-QA config:        enabled; tempBanTime=0; room prefix TQSQA/; two private allowlisted accounts
+QA config:        last verified enabled; tempBanTime=0; room prefix TQSQA/;
+                  two private allowlisted accounts. Production source config
+                  with tempBanTime=5 is staged in the repository but not yet
+                  active on the VM.
 QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
 Public QA path:   packages/tqs_qa absent; no packages.db row
 QA backups:       /opt/freekill-hegemony/qa-backups/tqs_qa-before-zhiman-observer-install-20261016T014332Z.tar.gz
                   /opt/freekill-hegemony/qa-backups/tqs_qa-before-jianzhi-fix-20261016T010210Z.tar.gz
-Service:          freekill-native.service enabled/active; TCP 9527 reachable
+Service:          was enabled/active before CP16; currently requires recovery
+                  after resource-exhausted source compile; TCP 9527 must be
+                  reverified before any old-VM deletion
 ```
 
 `qa_packages/tqs_qa` is deliberately outside the public `packages/` namespace.
@@ -344,9 +350,12 @@ sudo ./scripts/verify-install.sh
 ```
 
 This installs the build dependencies, checks out the pinned `freekill-asio`
-source commit, builds it locally, and then installs the same pinned packages
-as the amd64 path. The source path installs and verifies the system Lua 5.4
-interpreter plus LuaSocket and LuaFileSystem modules.
+source commit, applies the managed reconnect/temp-ban patch, and builds it
+locally with the pinned CMake 4.1.1 + GCC/G++ 14 toolchain. The default build
+parallelism is deliberately `1` for the 1 GB Oracle VM; override it only on a
+larger host with `FREEKILL_BUILD_JOBS`. The source path then installs the same
+pinned packages as the amd64 path and verifies the system Lua 5.4 interpreter
+plus LuaSocket and LuaFileSystem modules.
 
 ## AMD64 installation
 

@@ -25,8 +25,8 @@ command -v apt-get >/dev/null 2>&1 || die "This bootstrap currently expects Debi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  ca-certificates git patch g++ cmake pkg-config sqlite3 tmux \
-  libasio-dev libssl-dev libcbor-dev nlohmann-json3-dev \
+  ca-certificates curl git patch make gcc-14 g++-14 cmake pkg-config sqlite3 tmux \
+  libasio-dev libboost-system-dev libssl-dev libcbor-dev nlohmann-json3-dev \
   libsqlite3-dev libgit2-dev libreadline-dev libspdlog-dev \
   lua5.4 lua-socket lua-filesystem
 
@@ -34,8 +34,25 @@ ROOT="$FREEKILL_INSTALL_ROOT"
 SOURCE_DIR="$ROOT/source/freekill-asio"
 RELEASE_DIR="$ROOT/releases/freekill-asio-source-$FREEKILL_ASIO_RELEASE"
 PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/reconnect-safe-tempban.patch"
+TOOL_ROOT="${FREEKILL_TOOL_ROOT:-/opt/tqs-toolchain}"
+CMAKE_VERSION="4.1.1"
+CMAKE_ARCHIVE="$TOOL_ROOT/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
+CMAKE_DIR="$TOOL_ROOT/cmake-$CMAKE_VERSION-linux-x86_64"
+CMAKE_URL="https://cmake.org/files/v4.1/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
+CMAKE_SHA256="5a6c61cb62b38e153148a2c8d4af7b3d387f0c8c32b6dbceb5eb4af113efd65a"
 
 [[ -f "$PATCH_FILE" ]] || die "Missing native reconnect/temp-ban patch: $PATCH_FILE"
+
+install -d -m 0755 "$TOOL_ROOT"
+if [[ ! -x "$CMAKE_DIR/bin/cmake" ]]; then
+  curl --fail --location --retry 3 --output "$CMAKE_ARCHIVE.tmp" "$CMAKE_URL"
+  printf '%s  %s\n' "$CMAKE_SHA256" "$CMAKE_ARCHIVE.tmp" | sha256sum -c -
+  mv -f -- "$CMAKE_ARCHIVE.tmp" "$CMAKE_ARCHIVE"
+  tar -xzf "$CMAKE_ARCHIVE" -C "$TOOL_ROOT"
+fi
+[[ -x "$CMAKE_DIR/bin/cmake" ]] || die "Pinned CMake $CMAKE_VERSION is unavailable"
+"$CMAKE_DIR/bin/cmake" --version | grep -Fq "cmake version $CMAKE_VERSION" ||
+  die "Unexpected CMake version in $CMAKE_DIR"
 
 install -d -m 0755 "$ROOT/source" "$ROOT/releases"
 
@@ -76,8 +93,15 @@ if ! managed_patch_applied; then
 fi
 printf 'Native reconnect/temp-ban patch: %s\n' "$(basename "$PATCH_FILE")"
 
-cmake -S "$SOURCE_DIR" -B "$SOURCE_DIR/build" -DCMAKE_BUILD_TYPE=Release
-cmake --build "$SOURCE_DIR/build" --parallel "$(nproc)"
+export CC="${CC:-gcc-14}"
+export CXX="${CXX:-g++-14}"
+BUILD_JOBS="${FREEKILL_BUILD_JOBS:-1}"
+[[ "$BUILD_JOBS" =~ ^[1-9][0-9]*$ ]] || die "FREEKILL_BUILD_JOBS must be a positive integer"
+"$CMAKE_DIR/bin/cmake" -S "$SOURCE_DIR" -B "$SOURCE_DIR/build" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER="$CC" \
+  -DCMAKE_CXX_COMPILER="$CXX"
+"$CMAKE_DIR/bin/cmake" --build "$SOURCE_DIR/build" --parallel "$BUILD_JOBS"
 [[ -x "$SOURCE_DIR/build/freekill-asio" ]] || die "Source build did not produce freekill-asio"
 
 if [[ -e "$RELEASE_DIR" ]]; then
