@@ -1159,7 +1159,7 @@ test('hidden-ejue locks DamageCaused damage+1 and reveal-before-effect for both 
     assert.equal(scenario.playerCount, 2);
     assert.deepEqual(scenario.players, {
       actor: contract.actor,
-      target: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+      target: { general: 'hs__zhaoyun', deputy: 'hs__zhangfei', kingdom: 'shu' },
     });
     assert.deepEqual(scenario.cards, [
       { key: 'ejue-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
