@@ -2153,7 +2153,7 @@ try{
           /hidden_jianzhi_damage|kiểm tra Gian Chí|奸志|Gian Chí|heg__jianzhi|jianzhi/i.test(activePrompt);
         const hiddenZhimanDamage = hiddenZhimanScenario &&
           /hidden_zhiman_damage|kiểm tra Chế Man|制蛮|Chế Man|ld__zhiman|zhiman/i.test(activePrompt);
-        const hiddenJilixDamage = hiddenJilixScenario &&
+        const hiddenJilixDamage = hiddenJilixScenario && nativeQaGateSeen &&
           /hidden_jilix_damage|kiểm tra Ký Ly|寄篱|Ký Ly|ld__jilix|jilix/i.test(activePrompt);
         const hiddenRevealActive = hiddenRevealScenario && /Mở tướng|亮将|reveal_skill&/i.test(activePrompt);
         const hiddenDualChoose = hiddenDualScenario &&
@@ -2175,7 +2175,23 @@ try{
         const hiddenEnyuanPeach = hiddenEnyuanScenario &&
           /hidden_enyuan_peach|dùng Đào|恩怨|Ân Oán|enyuan/i.test(activePrompt);
         const hiddenFuyinSlash = hiddenFuyinScenario &&
+          nativeQaGateSeen &&
           /hidden_fuyin_damage|dùng Sát|父荫|Phụ Âm|bóng mát của cha|fuyin/i.test(activePrompt);
+        const deferredHiddenScenario = hiddenFuyinScenario || hiddenJilixScenario;
+        const deferredGateAccepted = hiddenFuyinScenario ? hiddenFuyinGateReply : hiddenJilixGateReply;
+        if (deferredHiddenScenario && !deferredGateAccepted) {
+          // EventPhaseStart is intentionally deferred for these source
+          // predicates. Do not consume an unrelated active request while the
+          // native readiness AskForSkillInvoke is still pending.
+          const cancel = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+          if (await cancel.count() && await cancel.isEnabled()) {
+            await cancel.click();
+            await waitForReply(activeClient, latest.requestId);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
         if (hiddenJizhiCard || hiddenMingshiCard || hiddenQianxunCard || hiddenKongchengCard || hiddenWeimuCard || hiddenTianxiangChoose || hiddenEnyuanPeach || hiddenFuyinSlash) {
           // The hidden Enyuan actor is the Peach target, but the real card is
           // owned by the other seat.  Keep the request page explicit so a
