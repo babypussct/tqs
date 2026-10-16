@@ -1784,10 +1784,6 @@ try{
         const isHiddenJizhiInvoke = hiddenJizhiScenario && !isHiddenJizhiGate && /Tập Trí|集智|jizhi|hs__jizhi/i.test(invokeText);
         const isHiddenGuanxingInvoke = hiddenGuanxingScenario && !isHiddenGuanxingGate && /Quan Tinh|观星|guanxing|hs__guanxing/i.test(invokeText);
         const isHiddenTianxiangInvoke = hiddenTianxiangScenario && !isHiddenTianxiangGate && /Thiên Hương|天香|tianxiang|hs__tianxiang/i.test(invokeText);
-        if (hiddenZhimanScenario) {
-          console.log(`hidden-zhiman AskForSkillInvoke client=${activeClient + 1} request=${latest.requestId} ` +
-            `gate=${isHiddenZhimanGate} invoke=${isHiddenZhimanInvoke} text=${JSON.stringify(invokeText)}`);
-        }
         if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate) {
           nativeQaGateSeen = true;
           nativeQaGateCommand = latest.command;
@@ -3203,6 +3199,7 @@ try{
       askForSkillInvoke: incoming.filter((packet) => packet.command === 'AskForSkillInvoke').length,
       askForArrangeCards: incoming.filter((packet) => packet.command === 'AskForArrangeCards').length,
       askForUseActiveSkill: incoming.filter((packet) => packet.command === 'AskForUseActiveSkill').length,
+      askForCardChosen: incoming.filter((packet) => packet.command === 'AskForCardChosen').length,
       askForChoices: incoming.filter((packet) => packet.command === 'AskForChoices').length,
     };
   });
