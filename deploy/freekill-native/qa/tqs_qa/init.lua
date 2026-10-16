@@ -2382,6 +2382,11 @@ local function triggerHiddenEjue(room, state)
     and state.actor.general == "anjiang" and state.actor.deputyGeneral == "heg__zhangchunhua"
     or not ejueIsDeputy and state.actor.general == "heg__zhangchunhua" and state.actor.deputyGeneral == "anjiang"
   local targetHpLoss = targetHpBefore - state.target.hp
+  fk.qInfo(string.format("[tqs_qa] hidden-ejue diagnostics damage_caused=%s effect=%s effect_fake=%s revealed=%s target_hp_loss=%d actor_hp_before=%d actor_hp_after=%d actor_general=%s actor_deputy=%s target_kingdom=%s active=%s fake=%s",
+    tostring(state.hiddenEjueDamageCaused), tostring(effect ~= nil), tostring(effect and effect.fake or false),
+    tostring(revealedCorrectSlot), targetHpLoss, actorHpBefore, state.actor.hp,
+    tostring(state.actor.general), tostring(state.actor.deputyGeneral), tostring(state.target.kingdom),
+    tostring(state.actor:hasSkill("heg__ejue")), tostring(state.actor:isFakeSkill("heg__ejue"))))
   if not state.hiddenEjueDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
       targetHpLoss ~= 2 or actorHpBefore ~= state.actor.hp then
     fail("prelighted hidden Ejue must enter DamageCaused, reveal Zhang Chunhua and add one damage")
