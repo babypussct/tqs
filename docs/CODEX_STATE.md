@@ -81,21 +81,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T10:14:10.645Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `c6b53d24f3c8`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T10:17:48.104Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `c5d535ae4b29`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+c5d535ae docs: sync translation sheet
+b0e32af8 docs: record Render UI checkpoint
 c6b53d24 feat: ship hegemony mobile UI checkpoint
-77b6e099 docs: checkpoint VM optimization
-f3aca587 ops: add low-memory VM build preparation
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
