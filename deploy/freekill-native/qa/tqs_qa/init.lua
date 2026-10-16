@@ -2580,6 +2580,10 @@ local function triggerHiddenJianzhi(room, state)
     fail("hidden-jianzhi must not be active before the prelighted effect")
   end
 
+  -- The real lethal Slash must resolve to Death. Remove the target's normal
+  -- initial hand so a Peach rescue cannot turn this DamageCaused proof into a
+  -- separate Dying/AskForPeaches branch.
+  state.target:throwAllCards("h", "tqs_qa")
   room:setPlayerProperty(state.target, "hp", 1)
   room:broadcastProperty(state.target, "hp")
 
