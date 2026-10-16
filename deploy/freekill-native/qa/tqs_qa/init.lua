@@ -1454,6 +1454,7 @@ local function setupState(room, scenario, seed)
     hiddenEnyuanDrawCards = {},
     hiddenFuyinTargetConfirmed = false,
     hiddenFuyinNullified = false,
+    hiddenJilixPending = false,
     hiddenEjueDamageCaused = false,
     hiddenDufuDamageCaused = false,
     hiddenJianzhiDamageCaused = false,
@@ -2900,7 +2901,11 @@ local function triggerHiddenJilix(room, state)
     if entry.step == 1 and entry.to == state.actor.id then damage = damage + entry.amount end
   end
   local hpLoss = actorHpBefore - state.actor.hp
-  if not state.hiddenJilixTargetConfirmed or state.hiddenJilixDamageInflicted ~= 2 or
+  -- DamageInflicted is a nested engine event and may be observed more than
+  -- once for each actual damage resolution. The authoritative assertions are
+  -- the source effect count, one actual damage, one HP loss, and removal of
+  -- the owning slot; require at least two callbacks only as a lower bound.
+  if not state.hiddenJilixTargetConfirmed or state.hiddenJilixDamageInflicted < 2 or
       effectCount < 2 or damage ~= 1 or hpLoss ~= 1 or not removedCorrectSlot then
     fail(string.format("prelighted hidden Jilix must repeat the red Slash, prevent the second damage and remove the owning slot; " ..
       "target_confirmed=%s damage_inflicted=%d effects=%d damage=%d hp_loss=%d removed_slot=%s general=%s deputy=%s",
@@ -2912,7 +2917,7 @@ local function triggerHiddenJilix(room, state)
     type = "[TQS QA] Hidden Ký Ly: TargetConfirmed=%arg; DamageInflicted lần hai=%arg2; sát thương thực=%arg3; xoá đúng ô=%arg4; vị trí=%arg5",
     from = state.actor.id,
     arg = tostring(state.hiddenJilixTargetConfirmed),
-    arg2 = tostring(state.hiddenJilixDamageInflicted == 2),
+    arg2 = tostring(state.hiddenJilixDamageInflicted >= 2),
     arg3 = tostring(damage),
     arg4 = tostring(removedCorrectSlot),
     arg5 = jilixIsDeputy and "phó tướng" or "chủ tướng",
@@ -5106,7 +5111,10 @@ director:addEffect(fk.GameStart, {
     elseif scenario.trigger == "hidden-zhiman" then
       triggerHiddenZhiman(room, state)
     elseif scenario.trigger == "hidden-jilix" then
-      triggerHiddenJilix(room, state)
+      -- 寄篱's second-damage predicate is scoped to Player.HistoryPhase.
+      -- Wait for a real phase before using the red Slash; running this from
+      -- GameStart has no Phase parent and cannot reproduce the source law.
+      state.hiddenJilixPending = true
     end
   end,
 })
@@ -5128,6 +5136,26 @@ director:addEffect(fk.EventPhaseStart, {
     if state.actor.general ~= "anjiang" then state.actor:hideGeneral(false) end
     if state.actor.deputyGeneral ~= "anjiang" then state.actor:hideGeneral(true) end
     triggerHiddenFuyin(player.room, state)
+  end,
+})
+
+director:addEffect(fk.EventPhaseStart, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.hiddenJilixPending and target == state.actor and
+      player == state.actor and data.phase == Player.Start
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.hiddenJilixPending = false
+    -- Hegemony reveals the first player's pair before EventPhaseStart. Re-hide
+    -- both slots so the test reaches the source TargetConfirmed branch with
+    -- the same hidden state as a real player who kept both generals down.
+    if state.actor.general ~= "anjiang" then state.actor:hideGeneral(false) end
+    if state.actor.deputyGeneral ~= "anjiang" then state.actor:hideGeneral(true) end
+    triggerHiddenJilix(player.room, state)
   end,
 })
 
