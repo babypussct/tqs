@@ -60,22 +60,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T02:38:18.935Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `e8dea44a9ef4`.
-- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T02:38:33.749Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `a5c12f7d3879`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+a5c12f7d test: guard reconnect temp-ban policy and refresh audit metrics
 e8dea44a docs: checkpoint reconnect deployment status
 f94d3bca fix: protect production reconnect from temp bans
-b47e5e82 test: isolate QA runner from temp bans
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
