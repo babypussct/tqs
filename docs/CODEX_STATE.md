@@ -94,21 +94,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T12:12:58.425Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `114c9226f307`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T12:13:20.911Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `af9cf70b9c47`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
  M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
 ```
 
 Ba commit gần nhất:
 
 ```text
+af9cf70b docs: record CP22 Render deployment
 114c9226 feat: compact portrait hegemony board density
 4aa3fbc7 docs: record CP21 Render redeploy
-2f159d01 fix: keep self equipment readable on mobile
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
