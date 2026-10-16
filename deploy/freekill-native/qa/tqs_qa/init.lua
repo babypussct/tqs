@@ -4628,6 +4628,22 @@ director:addEffect(fk.PreDamage, {
   end,
 })
 
+-- Chế Man calls data:preventDamage(). DamageEvent:breakCheck() stops lower
+-- priority observers after that prevention, so record entry into the native
+-- DamageCaused event before production effects rather than after them.
+director:addEffect(fk.DamageCaused, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-zhiman" or state.scenario == "hidden-zhiman-deputy") and
+      state.currentDamageStep and data and data.from == state.actor and data.to == state.target
+  end,
+  on_trigger = function(self, event, target, player, data)
+    stateFor(player.room).hiddenZhimanDamageCaused = true
+  end,
+})
+
 director:addEffect(fk.DamageCaused, {
   global = true,
   priority = -1000,
