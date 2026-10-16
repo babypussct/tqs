@@ -140,5 +140,5 @@ for (const cat of categories) {
   md += `\n`;
 }
 
-fs.writeFileSync(catalogMdPath, md, 'utf8');
+fs.writeFileSync(catalogMdPath, md.replace(/\n+$/, '\n'), 'utf8');
 console.log(`Saved ${catalogMdPath} (${fs.statSync(catalogMdPath).size} bytes).`);
