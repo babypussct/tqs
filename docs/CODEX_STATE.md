@@ -24,7 +24,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **Portrait prompt chrome cleanup (candidate, 16/10/2026):** rule mobile cũ của `.gameplay-control-heading` vẫn để lại `margin âm`, nền panel và đường kẻ desktop dù dashboard đã chuyển sang normal flow; đã override trong portrait để prompt shell `position: static`, margin/padding/border bằng 0 và nền trong suốt. Điều này giữ prompt/timer một hàng gọn, không tạo thêm vùng mô tả đè lên seat/hand; không đổi action, wire hay Lua lifecycle. Đã thêm computed-style regression cho prompt shell trong `real-lua-e2e`; browser **21/21**, real-Lua **63/63**, store **43/43**, connection **29/29**, card-display **14/14**, native-dialogs **7/7**, typecheck/build và capture M6 PASS. Deployment [`dep-db8voibl550s73fcd3ng`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8voibl550s73fcd3ng) từ commit `2e544491` đã báo `Deploy succeeded | Live`; public asset hash đã được probe khớp local. Candidate vẫn cần smoke test trên thiết bị thật.
 - **Native private-skill owner ordering fix (CP18, 16/10/2026):** native FreeKill có thể phát `AddSkill`/`LoseSkill` trước marker `ChangeSelf`; client không được suy luận owner từ event đầu tiên vì sẽ làm lộ skill riêng của ghế khác. `GameConnection.handleLuaUi()` nay chỉ phát `SelfIdentity` bổ sung khi `Lua Self.id` khớp chính xác với numeric owner trong event, sau đó reducer hiện hành mới nhận snapshot skill riêng; không lưu tên skill đối thủ vào React. Regression mới khóa cả thứ tự `SelfIdentity → AddSkill` khi marker native đến trễ và trường hợp event thuộc player khác. `test:connection` **31/31**, `test:store` **43/43**, browser E2E **21/21**, real-Lua E2E **63/63**, typecheck/build và diff check các file thuộc slice PASS. Release snapshot root đã được đóng gói/xác minh lại (**16.522 files**, manifest v2) và đã deploy đúng commit lên candidate.
 - **CP18 Render + native smoke (16/10/2026):** deployment [`dep-db908ljrjlhs73dosio0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db908ljrjlhs73dosio0) từ commit [`601dbbe7`](https://github.com/babypussct/tqs/commit/601dbbe7506c577f7d5ac64fc23904561e24bc18) báo `Deploy succeeded | Live`. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS lần lượt khớp local với SHA-256 `5f61f4df…` / `06923f49…` / `b7db388e…`; HTML trỏ đúng `index-CFgQ4-qn.js`; manifest public giữ **14 package**, runtime bundle log **5.279 files**, MD5 `29653b06…`. Live native `cards-and-choice --manual` PASS: hai account/login/room/start, private rail resolve đúng actor client 1, skill `Thượng Nghĩa` xuất hiện, `Tưởng Khâm/shangyi` tới `AskForCardsAndChoice` và nhận đúng một reply, sau đó GameOver/lobby/disconnect sạch. Evidence sanitized: [`cp08-cards-and-choice-multiplayer-live-1792148779102.json`](../scratch/evidence/cp08-cards-and-choice-multiplayer-live-1792148779102.json). Candidate đã sẵn sàng cho user smoke test; chưa phải official/device sign-off.
-- **CP19 self-equipment ordering fix (local, 16/10/2026):** `EquipmentUpdate` nay nhận snapshot trang bị của chính `ownId` ngay cả khi reconnect phát sự kiện trước `AddPlayer`/`ArrangeSeats`; các seat khác vẫn phải thuộc public roster nên không mở thêm privacy surface. Regression mới khóa weapon/delayed-trick được sanitize, tồn tại sau khi roster dựng lại và unknown opponent bị bỏ qua. Đã quan sát `test:store` **44/44**, `test:connection` **31/31**, browser E2E **21/21**, real-Lua E2E pass toàn bộ suite, typecheck, production build và release verifier **16.522 files**. Release root đã tạo với JS `index-6fCl3qDg.js`, HTML SHA-256 `b69c5a4a…`, JS SHA-256 `fed6e578…`, CSS giữ `b7db388e…`; đang chờ deploy Render trước khi ghi nhận candidate live.
+- **CP19 self-equipment ordering fix (candidate live, 16/10/2026):** `EquipmentUpdate` nay nhận snapshot trang bị của chính `ownId` ngay cả khi reconnect phát sự kiện trước `AddPlayer`/`ArrangeSeats`; các seat khác vẫn phải thuộc public roster nên không mở thêm privacy surface. Regression mới khóa weapon/delayed-trick được sanitize, tồn tại sau khi roster dựng lại và unknown opponent bị bỏ qua. Đã quan sát `test:store` **44/44**, `test:connection` **31/31**, browser E2E **21/21**, real-Lua E2E pass toàn bộ suite, typecheck, production build và release verifier **16.522 files**. Deployment [`dep-db90dleq1p3s739kjsp0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db90dleq1p3s739kjsp0) từ commit `d0d5f498` báo `Deploy succeeded | Live`; public `/gateway/healthz` trả `ok`, HTML/JS/CSS byte-compare PASS với SHA-256 `b69c5a4a…` / `fed6e578…` / `b7db388e…`, HTML trỏ `index-6fCl3qDg.js`. Candidate đã sẵn sàng cho user smoke test; chưa phải official/device sign-off.
 - **M3 request-dialog UX correction (local, 16/10/2026):** thêm [RequestDialog.tsx](../game/web/src/RequestDialog.tsx) làm lớp modal chung cho request do Lua sở hữu: focus vào action đầu tiên, giữ vòng Tab trong dialog, Escape chỉ gọi cancel khi payload cho phép, và bottom-sheet portrait có safe-area/scroll riêng. Test real-Lua mới xác nhận `AskForSkillInvoke` focus đúng nút Kích hoạt và Escape phát đúng `__cancel`; toàn bộ dialog P0 vẫn pass expiry/replacement/disconnect/privacy. Không auto-reply và không thay validation/reply bytes của `GameConnection`.
 - **M4 waiting-room affordance correction (local, 16/10/2026):** thêm `roomStartDisabledReason()` trong `roomReadiness.ts` và gắn `aria-describedby`, `title` cùng status hint cho nút Bắt đầu của chủ phòng. Hint phân biệt đúng ba trạng thái observable hiện có: chưa đủ ghế, còn người chơi chưa ready, hoặc observer không thể bắt đầu; lobby cũng dùng `roomPoolDisabledReason()` để giải thích khi bể native không đủ tướng/bài trước khi tạo phòng. Không tạo readiness rule thứ hai và không thay đổi wire/law. `test:store` **43/43**, browser E2E **21/21**, real-Lua E2E **63/63** và typecheck/build đều PASS sau mốc này; diff check riêng các file của slice cũng PASS. Screenshot `390_portrait_waiting_room.png` đã được capture lại để chứa trạng thái giải thích nút.
 - **M5 mobile card-inspection correction (local, 16/10/2026):** `HandCardItem` nhận long-press trên touch để mở `CardDetailSheet` cho chính lá đang giữ; click ngắn vẫn chỉ dispatch `CardItem` selection và long-press không tạo Lua action/reply. Sheet cho phép Escape/Đóng, khóa scroll nền, hiển thị native art + suit/rank/category/mô tả tiếng Việt. Browser E2E **21/21**, card-display **13/13**, real-Lua E2E **63/63**; capture thêm `dialog_card_detail_long_press.png`. Đây là mobile UX local, chưa thay thế device gesture smoke.
@@ -89,28 +89,21 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T11:12:23.571Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `c51af5b48c42`.
-- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T11:15:38.748Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `d0d5f4985dda`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M RELEASE.json
- D dist/assets/index-CFgQ4-qn.js
- M dist/index.html
- M dist/sw.js
  M docs/CODEX_PLAN.md
  M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
- M game/web/scripts/store.test.ts
- M game/web/src/store/boardState.ts
-?? dist/assets/index-6fCl3qDg.js
 ```
 
 Ba commit gần nhất:
 
 ```text
+d0d5f498 fix: preserve self equipment during reconnect
 c51af5b4 docs: record CP18 candidate smoke
 601dbbe7 fix: restore native private skill ownership
-c25421ef docs: refresh deployment checkpoint snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
