@@ -82,6 +82,8 @@ export type QaScenarioId =
   | 'hidden-jianzhi-deputy'
   | 'hidden-zhiman'
   | 'hidden-zhiman-deputy'
+  | 'hidden-jilix'
+  | 'hidden-jilix-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -148,6 +150,7 @@ export type QaScenarioTrigger =
   | 'hidden-dufu'
   | 'hidden-jianzhi'
   | 'hidden-zhiman'
+  | 'hidden-jilix'
   | 'hidden-gongqing'
   | 'hidden-enyuan'
   | 'hidden-fuyin';
@@ -944,6 +947,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-zhiman',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-jilix': {
+    version: 1,
+    id: 'hidden-jilix',
+    title: '严白虎 úp: Ký Ly lặp Sát đỏ rồi ngăn sát thương lần hai',
+    seed: 0x5d6e7fca,
+    drawSequence: [trueName('slash', 'red')],
+    slots: [slot('jilix-slash', trueName('slash', 'red'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-jilix',
+    expectedCommand: 'PlayCard',
+  },
+  'hidden-jilix-deputy': {
+    version: 1,
+    id: 'hidden-jilix-deputy',
+    title: '严白虎 phó tướng úp: Ký Ly lặp Sát đỏ rồi ngăn sát thương lần hai',
+    seed: 0x5d6e7fcb,
+    drawSequence: [trueName('slash', 'red')],
+    slots: [slot('jilix-slash', trueName('slash', 'red'), 'opponent', 'hand', true, 0)],
+    trigger: 'hidden-jilix',
+    expectedCommand: 'PlayCard',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -1036,6 +1059,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-dufu', 'hidden-dufu-deputy',
   'hidden-jianzhi', 'hidden-jianzhi-deputy',
   'hidden-zhiman', 'hidden-zhiman-deputy',
+  'hidden-jilix', 'hidden-jilix-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
   'hidden-fuyin', 'hidden-fuyin-deputy',
@@ -1275,6 +1299,14 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[1].area !== 'equip' || !('type' in plan.slots[1].match) ||
         plan.slots[1].match.type !== 'equip') {
       throw new QaScenarioError(`${plan.id} must reserve an actor Slash and opponent equipment for Chế Man`);
+    }
+  }
+  if (plan.trigger === 'hidden-jilix') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'jilix-slash' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[0].match.color !== 'red') {
+      throw new QaScenarioError(`${plan.id} must reserve one red opponent Slash for Ký Ly`);
     }
   }
   if (plan.trigger === 'hidden-gongqing') {

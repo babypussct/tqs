@@ -38,6 +38,7 @@ const ejueSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg
 const dufuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zfxp/skills/dufu.lua');
 const jianzhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zqdl/skills/jianzhi.lua');
 const zhimanSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/transformation/skills/zhiman.lua');
+const jilixSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/lord_ex/skills/jilix.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -1318,6 +1319,55 @@ test('hidden-zhiman locks DamageCaused prevention, equipment obtain and reveal-b
     'SkillEffect must reveal the matching slot before running Zhiman effect');
   assert.match(qaInit, /scenario\.trigger == "hidden-zhiman"[\s\S]*triggerHiddenZhiman\(room, state\)/u);
   assert.match(qaInit, /hidden-zhiman[\s\S]*fk\.DamageCaused[\s\S]*hiddenZhimanDamageCaused/u);
+});
+
+test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted removal for both slots', () => {
+  const expected = {
+    'hidden-jilix': {
+      seed: 0x5d6e7fca,
+      actor: { general: 'ld__yanbaihu', deputy: 'ld__huangzu', kingdom: 'qun' },
+    },
+    'hidden-jilix-deputy': {
+      seed: 0x5d6e7fcb,
+      actor: { general: 'ld__huangzu', deputy: 'ld__yanbaihu', kingdom: 'qun' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-jilix', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'PlayCard', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'jilix-slash', match: { trueName: 'slash', color: 'red' }, owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const jilix = fs.readFileSync(jilixSkillPath, 'utf8');
+  const skillEvent = fs.readFileSync(skillEventPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(jilix, /name = "ld__jilix"/u);
+  assert.match(jilix, /tags = \{ Skill\.Compulsory \}/u);
+  assert.match(jilix, /jilix:addEffect\(fk\.TargetConfirmed/u);
+  assert.match(jilix, /data\.card\.color == Card\.Red/u);
+  assert.match(jilix, /data\.use\.additionalEffect/u);
+  assert.match(jilix, /jilix:addEffect\(fk\.DamageInflicted/u);
+  assert.match(jilix, /getActualDamageEvents\(2/u);
+  assert.match(jilix, /data:preventDamage\(\)/u);
+  assert.match(jilix, /H\.removeGeneral\(player, isDeputy == "d"\)/u);
+  const revealIndex = skillEvent.indexOf('player:revealBySkillName(main_skill.name)');
+  const effectCallbackIndex = skillEvent.indexOf('effect_cb()');
+  assert.ok(revealIndex >= 0, 'SkillEffect must reveal the hidden general by skill name');
+  assert.ok(effectCallbackIndex > revealIndex,
+    'SkillEffect must reveal the matching slot before running Jilix effect');
+  assert.match(qaInit, /scenario\.trigger == "hidden-jilix"[\s\S]*triggerHiddenJilix\(room, state\)/u);
+  assert.match(qaInit, /hidden-jilix[\s\S]*fk\.TargetConfirmed[\s\S]*hiddenJilixTargetConfirmed/u);
+  assert.match(qaInit, /hidden-jilix[\s\S]*fk\.DamageInflicted[\s\S]*hiddenJilixDamageInflicted/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {

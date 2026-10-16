@@ -2105,6 +2105,68 @@
       ]
     },
     {
+      "id": "hidden-jilix",
+      "title": "Hidden main 严白虎 寄篱 repeats red Slash then prevents the second damage",
+      "seed": 1567522762,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-jilix",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__yanbaihu",
+          "deputy": "ld__huangzu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jilix-slash",
+          "match": {
+            "trueName": "slash",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jilix-deputy",
+      "title": "Hidden deputy 严白虎 寄篱 repeats red Slash then prevents the second damage",
+      "seed": 1567522763,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-jilix",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__huangzu",
+          "deputy": "ld__yanbaihu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jilix-slash",
+          "match": {
+            "trueName": "slash",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
       "id": "hidden-zhiman-deputy",
       "title": "Hidden deputy 马谡 Chế Man ngăn sát thương và lấy trang bị",
       "seed": 1567522761,

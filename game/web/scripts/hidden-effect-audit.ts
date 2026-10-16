@@ -53,6 +53,7 @@ const NATIVE_LOCAL_EFFECT_EVIDENCE: readonly EvidenceMap[] = [
   { scenario: 'hidden-dufu (+ deputy)', skill: 'heg__dufu', events: ['fk.DamageCaused'] },
   { scenario: 'hidden-jianzhi (+ deputy)', skill: 'heg__jianzhi', events: ['fk.DamageCaused'] },
   { scenario: 'hidden-zhiman (+ deputy)', skill: 'ld__zhiman', events: ['fk.DamageCaused'] },
+  { scenario: 'hidden-jilix (+ deputy)', skill: 'ld__jilix', events: ['fk.TargetConfirmed', 'fk.DamageInflicted'] },
 ];
 
 const LUA_EFFECT_AUDIT = String.raw`

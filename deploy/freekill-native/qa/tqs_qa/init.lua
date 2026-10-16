@@ -433,6 +433,34 @@ local function validateHiddenZhimanScenario(scenario)
   end
 end
 
+local function validateHiddenJilixScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-jilix scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-jilix-deputy"
+  local expectedMain = deputy and "ld__huangzu" or "ld__yanbaihu"
+  local expectedDeputy = deputy and "ld__yanbaihu" or "ld__huangzu"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "qun" then
+    fail("hidden-jilix actor must use the catalogued Yan Baihu main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-jilix source must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "PlayCard" then
+    fail("hidden-jilix must expose the native PlayCard red Slash request")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "jilix-slash" or scenario.cards[1].owner ~= "target" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "slash" or scenario.cards[1].match.color ~= "red" then
+    fail("hidden-jilix must reserve exactly one red source Slash")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -1047,6 +1075,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenJianzhiScenario(scenario)
   elseif scenario.trigger == "hidden-zhiman" then
     validateHiddenZhimanScenario(scenario)
+  elseif scenario.trigger == "hidden-jilix" then
+    validateHiddenJilixScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1428,6 +1458,8 @@ local function setupState(room, scenario, seed)
     hiddenDufuDamageCaused = false,
     hiddenJianzhiDamageCaused = false,
     hiddenZhimanDamageCaused = false,
+    hiddenJilixTargetConfirmed = false,
+    hiddenJilixDamageInflicted = 0,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2797,6 +2829,97 @@ local function triggerHiddenZhiman(room, state)
   }
   fk.qInfo(string.format("[tqs_qa] hidden-zhiman damage_caused=true prevented=true obtained_equipment=true skill_effect=true revealed=%s slot=%s revision=%s",
     tostring(revealedCorrectSlot), zhimanIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenJilix(room, state)
+  -- 寄篱 has two linked source effects. A red Slash is repeated at
+  -- TargetConfirmed, then the second DamageInflicted in the phase is
+  -- prevented and removes the general that owns the hidden skill.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-jilix actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("ld__jilix") then
+    fail("hidden-jilix must attach the hidden Jilix skill")
+  end
+  if state.actor:hasSkill("ld__jilix") then
+    fail("hidden-jilix must not be active before the TargetConfirmed branch")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_jilix_gate",
+    prompt = "TQS QA: prelight Ký Ly, rồi xác nhận để nguồn dùng Sát đỏ.",
+  })
+  if not gate then
+    fail("hidden-jilix QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "ld__jilix") then
+    fail("hidden-jilix must be prelighted before the TargetConfirmed branch")
+  end
+
+  local cardId = state.slotCards["jilix-slash"]
+  if not cardId or not table.contains(state.target:getCardIds(Player.Hand), cardId) then
+    fail("hidden-jilix must put the reserved red Slash in the native source hand")
+  end
+
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.target, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_jilix_damage",
+    prompt = "TQS QA: dùng Sát đỏ lên đối thủ để kiểm tra Ký Ly.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.actor.id }, must_targets = { state.actor.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or use.card.trueName ~= "slash" or
+      #use.tos ~= 1 or use.tos[1] ~= state.actor then
+    fail("hidden-jilix must receive the reserved red Slash against the actor")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effectCount = 0
+  for _, entry in ipairs(state.skillEffects) do
+    if entry.step == 1 and entry.skill == "ld__jilix" and entry.player == state.actor.id then
+      effectCount = effectCount + 1
+    end
+  end
+  local jilixIsDeputy = state.scenario == "hidden-jilix-deputy"
+  local removedCorrectSlot = jilixIsDeputy
+    and state.actor.general == "ld__huangzu" and state.actor.deputyGeneral == "blank_shibing"
+    or not jilixIsDeputy and state.actor.general == "blank_shibing" and state.actor.deputyGeneral == "ld__huangzu"
+  local damage = 0
+  for _, entry in ipairs(state.damageEvents) do
+    if entry.step == 1 and entry.to == state.actor.id then damage = damage + entry.amount end
+  end
+  local hpLoss = actorHpBefore - state.actor.hp
+  if not state.hiddenJilixTargetConfirmed or state.hiddenJilixDamageInflicted ~= 2 or
+      effectCount < 2 or damage ~= 1 or hpLoss ~= 1 or not removedCorrectSlot then
+    fail(string.format("prelighted hidden Jilix must repeat the red Slash, prevent the second damage and remove the owning slot; " ..
+      "target_confirmed=%s damage_inflicted=%d effects=%d damage=%d hp_loss=%d removed_slot=%s general=%s deputy=%s",
+      tostring(state.hiddenJilixTargetConfirmed), state.hiddenJilixDamageInflicted, effectCount, damage, hpLoss,
+      tostring(removedCorrectSlot), state.actor.general, state.actor.deputyGeneral))
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Ký Ly: TargetConfirmed=%arg; DamageInflicted lần hai=%arg2; sát thương thực=%arg3; xoá đúng ô=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = tostring(state.hiddenJilixTargetConfirmed),
+    arg2 = tostring(state.hiddenJilixDamageInflicted == 2),
+    arg3 = tostring(damage),
+    arg4 = tostring(removedCorrectSlot),
+    arg5 = jilixIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-jilix target_confirmed=true damage_inflicted=2 repeated=true prevented_second=true damage=%d removed_slot=%s slot=%s main=%s deputy=%s revision=%s",
+    damage, tostring(removedCorrectSlot), jilixIsDeputy and "deputy" or "main", state.actor.general,
+    state.actor.deputyGeneral, manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -4602,7 +4725,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-jianzhi" or
       state.scenario == "hidden-jianzhi-deputy" or
       state.scenario == "hidden-zhiman" or
-      state.scenario == "hidden-zhiman-deputy") and
+      state.scenario == "hidden-zhiman-deputy" or
+      state.scenario == "hidden-jilix" or
+      state.scenario == "hidden-jilix-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4770,6 +4895,35 @@ director:addEffect(fk.TargetConfirmed, {
     state.hiddenFuyinTargetConfirmed = true
     state.hiddenFuyinNullified = data.nullified == true or
       (data.use and data.use.nullifiedTargets and table.contains(data.use.nullifiedTargets, state.actor))
+  end,
+})
+
+director:addEffect(fk.TargetConfirmed, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-jilix" or state.scenario == "hidden-jilix-deputy") and
+      state.currentDamageStep and target == state.actor and data and data.card and
+      data.card.trueName == "slash" and data.card.color == Card.Red and data.from == state.target and
+      data:isOnlyTarget(state.actor)
+  end,
+  on_trigger = function(self, event, target, player, data)
+    stateFor(player.room).hiddenJilixTargetConfirmed = true
+  end,
+})
+
+director:addEffect(fk.DamageInflicted, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "hidden-jilix" or state.scenario == "hidden-jilix-deputy") and
+      state.currentDamageStep and target == state.actor and data and data.from == state.target
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.hiddenJilixDamageInflicted = state.hiddenJilixDamageInflicted + 1
   end,
 })
 
@@ -4951,6 +5105,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenJianzhi(room, state)
     elseif scenario.trigger == "hidden-zhiman" then
       triggerHiddenZhiman(room, state)
+    elseif scenario.trigger == "hidden-jilix" then
+      triggerHiddenJilix(room, state)
     end
   end,
 })
