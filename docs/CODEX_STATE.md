@@ -60,22 +60,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T04:15:26.810Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `b0ac076a6305`.
-- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T04:15:45.005Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `f3aca5875c1b`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M deploy/freekill-native/scripts/bootstrap-source.sh
-?? deploy/freekill-native/scripts/prepare-build-resources.sh
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+f3aca587 ops: add low-memory VM build preparation
 b0ac076a docs: checkpoint CP16 VM recovery
 e3c54ccf ops: harden constrained native source builds
-c0b8b3e6 docs: refresh CP15 handoff snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
