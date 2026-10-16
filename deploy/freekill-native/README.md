@@ -117,9 +117,9 @@ These are two separate layers and must be verified independently:
 
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
-`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09–CP13
-health, manifest, login, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt,
-Độc Phu, Gian Chí and Chế Man main/deputy have verified the route on the web
+`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09–CP14
+health, manifest, login, hidden Di Kế positive, hidden Phụ Âm current, hidden
+Ách Tuyệt, Độc Phu, Gian Chí and Chế Man main/deputy have verified the route on the web
 identity. CP13 used a server-only QA package and changed only the observer
 priority needed to see `DamageCaused` before `preventDamage()`; it does not
 change production law. The current QA identity is listed below; any package
@@ -244,9 +244,10 @@ SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; CP13 Chế Man pre-refresh package main/deputy PASS;
-                 Di Kế/Fuyin/Ách Tuyệt/Độc Phu/Gian Chí bounded proof retained
-                 from earlier QA revisions;
+                 main/deputy PASS; CP14 Phụ Âm current package main/deputy PASS;
+                 CP13 Chế Man pre-refresh package main/deputy PASS;
+                 Di Kế/Ách Tuyệt/Độc Phu/Gian Chí bounded proof retained
+                 from earlier QA revisions; Fuyin pre-CP14 retained as historical;
                  full parity OPEN
 ```
 
@@ -267,8 +268,8 @@ Static release:   freekill-asio v0.1.17 amd64
 Runtime flist MD5: 43b6cdade072b75f93b9d49b3384f08f
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      b47e5e829ea3657f848f737b9c732c123063307a
-QA package SHA:   d488a02c8697dda47338ff0dc9723db1cb812a0cb96e1f0db634a16319d34ac8
+QA revision:      51abc9dbc6e45104e1603f7565c7e344b41089c7
+QA package SHA:   60490353f4ee4e7a09718b47df2b5b6e00ec27889006856ee575eeabaa71e30c
 QA catalog SHA:   945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe
 QA config:        enabled; tempBanTime=0; room prefix TQSQA/; two private allowlisted accounts
 QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
@@ -282,10 +283,11 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 `run-server.sh` creates a broken runtime-only symlink while the native process
 calculates the public `flist.txt` MD5, then activates the symlink after port
 9527 is listening. This lets the QA director load on Oracle without changing
-the public Render/Oracle release identity. The current CP13 Chế Man main/deputy
-proof passes with this arrangement. CP09–CP12 proof for Di Kế/Fuyin/Ách Tuyệt/
-Độc Phu/Gian Chí was recorded on earlier QA revisions; CP11–CP13 update only
-the server-only QA package and do not change the public Render web artifact. The earlier 51-run corpus remains
+the public Render/Oracle release identity. The current CP14 Phụ Âm main/deputy
+proof passes with this arrangement. CP13 Chế Man main/deputy proof belongs to
+the previous QA package. CP09–CP12 proof for Di Kế/Fuyin/Ách Tuyệt/Độc Phu/
+Gian Chí was recorded on earlier QA revisions; CP11–CP14 update only the
+server-only QA package/observer and do not change the public Render web artifact. The earlier 51-run corpus remains
 historical and does not close the exhaustive 607-pair rule matrix.
 
 ```sh
