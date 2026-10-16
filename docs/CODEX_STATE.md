@@ -21,6 +21,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **Portrait compact v2 (candidate, 16/10/2026):** prompt gameplay dài nay giữ một dòng trên mobile bằng ellipsis, nhưng vẫn giữ toàn văn qua `aria-label` và `title`; skill/request chips dùng chung profile khoảng `68–104×32px`, action bar dùng profile khoảng `56/46/66×22px`, timer track còn `3px`. Fake-prelight portal trong trạng thái `AskForSkillInvoke` cũng dùng cùng profile nhỏ, tránh mở lại một hộp kỹ năng lớn ở đáy màn hình. Browser E2E **21/21**, real-Lua E2E **63/63**, typecheck, card/store regression, capture M6 và production build đều PASS sau mốc này. Candidate đã được deploy; chưa đóng visual/touch acceptance trên iOS Safari hoặc Android Chrome thật.
 - **Portrait ticker/dashboard overlap correction (candidate, 16/10/2026):** loại bỏ `board-moments` trùng ở giữa bàn; `GameBoardScreen.tsx` chỉ render một ticker chứa diễn biến mới nhất, còn toàn bộ lịch sử mở bằng log drawer và mặc định thu gọn ở viewport hẹp. `board-local-dashboard` portrait chuyển về normal flow thay vì `sticky`, bàn dùng chiều cao co giãn `170–200px`, profile 2 người đặt tâm bàn riêng để không chạm ghế đối thủ, hand active và idle đều dùng card `64×88px` với scroll ngang không âm margin. Các selector compact được áp dụng cho cả `.sg-game-shell` lẫn `.sg-game-board`, equipment placeholder công khai của đối thủ có tương phản/icon rõ hơn. Tab log desktop thu gọn dùng nhãn nhìn thấy `Mở` vừa cột 42px nhưng vẫn giữ `aria-label` đầy đủ. Regression đã thêm viewport ngắn `360×667` và khóa computed position của dashboard là `relative`, không được quay lại sticky. Lớp display card chỉ bỏ hậu tố `(Quốc Chiến)`; `localizedGameLog()` chuẩn hóa các biến thể `rút liễu/liêu ... lá lá bài`, `Điên Vi`, dấu `/` giữa song tướng và `(Bạn)`, không đổi wire ID hay luật Lua. Evidence đã quan sát: capture M6 **14 ảnh**, typecheck, `test:store` **43/43**, `test:connection` **29/29**, `test:gameplay` **16/16**, `test:native-dialogs` **7/7**, `test:card-display` **14/14**, `test:vietnamese` **4/4**, `seat-layout` **4/4**, browser E2E **21/21**, real-Lua E2E **63/63**, production build PASS; candidate đã deploy, chưa có device sign-off.
 - **Portrait toolbar compression (candidate, 16/10/2026):** top action `BOT chơi hộ`/`Rời trận` nay dùng SVG icon-only trên portrait để không tạo thêm hàng và không lặp chữ trong vùng hẹp; `aria-label`/`title` vẫn giữ nguyên tên thao tác, desktop/tablet vẫn hiển thị chữ. Reset `margin-top`/`flex-wrap` của `.inline-controls` trong board loại bỏ chiều cao thừa kế từ layout form chung; coarse-pointer có hit area tối thiểu 40–44px. Card-display **14/14**, typecheck, capture M6 và real-Lua E2E **63/63** PASS; geometry assertion khóa toolbar ≤48px, ticker ≤32px và icon visible/label hidden trên portrait. Candidate đã deploy; vẫn cần touch smoke trên thiết bị thật.
+- **Portrait prompt chrome cleanup (local, chuẩn bị redeploy, 16/10/2026):** rule mobile cũ của `.gameplay-control-heading` vẫn để lại `margin âm`, nền panel và đường kẻ desktop dù dashboard đã chuyển sang normal flow; đã override trong portrait để prompt shell `position: static`, margin/padding/border bằng 0 và nền trong suốt. Điều này giữ prompt/timer một hàng gọn, không tạo thêm vùng mô tả đè lên seat/hand; không đổi action, wire hay Lua lifecycle. Đã thêm computed-style regression cho prompt shell trong `real-lua-e2e`; browser **21/21**, real-Lua **63/63**, store **43/43**, connection **29/29**, card-display **14/14**, native-dialogs **7/7**, typecheck/build và capture M6 PASS. Bằng chứng ảnh mới vẫn cho thấy hand 10 lá cuộn ngang, self equipment mounted; candidate Render sẽ được redeploy sau checkpoint.
 - **M3 request-dialog UX correction (local, 16/10/2026):** thêm [RequestDialog.tsx](../game/web/src/RequestDialog.tsx) làm lớp modal chung cho request do Lua sở hữu: focus vào action đầu tiên, giữ vòng Tab trong dialog, Escape chỉ gọi cancel khi payload cho phép, và bottom-sheet portrait có safe-area/scroll riêng. Test real-Lua mới xác nhận `AskForSkillInvoke` focus đúng nút Kích hoạt và Escape phát đúng `__cancel`; toàn bộ dialog P0 vẫn pass expiry/replacement/disconnect/privacy. Không auto-reply và không thay validation/reply bytes của `GameConnection`.
 - **M4 waiting-room affordance correction (local, 16/10/2026):** thêm `roomStartDisabledReason()` trong `roomReadiness.ts` và gắn `aria-describedby`, `title` cùng status hint cho nút Bắt đầu của chủ phòng. Hint phân biệt đúng ba trạng thái observable hiện có: chưa đủ ghế, còn người chơi chưa ready, hoặc observer không thể bắt đầu; lobby cũng dùng `roomPoolDisabledReason()` để giải thích khi bể native không đủ tướng/bài trước khi tạo phòng. Không tạo readiness rule thứ hai và không thay đổi wire/law. `test:store` **43/43**, browser E2E **21/21**, real-Lua E2E **63/63** và typecheck/build đều PASS sau mốc này; diff check riêng các file của slice cũng PASS. Screenshot `390_portrait_waiting_room.png` đã được capture lại để chứa trạng thái giải thích nút.
 - **M5 mobile card-inspection correction (local, 16/10/2026):** `HandCardItem` nhận long-press trên touch để mở `CardDetailSheet` cho chính lá đang giữ; click ngắn vẫn chỉ dispatch `CardItem` selection và long-press không tạo Lua action/reply. Sheet cho phép Escape/Đóng, khóa scroll nền, hiển thị native art + suit/rank/category/mô tả tiếng Việt. Browser E2E **21/21**, card-display **13/13**, real-Lua E2E **63/63**; capture thêm `dialog_card_detail_long_press.png`. Đây là mobile UX local, chưa thay thế device gesture smoke.
@@ -85,20 +86,29 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T10:18:06.290Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `ab817c82d709`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T10:26:00.918Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `902c42cd30b0`.
+- File thay đổi hiển thị: 10 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ D dist/assets/index-D6IewbH2.js
+ D dist/assets/index-DvsdgYae.css
+ M dist/index.html
+ M dist/sw.js
+ M docs/CODEX_PLAN.md
+ M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/styles.css
+?? dist/assets/index-DG50LXpj.css
+?? dist/assets/index-g6-GsOoS.js
 ```
 
 Ba commit gần nhất:
 
 ```text
+902c42cd docs: record final Render redeploy
 ab817c82 docs: refresh final checkpoint snapshot
 c5d535ae docs: sync translation sheet
-b0e32af8 docs: record Render UI checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

@@ -4369,8 +4369,15 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     transform: none;
     align-items: stretch;
     gap: 2px;
+    padding: 0;
+    background: transparent;
   }
   .sg-gameplay-controls .sg-control-prompt-bar {
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
     gap: 2px;
   }
   .sg-gameplay-controls .sg-floating-controls-hud .gameplay-prompt {

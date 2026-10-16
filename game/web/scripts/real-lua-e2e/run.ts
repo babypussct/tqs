@@ -115,6 +115,8 @@ try {
           const skillRail = document.querySelector<HTMLElement>('.board-local-skill-rail');
           const skillBox = skillRail?.getBoundingClientRect();
           const skillStyles = skillRail ? getComputedStyle(skillRail) : null;
+          const promptShell = document.querySelector<HTMLElement>('.sg-gameplay-controls .gameplay-control-heading');
+          const promptShellStyles = promptShell ? getComputedStyle(promptShell) : null;
           return {
             viewportWidth: window.innerWidth,
             viewportHeight: window.innerHeight,
@@ -157,6 +159,15 @@ try {
               left: tickerBox.left, right: tickerBox.right, top: tickerBox.top,
               bottom: tickerBox.bottom, width: tickerBox.width, height: tickerBox.height,
             } : null,
+            promptShell: promptShellStyles ? {
+              position: promptShellStyles.position,
+              marginTop: promptShellStyles.marginTop,
+              marginBottom: promptShellStyles.marginBottom,
+              paddingTop: promptShellStyles.paddingTop,
+              paddingBottom: promptShellStyles.paddingBottom,
+              backgroundColor: promptShellStyles.backgroundColor,
+              borderBottomWidth: promptShellStyles.borderBottomWidth,
+            } : null,
           };
         });
         assert.ok(layout.hand, `${label}: gameplay hand must be mounted`);
@@ -189,6 +200,16 @@ try {
           `${label}: toolbar is still consuming a desktop-sized row (${JSON.stringify(layout.toolbar)})`);
         assert.ok(layout.ticker && layout.ticker.height <= 32,
           `${label}: latest-event ticker is too tall (${JSON.stringify(layout.ticker)})`);
+        assert.equal(layout.promptShell?.position, 'static',
+          `${label}: portrait prompt shell must stay in normal flow (${JSON.stringify(layout.promptShell)})`);
+        assert.equal(layout.promptShell?.marginTop, '0px',
+          `${label}: portrait prompt shell keeps a negative/large top margin (${JSON.stringify(layout.promptShell)})`);
+        assert.equal(layout.promptShell?.marginBottom, '0px',
+          `${label}: portrait prompt shell keeps a hidden bottom margin (${JSON.stringify(layout.promptShell)})`);
+        assert.equal(layout.promptShell?.backgroundColor, 'rgba(0, 0, 0, 0)',
+          `${label}: portrait prompt shell must not paint a second oversized panel (${JSON.stringify(layout.promptShell)})`);
+        assert.equal(layout.promptShell?.borderBottomWidth, '0px',
+          `${label}: portrait prompt shell must not retain the desktop divider (${JSON.stringify(layout.promptShell)})`);
         const toolbarLabel = p.locator('.board-toolbar .sg-toolbar-action-label').first();
         const toolbarIcon = p.locator('.board-toolbar .sg-toolbar-action-icon').first();
         assert.equal(await toolbarLabel.evaluate((element) => getComputedStyle(element).display), 'none',
