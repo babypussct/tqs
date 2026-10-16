@@ -60,27 +60,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T02:30:36.826Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `b47e5e829ea3`.
-- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T02:31:58.989Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `f94d3bcad976`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/README.md
- M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
- M deploy/freekill-native/qa/tqs_qa/README.md
- M deploy/freekill-native/scripts/bootstrap-source.sh
- M deploy/freekill-native/server/freekill.server.config.json
- M docs/CODEX_PLAN.md
- M docs/web-client/LIVE_TESTING.md
-?? deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+f94d3bca fix: protect production reconnect from temp bans
 b47e5e82 test: isolate QA runner from temp bans
 a9d915a9 test: run hidden Jilix inside a real phase
-ad1adfb3 test: prove hidden Jilix trigger parity
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
