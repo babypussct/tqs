@@ -27,6 +27,13 @@ export interface RoomPlayer {
   netState?: 'online' | 'trust' | 'run' | 'robot' | 'offline';
 }
 
+/** Public identity of a room observer. Observers never occupy a player seat. */
+export interface RoomObserver {
+  id: number;
+  name: string;
+  avatar: string;
+}
+
 export type GamePhase = 'boot' | 'login' | 'lobby' | 'room' | 'playing';
 
 export interface GameResult {
@@ -90,10 +97,12 @@ export interface GameSnapshot {
   rooms: LobbyRoom[];
   roomName: string;
   roomMode: string;
+  roomIsObserver: boolean;
   roomDisabledPacks: string[];
   roomDisabledGenerals: string[];
   capacity: number;
   players: RoomPlayer[];
+  observers: RoomObserver[];
   ownId: number | null;
   pendingRequest: RequestInfo | null;
   skillInvoke: SkillInvokePrompt | null;
@@ -108,9 +117,9 @@ export interface GameSnapshot {
 
 export const initialSnapshot: GameSnapshot = {
   phase: 'boot', connection: { kind: 'booting' }, manifest: null,
-  progress: '', error: null, rooms: [], roomName: '', roomMode: '',
+  progress: '', error: null, rooms: [], roomName: '', roomMode: '', roomIsObserver: false,
   roomDisabledPacks: [], roomDisabledGenerals: [],
-  capacity: 0, players: [], ownId: null, pendingRequest: null, skillInvoke: null,
+  capacity: 0, players: [], observers: [], ownId: null, pendingRequest: null, skillInvoke: null,
   fakeSkills: [],
   regularSkills: [],
   initialGeneral: null,
@@ -131,6 +140,17 @@ function parseRooms(data: unknown): LobbyRoom[] {
     if (!Number.isInteger(id) || typeof name !== 'string' || typeof mode !== 'string' ||
         !Number.isInteger(players) || !Number.isInteger(capacity)) return [];
     return [{ id, name, mode, players, capacity, hasPassword: !!hasPassword, outdated: !!outdated }];
+  });
+}
+
+function parseObservers(data: unknown): RoomObserver[] {
+  const seen = new Set<number>();
+  return entries(data).flatMap((entry): RoomObserver[] => {
+    if (!Array.isArray(entry) || !Number.isSafeInteger(entry[0])) return [];
+    const id = entry[0] as number;
+    if (seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, name: String(entry[1] ?? ''), avatar: String(entry[2] ?? '') }];
   });
 }
 
@@ -160,9 +180,10 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         : state;
     case 'EnterLobby':
       return { ...state, phase: 'lobby', error: null, roomName: '', roomMode: '',
+        roomIsObserver: false,
         roomDisabledPacks: [], roomDisabledGenerals: [],
         result: null,
-        capacity: 0, players: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
+        capacity: 0, players: [], observers: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
         fakeSkills: [],
         regularSkills: [],
         board: emptyBoard(), gameplay: emptyGameplay() };
@@ -193,7 +214,9 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       return { ...state, phase: 'room', error: null,
         result: null,
         players: basePlayers.length ? players : state.players,
+        observers: parseObservers(settings._observers),
         roomName: String(settings.roomName ?? ''), roomMode: String(settings.gameMode ?? ''),
+        roomIsObserver: settings.isObserver === true,
         roomDisabledPacks: Array.isArray(settings.disabledPack) ? settings.disabledPack.filter((p): p is string => typeof p === 'string') : [],
         roomDisabledGenerals: Array.isArray(settings.disabledGenerals) ? settings.disabledGenerals.filter((p): p is string => typeof p === 'string') : [],
         capacity: Number(arr[0]) || 0, pendingRequest: null, skillInvoke: null, initialGeneral: null,
@@ -213,6 +236,41 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       return { ...state, players: state.players.filter((p) => p.id !== arr[0]),
         board: { ...state.board, seats: state.board.seats.filter((id) => id !== arr[0]),
           player: Object.fromEntries(Object.entries(state.board.player).filter(([id]) => Number(id) !== arr[0])) } };
+    case 'AddObserver': {
+      if (!Number.isSafeInteger(arr[0])) return state;
+      const observer: RoomObserver = { id: arr[0] as number, name: String(arr[1] ?? ''), avatar: String(arr[2] ?? '') };
+      return { ...state,
+        players: state.players.filter((player) => player.id !== observer.id),
+        observers: [...state.observers.filter((item) => item.id !== observer.id), observer],
+        roomIsObserver: state.ownId === observer.id ? true : state.roomIsObserver,
+      };
+    }
+    case 'RemoveObserver':
+      return { ...state, observers: state.observers.filter((observer) => observer.id !== arr[0]) };
+    case 'SwitchToObserver': {
+      if (!Number.isSafeInteger(arr[0])) return state;
+      const id = arr[0] as number;
+      const player = state.players.find((item) => item.id === id);
+      if (!player) return state;
+      const observer: RoomObserver = { id: player.id, name: player.name, avatar: player.avatar };
+      return { ...state,
+        players: state.players.filter((item) => item.id !== id),
+        observers: [...state.observers.filter((item) => item.id !== id), observer],
+        roomIsObserver: state.ownId === id ? true : state.roomIsObserver,
+      };
+    }
+    case 'SwitchToPlayer': {
+      if (!Number.isSafeInteger(arr[0])) return state;
+      const id = arr[0] as number;
+      const observer = state.observers.find((item) => item.id === id);
+      if (!observer) return state;
+      const player: RoomPlayer = { ...observer, ready: false, owner: false };
+      return { ...state,
+        observers: state.observers.filter((item) => item.id !== id),
+        players: [...state.players.filter((item) => item.id !== id), player],
+        roomIsObserver: state.ownId === id ? false : state.roomIsObserver,
+      };
+    }
     case 'ReadyChanged':
       return { ...state, players: state.players.map((p) => p.id === arr[0] ? { ...p, ready: arr[1] === true } : p) };
     case 'RoomOwner':

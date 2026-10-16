@@ -421,6 +421,9 @@ async function verifyUiTranslations(page: Page) {
     assert.ok(pairChosen, 'No valid general pair in live offer');
     await page.getByRole('button', { name: 'Xác nhận tướng' }).click();
     await page.locator('.game-board').waitFor({ timeout: 75_000 });
+    const logRegion = page.getByRole('region', { name: 'Nhật ký trận đấu' });
+    const openLog = logRegion.getByRole('button', { name: 'Xem nhật ký' });
+    if (await openLog.count()) await openLog.click();
 
     // The observer records DOM text only; its selector excludes card metadata,
     // internal state and network payloads. A set prevents duplicate growth.

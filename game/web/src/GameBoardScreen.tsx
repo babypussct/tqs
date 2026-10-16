@@ -1,14 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
-import { relativeSeatOrder, serverSeatNumbers, type BoardMoment } from './store/boardState';
+import type { BoardMoment } from './store/boardState';
 import { useGameStore, type RoomPlayer } from './store/gameStore';
-import { GameplayControls, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
+import { GameplayControls, GameplaySkillDock, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
 import { GAMEPLAY_REQUESTS } from './store/gameplayState';
 import PlayerPhotoPanel from './PlayerPhotoPanel';
 import { IdleHandCard, ResolvingCardView } from './HandCardItem';
 import FakeSkillDock from './FakeSkillDock';
 import RegularSkillDock from './RegularSkillDock';
+import { ToolbarBotIcon, ToolbarExitIcon } from './EquipIcons';
 import type { RegularSkill } from './store/gameStore';
+import {
+  deriveSeatViewModels,
+  getDeterministicSeatPosition,
+  getOpponentPosition,
+} from './store/seatLayout';
 
 function useIsMobile(query = '(max-width: 640px)'): boolean {
   const [isMobile, setIsMobile] = useState(() =>
@@ -24,50 +30,7 @@ function useIsMobile(query = '(max-width: 640px)'): boolean {
   return isMobile;
 }
 
-export function getOpponentPosition(
-  opponentIndex: number,
-  totalSeats: number,
-  isMobile: boolean
-): React.CSSProperties {
-  const cX = 50;
-  const cY = isMobile ? 38 : 38.5;
-  const rX = isMobile ? 38 : 42.5;
-  const rY = isMobile ? 24.5 : 28;
-
-  let scale = 1;
-  if (isMobile) {
-    if (totalSeats >= 10) scale = 0.50;
-    else if (totalSeats >= 8) scale = 0.62;
-    else if (totalSeats >= 4) scale = 0.75;
-    else scale = 0.88;
-  } else {
-    if (totalSeats >= 10) scale = 0.60;
-    else if (totalSeats >= 8) scale = 0.72;
-    else if (totalSeats >= 6) scale = 0.80;
-    else if (totalSeats >= 4) scale = 0.88;
-    else scale = 1.0;
-  }
-
-  if (totalSeats <= 2) {
-    return {
-      left: '50%',
-      top: isMobile ? '13%' : '12%',
-      transform: `translate(-50%, -50%) scale(${scale})`,
-    };
-  }
-
-  const angleStep = 360 / totalSeats;
-  const deg = 90 - (opponentIndex + 1) * angleStep;
-  const rad = (deg * Math.PI) / 180;
-  const x = cX + rX * Math.cos(rad);
-  const y = cY + rY * Math.sin(rad);
-
-  return {
-    left: `${x.toFixed(2)}%`,
-    top: `${y.toFixed(2)}%`,
-    transform: `translate(-50%, -50%) scale(${scale})`,
-  };
-}
+export { getDeterministicSeatPosition, getOpponentPosition };
 
 function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): string {
   if (moment.kind === 'log') return localizedGameLog(moment.text);
@@ -86,20 +49,15 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills } = useGameStore((s) => s);
   const text = useDisplayText();
   const isMobile = useIsMobile();
-  const [showLogs, setShowLogs] = useState(true);
+  const [showLogs, setShowLogs] = useState(() =>
+    typeof window === 'undefined' || !window.matchMedia('(max-width: 899px)').matches
+  );
   const [followLogs, setFollowLogs] = useState(true);
-  const [visibleMoments, setVisibleMoments] = useState<BoardMoment[]>([]);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
-  useEffect(() => {
-    if (board.moments.length === 0) {
-      setVisibleMoments([]);
-      return;
-    }
-    // Instantly sync the latest up to 3 moments in lockstep with match logs
-    setVisibleMoments([...board.moments].slice(-3).reverse());
-  }, [board.moments]);
   const lastMomentId = board.moments.at(-1)?.id;
+  const latestMoment = board.moments.at(-1);
+  const seatProfile = Math.min(10, Math.max(2, board.seats.length || 2));
   useLayoutEffect(() => {
     if (showLogs && followLogs && logList.current) logList.current.scrollTop = logList.current.scrollHeight;
   }, [showLogs, followLogs, lastMomentId]);
@@ -125,46 +83,67 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     };
   }, [showLogs, followLogs]);
   const markUserScroll = () => { userScrollUntil.current = performance.now() + 1500; };
-  const seatOrder = relativeSeatOrder(board.seats, players.map((p) => p.id), ownId);
   const byId = new Map(players.map((p) => [p.id, p]));
   const self = ownId == null ? null : byId.get(ownId);
   const trusting = self?.netState === 'trust';
-  const others = seatOrder.filter((id) => id !== ownId);
-  const totalSeats = Math.max(2, seatOrder.length);
-  // Keep the server's absolute seat number for log/UI parity.  The visual
-  // order is rotated so the local player sits at the bottom, but that
-  // rotation must never renumber the seats.
-  const absoluteSeatNumbers = serverSeatNumbers(board.seats, players.map((p) => p.id));
-  const seatNumbers = new Map(seatOrder.map((id, index) => [id, absoluteSeatNumbers.get(id) ?? index + 1]));
   const gameplayActive = !trusting && pendingRequest !== null && GAMEPLAY_REQUESTS.has(pendingRequest.command);
   const requestExpired = pendingRequest?.expiresAt != null && Date.now() >= pendingRequest.expiresAt;
   const targetFor = (id: number) => gameplayActive ? gameplay.items.Photo[String(id)] : undefined;
-  const activeFor = (id: number) => {
-    const phase = board.player[id]?.phase;
-    return phase !== null && phase !== undefined && ![0, 8, 9, 'NotActive', 'PhaseNone'].includes(phase);
-  };
   const chooseTarget = (id: number) => {
     const item = targetFor(id);
     if (item) dispatch('Photo', item.id, 'click', { selected: !item.selected });
   };
 
+  const { selfSeat, opponentSeats } = deriveSeatViewModels({
+    boardSeats: board.seats,
+    playerIds: players.map((p) => p.id),
+    ownId,
+    boardPlayers: board.player,
+    gameplayActive,
+    targetItems: gameplay.items.Photo,
+    isMobile,
+  });
+
   return (
     <section className="game-board sg-game-board" aria-labelledby="board-title">
       <header className="board-toolbar">
-        <div><span className="section-label">04 / Bàn chơi Quốc Chiến</span><h2 id="board-title">{roomName || 'Trận đấu'}</h2></div>
+        <div className="board-toolbar-title">
+          <span className="section-label">04 / Bàn chơi Quốc Chiến</span>
+          <h2 id="board-title">{roomName || 'Trận đấu'}</h2>
+        </div>
         <div className="inline-controls">
-          {toggleTrust && <button className="button secondary" type="button" disabled={busy} onClick={toggleTrust}
-            aria-pressed={trusting}>{trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}</button>}
-          <button className="button secondary" type="button" disabled={busy} onClick={leave}>Rời trận</button>
+          {toggleTrust && <button className="button secondary sg-toolbar-action" type="button" disabled={busy} onClick={toggleTrust}
+            aria-label={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'} title={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}
+            aria-pressed={trusting}>
+            <span className="sg-toolbar-action-icon"><ToolbarBotIcon /></span>
+            <span className="sg-toolbar-action-label">{trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}</span>
+          </button>}
+          <button className="button secondary sg-toolbar-action" type="button" disabled={busy} onClick={leave}
+            aria-label="Rời trận" title="Rời trận">
+            <span className="sg-toolbar-action-icon"><ToolbarExitIcon /></span>
+            <span className="sg-toolbar-action-label">Rời trận</span>
+          </button>
         </div>
       </header>
       {trusting && <p className="notice" role="status">Máy chủ đã bật BOT chơi hộ. Giữ trang mở để duy trì kết nối; bấm Tự chơi lại khi quay lại.</p>}
+      <div className="board-moments board-ticker" aria-label="Diễn biến mới nhất" aria-live="polite">
+        <strong>Diễn biến mới nhất</strong>
+        {latestMoment ? (
+          <p className={`board-moment moment-${latestMoment.kind}`} title={momentText(latestMoment, byId)}>
+            {momentText(latestMoment, byId)}
+          </p>
+        ) : (
+          <p className="board-moment">Đang chờ diễn biến từ máy chủ.</p>
+        )}
+      </div>
       <div className={`board-layout ${showLogs ? 'has-logs-open' : 'logs-collapsed'}`}>
         <section className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
           <div className="board-log-heading">
             <strong>Nhật ký trận đấu ({board.logs.length})</strong>
             <button type="button" className="button small-button secondary" aria-expanded={showLogs}
-              onClick={() => setShowLogs(!showLogs)}>{showLogs ? 'Thu gọn' : 'Xem nhật ký'}</button>
+              aria-label={showLogs ? 'Thu gọn' : 'Xem nhật ký'}
+              title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
+              onClick={() => setShowLogs(!showLogs)}>{showLogs ? 'Thu gọn' : 'Mở'}</button>
           </div>
           {showLogs && <>
             <ol className="board-logs" ref={logList} aria-label="Các diễn biến trận đấu"
@@ -212,16 +191,15 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         <div className="board-main sg-board-main">
       <div className="board-table sg-board-table">
         <div className="board-opponents" aria-label="Các ghế khác">
-          {others.map((id, index) => {
-            const player = byId.get(id);
-            const pos = getOpponentPosition(index, totalSeats, isMobile);
-            return player && <PlayerPhotoPanel key={id} player={player} game={board.player[id]}
-              seat={seatNumbers.get(id) ?? 0} self={false} active={activeFor(id)} target={targetFor(id)}
-              busy={busy || requestExpired} onTarget={() => chooseTarget(id)}
-              style={pos} />;
+          {opponentSeats.map((seat) => {
+            const player = byId.get(seat.playerId);
+            return player && <PlayerPhotoPanel key={seat.playerId} player={player} game={board.player[seat.playerId]}
+              seat={seat.serverSeatNumber} self={false} active={seat.isActive} target={targetFor(seat.playerId)}
+              busy={busy || requestExpired} onTarget={() => chooseTarget(seat.playerId)}
+              style={seat.positionStyle} />;
           })}
         </div>
-        <div className="board-center" aria-label="Khu vực bàn chơi">
+        <div className={`board-center board-center-seats-${seatProfile}`} aria-label="Khu vực bàn chơi">
           <div className="native-table-center" aria-label="Tâm bàn chơi">
             {/* Chồng bài rút */}
             <div className="native-deck-slot draw-pile" title="Chồng bài rút">
@@ -252,12 +230,6 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           </div>
 
           <p className="board-center-seat-count">{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
-          <div className="board-moments" aria-label="Diễn biến mới nhất" aria-live="off">
-            <strong>Diễn biến mới nhất</strong>
-            {visibleMoments.length ? visibleMoments.map((moment) =>
-              <p className={`board-moment moment-${moment.kind}`} key={moment.id}>{momentText(moment, byId)}</p>) :
-              <p className="board-moment">Đang chờ diễn biến từ máy chủ.</p>}
-          </div>
           <div className="board-banners">
             {Object.entries(board.banners).filter(([, v]) => v !== 0 && v !== false && v !== '').map(([key, value]) =>
               <span className="board-mark" key={key}>{text(key)}: {typeof value === 'string' ? text(value) : String(value)}</span>)}
@@ -265,10 +237,18 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         </div>
       </div>
       <div className="board-local-dashboard" aria-label="Bảng điều khiển người chơi">
-        {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
-          seat={seatNumbers.get(self.id) ?? 0} active={activeFor(self.id)} target={targetFor(self.id)}
-          busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} /></div>}
-        {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill} />}
+        <div className="board-local-utility-row" aria-label="Thông tin và kỹ năng của bạn">
+          {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
+            seat={selfSeat?.serverSeatNumber ?? 0} active={selfSeat?.isActive ?? false} target={targetFor(self.id)}
+            busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact={isMobile} /></div>}
+          <div className="board-local-skill-rail" aria-label="Kỹ năng của bạn">
+            {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill}
+              floating={pendingRequest?.command === 'AskForSkillInvoke'} />}
+            {gameplayActive && <GameplaySkillDock scene={gameplay} request={pendingRequest!}
+              regularSkills={regularSkills} busy={busy || requestExpired} dispatch={dispatch} />}
+            {!gameplayActive && <RegularSkillDock skills={regularSkills} />}
+          </div>
+        </div>
         {gameplayActive && <GameplayControls key={`${pendingRequest.requestId}-${pendingRequest.receivedAt}`}
           scene={gameplay} request={pendingRequest} regularSkills={regularSkills}
           dispatch={dispatch} direct={direct} busy={busy} toggleTrust={toggleTrust} trusting={trusting} />}
@@ -301,7 +281,6 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             <div className="board-status" role="status">
               Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
             </div>
-            <RegularSkillDock skills={regularSkills} />
           </div>
         )}
       </div>

@@ -144,6 +144,10 @@ const api = {
       return __host_bin2hex(cbor.encode({data[2], data[3], data[4]}))
     `);
     serverNotify('EnterRoom', fromHex(enterRoom));
+    // A native room owner receives RoomOwner after EnterRoom. Keep the local
+    // fixture in the same state so waiting-room screenshots and controls test
+    // the owner path instead of silently rendering a regular player.
+    serverNotify('RoomOwner', serverCbor('{17}'));
     return parsed;
   },
   boardState: () => useGameStore.getState().board,
@@ -377,6 +381,23 @@ const api = {
       command: 'PlayCard', data: serverCbor('{}'), timestamp: Date.now(), timeout: 30,
     }));
     return { id, cardIds };
+  },
+  /** Keep a large hand after the request closes so the idle portrait layout
+   * is exercised separately from the active gameplay-controls layout. */
+  beginVisualIdleHand: (count = 12) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const requestedCount = Math.max(1, Math.floor(count));
+    const cardIds = conn.lua.eval<number[]>(`local ret = {}
+      for _, id in ipairs(ClientInstance.draw_pile) do
+        if #ret >= ${requestedCount} then break end
+        ret[#ret + 1] = id
+      end
+      return ret`);
+    if (cardIds.length < requestedCount) throw new Error('Lua fixture has too few cards for idle hand viewport test');
+    const moves = cardIds.map((id) => `{to=17, toArea=Card.PlayerHand, moveReason=fk.ReasonDraw,
+      moveInfo={{cardId=${id}, fromArea=Card.DrawPile}}, moveVisible=true}`).join(',');
+    serverNotify('MoveCards', serverCbor(`{{${moves}}, 1}`));
+    return { cardIds };
   },
   /** Exercise the native response-card request separately from normal play. */
   beginResponseCard: () => {
@@ -1186,6 +1207,7 @@ function Fixture() {
   const regularSkills = useGameStore((s) => s.regularSkills);
   const error = useGameStore((s) => s.error);
   const result = useGameStore((s) => s.result);
+  const visualEvidence = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('visual');
   const act = (choice: 'OK' | 'Cancel') => {
     if (busy || !request) return;
     setBusy(true);
@@ -1221,10 +1243,10 @@ function Fixture() {
       .catch((e: unknown) => useGameStore.getState().update({ error: String((e as Error).message) }))
       .finally(() => setBusy(false));
   };
-  return <main className={`shell ${phase === 'playing' ? 'shell-playing' : ''}`}>
-    <h1>TQS real Lua WASM E2E</h1>
+  return <main className={`shell ${phase === 'playing' ? 'shell-playing' : ''}${visualEvidence ? ' visual-evidence-shell' : ''}`}>
+    {!visualEvidence && <h1>TQS real Lua WASM E2E</h1>}
     {error && <div className="notice error-notice" role="alert">{error}</div>}
-    {phase !== 'playing' && <section className="panel" aria-label="Bắt đầu ván test tương tác">
+    {!visualEvidence && phase !== 'playing' && <section className="panel" aria-label="Bắt đầu ván test tương tác">
       <h2>Ván test tương tác</h2>
       <p>Lua FreeKill thật chạy trong Wasmoon, còn máy chủ là socket fixture cục bộ để bạn thử trọn luồng chọn bài.</p>
       <div className="inline-controls">
@@ -1262,12 +1284,12 @@ function Fixture() {
       respond={(selected, choice, cancel) => gameAction(() => conn.respondToCardsAndChoice(request.requestId, selected, choice, cancel))} />}
     {/* The native dashboard keeps fake-skill/prelight controls visible while
         AskForSkillInvoke is pending; the request panel is a separate layer. */}
-    <GameBoardScreen busy={busy} leave={() => {}}
+    {phase === 'playing' && <GameBoardScreen busy={busy} leave={() => {}}
       toggleTrust={() => gameAction(() => conn.toggleTrust())}
       regularSkills={regularSkills}
       prelightSkill={(skillName, prelight) => prelightAction(() => conn.prelightSkill(skillName, prelight))}
       dispatch={(kind, id, action, data) => gameAction(() => conn.updateRequestUI(request!.requestId, kind, id, action, data))}
-      direct={(id, data) => gameAction(() => conn.finishDirectInteraction(request!.requestId, id, data))} />
+      direct={(id, data) => gameAction(() => conn.finishDirectInteraction(request!.requestId, id, data))} />}
   </main>;
 }
 

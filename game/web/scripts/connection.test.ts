@@ -64,6 +64,23 @@ test('successful Lua EnterLobby transitions to online after callback', () => {
   assert.equal(h.conn.getStatus().kind, 'online');
 });
 
+test('observer EnterRoom publishes self identity without occupying a player seat', () => {
+  const h = harness();
+  const ui: [string, unknown][] = [];
+  h.conn['opts'].onUi = (command: string, data: unknown) => ui.push([command, data]);
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.eval = <T>(): T => [21, 'Watcher', 'avatar', false] as T;
+  h.conn.lua.receive = (command) => {
+    if (command === 'EnterRoom') h.conn['handleLuaUi']('EnterRoom', [4, 30, { isObserver: true }]);
+  };
+  h.sockets[0].handlers.onData(encodePacket(h.packet('EnterRoom')));
+  assert.deepEqual(ui, [
+    ['SelfIdentity', 21],
+    ['EnterRoom', [4, 30, { isObserver: true }]],
+  ]);
+});
+
 test('heartbeat replies immediately without Lua dispatch or altering a pending request', () => {
   const h = harness();
   h.conn.connect();

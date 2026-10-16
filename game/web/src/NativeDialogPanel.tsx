@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { RequestInfo } from './engine/connection';
 import type { NativeDialogPrompt } from './engine/nativeDialogs';
 import { useDisplayText } from './engine/displayText';
+import RequestDialog from './RequestDialog';
 
 export default function NativeDialogPanel({ request, prompt, busy, view, move, chooseGeneral, respond }: {
   request: RequestInfo; prompt: NativeDialogPrompt; busy: boolean;
@@ -34,7 +35,13 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
     if (!selected || disabled) return;
     move(selected, area, index); select(null);
   };
-  return <section className="panel request-panel" aria-label="Lựa chọn bài và sắp xếp">
+  const cancelToken = prompt.kind === 'generalsAndChoice' ? prompt.cancelOptions?.[0] : undefined;
+  const canCancel = !disabled && (prompt.kind === 'generalsAndChoice' ? Boolean(cancelToken) : prompt.cancelable);
+  return <RequestDialog className="panel request-panel" label="Lựa chọn bài và sắp xếp"
+    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={canCancel}
+    onCancel={() => prompt.kind === 'generalsAndChoice'
+      ? cancelToken && respond(cancelToken, true)
+      : respond(undefined, true)}>
     <h2>{prompt.kind === 'arrange' ? 'Sắp xếp bài' : prompt.kind === 'ag' || prompt.kind === 'boardMove' ? 'Chọn một lá bài' : ['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? (prompt.kind === 'skills' ? 'Chọn kỹ năng' : prompt.kind === 'cardNames' ? 'Chọn tên bài' : 'Chọn tướng') : 'Xem tướng'}</h2>
     <p>{text(prompt.title)}</p>
     {prompt.kind === 'generals' ? <div className="gameplay-options">
@@ -64,5 +71,5 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}
     {error && <p role="alert">{error}</p>}
-  </section>;
+  </RequestDialog>;
 }

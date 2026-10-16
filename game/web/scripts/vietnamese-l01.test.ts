@@ -70,13 +70,13 @@ test('C01 choice labels display players; raw Lua option identifiers remain valid
 test('C01 public log is localized only in exact skill markers', () => {
   const examples = [
     ['Trâu Thị/Tướng ẩn (bạn) đã phát động kỹ năng〖祸水〗',
-      'Trâu Thị/Tướng ẩn (bạn) đã phát động kỹ năng〖Họa Thủy〗'],
+      'Trâu Thị / Tướng ẩn (bạn) đã phát động kỹ năng〖Họa Thủy〗'],
     ['Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖礼下〗',
-      'Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Lễ Hạ〗'],
+      'Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Lễ Hạ〗'],
     ['Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖祸水〗',
-      'Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Họa Thủy〗'],
+      'Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Họa Thủy〗'],
     ['Trâu Thị/Sĩ Nhiếp đã phát động kỹ năng〖倾城〗 và〖避乱〗',
-      'Trâu Thị/Sĩ Nhiếp đã phát động kỹ năng〖Khuynh Thành〗 và〖Tị Loạn〗'],
+      'Trâu Thị / Sĩ Nhiếp đã phát động kỹ năng〖Khuynh Thành〗 và〖Tị Loạn〗'],
   ] as const;
   for (const [source, expected] of examples) assert.equal(localizedGameLog(source), expected);
   assert.equal(localizedGameLog('Trâu Thị đã phát động kỹ năng 礼下'), 'Trâu Thị đã phát động kỹ năng Lễ Hạ');
@@ -84,6 +84,9 @@ test('C01 public log is localized only in exact skill markers', () => {
   assert.equal(localizedGameLog('〖祸水-unknown〗'), '〖祸水-unknown〗');
   assert.equal(localizedGameLog('〖&lt;script&gt;祸水&lt;/script&gt;〗'),
     '〖<script>祸水</script>〗');
+  assert.equal(localizedGameLog('Biện Phu Nhân/Điên Vi (bạn) rút liễu 1 lá lá bài Sát[♠5]'),
+    'Biện Phu Nhân / Điển Vi (bạn) rút 1 lá bài Sát[♠5]');
+  assert.equal(localizedGameLog('Điên Vi rút liêu 2 lá bài'), 'Điển Vi rút 2 lá bài');
 });
 
 test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden data/replies',
@@ -149,9 +152,11 @@ test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden 
         }
       });
       const log = page.getByRole('region', { name: 'Nhật ký trận đấu' });
-      await log.getByText('Trâu Thị/Tướng ẩn (bạn) đã phát động kỹ năng〖Họa Thủy〗', { exact: true }).waitFor();
-      await log.getByText('Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Lễ Hạ〗', { exact: true }).waitFor();
-      await log.getByText('Trâu Thị/Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Họa Thủy〗', { exact: true }).waitFor();
+      const openLog = log.getByRole('button', { name: 'Xem nhật ký' });
+      if (await openLog.count()) await openLog.click();
+      await log.getByText('Trâu Thị / Tướng ẩn (bạn) đã phát động kỹ năng〖Họa Thủy〗', { exact: true }).waitFor();
+      await log.getByText('Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Lễ Hạ〗', { exact: true }).waitFor();
+      await log.getByText('Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Họa Thủy〗', { exact: true }).waitFor();
       assert.equal(await log.getByText(/祸水|礼下/).count(), 0);
       assert.equal(await log.locator('script, img, iframe').count(), 0);
       assert.deepEqual((await page.evaluate(() => window.__tqsRealLuaE2e.boardState())).player[-1].marks, {});

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDisplayText } from './engine/displayText';
 import type { FakeSkill } from './store/gameStore';
 
@@ -6,6 +7,7 @@ interface FakeSkillDockProps {
   skills: FakeSkill[];
   busy: boolean;
   onToggle: (skillName: string, prelight: boolean) => void;
+  floating?: boolean;
 }
 
 /**
@@ -13,7 +15,7 @@ interface FakeSkillDockProps {
  * They are available while a hidden general is still face-down, so they must
  * remain visible even when the rest of the dashboard is idle.
  */
-export default function FakeSkillDock({ skills, busy, onToggle }: FakeSkillDockProps) {
+export default function FakeSkillDock({ skills, busy, onToggle, floating = false }: FakeSkillDockProps) {
   const text = useDisplayText();
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -63,7 +65,7 @@ export default function FakeSkillDock({ skills, busy, onToggle }: FakeSkillDockP
     onToggle(skill.name, nextPrelight);
   };
 
-  return (
+  const dock = (
     <aside className="native-skill-dock fake-skill-dock" aria-label="Kỹ năng tướng úp">
       <div className="native-skill-header">
         <h3 className="native-skill-heading">Kỹ năng tướng úp</h3>
@@ -94,4 +96,13 @@ export default function FakeSkillDock({ skills, busy, onToggle }: FakeSkillDockP
       </div>
     </aside>
   );
+
+  // AskForSkillInvoke is a modal request, but Hegemony's prelight controls
+  // remain actionable while that request is open.  Portal the dock above the
+  // modal only for that short-lived state so the overlay cannot swallow the
+  // native prelight click.
+  if (floating && typeof document !== 'undefined') {
+    return createPortal(<div className="sg-fake-skill-portal">{dock}</div>, document.body);
+  }
+  return dock;
 }

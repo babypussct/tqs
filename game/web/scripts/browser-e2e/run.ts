@@ -75,6 +75,22 @@ async function runSuite(page: Page) {
       assert.equal(await p.getByRole('button', { name: 'Sát', exact: true }).getAttribute('aria-pressed'), 'true');
       assert.equal(await p.getByRole('button', { name: 'Đã chọn mục tiêu' }).getAttribute('aria-pressed'), 'true');
     }],
+    ['Long press opens card details without changing the Lua selection', async (p) => {
+      const id = await start(p, 'choices');
+      const card = p.getByRole('button', { name: 'Sát', exact: true });
+      await card.dispatchEvent('pointerdown', { pointerType: 'touch', button: 0 });
+      await p.waitForTimeout(650);
+      await card.dispatchEvent('pointerup', { pointerType: 'touch', button: 0 });
+      const dialog = p.getByRole('dialog', { name: 'Sát' });
+      await dialog.waitFor();
+      assert.equal((await snapshot(p)).actions.length, 0);
+      assert.equal((await snapshot(p)).requestId, id);
+      assert.match(await dialog.innerText(), /Trong giai đoạn ra bài/);
+      await p.keyboard.press('Escape');
+      await p.waitForTimeout(20);
+      assert.equal(await p.getByRole('dialog', { name: 'Sát' }).count(), 0);
+      assert.equal((await snapshot(p)).actions.length, 0);
+    }],
     ['Hidden-trigger dock prelights locally and stays through damage', async (p) => {
       await start(p, 'choices');
       await p.evaluate(() => window.__tqsE2e.addFakeSkill());
@@ -274,7 +290,7 @@ async function runSuite(page: Page) {
         window.dispatchEvent(event);
         return event.defaultPrevented;
       }), true);
-      await p.getByRole('timer').getByText(/Còn \d+ giây để trả lời/).waitFor();
+      await p.getByRole('timer', { name: /Còn \d+ giây/ }).waitFor();
       await p.getByRole('button', { name: 'Rời trận', exact: true }).click();
       await p.getByRole('button', { name: 'Vẫn rời trận', exact: true }).click();
       await p.waitForFunction(() => window.__tqsE2e.appActions().at(-1) === 'QuitRoom');

@@ -5,6 +5,7 @@ import type { GameplayItem } from './store/gameplayState';
 import type { BoardEquipment, BoardPlayer } from './store/boardState';
 import { generalArtCandidates } from './generalArt';
 import type { RoomPlayer } from './store/gameStore';
+import { EquipIcon, TargetCrosshairIcon } from './EquipIcons';
 
 export type Faction = 'wei' | 'shu' | 'wu' | 'qun' | 'neutral';
 
@@ -27,6 +28,7 @@ export interface PlayerPhotoPanelProps {
   target?: GameplayItem;
   busy?: boolean;
   onTarget?: () => void;
+  compact?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -137,9 +139,9 @@ function resolveEquipName(card: BoardEquipment | undefined, fallback: string, te
 }
 
 function EquipRow({
-  icon, typeLabel, card, text,
+  slot, typeLabel, card, text,
 }: {
-  icon: string;
+  slot: EquipmentSlotKey;
   typeLabel: string;
   card?: BoardEquipment;
   text: (value: string) => string;
@@ -150,7 +152,7 @@ function EquipRow({
   const detail = card ? `${name} · ${suitText}${card.range != null ? ` · Tầm ${card.range}` : ''}` : `${typeLabel} trống`;
 
   return <div className={`native-equip-row ${card ? 'equipped' : 'empty'}`} title={detail} aria-label={detail}>
-    <span className="native-eq-icon" aria-hidden="true">{icon}</span>
+    <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot={slot} /></span>
     <span className="native-eq-name">{card ? name : '—'}</span>
     {card && <span className={`native-eq-suit ${info?.isRed ? 'suit-red' : 'suit-black'}`}>{suitText}</span>}
   </div>;
@@ -172,12 +174,12 @@ function EquipRidesSplit({
 
   return <div className="native-equip-rides-split">
     <div className={`native-equip-half ${defCard ? 'equipped' : 'empty'}`} title={defDetail} aria-label={defDetail}>
-      <span className="native-eq-icon" aria-hidden="true">🐎</span>
+      <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot="defensive_ride" /></span>
       <span className="native-eq-name">{defCard ? defName : '+1'}</span>
       {defCard && <span className={`native-eq-suit ${defInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{defInfo?.text}</span>}
     </div>
     <div className={`native-equip-half ${offCard ? 'equipped' : 'empty'}`} title={offDetail} aria-label={offDetail}>
-      <span className="native-eq-icon" aria-hidden="true">🏹</span>
+      <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot="offensive_ride" /></span>
       <span className="native-eq-name">{offCard ? offName : '-1'}</span>
       {offCard && <span className={`native-eq-suit ${offInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{offInfo?.text}</span>}
     </div>
@@ -192,9 +194,9 @@ function EquipmentPlate({
   count: number;
 }) {
   return <div className="sg-equip-plate native-equip-plate" aria-label={count > 0 ? 'Trang bị công khai' : undefined}>
-    <EquipRow icon="📿" typeLabel="Bảo vật" card={slotCards.get('treasure')} text={text} />
-    <EquipRow icon="⚔️" typeLabel="Vũ khí" card={slotCards.get('weapon')} text={text} />
-    <EquipRow icon="🛡️" typeLabel="Phòng cụ" card={slotCards.get('armor')} text={text} />
+    <EquipRow slot="treasure" typeLabel="Bảo vật" card={slotCards.get('treasure')} text={text} />
+    <EquipRow slot="weapon" typeLabel="Vũ khí" card={slotCards.get('weapon')} text={text} />
+    <EquipRow slot="armor" typeLabel="Phòng cụ" card={slotCards.get('armor')} text={text} />
     <EquipRidesSplit defCard={slotCards.get('defensive_ride')} offCard={slotCards.get('offensive_ride')} text={text} />
   </div>;
 }
@@ -250,7 +252,7 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, style,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
@@ -283,7 +285,7 @@ export default function PlayerPhotoPanel({
   const mainUnrevealed = self && !isMainRevealed && !!main;
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
 
-  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''}`}
+  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
     style={style}
     aria-label={`${playerName}${self ? ' (bạn)' : ''}`}>
@@ -319,7 +321,7 @@ export default function PlayerPhotoPanel({
         aria-label={target.selected ? 'Đã chọn mục tiêu' : 'Chọn mục tiêu'}
         title={target.selected ? `Bỏ chọn ${playerName}` : `Chọn ${playerName} làm mục tiêu`}
         aria-pressed={target.selected} disabled={busy || !target.enabled} onClick={onTarget}>
-        <span aria-hidden="true">✛</span>
+        <TargetCrosshairIcon className="sg-target-crosshair-icon" />
         <span className="sg-visually-hidden">{target.selected ? 'Đã chọn mục tiêu' : 'Chọn mục tiêu'}</span>
       </button>}
     </div>

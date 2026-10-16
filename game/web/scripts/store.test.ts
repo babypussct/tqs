@@ -6,6 +6,7 @@ import { initialSnapshot, reduceUiEvent, useGameStore, type GameSnapshot } from 
 import { MAX_BOARD_LOGS, relativeSeatOrder, serverSeatNumbers } from '../src/store/boardState';
 import { displayText, localizedGameLog, plainText } from '../src/engine/displayText';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
+import { deriveRoomReadiness, roomPoolDisabledReason, roomStartDisabledReason } from '../src/store/roomReadiness';
 
 test('temporary IP ban remains actionable and transport closed is not displayed as progress', () => {
   const state = reduceUiEvent(initialSnapshot, 'ErrorDlg', 'you have been temporarily banned!');
@@ -120,13 +121,41 @@ test('observer room summaries and both bot events render occupants', () => {
   let state = reduceUiEvent(initialSnapshot, 'EnterRoom', [4, 30, {
     roomName: 'Watch', gameMode: 'new_heg_mode', isObserver: true,
     _players: [[17, 'A', 'a', true, 0, true], [-1, 'Bot', 'b', false, 0, false]],
+    _observers: [[21, 'Watcher', 'w', false, 0]],
   }]);
+  assert.equal(state.roomIsObserver, true);
   assert.equal(state.players.length, 2);
   assert.equal(state.players[0].owner, true);
+  assert.deepEqual(state.observers, [{ id: 21, name: 'Watcher', avatar: 'w' }]);
   state = reduceUiEvent(state, 'AddNpc', [-2, 'Bot phụ', 'c', false, 0]);
   assert.equal(state.players.find((p) => p.id === -2)?.name, 'Bot phụ');
   state = reduceUiEvent(state, 'AddPlayer', [-3, 'Bot thường', 'd', false, 0]);
   assert.equal(state.players.filter((p) => p.id < 0).length, 3);
+});
+
+test('observer transitions keep observers outside seats and preserve self mode', () => {
+  let state = reduceUiEvent(initialSnapshot, 'EnterRoom', [4, 30, {
+    roomName: 'Watch', gameMode: 'new_heg_mode', isObserver: true,
+    _players: [[17, 'A', 'a', true, 0, true]],
+    _observers: [[21, 'Watcher', 'w', false, 0]],
+  }]);
+  state = reduceUiEvent(state, 'SelfIdentity', 21);
+  state = reduceUiEvent(state, 'SwitchToPlayer', [21]);
+  assert.equal(state.roomIsObserver, false);
+  assert.equal(state.observers.some((observer) => observer.id === 21), false);
+  assert.equal(state.players.find((player) => player.id === 21)?.ready, false);
+
+  state = reduceUiEvent(state, 'SwitchToObserver', [21]);
+  assert.equal(state.roomIsObserver, true);
+  assert.equal(state.players.some((player) => player.id === 21), false);
+  assert.deepEqual(state.observers.find((observer) => observer.id === 21), {
+    id: 21, name: 'Watcher', avatar: 'w',
+  });
+  state = reduceUiEvent(state, 'AddObserver', [22, 'Another watcher', 'x', false, 0]);
+  assert.equal(state.observers.length, 2);
+  state = reduceUiEvent(state, 'RemoveObserver', [22]);
+  assert.deepEqual(state.observers.map((observer) => observer.id), [21]);
+  assert.equal(reduceUiEvent(state, 'EnterLobby', '').observers.length, 0);
 });
 
 test('StartGame, GameOver, EnterLobby and reset clear lifecycle state', () => {
@@ -185,6 +214,53 @@ test('display text formats native prompts and choices without changing IDs or in
   assert.equal(localizedGameLog('Nhân vật đã phát động kỹ năng 祸水'), 'Nhân vật đã phát động kỹ năng Họa Thủy');
 });
 
+test('waiting-room readiness mirrors native owner/full/non-owner semantics', () => {
+  const owner = { id: 17, name: 'Chủ phòng', avatar: '', ready: false, owner: true };
+  const guest = { id: 21, name: 'Khách', avatar: '', ready: false, owner: false };
+  const readyGuest = { ...guest, ready: true };
+
+  assert.deepEqual(deriveRoomReadiness([owner], 2, 17, false), {
+    isFull: false,
+    isAllReady: false,
+    canReady: false,
+    canStart: false,
+    canAddBot: true,
+    missingReadyCount: 0,
+  });
+  assert.deepEqual(deriveRoomReadiness([owner, guest], 2, 17, false), {
+    isFull: true,
+    isAllReady: false,
+    canReady: false,
+    canStart: false,
+    canAddBot: false,
+    missingReadyCount: 1,
+  });
+  assert.deepEqual(deriveRoomReadiness([owner, readyGuest], 2, 17, false), {
+    isFull: true,
+    isAllReady: true,
+    canReady: false,
+    canStart: true,
+    canAddBot: false,
+    missingReadyCount: 0,
+  });
+  assert.equal(deriveRoomReadiness([owner, readyGuest], 2, 21, false).canReady, true);
+  assert.equal(deriveRoomReadiness([owner, readyGuest], 2, 21, true).canReady, false);
+  assert.equal(deriveRoomReadiness([owner, readyGuest], 2, 17, true).canStart, false);
+  assert.equal(roomStartDisabledReason(deriveRoomReadiness([owner], 2, 17, false), false),
+    'Cần đủ người chơi trong tất cả ghế trước khi bắt đầu.');
+  assert.equal(roomStartDisabledReason(deriveRoomReadiness([owner, guest], 2, 17, false), false),
+    'Còn 1 người chơi chưa sẵn sàng.');
+  assert.equal(roomStartDisabledReason(deriveRoomReadiness([owner, readyGuest], 2, 17, false), false), null);
+  assert.equal(roomStartDisabledReason(deriveRoomReadiness([owner, readyGuest], 2, 17, true), true),
+    'Người quan sát không thể bắt đầu trận.');
+  assert.equal(roomPoolDisabledReason(null, 4), 'Không thể kiểm tra bể tướng và bể bài từ Lua.');
+  assert.equal(roomPoolDisabledReason({ generals: 19, cards: 16 }, 4),
+    'Chưa thể tạo phòng: thiếu tướng (19/20).');
+  assert.equal(roomPoolDisabledReason({ generals: 20, cards: 15 }, 4),
+    'Chưa thể tạo phòng: thiếu bài (15/16).');
+  assert.equal(roomPoolDisabledReason({ generals: 20, cards: 16 }, 4), null);
+});
+
 test('upstream Hegemony translations preserve distinct variants and interpolate all verified prompts', () => {
   assert.equal(VI_ADDITIONS['liulongcanjia'], VI_ADDITIONS['mobile__liulongcanjia']);
   assert.match(VI_ADDITIONS[':liulongcanjia'], /\+1/);
@@ -207,7 +283,7 @@ test('upstream Hegemony translations preserve distinct variants and interpolate 
 
 test('UI-01 live C++ audit: battle events, Chinese cards, English turns and skill identifiers are localized', () => {
   assert.equal(localizedGameLog('Tướng ẩn/Mi Trúc (bạn) đã phát động kỹ năng〖巨贾〗'),
-    'Tướng ẩn/Mi Trúc (bạn) đã phát động kỹ năng〖Cự Cổ〗');
+    'Tướng ẩn / Mi Trúc (bạn) đã phát động kỹ năng〖Cự Cổ〗');
   assert.equal(localizedGameLog('巨贾 ngoài nhãn kỹ năng'), '巨贾 ngoài nhãn kỹ năng');
   assert.match(VI_ADDITIONS[':ofl_heg__jugu'], /khi lật tướng.*rút X.*giới hạn.*tăng X.*máu tối đa/);
   assert.match(VI_ADDITIONS[':ofl_heg__ziyuan'], /một lần.*tổng điểm bằng 13.*người chơi khác cùng thế lực.*hồi 1 máu/);
@@ -225,28 +301,28 @@ test('UI-01 live C++ audit: battle events, Chinese cards, English turns and skil
     'Sự kiện vòng này: Lạc Thạch. Khi lật lá sự kiện này, tất cả nhân vật đã xác định thế lực lần lượt đổi phó tướng.');
   assert.equal(localizedGameLog('-------------- 2 th Round Start --------------'), 'Bắt đầu vòng 2');
   assert.equal(localizedGameLog('-------#1(you)\'s Turn Start -------'), 'Bắt đầu lượt của Ghế 1 (bạn)');
-  assert.equal(localizedGameLog('------- Lý Phong/Trương Phi\'s Turn End -------'), 'Kết thúc lượt của Lý Phong/Trương Phi');
+  assert.equal(localizedGameLog('------- Lý Phong/Trương Phi\'s Turn End -------'), 'Kết thúc lượt của Lý Phong / Trương Phi');
   assert.equal(localizedGameLog('Sắc Lệnh[♣3] is removed from the game'), 'Sắc Lệnh[♣3] bị loại khỏi trận.');
   assert.equal(localizedGameLog('Lý Phong đã sử dụng 鹦鹉杯[♥9], 咄咄逼人[♣K], Triblade[♦Q]'),
     'Lý Phong đã sử dụng Anh Vũ Bôi[♥9], Đốt Đốt Bức Nhân[♣K], Tam Tiêm Lưỡng Nhận Đao[♦Q]');
   assert.equal(localizedGameLog('Đã phát động kỹ năng〖#new_battle_royal_event&〗 và hồi 1 máu (酒)'),
     'Đã phát động kỹ năng〖Quyết chiến〗 và hồi 1 máu (Tửu)');
   assert.equal(localizedGameLog('Chúc Dung/Lý Vĩ (bạn) đã sử dụng 图穷匕见[♣2] nhắm vào Hoắc Tuấn/Mã Tắc'),
-    'Chúc Dung/Lý Vĩ (bạn) đã sử dụng Đồ Cùng Chủy Hiện[♣2] nhắm vào Hoắc Tuấn/Mã Tắc');
+    'Chúc Dung / Lý Vĩ (bạn) đã sử dụng Đồ Cùng Chủy Hiện[♣2] nhắm vào Hoắc Tuấn / Mã Tắc');
   assert.equal(localizedGameLog('Tướng ẩn/Mã Tắc đã bỏ 巧取豪夺[♥A] và trang bị 九州鼎[♥K]'),
-    'Tướng ẩn/Mã Tắc đã bỏ Xảo Thủ Hào Đoạt[♥A] và trang bị Cửu Châu Đỉnh[♥K]');
+    'Tướng ẩn / Mã Tắc đã bỏ Xảo Thủ Hào Đoạt[♥A] và trang bị Cửu Châu Đỉnh[♥K]');
   assert.equal(localizedGameLog('Hoắc Tuấn/Mã Tắc 即将对 Chúc Dung/Lý Vĩ (bạn) 造成的 1 点 Thường 伤害变为 2 点'),
-    'Sát thương Thường do Hoắc Tuấn/Mã Tắc gây ra cho Chúc Dung/Lý Vĩ (bạn) thay đổi từ 1 thành 2 điểm.');
+    'Sát thương Thường do Hoắc Tuấn / Mã Tắc gây ra cho Chúc Dung / Lý Vĩ (bạn) thay đổi từ 1 thành 2 điểm.');
   assert.equal(localizedGameLog('Thông báo khác: 即将对 nhân vật'), 'Thông báo khác: 即将对 nhân vật');
   assert.match(VI_ADDITIONS[':nine_tripod_cauldrons'], /4 lá Kỳ Trân/);
   assert.equal(localizedGameLog('Tào Thực/Tướng ẩn (bạn) 观看了 Tướng ẩn/Thành Tế 的 chủ tướng Nhạc Tiến'),
-    'Tào Thực/Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn/Thành Tế: Nhạc Tiến.');
+    'Tào Thực / Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn / Thành Tế: Nhạc Tiến.');
   assert.equal(localizedGameLog('Tào Thực/Tướng ẩn (bạn) 观看了 Tướng ẩn/Thành Tế 的 chủ tướng'),
-    'Tào Thực/Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn/Thành Tế.');
+    'Tào Thực / Tướng ẩn (bạn) đã xem chủ tướng của Tướng ẩn / Thành Tế.');
   assert.equal(localizedGameLog('Vương Duyệt/Tướng ẩn 使用的 Hỏa Sát[♥4] 取消了目标 Tướng ẩn/Mã Đại (bạn)'),
-    'Mục tiêu Tướng ẩn/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♥4] do Vương Duyệt/Tướng ẩn sử dụng.');
+    'Mục tiêu Tướng ẩn / Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♥4] do Vương Duyệt / Tướng ẩn sử dụng.');
   assert.equal(localizedGameLog('Vương Duyệt/Lưu Phu Nhân 使用的 Hỏa Sát[♦4] 取消了目标 Phùng Tập/Mã Đại (bạn)'),
-    'Mục tiêu Phùng Tập/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♦4] do Vương Duyệt/Lưu Phu Nhân sử dụng.');
+    'Mục tiêu Phùng Tập / Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♦4] do Vương Duyệt / Lưu Phu Nhân sử dụng.');
   assert.equal(localizedGameLog('Thử nghiệm: 使用的 Hỏa Sát 取消了目标'),
     'Thử nghiệm: 使用的 Hỏa Sát 取消了目标', 'Only rewrite the exact upstream log shape');
   assert.equal(localizedGameLog('Nhạc Tiến đã sử dụng 狗尾续貂[♦2], Tào Thực đã rút 火浣衣[♦Q]'),
@@ -705,7 +781,7 @@ test('damage prevention and reshuffle logs are localized in Vietnamese', () => {
   const log1 = '由于 Thiên Hương，Tào Phi/Hạ Hầu Đôn 即将对 Tiểu Kiều/Tướng ẩn (bạn) 造成的 1 点 Hỏa 伤害被防止了';
   assert.equal(
     localizedGameLog(log1),
-    'Do Thiên Hương, 1 điểm sát thương Hỏa do Tào Phi/Hạ Hầu Đôn sắp gây ra cho Tiểu Kiều/Tướng ẩn (bạn) đã được ngăn chặn.',
+    'Do Thiên Hương, 1 điểm sát thương Hỏa do Tào Phi / Hạ Hầu Đôn sắp gây ra cho Tiểu Kiều / Tướng ẩn (bạn) đã được ngăn chặn.',
   );
 
   const log2 = '由于 八卦阵，Enemy 即将受到的 2 点 雷 伤害被防止了';

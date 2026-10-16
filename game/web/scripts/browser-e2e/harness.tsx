@@ -51,7 +51,7 @@ function item(type: string, data: Record<string, unknown>) { return { type, data
 function initialScene(mode: Scenario) {
   if (mode === 'choices' || mode === 'lua-error') {
     return { _type: 'RoomScene', _prompt: 'Chọn lá bài và mục tiêu', _new: [
-      item('CardItem', { id: 7, enabled: true, selected: false, card: { name: 'Sát' } }),
+      item('CardItem', { id: 7, enabled: true, selected: false, card: { name: 'slash' } }),
       item('Photo', { id: 2, enabled: true, selected: false }),
       item('SkillButton', { id: 'longdan', enabled: true, selected: false }),
       item('SpecialSkills', { id: 'special', enabled: true, skills: ['_normal_use', 'convert'] }),

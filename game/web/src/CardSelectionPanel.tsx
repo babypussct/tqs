@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { RequestInfo } from './engine/connection';
 import type { CardSelectionPrompt, PoxiView } from './engine/cardSelection';
 import { useDisplayText } from './engine/displayText';
+import RequestDialog from './RequestDialog';
 
 export default function CardSelectionPanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardSelectionPrompt; busy: boolean;
@@ -24,7 +25,9 @@ export default function CardSelectionPanel({ request, prompt, busy, view, respon
     catch (e) { error = (e as Error).message; }
   }
   const disabled = busy || expired || !!error;
-  return <section className="panel request-panel" aria-label="Chọn bài đối thủ">
+  return <RequestDialog className="panel request-panel" label="Chọn bài đối thủ"
+    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !disabled}
+    onCancel={() => respond([], true)}>
     <span className="section-label">Chọn bài</span>
     <h2>{prompt.mode === 'single' ? 'Chọn một lá bài' : 'Chọn các lá bài'}</h2>
     <p>{text(rules.prompt) || 'Chọn bài theo yêu cầu của kỹ năng.'}</p>
@@ -53,5 +56,5 @@ export default function CardSelectionPanel({ request, prompt, busy, view, respon
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}
     {error && <p role="alert">{error}</p>}
-  </section>;
+  </RequestDialog>;
 }

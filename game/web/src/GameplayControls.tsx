@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useDisplayText } from './engine/displayText';
 import { choices, objectValue } from './engine/gameplayInteraction';
 import type { RequestInfo } from './engine/connection';
@@ -14,6 +14,7 @@ import {
   SelectedCardSummary,
   type CardData,
 } from './HandCardItem';
+import { TimerClockIcon } from './EquipIcons';
 
 export type GameplayDispatch = (type: GameplayItemType, id: string | number,
   action: 'click' | 'update' | 'finish', data: unknown) => void;
@@ -24,6 +25,73 @@ function ItemButton({ item, label, onClick, busy, card = false, className = '' }
 }) {
   return <button className={`gameplay-choice ${card ? 'sg-card-button' : ''} ${className} ${item.selected ? 'selected' : ''}`} type="button"
     data-card-id={typeof item.id === 'number' ? item.id : undefined} aria-pressed={item.selected} disabled={busy || !item.enabled} onClick={onClick}>{label}</button>;
+}
+
+function resolveGameplaySkills(scene: GameplayScene, regularSkills: RegularSkill[]): GameplayItem[] {
+  // Native SkillArea keeps every local dashboard skill visible, while the
+  // request scene owns which of those skills is currently actionable. Merge
+  // both sources so a passive/temporarily unavailable skill is still shown,
+  // but only a Lua-created SkillButton can become enabled and clickable.
+  const requestSkills = Object.values(scene.items.SkillButton);
+  const requestSkillByName = new Map(requestSkills.map((item) => [String(item.id), item]));
+  return [
+    ...regularSkills.map((skill) => requestSkillByName.get(skill.name) ?? {
+      id: skill.name, enabled: false, selected: false,
+    }),
+    ...requestSkills.filter((item) => !regularSkills.some((skill) => skill.name === String(item.id))),
+  ];
+}
+
+/**
+ * The one portrait skill rail. It is rendered beside the local seat instead
+ * of being appended after the hand, so fake/prelight skills and request
+ * skills never create competing vertical columns on a phone.
+ */
+export function GameplaySkillDock({ scene, request, regularSkills = [], busy, dispatch }: {
+  scene: GameplayScene;
+  request: RequestInfo;
+  regularSkills?: RegularSkill[];
+  busy: boolean;
+  dispatch: GameplayDispatch;
+}) {
+  const text = useDisplayText();
+  const [expired, setExpired] = useState(false);
+  const skills = resolveGameplaySkills(scene, regularSkills);
+
+  useEffect(() => {
+    setExpired(false);
+    if (request.expiresAt === null) return;
+    const tick = () => setExpired(Date.now() >= request.expiresAt!);
+    tick();
+    const interval = window.setInterval(tick, 250);
+    return () => window.clearInterval(interval);
+  }, [request.expiresAt]);
+
+  if (!skills.length) return null;
+  const waiting = busy || expired;
+  return (
+    <div className="native-skill-dock gameplay-skill-dock" aria-label="Khu vực kỹ năng">
+      <div className="native-skill-header sg-visually-hidden">
+        <h3 className="native-skill-heading">Kỹ năng</h3>
+        <span className="native-skill-hint">Chủ động / Trang bị</span>
+      </div>
+      <div className="gameplay-options native-skill-options">
+        {skills.map((item) => (
+          <ItemButton
+            key={item.id}
+            item={item}
+            className="sg-skill-button"
+            label={text(String(item.id))}
+            busy={waiting}
+            onClick={() => dispatch('SkillButton', item.id, 'click', {
+              selected: !item.selected,
+              autoTarget: false,
+            })}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function list(value: unknown): unknown[] { return Array.isArray(value) ? value.slice(0, 256) : []; }
@@ -178,7 +246,76 @@ function sortHandcards(cards: GameplayItem[], mode: SortMode): GameplayItem[] {
   });
 }
 
-export function GameplayControls({ scene, request, regularSkills = [], busy, dispatch, direct, toggleTrust, trusting }: {
+/**
+ * Keep the 250ms countdown repaint local to the timer HUD.  Repainting the
+ * whole gameplay dashboard also repaints every hand card and can make a
+ * horizontally scrolling mobile hand feel sticky.  The parent is notified
+ * once at expiry so its disabled state still follows the request lifecycle.
+ */
+function RequestTimer({ request, onExpired, prompt }: {
+  request: RequestInfo;
+  onExpired: () => void;
+  prompt: ReactNode;
+}) {
+  const expiresAt = request.expiresAt;
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (expiresAt === null) return;
+    let interval: number | null = null;
+    const tick = () => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= expiresAt) {
+        onExpired();
+        if (interval !== null) window.clearInterval(interval);
+      }
+    };
+    tick();
+    if (Date.now() < expiresAt) interval = window.setInterval(tick, 250);
+    return () => {
+      if (interval !== null) window.clearInterval(interval);
+    };
+  }, [expiresAt, onExpired]);
+
+  if (expiresAt === null) return null;
+  const totalDuration = request.timeout > 0
+    ? request.timeout * 1000
+    : Math.max(1000, expiresAt - request.receivedAt);
+  const remainingMs = Math.max(0, expiresAt - now);
+  const progressPercent = totalDuration > 0
+    ? Math.min(100, Math.max(0, (remainingMs / totalDuration) * 100))
+    : 100;
+
+  return (
+    <>
+      <div
+        className="sg-timer-track"
+        role="progressbar"
+        aria-valuenow={Math.round(progressPercent)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className={`sg-timer-fill${progressPercent < 30 ? ' urgent' : ''}`}
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      {prompt && (
+        <p className="gameplay-prompt" aria-label={String(prompt)} title={String(prompt)}>
+          <span className="sg-prompt-copy">{prompt}</span>
+          {remainingMs > 0 && (
+            <span className="sg-timer-number" role="timer" aria-label={`Còn ${Math.ceil(remainingMs / 1000)} giây`}>
+              &nbsp;(<TimerClockIcon className="sg-timer-clock-icon" /> {Math.ceil(remainingMs / 1000)}s)
+            </span>
+          )}
+        </p>
+      )}
+    </>
+  );
+}
+
+export function GameplayControls({ scene, request, busy, dispatch, direct, toggleTrust, trusting }: {
   scene: GameplayScene; request: RequestInfo; busy: boolean;
   regularSkills?: RegularSkill[];
   dispatch: GameplayDispatch; direct: GameplayDirect;
@@ -187,44 +324,19 @@ export function GameplayControls({ scene, request, regularSkills = [], busy, dis
 }) {
   const text = useDisplayText();
   const cards = Object.values(scene.items.CardItem);
-  const requestSkills = Object.values(scene.items.SkillButton);
-  // Native SkillArea keeps every local dashboard skill visible, while the
-  // request scene owns which of those skills is currently actionable. Merge
-  // both sources so a passive/temporarily unavailable skill is still shown,
-  // but only a Lua-created SkillButton can become enabled and clickable.
-  const requestSkillByName = new Map(requestSkills.map((item) => [String(item.id), item]));
-  const skills: GameplayItem[] = [
-    ...regularSkills.map((skill) => requestSkillByName.get(skill.name) ?? {
-      id: skill.name, enabled: false, selected: false,
-    }),
-    ...requestSkills.filter((item) => !regularSkills.some((skill) => skill.name === String(item.id))),
-  ];
   const specials = Object.values(scene.items.SpecialSkills);
   const interactions = Object.values(scene.items.Interaction);
   const buttons = Object.values(scene.items.Button);
   const [inspectedCardId, setInspectedCardId] = useState<string | number | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('default');
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!request.expiresAt || request.expiresAt <= Date.now()) return;
-    const timer = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(timer);
-  }, [request.expiresAt]);
-
-  const totalDuration = request.timeout > 0
-    ? request.timeout * 1000
-    : (request.expiresAt ? Math.max(1000, request.expiresAt - request.receivedAt) : 0);
-  const remainingMs = request.expiresAt ? Math.max(0, request.expiresAt - now) : 0;
-  const progressPercent = totalDuration > 0
-    ? Math.min(100, Math.max(0, (remainingMs / totalDuration) * 100))
-    : 100;
+  const [expiredByTimer, setExpiredByTimer] = useState(false);
+  const markExpired = useCallback(() => setExpiredByTimer(true), []);
 
   const displayCards = sortHandcards(cards, sortMode);
   const selectedCard = cards.find((item) => item.selected) ?? null;
   const inspectedCard = inspectedCardId === null
     ? null
-    : cards.find((item) => item.id === inspectedCardId && item.selected) ?? null;
+    : cards.find((item) => item.id === inspectedCardId) ?? null;
   const inspectedData = objectValue(inspectedCard?.card) as CardData | null;
   const inspectedCategoryFromName = getCardCategory(inspectedData?.name);
   const inspectedCategory = inspectedCategoryFromName.typeKey === 'unknown'
@@ -235,7 +347,7 @@ export function GameplayControls({ scene, request, regularSkills = [], busy, dis
   const inspectedText = resolveCardText(inspectedData ?? undefined, text);
   const disabledReasons = [...new Set(cards.filter((item) => !item.enabled && item.disabledReason)
     .map((item) => item.disabledReason!))];
-  const expired = request.expiresAt !== null && Date.now() >= request.expiresAt;
+  const expired = expiredByTimer || (request.expiresAt !== null && Date.now() >= request.expiresAt);
   const waiting = busy || expired;
 
   return (
@@ -246,30 +358,17 @@ export function GameplayControls({ scene, request, regularSkills = [], busy, dis
           <div className="sg-control-header-row sg-visually-hidden">
             <strong>Thao tác trong lượt</strong>
           </div>
-          {request.timeout > 0 && request.expiresAt && (
-            <div
-              className="sg-timer-track"
-              role="progressbar"
-              aria-valuenow={Math.round(progressPercent)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className={`sg-timer-fill${progressPercent < 30 ? ' urgent' : ''}`}
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          )}
-          {scene.prompt && (
-            <p className="gameplay-prompt">
-              {text(scene.prompt)}
-              {request.timeout > 0 && remainingMs > 0 && (
-                <span className="sg-timer-number" aria-label={`Còn ${Math.ceil(remainingMs / 1000)} giây`}>
-                  &nbsp;(⏱ {Math.ceil(remainingMs / 1000)}s)
-                </span>
-              )}
+          {request.timeout > 0 && request.expiresAt ? (
+            <RequestTimer
+              request={request}
+              onExpired={markExpired}
+              prompt={scene.prompt ? text(scene.prompt) : null}
+            />
+          ) : scene.prompt ? (
+            <p className="gameplay-prompt" aria-label={text(scene.prompt)} title={text(scene.prompt)}>
+              <span className="sg-prompt-copy">{text(scene.prompt)}</span>
             </p>
-          )}
+          ) : null}
         </div>
 
         {disabledReasons.map((reason) => <p key={reason} className="notice" role="status">{text(reason)}</p>)}
@@ -359,42 +458,20 @@ export function GameplayControls({ scene, request, regularSkills = [], busy, dis
                 index={index}
                 totalCards={cards.length}
                 busy={waiting}
+                onLongPress={() => setInspectedCardId(item.id)}
                 onClick={() => dispatch('CardItem', item.id, 'click', { selected: !item.selected })}
               />
             ))}
           </div>
-          {cards.length > 6 && <p className="sg-hand-scroll-hint sg-visually-hidden">Vuốt hoặc cuộn ngang để xem toàn bộ bài trên tay</p>}
+          {cards.length > 4 && (
+            <p className="sg-hand-scroll-hint" role="status">
+              Vuốt ngang để xem đủ {cards.length} lá bài trên tay
+            </p>
+          )}
         </div>
       )}
 
-      {/* 4. Khu vực Kỹ năng chuẩn FreeKill SkillArea (xếp tầng dọc cạnh ô ghế bản thân) */}
-      {!!skills.length && (
-        <div className="native-skill-dock" aria-label="Khu vực kỹ năng">
-          <div className="native-skill-header sg-visually-hidden">
-            <h3 className="native-skill-heading">Kỹ năng</h3>
-            <span className="native-skill-hint">Chủ động / Trang bị</span>
-          </div>
-          <div className="gameplay-options native-skill-options">
-            {skills.map((item) => (
-              <ItemButton
-                key={item.id}
-                item={item}
-                className="sg-skill-button"
-                label={text(String(item.id))}
-                busy={waiting}
-                onClick={() =>
-                  dispatch('SkillButton', item.id, 'click', {
-                    selected: !item.selected,
-                    autoTarget: false,
-                  })
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Tương tác đặc biệt SpecialSkills & InteractionPicker */}
+      {/* 4. Tương tác đặc biệt SpecialSkills & InteractionPicker */}
       {specials.filter((item) => item.skills?.length).map((item) => (
         <div key={item.id}>
           <h3>Cách sử dụng lá bài</h3>

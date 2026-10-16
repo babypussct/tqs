@@ -172,6 +172,21 @@ export function localizedGameLog(raw: string): string {
   // remains verbatim so an unknown identifier cannot be mistranslated.
   result = result.replace(/(kỹ năng\s*(?:〖|「|【)?)(祸水|礼下)(?:〗|」|】)?/gi,
     (_match, prefix: string, skill: string) => `${prefix}${skill === '祸水' ? VI_ADDITIONS.huoshui : VI_ADDITIONS.ld__lixia}`);
+
+  // A few pinned public-log variants contain the machine-translated particle
+  // "liễu/liêu" and duplicate the Vietnamese classifier.  Normalize only the
+  // known draw-card shape, plus the observed Điển Vi typo; do not rewrite
+  // arbitrary user/server text or any wire identifier.
+  result = result
+    .replace(/\brút\s+(?:liễu|liêu)\s+(\d+)\s+l(?:á|a)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
+    .replace(/\brút\s+(?:liễu|liêu)\s+(\d+)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
+    .replace(/\brút\s+(\d+)\s+l(?:á|a)\s+l(?:á|a)\s+bài\b/giu, 'rút $1 lá bài')
+    .replaceAll('Điên Vi', 'Điển Vi')
+    // Public dual-general labels are written as "main/deputy" upstream.
+    // Normalize only letter-to-letter separators so numeric fractions and
+    // arbitrary slash-containing card identifiers remain untouched.
+    .replace(/(\p{L})\/(?=\p{L})/gu, '$1 / ')
+    .replace(/\s*\((?:bạn|Bạn)\)/g, ' (bạn)');
   return result;
 }
 

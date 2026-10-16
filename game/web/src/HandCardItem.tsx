@@ -1,6 +1,6 @@
 import { useId, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { useDisplayText } from './engine/displayText';
 import { objectValue } from './engine/gameplayInteraction';
 import type { GameplayItem } from './store/gameplayState';
@@ -305,6 +305,19 @@ function safeRawCardName(value: string): string | null {
   return /^[a-z0-9_-]+$/.test(value) ? null : value;
 }
 
+/**
+ * The native Hegemony dictionary sometimes appends the mode name to a card
+ * face (for example, "Vô Giải (Quốc Chiến)").  That suffix identifies the
+ * package, not a different card for the player.  Strip it only at the display
+ * boundary; card IDs, trueName, wire payloads and art lookup stay untouched.
+ */
+export function normalizeCardDisplayName(value: string): string {
+  return value
+    .replace(/\s*\(Quốc Chiến\)\s*$/iu, '')
+    .replace(/\s*（国战）\s*$/u, '')
+    .trim();
+}
+
 /** Resolver for card title and description conforming to user criteria */
 export function resolveCardText(
   card: CardData | undefined,
@@ -316,7 +329,9 @@ export function resolveCardText(
   const translatedName = names.map((name) => translatedValue(name, text)).find(Boolean);
   const baselineName = names.map(baseCardKey).map((name) => BASELINE_NAMES[name]).find(Boolean);
   const providedName = names.map(safeRawCardName).find(Boolean);
-  const displayName = translatedName || baselineName || providedName || UNKNOWN_CARD_NAME;
+  const displayName = normalizeCardDisplayName(
+    translatedName || baselineName || providedName || UNKNOWN_CARD_NAME,
+  );
 
   // Prefer the current view-as name, then the true card name, then the static baseline.
   const translatedDesc = names
@@ -622,12 +637,15 @@ export function HandCardItem({
   item,
   busy,
   onClick,
+  onLongPress,
   index = 0,
   totalCards = 1,
 }: {
   item: GameplayItem;
   busy: boolean;
   onClick: () => void;
+  /** Mobile inspection gesture; must not change the Lua selection state. */
+  onLongPress?: () => void;
   index?: number;
   totalCards?: number;
 }) {
@@ -639,6 +657,8 @@ export function HandCardItem({
   const [focused, setFocused] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggeredRef = useRef(false);
 
   const suitInfo = getSuitInfo(card?.suit);
   const rank = formatRank(card?.number);
@@ -674,6 +694,28 @@ export function HandCardItem({
     }
   };
 
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current !== null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => cancelLongPress(), []);
+
+  const startLongPress = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!onLongPress || disabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    cancelLongPress();
+    longPressTriggeredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      longPressTriggeredRef.current = true;
+      onLongPress();
+    }, 550);
+  };
+
+  const finishLongPress = () => cancelLongPress();
+
   return (
     <button
       ref={buttonRef}
@@ -687,7 +729,21 @@ export function HandCardItem({
       aria-label={displayName}
       aria-describedby={describedBy}
       disabled={disabled}
-      onClick={onClick}
+      onPointerDown={startLongPress}
+      onPointerUp={finishLongPress}
+      onPointerCancel={finishLongPress}
+      onPointerLeave={finishLongPress}
+      onContextMenu={(event) => {
+        if (longPressTriggeredRef.current) event.preventDefault();
+      }}
+      onClick={(event) => {
+        if (longPressTriggeredRef.current) {
+          event.preventDefault();
+          longPressTriggeredRef.current = false;
+          return;
+        }
+        onClick();
+      }}
       onMouseEnter={() => { updateRect(); setHovered(true); }}
       onMouseLeave={() => setHovered(false)}
       onFocus={() => { updateRect(); setFocused(true); }}

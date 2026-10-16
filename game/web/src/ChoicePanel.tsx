@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDisplayText } from './engine/displayText';
 import type { RequestInfo } from './engine/connection';
 import { validChoiceReply, type ChoicePrompt } from './engine/choiceSelection';
+import RequestDialog from './RequestDialog';
 
 export default function ChoicePanel({ request, prompt, busy, respond }: {
   request: RequestInfo; prompt: ChoicePrompt; busy: boolean; respond: (choices: string[]) => void;
@@ -18,7 +19,9 @@ export default function ChoicePanel({ request, prompt, busy, respond }: {
   }, []);
   const expired = request.expiresAt !== null && now >= request.expiresAt;
   const disabled = busy || expired;
-  return <section className="panel request-panel" aria-label="Lựa chọn trong trận">
+  return <RequestDialog className="panel request-panel" label="Lựa chọn trong trận"
+    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !disabled}
+    onCancel={() => respond([])}>
     <span className="section-label">Yêu cầu trong trận</span>
     <h2>{prompt.skill ? text(prompt.skill) : 'Chọn phương án'}</h2>
     <p>{text(prompt.prompt) || `Chọn từ ${prompt.min} đến ${prompt.max} phương án.`}</p>
@@ -40,5 +43,5 @@ export default function ChoicePanel({ request, prompt, busy, respond }: {
         disabled={disabled} onClick={() => respond([])}>Bỏ qua lựa chọn</button>}
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}
-  </section>;
+  </RequestDialog>;
 }

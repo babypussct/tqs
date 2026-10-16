@@ -695,16 +695,17 @@ export class GameConnection {
     // C++ broadcasts AddPlayer before inserting the joining player, so the
     // new socket never receives its own AddPlayer. Lua creates Self during
     // EnterRoom; publish that occupant to the web UI as native QML does.
-    if (command === 'EnterRoom' && Array.isArray(data) &&
-        !(data[2] as { isObserver?: boolean } | undefined)?.isObserver) {
+    if (command === 'EnterRoom' && Array.isArray(data)) {
       const self = this.lua.eval<unknown[]>(`return {
         Self.id, Self.player:getScreenName(), Self.player:getAvatar(), Self.ready or false
       }`);
       const generation = this.socketGeneration;
       this.opts.onUi('SelfIdentity', self[0]);
       if (generation !== this.socketGeneration) return;
-      this.opts.onUi('AddPlayer', self);
-      if (generation !== this.socketGeneration) return;
+      if (!(data[2] as { isObserver?: boolean } | undefined)?.isObserver) {
+        this.opts.onUi('AddPlayer', self);
+        if (generation !== this.socketGeneration) return;
+      }
     }
     this.opts.onUi(command, data);
   }

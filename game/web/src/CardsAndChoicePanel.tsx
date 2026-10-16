@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { RequestInfo } from './engine/connection';
 import type { CardsAndChoicePrompt } from './engine/cardsAndChoice';
 import { useDisplayText } from './engine/displayText';
+import RequestDialog from './RequestDialog';
 
 export default function CardsAndChoicePanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardsAndChoicePrompt; busy: boolean;
@@ -29,7 +30,10 @@ export default function CardsAndChoicePanel({ request, prompt, busy, view, respo
     {text(card.name || 'Lá bài')}
     {card.number !== undefined && <small> {({ 1: '♠', 2: '♣', 3: '♥', 4: '♦' } as Record<string, string>)[String(card.suit)] || ''}{card.number}</small>}
   </>;
-  return <section className="panel request-panel" aria-label="Xem bài và chọn phương án">
+  const cancelChoice = prompt.cancelChoices[0];
+  return <RequestDialog className="panel request-panel" label="Xem bài và chọn phương án"
+    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={Boolean(cancelChoice && !disabled)}
+    onCancel={() => cancelChoice && respond([], cancelChoice, true)}>
     <span className="section-label">{viewing ? 'Xem bài' : 'Chọn bài và phương án'}</span>
     <h2>{viewing ? 'Xem các lá bài' : 'Chọn bài theo yêu cầu'}</h2>
     <p>{text(prompt.title) || (viewing ? 'Xem bài, sau đó xác nhận để tiếp tục.' : `Chọn từ ${prompt.min} đến ${prompt.max} lá bài.`)}</p>
@@ -53,5 +57,5 @@ export default function CardsAndChoicePanel({ request, prompt, busy, view, respo
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}
     {error && <p role="alert">{error}</p>}
-  </section>;
+  </RequestDialog>;
 }

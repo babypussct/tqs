@@ -8,6 +8,7 @@ import {
   formatRank,
   getCardCategory,
   resolveCardText,
+  normalizeCardDisplayName,
   getNativeCardArtUrl,
   type CardData,
 } from '../src/HandCardItem';
@@ -126,10 +127,23 @@ test('resolveCardText resolves translations with layered fallback without leakin
   assert.equal(prefixedEquipResult.displayName, 'Chư Cát Liên Nỗ');
 });
 
+test('card display names remove a mode suffix without changing the native card identity', () => {
+  assert.equal(normalizeCardDisplayName('Vô Giải (Quốc Chiến)'), 'Vô Giải');
+  assert.equal(normalizeCardDisplayName('Vô Giải （国战）'), 'Vô Giải');
+  assert.equal(normalizeCardDisplayName('Vô Giải Khả Kích'), 'Vô Giải Khả Kích');
+
+  const result = resolveCardText(
+    { name: 'heg__nullification' },
+    (key) => key === 'heg__nullification' ? 'Vô Giải (Quốc Chiến)' : key,
+  );
+  assert.equal(result.displayName, 'Vô Giải');
+});
+
 test('GameplayControls uses the card presentation while preserving the gameplay button contract', () => {
   const source = readFileSync(path.join(rootDir, 'src/GameplayControls.tsx'), 'utf8');
   assert.match(source, /import[\s\S]*HandCardItem[\s\S]*from ['"]\.\/HandCardItem['"]/);
   assert.match(source, /<HandCardItem[\s\S]*dispatch\('CardItem'/);
+  assert.match(source, /<HandCardItem[\s\S]*onLongPress=\{\(\) => setInspectedCardId\(item\.id\)\}/);
   assert.match(source, /<SelectedCardSummary/);
   assert.match(source, /<CardDetailSheet/);
   assert.doesNotMatch(source, /<ItemButton[^>]*card\b/);
@@ -222,7 +236,7 @@ test('Vite emits the native card whitelist into production output as well as ser
   assert.match(source, /emitFile/);
 });
 
-test('styles.css contains log scrollbar, moments wrapping, and skill font styles', () => {
+test('styles.css contains log scrollbar, single-line ticker, and skill font styles', () => {
   const cssPath = path.join(rootDir, 'src/styles.css');
   const css = readFileSync(cssPath, 'utf8');
 
@@ -231,12 +245,28 @@ test('styles.css contains log scrollbar, moments wrapping, and skill font styles
   assert.match(css, /\.board-logs::-webkit-scrollbar/);
   assert.match(css, /\.board-log-panel\s*\.board-logs\s*\{[\s\S]*max-height:\s*calc/);
 
-  // Verify moments display full content without ellipsis truncation
-  assert.match(css, /\.board-center\s*\.board-moment\s*\{[\s\S]*white-space:\s*normal/);
-  assert.match(css, /\.sg-board-table\s*\.board-center\s*\.board-moment\s*\{[\s\S]*white-space:\s*normal/);
+  // The latest public event is a single compact ticker above the table.
+  assert.match(css, /\.board-moments\.board-ticker\s*\{[\s\S]*min-height:\s*30px/);
+  assert.match(css, /\.board-ticker\s+\.board-moment\s*\{[\s\S]*white-space:\s*nowrap/);
+  assert.match(css, /\.board-local-idle-area \.sg-hand-idle\s*\{/);
+  assert.match(css, /\.board-local-idle-area \.sg-hand-idle \.sg-card-button\s*\{/);
 
   // Verify skill buttons use Vietnamese font stack
   assert.match(css, /\.sg-skill-button[\s\S]*font-family:\s*"Be Vietnam Pro"/);
+});
+
+test('portrait toolbar uses compact icons without removing accessible action names', () => {
+  const css = readFileSync(path.join(rootDir, 'src/styles.css'), 'utf8');
+  const board = readFileSync(path.join(rootDir, 'src/GameBoardScreen.tsx'), 'utf8');
+  const icons = readFileSync(path.join(rootDir, 'src/EquipIcons.tsx'), 'utf8');
+  assert.match(board, /sg-toolbar-action-icon/);
+  assert.match(board, /aria-label=\{trusting \? 'Tự chơi lại' : 'BOT chơi hộ'\}/);
+  assert.match(board, /aria-label="Rời trận"/);
+  assert.match(icons, /export function ToolbarBotIcon/);
+  assert.match(icons, /export function ToolbarExitIcon/);
+  assert.match(css, /\.sg-toolbar-action-icon\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /\.sg-game-board \.board-toolbar \.sg-toolbar-action-icon[\s\S]*display:\s*inline-flex/);
+  assert.match(css, /@media \(max-width: 600px\) and \(orientation: portrait\) and \(pointer: coarse\)/);
 });
 
 test('version is displayed as BETA across screens rather than hardcoded 2.4.1', () => {

@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { GameAdapter, type RoomGeneral, type RoomPack } from './engine/gameAdapter';
 import { useDisplayText } from './engine/displayText';
 import { useGameStore, type LobbyRoom } from './store/gameStore';
+import { deriveRoomReadiness, roomPoolDisabledReason, roomStartDisabledReason } from './store/roomReadiness';
 
 const ROOM_MODE_LABELS: Record<string, string> = {
   new_heg_mode: 'Quốc Chiến',
@@ -77,7 +78,12 @@ function roomAvailability(room: LobbyRoom): { label: string; tone: 'open' | 'ful
   return { label: `Còn ${room.capacity - room.players} chỗ`, tone: 'open' };
 }
 
-function LobbyRoomRow({ room, join, busy }: { room: LobbyRoom; join: (id: number, pw: string) => void; busy: boolean }) {
+function LobbyRoomRow({ room, join, observe, busy }: {
+  room: LobbyRoom;
+  join: (id: number, pw: string) => void;
+  observe: (id: number, pw: string) => void;
+  busy: boolean;
+}) {
   const [password, setPassword] = useState('');
   const unavailable = room.outdated || room.players >= room.capacity;
   const availability = roomAvailability(room);
@@ -132,6 +138,14 @@ function LobbyRoomRow({ room, join, busy }: { room: LobbyRoom; join: (id: number
             onClick={() => join(room.id, password)}
           >
             {joinLabel}
+          </button>
+          <button
+            className="sg-room-join-btn sg-room-observe-btn button secondary"
+            type="button"
+            disabled={busy || room.outdated || (room.hasPassword && !password)}
+            onClick={() => observe(room.id, password)}
+          >
+            Quan sát
           </button>
         </div>
       </div>
@@ -242,7 +256,8 @@ export function LobbyScreen({ adapter, run, busy }: {
     if (!packs) return null;
     try { return adapter.getRoomPoolSummary(disabledPacks, disabledGenerals); } catch { return null; }
   }, [adapter, packs, disabledPacks, disabledGenerals]);
-  const validPool = !qaPlan?.error && !!pool && pool.generals >= capacity * 5 && pool.cards >= capacity * 4;
+  const createDisabledReason = roomPoolDisabledReason(pool, capacity, qaPlan?.error);
+  const validPool = createDisabledReason === null;
   const togglePack = (name: string) => setDisabledPacks((previous) => previous.includes(name)
     ? previous.filter((id) => id !== name) : [...previous, name]);
 
@@ -402,9 +417,16 @@ export function LobbyScreen({ adapter, run, busy }: {
                 className="sg-create-btn button primary"
                 type="submit"
                 disabled={busy || !validPool}
+                aria-describedby={createDisabledReason ? 'create-room-help' : undefined}
+                title={createDisabledReason ?? 'Tạo phòng Quốc Chiến'}
               >
                 Tạo phòng Quốc Chiến
               </button>
+              {createDisabledReason && (
+                <p id="create-room-help" className="sg-create-disabled-hint" role="status">
+                  {createDisabledReason}
+                </p>
+              )}
             </form>
           </section>
 
@@ -438,6 +460,7 @@ export function LobbyScreen({ adapter, run, busy }: {
                     key={room.id}
                     busy={busy}
                     join={(id, pw) => run(() => adapter.joinRoom(id, pw))}
+                    observe={(id, pw) => run(() => adapter.observeRoom(id, pw))}
                   />
                 ))}
               </ul>
@@ -467,13 +490,22 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
   run: (action: () => void | Promise<void>) => void;
   busy: boolean;
 }) {
-  const { roomName, roomMode, roomDisabledPacks, roomDisabledGenerals, players, capacity, ownId } = useGameStore((s) => s);
+  const { roomName, roomMode, roomIsObserver, roomDisabledPacks, roomDisabledGenerals, players, observers, capacity, ownId } = useGameStore((s) => s);
   const text = useDisplayText();
   const packs = useMemo(() => {
     try { return adapter.getRoomPacks(); } catch { return null; }
   }, [adapter]);
   const self = players.find((p) => p.id === ownId);
   const modeLabel = formatRoomMode(roomMode);
+  const readiness = deriveRoomReadiness(players, capacity, ownId, roomIsObserver);
+  const startDisabledReason = roomStartDisabledReason(readiness, roomIsObserver);
+  const readinessMessage = roomIsObserver
+    ? 'Bạn đang ở chế độ quan sát.'
+    : !readiness.isFull
+    ? `Đang chờ đủ ${capacity} tướng lĩnh trong phòng.`
+    : readiness.missingReadyCount > 0
+    ? `Còn ${readiness.missingReadyCount} tướng lĩnh chưa sẵn sàng.`
+    : 'Phòng đã đủ người và có thể bắt đầu.';
 
   const savedUsername = typeof window !== 'undefined' ? localStorage.getItem('tqs_saved_username') : null;
   const username = savedUsername?.trim() || 'Chúa Công';
@@ -548,6 +580,10 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
             <span className="sg-roster-count">{players.length}/{capacity} tướng lĩnh</span>
           </div>
 
+          <p className={`sg-readiness-status ${readiness.isAllReady ? 'ready' : ''}`} role="status">
+            {readinessMessage}
+          </p>
+
           <ul className="player-list sg-roster-grid" aria-labelledby="players-title">
             {players.map((p, index) => {
               const isBot = p.id < 0 || p.netState === 'robot';
@@ -591,31 +627,71 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
             ))}
           </ul>
 
+          {observers.length > 0 && (
+            <section className="sg-observer-roster" aria-labelledby="observers-title">
+              <div className="sg-roster-head">
+                <h3 id="observers-title" className="sg-roster-title">Khu vực quan sát</h3>
+                <span className="sg-roster-count">{observers.length} người</span>
+              </div>
+              <ul className="sg-observer-list">
+                {observers.map((observer) => (
+                  <li key={observer.id} className="sg-observer-item">
+                    <span className="sg-observer-avatar" aria-hidden="true">◉</span>
+                    <span className="sg-observer-name">{observer.name || `Người quan sát ${observer.id}`}</span>
+                    {observer.id === ownId && <span className="you-tag sg-tag-you">Bạn</span>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <div className="room-actions sg-waiting-actions-bar">
-            <button
-              className="button secondary sg-action-btn-secondary"
-              disabled={busy}
-              onClick={() => run(() => adapter.ready())}
-            >
-              {self?.ready ? 'Bỏ sẵn sàng' : 'Sẵn sàng'}
-            </button>
+            {readiness.canReady && (
+              <button
+                className="button secondary sg-action-btn-secondary"
+                disabled={busy}
+                onClick={() => run(() => adapter.ready())}
+              >
+                {self?.ready ? 'Bỏ sẵn sàng' : 'Sẵn sàng'}
+              </button>
+            )}
             {self?.owner && (
               <>
                 <button
                   className="button secondary sg-action-btn-secondary"
-                  disabled={busy || players.length >= capacity}
+                  disabled={busy || !readiness.canAddBot}
                   onClick={() => run(() => adapter.addBot())}
                 >
                   + Thêm bot
                 </button>
                 <button
                   className="button primary sg-action-btn-gold"
-                  disabled={busy || players.length < 2}
+                  disabled={busy || !readiness.canStart}
+                  aria-describedby={startDisabledReason ? 'start-game-help' : undefined}
+                  title={startDisabledReason ?? 'Bắt đầu ván Quốc Chiến'}
                   onClick={() => run(() => adapter.start())}
                 >
                   Bắt đầu
                 </button>
               </>
+            )}
+            {!roomIsObserver && players.filter((player) => player.id > 0).length > 1 && (
+              <button
+                className="button secondary sg-action-btn-secondary"
+                disabled={busy}
+                onClick={() => run(() => adapter.switchToObserver())}
+              >
+                Chuyển sang quan sát
+              </button>
+            )}
+            {roomIsObserver && !readiness.isFull && (
+              <button
+                className="button secondary sg-action-btn-secondary"
+                disabled={busy}
+                onClick={() => run(() => adapter.switchToPlayer())}
+              >
+                Lấy chỗ chơi
+              </button>
             )}
             <button
               className="button ghost sg-action-btn-ghost"
@@ -625,6 +701,11 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
               Rời phòng
             </button>
           </div>
+          {self?.owner && startDisabledReason && (
+            <p id="start-game-help" className="sg-start-disabled-hint" role="status">
+              {startDisabledReason}
+            </p>
+          )}
         </section>
       </div>
 

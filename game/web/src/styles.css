@@ -259,7 +259,13 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .gameplay-card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; }
 .gameplay-card-heading h3 { min-width: 0; }
 .sg-hand-count { flex: 0 0 auto; color: var(--sg-gold-pale, #eac880); font-size: .76rem; white-space: nowrap; }
-.sg-hand-scroll-hint { margin: -4px 0 0; color: rgba(240, 229, 218, .7); font-size: .72rem; line-height: 1.3; }
+.sg-hand-scroll-hint {
+  margin: -2px 4px 0;
+  color: rgba(240, 229, 218, .76);
+  font-size: .72rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
 .gameplay-choice { min-height: 47px; border: 1px solid #79967d; color: #f7f0d9; background: #1c3226; border-radius: 10px; padding: 10px 12px; max-width: 100%; overflow-wrap: anywhere; }
 .gameplay-choice.selected, .gameplay-target.selected { border-color: #f6d388; background: #5a542c; color: #ffedae; }
 .gameplay-choice:focus-visible, .gameplay-target:focus-visible { outline: 3px solid #f6d388; outline-offset: 2px; }
@@ -289,6 +295,27 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .gameplay-options { min-width: 0; }
   .gameplay-choice { width: 100%; }
   .gameplay-options > div { min-width: 0; flex: 1 1 130px; }
+}
+
+/* Request dialogs become a bottom sheet on portrait phones.  The server
+ * still owns the request lifecycle; this only keeps the current dialog
+ * readable and reachable above the browser safe area. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .shell-playing .request-panel {
+    inset: auto max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom));
+    width: min(calc(100vw - 16px), 520px);
+    max-width: none;
+    max-height: min(86dvh, calc(100dvh - 24px));
+    margin: 0 auto;
+    padding: 14px;
+    border-radius: 18px 18px 12px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 12px;
+  }
+  .shell-playing .request-panel .request-actions {
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
+  }
 }
 @media (max-width: 350px) {
   .general-grid { grid-template-columns: 1fr; }
@@ -1002,6 +1029,16 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   filter: grayscale(0.5);
 }
 
+.sg-create-disabled-hint {
+  margin: -2px 0 0;
+  padding: 7px 9px;
+  border-left: 2px solid rgba(212, 155, 56, .72);
+  background: rgba(39, 27, 18, .56);
+  color: #c9b89d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .sg-refresh-btn {
   background: rgba(45, 30, 20, 0.85);
   border: 1px solid #8c642e;
@@ -1146,6 +1183,12 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   cursor: not-allowed;
 }
 
+.sg-room-observe-btn {
+  background: rgba(45, 75, 70, 0.9);
+  border-color: #78b7a4;
+  color: #d5fff0;
+}
+
 .sg-empty-state {
   position: relative;
   z-index: 1;
@@ -1182,6 +1225,63 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .sg-roster-count {
   font-size: 11px;
   color: #caa674;
+}
+
+.sg-readiness-status {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(140, 100, 46, 0.58);
+  border-radius: 6px;
+  background: rgba(30, 20, 15, 0.72);
+  color: #c9b89d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.sg-readiness-status.ready {
+  border-color: rgba(46, 204, 113, 0.72);
+  background: rgba(13, 48, 24, 0.78);
+  color: #a2f2b8;
+}
+
+.sg-observer-roster {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(140, 100, 46, 0.4);
+}
+
+.sg-observer-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sg-observer-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid rgba(120, 183, 164, 0.42);
+  border-radius: 999px;
+  background: rgba(22, 42, 38, 0.75);
+  color: #c7e7da;
+  font-size: 11px;
+}
+
+.sg-observer-avatar {
+  color: #78b7a4;
+  font-size: 9px;
+}
+
+.sg-observer-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sg-roster-grid {
@@ -1378,6 +1478,17 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   margin-top: 10px;
 }
 
+.sg-start-disabled-hint {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  padding: 7px 9px;
+  border-left: 2px solid rgba(212, 155, 56, .72);
+  background: rgba(39, 27, 18, .56);
+  color: #c9b89d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .sg-action-btn-gold {
   flex: 1;
   height: 40px;
@@ -1490,7 +1601,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   min-height: 0;
   flex: 1 1 auto;
 }
-.sg-game-shell .board-toolbar {
+.sg-game-shell .board-toolbar,
+.sg-game-board .board-toolbar {
   min-height: 36px;
   padding: 4px 12px;
   background: linear-gradient(180deg, rgba(34, 26, 18, 0.95), rgba(18, 14, 10, 0.95));
@@ -1503,7 +1615,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   gap: 8px;
   flex-wrap: nowrap;
 }
-.sg-game-shell .board-toolbar h2 {
+.sg-game-shell .board-toolbar h2,
+.sg-game-board .board-toolbar h2 {
   margin: 0;
   font-size: clamp(0.85rem, 2.4vw, 1.1rem);
   color: var(--sg-cream);
@@ -1511,13 +1624,28 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   letter-spacing: .015em;
   text-shadow: 0 2px 0 var(--sg-text-outline), 0 4px 12px rgba(0, 0, 0, .64);
 }
-.sg-game-shell .board-toolbar .section-label { display: none; }
-.sg-game-shell .board-toolbar .button {
+.sg-game-shell .board-toolbar .section-label,
+.sg-game-board .board-toolbar .section-label { display: none; }
+.sg-game-shell .board-toolbar .button,
+.sg-game-board .board-toolbar .button {
   min-height: 28px;
   padding: 3px 10px;
   font-size: 0.74rem;
   border-radius: 6px;
 }
+.sg-game-shell .board-toolbar .inline-controls,
+.sg-game-board .board-toolbar .inline-controls {
+  margin-top: 0;
+  flex-wrap: nowrap;
+}
+.sg-toolbar-action-icon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.sg-toolbar-action-label { display: inline; }
+.sg-toolbar-icon { display: block; }
 .sg-board-table {
   position: relative;
   isolation: isolate;
@@ -1601,8 +1729,53 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   font-family: "FZLBGBK", "STLiti", "Kaiti SC", Georgia, serif;
   text-shadow: 0 2px 0 var(--sg-text-outline), 0 0 18px rgba(212, 155, 56, .28);
 }
+.sg-game-shell .board-moments.board-ticker,
+.sg-game-board .board-moments.board-ticker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.sg-game-shell .board-ticker > strong,
+.sg-game-board .board-ticker > strong {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin: 0;
+  color: var(--sg-gold-hi);
+  font-size: .66rem;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.sg-game-shell .board-ticker .board-moment,
+.sg-game-board .board-ticker .board-moment {
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 0 8px;
+  border: 0;
+  border-left: 1px solid rgba(200, 166, 98, .42);
+  border-radius: 0;
+  background: transparent;
+  color: #eadfcf;
+  font-size: .72rem;
+  line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sg-game-shell .board-moments,
+.sg-game-board .board-moments,
 .sg-game-shell .board-status,
+.sg-game-board .board-status,
 .sg-board-log-panel {
   border-color: rgba(200, 166, 98, .52);
   background: rgba(18, 19, 13, .8);
@@ -1612,6 +1785,18 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .sg-game-shell .board-mark { border-color: rgba(200, 166, 98, .5); background: rgba(67, 48, 26, .72); }
 .sg-game-shell .board-log-panel { border-radius: 8px; }
 .sg-game-shell .board-logs { color: #e4d7c3; }
+.sg-game-shell .board-toolbar-title,
+.sg-game-board .board-toolbar-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.sg-game-shell .board-toolbar-title h2,
+.sg-game-board .board-toolbar-title h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sg-gameplay-controls {
   position: relative;
   overflow: visible;
@@ -1811,6 +1996,20 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     margin-left: calc(-1 * var(--card-overlap-mobile, var(--card-overlap, 0px)));
     scroll-snap-align: center;
     touch-action: manipulation;
+  }
+  /*
+   * A touch pointer can remain over a card after the preceding action button
+   * is pressed.  The desktop hover lift would then move the card out from
+   * underneath that pointer, repeatedly toggling :hover and making the card
+   * impossible to click reliably.  Mobile keeps the selected glow but leaves
+   * the card's hit rectangle stable.
+   */
+  .sg-hand-fan .sg-card-button:hover:not(:disabled),
+  .sg-hand-fan .sg-card-button:focus-visible:not(:disabled),
+  .sg-hand-fan .sg-card-button.selected,
+  .sg-hand-fan .sg-card-button.selected:hover,
+  .sg-hand-fan .sg-card-button.selected:focus-visible {
+    --card-lift: 0px;
   }
   .sg-hand-fan .sg-card-popover-tooltip,
   .sg-card-popover-portal { display: none !important; }
@@ -2749,7 +2948,42 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   font-size: 7.5px;
   flex: none;
   width: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+}
+.sg-equip-icon {
+  display: block;
+  width: 9px;
+  height: 9px;
+  stroke: #ffe299;
+  fill: none;
+}
+.native-equip-row.empty .sg-equip-icon,
+.native-equip-half.empty .sg-equip-icon {
+  stroke: #8a7a60;
+  opacity: 0.55;
+}
+.sg-target-crosshair-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  color: #ff4b3d;
+  filter: drop-shadow(0 0 6px rgba(255, 75, 61, 0.85));
+}
+.sg-portrait-target-overlay.selected .sg-target-crosshair-icon {
+  color: #ffd700;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
+}
+.sg-timer-clock-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -1px;
+  margin-right: 2px;
+}
+.sg-timer-clock-icon svg {
+  display: block;
 }
 .native-eq-name {
   flex: 1;
@@ -2767,6 +3001,31 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .native-eq-suit.suit-red { color: #ff5252; text-shadow: 0 0 2px rgba(255,0,0,0.6); }
 .native-eq-suit.suit-black { color: #f0f0f0; text-shadow: 0 0 2px #000; }
+
+/* Empty public equipment slots still communicate the slot that is being
+ * inspected.  Keep them quieter than an equipped card, but do not let the
+ * opponent's weapon/armor/+1/-1 information disappear into the dark plate. */
+.sg-game-shell .board-player:not(.board-self) .native-equip-row.empty,
+.sg-game-board .board-player:not(.board-self) .native-equip-row.empty,
+.sg-game-shell .board-player:not(.board-self) .native-equip-half.empty,
+.sg-game-board .board-player:not(.board-self) .native-equip-half.empty {
+  opacity: .78;
+  color: #cfb98c;
+  background: rgba(255, 255, 255, .07);
+}
+.sg-game-shell .board-player:not(.board-self) .native-equip-row.empty .sg-equip-icon,
+.sg-game-board .board-player:not(.board-self) .native-equip-row.empty .sg-equip-icon,
+.sg-game-shell .board-player:not(.board-self) .native-equip-half.empty .sg-equip-icon,
+.sg-game-board .board-player:not(.board-self) .native-equip-half.empty .sg-equip-icon {
+  stroke: #c9aa70;
+  opacity: .9;
+}
+.sg-game-shell .board-player:not(.board-self) .native-equip-row.empty .native-eq-name,
+.sg-game-board .board-player:not(.board-self) .native-equip-row.empty .native-eq-name,
+.sg-game-shell .board-player:not(.board-self) .native-equip-half.empty .native-eq-name,
+.sg-game-board .board-player:not(.board-self) .native-equip-half.empty .native-eq-name {
+  color: #cfb98c;
+}
 
 .native-equip-rides-split {
   display: flex;
@@ -2917,6 +3176,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   min-width: 0;
   box-sizing: border-box;
 }
+.board-local-utility-row { display: contents; }
 .board-local-dashboard > * { min-width: 0; }
 .board-local-seat {
   position: relative;
@@ -2942,7 +3202,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   border-radius: 6px;
 }
 .board-local-dashboard > .sg-gameplay-controls,
-.board-local-dashboard > .fake-skill-dock,
+.board-local-dashboard .fake-skill-dock,
 .board-local-dashboard > .board-status,
 .board-local-dashboard > .board-local-idle-area {
   position: relative;
@@ -2951,7 +3211,27 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   min-width: 0;
   order: 2;
 }
-.board-local-dashboard > .fake-skill-dock {
+.board-local-skill-rail {
+  position: relative;
+  z-index: 22;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  order: 2;
+}
+.board-local-skill-rail:empty { display: none; }
+.board-local-skill-rail > .native-skill-dock {
+  position: relative;
+  z-index: 22;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.board-local-dashboard .fake-skill-dock {
   order: 5;
   flex: 0 0 auto;
 }
@@ -3186,8 +3466,24 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   letter-spacing: 0.5px;
   text-align: center;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+}
+.sg-prompt-copy {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sg-timer-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 0.75rem;
   font-weight: 800;
   color: #ffd97d;
@@ -3195,6 +3491,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   padding: 1px 5px;
   border-radius: 8px;
   border: 1px solid rgba(212, 155, 56, 0.4);
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .sg-timer-track {
   width: min(280px, 80%);
@@ -3344,11 +3642,18 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 /* Trạng thái Disabled mờ xám cho cả 3 nút */
 .sg-gameplay-controls .gameplay-actions button.button:disabled,
 .sg-gameplay-controls .sg-action-bar button.button:disabled {
-  opacity: 0.38 !important;
-  filter: grayscale(0.7) !important;
+  opacity: 0.72 !important;
+  filter: none !important;
   cursor: not-allowed !important;
-  box-shadow: none !important;
+  border-color: rgba(255, 217, 125, .46) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08) !important;
   transform: none !important;
+}
+.sg-gameplay-controls .sg-btn-ok:disabled,
+.sg-gameplay-controls .sg-btn-cancel:disabled,
+.sg-gameplay-controls .sg-btn-end:disabled {
+  color: #f2dfc9 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .8);
 }
 
 @media (max-width: 639px) {
@@ -3435,10 +3740,49 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   max-width: none;
 }
 
+/*
+ * Portrait hand viewport.
+ *
+ * The gameplay dashboard is a compact flex row on small screens.  The hand
+ * itself must consume only the width assigned by that row; making it wider
+ * than its parent (or overlapping cards to force them into that width) cuts
+ * the first card off and makes later cards unreliable touch targets.  Keep
+ * every card in the horizontal scroll surface instead.
+ */
+@media (max-width: 600px) {
+  .sg-gameplay-controls .gameplay-card-section {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .sg-gameplay-controls .sg-hand-fan {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    box-sizing: border-box;
+    padding-inline: 8px;
+  }
+  .sg-gameplay-controls .sg-hand-fan.sg-hand-overlap,
+  .sg-hand-fan.sg-hand-idle.sg-hand-overlap {
+    gap: 8px;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button,
+  .sg-hand-fan.sg-hand-idle .sg-card-button {
+    margin-left: 0;
+  }
+  .sg-hand-scroll-hint {
+    padding: 0 4px 2px;
+    white-space: normal;
+  }
+}
+
 /* 4. Vertical Stacked Skill Area Dock (Xếp tầng dọc cạnh ô ghế bản thân) */
 .sg-gameplay-controls .native-skill-dock,
 .sg-gameplay-controls .regular-skill-dock,
-.board-local-dashboard > .fake-skill-dock,
+.board-local-dashboard .fake-skill-dock,
 .board-local-idle-area .regular-skill-dock {
   order: 3;
   flex: 0 0 auto;
@@ -3518,6 +3862,41 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .fake-skill-button.selected .fake-skill-state {
   color: #2b1b08;
+}
+
+.sg-fake-skill-portal {
+  position: fixed;
+  left: 50%;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 1100;
+  width: min(92vw, 420px);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+.sg-fake-skill-portal .fake-skill-dock {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(212, 155, 56, .72);
+  border-radius: 9px;
+  background: rgba(22, 17, 13, .97);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .8), 0 0 0 1px rgba(255, 217, 125, .12);
+}
+.sg-fake-skill-portal .native-skill-options {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.sg-fake-skill-portal .fake-skill-button {
+  flex: 0 0 auto;
+  min-width: 96px !important;
+  max-width: 140px !important;
+  min-height: 44px !important;
+  height: 44px !important;
 }
 
 @media (max-width: 899px) {
@@ -3607,37 +3986,6 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     font-size: 6.5px;
     padding: 1px;
   }
-  .sg-board-table .board-moments {
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    margin: 16px auto 0;
-    padding: 3px 6px;
-    font-size: 0.68rem;
-    min-height: 70px;
-    max-height: 85px;
-    overflow-y: auto;
-    line-height: 1.25;
-    border-radius: 6px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(212, 155, 56, .6) rgba(20, 16, 11, .4);
-  }
-  .sg-board-table .board-moments > strong {
-    display: block;
-    font-size: 0.68rem;
-    margin-bottom: 2px;
-  }
-  .sg-board-table .board-center .board-moment {
-    display: block;
-    margin: 2px 0;
-    padding: 2px 4px;
-    font-size: 0.68rem;
-    line-height: 1.25;
-    white-space: normal;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
   .sg-board-table .board-banners {
     margin-top: 2px;
   }
@@ -3664,13 +4012,71 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 }
 
+/* Narrow board chrome: the room title stays readable while secondary actions
+ * stop consuming a full desktop-sized pill row.  The full accessible labels
+ * remain on the buttons for screen readers and tooltips. */
+@media (max-width: 899px) {
+  .sg-game-shell .board-toolbar,
+  .sg-game-board .board-toolbar {
+    min-height: 32px;
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .sg-game-shell .board-toolbar h2,
+  .sg-game-board .board-toolbar h2 {
+    max-width: 100%;
+    font-size: .82rem;
+  }
+  .sg-game-shell .board-toolbar .inline-controls,
+  .sg-game-board .board-toolbar .inline-controls {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  .sg-game-shell .board-toolbar .button,
+  .sg-game-shell .board-toolbar .sg-toolbar-action,
+  .sg-game-board .board-toolbar .button,
+  .sg-game-board .board-toolbar .sg-toolbar-action {
+    min-height: 24px;
+    height: 24px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: .62rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel {
+    height: 34px;
+    min-height: 34px;
+    max-height: 34px;
+    padding: 0 6px;
+    overflow: hidden;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel .board-log-heading {
+    height: 34px;
+    min-height: 34px;
+    padding: 0 2px;
+    gap: 6px;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel .board-log-heading strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: horizontal-tb;
+    letter-spacing: 0;
+    font-size: .68rem;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel .board-log-heading button {
+    flex: 0 0 auto;
+    min-height: 24px !important;
+    padding: 2px 6px;
+    font-size: .62rem;
+  }
+}
+
 @media (max-width: 899px) and (orientation: portrait), (max-width: 640px) and (orientation: portrait) {
   .sg-board-table .board-center {
     top: 48%;
-  }
-  .sg-board-table .board-moments {
-    margin: 20px auto 0;
-    max-height: 95px;
   }
 }
 
@@ -3690,6 +4096,439 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
   .board-local-dashboard { gap: 8px; }
   .board-local-dashboard .sg-photo-panel > .gameplay-target { min-height: 44px; }
+}
+
+/*
+ * Portrait mobile dashboard composition.
+ *
+ * The board remains the main stage.  The local dashboard is a compact HUD
+ * below it: one compact utility row for the local player and every skill,
+ * then the request prompt/action bar and hand in normal flow.  This prevents
+ * the seat and vertical skill docks from stealing the hand's width or
+ * covering its hit targets.  Desktop and landscape keep the established
+ * dashboard geometry.
+ */
+@media (max-width: 600px) and (orientation: portrait) {
+  .sg-board-table {
+    min-height: clamp(170px, 20dvh, 200px);
+  }
+  .sg-board-table .board-center {
+    top: 32%;
+  }
+  /* With only one opponent the native portrait is centered at the top;
+   * place the deck/pile below it instead of letting the two visual layers
+   * touch on the intentionally shallow portrait table. */
+  .sg-board-table .board-center-seats-2 {
+    top: 64%;
+  }
+
+  .sg-game-shell .board-ticker,
+  .sg-game-board .board-ticker {
+    min-height: 28px;
+    height: 28px;
+    padding: 3px 6px;
+    gap: 6px;
+  }
+  .sg-game-shell .board-ticker > strong,
+  .sg-game-board .board-ticker > strong { font-size: .61rem; }
+  .sg-game-shell .board-ticker .board-moment,
+  .sg-game-board .board-ticker .board-moment {
+    padding-left: 6px;
+    font-size: .66rem;
+  }
+
+  /* Secondary toolbar actions become compact icon buttons on a portrait
+   * phone. Their accessible name/title remains the full native action label;
+   * the visible text is retained at tablet/desktop widths. */
+  .sg-game-shell .board-toolbar,
+  .sg-game-board .board-toolbar {
+    min-height: 32px;
+    height: 32px;
+    padding: 2px 5px;
+    border-radius: 6px;
+  }
+  .sg-game-shell .board-toolbar h2,
+  .sg-game-board .board-toolbar h2 {
+    margin: 0;
+    font-size: .78rem;
+    line-height: 1;
+  }
+  .sg-game-shell .board-toolbar .sg-toolbar-action,
+  .sg-game-board .board-toolbar .sg-toolbar-action {
+    width: 32px;
+    min-width: 32px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .sg-game-shell .board-toolbar .sg-toolbar-action-icon,
+  .sg-game-board .board-toolbar .sg-toolbar-action-icon { display: inline-flex; }
+  .sg-game-shell .board-toolbar .sg-toolbar-action-label,
+  .sg-game-board .board-toolbar .sg-toolbar-action-label { display: none; }
+
+  .board-layout,
+  .board-main {
+    gap: 6px;
+  }
+
+  .sg-board-log-panel {
+    width: 100%;
+    max-height: 96px;
+    padding: 6px 8px;
+    overflow: hidden;
+  }
+  .sg-board-log-panel .board-logs {
+    max-height: 48px;
+    margin-top: 3px;
+  }
+
+  .board-local-dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    padding: 8px 6px max(8px, env(safe-area-inset-bottom));
+    position: relative;
+    bottom: auto;
+    z-index: 20;
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+
+  .board-local-utility-row {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .board-local-seat {
+    order: 0;
+    flex: 0 0 92px;
+    width: 92px;
+    height: 64px;
+    min-width: 92px;
+    min-height: 64px;
+  }
+  .board-local-seat .sg-photo-panel {
+    position: relative;
+    width: 92px;
+    height: 64px;
+    min-width: 92px;
+    min-height: 64px;
+    max-width: 92px;
+    max-height: 64px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-portrait-frame {
+    right: 47px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-photo-top-overlay {
+    left: 46px;
+    padding-right: 2px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-kingdom-crest {
+    font-size: 6px;
+    padding-inline: 2px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-calligraphy-name {
+    top: 13px;
+    font-size: 7px;
+    letter-spacing: 0;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-seat-player-name {
+    max-width: 42px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-hp-vertical-column {
+    left: auto;
+    right: 36px;
+    bottom: 3px;
+    transform: scale(.78);
+    transform-origin: right bottom;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-hand-count-badge {
+    right: 2px;
+    left: auto;
+    bottom: 2px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-photo-marks {
+    top: 18px;
+    right: 2px;
+    max-width: 48px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-equip-plate {
+    display: flex;
+    left: 17px;
+    height: 24px;
+    padding: 1px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-row {
+    height: 5px;
+    font-size: 5.5px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-eq-icon {
+    width: 7px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-equip-icon {
+    width: 6px;
+    height: 6px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-eq-suit,
+  .board-local-seat .sg-photo-panel-compact .native-equip-half {
+    font-size: 5.5px;
+  }
+
+  .board-local-skill-rail {
+    order: 1;
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 1px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+  .board-local-skill-rail > .native-skill-dock {
+    display: contents;
+  }
+  .board-local-skill-rail .native-skill-options {
+    display: contents !important;
+  }
+  .board-local-skill-rail .sg-skill-button {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 68px !important;
+    max-width: 104px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 1px 4px !important;
+    font-size: 9px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .board-local-skill-rail .fake-skill-button {
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+  .board-local-skill-rail .fake-skill-state {
+    font-size: 7px !important;
+  }
+  .sg-fake-skill-portal {
+    bottom: max(4px, env(safe-area-inset-bottom));
+    width: min(calc(100vw - 12px), 420px);
+  }
+  .sg-fake-skill-portal .fake-skill-dock {
+    padding: 3px;
+  }
+  .sg-fake-skill-portal .fake-skill-button {
+    min-width: 68px !important;
+    max-width: 104px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 1px 4px !important;
+    font-size: 9px !important;
+  }
+  .sg-fake-skill-portal .fake-skill-state {
+    font-size: 7px !important;
+  }
+
+  .board-local-dashboard > .sg-gameplay-controls {
+    order: 2;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .sg-gameplay-controls .sg-floating-controls-hud {
+    position: static;
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+    transform: none;
+    align-items: stretch;
+    gap: 2px;
+  }
+  .sg-gameplay-controls .sg-control-prompt-bar {
+    gap: 2px;
+  }
+  .sg-gameplay-controls .sg-floating-controls-hud .gameplay-prompt {
+    max-width: 100%;
+    font-size: 11px;
+    line-height: 1.1;
+    max-height: 16px;
+  }
+  .sg-gameplay-controls .sg-floating-controls-hud .sg-prompt-copy {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+  .sg-gameplay-controls .sg-floating-controls-hud .sg-action-bar {
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    gap: 4px !important;
+    overflow-x: auto;
+  }
+  .sg-gameplay-controls .sg-action-bar button.button,
+  .sg-gameplay-controls .gameplay-actions button.button {
+    font-size: 9px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    padding: 0 3px !important;
+    border-radius: 4px;
+  }
+  .sg-gameplay-controls .sg-btn-ok,
+  .sg-gameplay-controls .gameplay-actions button.button.primary {
+    width: 56px !important;
+  }
+  .sg-gameplay-controls .sg-btn-cancel {
+    width: 46px !important;
+  }
+  .sg-gameplay-controls .sg-btn-end {
+    width: 66px !important;
+  }
+  .sg-gameplay-controls .sg-timer-track {
+    width: min(240px, 70%);
+    height: 3px;
+  }
+  .sg-gameplay-controls .sg-timer-number {
+    font-size: .68rem;
+    padding: 0 4px;
+  }
+
+  .sg-gameplay-controls .native-skill-dock {
+    order: 2;
+    align-self: stretch;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .sg-gameplay-controls .gameplay-card-section {
+    order: 3;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sg-gameplay-controls .native-skill-options {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 2px 1px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+  .sg-gameplay-controls .sg-skill-button {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 96px !important;
+    max-width: 140px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 4px 8px !important;
+  }
+
+  .sg-gameplay-controls .sg-hand-fan {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    min-height: 110px;
+    gap: 6px;
+    padding: 8px 4px 10px;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button {
+    flex-basis: 64px;
+    width: 64px;
+    min-width: 64px;
+    height: 88px;
+  }
+
+  /* IdleHandCard lives outside sg-gameplay-controls after a request closes.
+   * Give it the same bounded portrait profile so a large hand cannot fall
+   * back to the older negative-margin/72px layout between turns. */
+  .board-local-idle-area .sg-hand-idle {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    min-height: 110px;
+    gap: 6px;
+    padding: 8px 4px 10px;
+  }
+  .board-local-idle-area .sg-hand-idle .sg-card-button {
+    flex-basis: 64px;
+    width: 64px;
+    min-width: 64px;
+    height: 88px;
+    margin-left: 0;
+  }
+
+  .board-local-idle-area {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    gap: 8px;
+  }
+  .board-local-idle-area .sg-hand-idle,
+  .board-local-idle-area .board-status {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Keep the compact visual treatment while restoring the conventional 44px
+ * touch hit area on real coarse-pointer devices. */
+@media (max-width: 600px) and (orientation: portrait) and (pointer: coarse) {
+  .sg-game-shell .board-toolbar,
+  .sg-game-board .board-toolbar {
+    min-height: 44px;
+    height: 44px;
+  }
+  .sg-game-shell .board-toolbar .sg-toolbar-action,
+  .sg-game-board .board-toolbar .sg-toolbar-action {
+    width: 44px;
+    min-width: 44px;
+    height: 40px;
+    min-height: 40px;
+  }
 }
 
 /* ============================================================== */

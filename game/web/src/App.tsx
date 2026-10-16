@@ -34,6 +34,13 @@ export default function App() {
     return () => { window.removeEventListener('online', changed); window.removeEventListener('offline', changed); };
   }, []);
   const trusting = snapshot.players.find((player) => player.id === snapshot.ownId)?.netState === 'trust';
+  // Gameplay requests already own a prompt, countdown and action bar inside
+  // GameBoardScreen. Keeping the legacy global warning for them consumes
+  // portrait height twice and pushes the hand rail below the fold. Native
+  // dialogs still keep the global deadline notice because their shell is
+  // mounted independently and may not expose a compact countdown.
+  const showGlobalDeadline = snapshot.phase === 'playing' && !trusting &&
+    snapshot.pendingRequest !== null && !GAMEPLAY_REQUESTS.has(snapshot.pendingRequest.command);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,7 +72,7 @@ export default function App() {
 
   const disconnect = () => {
     adapter.disconnect();
-    useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], ownId: null, pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, result: null, board: emptyBoard(), progress: '', error: null });
+    useGameStore.getState().update({ phase: 'login', connection: { kind: 'closed', reason: 'Đã ngắt kết nối' }, rooms: [], players: [], observers: [], ownId: null, roomIsObserver: false, pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, result: null, board: emptyBoard(), progress: '', error: null });
   };
 
   const shellVariant = snapshot.phase === 'playing'
@@ -102,7 +109,7 @@ export default function App() {
           }}>{exitAction === 'leave' ? 'Vẫn rời trận' : 'Vẫn ngắt kết nối'}</button>
         </div>
       </section>}
-      {snapshot.phase === 'playing' && !trusting && <RequestDeadline request={snapshot.pendingRequest} />}
+      {showGlobalDeadline && <RequestDeadline request={snapshot.pendingRequest} />}
       {snapshot.phase === 'login' && <LoginScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'lobby' && <LobbyScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'room' && snapshot.result && <GameResultPanel result={snapshot.result} busy={busy}

@@ -95,6 +95,111 @@ try {
     ['Real Lua gameplay hand renders catalogue art and remains horizontally scrollable', async (p) => {
       const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
       const hand = controls.locator('.gameplay-hand');
+      const assertPortraitLayout = async (label: string) => {
+        const layout = await p.evaluate(() => {
+          const handElement = document.querySelector<HTMLElement>('.sg-gameplay-controls .gameplay-hand');
+          const handBox = handElement?.getBoundingClientRect();
+          const handStyles = handElement ? getComputedStyle(handElement) : null;
+          const dashboardElement = document.querySelector<HTMLElement>('.board-local-dashboard');
+          const dashboardBox = dashboardElement?.getBoundingClientRect();
+          const dashboardStyles = dashboardElement ? getComputedStyle(dashboardElement) : null;
+          const seatElement = document.querySelector<HTMLElement>('.board-local-seat');
+          const seatBox = seatElement?.getBoundingClientRect();
+          const controlsElement = document.querySelector<HTMLElement>('.sg-gameplay-controls');
+          const controlsBox = controlsElement?.getBoundingClientRect();
+          const controlsStyles = controlsElement ? getComputedStyle(controlsElement) : null;
+          const toolbarElement = document.querySelector<HTMLElement>('.board-toolbar');
+          const toolbarBox = toolbarElement?.getBoundingClientRect();
+          const tickerElement = document.querySelector<HTMLElement>('.board-ticker');
+          const tickerBox = tickerElement?.getBoundingClientRect();
+          const skillRail = document.querySelector<HTMLElement>('.board-local-skill-rail');
+          const skillBox = skillRail?.getBoundingClientRect();
+          const skillStyles = skillRail ? getComputedStyle(skillRail) : null;
+          return {
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+            documentWidth: document.documentElement.scrollWidth,
+            hand: handBox ? {
+              left: handBox.left, right: handBox.right, top: handBox.top,
+              bottom: handBox.bottom, width: handBox.width, height: handBox.height,
+              display: handStyles?.display ?? '', flexDirection: handStyles?.flexDirection ?? '',
+            } : null,
+            dashboard: dashboardBox ? {
+              left: dashboardBox.left, right: dashboardBox.right, top: dashboardBox.top,
+              bottom: dashboardBox.bottom, width: dashboardBox.width, height: dashboardBox.height,
+              position: dashboardStyles?.position ?? '',
+            } : null,
+            seat: seatBox ? {
+              left: seatBox.left, right: seatBox.right, top: seatBox.top,
+              bottom: seatBox.bottom, width: seatBox.width, height: seatBox.height,
+            } : null,
+            skillRail: skillStyles ? {
+              left: skillBox?.left ?? 0,
+              right: skillBox?.right ?? 0,
+              top: skillBox?.top ?? 0,
+              bottom: skillBox?.bottom ?? 0,
+              width: skillBox?.width ?? 0,
+              height: skillBox?.height ?? 0,
+              display: skillStyles.display,
+              flexDirection: skillStyles.flexDirection,
+              overflowX: skillStyles.overflowX,
+            } : null,
+            controls: controlsBox ? {
+              left: controlsBox.left, right: controlsBox.right, top: controlsBox.top,
+              bottom: controlsBox.bottom, width: controlsBox.width, height: controlsBox.height,
+              display: controlsStyles?.display ?? '', flexDirection: controlsStyles?.flexDirection ?? '',
+            } : null,
+            toolbar: toolbarBox ? {
+              left: toolbarBox.left, right: toolbarBox.right, top: toolbarBox.top,
+              bottom: toolbarBox.bottom, width: toolbarBox.width, height: toolbarBox.height,
+            } : null,
+            ticker: tickerBox ? {
+              left: tickerBox.left, right: tickerBox.right, top: tickerBox.top,
+              bottom: tickerBox.bottom, width: tickerBox.width, height: tickerBox.height,
+            } : null,
+          };
+        });
+        assert.ok(layout.hand, `${label}: gameplay hand must be mounted`);
+        assert.ok(layout.dashboard, `${label}: local dashboard must be mounted`);
+        assert.ok(layout.hand!.left >= -1, `${label}: hand starts outside viewport (${layout.hand!.left}px)`);
+        assert.ok(layout.hand!.right <= layout.viewportWidth + 1,
+          `${label}: hand extends outside viewport (${layout.hand!.right}px > ${layout.viewportWidth}px)`);
+        assert.ok(layout.hand!.width >= layout.viewportWidth - 40,
+          `${label}: hand is still squeezed by a sibling (${layout.hand!.width}px at ${layout.viewportWidth}px viewport)`);
+        assert.ok(layout.hand!.bottom <= layout.viewportHeight + 3,
+          `${label}: hand is below the portrait viewport (${layout.hand!.bottom}px > ${layout.viewportHeight}px): ${JSON.stringify(layout)}`);
+        assert.ok(layout.dashboard!.right <= layout.viewportWidth + 1,
+          `${label}: dashboard extends outside viewport (${layout.dashboard!.right}px > ${layout.viewportWidth}px)`);
+        assert.equal(layout.dashboard!.position, 'relative',
+          `${label}: portrait dashboard must stay in normal flow instead of sticky overlap`);
+        assert.ok(layout.seat && layout.seat.width <= 112 && layout.seat.height <= 72,
+          `${label}: self seat is not compact (${JSON.stringify(layout.seat)})`);
+        assert.ok(layout.skillRail, `${label}: local skill rail must be mounted`);
+        assert.ok(layout.skillRail!.right <= layout.viewportWidth + 1,
+          `${label}: skill rail extends outside viewport (${layout.skillRail!.right}px > ${layout.viewportWidth}px)`);
+        assert.ok(layout.skillRail!.height <= 70,
+          `${label}: skill rail is making the local utility row too tall (${layout.skillRail!.height}px)`);
+        assert.equal(await p.locator('.board-local-seat .sg-equip-plate').count(), 1,
+          `${label}: self equipment plate must remain mounted in compact mode`);
+        assert.ok(layout.documentWidth <= layout.viewportWidth + 1,
+          `${label}: portrait document overflows horizontally (${layout.documentWidth}px > ${layout.viewportWidth}px)`);
+        assert.equal(layout.controls?.display, 'flex', `${label}: controls should use the mobile flex stack`);
+        assert.equal(layout.controls?.flexDirection, 'column', `${label}: controls should stack vertically on portrait`);
+        assert.ok(layout.toolbar && layout.toolbar.height <= 48,
+          `${label}: toolbar is still consuming a desktop-sized row (${JSON.stringify(layout.toolbar)})`);
+        assert.ok(layout.ticker && layout.ticker.height <= 32,
+          `${label}: latest-event ticker is too tall (${JSON.stringify(layout.ticker)})`);
+        const toolbarLabel = p.locator('.board-toolbar .sg-toolbar-action-label').first();
+        const toolbarIcon = p.locator('.board-toolbar .sg-toolbar-action-icon').first();
+        assert.equal(await toolbarLabel.evaluate((element) => getComputedStyle(element).display), 'none',
+          `${label}: portrait toolbar should hide the repeated text label`);
+        assert.equal(await toolbarIcon.evaluate((element) => getComputedStyle(element).display), 'inline-flex',
+          `${label}: portrait toolbar should expose the compact icon`);
+        if (layout.skillRail) {
+          assert.equal(layout.skillRail.flexDirection, 'row', `${label}: skills should use a horizontal strip`);
+          assert.equal(layout.skillRail.overflowX, 'auto', `${label}: skills should remain horizontally scrollable`);
+        }
+      };
       await p.setViewportSize({ width: 360, height: 844 });
       const { id: compactId, cardIds: compactCardIds } = await p.evaluate(() => window.__tqsRealLuaE2e.beginVisualHand(10));
       await hand.waitFor();
@@ -108,12 +213,37 @@ try {
         clientWidth: element.clientWidth,
         scrollWidth: element.scrollWidth,
         overflowX: getComputedStyle(element).overflowX,
+        left: element.getBoundingClientRect().left,
+        right: element.getBoundingClientRect().right,
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
       }));
       assert.equal(compactMetrics.buttonCount, compactCardIds.length);
       assert.equal(compactMetrics.artCount, compactCardIds.length, 'every compact hand card needs catalogue art');
       assert.equal(compactMetrics.overflowX, 'auto');
-      assert.ok(compactMetrics.scrollWidth <= compactMetrics.clientWidth,
-        `ten cards should fit the mobile hand (${compactMetrics.scrollWidth} > ${compactMetrics.clientWidth})`);
+      assert.ok(compactMetrics.scrollWidth > compactMetrics.clientWidth,
+        `ten cards should remain reachable through horizontal scrolling (${compactMetrics.scrollWidth} <= ${compactMetrics.clientWidth})`);
+      assert.ok(compactMetrics.left >= -1, `hand starts outside the viewport (${compactMetrics.left}px)`);
+      assert.ok(compactMetrics.right <= compactMetrics.viewportWidth + 1,
+        `hand extends outside the viewport (${compactMetrics.right}px > ${compactMetrics.viewportWidth}px)`);
+      assert.ok(compactMetrics.documentWidth <= compactMetrics.viewportWidth + 1,
+        `portrait page must not overflow horizontally (${compactMetrics.documentWidth}px > ${compactMetrics.viewportWidth}px)`);
+      await hand.evaluate((element) => element.scrollTo({ left: element.scrollWidth, behavior: 'auto' }));
+      const compactLastCard = await hand.locator('button.gameplay-choice:enabled').last().evaluate((element) => {
+        const handRect = element.parentElement?.getBoundingClientRect();
+        const cardRect = element.getBoundingClientRect();
+        return handRect ? {
+          cardLeft: cardRect.left,
+          cardRight: cardRect.right,
+          handLeft: handRect.left,
+          handRight: handRect.right,
+        } : null;
+      });
+      assert.ok(compactLastCard && compactLastCard.cardLeft >= compactLastCard.handLeft - 1,
+        'last mobile hand card must be reachable after scrolling');
+      assert.ok(compactLastCard && compactLastCard.cardRight <= compactLastCard.handRight + 1,
+        'last mobile hand card must be fully visible after scrolling');
+      await assertPortraitLayout('360px portrait');
       await hand.locator('button.gameplay-choice:enabled').last().click();
       assert.equal((await snapshot(p)).requestId, compactId);
       await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
@@ -133,6 +263,10 @@ try {
         clientWidth: element.clientWidth,
         scrollWidth: element.scrollWidth,
         overflowX: getComputedStyle(element).overflowX,
+        left: element.getBoundingClientRect().left,
+        right: element.getBoundingClientRect().right,
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
       }));
       assert.equal(metrics.buttonCount, cardIds.length);
       assert.equal(metrics.artCount, cardIds.length, 'every real CardItem needs a catalogue/native art image');
@@ -141,9 +275,59 @@ try {
       assert.equal(metrics.overflowX, 'auto');
       assert.ok(metrics.scrollWidth > metrics.clientWidth,
         `hand must expose horizontal scrolling (${metrics.scrollWidth} <= ${metrics.clientWidth})`);
+      assert.ok(metrics.left >= -1, `hand starts outside the viewport (${metrics.left}px)`);
+      assert.ok(metrics.right <= metrics.viewportWidth + 1,
+        `hand extends outside the viewport (${metrics.right}px > ${metrics.viewportWidth}px)`);
+      assert.ok(metrics.documentWidth <= metrics.viewportWidth + 1,
+        `portrait page must not overflow horizontally (${metrics.documentWidth}px > ${metrics.viewportWidth}px)`);
+      await hand.evaluate((element) => element.scrollTo({ left: element.scrollWidth, behavior: 'auto' }));
+      await assertPortraitLayout('390px portrait');
+      await p.setViewportSize({ width: 412, height: 915 });
+      await assertPortraitLayout('412px portrait');
+      await p.setViewportSize({ width: 360, height: 667 });
+      await assertPortraitLayout('360x667px short portrait');
+      await p.setViewportSize({ width: 390, height: 844 });
       await hand.locator('button.gameplay-choice:enabled').last().click();
       assert.equal((await snapshot(p)).requestId, id);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
+      await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
+
+      await p.setViewportSize({ width: 360, height: 844 });
+      const idleHand = p.locator('.board-local-idle-area .sg-hand-idle');
+      const idle = await p.evaluate(() => window.__tqsRealLuaE2e.beginVisualIdleHand(10));
+      await idleHand.waitFor();
+      const idleMetrics = await idleHand.evaluate((element) => ({
+        cardCount: element.querySelectorAll('.sg-card-button').length,
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+        overflowX: getComputedStyle(element).overflowX,
+        left: element.getBoundingClientRect().left,
+        right: element.getBoundingClientRect().right,
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+      }));
+      assert.equal(idleMetrics.cardCount, idle.cardIds.length);
+      assert.equal(idleMetrics.overflowX, 'auto');
+      assert.ok(idleMetrics.scrollWidth > idleMetrics.clientWidth,
+        `idle hand must expose horizontal scrolling (${idleMetrics.scrollWidth} <= ${idleMetrics.clientWidth})`);
+      assert.ok(idleMetrics.left >= -1, `idle hand starts outside viewport (${idleMetrics.left}px)`);
+      assert.ok(idleMetrics.right <= idleMetrics.viewportWidth + 1,
+        `idle hand extends outside viewport (${idleMetrics.right}px > ${idleMetrics.viewportWidth}px)`);
+      assert.ok(idleMetrics.documentWidth <= idleMetrics.viewportWidth + 1,
+        `idle portrait document overflows horizontally (${idleMetrics.documentWidth}px > ${idleMetrics.viewportWidth}px)`);
+      await idleHand.evaluate((element) => element.scrollTo({ left: element.scrollWidth, behavior: 'auto' }));
+      const idleLastCard = await idleHand.locator('.sg-card-button').last().evaluate((element) => {
+        const handRect = element.parentElement?.getBoundingClientRect();
+        const cardRect = element.getBoundingClientRect();
+        return handRect ? {
+          cardLeft: cardRect.left, cardRight: cardRect.right,
+          handLeft: handRect.left, handRight: handRect.right,
+        } : null;
+      });
+      assert.ok(idleLastCard && idleLastCard.cardLeft >= idleLastCard.handLeft - 1,
+        'last idle hand card must be reachable after scrolling');
+      assert.ok(idleLastCard && idleLastCard.cardRight <= idleLastCard.handRight + 1,
+        'last idle hand card must be fully visible after scrolling');
       await p.evaluate(() => window.__tqsRealLuaE2e.finishGame());
     }],
     ['Unsolicited Lua ReplyToServer does not send a packet', async (p) => {
@@ -155,6 +339,14 @@ try {
     }],
     ['Real Lua OK emits one exact 4131 CBOR CLIENT_REPLY', async (p) => {
       const id = await start(p);
+      const dialog = p.getByRole('dialog', { name: 'Kích hoạt kỹ năng?' });
+      await dialog.waitFor();
+      const focusedAction = await p.evaluate(() => {
+        const active = document.activeElement;
+        return active instanceof HTMLButtonElement ? active.textContent?.trim() : null;
+      });
+      assert.equal(focusedAction, 'Kích hoạt',
+        'new request dialogs should focus their first enabled action');
       await p.getByRole('button', { name: 'Kích hoạt' }).click();
       const s = await reply(p);
       assert.deepEqual(s.replies.map(({ requestId, command, type, hex }) => ({ requestId, command, type, hex })),
@@ -291,7 +483,7 @@ try {
     }],
     ['Real Lua Cancel emits exact 485f5f63616e63656c reply', async (p) => {
       const id = await start(p);
-      await p.getByRole('button', { name: 'Bỏ qua' }).click();
+      await p.getByRole('dialog', { name: 'Kích hoạt kỹ năng?' }).press('Escape');
       const s = await reply(p);
       assert.deepEqual(s.replies.map(({ requestId, command, type, hex }) => ({ requestId, command, type, hex })),
         [{ requestId: id, command: '', type: 0x212, hex: '485f5f63616e63656c' }]);
@@ -461,7 +653,7 @@ try {
       await p.getByText('Điển Vi', { exact: true }).waitFor();
       await p.getByRole('button', { name: 'Sát', exact: true }).waitFor();
       await p.getByRole('button', { name: 'Cường Tập', exact: true }).waitFor();
-      await p.getByRole('button', { name: 'Vô Giải (Quốc Chiến)', exact: true }).waitFor();
+      await p.getByRole('button', { name: 'Vô Giải', exact: true }).waitFor();
       await p.getByText('Thế lực: Ngụy', { exact: true }).waitFor();
       await p.getByText('Chủ tướng ẩn', { exact: true }).waitFor();
       assert.equal(await p.getByText('ld__bianfuren', { exact: true }).count(), 0);
@@ -522,15 +714,17 @@ try {
       await own.getByText('Tiên phong: 2', { exact: true }).waitFor();
       await own.getByText('Song Hùng: Đỏ', { exact: true }).waitFor();
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
+      const openLog = logs.getByRole('button', { name: 'Xem nhật ký' });
+      if (await openLog.count()) await openLog.click();
       await logs.getByText('Song Hùng: bạn có thể dùng 1 lá trên tay màu Đỏ như Quyết Đấu.', { exact: true }).waitFor();
       await logs.getByText('Một Dã tâm gia đã chọn quốc hiệu Tần.', { exact: true }).waitFor();
       await logs.getByText('Trận đấu bước vào giai đoạn Quyết chiến.', { exact: true }).waitFor();
       await logs.getByText('Sự kiện vòng này: Họa Khởi. Trong vòng này, sát thương mọi nhân vật phải chịu tăng thêm 1.', { exact: true }).waitFor();
       await logs.getByText('Sự kiện vòng này: Lạc Thạch. Khi lật lá sự kiện này, tất cả nhân vật đã xác định thế lực lần lượt đổi phó tướng.', { exact: true }).waitFor();
       await logs.getByText('Quyết chiến', { exact: true }).waitFor();
-      await logs.getByText('Mục tiêu Tướng ẩn/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♥4] do Vương Duyệt/Tướng ẩn sử dụng.', { exact: true }).waitFor();
-      await logs.getByText('Mục tiêu Phùng Tập/Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♦4] do Vương Duyệt/Lưu Phu Nhân sử dụng.', { exact: true }).waitFor();
-      await logs.getByText('Tướng ẩn/Mi Trúc (bạn) đã phát động kỹ năng〖Cự Cổ〗', { exact: true }).waitFor();
+      await logs.getByText('Mục tiêu Tướng ẩn / Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♥4] do Vương Duyệt / Tướng ẩn sử dụng.', { exact: true }).waitFor();
+      await logs.getByText('Mục tiêu Phùng Tập / Mã Đại (bạn) đã bị hủy khỏi lá Hỏa Sát[♦4] do Vương Duyệt / Lưu Phu Nhân sử dụng.', { exact: true }).waitFor();
+      await logs.getByText('Tướng ẩn / Mi Trúc (bạn) đã phát động kỹ năng〖Cự Cổ〗', { exact: true }).waitFor();
       await logs.getByText('Nhật ký "<img src=x onerror=alert(1)> 中', { exact: true }).waitFor();
       assert.equal(await logs.locator('img, script, font, b').count(), 0);
       assert.equal(await p.locator('.board-center-symbol').innerText(), 'Quốc Chiến');
@@ -926,6 +1120,9 @@ try {
       assert.match(await p.locator('.waiting-pools').innerText(), /máy chủ xác nhận/);
       const waiting = await p.locator('.waiting-pools').innerText();
       assert.ok(!waiting.includes(general) && !waiting.includes(card), 'disabled packs cannot appear as enabled');
+      assert.equal(await p.getByRole('button', { name: '+ Thêm bot', exact: true }).isVisible(), true);
+      assert.equal(await p.getByRole('button', { name: 'Bắt đầu', exact: true }).isDisabled(), true);
+      assert.equal(await p.getByRole('button', { name: 'Sẵn sàng', exact: true }).count(), 0);
       await p.screenshot({ path: path.join(evidenceDir, 'ui-02-mobile-waiting-lua-fixture-2026-10-11.png'), fullPage: true });
       for (const width of [390, 320]) {
         await p.setViewportSize({ width, height: 844 });
@@ -974,24 +1171,26 @@ try {
     ['UI-03 Lua public logs, HP and chain changes appear in the board and reset safely', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
-      assert.equal(await logs.getByRole('button', { name: 'Thu gọn' }).getAttribute('aria-expanded'), 'true');
+      const openLog = logs.getByRole('button', { name: 'Xem nhật ký' });
+      assert.equal(await openLog.getAttribute('aria-expanded'), 'false');
+      assert.equal(await openLog.innerText(), 'Mở', 'collapsed log tab must fit its narrow desktop/mobile affordance');
+      await openLog.click();
       await logs.getByRole('list', { name: 'Các diễn biến trận đấu' }).waitFor();
+      const moments = p.locator('.board-ticker');
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'hp', 2}"));
+      await moments.getByText('Bot fixture mất 2 HP (4 → 2)', { exact: true }).waitFor();
       await p.evaluate(() => {
-        window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'hp', 2}");
         window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'chained', false}");
         window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'chained', true}");
-        window.__tqsRealLuaE2e.boardNotify('GameLog', "{type='Sử dụng %arg', arg='slash'}");
       });
-      const moments = p.locator('.board-moments');
-      await moments.getByText('Bot fixture mất 2 HP (4 → 2)', { exact: true }).waitFor();
       await moments.getByText('Bot fixture bị xích', { exact: true }).waitFor();
-      // Moments are intentionally presented at a readable interval; wait for
-      // the queued log item instead of assuming the two earlier items imply
-      // that the third one has already reached the DOM.
-      await p.waitForFunction(() => document.querySelector('.board-moments')?.textContent?.includes('Sử dụng'));
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('GameLog', "{type='Sử dụng %arg', arg='slash'}"));
+      // The ticker intentionally presents one latest event; the full history
+      // remains in the drawer, while the reducer still retains all moments.
+      await p.waitForFunction(() => document.querySelector('.board-ticker')?.textContent?.includes('Sử dụng'));
       assert.match(await moments.innerText(), /Sử dụng/);
       assert.match(await logs.innerText(), /Sử dụng/);
-      assert.equal((await moments.locator('.board-moment').count()), 3);
+      assert.equal((await moments.locator('.board-moment').count()), 1);
       assert.equal(await moments.locator('font, b, script').count(), 0, 'server HTML is rendered only as text');
       const board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
       assert.deepEqual(board.moments.slice(-3).map((event) => event.kind), ['hp', 'chain', 'log']);
@@ -1004,6 +1203,10 @@ try {
     }],
     ['UI-03 responsive log layout and scroll following work with actual Lua notifications', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
+      const logRegion = p.getByRole('region', { name: 'Nhật ký trận đấu' });
+      if (await logRegion.getByRole('button', { name: 'Xem nhật ký' }).count()) {
+        await logRegion.getByRole('button', { name: 'Xem nhật ký' }).click();
+      }
       const logList = p.getByRole('list', { name: 'Các diễn biến trận đấu' });
       const addLogs = async (from: number, to: number) => p.evaluate(([start, end]) => {
         for (let i = start; i < end; i++) {
@@ -1079,11 +1282,11 @@ try {
       await addLogs(52, 54);
       assert.equal(await nearBottom(), true, 'follow remains active after keyboard navigation');
       await p.waitForFunction(() =>
-        document.querySelector('.board-moments')?.textContent?.includes('lá Sát nhắm vào Bot fixture') ?? false,
+        document.querySelector('.board-ticker')?.textContent?.includes('lá Sát nhắm vào Bot fixture') ?? false,
         undefined,
         { timeout: 3000 });
-      assert.match(await p.locator('.board-moments').innerText(), /lá Sát nhắm vào Bot fixture/,
-        'recent public card and target details appear in the center');
+      assert.match(await p.locator('.board-ticker').innerText(), /lá Sát nhắm vào Bot fixture/,
+        'the latest public card and target details appear in the single ticker');
       await p.setViewportSize({ width: 390, height: 844 });
       await p.getByRole('button', { name: 'Thu gọn' }).click();
       assert.equal(await logList.count(), 0);
@@ -1735,7 +1938,7 @@ try {
 
       const hiddenActive = await startScenario('hidden-active');
       const activeControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
-      const zhiheng = activeControls.locator('button.sg-skill-button')
+      const zhiheng = p.locator('.board-local-skill-rail button.sg-skill-button')
         .filter({ hasText: /Chế Hành|制衡|zhiheng/i }).first();
       await zhiheng.waitFor();
       assert.equal(await zhiheng.isEnabled(), true,
@@ -1752,7 +1955,7 @@ try {
       for (const scenarioId of ['hidden-fanjian', 'hidden-fanjian-deputy'] as const) {
         const hiddenFanjian = await startScenario(scenarioId);
         const fanjianControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
-        const fanjian = fanjianControls.locator('button.sg-skill-button')
+      const fanjian = p.locator('.board-local-skill-rail button.sg-skill-button')
           .filter({ hasText: /Phản Gián|反间|fanjian/i }).first();
         await fanjian.waitFor();
         assert.equal(await fanjian.isEnabled(), true,
@@ -1772,7 +1975,7 @@ try {
       for (const scenarioId of ['hidden-view-as', 'hidden-view-as-main'] as const) {
         const hiddenViewAs = await startScenario(scenarioId);
         const viewAsControls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
-        const longdan = viewAsControls.locator('button.sg-skill-button')
+      const longdan = p.locator('.board-local-skill-rail button.sg-skill-button')
           .filter({ hasText: /Long Đảm|龙胆|longdan/i }).first();
         await longdan.waitFor();
         assert.equal(await longdan.isEnabled(), true,
@@ -1796,7 +1999,7 @@ try {
       for (const direction of ['defend', 'attack'] as const) {
         const { id, cardId } = await p.evaluate((value) => window.__tqsRealLuaE2e.beginLongdan(value), direction);
         const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
-        await controls.getByRole('button', { name: 'Long Đảm', exact: true }).click();
+        await p.locator('.board-local-skill-rail').getByRole('button', { name: 'Long Đảm', exact: true }).click();
         await controls.locator(`button[data-card-id="${cardId}"]:enabled`).click();
         if (direction === 'attack') await p.locator('.board-player:not(.board-self) .gameplay-target:enabled').click();
         await controls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
