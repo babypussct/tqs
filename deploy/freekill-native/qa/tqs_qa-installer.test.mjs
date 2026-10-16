@@ -12,6 +12,7 @@ const packageDir = path.join(here, 'tqs_qa');
 const installer = path.join(repo, 'deploy/freekill-native/scripts/install-qa-package.sh');
 const verifier = path.join(repo, 'deploy/freekill-native/scripts/verify-qa-package.sh');
 const defaultConfig = path.join(repo, 'deploy/freekill-native/server/freekill.server.config.json');
+const reconnectPatch = path.join(repo, 'deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch');
 
 function run(command, args, cwd) {
   return execFileSync(command, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -46,7 +47,14 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
     assert.deepEqual(config.tqsQa.allowedUsers, ['qa-a', 'qa-b']);
     assert.equal(config.tempBanTime, 0, 'QA installer must disable effective temp-ban duration');
     const productionConfig = JSON.parse(readFileSync(defaultConfig, 'utf8'));
-    assert.equal(productionConfig.tempBanTime, 20, 'production temp-ban policy must remain unchanged');
+    assert.equal(productionConfig.tempBanTime, 5, 'production temp-ban policy must remain five minutes');
+    const patchText = readFileSync(reconnectPatch, 'utf8');
+    assert.match(patchText, /server\.isTempBanned\(client->peerAddress\(\)\)/,
+      'production source patch must check temp-ban after authentication');
+    assert.match(patchText, /Capacity is enforced after authentication/,
+      'production source patch must keep reconnectable players ahead of capacity rejection');
+    assert.match(patchText, /-  } else if \(server\.isTempBanned\(addr\)\)/,
+      'production source patch must remove the pre-auth temp-ban rejection');
 
     writeFileSync(path.join(source, 'README.md'), `${readFileSync(path.join(source, 'README.md'), 'utf8')}\nchanged\n`);
     assert.throws(() => run('bash', [verifier, '--source', source, '--runtime', runtime], repo), /uncommitted changes/);

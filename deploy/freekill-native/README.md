@@ -120,20 +120,34 @@ FreeKill native on the VM**. The current deployment is pinned to
 `FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09–CP13
 health, manifest, login, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt,
 Độc Phu, Gian Chí and Chế Man main/deputy have verified the route on the web
-identity. CP13 uses the current server-only QA package and changes only the
-observer priority needed to see `DamageCaused` before `preventDamage()`; it does
-not change production law. This is bounded parity, not exhaustive rule coverage
-or an official release.
+identity. CP13 used a server-only QA package and changed only the observer
+priority needed to see `DamageCaused` before `preventDamage()`; it does not
+change production law. The current QA identity is listed below; any package
+identity change requires rerunning hosted evidence. This is bounded parity, not
+exhaustive rule coverage or an official release.
 
 ### QA temp-ban isolation
 
 The upstream native server temporarily bans the player address when an active
-room is abandoned. The production template keeps `tempBanTime: 20`. The
+room is abandoned. The production template now keeps `tempBanTime: 5`. The
 server-only QA installer overrides this value to `0` in the isolated QA runtime
 and the verifier rejects a QA runtime that is still ban-prone. The multiplayer
 QA runner also tries `BOT chơi hộ`/`GameOver` cleanup for a bounded period before
 closing a failed session. This policy applies only to the QA replacement VM;
 it must not be copied into a production runtime.
+
+For source-built production runtimes, `scripts/bootstrap-source.sh` applies
+`patches/freekill-asio/reconnect-safe-tempban.patch`. It moves the temporary-IP
+check after password verification and permits it only when the authenticated
+account still owns a player inside an active room; new accounts and accounts no
+longer in a room remain blocked. This preserves the five-minute abandonment
+policy while allowing a real reconnect during the room lifetime. The capacity
+check is also deferred until after authentication, so an offline player can
+reclaim its existing slot while a new account is still rejected when the server
+is full. The patch does not resurrect a room that has already finalized or been
+removed. The current amd64 static artifact cannot receive a C++ source patch in
+place; it must be replaced by a source-built release before this guard is
+claimed active there.
 
 ## Administrator access
 
@@ -230,7 +244,7 @@ SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; CP13 Chế Man current package main/deputy PASS;
+                 main/deputy PASS; CP13 Chế Man pre-refresh package main/deputy PASS;
                  Di Kế/Fuyin/Ách Tuyệt/Độc Phu/Gian Chí bounded proof retained
                  from earlier QA revisions;
                  full parity OPEN
@@ -253,10 +267,10 @@ Static release:   freekill-asio v0.1.17 amd64
 Runtime flist MD5: 43b6cdade072b75f93b9d49b3384f08f
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      2b9a9f34154c6089ae6b05eda4c07abffc2924e3
-QA package SHA:   bc358d3ff0ba5e71d75b156225ba9e1d530707e8390b36441864423c7f9d22f8
-QA catalog SHA:   6eaf5a692434162d6d87c540065e5f7b75f935ca8a9546cc6322c78ccc51028e
-QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
+QA revision:      b47e5e829ea3657f848f737b9c732c123063307a
+QA package SHA:   d488a02c8697dda47338ff0dc9723db1cb812a0cb96e1f0db634a16319d34ac8
+QA catalog SHA:   945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe
+QA config:        enabled; tempBanTime=0; room prefix TQSQA/; two private allowlisted accounts
 QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
 Public QA path:   packages/tqs_qa absent; no packages.db row
 QA backups:       /opt/freekill-hegemony/qa-backups/tqs_qa-before-zhiman-observer-install-20261016T014332Z.tar.gz

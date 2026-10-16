@@ -3,7 +3,7 @@
   "description": "Private Hegemony test server",
   "iconUrl": "default",
   "capacity": 10,
-  "tempBanTime": 20,
+  "tempBanTime": 5,
   "motd": "Private group server. English package; admin managed.",
   "hiddenPacks": [],
   "enableBots": true,

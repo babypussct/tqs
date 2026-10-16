@@ -1,0 +1,64 @@
+diff --git a/src/server/user/auth.cpp b/src/server/user/auth.cpp
+index b553c2d..e077fc3 100644
+--- a/src/server/user/auth.cpp
++++ b/src/server/user/auth.cpp
+@@ -465,5 +465,12 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+-  if (auto player = um.findPlayer(atoi(obj["id"].c_str())).lock(); player) {
+-    // 只要在线就踢 无脑顶号
+-    if (player->isOnline()) {
+-      player->doNotify("ErrorDlg", "others logged in again with this name");
+-      player->emitKicked();
++  {
++    auto player = um.findPlayer(atoi(obj["id"].c_str())).lock();
++    // Temporary IP bans are an anti-abandon safeguard, not a reason to
++    // reject an authenticated player who is still inside an active room.
++    // Check the account after the password so a same-IP reconnect can
++    // recover within the room's lifetime, while a new/non-room login keeps
++    // the normal temporary-ban protection.
++    if (server.isTempBanned(client->peerAddress()) &&
++        (!player || !player->insideGame())) {
++      passed = false;
++      error_msg = "you have been temporarily banned!";
++      goto FAIL;
+@@ -472,7 +479,23 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+-    if (player->insideGame()) {
+-      updateUserLoginData(player->getId());
+-      spdlog::info("{}[/{}] reconnected (uid={},connid={})",
+-                   player->getScreenName(), client->peerAddress(), player->getId(), player->getConnId());
+-      player->reconnect(client);
+-      passed = true;
+-      return {};
++    if (player) {
++      // 只要在线就踢 无脑顶号
++      if (player->isOnline()) {
++        player->doNotify("ErrorDlg", "others logged in again with this name");
++        player->emitKicked();
++      }
++
++      if (player->insideGame()) {
++        updateUserLoginData(player->getId());
++        spdlog::info("{}[/{}] reconnected (uid={},connid={})",
++                     player->getScreenName(), client->peerAddress(), player->getId(), player->getConnId());
++        player->reconnect(client);
++        passed = true;
++        return {};
++      }
++    }
++
++    // Capacity is enforced after authentication so an existing in-game
++    // player can reclaim the slot held by its offline ServerPlayer.
++    if (!player && um.getPlayers().size() >= static_cast<size_t>(server.config().capacity)) {
++      passed = false;
++      error_msg = "server is full!";
++      goto FAIL;
+diff --git a/src/server/user/user_manager.cpp b/src/server/user/user_manager.cpp
+index 4f19ec9..016031e 100644
+--- a/src/server/user/user_manager.cpp
++++ b/src/server/user/user_manager.cpp
+@@ -106,6 +105,0 @@ void UserManager::processNewConnection(std::shared_ptr<ClientSocket> client) {
+-  } else if (server.isTempBanned(addr)) {
+-    errmsg = "you have been temporarily banned!";
+-    reject_reason = "IP is temp banned";
+-  } else if (online_players_map.size() >= (size_t)server.config().capacity) {
+-    errmsg = "server is full!";
+-    reject_reason = "server is full";

@@ -102,7 +102,17 @@ Cùng tài khoản đăng nhập lại được và tạo ván Bàng Đức + Ki
 
 ## Điều tra closed/temp-ban và tránh timeout (11/10/2026)
 
-`you have been temporarily banned!` được server C++ gửi khi IP nằm trong temp_banlist, trước NetworkDelayTest/Setup; đổi mật khẩu không giải quyết cơ chế này. Config triển khai trong repository là 20 phút, nhưng packet không có expiry và chưa đọc được config/log VM trong phiên này.
+`you have been temporarily banned!` được server C++ gửi khi IP nằm trong
+`temp_banlist`; bản ghi lịch sử này được tạo khi cấu hình còn 20 phút, policy
+production hiện hành đã giảm còn 5 phút. Với source-built native runtime, patch
+reconnect chuyển kiểm tra temp-ban sau xác thực mật khẩu và chỉ cho phép tài
+khoản đã xác thực reconnect khi player của chính tài khoản đó vẫn còn trong
+room đang chơi; tài khoản mới hoặc room đã kết thúc vẫn bị chặn. AMD64 static
+artifact hiện tại chưa chứa C++ patch này. QA runner dùng runtime riêng với
+`tempBanTime=0`. Source patch cũng dời capacity check sau xác thực để player
+offline đang giữ chỗ được reconnect; tài khoản mới vẫn nhận `server is full!`
+khi đủ capacity. Chưa claim production active cho đến khi thay static artifact
+bằng source-built runtime và đọc lại identity trên VM.
 
 Source Lua pin cộng thời gian các request timeout vào `_timewaste_count`, kick người đang online khi tổng đạt 70 giây. Người bị ngắt phiên trong ván khi còn sống có thể bị xử lý như bỏ ván và temp-ban. Không suy diễn mọi backend close đều do timeout; cần log server để xác nhận nguyên nhân cụ thể.
 

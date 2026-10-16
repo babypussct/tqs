@@ -25,7 +25,7 @@ command -v apt-get >/dev/null 2>&1 || die "This bootstrap currently expects Debi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  ca-certificates git g++ cmake pkg-config sqlite3 tmux \
+  ca-certificates git patch g++ cmake pkg-config sqlite3 tmux \
   libasio-dev libssl-dev libcbor-dev nlohmann-json3-dev \
   libsqlite3-dev libgit2-dev libreadline-dev libspdlog-dev \
   lua5.4 lua-socket lua-filesystem
@@ -33,6 +33,9 @@ apt-get install -y --no-install-recommends \
 ROOT="$FREEKILL_INSTALL_ROOT"
 SOURCE_DIR="$ROOT/source/freekill-asio"
 RELEASE_DIR="$ROOT/releases/freekill-asio-source-$FREEKILL_ASIO_RELEASE"
+PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/reconnect-safe-tempban.patch"
+
+[[ -f "$PATCH_FILE" ]] || die "Missing native reconnect/temp-ban patch: $PATCH_FILE"
 
 install -d -m 0755 "$ROOT/source" "$ROOT/releases"
 
@@ -44,8 +47,19 @@ if [[ ! -d "$SOURCE_DIR/.git" ]]; then
   git clone --no-tags "$FREEKILL_ASIO_SOURCE_URL" "$SOURCE_DIR"
 fi
 
-if [[ -n "$(git -C "$SOURCE_DIR" status --porcelain)" ]]; then
-  die "Source checkout has uncommitted changes: $SOURCE_DIR"
+managed_patch_applied() {
+  grep -Fq 'Temporary IP bans are an anti-abandon safeguard' \
+    "$SOURCE_DIR/src/server/user/auth.cpp" &&
+    grep -Fq 'Capacity is enforced after authentication' \
+      "$SOURCE_DIR/src/server/user/auth.cpp" &&
+    ! grep -Fq 'server.isTempBanned(addr)' \
+      "$SOURCE_DIR/src/server/user/user_manager.cpp" &&
+    ! grep -Fq 'online_players_map.size() >= (size_t)server.config().capacity' \
+      "$SOURCE_DIR/src/server/user/user_manager.cpp"
+}
+
+if [[ -n "$(git -C "$SOURCE_DIR" status --porcelain)" ]] && ! managed_patch_applied; then
+  die "Source checkout has uncommitted changes outside the managed reconnect patch: $SOURCE_DIR"
 fi
 
 git -C "$SOURCE_DIR" fetch --depth 1 origin "$FREEKILL_ASIO_SOURCE_COMMIT" >/dev/null 2>&1 || \
@@ -54,6 +68,13 @@ git -C "$SOURCE_DIR" checkout --detach "$FREEKILL_ASIO_SOURCE_COMMIT" >/dev/null
 
 actual_source="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
 [[ "$actual_source" == "$FREEKILL_ASIO_SOURCE_COMMIT" ]] || die "freekill-asio resolved to $actual_source"
+
+if ! managed_patch_applied; then
+  patch --dry-run --batch -p1 -d "$SOURCE_DIR" < "$PATCH_FILE" >/dev/null ||
+    die "Native reconnect/temp-ban patch does not apply cleanly to $actual_source"
+  patch --batch -p1 -d "$SOURCE_DIR" < "$PATCH_FILE" >/dev/null
+fi
+printf 'Native reconnect/temp-ban patch: %s\n' "$(basename "$PATCH_FILE")"
 
 cmake -S "$SOURCE_DIR" -B "$SOURCE_DIR/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$SOURCE_DIR/build" --parallel "$(nproc)"
