@@ -30,6 +30,8 @@ apt-get install -y --no-install-recommends \
   libsqlite3-dev libgit2-dev libreadline-dev libspdlog-dev \
   lua5.4 lua-socket lua-filesystem
 
+"$SCRIPT_DIR/prepare-build-resources.sh"
+
 ROOT="$FREEKILL_INSTALL_ROOT"
 SOURCE_DIR="$ROOT/source/freekill-asio"
 RELEASE_DIR="$ROOT/releases/freekill-asio-source-$FREEKILL_ASIO_RELEASE"

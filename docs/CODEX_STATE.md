@@ -9,7 +9,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 ## Handoff ngắn
 
 - **Render → Oracle replacement:** [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com) **Live** từ deployment [`dep-db8pmpcs728c73akbvr0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8pmpcs728c73akbvr0), commit `32ac4be2`. Public health `200 / ok`, HTML SHA-256 `591c51f15482d78267b3db4c48b150d20747d5bf83631f01c335e7799e114012`, manifest `5.279` file, runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, bundle `ce342f067f61796e`; Oracle QA revision hiện hành `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, package isolated at `qa_packages/tqs_qa`. Ký Ly/Jilix `TargetConfirmed` + lần `DamageInflicted` thứ hai chủ/phó đã PASS trên QA current; các family khác vẫn ghi theo revision bounded của từng evidence. Đây vẫn là candidate, chưa official.
-- **Production reconnect policy:** template production đã đặt `tempBanTime: 5`; source bootstrap có patch xác thực mật khẩu trước khi áp temp-ban, cho phép reconnect tài khoản còn player trong room và dời capacity gate sau xác thực. QA replacement trước CP16 vẫn dùng `tempBanTime=0`. Đã bắt đầu chuyển replacement sang source-built production nhưng build trên VM 1 GB bị nghẽn ở C++ compile trước khi đổi symlink; service hiện đang tạm dừng để phục hồi. Chưa claim guard native active cho tới khi reboot/recovery, binary hash và reconnect thật PASS.
+- **Production reconnect policy:** template production đã đặt `tempBanTime: 5`; source bootstrap có patch xác thực mật khẩu trước khi áp temp-ban, cho phép reconnect tài khoản còn player trong room và dời capacity gate sau xác thực. QA replacement trước CP16 vẫn dùng `tempBanTime=0`. Đã bắt đầu chuyển replacement sang source-built production nhưng build trên VM 1 GB bị nghẽn ở C++ compile trước khi đổi symlink; service hiện đang tạm dừng để phục hồi. Bootstrap hiện đã bổ sung bước chuẩn bị swap an toàn, vẫn giữ build `-j1`; chưa claim guard native active cho tới khi reboot/recovery, binary hash và reconnect thật PASS.
 - **Ước tính tiến độ:** mục tiêu candidate mobile để người dùng smoke test vẫn khoảng **65%**, còn khoảng **35%** đến mốc public/official. CP15 đã khóa thêm Ký Ly/Jilix `TargetConfirmed` + lần `DamageInflicted` thứ hai ở cả chủ/phó và sửa source ownership slot; exhaustive rule parity vẫn xa hơn: native-local direct effect evidence **29/607** cặp (**16/53** event kinds). Không quy đổi 29/607 thành tỷ lệ hoàn thiện toàn goal; corpus 51 run identity cũ chỉ giữ làm historical reference.
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. CP15 đã chứng minh Ký Ly/Jilix khi cả hai slot còn ẩn: Sát đỏ tạo `TargetConfirmed`, effect lặp Sát, `DamageInflicted` lần hai bị ngăn và `removeGeneral` loại đúng main/deputy; PASS cả main [`cp08-hidden-jilix-multiplayer-live-1792121835568.json`](../scratch/evidence/cp08-hidden-jilix-multiplayer-live-1792121835568.json) và deputy [`cp08-hidden-jilix-deputy-multiplayer-live-1792121858243.json`](../scratch/evidence/cp08-hidden-jilix-deputy-multiplayer-live-1792121858243.json). Đây là source-law fix trong `HegUtil.inGeneralSkills`, không phải workaround React; `runtime/flist.txt` đã được refresh cùng identity. CP14 Phụ Âm và CP13 Chế Man vẫn được giữ theo revision QA đã ghi; đây là bounded evidence, chưa phải full effect parity.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
@@ -24,7 +24,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **Fresh native-local hidden-liegong:** runtime `flist.txt` MD5 `4ab95597…`, QA revision `a3618958…`, package SHA-256 `6b8e5b7c…` đã PASS cả main [`1792073569775`](../scratch/evidence/cp08-hidden-liegong-multiplayer-live-1792073569775.json) và deputy [`1792073583047`](../scratch/evidence/cp08-hidden-liegong-deputy-multiplayer-live-1792073583047.json): Hoàng Trung còn úp nhưng đã prelight, dùng Sát thỏa predicate HP; native phát `TargetSpecified`, mở đúng chủ/phó trước `SkillEffect`, nhận lựa chọn `damage +1` và gây đúng 2 damage. Đây là bằng chứng trực tiếp cho một cặp TargetSpecified mới, vẫn là NATIVE-LOCAL/unpinned.
 - **Tích hợp toàn diện 100% từ điển chính thức (UI-01):** Đã nạp thành công 13.031 mục bản dịch tiếng Việt do người dùng cung cấp từ `ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv`. Đã qua khâu kiểm tra tự động: 0 ô trống, 0 chữ Hán sót lại, 0 lỗi placeholder, 0 lỗi thẻ HTML; sửa 152 điểm lỗi máy dịch (như `Người đóa` -> `Họa`, `Lá Phi` -> `Trương Phi`, `Điển là` -> `Điển Vi`, `Lưu lượt` -> `Lưu Hiệp`, `vàng Cái` -> `Hoàng Cái`, v.v.). Biên dịch sang `officialTranslations.json`, nạp vào `VI_ADDITIONS` trong `vietnamese.ts` và cập nhật đồng bộ `ZH_CN_ORIGINAL_CATALOG.json`, `ZH_CN_ORIGINAL_CATALOG.md`. Toàn bộ `test:store` (40/40), `test:vietnamese` (4/4), `test:card-display` (12/12), `test:e2e` (20/20), `test:e2e:lua` (63/63) và `npm run build` đều PASS 100%.
 - **Lua ABI:** launcher và installer đã fail-closed với Lua 5.5, chọn Lua 5.4 và preflight `socket`/`lfs`; native-local và Oracle replacement đều verify PASS. Oracle đang chạy Lua 5.4.8; old VM chưa cập nhật.
-- **Oracle/SSH:** hồ sơ vận hành đã được lưu tập trung ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md). VM cũ `freekill-hegemony` (`168.110.36.224`) chưa xoá vì replacement chưa khôi phục sau build. Replacement `freekill-hegemony-qa` (`161.33.209.212`, alias `tqs-native-qa-replacement`) đã PASS trước CP16 với Lua 5.4.8, 14/14 package pin, QA revision `a6c47982…`, runtime MD5 `29653b06…`; hiện cần OCI reboot/recovery hoặc SSH tự hồi phục, sau đó mới source-build production `tempBanTime=5` và kiểm reconnect. Không xoá VM cũ trước khi replacement health/port/reconnect/rollback evidence PASS.
+- **Oracle/SSH:** hồ sơ vận hành đã được lưu tập trung ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md). VM cũ `freekill-hegemony` (`168.110.36.224`) chưa xoá vì replacement chưa khôi phục sau build. Replacement `freekill-hegemony-qa` (`161.33.209.212`, alias `tqs-native-qa-replacement`) đã PASS trước CP16 với Lua 5.4.8, 14/14 package pin, QA revision `a6c47982…`, runtime MD5 `29653b06…`; hiện cần OCI reboot/recovery hoặc SSH tự hồi phục, sau đó mới source-build production `tempBanTime=5` và kiểm reconnect. Không xoá VM cũ trước khi replacement health/port/reconnect/rollback evidence PASS. Oracle Console hiện yêu cầu đăng nhập lại; lần kiểm tra mới nhất thấy replacement reset/timeout SSH, còn VM cũ vẫn mở cổng nhưng chưa có guest SSH key được xác nhận.
 - **Oracle/hosted hidden-trigger QA:** Ký Ly/Jilix `TargetConfirmed` + lần `DamageInflicted` thứ hai chủ/phó đã PASS trên current QA revision `a6c47982…`; Ân Oán và Phụ Âm `TargetConfirmed` cũng có current proof. CP13 pre-refresh package proof là Chế Man `DamageCaused` chủ/phó trên Render → Oracle. Native QA gate chỉ chuẩn bị prelight/fixture; các cổng source và lá Sát/target thật đã được quan sát. CP09–CP14 proof của các family khác thuộc revision QA trước và được giữ làm bounded reference. Full effect matrix, native interaction matrix và official release vẫn mở.
 
 ## Evidence và trạng thái ticket
@@ -60,20 +60,22 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T04:10:49.113Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `e3c54ccf15c4`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T04:15:26.810Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `b0ac076a6305`.
+- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M deploy/freekill-native/README.md
+ M deploy/freekill-native/scripts/bootstrap-source.sh
+?? deploy/freekill-native/scripts/prepare-build-resources.sh
 ```
 
 Ba commit gần nhất:
 
 ```text
+b0ac076a docs: checkpoint CP16 VM recovery
 e3c54ccf ops: harden constrained native source builds
 c0b8b3e6 docs: refresh CP15 handoff snapshot
-38dda9db docs: record CP15 hidden Jilix parity
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

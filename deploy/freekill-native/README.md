@@ -353,9 +353,13 @@ This installs the build dependencies, checks out the pinned `freekill-asio`
 source commit, applies the managed reconnect/temp-ban patch, and builds it
 locally with the pinned CMake 4.1.1 + GCC/G++ 14 toolchain. The default build
 parallelism is deliberately `1` for the 1 GB Oracle VM; override it only on a
-larger host with `FREEKILL_BUILD_JOBS`. The source path then installs the same
-pinned packages as the amd64 path and verifies the system Lua 5.4 interpreter
-plus LuaSocket and LuaFileSystem modules.
+larger host with `FREEKILL_BUILD_JOBS`. The bootstrap also runs
+`scripts/prepare-build-resources.sh`: on a small host with no active swap it
+creates a persistent, permission-restricted 2 GiB `/swapfile` and sets
+`vm.swappiness=10`; it never overwrites an existing swap configuration. The
+source path then installs the same pinned packages as the amd64 path and
+verifies the system Lua 5.4 interpreter plus LuaSocket and LuaFileSystem
+modules.
 
 ## AMD64 installation
 
