@@ -395,6 +395,44 @@ local function validateHiddenJianzhiScenario(scenario)
   end
 end
 
+local function validateHiddenZhimanScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-zhiman scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-zhiman-deputy"
+  local expectedMain = deputy and "hs__zhaoyun" or "ld__masu"
+  local expectedDeputy = deputy and "ld__masu" or "hs__zhaoyun"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "shu" then
+    fail("hidden-zhiman actor must use the catalogued Ma Su main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("hidden-zhiman target must be Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-zhiman must expose AskForSkillInvoke before the DamageCaused Slash")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-zhiman must reserve one actor Slash and one target equipment")
+  end
+  local actorSlash, targetEquip
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "zhiman-card" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      actorSlash = card
+    elseif card.key == "zhiman-equip" and card.owner == "target" and card.area == "equip" and
+        type(card.match) == "table" and card.match.type == "equip" then
+      targetEquip = card
+    end
+  end
+  if not actorSlash or not targetEquip then
+    fail("hidden-zhiman must reserve one actor Slash and one target equipment")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -1007,6 +1045,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenDufuScenario(scenario)
   elseif scenario.trigger == "hidden-jianzhi" then
     validateHiddenJianzhiScenario(scenario)
+  elseif scenario.trigger == "hidden-zhiman" then
+    validateHiddenZhimanScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1387,6 +1427,7 @@ local function setupState(room, scenario, seed)
     hiddenEjueDamageCaused = false,
     hiddenDufuDamageCaused = false,
     hiddenJianzhiDamageCaused = false,
+    hiddenZhimanDamageCaused = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2659,6 +2700,97 @@ local function triggerHiddenJianzhi(room, state)
   }
   fk.qInfo(string.format("[tqs_qa] hidden-jianzhi damage_caused=true lethal=true discarded=true reward=3x skill_effect=true revealed=%s slot=%s revision=%s",
     tostring(revealedCorrectSlot), jianzhiIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenZhiman(room, state)
+  -- 制蛮 is an optional fk.DamageCaused effect. Keep Ma Su face-down until
+  -- the real Slash reaches DamageCaused, then verify the source-defined invoke
+  -- prevents damage and obtains the target's reserved equipment card.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-zhiman actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("ld__zhiman") then
+    fail("hidden-zhiman must attach the hidden Zhiman skill")
+  end
+  if state.actor:hasSkill("ld__zhiman") then
+    fail("hidden-zhiman must not be active before the prelighted effect")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_zhiman_gate",
+    prompt = "TQS QA: prelight Chế Man, rồi xác nhận để dùng Sát lên đối thủ.",
+  })
+  if not gate then
+    fail("hidden-zhiman QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "ld__zhiman") then
+    fail("hidden-zhiman must be prelighted before the DamageCaused branch")
+  end
+
+  local cardId = state.slotCards["zhiman-card"]
+  local equipId = state.slotCards["zhiman-equip"]
+  local hand = state.actor:getCardIds(Player.Hand)
+  local targetEquip = state.target:getCardIds(Player.Equip)
+  if not cardId or not equipId or not table.contains(hand, cardId) or
+      not table.contains(targetEquip, equipId) then
+    fail("hidden-zhiman must put the reserved Slash in the actor hand and equipment on the target")
+  end
+
+  local targetHpBefore = state.target.hp
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_zhiman_damage",
+    prompt = "TQS QA: dùng Sát để kiểm tra Chế Man.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-zhiman must receive the reserved Slash against the target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "ld__zhiman" and entry.player == state.actor.id
+  end)
+  local zhimanIsDeputy = state.scenario == "hidden-zhiman-deputy"
+  local revealedCorrectSlot = zhimanIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "ld__masu"
+    or not zhimanIsDeputy and state.actor.general == "ld__masu" and state.actor.deputyGeneral == "anjiang"
+  local equipmentMoved = table.contains(state.actor:getCardIds(Player.Hand), equipId) or
+    table.contains(state.actor:getCardIds(Player.Equip), equipId)
+  local targetHpSame = targetHpBefore == state.target.hp and not state.target.dead
+  if not state.hiddenZhimanDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
+      not targetHpSame or not equipmentMoved or actorHpBefore ~= state.actor.hp then
+    fail("prelighted hidden Zhiman must invoke on DamageCaused, reveal Ma Su, prevent damage and obtain the equipment")
+  end
+  if state.actor:isFakeSkill("ld__zhiman") or not state.actor:hasSkill("ld__zhiman") then
+    fail("hidden Zhiman must be a real active skill after SkillEffect")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Chế Man: DamageCaused=%arg; ngăn sát thương=%arg2; lấy trang bị=%arg3; SkillEffect=%arg4; mở tướng=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = tostring(state.hiddenZhimanDamageCaused),
+    arg2 = tostring(targetHpSame),
+    arg3 = tostring(equipmentMoved),
+    arg4 = tostring(effect ~= nil and not effect.fake),
+    arg5 = tostring(revealedCorrectSlot),
+    arg6 = zhimanIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-zhiman damage_caused=true prevented=true obtained_equipment=true skill_effect=true revealed=%s slot=%s revision=%s",
+    tostring(revealedCorrectSlot), zhimanIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -4462,7 +4594,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-dufu" or
       state.scenario == "hidden-dufu-deputy" or
       state.scenario == "hidden-jianzhi" or
-      state.scenario == "hidden-jianzhi-deputy") and
+      state.scenario == "hidden-jianzhi-deputy" or
+      state.scenario == "hidden-zhiman" or
+      state.scenario == "hidden-zhiman-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4495,7 +4629,8 @@ director:addEffect(fk.DamageCaused, {
     local state = stateFor(player.room)
     return state and (state.scenario == "hidden-ejue" or state.scenario == "hidden-ejue-deputy" or
       state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy" or
-      state.scenario == "hidden-jianzhi" or state.scenario == "hidden-jianzhi-deputy") and
+      state.scenario == "hidden-jianzhi" or state.scenario == "hidden-jianzhi-deputy" or
+      state.scenario == "hidden-zhiman" or state.scenario == "hidden-zhiman-deputy") and
       state.currentDamageStep and data and data.from == state.actor and data.to == state.target
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4504,6 +4639,8 @@ director:addEffect(fk.DamageCaused, {
       state.hiddenDufuDamageCaused = true
     elseif state.scenario == "hidden-jianzhi" or state.scenario == "hidden-jianzhi-deputy" then
       state.hiddenJianzhiDamageCaused = true
+    elseif state.scenario == "hidden-zhiman" or state.scenario == "hidden-zhiman-deputy" then
+      state.hiddenZhimanDamageCaused = true
     else
       state.hiddenEjueDamageCaused = true
     end
@@ -4790,6 +4927,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenDufu(room, state)
     elseif scenario.trigger == "hidden-jianzhi" then
       triggerHiddenJianzhi(room, state)
+    elseif scenario.trigger == "hidden-zhiman" then
+      triggerHiddenZhiman(room, state)
     end
   end,
 })

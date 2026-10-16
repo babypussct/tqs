@@ -2065,6 +2065,82 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-zhiman",
+      "title": "Hidden main 马谡 Chế Man ngăn sát thương và lấy trang bị",
+      "seed": 1567522760,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-zhiman",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__masu",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiman-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "zhiman-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "target",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "hidden-zhiman-deputy",
+      "title": "Hidden deputy 马谡 Chế Man ngăn sát thương và lấy trang bị",
+      "seed": 1567522761,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-zhiman",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__masu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiman-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "zhiman-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "target",
+          "area": "equip"
+        }
+      ]
     }
   ]
 }

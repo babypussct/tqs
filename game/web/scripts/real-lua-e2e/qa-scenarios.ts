@@ -80,6 +80,8 @@ export type QaScenarioId =
   | 'hidden-dufu-deputy'
   | 'hidden-jianzhi'
   | 'hidden-jianzhi-deputy'
+  | 'hidden-zhiman'
+  | 'hidden-zhiman-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -145,6 +147,7 @@ export type QaScenarioTrigger =
   | 'hidden-ejue'
   | 'hidden-dufu'
   | 'hidden-jianzhi'
+  | 'hidden-zhiman'
   | 'hidden-gongqing'
   | 'hidden-enyuan'
   | 'hidden-fuyin';
@@ -915,6 +918,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-jianzhi',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-zhiman': {
+    version: 1,
+    id: 'hidden-zhiman',
+    title: '马谡 úp: Chế Man chặn sát thương và lấy trang bị',
+    seed: 0x5d6e7fc8,
+    drawSequence: [trueName('slash'), equip()],
+    slots: [
+      slot('zhiman-card', trueName('slash'), 'self', 'hand', true, 0),
+      slot('zhiman-equip', equip(), 'opponent', 'equip', true, 1),
+    ],
+    trigger: 'hidden-zhiman',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-zhiman-deputy': {
+    version: 1,
+    id: 'hidden-zhiman-deputy',
+    title: '马谡 phó tướng úp: Chế Man chặn sát thương và lấy trang bị',
+    seed: 0x5d6e7fc9,
+    drawSequence: [trueName('slash'), equip()],
+    slots: [
+      slot('zhiman-card', trueName('slash'), 'self', 'hand', true, 0),
+      slot('zhiman-equip', equip(), 'opponent', 'equip', true, 1),
+    ],
+    trigger: 'hidden-zhiman',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -1006,6 +1035,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-ejue', 'hidden-ejue-deputy',
   'hidden-dufu', 'hidden-dufu-deputy',
   'hidden-jianzhi', 'hidden-jianzhi-deputy',
+  'hidden-zhiman', 'hidden-zhiman-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
   'hidden-fuyin', 'hidden-fuyin-deputy',
@@ -1235,6 +1265,16 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 独夫`);
+    }
+  }
+  if (plan.trigger === 'hidden-zhiman') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'zhiman-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'zhiman-equip' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'equip' || !('type' in plan.slots[1].match) ||
+        plan.slots[1].match.type !== 'equip') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Slash and opponent equipment for Chế Man`);
     }
   }
   if (plan.trigger === 'hidden-gongqing') {
