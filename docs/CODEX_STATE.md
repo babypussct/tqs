@@ -60,8 +60,8 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T03:22:27.512Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `96fcd05dd494`.
+- Ghi lúc: 2026-10-16T03:22:38.124Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `981ccee9e76e`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -71,7 +71,7 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 Ba commit gần nhất:
 
 ```text
-96fcd05d docs: record current Fuyin QA parity
+981ccee9 docs: record current Fuyin QA parity
 5d2da89e test: gate deferred hidden card actions
 51abc9db test: settle deferred hidden gate client sync
 ```
