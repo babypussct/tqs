@@ -117,14 +117,17 @@ These are two separate layers and must be verified independently:
 
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
-`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09–CP14
-health, manifest, login, hidden Di Kế positive, hidden Phụ Âm current, hidden
-Ách Tuyệt, Độc Phu, Gian Chí and Chế Man main/deputy have verified the route on the web
-identity. CP13 used a server-only QA package and changed only the observer
-priority needed to see `DamageCaused` before `preventDamage()`; it does not
-change production law. The current QA identity is listed below; any package
-identity change requires rerunning hosted evidence. This is bounded parity, not
-exhaustive rule coverage or an official release.
+`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP15 health,
+manifest, login and hidden Ký Ly/Jilix main/deputy have verified the route on
+the refreshed web/runtime identity. Earlier CP09–CP14 evidence for hidden Di
+Kế, Phụ Âm, Ách Tuyệt, Độc Phu, Gian Chí and Chế Man remains explicitly
+bounded by its recorded QA revision. CP13 used a server-only QA package and
+changed only the observer priority needed to see `DamageCaused` before
+`preventDamage()`; it does not change production law. CP15 changed the
+source-owned slot resolver and refreshed the public `flist.txt` identity; the
+current QA identity is listed below. Any package identity change requires
+rerunning hosted evidence. This is bounded parity, not exhaustive rule
+coverage or an official release.
 
 ### QA temp-ban isolation
 
@@ -244,6 +247,7 @@ SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
+                 main/deputy PASS; CP15 Ký Ly/Jilix current package
                  main/deputy PASS; CP14 Phụ Âm current package main/deputy PASS;
                  CP13 Chế Man pre-refresh package main/deputy PASS;
                  Di Kế/Ách Tuyệt/Độc Phu/Gian Chí bounded proof retained
@@ -265,11 +269,11 @@ recreate the exact runner without guessing:
 ```text
 Runtime:          /opt/freekill-hegemony/current
 Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: 43b6cdade072b75f93b9d49b3384f08f
+Runtime flist MD5: 29653b06f1db4a1cece2941f79cbe648
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      51abc9dbc6e45104e1603f7565c7e344b41089c7
-QA package SHA:   60490353f4ee4e7a09718b47df2b5b6e00ec27889006856ee575eeabaa71e30c
+QA revision:      a6c47982d6f0140eaa2869cbaa6c5a780d688396
+QA package SHA:   5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2
 QA catalog SHA:   945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe
 QA config:        enabled; tempBanTime=0; room prefix TQSQA/; two private allowlisted accounts
 QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
@@ -283,12 +287,13 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 `run-server.sh` creates a broken runtime-only symlink while the native process
 calculates the public `flist.txt` MD5, then activates the symlink after port
 9527 is listening. This lets the QA director load on Oracle without changing
-the public Render/Oracle release identity. The current CP14 Phụ Âm main/deputy
-proof passes with this arrangement. CP13 Chế Man main/deputy proof belongs to
-the previous QA package. CP09–CP12 proof for Di Kế/Fuyin/Ách Tuyệt/Độc Phu/
-Gian Chí was recorded on earlier QA revisions; CP11–CP14 update only the
-server-only QA package/observer and do not change the public Render web artifact. The earlier 51-run corpus remains
-historical and does not close the exhaustive 607-pair rule matrix.
+the public Render/Oracle release identity. CP15 Ký Ly/Jilix main/deputy proof
+passes with this arrangement. When a public runtime file changes, refresh its
+entry in `runtime/flist.txt` before deploying; otherwise the client correctly
+rejects the mismatched server with `MD5 check failed` before login. CP13 Chế
+Man and CP09–CP14 proof for other skills remain bounded by their recorded QA
+revisions. The earlier 51-run corpus remains historical and does not close the
+exhaustive 607-pair rule matrix.
 
 ```sh
 ssh tqs-native-qa-replacement 'id; hostname'
