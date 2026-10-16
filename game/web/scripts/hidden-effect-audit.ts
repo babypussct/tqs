@@ -34,6 +34,7 @@ const NATIVE_LOCAL_EFFECT_EVIDENCE: readonly EvidenceMap[] = [
   { scenario: 'hidden-yiji (+ deputy)', skill: 'hs__yiji', events: ['fk.Damaged'] },
   { scenario: 'hidden-jianxiong (+ deputy)', skill: 'hs__jianxiong', events: ['fk.Damaged'] },
   { scenario: 'hidden-fankui (+ deputy)', skill: 'fankui', events: ['fk.Damaged'] },
+  { scenario: 'hidden-enyuan (+ deputy)', skill: 'ld__enyuan', events: ['fk.TargetConfirmed'] },
   { scenario: 'hidden-dual', skill: 'hs__shuangxiong', events: ['fk.EventPhaseStart'] },
   { scenario: 'hidden-luoshen (+ deputy)', skill: 'hs__luoshen', events: ['fk.EventPhaseStart'] },
   { scenario: 'hidden-jizhi (+ deputy)', skill: 'hs__jizhi', events: ['fk.CardUsing'] },

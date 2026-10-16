@@ -10,12 +10,12 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 - **Render → Oracle replacement:** [`tqs-mobile-candidate`](https://tqs-mobile-candidate.onrender.com) **Live** từ deployment [`dep-db8j9gei0phs73fs8pcg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8j9gei0phs73fs8pcg), commit `798dc2e4`. Public health `200 / ok`, HTML SHA-256 `591c51f15482d78267b3db4c48b150d20747d5bf83631f01c335e7799e114012`, manifest `5.279` file, runtime MD5 `43b6cdade072b75f93b9d49b3384f08f`; Oracle QA revision hiện hành `b47e5e829ea3657f848f737b9c732c123063307a`, package `d488a02c8697dda47338ff0dc9723db1cb812a0cb96e1f0db634a16319d34ac8`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, package isolated at `qa_packages/tqs_qa`. CP13 Chế Man `DamageCaused` chủ/phó đã PASS trước lần refresh QA-only; Di Kế, Fuyin, Ách Tuyệt, Độc Phu và Gian Chí có bounded evidence ở các revision QA trước cùng web/runtime identity. Refresh hiện tại chỉ đổi QA isolation/temp-ban policy, không đổi luật gameplay; hosted evidence cần rerun nếu muốn bind vào identity mới. Render artifact không đổi. Đây vẫn là candidate, chưa official.
 - **Production reconnect policy:** template production đã đặt `tempBanTime: 5`; source bootstrap có patch xác thực mật khẩu trước khi áp temp-ban, cho phép reconnect tài khoản còn player trong room và dời capacity gate sau xác thực. QA replacement vẫn cố ý dùng `tempBanTime=0`. Guard native chưa được claim là active trên VM production cũ vì amd64 static artifact chưa chứa patch và SSH vào host cũ hiện không truy cập được.
-- **Ước tính tiến độ:** mục tiêu candidate mobile để người dùng smoke test vẫn khoảng **65%**, còn khoảng **35%** đến mốc public/official. CP13 đã khóa thêm một cặp `DamageCaused` của Chế Man ở cả chủ/phó, gồm invoke thật sau prelight, prevention, lấy trang bị và reveal đúng slot; exhaustive rule parity vẫn xa hơn: native-local direct effect evidence **28/607** cặp (**16/53** event kinds). Không quy đổi 28/607 thành tỷ lệ hoàn thiện toàn goal; corpus 51 run identity cũ chỉ giữ làm historical reference.
+- **Ước tính tiến độ:** mục tiêu candidate mobile để người dùng smoke test vẫn khoảng **65%**, còn khoảng **35%** đến mốc public/official. CP13 đã khóa thêm một cặp `DamageCaused` của Chế Man ở cả chủ/phó, gồm invoke thật sau prelight, prevention, lấy trang bị và reveal đúng slot; exhaustive rule parity vẫn xa hơn: native-local direct effect evidence **29/607** cặp (**16/53** event kinds). Không quy đổi 29/607 thành tỷ lệ hoàn thiện toàn goal; corpus 51 run identity cũ chỉ giữ làm historical reference.
 - **Điều kiện người dùng nêu:** native chỉ coi skill fake là hoạt động khi đã prelight; `SkillEffect` gọi `revealBySkillName` trước effect. CP13 đã chạy đúng Chế Man Ma Tắc: pre-gate thấy fake skill khi tướng còn úp, Sát thật tạo `DamageCaused` → `AskForSkillInvoke` thật → mở đúng chủ/phó → ngăn sát thương → `AskForCardChosen` và lấy trang bị; PASS cả chủ [`cp13-hidden-zhiman-multiplayer-live-1792115111812.json`](../scratch/evidence/cp13-hidden-zhiman-multiplayer-live-1792115111812.json) và phó [`cp13-hidden-zhiman-deputy-multiplayer-live-1792115138764.json`](../scratch/evidence/cp13-hidden-zhiman-deputy-multiplayer-live-1792115138764.json). Các evidence Di Kế/Gian Chí/Fuyin/Ách Tuyệt/Độc Phu trước đó vẫn được giữ theo revision QA tương ứng; với Độc Phu, skill source là compulsory và gate QA không phải prompt lựa chọn của source. Đây là bounded evidence, chưa phải full effect parity.
 - **React boundary:** fake/regular skill projection, privacy theo Self, prelight wire `prelight,<skill>,true|false`, request/reply và reconnect duplicate đã được kiểm chứng; React không tự quyết damage, reveal, card, phe hoặc winner.
-- **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, native-local effect evidence hiện **28/607** trên **16/53** event kinds. CP13 hosted proof đã khóa Chế Man `DamageCaused` ở cả chủ/phó trước QA-only refresh; các batch hidden-trigger khác dùng revision QA trước và được tách khỏi current package proof. Exhaustive matrix vẫn mở.
+- **Coverage hiện hành:** source projection/lifecycle `520/520`, slot route `155.168/155.168`, prelight sync `403/403`; inventory có `607` cặp trigger `skill × event` non-delay trên `53` event kinds, native-local effect evidence hiện **29/607** trên **16/53** event kinds. Bổ sung này là evidence local Ân Oán `TargetConfirmed` main/deputy; CP13 hosted proof đã khóa Chế Man `DamageCaused` ở cả chủ/phó trước QA-only refresh; các batch hidden-trigger khác dùng revision QA trước và được tách khỏi current package proof. Exhaustive matrix vẫn mở.
 - **Native probe lịch sử:** lần thử Thiên Đố trước khi thay VM đã vào được phòng nhưng host chưa có gate deterministic (`nativeQaGateSeen=false`), nên dừng trước gameplay. Evidence [`reconnect-failure-1792066870927.json`](../scratch/evidence/reconnect-failure-1792066870927.json) chỉ là diagnostic cũ, không dùng để kết luận `FinishJudge` sai. Replacement hiện đã cài/verify `tqs_qa` và đã có native gate PASS cho bộ bounded nêu trên. `fazheng-enyuan` broad contract vẫn là scope riêng cần hoàn thiện; không được dùng nó để phủ định hidden Ân Oán `TargetConfirmed` đã PASS.
-- **Gate vừa chạy PASS:** `npm --prefix game/web run test:qa-server-contract` **44/44**, `audit:hidden-skills`, `test:hidden-rule-contract`, `audit:skill-activation`, `audit:native-callers`, typecheck và `audit:hidden-effects` (**28/607**, **16/53**) đều PASS. Đây là bằng chứng browser/Wasmoon/React, native-local, Oracle bounded và Render → Oracle bounded; không thay thế full effect matrix.
+- **Gate vừa chạy PASS:** `npm --prefix game/web run test:qa-server-contract` **44/44**, `audit:hidden-skills`, `test:hidden-rule-contract`, `audit:skill-activation`, `audit:native-callers`, typecheck và `audit:hidden-effects` (**29/607**, **16/53**) đều PASS. Đây là bằng chứng browser/Wasmoon/React, native-local, Oracle bounded và Render → Oracle bounded; không thay thế full effect matrix.
 - **Fresh Render → Oracle probe:** deployment `dep-db8j9gei0phs73fs8pcg` build từ `798dc2e4`; gateway :10000 → `161.33.209.212:9527`, public HTML và runtime MD5 cùng identity `591c51f1…` / `43b6cdad…`. Login, native QA gate, hidden Chế Man `DamageCaused` chủ/phó, GameOver và clean disconnect đều PASS trên QA revision trước lần refresh QA-only; evidence chi tiết nằm trong audit canonical. Đây là hosted bounded, chưa là official.
 - **Fresh native-local hidden-yiji:** trên C++/Lua thật, source pin `b8a2ad4…`, runtime flist MD5 `ca33a1e8…`, QA package revision `b412f91b…` nguyên trạng, đã PASS đủ `positive`/`negative`/`skip`: prelight + invoke mở Quách Gia trước Di Kế và chuyển 2 lá; không prelight không hỏi/không mở; prelight nhưng bỏ qua không mở/không effect. Evidence chi tiết và hash chỉ giữ ở audit canonical; đây là NATIVE-LOCAL/unpinned, không phải Render/Oracle.
 - **Fresh native-local hidden-tiandu:** cùng runtime/package identity đã PASS cả main/deputy: `room:judge` → `FinishJudge` → reveal đúng slot → lấy lá đang ở `Card.Processing`; harness đã loại assertion generic `PlayCard` không áp dụng cho trigger này. Evidence chi tiết chỉ giữ ở audit canonical; đây là NATIVE-LOCAL/unpinned, không phải Render/Oracle.
@@ -36,7 +36,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 | NATIVE-LOCAL hidden skill | PASS bounded | Các case Di Kế, staged trigger add-on, Cuồng Cốt, Liệt Cung, Ách Tuyệt, Độc Phu và Phản Gián main/deputy đã chạy C++/Lua thật trong runtime cô lập; không gộp thành hosted/official. |
 | Oracle QA hidden-trigger | PASS bounded current / historical corpus separated | Replacement VM current identity, Lua 5.4.8, isolated QA package; CP13 Chế Man `DamageCaused` chủ/phó trên Render → Oracle PASS trước QA-only temp-ban refresh. Batch CP09–CP12 thuộc revision QA trước và cần rerun nếu muốn tái sử dụng dưới package hiện hành. Full matrix và official release còn mở. |
 | LIVE candidate | PASS bounded | Login/lobby/room/bot/GameOver và CP96 asset probe đã có; chưa là full rule parity. |
-| Exhaustive hidden effects | OPEN | `28/607` cặp native-local trên 16 event kinds; `DamageCaused` còn 12/16 cặp chưa có evidence; cần scenario main/deputy cho event groups còn lại. |
+| Exhaustive hidden effects | OPEN | `29/607` cặp native-local trên 16 event kinds; `DamageCaused` còn 12/16 cặp chưa có evidence; cần scenario main/deputy cho event groups còn lại. |
 | PLAYABLE_MOBILE / official | FALSE / OPEN | Còn live interaction matrix, rescue/wild/founding, release operations và sign-off. |
 
 ## Việc còn mở theo thứ tự
@@ -60,20 +60,22 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T02:38:33.749Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `a5c12f7d3879`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T02:42:11.915Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `88375dbe624f`.
+- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
+ M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+ M game/web/scripts/hidden-effect-audit.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+88375dbe docs: checkpoint reconnect guard audit
 a5c12f7d test: guard reconnect temp-ban policy and refresh audit metrics
 e8dea44a docs: checkpoint reconnect deployment status
-f94d3bca fix: protect production reconnect from temp bans
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
