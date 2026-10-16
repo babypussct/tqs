@@ -18,6 +18,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
   - M6 visual evidence: đã capture và trực tiếp review lại 14 ảnh tại artifact directory sau khi sửa CSS alias cho cả production shell và visual harness; portrait ticker, log drawer, self HUD, equipment, hand 10 lá và bàn 8 ghế đều nằm trong geometry dự kiến. Đây vẫn là bằng chứng local/Chrome automation, chưa phải sign-off iOS Safari/Android Chrome thật.
 - **Parallel web-client slice đã nằm trong candidate (16/10/2026):** waiting-room readiness theo semantics FreeKill native đã được đưa vào commit/deployment CP17: owner không cần ready, phòng phải đủ chỗ, mọi người chơi không phải owner phải ready trước khi start, observer không được ready/start/add bot; `EnterRoom` giữ cờ observer riêng trong store. Phần này nằm ở `game/web/src/store/roomReadiness.ts`, `game/web/src/store/gameStore.ts`, `game/web/src/LobbyScreen.tsx`, adapter/lifecycle reset và regression store/connection test; seat layout/icon integration nằm ở `seatLayout.ts`, `EquipIcons.tsx`, board/player components. Đây là candidate evidence, chưa official và không dùng để đóng `PLAYABLE_MOBILE`.
 - **Portrait mobile hierarchy correction (candidate, 16/10/2026):** đã xử lý lỗi hàng kỹ năng và ghế bản thân chiếm chiều ngang khiến bài trên tay bị ép/lọt khỏi màn hình. `GameBoardScreen.tsx` hiện có một utility row duy nhất: ghế bản thân compact `92×64` ở bên trái, giữ lại equipment plate thu nhỏ, và một `board-local-skill-rail` ngang duy nhất để gộp fake skill, regular skill và skill request; rail tự cuộn ngang khi có nhiều kỹ năng. Prompt/timer và ba nút thao tác được đặt trong HUD bên dưới với kích thước nén, không phình thành vùng riêng; hand dùng toàn bộ chiều rộng với scroll ngang. Các margin âm của hand được tắt ở mobile để lá đầu không bị cắt; hint vuốt ngang xuất hiện khi có hơn 4 lá. Khi `AskForSkillInvoke` đang pending, skill request vẫn được prelight/confirm qua rail chung và không tự động trả lời. Log mobile được giới hạn chiều cao để không đẩy hand ra ngoài viewport; hiệu ứng hover-lift của lá được khóa ở mobile để click không bị rung/lặp do hover touch. Real-Lua E2E đã kiểm tra rail nằm trong viewport, cao không quá `70px`, self seat/equipment còn mounted và geometry 360/390/412. Bằng chứng mới gồm `390_portrait_board_prompt.png` và `390_portrait_board_many_hand.png` (10 lá). Candidate đã deploy; vẫn cần smoke test trên thiết bị thật.
+- **Portrait self-equipment readability follow-up (local, 16/10/2026):** dải trang bị của bản thân không còn bị ép thành các hàng chữ nhỏ trong seat compact. `PlayerPhotoPanel.tsx` thêm class `native-equip-plate-compact`, summary ARIA/title và `data-equipped-count`; CSS chuyển đúng 5 slot native (bảo vật, vũ khí, phòng cụ, +1 mã, -1 mã) thành một grid ngang `29px`, chỉ giữ icon + chất/số đủ nhìn ở viewport 390px, tên đầy đủ vẫn có qua title/ARIA. Equipment public rỗng vẫn giữ contract accessibility cũ để không phá lifecycle test. `real-lua-e2e` khóa display grid, 5 cột, 5 cell, chiều cao ≤32px, label và không overflow; capture M6 inject một trang bị thật vào self để review trực quan. Đã quan sát typecheck, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, real-Lua **63/63**, production build/audit và capture 14 ảnh PASS. Đây là candidate UI patch chờ deploy Render, chưa phải device sign-off.
 - **Portrait compact v2 (candidate, 16/10/2026):** prompt gameplay dài nay giữ một dòng trên mobile bằng ellipsis, nhưng vẫn giữ toàn văn qua `aria-label` và `title`; skill/request chips dùng chung profile khoảng `68–104×32px`, action bar dùng profile khoảng `56/46/66×22px`, timer track còn `3px`. Fake-prelight portal trong trạng thái `AskForSkillInvoke` cũng dùng cùng profile nhỏ, tránh mở lại một hộp kỹ năng lớn ở đáy màn hình. Browser E2E **21/21**, real-Lua E2E **63/63**, typecheck, card/store regression, capture M6 và production build đều PASS sau mốc này. Candidate đã được deploy; chưa đóng visual/touch acceptance trên iOS Safari hoặc Android Chrome thật.
 - **Portrait ticker/dashboard overlap correction (candidate, 16/10/2026):** loại bỏ `board-moments` trùng ở giữa bàn; `GameBoardScreen.tsx` chỉ render một ticker chứa diễn biến mới nhất, còn toàn bộ lịch sử mở bằng log drawer và mặc định thu gọn ở viewport hẹp. `board-local-dashboard` portrait chuyển về normal flow thay vì `sticky`, bàn dùng chiều cao co giãn `170–200px`, profile 2 người đặt tâm bàn riêng để không chạm ghế đối thủ, hand active và idle đều dùng card `64×88px` với scroll ngang không âm margin. Các selector compact được áp dụng cho cả `.sg-game-shell` lẫn `.sg-game-board`, equipment placeholder công khai của đối thủ có tương phản/icon rõ hơn. Tab log desktop thu gọn dùng nhãn nhìn thấy `Mở` vừa cột 42px nhưng vẫn giữ `aria-label` đầy đủ. Regression đã thêm viewport ngắn `360×667` và khóa computed position của dashboard là `relative`, không được quay lại sticky. Lớp display card chỉ bỏ hậu tố `(Quốc Chiến)`; `localizedGameLog()` chuẩn hóa các biến thể `rút liễu/liêu ... lá lá bài`, `Điên Vi`, dấu `/` giữa song tướng và `(Bạn)`, không đổi wire ID hay luật Lua. Evidence đã quan sát: capture M6 **14 ảnh**, typecheck, `test:store` **43/43**, `test:connection` **29/29**, `test:gameplay` **16/16**, `test:native-dialogs` **7/7**, `test:card-display` **14/14**, `test:vietnamese` **4/4**, `seat-layout` **4/4**, browser E2E **21/21**, real-Lua E2E **63/63**, production build PASS; candidate đã deploy, chưa có device sign-off.
 - **Portrait toolbar compression (candidate, 16/10/2026):** top action `BOT chơi hộ`/`Rời trận` nay dùng SVG icon-only trên portrait để không tạo thêm hàng và không lặp chữ trong vùng hẹp; `aria-label`/`title` vẫn giữ nguyên tên thao tác, desktop/tablet vẫn hiển thị chữ. Reset `margin-top`/`flex-wrap` của `.inline-controls` trong board loại bỏ chiều cao thừa kế từ layout form chung; coarse-pointer có hit area tối thiểu 40–44px. Card-display **14/14**, typecheck, capture M6 và real-Lua E2E **63/63** PASS; geometry assertion khóa toolbar ≤48px, ticker ≤32px và icon visible/label hidden trên portrait. Candidate đã deploy; vẫn cần touch smoke trên thiết bị thật.
@@ -91,21 +92,31 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T11:25:57.764Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `d61913ae563a`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T11:44:04.964Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `c3465ceb100d`.
+- File thay đổi hiển thị: 12 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ D dist/assets/index-6fCl3qDg.js
+ D dist/assets/index-DG50LXpj.css
+ M dist/index.html
+ M dist/sw.js
  M docs/CODEX_PLAN.md
  M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
+ M game/web/scripts/capture-m6-evidence.ts
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/styles.css
+?? dist/assets/index-C_2E91Eb.js
+?? dist/assets/index-DlX1f6xo.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+c3465ceb docs: record CP20 Render redeploy
 d61913ae docs: record live interaction matrix CP20
 96197abc docs: record CP19 candidate deployment
-d0d5f498 fix: preserve self equipment during reconnect
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

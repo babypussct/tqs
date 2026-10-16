@@ -190,8 +190,32 @@ try {
           `${label}: skill rail extends outside viewport (${layout.skillRail!.right}px > ${layout.viewportWidth}px)`);
         assert.ok(layout.skillRail!.height <= 70,
           `${label}: skill rail is making the local utility row too tall (${layout.skillRail!.height}px)`);
-        assert.equal(await p.locator('.board-local-seat .sg-equip-plate').count(), 1,
+        const compactEquipment = p.locator('.board-local-seat .sg-equip-plate').first();
+        assert.equal(await compactEquipment.count(), 1,
           `${label}: self equipment plate must remain mounted in compact mode`);
+        const equipmentMetrics = await compactEquipment.evaluate((element) => {
+          const style = getComputedStyle(element);
+          return {
+            className: element.className,
+            height: element.getBoundingClientRect().height,
+            display: style.display,
+            columns: style.gridTemplateColumns.split(' ').filter(Boolean).length,
+            cells: element.querySelectorAll('.native-equip-row, .native-equip-half').length,
+            label: element.getAttribute('aria-label'),
+          };
+        });
+        assert.match(equipmentMetrics.className, /native-equip-plate-compact/,
+          `${label}: self equipment must use the compact five-cell presentation`);
+        assert.equal(equipmentMetrics.display, 'grid',
+          `${label}: compact self equipment should be a fixed grid, not crushed rows`);
+        assert.equal(equipmentMetrics.columns, 5,
+          `${label}: compact self equipment must reserve one cell per slot (${JSON.stringify(equipmentMetrics)})`);
+        assert.equal(equipmentMetrics.cells, 5,
+          `${label}: compact self equipment must expose all five slots (${JSON.stringify(equipmentMetrics)})`);
+        assert.ok(equipmentMetrics.height <= 32,
+          `${label}: compact equipment is making the self seat too tall (${JSON.stringify(equipmentMetrics)})`);
+        assert.ok(equipmentMetrics.label,
+          `${label}: compact equipment must retain an accessible summary label`);
         assert.ok(layout.documentWidth <= layout.viewportWidth + 1,
           `${label}: portrait document overflows horizontally (${layout.documentWidth}px > ${layout.viewportWidth}px)`);
         assert.equal(layout.controls?.display, 'flex', `${label}: controls should use the mobile flex stack`);

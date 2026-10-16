@@ -187,13 +187,29 @@ function EquipRidesSplit({
 }
 
 function EquipmentPlate({
-  slotCards, text, count,
+  slotCards, text, count, self, compact,
 }: {
   slotCards: Map<EquipmentSlotKey, BoardEquipment>;
   text: (value: string) => string;
   count: number;
+  self: boolean;
+  compact: boolean;
 }) {
-  return <div className="sg-equip-plate native-equip-plate" aria-label={count > 0 ? 'Trang bị công khai' : undefined}>
+  const label = self ? 'Trang bị của bạn' : 'Trang bị công khai';
+  const equippedNames = [...slotCards.values()]
+    .map((card) => text(card.name) || card.name)
+    .filter(Boolean)
+    .join(', ');
+  // Keep the existing public-panel contract: an opponent's empty equipment
+  // plate is not exposed as a labelled landmark, while the local compact seat
+  // keeps its stable label so the five slots remain discoverable. The detailed
+  // summary remains available through the description/title attributes.
+  const equipmentSummary = count > 0 && equippedNames ? equippedNames : 'chưa có';
+  const ariaLabel = count > 0 || self ? label : undefined;
+
+  return <div className={`sg-equip-plate native-equip-plate${compact ? ' native-equip-plate-compact' : ''}`}
+    aria-label={ariaLabel} aria-description={`${label}: ${equipmentSummary}`} title={`${label}: ${equipmentSummary}`}
+    data-equipped-count={slotCards.size} data-equipment-summary={equipmentSummary}>
     <EquipRow slot="treasure" typeLabel="Bảo vật" card={slotCards.get('treasure')} text={text} />
     <EquipRow slot="weapon" typeLabel="Vũ khí" card={slotCards.get('weapon')} text={text} />
     <EquipRow slot="armor" typeLabel="Phòng cụ" card={slotCards.get('armor')} text={text} />
@@ -333,7 +349,7 @@ export default function PlayerPhotoPanel({
     <HandCardBadge count={game?.handcardNum} />
 
     {/* 5. AUTHENTIC 4-ROW / 5-SLOT EQUIPMENT PLATE */}
-    <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} />
+    <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />
 
     {/* 6. MARKS AND DOM COMPATIBILITY HOOKS */}
     {marks.length > 0 && <div className="sg-photo-marks" aria-label="Dấu hiệu công khai">

@@ -98,6 +98,10 @@ async function run() {
     await page.evaluate(() => {
       const api = (window as any).__tqsRealLuaE2e;
       api.beginPlay(true);
+      const equipId = api.getConn().lua.eval(`return table.find(ClientInstance.draw_pile, function(id)
+        return Fk:getCardById(id).type == Card.TypeEquip end)`);
+      api.boardNotify('MoveCards', `{{{to=17, toArea=Card.PlayerEquip, moveReason=fk.ReasonPut,
+        moveInfo={{cardId=${equipId}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`);
     });
     await page.waitForTimeout(800);
     await page.screenshot({ path: path.join(outDir, '390_portrait_board_prompt.png') });
