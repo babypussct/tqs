@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, cpSync, existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,9 +13,16 @@ const installer = path.join(repo, 'deploy/freekill-native/scripts/install-qa-pac
 const verifier = path.join(repo, 'deploy/freekill-native/scripts/verify-qa-package.sh');
 const defaultConfig = path.join(repo, 'deploy/freekill-native/server/freekill.server.config.json');
 const reconnectPatch = path.join(repo, 'deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch');
+const upstreamNativeSource = path.join(repo, 'scratch/upstream/freekill-asio');
 
 function run(command, args, cwd) {
   return execFileSync(command, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+function runWithInput(command, args, input, cwd) {
+  return execFileSync(command, args, {
+    cwd, input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+  });
 }
 
 test('QA installer creates a verified server-only runtime and rejects a dirty source', () => {
@@ -51,10 +58,39 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
     const patchText = readFileSync(reconnectPatch, 'utf8');
     assert.match(patchText, /server\.isTempBanned\(client->peerAddress\(\)\)/,
       'production source patch must check temp-ban after authentication');
+    assert.match(patchText, /!player\s*\|\|\s*!player->insideGame\(\)/,
+      'production source patch must exempt only an authenticated player still inside a game');
     assert.match(patchText, /Capacity is enforced after authentication/,
       'production source patch must keep reconnectable players ahead of capacity rejection');
+    assert.match(patchText, /if \(!player && um\.getPlayers\(\)\.size\(\) >=/,
+      'production source patch must defer capacity rejection until after account lookup');
     assert.match(patchText, /-  } else if \(server\.isTempBanned\(addr\)\)/,
       'production source patch must remove the pre-auth temp-ban rejection');
+    if (existsSync(path.join(upstreamNativeSource, '.git'))) {
+      const fixture = path.join(root, 'native-source-fixture');
+      mkdirSync(path.join(fixture, 'src/server/user'), { recursive: true });
+      cpSync(path.join(upstreamNativeSource, 'src/server/user/auth.cpp'),
+        path.join(fixture, 'src/server/user/auth.cpp'));
+      cpSync(path.join(upstreamNativeSource, 'src/server/user/user_manager.cpp'),
+        path.join(fixture, 'src/server/user/user_manager.cpp'));
+      assert.doesNotThrow(() => runWithInput('patch', [
+        '--batch', '-p1', '-d', fixture,
+      ], patchText, repo), 'production reconnect patch must apply cleanly to the pinned native source');
+      const patchedAuth = readFileSync(path.join(fixture, 'src/server/user/auth.cpp'), 'utf8');
+      const passwordCheck = patchedAuth.indexOf('passed = (passwordHash == obj["password"]);');
+      const tempBanCheck = patchedAuth.indexOf('server.isTempBanned(client->peerAddress())');
+      assert.ok(passwordCheck >= 0 && tempBanCheck > passwordCheck,
+        'patched native auth must authenticate the account before applying the IP temp-ban');
+      assert.match(patchedAuth, /if \(server\.isTempBanned\(client->peerAddress\(\)\) &&[\s\S]*!player->insideGame\(\)\)/,
+        'patched native auth must exempt only an authenticated player still inside a game');
+      assert.match(patchedAuth, /if \(!player && um\.getPlayers\(\)\.size\(\) >=/,
+        'patched native auth must defer capacity rejection until after account lookup');
+      const patchedUserManager = readFileSync(path.join(fixture, 'src/server/user/user_manager.cpp'), 'utf8');
+      assert.doesNotMatch(patchedUserManager, /server\.isTempBanned\(addr\)/,
+        'patched native connection setup must not reject temp-banned IPs before auth');
+      assert.doesNotMatch(patchedUserManager, /online_players_map\.size\(\) >= \(size_t\)server\.config\(\)\.capacity/,
+        'patched native connection setup must not reject reconnects before auth');
+    }
 
     writeFileSync(path.join(source, 'README.md'), `${readFileSync(path.join(source, 'README.md'), 'utf8')}\nchanged\n`);
     assert.throws(() => run('bash', [verifier, '--source', source, '--runtime', runtime], repo), /uncommitted changes/);
