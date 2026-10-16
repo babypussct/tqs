@@ -60,8 +60,8 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T03:41:17.634Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `38dda9db25a7`.
+- Ghi lúc: 2026-10-16T04:10:49.113Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `e3c54ccf15c4`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -71,9 +71,9 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 Ba commit gần nhất:
 
 ```text
+e3c54ccf ops: harden constrained native source builds
+c0b8b3e6 docs: refresh CP15 handoff snapshot
 38dda9db docs: record CP15 hidden Jilix parity
-32ac4be2 fix: refresh runtime identity for hidden skill patch
-a6c47982 fix: resolve hidden general skill ownership
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
