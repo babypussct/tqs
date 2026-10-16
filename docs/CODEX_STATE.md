@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 16/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke và CP25 portrait mobile UI/UX ergonomics overhaul (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul và CP26 expanded wild-marker live translation fix (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Mục tiêu và phạm vi
 
@@ -38,6 +38,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
   - **Công thái học nút thao tác:** tăng chiều cao các nút trong `sg-action-bar` (`Xác nhận`, `Hủy`, `Kết thúc lượt`) từ 20px lên 26px, font 10px đậm, tách khoảng cách giữa các nút lên 12px để người dùng ngón tay cái thao tác an toàn, tránh bấm nhầm nút Hủy. Cập nhật test assertion trong `real-lua-e2e/run.ts` từ `<= 22` lên `<= 28`.
   - **Thế lực ẩn trên ghế bản thân:** sửa `PlayerPhotoPanel.tsx` để khi thế lực chưa công khai (`unknown` hoặc chưa lật) hiển thị nhãn tiếng Việt `ẨN` thay vì chuỗi tiếng Anh kỹ thuật thô `UNKNOWN`.
   - **Evidence quan sát:** `seat-layout.test.ts` **4/4**, `test:card-display` **14/14**, `test:store` **44/44**, `test:vietnamese` **4/4**, `test:native-dialogs` **7/7**, `test:gameplay` **16/16**, browser E2E **21/21**, real-Lua E2E **63/63**, production build/all audits PASS; capture M6 sinh 15 ảnh (bổ sung `390_portrait_board_8_players.png`).
+- **CP26 expanded wild-marker translation fix + Render/VM live smoke (candidate live, 17/10/2026):** live UI audit sau CP25 phát hiện đúng một chuỗi C++ đã expand trước khi tới React: `Tôn Sâm / Tướng ẩn nhận 〖野心家〗`. Đã thêm alias display-only trong `localizedGameLog()` từ marker Hoa mở rộng về `〖Dã tâm gia〗`, giữ nguyên wire ID, Lua key `@!!wild`, luật native và privacy boundary; thêm regression vào `vietnamese-l01.test.ts`. Đã quan sát `test:vietnamese` **4/4**, `test:store` **44/44**, `test:card-display` **14/14**, typecheck và production build/audit PASS; `rsync -a --delete game/web/dist/ dist/`, `diff -rq` và `git diff --check` PASS. Commit [`10af0586`](https://github.com/babypussct/tqs/commit/10af0586539c7d725b61dd5a916bc01162add2ca) đã push và deploy thủ công lên [`dep-db95hsft5n8s73ec9m6g`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db95hsft5n8s73ec9m6g), dashboard báo `Deploy succeeded | Live`. Public health `ok`; HTML SHA-256 `afa295ed9720bd0c076e1813322d823e3bbabf21fc69d7f4daadebcc5b634d69`, JS `73a19e272d01f176ae92a879522d8b69ff6888ff4a8533bf572f90121e83ce0e`, CSS `c54281f241fea1ef1daa9cb57a40fdb1e352fc47661ab24751037a6dcd84a2d6` khớp local; gateway log giữ bundle **5.279 files**, runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, trỏ `161.33.209.212:9527`. VM `freekill-hegemony-qa` đã kiểm tra `systemctl active`, `*:9527 LISTEN`, binary tồn tại. Live `test:e2e:live -- --ui-translations` PASS với **109 visible texts / 0 possible untranslated strings**, GameOver/lobby/disconnect sạch; evidence [`ui-01-live-cpp-2026-10-17-1792170368669.json`](../scratch/evidence/ui-01-live-cpp-2026-10-17-1792170368669.json). Đây là candidate hiện hành cho user smoke test; chưa phải device sign-off hoặc official release.
 - **M3 request-dialog UX correction (local, 16/10/2026):** thêm [RequestDialog.tsx](../game/web/src/RequestDialog.tsx) làm lớp modal chung cho request do Lua sở hữu: focus vào action đầu tiên, giữ vòng Tab trong dialog, Escape chỉ gọi cancel khi payload cho phép, và bottom-sheet portrait có safe-area/scroll riêng. Test real-Lua mới xác nhận `AskForSkillInvoke` focus đúng nút Kích hoạt và Escape phát đúng `__cancel`; toàn bộ dialog P0 vẫn pass expiry/replacement/disconnect/privacy. Không auto-reply và không thay validation/reply bytes của `GameConnection`.
 - **M4 waiting-room affordance correction (local, 16/10/2026):** thêm `roomStartDisabledReason()` trong `roomReadiness.ts` và gắn `aria-describedby`, `title` cùng status hint cho nút Bắt đầu của chủ phòng. Hint phân biệt đúng ba trạng thái observable hiện có: chưa đủ ghế, còn người chơi chưa ready, hoặc observer không thể bắt đầu; lobby cũng dùng `roomPoolDisabledReason()` để giải thích khi bể native không đủ tướng/bài trước khi tạo phòng. Không tạo readiness rule thứ hai và không thay đổi wire/law. `test:store` **43/43**, browser E2E **21/21**, real-Lua E2E **63/63** và typecheck/build đều PASS sau mốc này; diff check riêng các file của slice cũng PASS. Screenshot `390_portrait_waiting_room.png` đã được capture lại để chứa trạng thái giải thích nút.
 - **M5 mobile card-inspection correction (local, 16/10/2026):** `HandCardItem` nhận long-press trên touch để mở `CardDetailSheet` cho chính lá đang giữ; click ngắn vẫn chỉ dispatch `CardItem` selection và long-press không tạo Lua action/reply. Sheet cho phép Escape/Đóng, khóa scroll nền, hiển thị native art + suit/rank/category/mô tả tiếng Việt. Browser E2E **21/21**, card-display **13/13**, real-Lua E2E **63/63**; capture thêm `dialog_card_detail_long_press.png`. Đây là mobile UX local, chưa thay thế device gesture smoke.
@@ -75,7 +76,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Render checkpoint cuối
 
-- **Final active deployment:** Render deployment [`dep-db94gsbrjlhs73c8p670`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db94gsbrjlhs73c8p670) từ source [`b32bd9c4`](https://github.com/babypussct/tqs/commit/b32bd9c4f93d8737f1574a8943b6430aa76c683e) báo `Deploy succeeded | Live`. Public `/gateway/healthz` trả `ok`; HTML trỏ tới `index-Bm-fv37A.js` và `index-CzOASeu6.css`, SHA-256 JS `2b5d602d…`, CSS `03cf80b7…` khớp local `dist`; manifest public giữ 14 package/5.279 file, runtime MD5 `29653b06…`, bundle `ce342f067f61796e`. Live UI translation smoke thấy 175 visible texts/0 unresolved và clean GameOver/lobby/disconnect; gateway log xác nhận Render → VM `161.33.209.212:9527`. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
+- **Final active deployment:** Render deployment [`dep-db95hsft5n8s73ec9m6g`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db95hsft5n8s73ec9m6g) từ source [`10af0586`](https://github.com/babypussct/tqs/commit/10af0586539c7d725b61dd5a916bc01162add2ca) báo `Deploy succeeded | Live`. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `afa295ed…` / `73a19e27…` / `c54281f2…` khớp local `dist`; manifest public giữ 14 package/5.279 file, runtime bundle MD5 `29653b06…` theo gateway log. Live UI translation smoke thấy 109 visible texts/0 unresolved và clean GameOver/lobby/disconnect; gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra service active/port 9527 listening. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
 
 ## Việc còn mở theo thứ tự
 
@@ -95,39 +96,27 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; hiện runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, bundle `ce342f067f61796e`, QA revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, current UI deployment `dep-db94gsbrjlhs73c8p670`, source `b32bd9c4`. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Public UI health/HTML/JS/CSS identity đã kiểm tra trực tiếp sau deployment; package/runtime identity đã được health/manifest/live UI translation smoke probe. **UI portrait + request-dialog + self-equipment compact slice:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, typecheck/build và diff check riêng các file thuộc slice đều PASS; capture đã sinh **14 ảnh** (12 ảnh chuẩn + ảnh 10 lá + ảnh card-detail long-press) với self equipment thật. CP24 live translation smoke thấy **175 visible texts / 0 possible untranslated strings** qua Render → VM `161.33.209.212:9527`. Candidate đã deploy và live; bước kế tiếp là user smoke test trên thiết bị/viewport thật, sau đó tiếp tục native matrix theo các event groups còn thiếu. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
+Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; hiện runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, QA revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, current UI deployment `dep-db95hsft5n8s73ec9m6g`, source `10af0586`. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Public UI health/HTML/JS/CSS identity đã kiểm tra trực tiếp sau deployment; package/runtime identity đã được health/manifest/live UI translation smoke probe. **UI portrait + request-dialog + self-equipment compact slice:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, typecheck/build và diff check riêng các file thuộc slice đều PASS; capture đã sinh **14 ảnh** (12 ảnh chuẩn + ảnh 10 lá + ảnh card-detail long-press) với self equipment thật. CP26 live translation smoke thấy **109 visible texts / 0 possible untranslated strings** qua Render → VM `161.33.209.212:9527`, VM service active/port listening. Candidate đã deploy và live; bước kế tiếp là user smoke test trên thiết bị/viewport thật, sau đó tiếp tục native matrix theo các event groups còn thiếu. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
 
 **Bổ sung evidence sau M3/M4/M5:** PWA E2E PASS; recovery **3/3**, protocol **5/5**, room-pools **1/1**, Vietnamese **4/4** và Lua lifecycle **5/5** đều PASS trên checkout hiện hành. Capture M6 đã chạy lại sau waiting-room hint, card long-press và portrait hand correction; bộ ảnh gồm **12 ảnh chuẩn + 1 ảnh 10 lá + 1 ảnh card-detail long-press**. `RequestTimer` đã được tách repaint cục bộ để giữ hand rail ổn định khi đếm ngược. Diff check riêng các file thuộc UI/docs slice PASS; lệnh toàn repo hiện dừng ở `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` do CRLF bị báo trailing whitespace trong file CSV dirty ngoài slice, không được chuẩn hóa trong phiên này. Đây là regression evidence local, không thay thế device smoke/candidate smoke.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T16:49:13.632Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `7bd6e3d799f0`.
-- File thay đổi hiển thị: 13 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T17:09:08.514Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `10af0586539c`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- D dist/assets/index-Bm-fv37A.js
- D dist/assets/index-CzOASeu6.css
- M dist/index.html
- M dist/sw.js
- M game/web/scripts/capture-m6-evidence.ts
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/vietnamese-l01.test.ts
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/engine/vietnamese.ts
- M game/web/src/store/seatLayout.ts
- M game/web/src/styles.css
-?? dist/assets/index-AvlEIBWk.css
-?? dist/assets/index-BT_qiC-B.js
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+10af0586 fix: localize expanded wild marker in game logs
+2f231c04 feat: finalize portrait hegemony mobile layout
 7bd6e3d7 docs: record CP24 translation live smoke
-b32bd9c4 fix: localize hegemony card display text
-52ea32ad build: publish updated Vietnamese translation catalog
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
