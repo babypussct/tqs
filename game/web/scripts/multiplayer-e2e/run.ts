@@ -195,6 +195,12 @@ let recovered = false;
 const pages:Page[]=[];
 const currentSockets: unknown[] = [];
 const transportOpen = [false,false];
+// The native QA director binds its actor to the first allowlisted user
+// (`allowedUsers[1]` in Lua). The runner logs that account into page 0, so keep
+// page 0 as the default until a later roster/prelight probe discovers a more
+// specific owner. Without this, the actor can be delegated to Trust while the
+// runner waits for a request that will never be emitted on the manually
+// controlled page.
 let scenarioClient = 0;
 const progressTimer = setInterval(() => console.log(JSON.stringify({stage:finished?'finished':gameStarted?'playing':'login',recovered,
   packets:traces.map(t=>t.length),lastIncoming:traces.map(t=>t.filter(p=>p.direction==='incoming').at(-1)?.command ?? null),
@@ -649,8 +655,10 @@ async function observeBattleRoyal(page: Page) {
 /** Complete the real Lua active-skill scene without inspecting private payloads. */
 async function completeActiveSkill(page: Page, client: number, requestId: number, prefer: RegExp | null) {
   const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
-  const skillHeading = controls.locator('h3').filter({ hasText: 'Kỹ năng' });
-  const skillButtons = skillHeading.locator('..').locator('..').getByRole('button');
+  // The production skill rail is a sibling of GameplayControls, not a child
+  // of its request region.  Scope to the rail directly so active skills are
+  // found on the same DOM path used by the real UI and the local Lua tests.
+  const skillButtons = page.locator('button.sg-skill-button');
   const count = await skillButtons.count();
 
   // The native reveal helper is an InteractionPicker rather than a plain
@@ -1046,6 +1054,30 @@ try{
       assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(), 0,
         'opponent hand IDs must not render');
     }
+  }
+  if (nativeQa && selectedScenario?.skill && !hiddenScenario) {
+    // The QA director binds the actor by allowlist order, while room seats and
+    // browser tabs are independent.  Resolve the private owner from the
+    // production skill rail before delegating the other seat to Trust.
+    const ownerDeadline = Date.now() + 15000;
+    let owner = -1;
+    let observedSkillLabels: string[][] = [[], []];
+    while (Date.now() < ownerDeadline && owner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        const labels = await pages[client].locator('button.sg-skill-button').allTextContents();
+        observedSkillLabels[client] = labels;
+        if (labels.some((label) => selectedScenario.skill!.test(label))) {
+          owner = client;
+          break;
+        }
+      }
+      if (owner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(owner >= 0,
+      `Native QA ${testScenario} did not expose its actor skill on either private skill rail; ` +
+      `observed=${JSON.stringify(observedSkillLabels)}`);
+    scenarioClient = owner;
+    console.log(`Scenario ${testScenario}: native caller skill is on client ${scenarioClient + 1}`);
   }
   if (damageExchangeScenario) {
     // The QA director binds the actor by allowlisted screen name, while room
@@ -2635,7 +2667,9 @@ try{
         }
       } else if(latest?.command==='PlayCard') {
         const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
-        const skillButtons=controls.locator('button.sg-skill-button');
+        // SkillDock is rendered beside, rather than inside, the gameplay
+        // request region.  Keep the live runner on the production DOM path.
+        const skillButtons=actor.locator('button.sg-skill-button');
         if (selectedScenario && !printedScenarioSkills) {
           printedScenarioSkills = true;
           console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillButtons.allTextContents()).join(' | ') || '(none)'}`);

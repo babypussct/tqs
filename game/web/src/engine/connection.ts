@@ -692,6 +692,23 @@ export class GameConnection {
     if (['AskForChoices', 'AskForOptions'].includes(command) && this.receivingRequestCommand === command)
       this.choicePrompt = parseChoicePrompt(command === 'AskForOptions' && Array.isArray(data)
         ? [...data.slice(0, 6), false, data[6] ?? false] : data);
+    // The native client can publish the initial private skill snapshot before
+    // its later ChangeSelf marker (the marker is also reused at GameOver).
+    // Refresh only from Lua's current Self and only when the event owner is
+    // that same numeric identity.  Never infer ownership from the first
+    // AddSkill event: an observer or a future native projection may receive
+    // another player's skill name, and that must remain outside React's
+    // private skill state.
+    if ((command === 'AddSkill' || command === 'LoseSkill') && Array.isArray(data) &&
+        Number.isSafeInteger(data[0]) && (data[0] as number) > 0) {
+      try {
+        const nativeSelfId = this.lua.eval<unknown>('return Self and Self.id or nil');
+        if (nativeSelfId === data[0]) this.opts.onUi('SelfIdentity', nativeSelfId);
+      } catch {
+        // A skill notification during a partially initialized/reconnecting
+        // Lua state must not turn a valid server packet into a dead session.
+      }
+    }
     // C++ broadcasts AddPlayer before inserting the joining player, so the
     // new socket never receives its own AddPlayer. Lua creates Self during
     // EnterRoom; publish that occupant to the web UI as native QML does.

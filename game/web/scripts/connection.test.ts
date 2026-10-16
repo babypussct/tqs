@@ -81,6 +81,35 @@ test('observer EnterRoom publishes self identity without occupying a player seat
   ]);
 });
 
+test('private skill snapshot refreshes SelfIdentity before AddSkill when native ChangeSelf is delayed', () => {
+  const h = harness();
+  const ui: [string, unknown][] = [];
+  h.conn['opts'].onUi = (command: string, data: unknown) => ui.push([command, data]);
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.eval = <T>(): T => 21 as T;
+
+  h.conn['handleLuaUi']('AddSkill', [21, 'hs__yiji', true]);
+
+  assert.deepEqual(ui, [
+    ['SelfIdentity', 21],
+    ['AddSkill', [21, 'hs__yiji', true]],
+  ]);
+});
+
+test('skill snapshot for another native player does not change the private owner', () => {
+  const h = harness();
+  const ui: [string, unknown][] = [];
+  h.conn['opts'].onUi = (command: string, data: unknown) => ui.push([command, data]);
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.eval = <T>(): T => 21 as T;
+
+  h.conn['handleLuaUi']('AddSkill', [22, 'hs__opponent-skill', true]);
+
+  assert.deepEqual(ui, [['AddSkill', [22, 'hs__opponent-skill', true]]]);
+});
+
 test('heartbeat replies immediately without Lua dispatch or altering a pending request', () => {
   const h = harness();
   h.conn.connect();
