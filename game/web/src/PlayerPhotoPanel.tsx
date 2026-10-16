@@ -310,8 +310,8 @@ export default function PlayerPhotoPanel({
     <div className="native-top-overlay sg-photo-top-overlay">
       <div className="native-top-left-identity sg-top-left-identity">
         <span className="native-kingdom-crest sg-kingdom-crest"
-          title={`Thế lực: ${exposedKingdom && kingdom ? text(kingdom) : 'Chưa công khai'}`}>
-          {exposedKingdom && kingdom ? text(kingdom).toUpperCase() : 'ẨN'}
+          title={`Thế lực: ${exposedKingdom && kingdom && kingdom !== 'unknown' ? text(kingdom) : 'Chưa công khai'}`}>
+          {exposedKingdom && kingdom && kingdom !== 'unknown' ? text(kingdom).toUpperCase() : 'ẨN'}
         </span>
         <span className="board-seat native-seat-badge-circle sg-seat-badge-circle" title={`Ghế ${seat}`}>
           {seat}

@@ -257,12 +257,14 @@ zuoci=Tả Từ
 `;
 export const VI_NAMES: Record<string, string> = Object.fromEntries(names.trim().split('\n').map((line) => line.split('=')));
 export const VI_ADDITIONS: Record<string, string> = {
-  // Generated from the effective CP19 skill inventory; the precise hand-written
-  // entries below intentionally override this broad translation baseline.
+  // The official catalog is the broad upstream baseline.  Reviewed/refined
+  // entries must be spread after it: the catalog intentionally contains every
+  // zh_CN key, while these maps contain the Vietnamese wording that has been
+  // checked against the pinned FreeKill rule and UI contract.
   ...VI_SKILL_TRANSLATIONS,
+  ...(OFFICIAL_TRANSLATIONS as Record<string, string>),
   ...VI_SKILL_REFINEMENTS,
   ...VI_SKILL_REVIEWED,
-  ...(OFFICIAL_TRANSLATIONS as Record<string, string>),
   '#TargetCancelled': 'Mục tiêu %to đã bị hủy khỏi lá %arg do %from sử dụng.',
   '#AskForSkillInvoke': 'Bạn có muốn kích hoạt %arg?',
   '#AskForUseActiveSkill': 'Hãy phát động kỹ năng %arg',

@@ -7,7 +7,7 @@ import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { loadUpstreamFiles } from './upstream-packages';
 
-const outDir = '/Users/otada/.gemini/antigravity/brain/871ed6eb-95ea-4c9d-812d-3f2dfaa4e064';
+const outDir = process.env.TQS_CAPTURE_OUT_DIR || '/Users/otada/.gemini/antigravity/brain/0c526d04-3873-40d7-8f73-d4599c2f79a6';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const upstream = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
 
@@ -170,6 +170,13 @@ async function run() {
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(outDir, 'board_8_players.png') });
     console.log('Saved board_8_players.png');
+
+    console.log('8b. Capturing 8 players layout in 390x844 portrait...');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(outDir, '390_portrait_board_8_players.png') });
+    console.log('Saved 390_portrait_board_8_players.png');
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     console.log('9. Capturing hidden main/deputy presentation...');
     await page.evaluate(() => {

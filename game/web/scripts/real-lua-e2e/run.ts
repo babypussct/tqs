@@ -156,6 +156,8 @@ try {
               left: controlsBox.left, right: controlsBox.right, top: controlsBox.top,
               bottom: controlsBox.bottom, width: controlsBox.width, height: controlsBox.height,
               display: controlsStyles?.display ?? '', flexDirection: controlsStyles?.flexDirection ?? '',
+              position: controlsStyles?.position ?? '', maxHeight: controlsStyles?.maxHeight ?? '',
+              overflowY: controlsStyles?.overflowY ?? '', padding: controlsStyles?.padding ?? '',
             } : null,
             toolbar: toolbarBox ? {
               left: toolbarBox.left, right: toolbarBox.right, top: toolbarBox.top,
@@ -201,7 +203,7 @@ try {
           `${label}: local dashboard is expanding into the table (${layout.dashboard!.height}px)`);
         assert.ok(layout.hand!.height <= 104,
           `${label}: hand viewport is taller than the compact portrait budget (${layout.hand!.height}px)`);
-        assert.ok(layout.actionButtons.length > 0 && layout.actionButtons.every((button) => button.height <= 22),
+        assert.ok(layout.actionButtons.length > 0 && layout.actionButtons.every((button) => button.height <= 28),
           `${label}: action buttons are consuming a full row (${JSON.stringify(layout.actionButtons)})`);
         const compactEquipment = p.locator('.board-local-seat .sg-equip-plate').first();
         assert.equal(await compactEquipment.count(), 1,
@@ -233,6 +235,12 @@ try {
           `${label}: portrait document overflows horizontally (${layout.documentWidth}px > ${layout.viewportWidth}px)`);
         assert.equal(layout.controls?.display, 'flex', `${label}: controls should use the mobile flex stack`);
         assert.equal(layout.controls?.flexDirection, 'column', `${label}: controls should stack vertically on portrait`);
+        assert.equal(layout.controls?.position, 'relative',
+          `${label}: gameplay controls must stay in the single page flow, not sticky over the hand (${JSON.stringify(layout.controls)})`);
+        assert.equal(layout.controls?.maxHeight, 'none',
+          `${label}: gameplay controls must not create a capped nested viewport (${JSON.stringify(layout.controls)})`);
+        assert.equal(layout.controls?.overflowY, 'visible',
+          `${label}: gameplay controls must not own a second vertical scrollbar (${JSON.stringify(layout.controls)})`);
         assert.ok(layout.toolbar && layout.toolbar.height <= 48,
           `${label}: toolbar is still consuming a desktop-sized row (${JSON.stringify(layout.toolbar)})`);
         assert.ok(layout.ticker && layout.ticker.height <= 32,

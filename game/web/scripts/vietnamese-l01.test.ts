@@ -44,6 +44,10 @@ test('C01 exact package-pin skills and variants, including conditional choice ru
   assert.match(VI_ADDITIONS[':ld__lixia'], /Khóa định.*chuẩn bị.*ngoài phạm vi.*rút 1 lá.*mất 1 máu/);
   assert.match(VI_ADDITIONS[':qingcheng'], /Đen.*úp một tướng.*trang bị màu Đen/);
   assert.match(VI_ADDITIONS[':ld__biluan'], /\+X.*trang bị/);
+  assert.equal(VI_ADDITIONS['hs__weimu'], 'Vi Mộ',
+    'reviewed skill names must override the broad official catalog');
+  assert.match(VI_ADDITIONS[':hs__weimu'], /^TOẢ ĐỊNH KỸ,/,
+    'reviewed skill descriptions must override machine/baseline wording');
   for (const key of ['hs__zoushi', '#hs__zoushi', '~hs__zoushi', '$qingcheng1', '$qingcheng2',
     'ld__shixie', '#ld__shixie', '~ld__shixie']) {
     assert.ok(VI_ADDITIONS[key] && !/[\u3400-\u9fff]/.test(VI_ADDITIONS[key]), key);
