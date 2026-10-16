@@ -36,6 +36,7 @@ const liegongSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/
 const jueqingSkillPath = path.resolve(here, '../../../runtime/packages/yj/pkg/yj2011/skills/jueqing.lua');
 const ejueSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zqdl/skills/ejue.lua');
 const dufuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zfxp/skills/dufu.lua');
+const jianzhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zqdl/skills/jianzhi.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -1225,6 +1226,52 @@ test('hidden-dufu locks DamageCaused damage+1 and reveal-before-effect for both 
     'SkillEffect must reveal the matching slot before running Dufu effect');
   assert.match(qaInit, /scenario\.trigger == "hidden-dufu"[\s\S]*triggerHiddenDufu\(room, state\)/u);
   assert.match(qaInit, /hidden-dufu[\s\S]*fk\.DamageCaused[\s\S]*hiddenDufuDamageCaused/u);
+});
+
+test('hidden-jianzhi locks lethal DamageCaused discard/reward and reveal-before-effect for both slots', () => {
+  const expected = {
+    'hidden-jianzhi': {
+      seed: 0x5d6e7fc6,
+      actor: { general: 'heg__jiachong', deputy: 'heg__simayi', kingdom: 'jin' },
+    },
+    'hidden-jianzhi-deputy': {
+      seed: 0x5d6e7fc7,
+      actor: { general: 'heg__simayi', deputy: 'heg__jiachong', kingdom: 'jin' },
+    },
+  };
+  for (const [id, contract] of Object.entries(expected)) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.seed, contract.seed, `${id} seed drift`);
+    assert.equal(scenario.trigger, 'hidden-jianzhi', `${id} trigger drift`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke', `${id} acceptance command drift`);
+    assert.equal(scenario.playerCount, 2);
+    assert.deepEqual(scenario.players, {
+      actor: contract.actor,
+      target: { general: 'hs__zhaoyun', deputy: 'hs__zhangfei', kingdom: 'shu' },
+    });
+    assert.deepEqual(scenario.cards, [
+      { key: 'jianzhi-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
+      { key: 'jianzhi-filler', match: { trueName: 'jink' }, owner: 'actor', area: 'hand' },
+    ]);
+  }
+
+  const jianzhi = fs.readFileSync(jianzhiSkillPath, 'utf8');
+  const skillEvent = fs.readFileSync(skillEventPath, 'utf8');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(jianzhi, /name = "heg__jianzhi"/u);
+  assert.match(jianzhi, /jianzhi:addEffect\(fk\.DamageCaused/u);
+  assert.match(jianzhi, /data\.damage >= \(data\.to\.hp \+ data\.to\.shield\)/u);
+  assert.match(jianzhi, /not player:isKongcheng\(\)/u);
+  assert.match(jianzhi, /player:throwAllCards\("h", jianzhi\.name\)/u);
+  assert.match(jianzhi, /room:setBanner\("additional_reward", n \+ 2\)/u);
+  const revealIndex = skillEvent.indexOf('player:revealBySkillName(main_skill.name)');
+  const effectCallbackIndex = skillEvent.indexOf('effect_cb()');
+  assert.ok(revealIndex >= 0, 'SkillEffect must reveal the hidden general by skill name');
+  assert.ok(effectCallbackIndex > revealIndex,
+    'SkillEffect must reveal the matching slot before running Jianzhi effect');
+  assert.match(qaInit, /scenario\.trigger == "hidden-jianzhi"[\s\S]*triggerHiddenJianzhi\(room, state\)/u);
+  assert.match(qaInit, /hidden-jianzhi[\s\S]*fk\.DamageCaused[\s\S]*hiddenJianzhiDamageCaused/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {

@@ -357,6 +357,44 @@ local function validateHiddenDufuScenario(scenario)
   end
 end
 
+local function validateHiddenJianzhiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-jianzhi scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-jianzhi-deputy"
+  local expectedMain = deputy and "heg__simayi" or "heg__jiachong"
+  local expectedDeputy = deputy and "heg__jiachong" or "heg__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "jin" then
+    fail("hidden-jianzhi actor must use the catalogued Jia Chong main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "hs__zhangfei" or target.kingdom ~= "shu" then
+    fail("hidden-jianzhi target must be Zhao Yun + Zhang Fei in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-jianzhi must expose AskForSkillInvoke before the lethal DamageCaused Slash")
+  end
+  if #scenario.cards ~= 2 then
+    fail("hidden-jianzhi must reserve an actor Slash and one filler card")
+  end
+  local actorSlash, actorFiller
+  for _, card in ipairs(scenario.cards) do
+    if card.owner == "actor" and card.area == "hand" and type(card.match) == "table" then
+      if card.key == "jianzhi-card" and card.match.trueName == "slash" then
+        actorSlash = card
+      elseif card.key == "jianzhi-filler" and card.match.trueName == "jink" then
+        actorFiller = card
+      end
+    end
+  end
+  if not actorSlash or not actorFiller then
+    fail("hidden-jianzhi must reserve one actor Slash and one actor Jink filler")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -967,6 +1005,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenEjueScenario(scenario)
   elseif scenario.trigger == "hidden-dufu" then
     validateHiddenDufuScenario(scenario)
+  elseif scenario.trigger == "hidden-jianzhi" then
+    validateHiddenJianzhiScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1346,6 +1386,7 @@ local function setupState(room, scenario, seed)
     hiddenFuyinNullified = false,
     hiddenEjueDamageCaused = false,
     hiddenDufuDamageCaused = false,
+    hiddenJianzhiDamageCaused = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2518,6 +2559,102 @@ local function triggerHiddenDufu(room, state)
   }
   fk.qInfo(string.format("[tqs_qa] hidden-dufu damage_caused=true damage=%d skill_effect=true revealed=%s slot=%s revision=%s",
     targetHpLoss, tostring(revealedCorrectSlot), dufuIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenJianzhi(room, state)
+  -- 奸志 is an optional fk.DamageCaused effect. Keep Jia Chong hidden until
+  -- a real lethal Slash reaches the native damage hook, then accept the
+  -- source-defined invoke, discard the remaining hand and verify the reward
+  -- banner mutation. The second hand card is intentional: the Slash leaves
+  -- processing before the predicate checks isKongcheng().
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-jianzhi actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("heg__jianzhi") then
+    fail("hidden-jianzhi must attach the hidden Jianzhi skill")
+  end
+  if state.actor:hasSkill("heg__jianzhi") then
+    fail("hidden-jianzhi must not be active before the prelighted effect")
+  end
+
+  room:setPlayerProperty(state.target, "hp", 1)
+  room:broadcastProperty(state.target, "hp")
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_jianzhi_gate",
+    prompt = "TQS QA: prelight Gian Chí, rồi xác nhận để dùng Sát chí mạng.",
+  })
+  if not gate then
+    fail("hidden-jianzhi QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "heg__jianzhi") then
+    fail("hidden-jianzhi must be prelighted before the DamageCaused branch")
+  end
+
+  local cardId = state.slotCards["jianzhi-card"]
+  local fillerId = state.slotCards["jianzhi-filler"]
+  local hand = state.actor:getCardIds(Player.Hand)
+  if not cardId or not fillerId or #hand ~= 2 or
+      not table.contains(hand, cardId) or not table.contains(hand, fillerId) then
+    fail("hidden-jianzhi must put the reserved Slash and one filler card in the actor hand")
+  end
+
+  local targetHpBefore = state.target.hp
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_jianzhi_damage",
+    prompt = "TQS QA: dùng Sát chí mạng để kiểm tra Gian Chí.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-jianzhi must receive the reserved Slash against the one-hp target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "heg__jianzhi" and entry.player == state.actor.id
+  end)
+  local jianzhiIsDeputy = state.scenario == "hidden-jianzhi-deputy"
+  local revealedCorrectSlot = jianzhiIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "heg__jiachong"
+    or not jianzhiIsDeputy and state.actor.general == "heg__jiachong" and state.actor.deputyGeneral == "anjiang"
+  local targetHpLoss = targetHpBefore - state.target.hp
+  local rewardBanner = room:getBanner("additional_reward") or 0
+  local jianzhiBanner = room:getBanner("heg__jianzhi") or 0
+  if not state.hiddenJianzhiDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
+      targetHpLoss ~= 1 or not state.target.dead or actorHpBefore ~= state.actor.hp or
+      not state.actor:isKongcheng() or jianzhiBanner < 1 or rewardBanner < 2 then
+    fail("prelighted hidden Jianzhi must invoke on lethal DamageCaused, reveal Jia Chong, discard the hand and set the triple-reward banner")
+  end
+  if state.actor:isFakeSkill("heg__jianzhi") or not state.actor:hasSkill("heg__jianzhi") then
+    fail("hidden Jianzhi must be a real active skill after SkillEffect")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Gian Chí: DamageCaused=%arg; chí mạng=%arg2; bỏ bài=%arg3; thưởng=3x; SkillEffect=%arg4; mở tướng=%arg5; vị trí=%arg6",
+    from = state.actor.id,
+    arg = tostring(state.hiddenJianzhiDamageCaused),
+    arg2 = tostring(targetHpLoss == 1),
+    arg3 = tostring(state.actor:isKongcheng()),
+    arg4 = tostring(effect ~= nil and not effect.fake),
+    arg5 = tostring(revealedCorrectSlot),
+    arg6 = jianzhiIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-jianzhi damage_caused=true lethal=true discarded=true reward=3x skill_effect=true revealed=%s slot=%s revision=%s",
+    tostring(revealedCorrectSlot), jianzhiIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -4319,7 +4456,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-ejue" or
       state.scenario == "hidden-ejue-deputy" or
       state.scenario == "hidden-dufu" or
-      state.scenario == "hidden-dufu-deputy") and
+      state.scenario == "hidden-dufu-deputy" or
+      state.scenario == "hidden-jianzhi" or
+      state.scenario == "hidden-jianzhi-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4351,13 +4490,16 @@ director:addEffect(fk.DamageCaused, {
   can_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
     return state and (state.scenario == "hidden-ejue" or state.scenario == "hidden-ejue-deputy" or
-      state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy") and
+      state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy" or
+      state.scenario == "hidden-jianzhi" or state.scenario == "hidden-jianzhi-deputy") and
       state.currentDamageStep and data and data.from == state.actor and data.to == state.target
   end,
   on_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
     if state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy" then
       state.hiddenDufuDamageCaused = true
+    elseif state.scenario == "hidden-jianzhi" or state.scenario == "hidden-jianzhi-deputy" then
+      state.hiddenJianzhiDamageCaused = true
     else
       state.hiddenEjueDamageCaused = true
     end
@@ -4642,6 +4784,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenEjue(room, state)
     elseif scenario.trigger == "hidden-dufu" then
       triggerHiddenDufu(room, state)
+    elseif scenario.trigger == "hidden-jianzhi" then
+      triggerHiddenJianzhi(room, state)
     end
   end,
 })

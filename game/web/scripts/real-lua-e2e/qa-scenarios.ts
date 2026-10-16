@@ -78,6 +78,8 @@ export type QaScenarioId =
   | 'hidden-ejue-deputy'
   | 'hidden-dufu'
   | 'hidden-dufu-deputy'
+  | 'hidden-jianzhi'
+  | 'hidden-jianzhi-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -142,6 +144,7 @@ export type QaScenarioTrigger =
   | 'hidden-jueqing'
   | 'hidden-ejue'
   | 'hidden-dufu'
+  | 'hidden-jianzhi'
   | 'hidden-gongqing'
   | 'hidden-enyuan'
   | 'hidden-fuyin';
@@ -886,6 +889,32 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-dufu',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-jianzhi': {
+    version: 1,
+    id: 'hidden-jianzhi',
+    title: '贾充 úp: Gian Chí bỏ bài khi gây sát thương chí mạng',
+    seed: 0x5d6e7fc6,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      { key: 'jianzhi-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'jianzhi-filler', match: { trueName: 'jink' }, drawIndex: 1, owner: 'self', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-jianzhi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-jianzhi-deputy': {
+    version: 1,
+    id: 'hidden-jianzhi-deputy',
+    title: '贾充 phó tướng úp: Gian Chí bỏ bài khi gây sát thương chí mạng',
+    seed: 0x5d6e7fc7,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      { key: 'jianzhi-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true },
+      { key: 'jianzhi-filler', match: { trueName: 'jink' }, drawIndex: 1, owner: 'self', area: 'hand', visible: true },
+    ],
+    trigger: 'hidden-jianzhi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -976,6 +1005,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-jueqing', 'hidden-jueqing-deputy',
   'hidden-ejue', 'hidden-ejue-deputy',
   'hidden-dufu', 'hidden-dufu-deputy',
+  'hidden-jianzhi', 'hidden-jianzhi-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
   'hidden-fuyin', 'hidden-fuyin-deputy',

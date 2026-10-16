@@ -1989,6 +1989,82 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-jianzhi",
+      "title": "Hidden main 贾充 Gian Chí discards hand on lethal damage",
+      "seed": 1567522758,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jianzhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__jiachong",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianzhi-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "jianzhi-filler",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jianzhi-deputy",
+      "title": "Hidden deputy 贾充 Gian Chí discards hand on lethal damage",
+      "seed": 1567522759,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jianzhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__jiachong",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianzhi-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "jianzhi-filler",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

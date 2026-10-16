@@ -51,6 +51,7 @@ const NATIVE_LOCAL_EFFECT_EVIDENCE: readonly EvidenceMap[] = [
   { scenario: 'hidden-liegong (+ deputy)', skill: 'hs__liegong', events: ['fk.TargetSpecified'] },
   { scenario: 'hidden-ejue (+ deputy)', skill: 'heg__ejue', events: ['fk.DamageCaused'] },
   { scenario: 'hidden-dufu (+ deputy)', skill: 'heg__dufu', events: ['fk.DamageCaused'] },
+  { scenario: 'hidden-jianzhi (+ deputy)', skill: 'heg__jianzhi', events: ['fk.DamageCaused'] },
 ];
 
 const LUA_EFFECT_AUDIT = String.raw`
