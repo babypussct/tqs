@@ -95,21 +95,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T13:33:09.750Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `d125e9a9c1db`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T13:33:40.049Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `42b17e6bbfa6`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
  M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
 ```
 
 Ba commit gần nhất:
 
 ```text
+42b17e6b docs: record CP23 live deployment
 d125e9a9 build: publish CP23 web artifact
 544466c1 docs: record CP23 translation checkpoint
-9cc50997 fix: localize live hegemony public logs
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
