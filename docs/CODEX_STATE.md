@@ -56,6 +56,10 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 | Exhaustive hidden effects | OPEN | `29/607` cặp native-local trên 16 event kinds; `DamageCaused` còn 12/16 cặp chưa có evidence; cần scenario main/deputy cho event groups còn lại. |
 | PLAYABLE_MOBILE / official | FALSE / OPEN | Còn live interaction matrix, rescue/wild/founding, release operations và sign-off. |
 
+## Render checkpoint cuối
+
+- **Final active deployment:** Render deployment [`dep-db8viic9v7es73e1ftag`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8viic9v7es73e1ftag) từ source `b0e32af8` đã báo `Deploy succeeded | Live`. Đây là lần redeploy sau checkpoint để branch/Render cùng chứa toàn bộ snapshot đã commit; Docker layer phục vụ web không đổi so với UI commit `c6b53d24`. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt là `75dbd7d5…`, `7c752d10…`, `cf7eb61e…`; manifest vẫn 14 package/5.279 file, bundle `ce342f067f61796e`, runtime MD5 `29653b06…`. Candidate đã sẵn sàng cho smoke test, chưa phải official release.
+
 ## Việc còn mở theo thứ tự
 
 1. CP15 Ký Ly/Jilix chủ/phó đã PASS trên current replacement identity (`29653b06…`, QA `a6c47982…`, package `5b45411a…`, catalog `945b063f…`) và vẫn giữ `tempBanTime=0` ở mốc evidence. Render artifact là deployment `dep-db8pmpcs728c73akbvr0`, commit `32ac4be2`; `runtime/flist.txt` đã được cập nhật đồng bộ với `util.lua`. CP16 production reconnect mới chỉ có source patch/config và backup PASS; source compile chưa hoàn thành, service cần recovery. Việc kế tiếp bắt buộc là khôi phục replacement, build giới hạn tài nguyên, verify binary/config/reconnect thật rồi mới xoá VM cũ; sau đó tiếp tục native interaction matrix/rescue/wild/founding và hidden-effect family còn thiếu.
@@ -81,8 +85,8 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T10:17:48.104Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `c5d535ae4b29`.
+- Ghi lúc: 2026-10-16T10:18:06.290Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `ab817c82d709`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -92,9 +96,9 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 Ba commit gần nhất:
 
 ```text
+ab817c82 docs: refresh final checkpoint snapshot
 c5d535ae docs: sync translation sheet
 b0e32af8 docs: record Render UI checkpoint
-c6b53d24 feat: ship hegemony mobile UI checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
