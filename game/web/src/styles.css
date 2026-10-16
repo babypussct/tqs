@@ -4110,7 +4110,10 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
  */
 @media (max-width: 600px) and (orientation: portrait) {
   .sg-board-table {
-    min-height: clamp(170px, 20dvh, 200px);
+    /* Give the reclaimed log row back to the actual table.  The table is the
+     * primary play surface; a short fixed 170px stage made the page end with
+     * a large dead gutter while opponents were still cramped together. */
+    min-height: clamp(240px, 34dvh, 320px);
   }
   .sg-board-table .board-center {
     top: 32%;
@@ -4598,6 +4601,265 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     height: 40px;
     min-height: 40px;
   }
+}
+
+/* The latest-event ribbon owns the compact log-drawer affordance on every
+ * viewport.  Portrait overrides reduce it further below. */
+.sg-ticker-log-toggle {
+  flex: 0 0 auto;
+  min-height: 24px;
+  padding: 2px 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(212, 155, 56, .6);
+  border-radius: 5px;
+  background: rgba(39, 29, 17, .9);
+  color: #ffe299;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sg-ticker-log-toggle:hover,
+.sg-ticker-log-toggle:focus-visible {
+  border-color: #ffd97d;
+  background: rgba(86, 55, 20, .96);
+  outline: 2px solid rgba(255, 217, 125, .55);
+  outline-offset: 1px;
+}
+.sg-ticker-log-count {
+  font-size: 9px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * CP22 — portrait density pass.
+ *
+ * The mobile board has one job: keep the table readable while leaving the
+ * local hand usable.  The self seat, skill rail, prompt and action bar are
+ * therefore bounded HUD rows.  The hand owns the remaining width and keeps a
+ * real horizontal scroll surface; no negative margin or sticky layer is
+ * allowed to enlarge the dashboard or cover the table.
+ */
+@media (max-width: 600px) and (orientation: portrait) {
+  .sg-game-shell .board-ticker,
+  .sg-game-board .board-ticker {
+    display: flex;
+    gap: 4px;
+    padding-right: 4px;
+  }
+
+  .sg-ticker-log-toggle {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 22px;
+    min-height: 22px;
+    padding: 0 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    border: 1px solid rgba(212, 155, 56, .6);
+    border-radius: 5px;
+    background: rgba(39, 29, 17, .9);
+    color: #ffe299;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .sg-ticker-log-toggle:hover,
+  .sg-ticker-log-toggle:focus-visible {
+    border-color: #ffd97d;
+    background: rgba(86, 55, 20, .96);
+    outline: 2px solid rgba(255, 217, 125, .55);
+    outline-offset: 1px;
+  }
+  .sg-ticker-log-count {
+    font-size: 8px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The ticker is the only mobile log affordance.  The full history remains
+   * a real drawer when opened; its collapsed section must not consume a
+   * second visible row or duplicate the latest-event content. */
+  .board-layout.logs-collapsed .sg-board-log-panel {
+    display: none;
+  }
+
+  .board-local-dashboard {
+    gap: 5px;
+    padding: 5px 6px max(6px, env(safe-area-inset-bottom));
+    border-width: 1px;
+    border-radius: 9px 9px 0 0;
+  }
+
+  /* One short utility row: local seat + one horizontally scrolling skill
+   * rail.  The row cannot grow when a player owns several skills. */
+  .board-local-utility-row {
+    height: 58px;
+    min-height: 58px;
+    max-height: 58px;
+    align-items: center;
+    gap: 5px;
+  }
+  .board-local-seat {
+    flex: 0 0 84px;
+    width: 84px;
+    height: 58px;
+    min-width: 84px;
+    min-height: 58px;
+    max-height: 58px;
+  }
+  .board-local-seat .sg-photo-panel {
+    width: 84px;
+    height: 58px;
+    min-width: 84px;
+    min-height: 58px;
+    max-width: 84px;
+    max-height: 58px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-portrait-frame {
+    right: 42px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-photo-top-overlay {
+    left: 41px;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-hp-vertical-column {
+    right: 31px;
+    transform: scale(.7);
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-hand-count-badge {
+    right: 1px;
+    bottom: 1px;
+    transform: scale(.9);
+    transform-origin: right bottom;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-photo-marks {
+    top: 15px;
+    right: 1px;
+    max-width: 40px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact {
+    height: 23px;
+    padding: 1px 1px 0;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-row,
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-half {
+    padding: 0;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-icon {
+    height: 8px;
+    min-height: 8px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .sg-equip-icon {
+    width: 7px;
+    height: 7px;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-suit {
+    font-size: 6px;
+    line-height: 7px;
+    min-height: 7px;
+  }
+
+  .board-local-skill-rail {
+    height: 30px;
+    max-height: 30px;
+    align-self: center;
+    padding: 0;
+    gap: 3px;
+  }
+  .board-local-skill-rail .sg-skill-button,
+  .board-local-skill-rail .fake-skill-button,
+  .board-local-skill-rail .regular-skill-button {
+    min-width: 62px !important;
+    max-width: 92px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+    font-size: 8.5px !important;
+  }
+  .board-local-skill-rail .fake-skill-state {
+    font-size: 6.5px !important;
+  }
+
+  .board-local-dashboard > .sg-gameplay-controls {
+    gap: 4px;
+  }
+  .sg-gameplay-controls .sg-floating-controls-hud {
+    gap: 1px;
+  }
+  .sg-gameplay-controls .sg-floating-controls-hud .gameplay-prompt {
+    min-height: 13px;
+    max-height: 13px;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .sg-gameplay-controls .sg-timer-number {
+    font-size: .62rem;
+    padding: 0 3px;
+    border-radius: 6px;
+  }
+  .sg-gameplay-controls .sg-timer-track {
+    width: min(180px, 58%);
+    height: 2px;
+  }
+  .sg-gameplay-controls .sg-action-bar,
+  .sg-gameplay-controls .gameplay-actions {
+    gap: 3px !important;
+  }
+  .sg-gameplay-controls .sg-action-bar button.button,
+  .sg-gameplay-controls .gameplay-actions button.button {
+    height: 20px !important;
+    min-height: 20px !important;
+    padding: 0 2px !important;
+    border-radius: 3px;
+    font-size: 8px !important;
+    line-height: 1;
+  }
+  .sg-gameplay-controls .sg-action-bar button.button.primary,
+  .sg-gameplay-controls .gameplay-actions button.button.primary,
+  .sg-gameplay-controls .sg-btn-ok { width: 52px !important; height: 20px !important; min-height: 20px !important; }
+  .sg-gameplay-controls .sg-action-bar button.button.secondary,
+  .sg-gameplay-controls .gameplay-actions button.button.secondary,
+  .sg-gameplay-controls .sg-btn-cancel,
+  .sg-gameplay-controls .sg-btn-end { height: 20px !important; min-height: 20px !important; }
+  .sg-gameplay-controls .sg-btn-cancel { width: 42px !important; }
+  .sg-gameplay-controls .sg-btn-end { width: 62px !important; }
+
+  /* A 58x80 card remains large enough to inspect while allowing five cards
+   * to sit in a 360px viewport.  More cards remain reachable by pan-x. */
+  .sg-gameplay-controls .sg-hand-fan,
+  .board-local-idle-area .sg-hand-idle {
+    min-height: 96px;
+    height: 96px;
+    gap: 5px;
+    padding: 5px 4px 7px;
+    scroll-padding-inline: 4px;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button,
+  .board-local-idle-area .sg-hand-idle .sg-card-button {
+    flex: 0 0 58px;
+    width: 58px;
+    min-width: 58px;
+    height: 80px;
+    padding: 3px !important;
+    border-radius: 6px 6px 9px 9px;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button,
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button:hover:not(:disabled),
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button:focus-visible:not(:disabled),
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected,
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected:hover,
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected:focus-visible,
+  .board-local-idle-area .sg-hand-idle .sg-card-button {
+    --card-lift: 0px !important;
+  }
+  .sg-gameplay-controls .sg-hand-scroll-hint { display: none; }
 }
 
 /* ============================================================== */

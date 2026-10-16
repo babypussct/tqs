@@ -135,9 +135,21 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         ) : (
           <p className="board-moment">Đang chờ diễn biến từ máy chủ.</p>
         )}
+        <button
+          type="button"
+          className="sg-ticker-log-toggle"
+          aria-controls="board-log-panel"
+          aria-expanded={showLogs}
+          aria-label={showLogs ? 'Ẩn lịch sử' : 'Lịch sử'}
+          title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
+          onClick={() => setShowLogs((open) => !open)}
+        >
+          <span aria-hidden="true">{showLogs ? '⌃' : '☷'}</span>
+          <span className="sg-ticker-log-count">{board.logs.length}</span>
+        </button>
       </div>
       <div className={`board-layout ${showLogs ? 'has-logs-open' : 'logs-collapsed'}`}>
-        <section className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
+        <section id="board-log-panel" className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
           <div className="board-log-heading">
             <strong>Nhật ký trận đấu ({board.logs.length})</strong>
             <button type="button" className="button small-button secondary" aria-expanded={showLogs}

@@ -152,7 +152,7 @@ test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden 
         }
       });
       const log = page.getByRole('region', { name: 'Nhật ký trận đấu' });
-      const openLog = log.getByRole('button', { name: 'Xem nhật ký' });
+      const openLog = page.getByRole('button', { name: 'Lịch sử', exact: true });
       if (await openLog.count()) await openLog.click();
       await log.getByText('Trâu Thị / Tướng ẩn (bạn) đã phát động kỹ năng〖Họa Thủy〗', { exact: true }).waitFor();
       await log.getByText('Trâu Thị / Sĩ Nhiếp (bạn) đã phát động kỹ năng〖Lễ Hạ〗', { exact: true }).waitFor();

@@ -117,6 +117,12 @@ try {
           const skillStyles = skillRail ? getComputedStyle(skillRail) : null;
           const promptShell = document.querySelector<HTMLElement>('.sg-gameplay-controls .gameplay-control-heading');
           const promptShellStyles = promptShell ? getComputedStyle(promptShell) : null;
+          const actionButtons = [...document.querySelectorAll<HTMLButtonElement>(
+            '.sg-gameplay-controls .sg-action-bar button.button',
+          )].map((button) => {
+            const box = button.getBoundingClientRect();
+            return { label: button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '', height: box.height };
+          });
           return {
             viewportWidth: window.innerWidth,
             viewportHeight: window.innerHeight,
@@ -168,6 +174,7 @@ try {
               backgroundColor: promptShellStyles.backgroundColor,
               borderBottomWidth: promptShellStyles.borderBottomWidth,
             } : null,
+            actionButtons,
           };
         });
         assert.ok(layout.hand, `${label}: gameplay hand must be mounted`);
@@ -190,6 +197,12 @@ try {
           `${label}: skill rail extends outside viewport (${layout.skillRail!.right}px > ${layout.viewportWidth}px)`);
         assert.ok(layout.skillRail!.height <= 70,
           `${label}: skill rail is making the local utility row too tall (${layout.skillRail!.height}px)`);
+        assert.ok(layout.dashboard!.height <= 260,
+          `${label}: local dashboard is expanding into the table (${layout.dashboard!.height}px)`);
+        assert.ok(layout.hand!.height <= 104,
+          `${label}: hand viewport is taller than the compact portrait budget (${layout.hand!.height}px)`);
+        assert.ok(layout.actionButtons.length > 0 && layout.actionButtons.every((button) => button.height <= 22),
+          `${label}: action buttons are consuming a full row (${JSON.stringify(layout.actionButtons)})`);
         const compactEquipment = p.locator('.board-local-seat .sg-equip-plate').first();
         assert.equal(await compactEquipment.count(), 1,
           `${label}: self equipment plate must remain mounted in compact mode`);
@@ -759,7 +772,7 @@ try {
       await own.getByText('Tiên phong: 2', { exact: true }).waitFor();
       await own.getByText('Song Hùng: Đỏ', { exact: true }).waitFor();
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
-      const openLog = logs.getByRole('button', { name: 'Xem nhật ký' });
+      const openLog = p.locator('.board-ticker .sg-ticker-log-toggle[aria-expanded="false"]');
       if (await openLog.count()) await openLog.click();
       await logs.getByText('Song Hùng: bạn có thể dùng 1 lá trên tay màu Đỏ như Quyết Đấu.', { exact: true }).waitFor();
       await logs.getByText('Một Dã tâm gia đã chọn quốc hiệu Tần.', { exact: true }).waitFor();
@@ -1216,9 +1229,9 @@ try {
     ['UI-03 Lua public logs, HP and chain changes appear in the board and reset safely', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
-      const openLog = logs.getByRole('button', { name: 'Xem nhật ký' });
+      const openLog = p.getByRole('button', { name: 'Lịch sử', exact: true });
       assert.equal(await openLog.getAttribute('aria-expanded'), 'false');
-      assert.equal(await openLog.innerText(), 'Mở', 'collapsed log tab must fit its narrow desktop/mobile affordance');
+      assert.match(await openLog.innerText(), /☷\s*\d+/, 'collapsed ticker control must stay compact');
       await openLog.click();
       await logs.getByRole('list', { name: 'Các diễn biến trận đấu' }).waitFor();
       const moments = p.locator('.board-ticker');
@@ -1249,8 +1262,8 @@ try {
     ['UI-03 responsive log layout and scroll following work with actual Lua notifications', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       const logRegion = p.getByRole('region', { name: 'Nhật ký trận đấu' });
-      if (await logRegion.getByRole('button', { name: 'Xem nhật ký' }).count()) {
-        await logRegion.getByRole('button', { name: 'Xem nhật ký' }).click();
+      if (await p.getByRole('button', { name: 'Lịch sử', exact: true }).count()) {
+        await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
       }
       const logList = p.getByRole('list', { name: 'Các diễn biến trận đấu' });
       const addLogs = async (from: number, to: number) => p.evaluate(([start, end]) => {
@@ -1335,7 +1348,7 @@ try {
       await p.setViewportSize({ width: 390, height: 844 });
       await p.getByRole('button', { name: 'Thu gọn' }).click();
       assert.equal(await logList.count(), 0);
-      await p.getByRole('button', { name: 'Xem nhật ký' }).click();
+      await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
       await logList.waitFor();
       assert.equal(await nearBottom(), true, 'reopening logs resumes at latest when following');
       assert.deepEqual((await snapshot(p)).luaErrors, []);
