@@ -60,21 +60,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T02:48:43.575Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `d97e66cb70f5`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T02:48:50.053Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `54b7bf82197d`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+54b7bf82 docs: record current Enyuan hosted parity
 d97e66cb fix: record local Enyuan hidden effect evidence
 88375dbe docs: checkpoint reconnect guard audit
-a5c12f7d test: guard reconnect temp-ban policy and refresh audit metrics
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
