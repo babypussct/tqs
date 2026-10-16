@@ -24,12 +24,12 @@
 - Public release snapshot: 16.522 file, 14 package; `dist/index.html` dùng
   cùng SHA-256 ở trên.
 - Oracle: Lua 5.4.8, service enabled/active, port 9527; QA revision
-  `cbd2e685b7ea9a91b8685c3563083803968afdd5`, package SHA
-  `2d829d02414c326a119ac3cb214df9214092f0153b5f484c04297b4e79621f6b`,
-  catalog SHA `704f5bd388dc03f3a8a0776d2517f993c677bf6562629d843793aaa22d3e8a7c`;
+  `3b44b521298bd579b61cc51520ba2e34c91fc7d2`, package SHA
+  `e92d9f000ab2e0bbaafea72040780f3a1f99036c1590f2cd1dbeda3dc2b5d952`,
+  catalog SHA `4c95ae5ff2bafbfacd4aa98f32d1e50aa385811073f46e27ccec931484299a15`;
   QA package nằm ngoài public `packages/` và đã verify trên VM.
 
-## Acceptance current CP09
+## Acceptance current CP09/CP10
 
 - Hidden Di Kế chủ tướng: Quách Gia còn úp, fake skill hiển thị trước gate;
   sau damage → `AskForSkillInvoke` → invoke, native mở đúng chủ tướng và chuyển
@@ -41,7 +41,12 @@
   Sát. Evidence: [`cp08-hidden-fuyin-multiplayer-live-1792096610323.json`](../../../scratch/evidence/cp08-hidden-fuyin-multiplayer-live-1792096610323.json).
 - Hidden Fuyin phó tướng: cùng hợp đồng ở ô phó tướng. Evidence:
   [`cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json`](../../../scratch/evidence/cp08-hidden-fuyin-deputy-multiplayer-live-1792096811597.json).
-- Cả bốn run đều PASS candidate identity, native QA gate, login/lobby/room,
+- Hidden Ách Tuyệt chủ tướng: Trương Xuân Hoa còn úp nhưng đã prelight; Sát thật
+  vào phe `unknown` → `DamageCaused` tăng từ 1 lên 2, mở đúng chủ tướng.
+  Evidence: [`cp09-hidden-ejue-multiplayer-live-1792110813862.json`](../../../scratch/evidence/cp09-hidden-ejue-multiplayer-live-1792110813862.json).
+- Hidden Ách Tuyệt phó tướng: cùng predicate và mở đúng phó tướng, damage thực
+  tế bằng 2. Evidence: [`cp09-hidden-ejue-deputy-multiplayer-live-1792110834017.json`](../../../scratch/evidence/cp09-hidden-ejue-deputy-multiplayer-live-1792110834017.json).
+- Cả sáu run đều PASS candidate identity, native QA gate, login/lobby/room,
   GameOver và clean disconnect. Các batch hidden-trigger CP08 bên dưới dùng
   identity cũ; không gộp chúng vào current proof.
 
@@ -70,7 +75,7 @@
 - Batch current hosted bổ sung 32 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Tôn Thượng Hương/Xiaoji, Guanxing, Anh Tư, Thiên Hương, Phản Gián) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
 Kết luận CP08: các ca bên dưới là **historical bounded evidence** của identity
-cũ. Current CP09 đã kết luận Di Kế positive và Fuyin chủ/phó PASS trên Render → Oracle; full
+cũ. Current CP09/CP10 đã kết luận Di Kế positive, Fuyin và Ách Tuyệt chủ/phó PASS trên Render → Oracle; full
 rule parity, native interaction còn lại, cold-start/rollback/SLA và official
 sign-off vẫn OPEN.
 
