@@ -117,9 +117,9 @@ These are two separate layers and must be verified independently:
 
 The intended production path remains **browser → Render web/gateway →
 FreeKill native on the VM**. The current deployment is pinned to
-`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09/CP10/CP11
-health, manifest, login, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt
-and hidden Độc Phu main/deputy have verified the route on the current release
+`FK_HOST=161.33.209.212` in `render.yaml` and the Render service; CP09/CP10/CP11/CP12
+health, manifest, login, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt,
+Độc Phu and Gian Chí main/deputy have verified the route on the current release
 identity. This is bounded parity, not exhaustive rule coverage or an official
 release.
 
@@ -218,8 +218,8 @@ SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
 Status:          RUNNING; SSH PASS; native verify PASS; tqs_qa verify PASS;
                  Jueqing/Jianxiong and 30-variant native-QA + hosted
-                 main/deputy PASS; Di Kế/Fuyin/Ách Tuyệt/Độc Phu current
-                 CP09/CP10/CP11 main/deputy PASS;
+                 main/deputy PASS; Di Kế/Fuyin/Ách Tuyệt/Độc Phu/Gian Chí current
+                 CP09/CP10/CP11/CP12 main/deputy PASS;
                  full parity OPEN
 ```
 
@@ -240,12 +240,14 @@ Static release:   freekill-asio v0.1.17 amd64
 Runtime flist MD5: 43b6cdade072b75f93b9d49b3384f08f
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      12430188d2f3f7cfbd58de94ad4b8466e297649d2
-QA package SHA:   ff295793ce4f173e610c40ebc03362a85f07bbcacf34a3feac8b437e7195f8c3
-QA catalog SHA:   6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63
+QA revision:      48725c8ae9cc1917d415eec442841835ae881394
+QA package SHA:   4209c70465366a19ea75f104f53874ffa50c1656e7fec084c493f5b9a4f9cb45
+QA catalog SHA:   054d955bfd70bd14bef28ea9b925585974599b78a95c053261b59576df48ece2
 QA config:        enabled; room prefix TQSQA/; two private allowlisted accounts
 QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
 Public QA path:   packages/tqs_qa absent; no packages.db row
+QA backups:       /opt/freekill-hegemony/qa-backups/tqs_qa-before-jianzhi-20261016T005801Z.tar.gz
+                  /opt/freekill-hegemony/qa-backups/tqs_qa-before-jianzhi-fix-20261016T010210Z.tar.gz
 Service:          freekill-native.service enabled/active; TCP 9527 reachable
 ```
 
@@ -253,9 +255,9 @@ Service:          freekill-native.service enabled/active; TCP 9527 reachable
 `run-server.sh` creates a broken runtime-only symlink while the native process
 calculates the public `flist.txt` MD5, then activates the symlink after port
 9527 is listening. This lets the QA director load on Oracle without changing
-the public Render/Oracle release identity. The current CP09/CP10/CP11
-Di Kế/Fuyin/Ách Tuyệt/Độc Phu main/deputy proof passes with this arrangement; CP11
-updates only the server-only QA package and does not change the public Render web
+the public Render/Oracle release identity. The current CP09/CP10/CP11/CP12
+Di Kế/Fuyin/Ách Tuyệt/Độc Phu/Gian Chí main/deputy proof passes with this
+arrangement; CP11/CP12 update only the server-only QA package and do not change the public Render web
 artifact. The earlier 51-run corpus remains
 historical and does not close the exhaustive 607-pair rule matrix.
 

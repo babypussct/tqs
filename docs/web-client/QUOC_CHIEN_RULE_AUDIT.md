@@ -1,6 +1,6 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
-> Audit cập nhật 16/10/2026 sau CP11 hidden Độc Phu trên tuyến Render → Oracle (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
+> Audit cập nhật 16/10/2026 sau CP12 hidden Gian Chí trên tuyến Render → Oracle (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
 
@@ -9,7 +9,7 @@ React hiện tại là client của FreeKill, không phải một bản port lu�
 1. Server còn chạy luật gốc không? — Có, trong phạm vi runtime/package đang được bundle.
 2. React có render và trả lời được mọi state/request do luật gốc phát sinh không? — Chưa.
 
-Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Render → Oracle replacement đã đạt parity identity/vận hành và gameplay bounded** cho release identity CP09; CP10 bổ sung hidden Ách Tuyệt và CP11 bổ sung hidden Độc Phu trên `fk.DamageCaused` ở cả chủ/phó, bên cạnh Di Kế và Fuyin. CP11 chỉ cập nhật server-only QA package trên Oracle; web artifact Render vẫn là candidate CP09. Đây vẫn chưa là **full rule parity**, chưa đóng `PLAYABLE_MOBILE` và chưa phải official release. Các batch hosted CP08 khác được giữ riêng dưới nhãn historical.
+Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Render → Oracle replacement đã đạt parity identity/vận hành và gameplay bounded** cho release identity CP09; CP10 bổ sung hidden Ách Tuyệt, CP11 bổ sung hidden Độc Phu và CP12 bổ sung hidden Gian Chí trên `fk.DamageCaused` ở cả chủ/phó, bên cạnh Di Kế và Fuyin. CP11/CP12 chỉ cập nhật server-only QA package trên Oracle; web artifact Render vẫn là candidate CP09. Đây vẫn chưa là **full rule parity**, chưa đóng `PLAYABLE_MOBILE` và chưa phải official release. Các batch hosted CP08 khác được giữ riêng dưới nhãn historical.
 
 ## Identity đang kiểm tra
 
@@ -31,16 +31,16 @@ Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Rende
 | Evidence native-local trước đó | Các identity staged của Yiji/Xiaoji/Guanxing/Yingzi/Tiandu/Phản Gián… giữ trong từng evidence JSON; không lặp hash ở bảng này |
 | Probe native remote cũ cho Thiên Đố | Lượt thử trước replacement bị dừng trước readiness gate (`nativeQaGateSeen=false`); evidence [`1792066870927`](../../scratch/evidence/reconnect-failure-1792066870927.json). Đây là **diagnostic lịch sử**, không dùng để đánh giá `FinishJudge`; đã được supersede bởi identity Oracle replacement bên dưới |
 | Cài đặt native local | Lua 5.4 + `luasocket`/`luafilesystem` và package QA; ca Thiên Hương dùng runtime cô lập `flist MD5 79ef20f9a8fff39dc92310500269add0`, ca Đoạn Trường dùng `flist MD5 cc9ffae8858f3fff68f4b4f4c3d1bc9b`; chỉ phục vụ kiểm thử cục bộ, **không phải Oracle/production** |
-| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `43b6cdade072b75f93b9d49b3384f08f`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; current `tqs_qa` revision `12430188d2f3f7cfbd58de94ad4b8466e297649d2`, package SHA `ff295793ce4f173e610c40ebc03362a85f07bbcacf34a3feac8b437e7195f8c3`, catalog SHA `6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63`; service enabled/active, port 9527 reachable |
-| Oracle hidden-trigger QA | Current CP09/CP10/CP11: hidden Di Kế, Fuyin `TargetConfirmed`, Ách Tuyệt và Độc Phu `DamageCaused` chủ/phó hosted PASS; QA ở `qa_packages/tqs_qa`, ngoài public `packages/`. Batch CP08 trước thuộc identity cũ và historical cho tới khi rerun |
+| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `43b6cdade072b75f93b9d49b3384f08f`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; current `tqs_qa` revision `48725c8ae9cc1917d415eec442841835ae881394`, package SHA `4209c70465366a19ea75f104f53874ffa50c1656e7fec084c493f5b9a4f9cb45`, catalog SHA `054d955bfd70bd14bef28ea9b925585974599b78a95c053261b59576df48ece2`; service enabled/active, port 9527 reachable |
+| Oracle hidden-trigger QA | Current CP09/CP10/CP11/CP12: hidden Di Kế, Fuyin `TargetConfirmed`, Ách Tuyệt, Độc Phu và Gian Chí `DamageCaused` chủ/phó hosted PASS; QA ở `qa_packages/tqs_qa`, ngoài public `packages/`. Batch CP08 trước thuộc identity cũ và historical cho tới khi rerun |
 | CP92/CP96 UI + lifecycle hotfix | Artifact đã build/typecheck/release-verify PASS; root `dist/` đồng bộ `game/web/dist`; deployment cuối và byte probe được ghi ở các dòng trên |
 | Hotfix hiện hành | Commit `798dc2e4` đã Live trên Render; đây vẫn là candidate để smoke test, không phải official |
 
 `CP90` (pile/tay bài), `CP91` (skill dock/time bar/action row/sorter), CP93, CP94 và CP96 UI đã được đưa vào artifact candidate và được Render deploy.
 
-Probe public của deployment `dep-db8j9gei0phs73fs8pcg` trả `healthz=ok`, HTML SHA-256 `591c51f1…`, manifest `5.279` file với runtime MD5 `43b6cdad…`. Login thật, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt và hidden Độc Phu chủ/phó đã đi xuyên gateway tới Oracle replacement; đây là hosted bounded acceptance, không phải full gameplay acceptance hoặc official release. CP11 không thay HTML/runtime artifact Render.
+Probe public của deployment `dep-db8j9gei0phs73fs8pcg` trả `healthz=ok`, HTML SHA-256 `591c51f1…`, manifest `5.279` file với runtime MD5 `43b6cdad…`. Login thật, hidden Di Kế positive, hidden Fuyin, hidden Ách Tuyệt, hidden Độc Phu và hidden Gian Chí chủ/phó đã đi xuyên gateway tới Oracle replacement; đây là hosted bounded acceptance, không phải full gameplay acceptance hoặc official release. CP11/CP12 không thay HTML/runtime artifact Render.
 
-Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **41/41**, Wasmoon/React Lua E2E `63/63` (bằng chứng trước CP11), hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Current CP09/CP10/CP11 Oracle identity có hosted Di Kế, Fuyin, Ách Tuyệt và Độc Phu chủ/phó PASS; các batch hosted khác thuộc identity cũ và không dùng để nâng current coverage. Ma trận effect native-local hiện là `24/607` cặp trên `15/53` event kinds; scenario hosted/Oracle là bounded, chưa phải full matrix. `fazheng-enyuan` broad contract vẫn là scope riêng cần hoàn thiện.
+Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **42/42**, Wasmoon/React Lua E2E `63/63` (bằng chứng trước CP11), hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. Current CP09/CP10/CP11/CP12 Oracle identity có hosted Di Kế, Fuyin, Ách Tuyệt, Độc Phu và Gian Chí chủ/phó PASS; các batch hosted khác thuộc identity cũ và không dùng để nâng current coverage. Ma trận effect native-local hiện là `25/607` cặp trên `15/53` event kinds; scenario hosted/Oracle là bounded, chưa phải full matrix. `fazheng-enyuan` broad contract vẫn là scope riêng cần hoàn thiện.
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local và Oracle replacement; native verifier và hosted identity đều PASS. `render.yaml` đã ghim `FK_HOST` vào replacement, nên các deployment sau tiếp tục đi cùng tuyến Render → Oracle này.
 
@@ -53,7 +53,7 @@ Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract`
 - `freekill-asio` gọi worker bằng tên literal `lua5.4`; `scripts/lua-runtime.sh` chỉ nhận binary `lua5.4`/`lua-5.4`, kiểm tra chính xác `_VERSION == Lua 5.4`, rồi đặt lại `PATH` cho child process.
 - Helper đặt `LUA_PATH`/`LUA_CPATH` tới tree Lua 5.4 của runtime và fail-closed nếu không load được `socket` hoặc `lfs`. Vì vậy Lua 5.5 hoặc Lua 5.4 thiếu module không thể mở server rồi mới crash ở room đầu tiên.
 - `scripts/run-server.sh` và `scripts/verify-install.sh` dùng cùng helper; vận hành native phải đi qua `run-server.sh`, không gọi binary trực tiếp.
-- Bằng chứng local hiện hành: catalog/source scenarios **57/57**, `test:qa-server-contract` **41/41** subtests, launcher preflight PASS, Lua 5.4 + 18 extension; các scenario hidden main/deputy đã có evidence được liệt kê duy nhất ở bảng bên dưới. Current CP09/CP10/CP11 Oracle identity có Di Kế, Fuyin, Ách Tuyệt và Độc Phu chủ/phó hosted PASS. Corpus 51 run cũ được tách khỏi current proof. Full matrix và official LIVE vẫn mở.
+- Bằng chứng local hiện hành: catalog/source scenarios **57/57**, `test:qa-server-contract` **42/42** subtests, launcher preflight PASS, Lua 5.4 + 18 extension; các scenario hidden main/deputy đã có evidence được liệt kê duy nhất ở bảng bên dưới. Current CP09/CP10/CP11/CP12 Oracle identity có Di Kế, Fuyin, Ách Tuyệt, Độc Phu và Gian Chí chủ/phó hosted PASS. Corpus 51 run cũ được tách khỏi current proof. Full matrix và official LIVE vẫn mở.
 
 Ghi chú môi trường: native local được biên dịch từ commit C++ pin trên macOS. Harness tạm ngoài repository chỉ thay cách kiểm tra tiến trình con (`waitpid`) vì upstream dùng `/proc`, vốn không có trên macOS; patch này không nằm trong source/deploy và không được coi là thay đổi production/Oracle. Kết quả native local chứng minh vòng đời Lua/C++ và bridge của các scenario, không chứng minh binary Linux đang chạy trên VM.
 
@@ -139,6 +139,19 @@ Render → Oracle current identity đã PASS cả hai vị trí trên C++/Lua th
 - **Phó tướng:** cùng predicate và callback, `SkillEffect` mở đúng phó tướng; damage thực tế bằng 2. Evidence [`cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json`](../../scratch/evidence/cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json).
 
 Cả hai run đều ghi public log `Hidden Độc Phu: DamageCaused=true; sát thương=2; SkillEffect=true; mở tướng=true` với slot tương ứng, native QA gate và GameOver/clean disconnect. Đây là **hosted bounded evidence** cho thêm một cặp `DamageCaused`; nó không chứng minh effect `DrawNCards` của Độc Phu hay full rule parity.
+
+### Case bổ sung — Giả Sung úp và Gian Chí trên `fk.DamageCaused`
+
+Luật gốc của [`jianzhi.lua:15-49`](../../runtime/packages/hegemony/pkg/jin_zqdl/skills/jianzhi.lua:15) đăng ký `heg__jianzhi` trên `fk.DamageCaused`. Predicate yêu cầu người gây sát thương chính là chủ skill, damage đủ gây chết mục tiêu (`data.damage >= data.to.hp + data.to.shield`) và người dùng còn ít nhất một lá trên tay. Đây là trigger **tùy chọn**: native mở `AskForSkillInvoke`; nếu chọn kích hoạt, `on_use` bỏ toàn bộ bài trên tay, tăng banner `additional_reward` thêm 2 (để lần giết kế tiếp nhận thưởng 3x), rồi callback `Deathed`/`TurnEnd` reset banner theo luật nguồn.
+
+QA fixture dùng Sát thật có một lá Thiểm làm bài còn lại, mục tiêu Triệu Vân/Trương Phi được đặt 1 HP và bị dọn tay trước khi gây sát thương. Cách này giữ đúng các điều kiện source nhưng loại Peach cứu tự động khỏi fixture. QA readiness gate chỉ chuẩn bị prelight khi Giả Sung còn úp; sau đó request `AskForSkillInvoke` thứ hai là prompt thật của `heg__jianzhi`, không phải một lựa chọn giả từ React. Gói native tự fail trước `GameOver` nếu `DamageCaused`, lethal damage, discard-all-hand, banner thưởng hoặc reveal sai; browser audit đồng thời kiểm chuỗi log công khai, đúng slot và `GameOver`/disconnect của cả hai client.
+
+Render → Oracle current identity đã PASS cả hai vị trí trên C++/Lua thật, hai browser client và gateway:
+
+- **Chủ tướng:** Gian Chí fake xuất hiện trước gate → prelight → Sát thật chí mạng → `AskForSkillInvoke` thật → bỏ lá Thiểm còn lại → mở Giả Sung ở chủ tướng → mục tiêu chết. Evidence [`cp12-hidden-jianzhi-multiplayer-live-1792112786904.json`](../../scratch/evidence/cp12-hidden-jianzhi-multiplayer-live-1792112786904.json).
+- **Phó tướng:** cùng predicate, nhưng native phải mở Giả Sung ở phó tướng; evidence công khai xác nhận hung thủ, discard, lethal damage và reveal slot phó. [`cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json`](../../scratch/evidence/cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json).
+
+Hai evidence đều khớp candidate identity Render (`runtimeMD5=43b6cdad…`, HTML `591c51f1…`) và QA package revision `48725c8a…`; trace owner có hai `AskForSkillInvoke` (readiness gate + prompt source), một `AskForUseActiveSkill`, hai `AddSkillUseHistory`, `GameOver=1` ở cả hai client. Đây là **hosted bounded evidence** cho thêm một cặp `DamageCaused` và luật “tướng úp nhưng đã prelight, đủ điều kiện thì được kích hoạt”; không mở rộng thành full rule parity. Chuỗi `[TQS QA]` nội bộ không được UI Render hiển thị, nên evidence không giả vờ coi diagnostic đó là public log; assertion server-side vẫn chạy trước `room:gameOver`.
 
 ### Case bổ sung — Tôn Thượng Hương úp và Kiêu Cơ sau khi mất trang bị
 
@@ -337,10 +350,10 @@ Lệnh `npm --prefix game/web run audit:hidden-effects` tách riêng effect-leve
 | --- | ---: | --- |
 | Source trigger `skill × event`, không gồm delay effect | **607 cặp / 403 skill ID / 53 event kinds** | Tập effect cần native scenario để chứng minh điều kiện và callback thật. |
 | Source inventory gồm delay effect | **672 cặp / 57 event kinds** | Khớp boundary inventory rộng của `audit:hidden-skills`; delay effect không đi qua reveal-before-`SkillEffect` như trigger thường. |
-| Native-local effect evidence đã map | **24/607 cặp; 15/53 event kinds (~4,0%)** | Chỉ các scenario đã chạy C++/Lua thật trong runtime cô lập; không phải hosted/Oracle/Render. |
+| Native-local effect evidence đã map | **25/607 cặp; 15/53 event kinds (~4,1%)** | Chỉ các scenario đã chạy C++/Lua thật trong runtime cô lập; không phải hosted/Oracle/Render. |
 | Nhóm đã có evidence | `AfterCardsMove`, `BeforeCardsMove`, `BeforeHpChanged`, `CardUsing`, `Damaged`, `Damage`, `DamageInflicted`, `Death`, `DetermineDamageInflicted`, `DrawNCards`, `EventPhaseStart`, `FinishJudge`, `TargetConfirming`, `TargetSpecified` | Evidence hiện tập trung vào các case hidden đã được dựng, không đại diện toàn bộ event. |
 
-Trong **inventory native-local** còn trống/rủi ro cao gồm `TargetSpecified` (30 skill ID chưa test), `TargetConfirmed` (22), `Damage` (24 skill ID chưa test), `DamageCaused` (14), `CardUseFinished` (16), `EventPhaseStart` (108 skill ID chưa test), `EnterDying` (10), `AskForPeaches` (5), `AskForRetrial` (4), cùng các event `GeneralHidden/GeneralRevealed`, phase transition, death/round và package-specific hooks. Oracle bounded đã bổ sung các contract current, gồm `TargetConfirmed` của Ân Oán và một cặp `DamageCaused` của Ách Tuyệt cùng một cặp của Độc Phu, nhưng chưa phải exhaustive. Vì vậy kết luận hiện tại là **projection/lifecycle/slot-route đã đạt SOURCE/LOCAL; effect parity của skill tướng úp vẫn OPEN**, không được suy ra từ 24 cặp native-local, các bounded Oracle contract hoặc từ 520/520 lifecycle.
+Trong **inventory native-local** còn trống/rủi ro cao gồm `TargetSpecified` (30 skill ID chưa test), `TargetConfirmed` (22), `Damage` (24 skill ID chưa test), `DamageCaused` (13), `CardUseFinished` (16), `EventPhaseStart` (108 skill ID chưa test), `EnterDying` (10), `AskForPeaches` (5), `AskForRetrial` (4), cùng các event `GeneralHidden/GeneralRevealed`, phase transition, death/round và package-specific hooks. Oracle bounded đã bổ sung các contract current, gồm `TargetConfirmed` của Ân Oán và các cặp `DamageCaused` của Ách Tuyệt, Độc Phu và Gian Chí, nhưng chưa phải exhaustive. Vì vậy kết luận hiện tại là **projection/lifecycle/slot-route đã đạt SOURCE/LOCAL; effect parity của skill tướng úp vẫn OPEN**, không được suy ra từ 25 cặp native-local, các bounded Oracle contract hoặc từ 520/520 lifecycle.
 
 ### Oracle QA bounded — replacement VM
 
@@ -349,14 +362,14 @@ Ngày 16/10/2026, replacement `freekill-hegemony-qa` (`161.33.209.212`)
 CP09 web identity của runner PASS với runtime MD5
 `43b6cdade072b75f93b9d49b3384f08f`, 14 package, web `dist/index.html` SHA-256
 `591c51f15482d78267b3db4c48b150d20747d5bf83631f01c335e7799e114012`, QA
-revision `12430188d2f3f7cfbd58de94ad4b8466e297649d2`, package SHA
-`ff295793ce4f173e610c40ebc03362a85f07bbcacf34a3feac8b437e7195f8c3` và
-catalog SHA `6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63`.
+revision `48725c8ae9cc1917d415eec442841835ae881394`, package SHA
+`4209c70465366a19ea75f104f53874ffa50c1656e7fec084c493f5b9a4f9cb45` và
+catalog SHA `054d955bfd70bd14bef28ea9b925585974599b78a95c053261b59576df48ece2`.
 `verify-install.sh`, `verify-qa-package.sh`, Lua 5.4.8 + Socket/FileSystem,
 service enabled/active và TCP 9527 đều PASS. QA nằm ở `qa_packages/tqs_qa`,
 ngoài public `packages/` và không có row trong `packages.db`. QA manifest
 current được giữ ở `scratch/live-web-test/current/qa_packages/tqs_qa/package.manifest.json`;
-hosted evidence current giữ riêng ở các JSON CP09/CP10/CP11 bên dưới.
+hosted evidence current giữ riêng ở các JSON CP09/CP10/CP11/CP12 bên dưới.
 
 Current-identity proof dùng isolated local gateway với `FK_HOST=161.33.209.212`,
 hai browser client thật và không ghi credential/allowlist name vào evidence:
@@ -435,20 +448,20 @@ nhưng không dùng 51 run này làm bằng chứng current identity:
 Bộ 51 run này trước đây đều ghi `result: PASS` với native gate và hai client
 quan sát được audit công khai; tuy nhiên chúng thuộc identity cũ. Đây là
 **ORACLE QA BOUNDED — HISTORICAL** cho identity/native rule và browser bridge;
-phần CP09/CP10/CP11 current identity chỉ lấy các ca Di Kế/Fuyin/Ách Tuyệt/Độc Phu
+phần CP09/CP10/CP11/CP12 current identity chỉ lấy các ca Di Kế/Fuyin/Ách Tuyệt/Độc Phu/Gian Chí
 nêu ở phần current bên trên.
 Không thay thế toàn bộ `607` effect pairs, device acceptance hay official release.
 
-### Render → Oracle replacement — current CP09/CP10/CP11 hosted bounded acceptance
+### Render → Oracle replacement — current CP09/CP10/CP11/CP12 hosted bounded acceptance
 
 Deployment [`dep-db8j9gei0phs73fs8pcg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db8j9gei0phs73fs8pcg), commit
 `798dc2e4`, chạy gateway tới replacement `161.33.209.212:9527`. Current
 identity gate PASS: health `200 / ok`, public HTML SHA-256
 `591c51f15482d78267b3db4c48b150d20747d5bf83631f01c335e7799e114012`, runtime
 MD5 `43b6cdade072b75f93b9d49b3384f08f`, 14 package/5.279 file, QA revision
-`12430188d2f3f7cfbd58de94ad4b8466e297649d2`, package SHA
-`ff295793ce4f173e610c40ebc03362a85f07bbcacf34a3feac8b437e7195f8c3` và
-catalog SHA `6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63`.
+`48725c8ae9cc1917d415eec442841835ae881394`, package SHA
+`4209c70465366a19ea75f104f53874ffa50c1656e7fec084c493f5b9a4f9cb45` và
+catalog SHA `054d955bfd70bd14bef28ea9b925585974599b78a95c053261b59576df48ece2`.
 
 - **Di Kế chủ tướng:** PASS — Quách Gia còn úp, fake skill hiển thị ở pre-gate;
   sau damage, `AskForSkillInvoke` và invoke chạy, mở đúng chủ tướng và chuyển 2
@@ -475,14 +488,24 @@ catalog SHA `6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63`.
 - **Độc Phu phó tướng:** PASS — cùng predicate và callback, mở đúng phó tướng,
   damage thực tế bằng 2. Evidence
   [`cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json`](../../scratch/evidence/cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json).
+- **Gian Chí chủ tướng:** PASS — Giả Sung còn úp, fake skill hiển thị trước
+  gate; Sát thật gây lethal `DamageCaused`, prompt invoke thật, bỏ toàn bộ tay,
+  đặt banner thưởng 3x và mở đúng chủ tướng. Evidence
+  [`cp12-hidden-jianzhi-multiplayer-live-1792112786904.json`](../../scratch/evidence/cp12-hidden-jianzhi-multiplayer-live-1792112786904.json).
+- **Gian Chí phó tướng:** PASS — cùng predicate và callback, nhưng phải mở Giả
+  Sung đúng slot phó; evidence công khai xác nhận trigger, discard, lethal
+  damage, death và reveal phó tướng.
+  [`cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json`](../../scratch/evidence/cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json).
 
 Các run current đều quan sát được native QA gate, đúng reveal slot, GameOver và
 clean disconnect. Hai run Ách Tuyệt và hai run Độc Phu ghi public log
-`DamageCaused=true; sát thương=2; SkillEffect=true; mở tướng=true` với slot
-`chủ tướng`/`phó tướng` tương ứng. QA được load từ `qa_packages/tqs_qa`, tách
-khỏi public flist; đây là bounded proof cho điều kiện “tướng úp nhưng đủ điều
-kiện vẫn kích hoạt”, chưa là full rule parity. CP11 không thay public Render
-artifact; nó chỉ thay server-only QA package trên Oracle replacement.
+`DamageCaused=true; sát thương=2; SkillEffect=true; mở tướng=true`; hai run
+Gian Chí ghi chuỗi public trigger/discard/lethal/death/reveal tương ứng, còn
+QA package kiểm tra `DamageCaused`, hand-empty và banner thưởng trước
+`GameOver`. QA được load từ `qa_packages/tqs_qa`, tách khỏi public flist; đây
+là bounded proof cho điều kiện “tướng úp nhưng đủ điều kiện vẫn kích hoạt”, chưa
+là full rule parity. CP11/CP12 không thay public Render artifact; chỉ thay
+server-only QA package trên Oracle replacement.
 
 ### CP08 hosted batch — historical identity
 
@@ -507,8 +530,8 @@ historical index; không gộp vào CP09 current proof nếu chưa rerun.
 
 Kết luận CP08 historical: batch trên đã PASS bounded ở identity cũ. Nó không
 được dùng làm bằng chứng CP09 nếu chưa rerun; full rule parity và ma trận `607`
-cặp vẫn OPEN. Current CP09/CP10/CP11 acceptance gồm Di Kế positive, Fuyin,
-Ách Tuyệt và Độc Phu chủ/phó ở phần ngay trước.
+cặp vẫn OPEN. Current CP09/CP10/CP11/CP12 acceptance gồm Di Kế positive,
+Fuyin, Ách Tuyệt, Độc Phu và Gian Chí chủ/phó ở phần ngay trước.
 
 ## Mức bao phủ hiện tại
 
@@ -521,10 +544,10 @@ cặp vẫn OPEN. Current CP09/CP10/CP11 acceptance gồm Di Kế positive, Fuyi
 | Privacy/public projection | **Đạt một phần tốt** | Có public/private boundary; Self hidden data và đối thủ hidden data được tách. |
 | Native request mapping | **Đạt ở source contract** | 17 request families được ánh xạ; audit không thay thế live matrix. |
 | Hidden-skill source projection/lifecycle/slot route | **Đạt SOURCE/LOCAL** | 301 tướng active, 602 vị trí, 1.039 reference, 520 skill ID; native `AddSkill`/`LoseSkill` 520/520, replay event qua React 521/521, privacy Add/Lose 1.042/1.042, helper `reveal_skill&` 105/105, `canUse` theo slot 205/205, route `revealBySkillName` 155.168/155.168 trên cặp hợp lệ, prelight sync 403/403, reconnect projection 520/520 và probe state thật `Client:addSkill`/`Client:loseSkill` đều 520/520; chưa chứng minh effect/live parity. |
-| Hidden-trigger/prelight + active reveal | **Đạt RENDER → ORACLE bounded + ORACLE/NATIVE-LOCAL mở rộng** | CP09/CP10/CP11 current identity đã PASS Di Kế positive, Fuyin `TargetConfirmed`, Ách Tuyệt và Độc Phu `DamageCaused` chủ/phó với native gate, prelight/reveal đúng slot, chuyển 2 lá, vô hiệu Sát và damage+1. Với Độc Phu, gate QA không phải prompt của skill compulsory. Batch 32 slot/nhánh và các hosted family khác thuộc identity cũ, phải rerun nếu muốn tái sử dụng. Native-local còn các staged add-on; exhaustive effect matrix vẫn mở. |
-| Lua runtime launcher/module ABI | **Đạt RENDER → ORACLE bounded** | Oracle replacement chạy Lua 5.4.8, nạp `socket`/`lfs`; CP09 web artifact và CP11 QA package đi qua runtime MD5 `43b6cd…`; old VM vẫn là rollback/reference. |
+| Hidden-trigger/prelight + active reveal | **Đạt RENDER → ORACLE bounded + ORACLE/NATIVE-LOCAL mở rộng** | CP09/CP10/CP11/CP12 current identity đã PASS Di Kế positive, Fuyin `TargetConfirmed`, Ách Tuyệt, Độc Phu và Gian Chí `DamageCaused` chủ/phó với native gate, prelight/reveal đúng slot, chuyển 2 lá, vô hiệu Sát, damage+1 và lethal discard/reward. Với Độc Phu, gate QA không phải prompt của skill compulsory; với Gian Chí, prompt invoke thứ hai là lựa chọn thật của source skill. Batch 32 slot/nhánh và các hosted family khác thuộc identity cũ, phải rerun nếu muốn tái sử dụng. Native-local còn các staged add-on; exhaustive effect matrix vẫn mở. |
+| Lua runtime launcher/module ABI | **Đạt RENDER → ORACLE bounded** | Oracle replacement chạy Lua 5.4.8, nạp `socket`/`lfs`; CP09 web artifact và CP11/CP12 QA package đi qua runtime MD5 `43b6cd…`; old VM vẫn là rollback/reference. |
 | Regular-skill dashboard gate | **Đạt NATIVE-LOCAL bounded** | `AddSkill/LoseSkill` của Self, fake active Chế Hành và fake ViewAs Long Đảm → regular dock → native `PlayCard` đã PASS; Phản Gián main/deputy cũng đã PASS native-local theo chuỗi ActiveSkill đầy đủ; các active/ViewAs skill khác chưa có live matrix và hosted/Oracle chưa được verify. |
-| Local dialog/skill/card audits | **Đạt local** | Native dialogs 7/7, cards-and-choice 3/3, card selection 4/4, store 40/40, connection 28/28, gameplay 16/16, browser E2E 20/20, Wasmoon/React E2E 63/63 (bằng chứng trước CP11), catalog/source scenarios 57/57 và `test:qa-server-contract` 41/41 subtests; các fixture/pipeline contract này không thay thế C++ live. |
+| Local dialog/skill/card audits | **Đạt local** | Native dialogs 7/7, cards-and-choice 3/3, card selection 4/4, store 40/40, connection 28/28, gameplay 16/16, browser E2E 20/20, Wasmoon/React E2E 63/63 (bằng chứng trước CP11), catalog/source scenarios 57/57 và `test:qa-server-contract` 42/42 subtests; các fixture/pipeline contract này không thay thế C++ live. |
 | Full native dialog coverage | **Chưa đạt** | Còn cancellation/expiry/reconnect và các caller Arrange/AG/Move/CustomDialog/ChooseSkill/ChooseGenerals/CardNames/KnownBoth chưa có live matrix đầy đủ. |
 | Rescue ngoài Battle Royal | **Đạt NATIVE-LOCAL bounded** | Room 2 chỗ, actor dùng Peach thường cứu target qua `AskForUseCard`; Battle Royal không được bật. Hosted/Oracle chưa verify lại cùng identity. |
 | Battle Royal rescue/view-as | **Đạt NATIVE-LOCAL bounded** | Target tự cứu bằng Peach → SpecialSkills `Quyết chiến` → Analeptic/Wine qua native `AskForUseCard`; event theo round và các biến thể khác chưa exhaustive. |

@@ -1,6 +1,6 @@
-# CP09/CP11 — Render → Oracle replacement và nghiệm thu mobile
+# CP09/CP12 — Render → Oracle replacement và nghiệm thu mobile
 
-> Cập nhật 16/10/2026 sau CP11. Đây là runbook ngắn cho tuyến candidate hiện hành; không
+> Cập nhật 16/10/2026 sau CP12. Đây là runbook ngắn cho tuyến candidate hiện hành; không
 > phải cam kết official/SLA.
 
 ## Tuyến hiện hành
@@ -24,12 +24,12 @@
 - Public release snapshot: 16.522 file, 14 package; `dist/index.html` dùng
   cùng SHA-256 ở trên.
 - Oracle: Lua 5.4.8, service enabled/active, port 9527; QA revision
-  `12430188d2f3f7cfbd58de94ad4b8466e297649d2`, package SHA
-  `ff295793ce4f173e610c40ebc03362a85f07bbcacf34a3feac8b437e7195f8c3`,
-  catalog SHA `6f72b43fe8a85410f368bce74f2b306f2e93acadb6e90ec73ae50bb52a453e63`;
+  `48725c8ae9cc1917d415eec442841835ae881394`, package SHA
+  `4209c70465366a19ea75f104f53874ffa50c1656e7fec084c493f5b9a4f9cb45`,
+  catalog SHA `054d955bfd70bd14bef28ea9b925585974599b78a95c053261b59576df48ece2`;
   QA package nằm ngoài public `packages/` và đã verify trên VM.
 
-## Acceptance current CP09/CP10/CP11
+## Acceptance current CP09/CP10/CP11/CP12
 
 - Hidden Di Kế chủ tướng: Quách Gia còn úp, fake skill hiển thị trước gate;
   sau damage → `AskForSkillInvoke` → invoke, native mở đúng chủ tướng và chuyển
@@ -51,7 +51,13 @@
   tướng. Evidence: [`cp10-hidden-dufu-multiplayer-live-1792111636771.json`](../../../scratch/evidence/cp10-hidden-dufu-multiplayer-live-1792111636771.json).
 - Hidden Độc Phu phó tướng: cùng predicate và callback, mở đúng phó tướng,
   damage thực tế bằng 2. Evidence: [`cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json`](../../../scratch/evidence/cp10-hidden-dufu-deputy-multiplayer-live-1792111621810.json).
-- Cả tám run đều PASS candidate identity, native QA gate, login/lobby/room,
+- Hidden Gian Chí chủ tướng: Giả Sung còn úp, prelight, Sát thật gây lethal
+  `DamageCaused`, invoke thật, bỏ tay, đặt reward 3x và mở đúng chủ tướng.
+  Evidence: [`cp12-hidden-jianzhi-multiplayer-live-1792112786904.json`](../../../scratch/evidence/cp12-hidden-jianzhi-multiplayer-live-1792112786904.json).
+- Hidden Gian Chí phó tướng: cùng predicate/callback, nhưng mở Giả Sung đúng
+  slot phó; native package tự kiểm tra hand-empty, reward banner và reveal trước
+  `GameOver`. Evidence: [`cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json`](../../../scratch/evidence/cp12-hidden-jianzhi-deputy-multiplayer-live-1792112874147.json).
+- Cả mười run đều PASS candidate identity, native QA gate, login/lobby/room,
   GameOver và clean disconnect. Các batch hidden-trigger CP08 bên dưới dùng
   identity cũ; không gộp chúng vào current proof.
 
@@ -80,7 +86,8 @@
 - Batch current hosted bổ sung 32 slot/nhánh hidden-trigger (Phản Quỹ, Thiên Đố, Liệt Cung, Cuồng Cốt, Danh Sĩ, Cơ Trí, Tuần Tầm, Không Thành, Vi Mộ, Tôn Thượng Hương/Xiaoji, Guanxing, Anh Tư, Thiên Hương, Phản Gián) đều PASS ở cả chủ/phó; index evidence duy nhất ở [`QUOC_CHIEN_RULE_AUDIT.md`](../QUOC_CHIEN_RULE_AUDIT.md).
 
 Kết luận CP08: các ca bên dưới là **historical bounded evidence** của identity
-cũ. Current CP09/CP10/CP11 đã kết luận Di Kế positive, Fuyin, Ách Tuyệt và Độc Phu chủ/phó PASS trên Render → Oracle; full
+cũ. Current CP09/CP10/CP11/CP12 đã kết luận Di Kế positive, Fuyin, Ách Tuyệt,
+Độc Phu và Gian Chí chủ/phó PASS trên Render → Oracle; full
 rule parity, native interaction còn lại, cold-start/rollback/SLA và official
 sign-off vẫn OPEN.
 

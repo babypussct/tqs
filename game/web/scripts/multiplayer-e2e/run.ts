@@ -3270,12 +3270,19 @@ try{
     console.log(`PASS hidden-dufu public audit: both native clients observed DamageCaused, reveal and damage+1 in the ${expectedPosition} slot`);
   } else if (hiddenJianzhiScenario) {
     const expectedPosition = hiddenJianzhiDeputyScenario ? 'phó tướng' : 'chủ tướng';
-    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
-      /Hidden Gian Chí|Hidden 奸志/iu.test(log) && /DamageCaused=true/iu.test(log) &&
-      /chí mạng=true/iu.test(log) && /bỏ bài=true/iu.test(log) && /thưởng=3x/iu.test(log) &&
-      /SkillEffect=true/iu.test(log) && /mở tướng=true/iu.test(log) &&
-      log.includes(`vị trí=${expectedPosition}`))),
-      `Both native clients must observe Jianzhi lethal DamageCaused, discard-all-hand, triple reward and reveal in the ${expectedPosition} slot`);
+    // The QA package asserts DamageCaused, lethal damage, discard-all-hand,
+    // reward banner and slot before it calls GameOver. The browser-facing
+    // audit must therefore match the native public sequence, not the internal
+    // [TQS QA] diagnostic sendLog (which is not rendered by this client).
+    assert.ok(publicBotAudit.every((audit) => {
+      const logs = audit.logs;
+      return logs.some((log) => /phát động liễu.*Gian Chí|发 动.*奸志/iu.test(log)) &&
+        logs.some((log) => /bỏ liễu 1 lá.*\(Gian Chí\)|弃置.*奸志/iu.test(log)) &&
+        logs.some((log) => /đối với .* tạo Thành liễu 1 điểm .*sát thương|造成.*1.*伤害/iu.test(log)) &&
+        logs.some((log) => /\bchết, Hung Thủ là .*?(?:Giả Sung|Tư Mã Ý)|死亡.*(?:贾充|司马懿)/iu.test(log)) &&
+        logs.some((log) => new RegExp(`Lượng Ra ${expectedPosition} .*Giả Sung|亮出${expectedPosition === 'chủ tướng' ? '主将' : '副将'}.*贾充`, 'iu').test(log));
+    }),
+      `Both native clients must observe Jianzhi's public trigger, discard, lethal damage, death and ${expectedPosition} reveal`);
     assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
       'hidden-jianzhi must finish after its native lethal DamageCaused/effect branch');
     assert.ok(botAuditTrace[scenarioClient].askForSkillInvoke >= 2,
