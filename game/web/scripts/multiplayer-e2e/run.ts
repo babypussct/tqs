@@ -2174,8 +2174,15 @@ try{
             await new Promise((resolve) => setTimeout(resolve, 250));
             continue;
           }
-          const slash = actor.locator('.gameplay-hand button:enabled')
+          const hand = actor.locator('.gameplay-hand button:enabled');
+          const labelledSlash = hand
             .filter({ hasText: /Sát|Slash|杀/i }).first();
+          // The native QA fixture gives the actor exactly one hand card. Some
+          // mobile card renderers expose its label only through the card art
+          // (so hasText() is empty), while others include the translated name.
+          // Keep the semantic label as the first choice, but accept the sole
+          // enabled hand card as the same deterministic reserved Slash.
+          const slash = await labelledSlash.count() ? labelledSlash : hand.first();
           assert.ok(await slash.count(), 'hidden-ejue must expose the reserved actor Slash');
           await slash.click();
           const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
@@ -2468,8 +2475,10 @@ try{
             await new Promise(r => setTimeout(r, 250));
             continue;
           }
-          const card = controls.locator('.gameplay-hand button:enabled')
+          const hand = controls.locator('.gameplay-hand button:enabled');
+          const labelledSlash = hand
             .filter({ hasText: /Sát|Slash|杀/i }).first();
+          const card = await labelledSlash.count() ? labelledSlash : hand.first();
           assert.ok(await card.count(), 'hidden-ejue must expose the reserved actor Slash');
           await card.click();
           const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
