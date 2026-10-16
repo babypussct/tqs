@@ -250,7 +250,11 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
   }
   if (command === 'EquipmentUpdate') {
     const [id, cards, delayedTricks] = data;
-    if (!validId(id) || !knownIds.includes(id) || !Array.isArray(cards) || cards.length > 40 ||
+    // Reconnect can deliver the private self equipment snapshot before the
+    // public roster is rebuilt. Accept that one identity from ownId, while
+    // continuing to require a known roster entry for every other seat.
+    const isPrivateSelf = id === ownId;
+    if (!validId(id) || (!knownIds.includes(id) && !isPrivateSelf) || !Array.isArray(cards) || cards.length > 40 ||
         !cards.every((card: unknown) => publicCard(card) !== null) ||
         (delayedTricks !== undefined && (!Array.isArray(delayedTricks) || delayedTricks.length > 40 ||
           !delayedTricks.every((card: unknown) => publicCard(card) !== null)))) return board;

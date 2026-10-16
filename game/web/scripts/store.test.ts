@@ -654,6 +654,29 @@ test('private SelfGenerals survives reconnect ordering before public roster rebu
   assert.equal(state.board.player[17].selfDeputyGeneral, 'hs__simayi');
 });
 
+test('private self equipment survives reconnect ordering without exposing unknown opponents', () => {
+  let state = reduceUiEvent(initialSnapshot, 'SelfIdentity', 17);
+  state = reduceUiEvent(state, 'EquipmentUpdate', [17, [{
+    name: 'spear', suit: 1, number: 12, subtype: 'weapon', range: 3, id: 42, private: 'must-drop',
+  }], [{ name: 'indulgence', suit: 2, number: 6, subtype: 'delayed_trick', id: 99 }]]);
+
+  // Reconnect can publish the self equipment snapshot before AddPlayer and
+  // ArrangeSeats. Only ownId is accepted without a public roster entry.
+  assert.deepEqual(state.board.player[17].equipment, [{
+    name: 'spear', suit: 1, number: 12, subtype: 'weapon', range: 3,
+  }]);
+  assert.deepEqual(state.board.player[17].delayedTricks, [{
+    name: 'indulgence', suit: 2, number: 6, subtype: 'delayed_trick',
+  }]);
+  state = reduceUiEvent(state, 'EquipmentUpdate', [22, [{ name: 'spear', suit: 1, number: 12 }]]);
+  assert.equal(state.board.player[22], undefined);
+
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  assert.deepEqual(state.board.player[17].equipment, [{
+    name: 'spear', suit: 1, number: 12, subtype: 'weapon', range: 3,
+  }]);
+});
+
 test('game logs retain a full match beyond 100 entries and board clears on lifecycle', () => {
   let state = reduceUiEvent(initialSnapshot, 'AddPlayer', [1, 'Player', '', false, 0]);
   state = reduceUiEvent(state, 'StartGame', null);
