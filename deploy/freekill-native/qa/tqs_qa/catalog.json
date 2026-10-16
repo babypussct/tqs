@@ -1929,6 +1929,66 @@
           "area": "hand"
         }
       ]
+    },
+    {
+      "id": "hidden-dufu",
+      "title": "Hidden main 司马冏 Độc Phu adds damage against a different kingdom",
+      "seed": 1567522756,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dufu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simajiong",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "dufu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-dufu-deputy",
+      "title": "Hidden deputy 司马冏 Độc Phu adds damage against a different kingdom",
+      "seed": 1567522757,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dufu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__simajiong",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "dufu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
     }
   ]
 }

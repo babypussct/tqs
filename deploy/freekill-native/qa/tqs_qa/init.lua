@@ -329,6 +329,34 @@ local function validateHiddenEjueScenario(scenario)
   end
 end
 
+local function validateHiddenDufuScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("hidden-dufu scenarios must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local deputy = scenario.id == "hidden-dufu-deputy"
+  local expectedMain = deputy and "heg__simayi" or "heg__simajiong"
+  local expectedDeputy = deputy and "heg__simajiong" or "heg__simayi"
+  if type(actor) ~= "table" or actor.general ~= expectedMain or
+      actor.deputy ~= expectedDeputy or actor.kingdom ~= "jin" then
+    fail("hidden-dufu actor must use the catalogued Sima Jiong main/deputy placement")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhaoyun" or
+      target.deputy ~= "hs__zhangfei" or target.kingdom ~= "shu" then
+    fail("hidden-dufu target must be Zhao Yun + Zhang Fei in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("hidden-dufu must expose AskForSkillInvoke before the DamageCaused Slash")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "dufu-card" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "slash" then
+    fail("hidden-dufu must reserve exactly one actor Slash")
+  end
+end
+
 local function validateHiddenRevealScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-reveal scenarios must define exactly two players")
@@ -937,6 +965,8 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenJueqingScenario(scenario)
   elseif scenario.trigger == "hidden-ejue" then
     validateHiddenEjueScenario(scenario)
+  elseif scenario.trigger == "hidden-dufu" then
+    validateHiddenDufuScenario(scenario)
   elseif scenario.trigger == "hidden-reveal" then
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
@@ -1315,6 +1345,7 @@ local function setupState(room, scenario, seed)
     hiddenFuyinTargetConfirmed = false,
     hiddenFuyinNullified = false,
     hiddenEjueDamageCaused = false,
+    hiddenDufuDamageCaused = false,
   }
   if scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
@@ -2401,6 +2432,92 @@ local function triggerHiddenEjue(room, state)
   }
   fk.qInfo(string.format("[tqs_qa] hidden-ejue damage_caused=true damage=%d skill_effect=true revealed=%s slot=%s revision=%s",
     targetHpLoss, tostring(revealedCorrectSlot), ejueIsDeputy and "deputy" or "main", manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerHiddenDufu(room, state)
+  -- 独夫 is a compulsory fk.DamageCaused effect. Keep Sima Jiong hidden
+  -- until a real Slash reaches the native source hook, then prove the
+  -- same-kingdom predicate and the +1 damage mutation with a Jin actor and
+  -- a Shu target.
+  state.target:revealGenerals()
+  if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
+    fail("hidden-dufu actor must start with both generals hidden")
+  end
+  if not state.actor:isFakeSkill("heg__dufu") then
+    fail("hidden-dufu must attach the hidden Dufu skill")
+  end
+  if state.actor:hasSkill("heg__dufu") then
+    fail("hidden-dufu must not be active before the prelighted effect")
+  end
+
+  local gate = room:askToSkillInvoke(state.actor, {
+    skill_name = "tqs_qa_hidden_dufu_gate",
+    prompt = "TQS QA: prelight Độc Phu, rồi xác nhận để dùng Sát lên thế lực khác.",
+  })
+  if not gate then
+    fail("hidden-dufu QA gate was cancelled")
+  end
+  if not isPrelighted(state.actor, "heg__dufu") then
+    fail("hidden-dufu must be prelighted before the DamageCaused branch")
+  end
+
+  local cardId = state.slotCards["dufu-card"]
+  if not cardId or #state.actor:getCardIds(Player.Hand) ~= 1 or
+      not table.contains(state.actor:getCardIds(Player.Hand), cardId) then
+    fail("hidden-dufu must put exactly the reserved Slash in the actor hand")
+  end
+
+  local targetHpBefore = state.target.hp
+  local actorHpBefore = state.actor.hp
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { cardId },
+    skill_name = "tqs_qa_hidden_dufu_damage",
+    prompt = "TQS QA: dùng Sát lên đối thủ để kiểm tra Độc Phu.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= cardId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("hidden-dufu must receive the reserved actor Slash against the other kingdom")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "heg__dufu" and entry.player == state.actor.id
+  end)
+  local dufuIsDeputy = state.scenario == "hidden-dufu-deputy"
+  local revealedCorrectSlot = dufuIsDeputy
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "heg__simajiong"
+    or not dufuIsDeputy and state.actor.general == "heg__simajiong" and state.actor.deputyGeneral == "anjiang"
+  local targetHpLoss = targetHpBefore - state.target.hp
+  if not state.hiddenDufuDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
+      targetHpLoss ~= 2 or actorHpBefore ~= state.actor.hp then
+    fail("prelighted hidden Dufu must enter DamageCaused, reveal Sima Jiong and add one damage")
+  end
+  if state.actor:isFakeSkill("heg__dufu") or not state.actor:hasSkill("heg__dufu") then
+    fail("hidden Dufu must be a real active skill after SkillEffect")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Hidden Độc Phu: DamageCaused=%arg; sát thương=%arg2; SkillEffect=%arg3; mở tướng=%arg4; vị trí=%arg5",
+    from = state.actor.id,
+    arg = tostring(state.hiddenDufuDamageCaused),
+    arg2 = tostring(targetHpLoss),
+    arg3 = tostring(effect ~= nil and not effect.fake),
+    arg4 = tostring(revealedCorrectSlot),
+    arg5 = dufuIsDeputy and "phó tướng" or "chủ tướng",
+  }
+  fk.qInfo(string.format("[tqs_qa] hidden-dufu damage_caused=true damage=%d skill_effect=true revealed=%s slot=%s revision=%s",
+    targetHpLoss, tostring(revealedCorrectSlot), dufuIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end
@@ -4200,7 +4317,9 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-jueqing" or
       state.scenario == "hidden-jueqing-deputy" or
       state.scenario == "hidden-ejue" or
-      state.scenario == "hidden-ejue-deputy") and
+      state.scenario == "hidden-ejue-deputy" or
+      state.scenario == "hidden-dufu" or
+      state.scenario == "hidden-dufu-deputy") and
       data and data.skill
   end,
   on_trigger = function(self, event, target, player, data)
@@ -4231,11 +4350,17 @@ director:addEffect(fk.DamageCaused, {
   priority = -1000,
   can_trigger = function(self, event, target, player, data)
     local state = stateFor(player.room)
-    return state and (state.scenario == "hidden-ejue" or state.scenario == "hidden-ejue-deputy") and
+    return state and (state.scenario == "hidden-ejue" or state.scenario == "hidden-ejue-deputy" or
+      state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy") and
       state.currentDamageStep and data and data.from == state.actor and data.to == state.target
   end,
   on_trigger = function(self, event, target, player, data)
-    stateFor(player.room).hiddenEjueDamageCaused = true
+    local state = stateFor(player.room)
+    if state.scenario == "hidden-dufu" or state.scenario == "hidden-dufu-deputy" then
+      state.hiddenDufuDamageCaused = true
+    else
+      state.hiddenEjueDamageCaused = true
+    end
   end,
 })
 
@@ -4515,6 +4640,8 @@ director:addEffect(fk.GameStart, {
       triggerHiddenJueqing(room, state)
     elseif scenario.trigger == "hidden-ejue" then
       triggerHiddenEjue(room, state)
+    elseif scenario.trigger == "hidden-dufu" then
+      triggerHiddenDufu(room, state)
     end
   end,
 })

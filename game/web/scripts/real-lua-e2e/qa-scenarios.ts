@@ -76,6 +76,8 @@ export type QaScenarioId =
   | 'hidden-jueqing-deputy'
   | 'hidden-ejue'
   | 'hidden-ejue-deputy'
+  | 'hidden-dufu'
+  | 'hidden-dufu-deputy'
   | 'hidden-kuanggu'
   | 'hidden-kuanggu-deputy'
   | 'hidden-gongqing'
@@ -139,6 +141,7 @@ export type QaScenarioTrigger =
   | 'hidden-kuanggu'
   | 'hidden-jueqing'
   | 'hidden-ejue'
+  | 'hidden-dufu'
   | 'hidden-gongqing'
   | 'hidden-enyuan'
   | 'hidden-fuyin';
@@ -863,6 +866,26 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     trigger: 'hidden-ejue',
     expectedCommand: 'AskForSkillInvoke',
   },
+  'hidden-dufu': {
+    version: 1,
+    id: 'hidden-dufu',
+    title: '司马冏 úp: Độc Phu tăng sát thương khi không có đồng minh cùng thế lực',
+    seed: 0x5d6e7fc4,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'dufu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-dufu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'hidden-dufu-deputy': {
+    version: 1,
+    id: 'hidden-dufu-deputy',
+    title: '司马冏 phó tướng úp: Độc Phu tăng sát thương khi không có đồng minh cùng thế lực',
+    seed: 0x5d6e7fc5,
+    drawSequence: [trueName('slash')],
+    slots: [{ key: 'dufu-card', match: { trueName: 'slash' }, drawIndex: 0, owner: 'self', area: 'hand', visible: true }],
+    trigger: 'hidden-dufu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
   'hidden-gongqing': {
     version: 1,
     id: 'hidden-gongqing',
@@ -952,6 +975,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'hidden-kuanggu', 'hidden-kuanggu-deputy',
   'hidden-jueqing', 'hidden-jueqing-deputy',
   'hidden-ejue', 'hidden-ejue-deputy',
+  'hidden-dufu', 'hidden-dufu-deputy',
   'hidden-gongqing', 'hidden-gongqing-deputy',
   'hidden-enyuan', 'hidden-enyuan-deputy',
   'hidden-fuyin', 'hidden-fuyin-deputy',
@@ -1174,6 +1198,13 @@ function validatePlan(plan: QaScenarioPlan): void {
         plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 扼绝`);
+    }
+  }
+  if (plan.trigger === 'hidden-dufu') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'dufu-card' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Slash for 独夫`);
     }
   }
   if (plan.trigger === 'hidden-gongqing') {
