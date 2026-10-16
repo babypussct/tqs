@@ -76,7 +76,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Render checkpoint cuối
 
-- **Final active deployment:** Render deployment [`dep-db95hsft5n8s73ec9m6g`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db95hsft5n8s73ec9m6g) từ source [`10af0586`](https://github.com/babypussct/tqs/commit/10af0586539c7d725b61dd5a916bc01162add2ca) báo `Deploy succeeded | Live`. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `afa295ed…` / `73a19e27…` / `c54281f2…` khớp local `dist`; manifest public giữ 14 package/5.279 file, runtime bundle MD5 `29653b06…` theo gateway log. Live UI translation smoke thấy 109 visible texts/0 unresolved và clean GameOver/lobby/disconnect; gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra service active/port 9527 listening. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
+- **Final active deployment:** Render deployment [`dep-db95knvt5n8s73echb40`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db95knvt5n8s73echb40) từ source [`b94f4a72`](https://github.com/babypussct/tqs/commit/b94f4a72705a3e22b9eacdf8629a2f81be84abdf) báo `Deploy succeeded | Live`; đây là redeploy theo HEAD tài liệu sau artifact fix [`10af0586`](https://github.com/babypussct/tqs/commit/10af0586539c7d725b61dd5a916bc01162add2ca), không thay đổi web/runtime bundle. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `afa295ed…` / `73a19e27…` / `c54281f2…` khớp local `dist`; manifest public giữ 14 package/5.279 file, runtime bundle MD5 `29653b06…` theo gateway log. Live UI translation smoke của artifact fix thấy 109 visible texts/0 unresolved và clean GameOver/lobby/disconnect; gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra service active/port 9527 listening. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
 
 ## Việc còn mở theo thứ tự
 
@@ -96,15 +96,15 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; hiện runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, QA revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, current UI deployment `dep-db95hsft5n8s73ec9m6g`, source `10af0586`. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Public UI health/HTML/JS/CSS identity đã kiểm tra trực tiếp sau deployment; package/runtime identity đã được health/manifest/live UI translation smoke probe. **UI portrait + request-dialog + self-equipment compact slice:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, typecheck/build và diff check riêng các file thuộc slice đều PASS; capture đã sinh **14 ảnh** (12 ảnh chuẩn + ảnh 10 lá + ảnh card-detail long-press) với self equipment thật. CP26 live translation smoke thấy **109 visible texts / 0 possible untranslated strings** qua Render → VM `161.33.209.212:9527`, VM service active/port listening. Candidate đã deploy và live; bước kế tiếp là user smoke test trên thiết bị/viewport thật, sau đó tiếp tục native matrix theo các event groups còn thiếu. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
+Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; hiện runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, QA revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, current Render deployment `dep-db95knvt5n8s73echb40`, source `b94f4a72` (artifact fix source `10af0586`). QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Public UI health/HTML/JS/CSS identity đã kiểm tra trực tiếp sau deployment; package/runtime identity đã được health/manifest/live UI translation smoke probe. **UI portrait + request-dialog + self-equipment compact slice:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, typecheck/build và diff check riêng các file thuộc slice đều PASS; capture đã sinh **14 ảnh** (12 ảnh chuẩn + ảnh 10 lá + ảnh card-detail long-press) với self equipment thật. CP26 live translation smoke thấy **109 visible texts / 0 possible untranslated strings** qua Render → VM `161.33.209.212:9527`, VM service active/port listening. Candidate đã deploy và live; bước kế tiếp là user smoke test trên thiết bị/viewport thật, sau đó tiếp tục native matrix theo các event groups còn thiếu. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
 
 **Bổ sung evidence sau M3/M4/M5:** PWA E2E PASS; recovery **3/3**, protocol **5/5**, room-pools **1/1**, Vietnamese **4/4** và Lua lifecycle **5/5** đều PASS trên checkout hiện hành. Capture M6 đã chạy lại sau waiting-room hint, card long-press và portrait hand correction; bộ ảnh gồm **12 ảnh chuẩn + 1 ảnh 10 lá + 1 ảnh card-detail long-press**. `RequestTimer` đã được tách repaint cục bộ để giữ hand rail ổn định khi đếm ngược. Diff check riêng các file thuộc UI/docs slice PASS; lệnh toàn repo hiện dừng ở `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` do CRLF bị báo trailing whitespace trong file CSV dirty ngoài slice, không được chuẩn hóa trong phiên này. Đây là regression evidence local, không thay thế device smoke/candidate smoke.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T17:09:08.514Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `10af0586539c`.
+- Ghi lúc: 2026-10-16T17:12:00.872Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `b94f4a72705a`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -114,9 +114,9 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 Ba commit gần nhất:
 
 ```text
+b94f4a72 docs: record CP26 live translation deployment
 10af0586 fix: localize expanded wild marker in game logs
 2f231c04 feat: finalize portrait hegemony mobile layout
-7bd6e3d7 docs: record CP24 translation live smoke
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
