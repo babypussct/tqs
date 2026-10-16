@@ -1784,6 +1784,10 @@ try{
         const isHiddenJizhiInvoke = hiddenJizhiScenario && !isHiddenJizhiGate && /Tập Trí|集智|jizhi|hs__jizhi/i.test(invokeText);
         const isHiddenGuanxingInvoke = hiddenGuanxingScenario && !isHiddenGuanxingGate && /Quan Tinh|观星|guanxing|hs__guanxing/i.test(invokeText);
         const isHiddenTianxiangInvoke = hiddenTianxiangScenario && !isHiddenTianxiangGate && /Thiên Hương|天香|tianxiang|hs__tianxiang/i.test(invokeText);
+        if (hiddenZhimanScenario) {
+          console.log(`hidden-zhiman AskForSkillInvoke client=${activeClient + 1} request=${latest.requestId} ` +
+            `gate=${isHiddenZhimanGate} invoke=${isHiddenZhimanInvoke} text=${JSON.stringify(invokeText)}`);
+        }
         if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate) {
           nativeQaGateSeen = true;
           nativeQaGateCommand = latest.command;
@@ -2770,6 +2774,37 @@ try{
             hiddenDufuDamageReply = true;
             scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
               detail: 'hidden-dufu-damage-slash' });
+          }
+          await new Promise(r=>setTimeout(r,250));
+          continue;
+        }
+        if (hiddenZhimanScenario && !hiddenZhimanDamageReply) {
+          // Room:askToUseRealCard() may be published as a regular PlayCard
+          // request by the native adapter. Keep this reserved Slash path in
+          // lockstep with the AskForUseActiveSkill transport branch above.
+          if (activeClient !== scenarioClient) {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            if (await end.count() && await end.isEnabled()) await end.click();
+            await waitForReply(activeClient, latest.requestId);
+            await new Promise(r => setTimeout(r, 250));
+            continue;
+          }
+          const hand = controls.locator('.gameplay-hand button:enabled');
+          const labelledSlash = hand.filter({ hasText: /Sát|Slash|杀/i }).first();
+          const card = await labelledSlash.count() ? labelledSlash : hand.first();
+          assert.ok(await card.count(), 'hidden-zhiman must expose the reserved actor Slash');
+          await card.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          assert.ok(await target.count(), 'hidden-zhiman must expose the target with reserved equipment');
+          await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          assert.ok(await confirm.isEnabled(), 'hidden-zhiman must enable PlayCard confirmation after selecting the reserved Slash');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) {
+            hiddenZhimanDamageReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'hidden-zhiman-damage-slash' });
           }
           await new Promise(r=>setTimeout(r,250));
           continue;

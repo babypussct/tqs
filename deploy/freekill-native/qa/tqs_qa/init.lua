@@ -2773,7 +2773,13 @@ local function triggerHiddenZhiman(room, state)
   local targetHpSame = targetHpBefore == state.target.hp and not state.target.dead
   if not state.hiddenZhimanDamageCaused or not effect or effect.fake or not revealedCorrectSlot or
       not targetHpSame or not equipmentMoved or actorHpBefore ~= state.actor.hp then
-    fail("prelighted hidden Zhiman must invoke on DamageCaused, reveal Ma Su, prevent damage and obtain the equipment")
+    fail(string.format("prelighted hidden Zhiman must invoke on DamageCaused, reveal Ma Su, prevent damage and obtain the equipment; " ..
+      "DamageCaused=%s effect=%s fake=%s reveal=%s hpSame=%s equipment=%s actorHpSame=%s general=%s deputy=%s has=%s fakeNow=%s prelight=%s",
+      tostring(state.hiddenZhimanDamageCaused), tostring(effect ~= nil), tostring(effect and effect.fake or false),
+      tostring(revealedCorrectSlot), tostring(targetHpSame), tostring(equipmentMoved),
+      tostring(actorHpBefore == state.actor.hp), tostring(state.actor.general), tostring(state.actor.deputyGeneral),
+      tostring(state.actor:hasSkill("ld__zhiman")), tostring(state.actor:isFakeSkill("ld__zhiman")),
+      tostring(isPrelighted(state.actor, "ld__zhiman"))))
   end
   if state.actor:isFakeSkill("ld__zhiman") or not state.actor:hasSkill("ld__zhiman") then
     fail("hidden Zhiman must be a real active skill after SkillEffect")
