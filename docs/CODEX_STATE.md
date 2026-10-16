@@ -29,7 +29,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 - **CP20 live native interaction matrix (candidate live, 16/10/2026):** trên đúng candidate/runtime identity của CP19 và QA package revision `a6c47982…` / package `5b45411a…`, scenario `poxi` đã đưa `Đặng Chi / Nguy Minh` tới `AskForPoxi`, nhận multi-card reply (`scenarioPoxiReply=true`, `scenarioPoxiMultiple=true`) và clean GameOver/lobby/disconnect; scenario `card-chosen` đã đưa `Bàng Đức / Kiền Xuất` tới hidden `AskForCardChosen`, nhận đúng một card reply (`scenarioCardChosenReply=true`, `scenarioCardChosenHidden=true`) và clean lifecycle; scenario `founding` đã đưa wild general tới native Vietnamese kingdom choice và nhận đúng reply (`scenarioFoundingReply=true`), với session cleanup theo semantics founding. Không có error; evidence sanitized lần lượt là [`cp08-poxi-multiplayer-live-1792149529654.json`](../scratch/evidence/cp08-poxi-multiplayer-live-1792149529654.json), [`cp08-card-chosen-multiplayer-live-1792149617853.json`](../scratch/evidence/cp08-card-chosen-multiplayer-live-1792149617853.json) và [`cp08-founding-multiplayer-live-1792149695680.json`](../scratch/evidence/cp08-founding-multiplayer-live-1792149695680.json). Đây mới là bounded live coverage; các family ArrangeCards/AG/MoveCardInBoard/SkillInvoke/CustomDialog và cancel/expiry/reconnect semantics còn mở.
 - **CP20 Render redeploy (candidate live, 16/10/2026):** sau khi checkpoint CP20 hoàn tất, commit `d61913ae` đã được deploy thủ công lên [`dep-db90igtg1s2s738tjokg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db90igtg1s2s738tjokg). Dashboard báo `Deploy succeeded | Live`; public `/gateway/healthz` trả `ok`, HTML SHA-256 `b69c5a4a510371292fcfb91b856ad9f95772a96fd545ceb41958f7e8c4305b9d` khớp local, gateway log xác nhận bundle 5.279 file và runtime MD5 `29653b06f1db4a1cece2941f79cbe648`. Đây là snapshot hiện hành cho user smoke test; `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` vẫn dirty và không thuộc artifact vì chưa compile lại `officialTranslations.json`.
 - **CP21 Render redeploy (candidate live, 16/10/2026):** commit `2f159d01` đã được deploy thủ công lên [`dep-db90t3ei0phs7399qdc0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db90t3ei0phs7399qdc0). Dashboard báo `Deploy succeeded | Live`; public `/gateway/healthz` trả `200 / ok`; HTML SHA-256 `95531f89f0ff61383215347fff56e2bc99828615ca387029894bb9913c9f6039`, JS `38e97741955a6696c355e48bd3129b82a7b0eea1701631157fd6026eaa09ecca`, CSS `1b962a2671ef84ac40b87287962c4795552e1785854a1a346a7b26b2312863dd` đều khớp local; gateway log bundle 5.279 file, runtime MD5 `29653b06f1db4a1cece2941f79cbe648`. Đây là snapshot hiện hành cho user smoke test; `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` vẫn dirty và không thuộc artifact vì chưa compile lại `officialTranslations.json`.
-- **CP22 portrait density checkpoint (local, 16/10/2026):** mobile portrait nay chỉ còn một ticker hiển thị diễn biến gần nhất kèm nút lịch sử nhỏ; log panel thu gọn không còn chiếm một hàng riêng. Bàn được trả lại chiều cao thực dụng (`240–320px` theo viewport), dashboard đi theo normal flow; utility row giữ self seat khoảng `84×58px`, equipment vẫn là 5 slot icon/suit/rank, skill rail khoảng `30px`, prompt/timer và ba nút thao tác được nén, hand dùng card khoảng `58×80px` với scroll ngang và khóa negative margin/hover-lift để nhiều lá không lọt khỏi vùng thao tác. `GameBoardScreen.tsx`/`styles.css` là thay đổi UI chính; selectors của real-Lua/Vietnamese/live-gateway E2E đã đổi sang affordance lịch sử mới. Đã quan sát typecheck, `test:store` **44/44**, `test:connection` **31/31**, `test:gameplay` **16/16**, `test:native-dialogs` **7/7**, `test:card-display` **14/14**, `test:vietnamese` **4/4**, browser E2E **21/21**, real-Lua E2E **63/63**, capture M6 **14 ảnh**, production build/audit và release verifier **16.522 files** PASS. Đây là checkpoint chờ commit/deploy Render; vẫn chỉ là candidate evidence, chưa device sign-off và chưa đóng `PLAYABLE_MOBILE`.
+- **CP22 portrait density checkpoint (candidate live, 16/10/2026):** mobile portrait nay chỉ còn một ticker hiển thị diễn biến gần nhất kèm nút lịch sử nhỏ; log panel thu gọn không còn chiếm một hàng riêng. Bàn được trả lại chiều cao thực dụng (`240–320px` theo viewport), dashboard đi theo normal flow; utility row giữ self seat khoảng `84×58px`, equipment vẫn là 5 slot icon/suit/rank, skill rail khoảng `30px`, prompt/timer và ba nút thao tác được nén, hand dùng card khoảng `58×80px` với scroll ngang và khóa negative margin/hover-lift để nhiều lá không lọt khỏi vùng thao tác. `GameBoardScreen.tsx`/`styles.css` là thay đổi UI chính; selectors của real-Lua/Vietnamese/live-gateway E2E đã đổi sang affordance lịch sử mới. Đã quan sát typecheck, `test:store` **44/44**, `test:connection` **31/31**, `test:gameplay` **16/16**, `test:native-dialogs` **7/7**, `test:card-display` **14/14**, `test:vietnamese` **4/4**, browser E2E **21/21**, real-Lua E2E **63/63**, capture M6 **14 ảnh**, production build/audit và release verifier **16.522 files** PASS. Commit [`114c9226`](https://github.com/babypussct/tqs/commit/114c9226f307c5d22810c403313999885532bc3a) đã push và deploy thủ công lên [`dep-db918e6i0phs739aueqg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db918e6i0phs739aueqg), dashboard báo `Deploy succeeded`; public `/gateway/healthz` trả `ok`, HTML `6caaecde…`, JS `c34e1c6b…`, CSS `03cf80b7…` đều khớp local, manifest 14 package/5.279 file, runtime MD5 `29653b06…`. Đây là candidate cho user smoke test; chưa device sign-off và chưa đóng `PLAYABLE_MOBILE`. CSV dịch thuật vẫn dirty và nằm ngoài artifact.
 - **M3 request-dialog UX correction (local, 16/10/2026):** thêm [RequestDialog.tsx](../game/web/src/RequestDialog.tsx) làm lớp modal chung cho request do Lua sở hữu: focus vào action đầu tiên, giữ vòng Tab trong dialog, Escape chỉ gọi cancel khi payload cho phép, và bottom-sheet portrait có safe-area/scroll riêng. Test real-Lua mới xác nhận `AskForSkillInvoke` focus đúng nút Kích hoạt và Escape phát đúng `__cancel`; toàn bộ dialog P0 vẫn pass expiry/replacement/disconnect/privacy. Không auto-reply và không thay validation/reply bytes của `GameConnection`.
 - **M4 waiting-room affordance correction (local, 16/10/2026):** thêm `roomStartDisabledReason()` trong `roomReadiness.ts` và gắn `aria-describedby`, `title` cùng status hint cho nút Bắt đầu của chủ phòng. Hint phân biệt đúng ba trạng thái observable hiện có: chưa đủ ghế, còn người chơi chưa ready, hoặc observer không thể bắt đầu; lobby cũng dùng `roomPoolDisabledReason()` để giải thích khi bể native không đủ tướng/bài trước khi tạo phòng. Không tạo readiness rule thứ hai và không thay đổi wire/law. `test:store` **43/43**, browser E2E **21/21**, real-Lua E2E **63/63** và typecheck/build đều PASS sau mốc này; diff check riêng các file của slice cũng PASS. Screenshot `390_portrait_waiting_room.png` đã được capture lại để chứa trạng thái giải thích nút.
 - **M5 mobile card-inspection correction (local, 16/10/2026):** `HandCardItem` nhận long-press trên touch để mở `CardDetailSheet` cho chính lá đang giữ; click ngắn vẫn chỉ dispatch `CardItem` selection và long-press không tạo Lua action/reply. Sheet cho phép Escape/Đóng, khóa scroll nền, hiển thị native art + suit/rank/category/mô tả tiếng Việt. Browser E2E **21/21**, card-display **13/13**, real-Lua E2E **63/63**; capture thêm `dialog_card_detail_long_press.png`. Đây là mobile UX local, chưa thay thế device gesture smoke.
@@ -67,7 +67,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Render checkpoint cuối
 
-- **Final active deployment:** Render deployment [`dep-db90t3ei0phs7399qdc0`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db90t3ei0phs7399qdc0) từ source [`2f159d01`](https://github.com/babypussct/tqs/commit/2f159d01697afa058be6dff67bb8cb1eabb29588) đã báo `Deploy succeeded | Live` lúc 16/10/2026. Public `/gateway/healthz` trả `200 / ok`; HTML/JS/CSS hash lần lượt `95531f89…` / `38e97741…` / `1b962a26…` khớp local, manifest public 14 package, runtime bundle 5.279 file, MD5 `29653b06f1db4a1cece2941f79cbe648`; CP20 poxi/card-chosen/founding evidence giữ nguyên theo đúng runtime identity. Đây là candidate hiện hành để người dùng smoke test, chưa phải official release. File `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` vẫn dirty và chưa thuộc artifact vì chưa compile lại `officialTranslations.json`.
+- **Final active deployment:** Render deployment [`dep-db918e6i0phs739aueqg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db918e6i0phs739aueqg) từ source [`114c9226`](https://github.com/babypussct/tqs/commit/114c9226f307c5d22810c403313999885532bc3a) đã báo `Deploy succeeded` lúc 16/10/2026. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS hash lần lượt `6caaecde…` / `c34e1c6b…` / `03cf80b7…` khớp local, manifest public 14 package, runtime bundle 5.279 file, MD5 `29653b06f1db4a1cece2941f79cbe648`; CP20 poxi/card-chosen/founding evidence giữ nguyên theo đúng runtime identity. Đây là candidate hiện hành để người dùng smoke test, chưa phải official release. File `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` vẫn dirty và chưa thuộc artifact vì chưa compile lại `officialTranslations.json`.
 
 ## Việc còn mở theo thứ tự
 
@@ -94,32 +94,21 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-16T12:09:10.032Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `4aa3fbc72513`.
-- File thay đổi hiển thị: 13 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-16T12:12:58.425Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `114c9226f307`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- D dist/assets/index-C_2E91Eb.js
- D dist/assets/index-DlX1f6xo.css
- M dist/index.html
- M dist/sw.js
  M docs/CODEX_PLAN.md
  M docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv
- M game/web/scripts/live-gateway-e2e/run.ts
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/vietnamese-l01.test.ts
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/styles.css
-?? dist/assets/index-CkU8bFTv.js
-?? dist/assets/index-CzOASeu6.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+114c9226 feat: compact portrait hegemony board density
 4aa3fbc7 docs: record CP21 Render redeploy
 2f159d01 fix: keep self equipment readable on mobile
-c3465ceb docs: record CP20 Render redeploy
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
