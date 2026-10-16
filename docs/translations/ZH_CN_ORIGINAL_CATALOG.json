@@ -93541,5 +93541,117 @@
     "zh_CN": "锁定技，当你成为其他角色使用【杀】或普通锦囊牌的目标后，若“研作”牌中：没有同名牌，令〖研作〗出牌阶段可发动次数+1（至多为3），然后你从牌堆或弃牌堆中将一张同名牌置为“研作”牌；有同名牌，令此牌无效并移去“研作”牌中全部同名牌。",
     "current_vi": "",
     "official_vi": "TOẢ ĐỊNH KỸ, Sau khi bạn trở thành mục tiêu của 【Sát】 hoặc cẩm nang thông thường do người khác sử dụng, nếu trong các lá “Nghiên Tác” không có lá cùng tên, giới hạn số lần phát động 〖Nghiên Tác〗 trong giai đoạn hành động +1 (nhiều nhất 3), sau đó bạn đặt 1 lá cùng tên từ chồng bài rút hoặc chồng bài bỏ thành lá “Nghiên Tác”; nếu có lá cùng tên, lá bài này mất hiệu lực và bạn xóa toàn bộ các lá “Nghiên Tác” cùng tên."
+  },
+  {
+    "category": "Card_Name",
+    "key": "jingfan",
+    "zh_CN": "惊帆",
+    "current_vi": "",
+    "official_vi": "Kinh Phàm"
+  },
+  {
+    "category": "Card_Description",
+    "key": ":jingfan",
+    "zh_CN": "装备牌·坐骑<br /><b>坐骑技能</b>：你与其他角色的距离-1.",
+    "current_vi": "",
+    "official_vi": "Lá trang bị · Tọa kỵ<br /><b>Kỹ năng tọa kỵ</b>: Khoảng cách từ bạn đến người khác -1."
+  },
+  {
+    "category": "Card_Name",
+    "key": "peace_spell",
+    "zh_CN": "太平要术",
+    "current_vi": "",
+    "official_vi": "Thái Bình Yếu Thuật"
+  },
+  {
+    "category": "Card_Description",
+    "key": ":peace_spell",
+    "zh_CN": "装备牌·防具<br/><b>防具技能</b>：锁定技，当你受到属性伤害时，防止此伤害。你的手牌上限+X（X为与你势力相同的角色数）。当你失去装备区里的【太平要术】后，你摸两张牌，然后若你的体力值大于1，你失去1点体力。",
+    "current_vi": "",
+    "official_vi": "Lá trang bị · Phòng cụ<br/><b>Kỹ năng phòng cụ</b>: Khóa định: Khi bạn chịu sát thương thuộc tính, ngăn sát thương đó. Giới hạn bài trên tay của bạn +X (X là số người cùng thế lực với bạn). Sau khi bạn mất 【Thái Bình Yếu Thuật】 khỏi vùng trang bị, bạn rút 2 lá, sau đó nếu máu của bạn lớn hơn 1, bạn mất 1 máu."
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "#peace_spell_skill",
+    "zh_CN": "太平要术",
+    "current_vi": "",
+    "official_vi": "Thái Bình Yếu Thuật"
+  },
+  {
+    "category": "Card_Name",
+    "key": "luminous_pearl",
+    "zh_CN": "定澜夜明珠",
+    "current_vi": "",
+    "official_vi": "Định Lan Dạ Minh Châu"
+  },
+  {
+    "category": "Card_Description",
+    "key": ":luminous_pearl",
+    "zh_CN": "装备牌·宝物<br/><b>宝物技能</b>：锁定技，若你没有〖制衡〗，你视为拥有〖制衡〗；若你有〖制衡〗，取消〖制衡〗的数量限制。",
+    "current_vi": "",
+    "official_vi": "Lá trang bị · Bảo vật<br/><b>Kỹ năng bảo vật</b>: Khóa định: Nếu bạn không có 〖Chế Hành〗, bạn xem như có 〖Chế Hành〗; nếu bạn có 〖Chế Hành〗, bỏ giới hạn số lần của 〖Chế Hành〗."
+  },
+  {
+    "category": "Card_Name",
+    "key": "scaly_wings",
+    "zh_CN": "戢鳞潜翼",
+    "current_vi": "",
+    "official_vi": "Liễm Lân Tiềm Dực"
+  },
+  {
+    "category": "Card_Description",
+    "key": ":scaly_wings",
+    "zh_CN": "装备牌·武器<br/><b>攻击范围</b>：X <br/><b>武器技能</b>：锁定技，此牌的攻击范围为你已损失的体力值；当你使用【杀】指定目标后，你令你攻击范围内不为此【杀】目标的角色不能使用牌直至此【杀】结算后。",
+    "current_vi": "",
+    "official_vi": "Lá trang bị · Vũ khí<br/><b>Phạm vi công kích</b>: X<br/><b>Kỹ năng vũ khí</b>: Khóa định: Phạm vi công kích của lá này bằng số máu bạn đã mất; sau khi bạn dùng 【Sát】 chỉ định mục tiêu, những người trong phạm vi công kích của bạn không phải mục tiêu của 【Sát】 này không thể sử dụng bài cho đến khi 【Sát】 này kết toán xong."
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "#scaly_wings_skill",
+    "zh_CN": "戢鳞潜翼",
+    "current_vi": "",
+    "official_vi": "Liễm Lân Tiềm Dực"
+  },
+  {
+    "category": "Card_Name",
+    "key": "threaten_emperor",
+    "zh_CN": "挟天子以令诸侯",
+    "current_vi": "",
+    "official_vi": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu"
+  },
+  {
+    "category": "Card_Description",
+    "key": ":threaten_emperor",
+    "zh_CN": "锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：为大势力角色的你<br/><b>效果</b>：目标角色结束出牌阶段，此回合的弃牌阶段结束时，若其为当前回合角色，其可弃置一张手牌，然后其获得一个额外回合。",
+    "current_vi": "",
+    "official_vi": "Lá cẩm nang<br/><b>Thời điểm</b>: giai đoạn hành động<br/><b>Mục tiêu</b>: bạn thuộc thế lực lớn<br/><b>Hiệu quả</b>: mục tiêu kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, nếu mục tiêu là người đang trong lượt, người đó có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung."
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "#TE-ask",
+    "zh_CN": "受到【挟天子以令诸侯】影响，你可以弃置一张手牌，获得一个额外回合",
+    "current_vi": "",
+    "official_vi": "Bị ảnh hưởng bởi 【Hiệp Thiên Tử Dĩ Lệnh Chư Hầu】, bạn có thể bỏ 1 lá trên tay để nhận 1 lượt bổ sung"
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "threaten_emperor_skill",
+    "zh_CN": "挟天子以令诸侯",
+    "current_vi": "",
+    "official_vi": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu"
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "#threaten_emperor_extra",
+    "zh_CN": "挟天子以令诸侯",
+    "current_vi": "",
+    "official_vi": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu"
+  },
+  {
+    "category": "Card_Skill_Prompt",
+    "key": "#threaten_emperor_skill",
+    "zh_CN": "你结束出牌阶段，此回合弃牌阶段结束时，你可弃置一张手牌，然后获得一个额外回合",
+    "current_vi": "",
+    "official_vi": "Bạn kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, bạn có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung"
   }
 ]

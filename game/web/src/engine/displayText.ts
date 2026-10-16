@@ -107,6 +107,18 @@ const legacyBattleEvents: [string, string, string][] = [
   ['激励', 'battle_royal_jili', '本轮内：【杀】无次数距离限制。'],
 ];
 
+// Some pinned package GameLogs arrive after C++ has already expanded the card
+// identifier into a Chinese or English face name. Keep this list explicit so
+// an unknown runtime string is never guessed or translated accidentally.
+const legacyCardNames: Array<[string, string]> = [
+  ['戢鳞潜翼', 'scaly_wings'],
+  ['挟天子以令诸侯', 'threaten_emperor'],
+  ['Threaten Emperor', 'threaten_emperor'],
+  ['惊帆', 'jingfan'],
+  ['太平要术', 'peace_spell'],
+  ['定澜夜明珠', 'luminous_pearl'],
+];
+
 /** Display only. Never rewrite GameLog events stored by the reducer or wire replies. */
 export function localizedGameLog(raw: string): string {
   let result = plainText(raw).trim();
@@ -118,6 +130,10 @@ export function localizedGameLog(raw: string): string {
   result = result.replace(/^本轮事件：:\s*/, 'Sự kiện vòng này: ');
   for (const [chinese, key] of legacyBattleEvents) {
     result = result.replaceAll(chinese, VI_ADDITIONS[key]);
+  }
+  for (const [rawName, key] of legacyCardNames) {
+    const translated = VI_ADDITIONS[key];
+    if (translated) result = result.replaceAll(rawName, translated);
   }
   result = result.replaceAll('鹦鹉杯', VI_ADDITIONS.turban_shell_cup)
     .replaceAll('咄咄逼人', VI_ADDITIONS.overbearing)

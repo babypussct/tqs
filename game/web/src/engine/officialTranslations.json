@@ -13029,5 +13029,21 @@
   "zuwang": "Tộc Vọng",
   ":zuwang": "TOẢ ĐỊNH KỸ, Trong giai đoạn chuẩn bị và giai đoạn kết thúc, bạn rút bài trên tay đến máu tối đa.",
   "zuyin": "Tổ Ấm",
-  ":zuyin": "TOẢ ĐỊNH KỸ, Sau khi bạn trở thành mục tiêu của 【Sát】 hoặc cẩm nang thông thường do người khác sử dụng, nếu trong các lá “Nghiên Tác” không có lá cùng tên, giới hạn số lần phát động 〖Nghiên Tác〗 trong giai đoạn hành động +1 (nhiều nhất 3), sau đó bạn đặt 1 lá cùng tên từ chồng bài rút hoặc chồng bài bỏ thành lá “Nghiên Tác”; nếu có lá cùng tên, lá bài này mất hiệu lực và bạn xóa toàn bộ các lá “Nghiên Tác” cùng tên."
+  ":zuyin": "TOẢ ĐỊNH KỸ, Sau khi bạn trở thành mục tiêu của 【Sát】 hoặc cẩm nang thông thường do người khác sử dụng, nếu trong các lá “Nghiên Tác” không có lá cùng tên, giới hạn số lần phát động 〖Nghiên Tác〗 trong giai đoạn hành động +1 (nhiều nhất 3), sau đó bạn đặt 1 lá cùng tên từ chồng bài rút hoặc chồng bài bỏ thành lá “Nghiên Tác”; nếu có lá cùng tên, lá bài này mất hiệu lực và bạn xóa toàn bộ các lá “Nghiên Tác” cùng tên.",
+  "jingfan": "Kinh Phàm",
+  ":jingfan": "Lá trang bị · Tọa kỵ<br /><b>Kỹ năng tọa kỵ</b>: Khoảng cách từ bạn đến người khác -1.",
+  "peace_spell": "Thái Bình Yếu Thuật",
+  ":peace_spell": "Lá trang bị · Phòng cụ<br/><b>Kỹ năng phòng cụ</b>: Khóa định: Khi bạn chịu sát thương thuộc tính, ngăn sát thương đó. Giới hạn bài trên tay của bạn +X (X là số người cùng thế lực với bạn). Sau khi bạn mất 【Thái Bình Yếu Thuật】 khỏi vùng trang bị, bạn rút 2 lá, sau đó nếu máu của bạn lớn hơn 1, bạn mất 1 máu.",
+  "#peace_spell_skill": "Thái Bình Yếu Thuật",
+  "luminous_pearl": "Định Lan Dạ Minh Châu",
+  ":luminous_pearl": "Lá trang bị · Bảo vật<br/><b>Kỹ năng bảo vật</b>: Khóa định: Nếu bạn không có 〖Chế Hành〗, bạn xem như có 〖Chế Hành〗; nếu bạn có 〖Chế Hành〗, bỏ giới hạn số lần của 〖Chế Hành〗.",
+  "scaly_wings": "Liễm Lân Tiềm Dực",
+  ":scaly_wings": "Lá trang bị · Vũ khí<br/><b>Phạm vi công kích</b>: X<br/><b>Kỹ năng vũ khí</b>: Khóa định: Phạm vi công kích của lá này bằng số máu bạn đã mất; sau khi bạn dùng 【Sát】 chỉ định mục tiêu, những người trong phạm vi công kích của bạn không phải mục tiêu của 【Sát】 này không thể sử dụng bài cho đến khi 【Sát】 này kết toán xong.",
+  "#scaly_wings_skill": "Liễm Lân Tiềm Dực",
+  "threaten_emperor": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu",
+  ":threaten_emperor": "Lá cẩm nang<br/><b>Thời điểm</b>: giai đoạn hành động<br/><b>Mục tiêu</b>: bạn thuộc thế lực lớn<br/><b>Hiệu quả</b>: mục tiêu kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, nếu mục tiêu là người đang trong lượt, người đó có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung.",
+  "#TE-ask": "Bị ảnh hưởng bởi 【Hiệp Thiên Tử Dĩ Lệnh Chư Hầu】, bạn có thể bỏ 1 lá trên tay để nhận 1 lượt bổ sung",
+  "threaten_emperor_skill": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu",
+  "#threaten_emperor_extra": "Hiệp Thiên Tử Dĩ Lệnh Chư Hầu",
+  "#threaten_emperor_skill": "Bạn kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, bạn có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung"
 }

@@ -1,12 +1,12 @@
 # Danh Mục Ngôn Ngữ Hiển Thị Gốc Tiếng Trung (zh_CN) & Bản Dịch Chính Thức - FreeKill Quốc Chiến
 
 > Được trích xuất trực tiếp từ runtime Lua và 14 packages gốc FreeKill.
-> Tổng cộng: **13031 mục ngôn ngữ hiển thị gốc** (chia làm 10 nhóm).
+> Tổng cộng: **13047 mục ngôn ngữ hiển thị gốc** (chia làm 10 nhóm).
 > Đã cập nhật 100% bản dịch tiếng Việt chính thức.
 
 Bảng tính CSV đầy đủ: [`ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv`](./ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv)
 
-## 1. Tên Thẻ Bài & Trang Bị (Cards & Equipments) (61 mục)
+## 1. Tên Thẻ Bài & Trang Bị (Cards & Equipments) (66 mục)
 
 | Key | Gốc tiếng Trung (zh_CN) | Bản dịch hiện tại | Bản dịch chính thức | Ghi chú |
 | --- | --- | --- | --- | --- |
@@ -71,8 +71,13 @@ Bảng tính CSV đầy đủ: [`ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv`](./ZH_CN_
 | `nine_tripod_cauldrons` | 九州鼎 | Cửu Châu Đỉnh | Cửu Châu Đỉnh |  |
 | `turban_shell_cup` | 鹦鹉杯 | Anh Vũ Bôi | Anh Vũ Bôi |  |
 | `rare_treasure` | 奇珍 | Kỳ Trân | Kỳ Trân |  |
+| `jingfan` | 惊帆 |  | Kinh Phàm |  |
+| `peace_spell` | 太平要术 |  | Thái Bình Yếu Thuật |  |
+| `luminous_pearl` | 定澜夜明珠 |  | Định Lan Dạ Minh Châu |  |
+| `scaly_wings` | 戢鳞潜翼 |  | Liễm Lân Tiềm Dực |  |
+| `threaten_emperor` | 挟天子以令诸侯 |  | Hiệp Thiên Tử Dĩ Lệnh Chư Hầu |  |
 
-## 2. Mô Tả Chi Tiết Thẻ Bài & Trang Bị (Card Descriptions) (61 mục)
+## 2. Mô Tả Chi Tiết Thẻ Bài & Trang Bị (Card Descriptions) (66 mục)
 
 | Key | Gốc tiếng Trung (zh_CN) | Bản dịch hiện tại | Bản dịch chính thức | Ghi chú |
 | --- | --- | --- | --- | --- |
@@ -137,8 +142,13 @@ Bảng tính CSV đầy đủ: [`ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv`](./ZH_CN_
 | `:nine_tripod_cauldrons` | 装备牌·宝物 [<a href=':rare_treasure'>奇珍牌</a>]<br/><b>宝物技能</b>：分发手牌前或洗牌后，将此牌从牌堆内置于弃牌堆。锁定技，若你装备区内有四张或以上<a href=':rare_treasure'>奇珍牌</a>，你当前阵营获得游戏胜利。 | Trang bị · Bảo vật, Kỳ Trân. Trước khi phát bài trên tay hoặc sau khi xáo bài, đặt lá này từ chồng bài rút vào chồng bài bỏ. Khóa định: nếu khu trang bị của bạn có ít nhất 4 lá Kỳ Trân, phe hiện tại của bạn thắng trận. | Lá trang bị · Bảo vật [<a href=':rare_treasure'>Kỳ Trân</a>]<br/><b>Kỹ năng bảo vật</b>: Trước khi phân phát bài trên tay hoặc sau khi xáo bài, đặt lá này từ chồng bài vào chồng bài bỏ. TOẢ ĐỊNH KỸ, Nếu vùng trang bị của bạn có ít nhất 4 <a href=':rare_treasure'>Kỳ Trân</a>, thế lực hiện tại của bạn giành chiến thắng. |  |
 | `:turban_shell_cup` | 装备牌·宝物 [<a href=':rare_treasure'>奇珍牌</a>]<br/><b>宝物技能</b>：每回合限九次，你可以将牌堆顶的牌当【酒】使用。 | Trang bị · Bảo vật, Kỳ Trân. Mỗi lượt tối đa 9 lần, bạn có thể dùng lá trên cùng chồng bài như Tửu. | Lá trang bị · Bảo vật [<a href=':rare_treasure'>Kỳ Trân</a>]<br/><b>Kỹ năng bảo vật</b>: MỖI LƯỢT GIỚI HẠN 9 LẦN, Bạn có thể xem như sử dụng lá trên cùng của chồng bài làm 【Tửu】. |  |
 | `:rare_treasure` | 奇珍牌：装备区内拥有奇珍牌的角色，受到【杀】造成的伤害后，伤害来源可以获得其装备区的一张奇珍牌。<br/>奇珍牌包括\n      <a href=':serpent_slayer_sword'>【斩蛇剑】</a>、\n      <a href=':yangsui_spear'>【阳燧枪】</a>、\n      <a href=':amiantus_robe'>【火浣衣】</a>、\n      <a href=':white_kylin'>【白麒麟】</a>、\n      <a href=':tianlu'>【天禄】</a>、\n      <a href=':dunjia_book'>【遁甲天书】</a>、\n      <a href=':turban_shell_cup'>【鹦鹉杯】</a>、\n      <a href=':nine_tripod_cauldrons'>【九州鼎】</a>。 | Kỳ Trân: sau khi một nhân vật có trang bị Kỳ Trân chịu sát thương từ Sát, người gây sát thương có thể lấy một lá Kỳ Trân trong khu trang bị của nhân vật đó. Các lá Kỳ Trân gồm Trảm Xà Kiếm, Dương Toại Thương, Hỏa Hoán Y, Bạch Kỳ Lân, Thiên Lộc, Độn Giáp Thiên Thư, Anh Vũ Bôi và Cửu Châu Đỉnh. | Kỳ Trân: Sau khi người có Kỳ Trân trong vùng trang bị chịu sát thương do 【Sát】 gây, nguồn gây sát thương có thể nhận 1 Kỳ Trân trong vùng trang bị của người đó.<br/>Kỳ Trân gồm\n <a href=':serpent_slayer_sword'>【Trảm Xà Kiếm】</a>、\n <a href=':yangsui_spear'>【Dương Toại Thương】</a>、\n <a href=':amiantus_robe'>【Hỏa Hoán Y】</a>、\n <a href=':white_kylin'>【Bạch Kỳ Lân】</a>、\n <a href=':tianlu'>【Thiên Lộc】</a>、\n <a href=':dunjia_book'>【Độn Giáp Thiên Thư】</a>、\n <a href=':turban_shell_cup'>【Anh Vũ Bôi】</a>、\n <a href=':nine_tripod_cauldrons'>【Cửu Châu Đỉnh】</a>. |  |
+| `:jingfan` | 装备牌·坐骑<br /><b>坐骑技能</b>：你与其他角色的距离-1. |  | Lá trang bị · Tọa kỵ<br /><b>Kỹ năng tọa kỵ</b>: Khoảng cách từ bạn đến người khác -1. |  |
+| `:peace_spell` | 装备牌·防具<br/><b>防具技能</b>：锁定技，当你受到属性伤害时，防止此伤害。你的手牌上限+X（X为与你势力相同的角色数）。当你失去装备区里的【太平要术】后，你摸两张牌，然后若你的体力值大于1，你失去1点体力。 |  | Lá trang bị · Phòng cụ<br/><b>Kỹ năng phòng cụ</b>: Khóa định: Khi bạn chịu sát thương thuộc tính, ngăn sát thương đó. Giới hạn bài trên tay của bạn +X (X là số người cùng thế lực với bạn). Sau khi bạn mất 【Thái Bình Yếu Thuật】 khỏi vùng trang bị, bạn rút 2 lá, sau đó nếu máu của bạn lớn hơn 1, bạn mất 1 máu. |  |
+| `:luminous_pearl` | 装备牌·宝物<br/><b>宝物技能</b>：锁定技，若你没有〖制衡〗，你视为拥有〖制衡〗；若你有〖制衡〗，取消〖制衡〗的数量限制。 |  | Lá trang bị · Bảo vật<br/><b>Kỹ năng bảo vật</b>: Khóa định: Nếu bạn không có 〖Chế Hành〗, bạn xem như có 〖Chế Hành〗; nếu bạn có 〖Chế Hành〗, bỏ giới hạn số lần của 〖Chế Hành〗. |  |
+| `:scaly_wings` | 装备牌·武器<br/><b>攻击范围</b>：X <br/><b>武器技能</b>：锁定技，此牌的攻击范围为你已损失的体力值；当你使用【杀】指定目标后，你令你攻击范围内不为此【杀】目标的角色不能使用牌直至此【杀】结算后。 |  | Lá trang bị · Vũ khí<br/><b>Phạm vi công kích</b>: X<br/><b>Kỹ năng vũ khí</b>: Khóa định: Phạm vi công kích của lá này bằng số máu bạn đã mất; sau khi bạn dùng 【Sát】 chỉ định mục tiêu, những người trong phạm vi công kích của bạn không phải mục tiêu của 【Sát】 này không thể sử dụng bài cho đến khi 【Sát】 này kết toán xong. |  |
+| `:threaten_emperor` | 锦囊牌<br/><b>时机</b>：出牌阶段<br/><b>目标</b>：为大势力角色的你<br/><b>效果</b>：目标角色结束出牌阶段，此回合的弃牌阶段结束时，若其为当前回合角色，其可弃置一张手牌，然后其获得一个额外回合。 |  | Lá cẩm nang<br/><b>Thời điểm</b>: giai đoạn hành động<br/><b>Mục tiêu</b>: bạn thuộc thế lực lớn<br/><b>Hiệu quả</b>: mục tiêu kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, nếu mục tiêu là người đang trong lượt, người đó có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung. |  |
 
-## 3. Câu Nhắc Kích Hoạt Kỹ Năng Thẻ Bài (Card Skill Prompts) (63 mục)
+## 3. Câu Nhắc Kích Hoạt Kỹ Năng Thẻ Bài (Card Skill Prompts) (69 mục)
 
 | Key | Gốc tiếng Trung (zh_CN) | Bản dịch hiện tại | Bản dịch chính thức | Ghi chú |
 | --- | --- | --- | --- | --- |
@@ -205,6 +215,12 @@ Bảng tính CSV đầy đủ: [`ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv`](./ZH_CN_
 | `#role__wooden_ox` | 你可以将一张手牌扣置于【木牛流马】下 |  | Bạn có thể đặt lá trên tay mình dưới 【Mộc Ngưu Lưu Mã】 |  |
 | `#jade_seal_skill` | 玉玺 |  | Ngọc ấn |  |
 | `#nine_tripod_cauldrons_skill` | 九州鼎 | Cửu Châu Đỉnh | Cửu Châu Đỉnh |  |
+| `#peace_spell_skill` | 太平要术 |  | Thái Bình Yếu Thuật |  |
+| `#scaly_wings_skill` | 戢鳞潜翼 |  | Liễm Lân Tiềm Dực |  |
+| `#TE-ask` | 受到【挟天子以令诸侯】影响，你可以弃置一张手牌，获得一个额外回合 |  | Bị ảnh hưởng bởi 【Hiệp Thiên Tử Dĩ Lệnh Chư Hầu】, bạn có thể bỏ 1 lá trên tay để nhận 1 lượt bổ sung |  |
+| `threaten_emperor_skill` | 挟天子以令诸侯 |  | Hiệp Thiên Tử Dĩ Lệnh Chư Hầu |  |
+| `#threaten_emperor_extra` | 挟天子以令诸侯 |  | Hiệp Thiên Tử Dĩ Lệnh Chư Hầu |  |
+| `#threaten_emperor_skill` | 你结束出牌阶段，此回合弃牌阶段结束时，你可弃置一张手牌，然后获得一个额外回合 |  | Bạn kết thúc giai đoạn hành động; khi kết thúc giai đoạn bỏ bài của lượt này, bạn có thể bỏ 1 lá trên tay, sau đó nhận 1 lượt bổ sung |  |
 
 ## 4. Thuật Ngữ Giao Diện, Nút Bấm & Giai Đoạn (System UI & Controls) (499 mục)
 

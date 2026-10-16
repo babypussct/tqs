@@ -61,13 +61,13 @@ const DELAYED_TRICKS = new Set([
 
 const NORMAL_TRICKS = new Set([
   'duel', 'dismantlement', 'snatch', 'ex_nihilo', 'nullification',
-  'god_salvation', 'amazing_grace', 'savage_assault', 'archery_attack',
+  'god_salvation', 'amazing_grace', 'savage_assault', 'archery_attack', 'threaten_emperor',
   'iron_chain', 'collateral', 'fire_attack',
 ]);
 
 const WEAPONS = new Set([
   'qinggang_sword', 'double_swords', 'blade', 'spear', 'axe', 'halberd',
-  'kylin_bow', 'crossbow', 'ice_sword', 'guding_blade', 'fan',
+  'kylin_bow', 'crossbow', 'ice_sword', 'guding_blade', 'fan', 'scaly_wings',
 ]);
 
 const ARMORS = new Set([
@@ -79,11 +79,11 @@ const DEFENSIVE_RIDES = new Set([
 ]);
 
 const OFFENSIVE_RIDES = new Set([
-  'chitu', 'dayuan', 'zixing',
+  'chitu', 'dayuan', 'zixing', 'jingfan',
 ]);
 
 const TREASURES = new Set([
-  'wooden_ox', 'role__wooden_ox', 'jade_seal',
+  'wooden_ox', 'role__wooden_ox', 'jade_seal', 'luminous_pearl', 'peace_spell',
 ]);
 
 export function getCardCategory(rawName: string | undefined): CardCategoryInfo {
@@ -136,6 +136,7 @@ const BASELINE_DESCRIPTIONS: Record<string, string> = {
   iron_chain: 'Chọn tối đa 2 nhân vật để xích hoặc tháo xích, hoặc trùng chú để đổi lá mới.',
   collateral: 'Chỉ định một người chơi có vũ khí dùng 【Sát】 lên mục tiêu bạn chọn, nếu không bạn lấy vũ khí đó.',
   fire_attack: 'Mục tiêu công khai 1 lá bài trên tay; nếu bạn bỏ lá cùng chất thì mục tiêu chịu 1 sát thương Hỏa.',
+  threaten_emperor: 'Cẩm nang. Khiến nhân vật thuộc thế lực lớn kết thúc giai đoạn hành động; người đó có thể bỏ 1 lá để nhận 1 lượt bổ sung.',
   lightning: 'Đặt vào vùng phán xét: Đầu lượt phán xét, nếu lật trúng Bích 2..9 thì chịu 3 sát thương sấm sét.',
   indulgence: 'Đặt vào vùng phán xét đối phương: Đầu lượt, nếu phán xét không phải Cơ thì bị bỏ qua giai đoạn Ra Bài.',
   supply_shortage: 'Đặt vào vùng phán xét đối phương: Đầu lượt, nếu phán xét không phải Chuồn thì bị bỏ qua giai đoạn Rút Bài.',
@@ -153,6 +154,7 @@ const BASELINE_DESCRIPTIONS: Record<string, string> = {
   ice_sword: 'Vũ khí tầm 2. Khi 【Sát】 trúng mục tiêu, có thể bỏ 2 lá của họ thay vì gây sát thương.',
   guding_blade: 'Vũ khí tầm 2. Khi 【Sát】 gây sát thương lên mục tiêu không có bài trên tay, sát thương tăng thêm 1 điểm.',
   fan: 'Vũ khí tầm 4. Bạn có thể coi một lá 【Sát】 thường như 【Hỏa Sát】.',
+  scaly_wings: 'Vũ khí có phạm vi bằng số máu đã mất. Sau khi dùng 【Sát】, những người trong phạm vi không phải mục tiêu không thể sử dụng bài cho đến khi 【Sát】 kết toán.',
   triblade: 'Vũ khí tầm 3. Sau khi gây sát thương bằng 【Sát】, bỏ 1 lá trên tay để gây 1 sát thương cho nhân vật trong cự ly 1.',
   six_swords: 'Vũ khí tầm 2. Khóa định: Khoảng cách từ người khác đến các tướng Ngô +1.',
   dragon_phoenix: 'Vũ khí tầm 2. Khi dùng 【Sát】 gây sát thương, có thể lấy 1 lá trang bị của mục tiêu.',
@@ -176,6 +178,7 @@ const BASELINE_DESCRIPTIONS: Record<string, string> = {
   chitu: 'Tọa kỵ tấn công (-1 Mã): Khoảng cách từ bạn đến tất cả người chơi khác giảm đi 1.',
   dayuan: 'Tọa kỵ tấn công (-1 Mã): Khoảng cách từ bạn đến tất cả người chơi khác giảm đi 1.',
   zixing: 'Tọa kỵ tấn công (-1 Mã): Khoảng cách từ bạn đến tất cả người chơi khác giảm đi 1.',
+  jingfan: 'Tọa kỵ tấn công (-1 Mã): Khoảng cách từ bạn đến tất cả người chơi khác giảm đi 1.',
   tianlu: 'Tọa kỵ tấn công (-3 Mã), Kỳ Trân: Khoảng cách từ bạn đến người khác -3. Nhận kỹ năng Quân chủ phe mình.',
   liulongcanjia: 'Tọa kỵ đặc biệt: Khoảng cách người khác đến bạn +1; khoảng cách từ bạn đến người khác -1.',
   mobile__liulongcanjia: 'Tọa kỵ đặc biệt: Khoảng cách từ bạn đến tất cả người chơi khác -3.',
@@ -184,6 +187,8 @@ const BASELINE_DESCRIPTIONS: Record<string, string> = {
   wooden_ox: 'Bảo vật: Giai đoạn ra bài có thể cất tối đa 5 lá vào Mộc Ngưu và chuyển sang cho người khác.',
   role__wooden_ox: 'Bảo vật: Giai đoạn ra bài có thể cất tối đa 5 lá vào Mộc Ngưu và chuyển sang cho người khác.',
   jade_seal: 'Bảo vật: Khóa định: Coi như có kỹ năng Quân chủ của phe mình. Đầu lượt rút bài được rút thêm 1 lá.',
+  luminous_pearl: 'Bảo vật: Khóa định: Nhận hoặc bỏ giới hạn số lần của kỹ năng Chế Hành.',
+  peace_spell: 'Phòng cụ, Kỳ Trân: Ngăn sát thương thuộc tính; tăng giới hạn bài trên tay theo số người cùng thế lực.',
   dunjia_book: 'Bảo vật, Kỳ Trân: Trong giai đoạn ra bài, tối đa 2 lần, bạn có thể đổi phó tướng.',
   nine_tripod_cauldrons: 'Bảo vật, Kỳ Trân: Khóa định: Nếu khu trang bị có ít nhất 4 lá Kỳ Trân, phe bạn thắng trận.',
   turban_shell_cup: 'Bảo vật: Có thể dùng lá trên cùng của chồng bài rút như một lá 【Tửu】.',
@@ -211,6 +216,7 @@ export const BASELINE_NAMES: Record<string, string> = {
   iron_chain: 'Thiết Tỏa Liên Hoàn',
   collateral: 'Tá Đao Sát Nhân',
   fire_attack: 'Hỏa Công',
+  threaten_emperor: 'Hiệp Thiên Tử Dĩ Lệnh Chư Hầu',
   lightning: 'Sấm Sét',
   indulgence: 'Lạc Bất Tư Thục',
   supply_shortage: 'Binh Lương Thốn Đoạn',
@@ -242,6 +248,7 @@ export const BASELINE_NAMES: Record<string, string> = {
   ice_sword: 'Hàn Băng Kiếm',
   guding_blade: 'Cổ Đĩnh Đao',
   fan: 'Chu Tước Phiến',
+  scaly_wings: 'Liễm Lân Tiềm Dực',
   triblade: 'Tam Tiêm Lưỡng Nhận Đao',
   six_swords: 'Ngô Lục Kiếm',
   dragon_phoenix: 'Phi Long Đoạt Phượng',
@@ -267,6 +274,7 @@ export const BASELINE_NAMES: Record<string, string> = {
   chitu: 'Xích Thố',
   dayuan: 'Đại Uyển',
   zixing: 'Tử Tinh',
+  jingfan: 'Kinh Phàm',
   tianlu: 'Thiên Lộc',
   liulongcanjia: 'Lục Long Tham Giá',
   mobile__liulongcanjia: 'Lục Long Tham Giá',
@@ -275,6 +283,8 @@ export const BASELINE_NAMES: Record<string, string> = {
   wooden_ox: 'Mộc Ngưu Lưu Mã',
   role__wooden_ox: 'Mộc Ngưu Lưu Mã',
   jade_seal: 'Ngọc Tỷ',
+  luminous_pearl: 'Định Lan Dạ Minh Châu',
+  peace_spell: 'Thái Bình Yếu Thuật',
   dunjia_book: 'Độn Giáp Thiên Thư',
   nine_tripod_cauldrons: 'Cửu Châu Đỉnh',
   turban_shell_cup: 'Anh Vũ Bôi',

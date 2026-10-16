@@ -311,6 +311,8 @@ test('UI-01 live C++ audit: battle events, Chinese cards, English turns and skil
     'Chúc Dung / Lý Vĩ (bạn) đã sử dụng Đồ Cùng Chủy Hiện[♣2] nhắm vào Hoắc Tuấn / Mã Tắc');
   assert.equal(localizedGameLog('Tướng ẩn/Mã Tắc đã bỏ 巧取豪夺[♥A] và trang bị 九州鼎[♥K]'),
     'Tướng ẩn / Mã Tắc đã bỏ Xảo Thủ Hào Đoạt[♥A] và trang bị Cửu Châu Đỉnh[♥K]');
+  assert.equal(localizedGameLog('Tướng ẩn đã được trang bị 戢鳞潜翼[♠6] và dùng Threaten Emperor[♦A]'),
+    'Tướng ẩn đã được trang bị Liễm Lân Tiềm Dực[♠6] và dùng Hiệp Thiên Tử Dĩ Lệnh Chư Hầu[♦A]');
   assert.equal(localizedGameLog('Hoắc Tuấn/Mã Tắc 即将对 Chúc Dung/Lý Vĩ (bạn) 造成的 1 点 Thường 伤害变为 2 点'),
     'Sát thương Thường do Hoắc Tuấn / Mã Tắc gây ra cho Chúc Dung / Lý Vĩ (bạn) thay đổi từ 1 thành 2 điểm.');
   assert.equal(localizedGameLog('Thông báo khác: 即将对 nhân vật'), 'Thông báo khác: 即将对 nhân vật');
