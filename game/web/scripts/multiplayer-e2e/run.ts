@@ -46,9 +46,10 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-dufu' || testScenario === 'hidden-dufu-deputy' ||
   testScenario === 'hidden-jianzhi' || testScenario === 'hidden-jianzhi-deputy' || testScenario === 'hidden-zhiman' || testScenario === 'hidden-zhiman-deputy' || testScenario === 'hidden-jilix' || testScenario === 'hidden-jilix-deputy',
   'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
-// These scenarios deliberately require an explicit opt-in: an interrupted
-// active room can create a server-side runner and trigger the upstream IP
-// temporary-ban policy. Local fixtures remain enabled independently.
+// These scenarios deliberately require an explicit opt-in. An interrupted
+// active room exercises reconnect/cleanup and therefore must run only against
+// the isolated QA runtime, whose installer sets tempBanTime=0. Local fixtures
+// remain enabled independently.
 const experimentalScenariosEnabled = process.env.TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS === '1';
 assert.ok(!testScenario || experimentalScenariosEnabled,
   'Experimental live scenarios are temporarily locked; set TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 only after broad deployment');
@@ -431,6 +432,9 @@ const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJ
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
+const qaCleanupTimeoutMs = Number(process.env.TQS_LIVE_QA_CLEANUP_TIMEOUT_MS ?? '30000');
+assert.ok(Number.isSafeInteger(qaCleanupTimeoutMs) && qaCleanupTimeoutMs >= 5000 && qaCleanupTimeoutMs <= 120000,
+  'TQS_LIVE_QA_CLEANUP_TIMEOUT_MS must be a bounded integer between 5000 and 120000');
 const nativeQaCatalog = nativeQa
   ? JSON.parse(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'), 'utf8')) as {
       scenarios: { id: string; seed: number; expectedCommand: string }[];
@@ -4123,8 +4127,8 @@ try{
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));
-  if(gameStarted && !finished && !nativeQaGateFailureObserved){
-    console.error('Preserving the connected test browser and candidate processes until GameOver; no forced mid-game disconnect');
+  if(gameStarted && !finished){
+    console.error('Preserving the connected test browser and candidate processes while attempting safe GameOver cleanup; no immediate mid-game disconnect');
     for(const p of pages)await p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click({timeout:3000}).catch(()=>{});
     // GameOver belongs to the shared room. A disconnected participant may never
     // render the result panel, so do not wait forever for that DOM after a failure.
@@ -4134,11 +4138,14 @@ try{
       const lastLobby=incoming.reduce((last,t,i)=>t.command==='EnterLobby'?i:last,-1);
       return lastStart>=0 && lastLobby>lastStart;
     };
+    const cleanupDeadline = nativeQa ? Date.now() + qaCleanupTimeoutMs : Number.POSITIVE_INFINITY;
     while (!traces.some(t=>t.some(p=>p.direction==='incoming' && p.command==='GameOver')) &&
-      transportOpen.some((open,i)=>open && !backInLobby(i)))
+      transportOpen.some((open,i)=>open && !backInLobby(i)) && Date.now() < cleanupDeadline)
       await new Promise(resolve=>setTimeout(resolve,1000));
-  } else if (nativeQaGateFailureObserved) {
-    console.error('Native QA readiness gate was not observed; skipping GameOver wait because server/package setup is already the failing boundary');
+    if (nativeQa && !traces.some(t=>t.some(p=>p.direction==='incoming' && p.command==='GameOver')) &&
+      transportOpen.some((open,i)=>open && !backInLobby(i))) {
+      console.error(`QA cleanup deadline ${qaCleanupTimeoutMs}ms elapsed; closing only after soft cleanup attempt. The isolated QA runtime must have tempBanTime=0.`);
+    }
   }
   process.exitCode=1;
 }finally{

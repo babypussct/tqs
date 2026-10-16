@@ -44,6 +44,9 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
     const config = JSON.parse(readFileSync(path.join(runtime, 'freekill.server.config.json'), 'utf8'));
     assert.equal(config.tqsQa.enabled, true);
     assert.deepEqual(config.tqsQa.allowedUsers, ['qa-a', 'qa-b']);
+    assert.equal(config.tempBanTime, 0, 'QA installer must disable effective temp-ban duration');
+    const productionConfig = JSON.parse(readFileSync(defaultConfig, 'utf8'));
+    assert.equal(productionConfig.tempBanTime, 20, 'production temp-ban policy must remain unchanged');
 
     writeFileSync(path.join(source, 'README.md'), `${readFileSync(path.join(source, 'README.md'), 'utf8')}\nchanged\n`);
     assert.throws(() => run('bash', [verifier, '--source', source, '--runtime', runtime], repo), /uncommitted changes/);

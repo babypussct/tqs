@@ -122,6 +122,12 @@ with open(path, "r", encoding="utf-8") as handle:
 if not isinstance(config, dict):
     raise SystemExit("native server config must be a JSON object")
 
+# The upstream native server applies its temporary IP ban when a player leaves
+# an active room. QA failures are expected to exercise reconnect/cleanup paths,
+# so the isolated QA runtime must not lock the shared test IP. The production
+# template remains unchanged; this override is written only by the QA installer.
+config["tempBanTime"] = 0
+
 config["tqsQa"] = {
     "enabled": True,
     "roomPrefix": prefix,

@@ -125,6 +125,16 @@ observer priority needed to see `DamageCaused` before `preventDamage()`; it does
 not change production law. This is bounded parity, not exhaustive rule coverage
 or an official release.
 
+### QA temp-ban isolation
+
+The upstream native server temporarily bans the player address when an active
+room is abandoned. The production template keeps `tempBanTime: 20`. The
+server-only QA installer overrides this value to `0` in the isolated QA runtime
+and the verifier rejects a QA runtime that is still ban-prone. The multiplayer
+QA runner also tries `BOT chơi hộ`/`GameOver` cleanup for a bounded period before
+closing a failed session. This policy applies only to the QA replacement VM;
+it must not be copied into a production runtime.
+
 ## Administrator access
 
 The owner retains administration through the VM's local FreeKill CLI. Port

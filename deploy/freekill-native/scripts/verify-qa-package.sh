@@ -69,11 +69,14 @@ manifest_tree="$(read_json_field "$destination/package.manifest.json" packageSha
 
 qa_enabled="$(read_json_field "$config_path" tqsQa.enabled)" || die "native config has no tqsQa block"
 allowlist="$(read_json_field "$config_path" tqsQa.allowedUsers)" || die "native config has no QA allowlist"
+temp_ban_time="$(read_json_field "$config_path" tempBanTime)" || die "native config has no tempBanTime"
 [[ "$qa_enabled" == true ]] || die "tqsQa.enabled is not true"
 [[ "$allowlist" != "[]" ]] || die "QA allowlist is empty"
+[[ "$temp_ban_time" == "0" ]] || die "QA runtime must set tempBanTime=0; refusing a ban-prone test host"
 
 printf 'PASS tqs_qa runtime verification\n'
 printf 'sourceRevision=%s\n' "$revision"
 printf 'packageSha256=%s\n' "$actual_package_hash"
 printf 'catalogSha256=%s\n' "$actual_catalog_hash"
 printf 'serverOnly=true\n'
+printf 'tempBanTime=0 (QA only)\n'

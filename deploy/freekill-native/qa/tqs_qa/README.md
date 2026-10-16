@@ -54,6 +54,13 @@ production runtime must not be modified by this workflow.
 ## Operational contract
 
 - The default server config has QA disabled.
+- The QA installer sets the isolated runtime's top-level `tempBanTime` to `0`.
+  Upstream still performs its in-memory disconnect bookkeeping, but the timer
+  expires without an effective lockout; this keeps failed/reconnect QA runs
+  from blocking the shared test IP. The production template remains `20`.
+- The multiplayer runner attempts a bounded soft cleanup (`BOT chơi hộ` and
+  `GameOver`) before closing a failed QA session; `TQS_LIVE_QA_CLEANUP_TIMEOUT_MS`
+  controls that bound from 5–120 seconds and defaults to 30 seconds.
 - The allowlist must be explicit; an empty allowlist is rejected.
 - The scenario id and seed must both be present and must match the catalog.
 - The room is limited by the QA player count, active-room quota, run quota,
