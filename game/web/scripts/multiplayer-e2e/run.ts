@@ -2192,7 +2192,7 @@ try{
           await new Promise((resolve) => setTimeout(resolve, 250));
           continue;
         }
-        if (hiddenJizhiCard || hiddenMingshiCard || hiddenQianxunCard || hiddenKongchengCard || hiddenWeimuCard || hiddenTianxiangChoose || hiddenEnyuanPeach || hiddenFuyinSlash) {
+        if (hiddenJizhiCard || hiddenMingshiCard || hiddenQianxunCard || hiddenKongchengCard || hiddenWeimuCard || hiddenTianxiangChoose || hiddenEnyuanPeach || hiddenFuyinSlash || hiddenJilixDamage) {
           // The hidden Enyuan actor is the Peach target, but the real card is
           // owned by the other seat.  Keep the request page explicit so a
           // future selector/seat change cannot accidentally inspect the
@@ -2204,6 +2204,8 @@ try{
             : hiddenEnyuanPeach
             ? hand.filter({ hasText: /Đào|Peach|桃/i }).first()
             : hiddenFuyinSlash
+            ? hand.filter({ hasText: /Sát|Slash|杀/i }).first()
+            : hiddenJilixDamage
             ? hand.filter({ hasText: /Sát|Slash|杀/i }).first()
             : hiddenKongchengCard
             ? hand.filter({ hasText: /Quyết Đấu|决斗|Duel/i }).first()
@@ -2217,13 +2219,13 @@ try{
               : /Thuận Thủ|顺手牵羊|Snatch|顺手/i }).first()
             : hand.first();
           const card = await preferredCard.count() ? preferredCard : hand.first();
-          assert.ok(await card.count(), `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenFuyinSlash ? 'hidden-fuyin' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must expose its reserved real card`);
+          assert.ok(await card.count(), `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenFuyinSlash ? 'hidden-fuyin' : hiddenJilixDamage ? 'hidden-jilix' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must expose its reserved real card`);
           await card.click();
           await chooseTargetIfNeeded(requestPage);
           const ok = requestPage.getByRole('region', { name: 'Điều khiển lượt chơi' })
             .getByRole('button', { name: 'Xác nhận', exact: true });
           assert.ok(await ok.count() && await ok.isEnabled(),
-            `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenFuyinSlash ? 'hidden-fuyin' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must enable confirmation after selecting its real card`);
+            `${hiddenEnyuanPeach ? 'hidden-enyuan' : hiddenFuyinSlash ? 'hidden-fuyin' : hiddenJilixDamage ? 'hidden-jilix' : hiddenTianxiangChoose ? 'hidden-tianxiang' : hiddenJizhiCard ? 'hidden-jizhi' : hiddenMingshiCard ? 'hidden-mingshi' : hiddenQianxunCard ? 'hidden-qianxun' : hiddenKongchengCard ? 'hidden-kongcheng' : 'hidden-weimu'} must enable confirmation after selecting its real card`);
           await ok.click();
           const replied = await waitForReply(activeClient, latest.requestId);
           if (hiddenJizhiCard && replied) hiddenJizhiCardReply = true;
@@ -2241,8 +2243,9 @@ try{
           }
           if (hiddenEnyuanPeach && replied) hiddenEnyuanCardReply = true;
           if (hiddenFuyinSlash && replied) hiddenFuyinCardReply = true;
+          if (hiddenJilixDamage && replied) hiddenJilixCardReply = true;
           scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
-            detail: hiddenEnyuanPeach ? 'hidden-enyuan-peach-target' : hiddenFuyinSlash ? 'hidden-fuyin-source-slash' : hiddenTianxiangChoose ? 'hidden-tianxiang-heart-card-and-target' : hiddenJizhiCard ? 'hidden-jizhi-duel' : hiddenMingshiCard ? 'hidden-mingshi-hidden-source-slash' :
+            detail: hiddenEnyuanPeach ? 'hidden-enyuan-peach-target' : hiddenFuyinSlash ? 'hidden-fuyin-source-slash' : hiddenJilixDamage ? 'hidden-jilix-red-slash' : hiddenTianxiangChoose ? 'hidden-tianxiang-heart-card-and-target' : hiddenJizhiCard ? 'hidden-jizhi-duel' : hiddenMingshiCard ? 'hidden-mingshi-hidden-source-slash' :
               hiddenKongchengCard ? 'hidden-kongcheng-duel' : hiddenWeimuCard
                 ? (hiddenWeimuIndulgenceScenario ? 'hidden-weimu-black-indulgence' : 'hidden-weimu-black-duel') :
               hiddenQianxunIndulgenceScenario ? 'hidden-qianxun-indulgence' : 'hidden-qianxun-snatch' });

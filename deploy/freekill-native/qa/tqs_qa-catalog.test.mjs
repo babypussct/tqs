@@ -39,6 +39,7 @@ const dufuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg
 const jianzhiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/jin_zqdl/skills/jianzhi.lua');
 const zhimanSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/transformation/skills/zhiman.lua');
 const jilixSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/lord_ex/skills/jilix.lua');
+const hegemonyUtilPath = path.resolve(here, '../../../runtime/packages/hegemony/util.lua');
 const triggerSkillPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/skill_type/trigger.lua');
 const playerPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/core/player.lua');
 const skillEventPath = path.resolve(here, '../../../runtime/packages/freekill-core/ltk/server/events/skill.lua');
@@ -1352,6 +1353,7 @@ test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted r
   }
 
   const jilix = fs.readFileSync(jilixSkillPath, 'utf8');
+  const hegemonyUtil = fs.readFileSync(hegemonyUtilPath, 'utf8');
   const skillEvent = fs.readFileSync(skillEventPath, 'utf8');
   const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
   assert.match(jilix, /name = "ld__jilix"/u);
@@ -1363,6 +1365,10 @@ test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted r
   assert.match(jilix, /getActualDamageEvents\(2/u);
   assert.match(jilix, /data:preventDamage\(\)/u);
   assert.match(jilix, /H\.removeGeneral\(player, isDeputy == "d"\)/u);
+  assert.match(hegemonyUtil, /local main = HegUtil\.getActualGeneral\(player, false\)/u,
+    'hidden Jilix ownership must resolve the private main-general mark while the slot is anjiang');
+  assert.match(hegemonyUtil, /local deputy = HegUtil\.getActualGeneral\(player, true\)/u,
+    'hidden Jilix ownership must resolve the private deputy-general mark while the slot is anjiang');
   const revealIndex = skillEvent.indexOf('player:revealBySkillName(main_skill.name)');
   const effectCallbackIndex = skillEvent.indexOf('effect_cb()');
   assert.ok(revealIndex >= 0, 'SkillEffect must reveal the hidden general by skill name');

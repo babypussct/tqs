@@ -2908,8 +2908,12 @@ local function triggerHiddenJilix(room, state)
   end
   local jilixIsDeputy = state.scenario == "hidden-jilix-deputy"
   local removedCorrectSlot = jilixIsDeputy
-    and state.actor.general == "ld__huangzu" and state.actor.deputyGeneral == "blank_shibing"
-    or not jilixIsDeputy and state.actor.general == "blank_shibing" and state.actor.deputyGeneral == "ld__huangzu"
+    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "blank_shibing" and
+      state.actor:getMark("__heg_general") == "ld__huangzu" and
+      state.actor:getMark("__heg_deputy") == "blank_shibing"
+    or not jilixIsDeputy and state.actor.general == "blank_shibing" and state.actor.deputyGeneral == "anjiang" and
+      state.actor:getMark("__heg_general") == "blank_shibing" and
+      state.actor:getMark("__heg_deputy") == "ld__huangzu"
   local damage = 0
   for _, entry in ipairs(state.damageEvents) do
     if entry.step == 1 and entry.to == state.actor.id then damage = damage + entry.amount end

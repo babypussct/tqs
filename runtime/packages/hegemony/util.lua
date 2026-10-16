@@ -817,9 +817,15 @@ Fk:loadTranslationTable{
 function HegUtil.inGeneralSkills(player, skill)
   assert(type(skill) == "string" or skill:isInstanceOf(Skill))
   if type(skill) ~= "string" then skill = skill.name end
-  if table.contains(Fk.generals[player.general]:getSkillNameList(), skill) then
+  -- A prelighted hidden skill is still owned by its original slot while the
+  -- public general field is `anjiang`.  Resolve the private marks first so
+  -- callers such as Jilix/Qingyin remove or transform the correct main/deputy
+  -- general after the hidden skill has actually taken effect.
+  local main = HegUtil.getActualGeneral(player, false)
+  local deputy = HegUtil.getActualGeneral(player, true)
+  if Fk.generals[main] and table.contains(Fk.generals[main]:getSkillNameList(), skill) then
     return "m"
-  elseif player.deputyGeneral ~= "" and table.contains(Fk.generals[player.deputyGeneral]:getSkillNameList(), skill) then
+  elseif deputy ~= "" and Fk.generals[deputy] and table.contains(Fk.generals[deputy]:getSkillNameList(), skill) then
     return "d"
   end
   return nil
