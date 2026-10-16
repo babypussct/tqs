@@ -2622,6 +2622,23 @@ try{
           console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillButtons.allTextContents()).join(' | ') || '(none)'}`);
         }
         if (hiddenJizhiScenario || hiddenMingshiScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenEnyuanScenario || hiddenFuyinScenario || hiddenJilixScenario) {
+          // Fuyin and Jilix are deliberately deferred to the actor's native
+          // Start phase because their source predicates inspect turn history.
+          // A normal PlayCard request can therefore arrive before the QA
+          // prelight gate. Never consume the reserved source Slash from that
+          // unrelated turn; finish it and wait for the gate to establish the
+          // real askToUseRealCard request.
+          const deferredHiddenScenario = hiddenFuyinScenario || hiddenJilixScenario;
+          const deferredGateAccepted = hiddenFuyinScenario
+            ? hiddenFuyinGateReply
+            : hiddenJilixGateReply;
+          if (deferredHiddenScenario && !deferredGateAccepted) {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            if (await end.count() && await end.isEnabled()) await end.click();
+            await waitForReply(activeClient, latest.requestId);
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+          }
           const hand = controls.locator('.gameplay-hand button:enabled');
           const preferredCard = hiddenFuyinScenario
             ? hand.filter({ hasText: /Sát|Slash|杀/i }).first()

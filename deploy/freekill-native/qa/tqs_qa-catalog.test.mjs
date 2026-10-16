@@ -431,6 +431,8 @@ test('hidden-fuyin locks TargetConfirmed Slash nullification and hidden main/dep
   assert.match(fuyin, /data\.nullified = true/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*state\.hiddenFuyinPending = true/u);
   assert.match(qaInit, /director:addEffect\(fk\.EventPhaseStart[\s\S]*state\.hiddenFuyinPending[\s\S]*data\.phase == Player\.Start[\s\S]*triggerHiddenFuyin\(player\.room, state\)/u);
+  assert.match(qaInit, /local function askQaSkillInvoke\(room, player, params\)[\s\S]*req\.timeout = math\.max\(tonumber\(room\.timeout\) or 0, 60\)/u);
+  assert.match(qaInit, /local gate = askQaSkillInvoke\(room, state\.actor, \{[\s\S]*tqs_qa_hidden_fuyin_gate/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-fuyin"[\s\S]*for _ = 1, 4 do[\s\S]*trueName = "jink"/u);
   assert.match(qaInit, /skill_name = "tqs_qa_hidden_fuyin_damage"[\s\S]*exclusive_targets = \{ state\.actor\.id \}/u);
   assert.match(qaInit, /director:addEffect\(fk\.TargetConfirmed[\s\S]*hiddenFuyinTargetConfirmed = true/u);
@@ -1366,6 +1368,7 @@ test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted r
   assert.ok(effectCallbackIndex > revealIndex,
     'SkillEffect must reveal the matching slot before running Jilix effect');
   assert.match(qaInit, /scenario\.trigger == "hidden-jilix"[\s\S]*triggerHiddenJilix\(room, state\)/u);
+  assert.match(qaInit, /local gate = askQaSkillInvoke\(room, state\.actor, \{[\s\S]*tqs_qa_hidden_jilix_gate/u);
   assert.match(qaInit, /hidden-jilix[\s\S]*fk\.TargetConfirmed[\s\S]*hiddenJilixTargetConfirmed/u);
   assert.match(qaInit, /hidden-jilix[\s\S]*fk\.DamageInflicted[\s\S]*hiddenJilixDamageInflicted/u);
 });

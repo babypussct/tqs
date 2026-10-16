@@ -1518,6 +1518,20 @@ local function isPrelighted(player, skillName)
   end) ~= nil
 end
 
+-- A deferred hidden-skill gate can run while the browser is still finishing
+-- the preceding phase transition.  Keep the native request type and reply
+-- semantics, but give this QA-only synchronization gate a bounded 60-second
+-- window so the request is not cancelled before the real client can answer.
+local function askQaSkillInvoke(room, player, params)
+  local req = Request:new(player, "AskForSkillInvoke")
+  req.timeout = math.max(tonumber(room.timeout) or 0, 60)
+  req.focus_text = params.skill_name
+  req.receive_decode = false
+  req:setData(player, { params.skill_name, params.prompt })
+  req:ask()
+  return req:getResult(player) ~= ""
+end
+
 local function recordSkillEffect(state, player, data)
   local triggerEvent = data.skill_data and data.skill_data.trigger_event
   local damage = triggerEvent and triggerEvent.data
@@ -2109,7 +2123,7 @@ local function triggerHiddenFuyin(room, state)
     fail("hidden-fuyin must not be active before the prelighted Slash branch")
   end
 
-  local gate = room:askToSkillInvoke(state.actor, {
+  local gate = askQaSkillInvoke(room, state.actor, {
     skill_name = "tqs_qa_hidden_fuyin_gate",
     prompt = "TQS QA: prelight Phụ Âm, rồi xác nhận để đối thủ dùng Sát.",
   })
@@ -2849,7 +2863,7 @@ local function triggerHiddenJilix(room, state)
     fail("hidden-jilix must not be active before the TargetConfirmed branch")
   end
 
-  local gate = room:askToSkillInvoke(state.actor, {
+  local gate = askQaSkillInvoke(room, state.actor, {
     skill_name = "tqs_qa_hidden_jilix_gate",
     prompt = "TQS QA: prelight Ký Ly, rồi xác nhận để nguồn dùng Sát đỏ.",
   })
