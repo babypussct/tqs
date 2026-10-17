@@ -111,6 +111,7 @@ const legacyBattleEvents: [string, string, string][] = [
 // identifier into a Chinese or English face name. Keep this list explicit so
 // an unknown runtime string is never guessed or translated accidentally.
 const legacyCardNames: Array<[string, string]> = [
+  ['以逸待劳', 'await_exhausted'],
   ['戢鳞潜翼', 'scaly_wings'],
   ['挟天子以令诸侯', 'threaten_emperor'],
   ['Threaten Emperor', 'threaten_emperor'],
