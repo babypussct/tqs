@@ -30,6 +30,8 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
     - Ảnh chụp bằng chứng `390_portrait_card_vfx_combat_impact.png` xác thực trực quan nhát chém kiếm Sát chính thống vệt máu đỏ rực của FreeKill cùng đường cong ngắm mục tiêu.
     - Build web bundle và đồng bộ root `dist/` byte-for-byte (`diff -rq` 0 differences).
 
+- **CP33 Render publish attempt (BLOCKED, 17/10/2026):** commit [`69780705`](https://github.com/babypussct/tqs/commit/69780705606cdde08047895d3b77a0119a57bd56) đã push lên `codex/cp89-render-current`; release checkpoint sạch, `READY_FOR_PUBLISH_REVIEW`, verify PASS với **16.813 files**, **14 package**, runtime MD5 `29653b06…`, HTML SHA-256 `a527c8ef…`. Render dashboard service `tqs-mobile-candidate` báo workspace `suspended` vì dùng hết **5 GB free bandwidth**; public `/gateway/healthz` trả **HTTP 503 / Service Suspended**. Chưa có deployment ID CP33 và chưa claim LIVE; không nâng cấp/thêm billing trong phiên này. Native VM `freekill-hegemony-qa`/`161.33.209.212:9527` không bị thay đổi hay restart.
+
 - **CP32 card animation & visual effects engine (Card VFX, Targeting Indicator, Combat Impacts & Web Audio SFX) (local PASS, 17/10/2026):** triển khai toàn diện hệ thống hiệu ứng thị giác và hoạt ảnh lá bài sống động chuẩn SGS Mobile / FreeKill trên nền tảng Web Client:
   - **Đường mũi tên nhắm mục tiêu động (`TargetingOverlay.tsx`):**
     - Vẽ đường cong Quadratic Bezier uốn lượn nối từ lá bài/ghế bản thân lên avatar đối thủ bằng SVG overlay phủ trên `.board-main`, không bị cắt bởi `overflow: hidden` của bàn cờ.
@@ -177,6 +179,8 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Render checkpoint cuối
 
+- **CP33 chưa thể publish lên Render (BLOCKED, 17/10/2026):** source [`69780705`](https://github.com/babypussct/tqs/commit/69780705606cdde08047895d3b77a0119a57bd56) đã push và release snapshot sạch/verify PASS với 16.813 files, 14 package, runtime MD5 `29653b06…`, HTML SHA-256 `a527c8ef…`. Render dashboard báo workspace `suspended` do hết 5 GB free bandwidth; public `/gateway/healthz` trả HTTP 503 `Service Suspended`. Chưa có CP33 deployment ID/live probe; VM native không đổi. Cần người có quyền billing khôi phục quota rồi manual deploy và rerun health/assets/manifest/live Render → VM.
+
 - **Final active deployment:** Render deployment [`dep-db9m3bnavr4c73ej7ntg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db9m3bnavr4c73ej7ntg) từ source [`e5d383cf`](https://github.com/babypussct/tqs/commit/e5d383cf69f80fc9f34030e4fba766756e232f30) báo `Deploy succeeded | Live`; đây là candidate CP31 mobile landscape. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `e21686fcbbbf42be0e9bbdfba733473173e451d28fdc82f79d34554e2e6b0a08` / `5ed300cee6a67278e1315fad7aef412e193cd065be733a4d19d5719310db242f` / `34dfe7fab6fdd0c2b66a0d5069aceee7037644cb45e64362a081c72b4584f07e` khớp local `dist`; manifest public giữ 14 package/5.279 file, bundle `ce342f067f61796e`, runtime bundle MD5 `29653b06…`. Live UI translation smoke thấy 91 visible texts/0 unresolved và clean GameOver/lobby/disconnect; evidence [`ui-01-live-cpp-cp31-render-live-20261017.json`](../scratch/evidence/ui-01-live-cpp-cp31-render-live-20261017.json); gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra read-only: `freekill-native.service active + enabled`, `*:9527 LISTEN` và flist MD5 đúng. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
 
 ## Việc còn mở theo thứ tự
@@ -197,97 +201,27 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; hiện runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, QA revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`, current Render deployment `dep-db9m3bnavr4c73ej7ntg`, source `e5d383cf`. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Public UI health/HTML/JS/CSS identity đã kiểm tra trực tiếp sau deployment; package/runtime identity đã được health/manifest/live UI translation smoke probe. **CP31 UI landscape + portrait/request-dialog/self-equipment slice:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, store **44/44**, connection **31/31**, gameplay **16/16**, native-dialogs **7/7**, card-display **14/14**, typecheck/build và diff check riêng các file thuộc slice đều PASS; candidate final live smoke **91 visible texts / 0 possible untranslated strings** qua Render → VM `161.33.209.212:9527`, VM service active/enabled/port listening. Candidate đã deploy và live; bước kế tiếp là user smoke test trên thiết bị/viewport thật, sau đó tiếp tục native matrix theo các event groups còn thiếu. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
+Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; CP33 source hiện là commit `69780705606cdde08047895d3b77a0119a57bd56`, runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, release snapshot 16.813 files/14 package, HTML SHA-256 `a527c8ef…`. Render workspace đang suspended vì quota bandwidth và public health 503, nên deployment hiện hành vẫn là `dep-db9m3bnavr4c73ej7ntg` từ source `e5d383cf`; chưa được gọi CP33 LIVE. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Sau khi có quyền billing khôi phục workspace, manual deploy CP33 rồi kiểm tra public UI health/HTML/JS/CSS, asset animation/audio, package/runtime identity và live Render → VM. **CP33 local gates:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, card-effects **10/10**, store **44/44**, connection **31/31**, gameplay **16/16**, card-display **14/14**, release/QA contract **44/44**, typecheck/build và diff check PASS. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
 
 **Bổ sung evidence sau M3/M4/M5:** PWA E2E PASS; recovery **3/3**, protocol **5/5**, room-pools **1/1**, Vietnamese **4/4** và Lua lifecycle **5/5** đều PASS trên checkout hiện hành. Capture M6 đã chạy lại sau waiting-room hint, card long-press và portrait hand correction; bộ ảnh gồm **12 ảnh chuẩn + 1 ảnh 10 lá + 1 ảnh card-detail long-press**. `RequestTimer` đã được tách repaint cục bộ để giữ hand rail ổn định khi đếm ngược. Diff check riêng các file thuộc UI/docs slice PASS; lệnh toàn repo hiện dừng ở `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` do CRLF bị báo trailing whitespace trong file CSV dirty ngoài slice, không được chuẩn hóa trong phiên này. Đây là regression evidence local, không thay thế device smoke/candidate smoke.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T13:33:18.004Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `79568212a57a`.
-- File thay đổi hiển thị: 434 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-17T14:23:25.948Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `69780705606c`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- D dist/assets/index--wXokC1V.js
- D dist/assets/index-D4UZB8-r.css
- M dist/index.html
- M dist/sw.js
  M docs/CODEX_PLAN.md
- M game/web/package.json
- M game/web/scripts/capture-m6-evidence.ts
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/styles.css
-?? dist/anim/analeptic/0.png
-?? dist/anim/analeptic/1.png
-?? dist/anim/analeptic/10.png
-?? dist/anim/analeptic/11.png
-?? dist/anim/analeptic/12.png
-?? dist/anim/analeptic/13.png
-?? dist/anim/analeptic/14.png
-?? dist/anim/analeptic/15.png
-?? dist/anim/analeptic/16.png
-?? dist/anim/analeptic/2.png
-?? dist/anim/analeptic/3.png
-?? dist/anim/analeptic/4.png
-?? dist/anim/analeptic/5.png
-?? dist/anim/analeptic/6.png
-?? dist/anim/analeptic/7.png
-?? dist/anim/analeptic/8.png
-?? dist/anim/analeptic/9.png
-?? dist/anim/damage/0.png
-?? dist/anim/damage/1.png
-?? dist/anim/damage/2.png
-?? dist/anim/damage/3.png
-?? dist/anim/damage/4.png
-?? dist/anim/damage/5.png
-?? dist/anim/fire__slash/0.png
-?? dist/anim/fire__slash/1.png
-?? dist/anim/fire__slash/10.png
-?? dist/anim/fire__slash/11.png
-?? dist/anim/fire__slash/12.png
-?? dist/anim/fire__slash/13.png
-?? dist/anim/fire__slash/14.png
-?? dist/anim/fire__slash/15.png
-?? dist/anim/fire__slash/16.png
-?? dist/anim/fire__slash/17.png
-?? dist/anim/fire__slash/18.png
-?? dist/anim/fire__slash/19.png
-?? dist/anim/fire__slash/2.png
-?? dist/anim/fire__slash/20.png
-?? dist/anim/fire__slash/21.png
-?? dist/anim/fire__slash/22.png
-?? dist/anim/fire__slash/23.png
-?? dist/anim/fire__slash/3.png
-?? dist/anim/fire__slash/4.png
-?? dist/anim/fire__slash/5.png
-?? dist/anim/fire__slash/6.png
-?? dist/anim/fire__slash/7.png
-?? dist/anim/fire__slash/8.png
-?? dist/anim/fire__slash/9.png
-?? dist/anim/jink/0.png
-?? dist/anim/jink/1.png
-?? dist/anim/jink/10.png
-?? dist/anim/jink/11.png
-?? dist/anim/jink/12.png
-?? dist/anim/jink/13.png
-?? dist/anim/jink/14.png
-?? dist/anim/jink/15.png
-?? dist/anim/jink/16.png
-?? dist/anim/jink/17.png
-?? dist/anim/jink/18.png
-?? dist/anim/jink/19.png
-?? dist/anim/jink/2.png
-... và 364 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+69780705 feat: publish CP33 upstream FreeKill VFX assets
 79568212 docs: refresh checkpoint snapshot
 572b5dac docs: record CP31 Render deployment
-e5d383cf feat: refine mobile landscape board layout
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
