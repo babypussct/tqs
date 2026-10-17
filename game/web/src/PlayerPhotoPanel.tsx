@@ -138,6 +138,54 @@ function resolveEquipName(card: BoardEquipment | undefined, fallback: string, te
   return BASELINE_NAMES[base] ?? BASELINE_NAMES[card.name] ?? t;
 }
 
+const EQUIP_ICON_ALIASES: Record<string, string> = {
+  ex_crossbow: 'crossbow',
+  real__crossbow: 'crossbow',
+  sa__halberd: 'halberd',
+  sa__blade: 'blade',
+  guding_blade: 'guding_blade',
+  ex_eight_diagram: 'eight_diagram',
+  ex_nioh_shield: 'nioh_shield',
+  ex_silver_lion: 'silver_lion',
+  ex_vine: 'vine',
+  sa__breastplate: 'breastplate',
+  wooden_ox: 'role__wooden_ox',
+  six_swords: 'double_swords',
+  triblade: 'yajiao_spear',
+  jade_seal: 'mobile_seal',
+  dunjia_book: 'taigong_tactics',
+};
+
+export function getNativeEquipIconUrl(slot: string, card?: BoardEquipment): string | null {
+  if (!card) return null;
+  // FreeKill EquipItem.qml: horses (both defensive and offensive) always use "horse.png"
+  if (slot === 'defensive_ride' || slot === 'offensive_ride' || card.subtype === 'defensive_ride' || card.subtype === 'offensive_ride') {
+    return '/photo-assets/equipIcon/horse.png';
+  }
+
+  const rawName = card.name.replace(/^(sa__|ex__|ty__|mobile__|m_liuyi__)/, '');
+  const alias = EQUIP_ICON_ALIASES[card.name] || EQUIP_ICON_ALIASES[rawName] || rawName || card.name;
+  return `/photo-assets/equipIcon/${alias}.png`;
+}
+
+function EquipSlotVisual({ slot, card }: { slot: EquipmentSlotKey; card?: BoardEquipment }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const iconUrl = card ? getNativeEquipIconUrl(slot, card) : null;
+
+  if (card && iconUrl && !imgFailed) {
+    return <img className="native-eq-thumb" src={iconUrl} alt="" onError={() => setImgFailed(true)} />;
+  }
+  return <EquipIcon slot={slot} />;
+}
+
+function equipNameClass(name: string): string {
+  const len = name.length;
+  if (len <= 6) return 'eq-name-short';
+  if (len <= 11) return 'eq-name-medium';
+  if (len <= 16) return 'eq-name-long';
+  return 'eq-name-xlarge';
+}
+
 function EquipRow({
   slot, typeLabel, card, text,
 }: {
@@ -150,10 +198,11 @@ function EquipRow({
   const name = resolveEquipName(card, typeLabel, text);
   const suitText = info ? info.text : '';
   const detail = card ? `${name} · ${suitText}${card.range != null ? ` · Tầm ${card.range}` : ''}` : `${typeLabel} trống`;
+  const nameClass = equipNameClass(card ? name : typeLabel);
 
   return <div className={`native-equip-row ${card ? 'equipped' : 'empty'}`} title={detail} aria-label={detail}>
-    <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot={slot} /></span>
-    <span className="native-eq-name">{card ? name : '—'}</span>
+    <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot={slot} card={card} /></span>
+    <span className={`native-eq-name ${nameClass}`}>{card ? name : typeLabel}</span>
     {card && <span className={`native-eq-suit ${info?.isRed ? 'suit-red' : 'suit-black'}`}>{suitText}</span>}
   </div>;
 }
@@ -171,16 +220,18 @@ function EquipRidesSplit({
   const offName = resolveEquipName(offCard, '-1', text);
   const defDetail = defCard ? `${defName} · ${defInfo?.text}` : '+1 Mã trống';
   const offDetail = offCard ? `${offName} · ${offInfo?.text}` : '-1 Mã trống';
+  const defNameClass = equipNameClass(defCard ? defName : '+1');
+  const offNameClass = equipNameClass(offCard ? offName : '-1');
 
   return <div className="native-equip-rides-split">
     <div className={`native-equip-half ${defCard ? 'equipped' : 'empty'}`} title={defDetail} aria-label={defDetail}>
-      <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot="defensive_ride" /></span>
-      <span className="native-eq-name">{defCard ? defName : '+1'}</span>
+      <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="defensive_ride" card={defCard} /></span>
+      <span className={`native-eq-name ${defNameClass}`}>{defCard ? defName : '+1'}</span>
       {defCard && <span className={`native-eq-suit ${defInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{defInfo?.text}</span>}
     </div>
     <div className={`native-equip-half ${offCard ? 'equipped' : 'empty'}`} title={offDetail} aria-label={offDetail}>
-      <span className="native-eq-icon" aria-hidden="true"><EquipIcon slot="offensive_ride" /></span>
-      <span className="native-eq-name">{offCard ? offName : '-1'}</span>
+      <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="offensive_ride" card={offCard} /></span>
+      <span className={`native-eq-name ${offNameClass}`}>{offCard ? offName : '-1'}</span>
       {offCard && <span className={`native-eq-suit ${offInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{offInfo?.text}</span>}
     </div>
   </div>;
@@ -300,6 +351,7 @@ export default function PlayerPhotoPanel({
 
   const mainUnrevealed = self && !isMainRevealed && !!main;
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
+  const bothUnrevealed = mainUnrevealed && deputyUnrevealed;
 
   return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
@@ -326,9 +378,10 @@ export default function PlayerPhotoPanel({
     {/* 2. FULL-BLEED DUAL GENERAL PORTRAIT FRAME */}
     <div className={`sg-portrait-frame native-portrait-canvas ${deputy ? 'has-deputy' : 'single'} ${game?.faceup === false ? 'is-face-turned' : ''}`}
       aria-label={`${faceLabel}; ${deputyLabel}`}>
-      <PortraitImage name={main} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={mainUnrevealed} />
-      <PortraitImage name={deputy} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={deputyUnrevealed} />
+      <PortraitImage name={main} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : mainUnrevealed} />
+      <PortraitImage name={deputy} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : deputyUnrevealed} />
       {deputy && <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />}
+      {bothUnrevealed && <span className="sg-unrevealed-badge sg-unrevealed-badge-pair" aria-hidden="true">Chưa lật</span>}
       <PortraitOverlays game={game} self={self} />
 
       {/* Target button overlay (covers portrait frame per contract) */}
