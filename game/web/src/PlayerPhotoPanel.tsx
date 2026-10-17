@@ -154,6 +154,12 @@ const EQUIP_ICON_ALIASES: Record<string, string> = {
   triblade: 'yajiao_spear',
   jade_seal: 'mobile_seal',
   dunjia_book: 'taigong_tactics',
+  // FreeKill's built-in resource lookup falls back to unknown.png when a
+  // package does not ship a dedicated equip silhouette. Keep that behavior
+  // explicit so live gameplay never emits a 404 for those cards.
+  jingfan: 'unknown',
+  liulongcanjia: 'unknown',
+  m_liuyi__liulongcanjia: 'm_liuyi__liulongcanjia',
 };
 
 export function getNativeEquipIconUrl(slot: string, card?: BoardEquipment): string | null {
