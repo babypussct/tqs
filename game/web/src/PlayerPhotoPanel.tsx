@@ -6,6 +6,8 @@ import type { BoardEquipment, BoardPlayer } from './store/boardState';
 import { generalArtCandidates } from './generalArt';
 import type { RoomPlayer } from './store/gameStore';
 import { EquipIcon, TargetCrosshairIcon } from './EquipIcons';
+import type { AvatarReactionType } from './store/cardVfxState';
+import NativeVfxAnim from './NativeVfxAnim';
 
 export type Faction = 'wei' | 'shu' | 'wu' | 'qun' | 'neutral';
 
@@ -30,6 +32,8 @@ export interface PlayerPhotoPanelProps {
   onTarget?: () => void;
   compact?: boolean;
   style?: React.CSSProperties;
+  isShaking?: boolean;
+  avatarReaction?: AvatarReactionType | null;
 }
 
 type EquipmentSlotKey = 'treasure' | 'weapon' | 'armor' | 'defensive_ride' | 'offensive_ride';
@@ -325,7 +329,7 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, compact = false, style,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
@@ -358,8 +362,9 @@ export default function PlayerPhotoPanel({
   const mainUnrevealed = self && !isMainRevealed && !!main;
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
   const bothUnrevealed = mainUnrevealed && deputyUnrevealed;
+  const reactionClass = avatarReaction || (isShaking ? 'hit-shake' : '');
 
-  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''}`}
+  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''} ${reactionClass}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
     style={style}
     aria-label={`${playerName}${self ? ' (bạn)' : ''}`}>
@@ -389,6 +394,9 @@ export default function PlayerPhotoPanel({
       {deputy && <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />}
       {bothUnrevealed && <span className="sg-unrevealed-badge sg-unrevealed-badge-pair" aria-hidden="true">Chưa lật</span>}
       <PortraitOverlays game={game} self={self} />
+      {avatarReaction === 'hit-shake' && (
+        <NativeVfxAnim animName="damage" scale={1.1} intervalMs={45} className="sg-avatar-damage-overlay" />
+      )}
 
       {/* Target button overlay (covers portrait frame per contract) */}
       {target && <button className={`gameplay-target sg-portrait-target-overlay native-target-btn ${target.selected ? 'selected' : ''}`}

@@ -107,15 +107,31 @@ async function run() {
     await page.screenshot({ path: path.join(outDir, '390_portrait_board_prompt.png') });
     console.log('Saved 390_portrait_board_prompt.png');
 
-    console.log('4. Capturing 390x844 portrait board with target overlay...');
+    console.log('4. Capturing 390x844 portrait board with target overlay and arrow...');
     // Select card to activate target mode
     const firstCard = page.locator('.gameplay-hand button.gameplay-choice:enabled').first();
     if (await firstCard.count() > 0) {
       await firstCard.click();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(300);
+      const opponentAvatar = page.locator('.board-opponents article.board-player').first();
+      if (await opponentAvatar.count() > 0) {
+        await opponentAvatar.click();
+        await page.waitForTimeout(400);
+      }
     }
     await page.screenshot({ path: path.join(outDir, '390_portrait_board_target.png') });
     console.log('Saved 390_portrait_board_target.png');
+
+    console.log('4-vfx. Capturing card fly-out and slash impact combat VFX...');
+    await page.evaluate(() => {
+      const api = (window as any).__tqsRealLuaE2e;
+      api.store.getState().dispatch('GameLog', '#UseCardToTargets:17:-1:slash');
+      api.store.getState().dispatch('GameLog', '#Damage:17:-1:1:normal:slash');
+    });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(outDir, '390_portrait_card_vfx_combat_impact.png') });
+    console.log('Saved 390_portrait_card_vfx_combat_impact.png');
+    await page.waitForTimeout(800);
 
     console.log('4b. Capturing 390x844 portrait board with ten-card hand...');
     await page.evaluate(() => (window as any).__tqsRealLuaE2e.beginVisualHand(10));
@@ -132,6 +148,7 @@ async function run() {
     await page.screenshot({ path: path.join(outDir, 'dialog_card_detail_long_press.png') });
     console.log('Saved dialog_card_detail_long_press.png');
     await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
 
     console.log('5. Capturing 1280x720 landscape board...');
     await page.setViewportSize({ width: 1280, height: 720 });

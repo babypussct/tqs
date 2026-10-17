@@ -1,12 +1,57 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink, CP30 mobile landscape full-viewport layout & density checkpoint và CP31 mobile landscape ergonomics overhaul & elliptical arch seat distribution (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink, CP30 mobile landscape full-viewport layout & density checkpoint, CP31 mobile landscape ergonomics overhaul & elliptical arch seat distribution, CP32 card animation & visual effects engine và CP33 authentic upstream FreeKill assets & frame animation engine (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Mục tiêu và phạm vi
 
 Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng React + Wasmoon Lua + gateway, dùng FreeKill C++/Lua làm nguồn sự thật. Scope hiện tại là `new_heg_mode` với 14 package; không port luật server sang TypeScript và không trộn TQSShop.
 
 ## Handoff ngắn
+
+- **CP33 authentic upstream FreeKill assets & frame animation engine (Authentic SFX, Voices, & Frame Animations) (local PASS, 17/10/2026):** tích hợp 100% tài nguyên âm thanh và hoạt ảnh thị giác chính thống từ upstream FreeKill (`packages/standard_cards`, `packages/maneuvering`, `audio/system`, `image/anim`) mang lại cảm giác thân thuộc, sống động chuẩn Tam Quốc Sát:
+  - **Tài nguyên âm thanh chính thống (Authentic FreeKill SFX & Voice Lines):**
+    - SFX sát thương hệ thống: `normal_damage.mp3`, `fire_damage.mp3`, `thunder_damage.mp3`, `losehp.mp3`.
+    - SFX bay bài, rút bài, xích sắt, trang bị: `fly1.mp3`, `draw.mp3`, `chain.mp3`, `weapon.mp3`, `armor.mp3`, `horse.mp3`.
+    - SFX dốc rượu Tửu kinh điển: `wine1.mp3`.
+    - Voice hô bài nam/nữ chính thống từ FreeKill: `slash`, `jink`, `peach`, `analeptic`, `thunder__slash`, `fire__slash`, `nullification`, `snatch`, `dismantlement`, `duel`, `fire_attack`, `iron_chain`, v.v.
+  - **Hoạt ảnh frame-by-frame Pixmap Animation chuẩn FreeKill (`NativeVfxAnim.tsx`):**
+    - Tương thích hoàn toàn với kiến trúc `PixmapAnimation.qml` của FreeKill upstream (tốc độ 40–45ms/frame):
+      - `slash`: 24 frame vệt đao ánh bạc vết máu kinh điển của FreeKill.
+      - `fire__slash`: 24 frame ngọn lửa thiêu đốt rực rỡ.
+      - `thunder__slash`: 24 frame tia sét xanh giáng từ trên cao.
+      - `jink`: 23 frame né đòn xoay người.
+      - `peach`: 17 frame hoa đào bung nở phát sáng.
+      - `analeptic`: 17 frame vò rượu Tửu dốc sáng nộ khí.
+      - `damage`: 6 frame vết chém đỏ rách toạc đè lên avatar khi nhận sát thương (`hit-shake`).
+  - **Cơ chế phục hồi & Fallback thông minh:**
+    - Duy trì 100% bộ tổng hợp Web Audio API synthesizer (0 KB mạng) và SVG/CSS glowing graphics làm fallback tự động nếu asset mạng bị chậm hoặc chạy trong môi trường headless testing.
+  - **Bằng chứng kiểm thử & Build:**
+    - Unit/integration test `npm run test:card-effects` **10/10 PASS**, `test:store` **44/44 PASS**, `test:e2e` **21/21 PASS**, `npm run typecheck` **0 errors**.
+    - Ảnh chụp bằng chứng `390_portrait_card_vfx_combat_impact.png` xác thực trực quan nhát chém kiếm Sát chính thống vệt máu đỏ rực của FreeKill cùng đường cong ngắm mục tiêu.
+    - Build web bundle và đồng bộ root `dist/` byte-for-byte (`diff -rq` 0 differences).
+
+- **CP32 card animation & visual effects engine (Card VFX, Targeting Indicator, Combat Impacts & Web Audio SFX) (local PASS, 17/10/2026):** triển khai toàn diện hệ thống hiệu ứng thị giác và hoạt ảnh lá bài sống động chuẩn SGS Mobile / FreeKill trên nền tảng Web Client:
+  - **Đường mũi tên nhắm mục tiêu động (`TargetingOverlay.tsx`):**
+    - Vẽ đường cong Quadratic Bezier uốn lượn nối từ lá bài/ghế bản thân lên avatar đối thủ bằng SVG overlay phủ trên `.board-main`, không bị cắt bởi `overflow: hidden` của bàn cờ.
+    - Animation nét đứt chạy dọc thân (`stroke-dashoffset`) tạo cảm giác luồng năng lượng phóng tới mục tiêu, đầu mũi tên dạ quang đỏ nhọn hoắt chỉ thẳng tâm ngắm.
+    - Cơ chế **Auto-Lock Target Indicator**: Tự động phát hiện và vẽ đường ngắm khóa thẳng vào đối thủ hợp lệ khi bàn cờ chỉ có 1 đối thủ trong tầm (hoặc khi click chọn mục tiêu).
+  - **Hoạt ảnh lá bài phóng ra giữa bàn (`CardVfxOverlay.tsx`):**
+    - Lá bài khi đánh ra sẽ phóng to 1.35x bay từ tay/ghế ra giữa bàn cọc bài (`.board-center`), dừng 350ms hiển thị rõ chất, số, tên tiếng Việt và biểu tượng thẻ bài kèm viền vàng ánh kim, sau đó lao nhanh (projectile) vào avatar mục tiêu.
+  - **Bộ hiệu ứng va chạm chiến đấu (Impact Combat VFX) & Phản ứng avatar (`.hit-shake` / `.dodge-slide` / `.heal-glow`):**
+    - **Sát (`slash`)**: Vệt kiếm chém ánh kim bạc xé toạc màn hình.
+    - **Hỏa Sát (`fire_slash`)**: Vệt chém bốc lửa cam đỏ thiêu đốt rực rỡ.
+    - **Lôi Sát (`thunder_slash` / `lightning`)**: Tia sét xanh trắng giáng thẳng từ trên trời xuống.
+    - **Thiểm (`jink`)**: Chữ thư pháp 「闪」 bung to cùng vòng khiên bảo vệ và avatar lướt né đòn `.dodge-slide`.
+    - **Đào (`peach`)**: Cánh hoa đào bay lượn + chữ số `+1 HP` màu xanh ngọc bích nổi lên cùng vầng hào quang `.heal-glow`.
+    - **Tửu (`analeptic`)**: Vò rượu dốc rót + aura đỏ nộ khí quanh avatar.
+    - **Vô Giải Khả Kích (`nullification`)**: Vòng Thái Cực Bát Quái xoay tròn dập tắt bài.
+    - Thêm các class `.hit-shake` giật nảy avatar khi trúng đòn, `.dodge-slide` né đòn và `.heal-glow` hồi phục trên `PlayerPhotoPanel`.
+  - **Hệ thống âm thanh Web Audio SFX (`webAudioSfx.ts`):**
+    - Sử dụng Web Audio API native tạo sóng âm thanh tổng hợp (tiếng vung đao, va đập kim loại, né đòn, sấm sét, hồi phục): **0 KB tải mạng, 0ms latency, 0 byte tốn băng thông gói Free Render (100 GB/tháng)**. Tích hợp cơ chế fallback thông minh cho file MP3/WebM tùy chọn.
+  - **Tích hợp & Bằng chứng kiểm thử:**
+    - `npm run typecheck` (0 errors), `npm run test:card-effects` **7/7**, `test:store` **44/44**, `test:card-display` **14/14**, `test:connection` **31/31**, `test:gameplay` **16/16**, `test:choices` **3/3**, `test:native-dialogs` **7/7**, `test:card-selection` **4/4**, `test:cards-and-choice` **3/3**, `test:vietnamese` **4/4**, `seat-layout.test.ts` **4/4**, `test:e2e` **21/21**, real-Lua E2E **63/63** PASS.
+    - Ảnh chụp trực quan `390_portrait_board_target.png` xác thực đường mũi tên cong rực rỡ từ lá Sát lên avatar đối thủ; `390_portrait_card_vfx_combat_impact.png` xác thực lá Sát phóng to tại tâm cọc bài và vệt chém kiếm ánh kim bạc giáng vào avatar đối thủ.
+    - Build production và đồng bộ root `dist/` (`diff -rq` 0 differences).
 
 - **CP31 mobile landscape ergonomics overhaul, center deck clearance & skill rail HUD elevation (local PASS, 17/10/2026):** khắc phục triệt để các bất cập thị giác và công thái học trên màn hình ngang (landscape) 844×390 theo phản hồi thực tế từ người dùng:
   - **Hạ cọc bài / khu xử lý và nâng ghế giữa (`.board-center` & `seatLayout.ts`):**
@@ -159,20 +204,90 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T11:58:15.015Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `572b5dac4ab4`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-17T13:33:18.004Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `79568212a57a`.
+- File thay đổi hiển thị: 434 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ D dist/assets/index--wXokC1V.js
+ D dist/assets/index-D4UZB8-r.css
+ M dist/index.html
+ M dist/sw.js
+ M docs/CODEX_PLAN.md
+ M game/web/package.json
+ M game/web/scripts/capture-m6-evidence.ts
+ M game/web/src/GameBoardScreen.tsx
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/styles.css
+?? dist/anim/analeptic/0.png
+?? dist/anim/analeptic/1.png
+?? dist/anim/analeptic/10.png
+?? dist/anim/analeptic/11.png
+?? dist/anim/analeptic/12.png
+?? dist/anim/analeptic/13.png
+?? dist/anim/analeptic/14.png
+?? dist/anim/analeptic/15.png
+?? dist/anim/analeptic/16.png
+?? dist/anim/analeptic/2.png
+?? dist/anim/analeptic/3.png
+?? dist/anim/analeptic/4.png
+?? dist/anim/analeptic/5.png
+?? dist/anim/analeptic/6.png
+?? dist/anim/analeptic/7.png
+?? dist/anim/analeptic/8.png
+?? dist/anim/analeptic/9.png
+?? dist/anim/damage/0.png
+?? dist/anim/damage/1.png
+?? dist/anim/damage/2.png
+?? dist/anim/damage/3.png
+?? dist/anim/damage/4.png
+?? dist/anim/damage/5.png
+?? dist/anim/fire__slash/0.png
+?? dist/anim/fire__slash/1.png
+?? dist/anim/fire__slash/10.png
+?? dist/anim/fire__slash/11.png
+?? dist/anim/fire__slash/12.png
+?? dist/anim/fire__slash/13.png
+?? dist/anim/fire__slash/14.png
+?? dist/anim/fire__slash/15.png
+?? dist/anim/fire__slash/16.png
+?? dist/anim/fire__slash/17.png
+?? dist/anim/fire__slash/18.png
+?? dist/anim/fire__slash/19.png
+?? dist/anim/fire__slash/2.png
+?? dist/anim/fire__slash/20.png
+?? dist/anim/fire__slash/21.png
+?? dist/anim/fire__slash/22.png
+?? dist/anim/fire__slash/23.png
+?? dist/anim/fire__slash/3.png
+?? dist/anim/fire__slash/4.png
+?? dist/anim/fire__slash/5.png
+?? dist/anim/fire__slash/6.png
+?? dist/anim/fire__slash/7.png
+?? dist/anim/fire__slash/8.png
+?? dist/anim/fire__slash/9.png
+?? dist/anim/jink/0.png
+?? dist/anim/jink/1.png
+?? dist/anim/jink/10.png
+?? dist/anim/jink/11.png
+?? dist/anim/jink/12.png
+?? dist/anim/jink/13.png
+?? dist/anim/jink/14.png
+?? dist/anim/jink/15.png
+?? dist/anim/jink/16.png
+?? dist/anim/jink/17.png
+?? dist/anim/jink/18.png
+?? dist/anim/jink/19.png
+?? dist/anim/jink/2.png
+... và 364 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+79568212 docs: refresh checkpoint snapshot
 572b5dac docs: record CP31 Render deployment
 e5d383cf feat: refine mobile landscape board layout
-76110413 docs: refresh checkpoint snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

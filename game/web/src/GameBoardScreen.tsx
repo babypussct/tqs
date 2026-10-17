@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
 import type { BoardMoment } from './store/boardState';
 import { useGameStore, type RoomPlayer } from './store/gameStore';
@@ -15,6 +15,9 @@ import {
   getDeterministicSeatPosition,
   getOpponentPosition,
 } from './store/seatLayout';
+import TargetingOverlay from './TargetingOverlay';
+import CardVfxOverlay from './CardVfxOverlay';
+import { useCardVfx } from './store/cardVfxState';
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>
@@ -99,6 +102,41 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     const item = targetFor(id);
     if (item) dispatch('Photo', item.id, 'click', { selected: !item.selected });
   };
+
+  const boardMainRef = useRef<HTMLDivElement>(null);
+  const {
+    flyingCards,
+    impacts,
+    avatarReactions,
+    onFlyingCardDone,
+    onImpactDone,
+    processGameLogs,
+  } = useCardVfx();
+
+  useEffect(() => {
+    processGameLogs(board.logs);
+  }, [board.logs, processGameLogs]);
+
+  // Danh sách các playerId đối thủ đang được chọn làm mục tiêu (hoặc auto-lock khi có 1 mục tiêu duy nhất)
+  const selectedTargetPlayerIds = useMemo(() => {
+    if (!gameplayActive) return [];
+    const selected = Object.values(gameplay.items.Photo)
+      .filter((item) => item.selected)
+      .map((item) => Number(item.id))
+      .filter((n) => Number.isInteger(n));
+    if (selected.length > 0) return selected;
+
+    // Khi người chơi đã chọn lá bài trên tay, tự động vẽ đường ngắm tới mục tiêu hợp lệ nếu chỉ có 1 mục tiêu
+    const hasCardSelected = Object.values(gameplay.items.CardItem).some((c) => c.selected);
+    if (hasCardSelected) {
+      const enabledTargets = Object.values(gameplay.items.Photo)
+        .filter((item) => item.enabled)
+        .map((item) => Number(item.id))
+        .filter((n) => Number.isInteger(n));
+      if (enabledTargets.length === 1) return enabledTargets;
+    }
+    return [];
+  }, [gameplayActive, gameplay.items.Photo, gameplay.items.CardItem]);
 
   const { selfSeat, opponentSeats } = deriveSeatViewModels({
     boardSeats: board.seats,
@@ -207,14 +245,34 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             </button>}
           </>}
         </section>
-        <div className="board-main sg-board-main">
-      <div className="board-table sg-board-table">
+        <div className="board-main sg-board-main" ref={boardMainRef} style={{ position: 'relative' }}>
+          {/* Lớp hiển thị đường mũi tên ngắm mục tiêu (toàn màn hình bàn chơi và bài tay) */}
+          <TargetingOverlay
+            boardContainerRef={boardMainRef}
+            selectedTargetPlayerIds={selectedTargetPlayerIds}
+            sourcePlayerId={ownId}
+            active={gameplayActive}
+          />
+
+          {/* Lớp hiệu ứng lá bài bay và va chạm chiến đấu */}
+          <CardVfxOverlay
+            boardContainerRef={boardMainRef}
+            flyingCards={flyingCards}
+            impacts={impacts}
+            onFlyingCardDone={onFlyingCardDone}
+            onImpactDone={onImpactDone}
+          />
+
+          <div className="board-table sg-board-table">
+
         <div className="board-opponents" aria-label="Các ghế khác">
           {opponentSeats.map((seat) => {
             const player = byId.get(seat.playerId);
             return player && <PlayerPhotoPanel key={seat.playerId} player={player} game={board.player[seat.playerId]}
               seat={seat.serverSeatNumber} self={false} active={seat.isActive} target={targetFor(seat.playerId)}
               busy={busy || requestExpired} onTarget={() => chooseTarget(seat.playerId)}
+              avatarReaction={avatarReactions[seat.playerId]}
+              isShaking={avatarReactions[seat.playerId] === 'hit-shake'}
               style={seat.positionStyle} />;
           })}
         </div>
@@ -259,7 +317,9 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         <div className="board-local-utility-row" aria-label="Thông tin và kỹ năng của bạn">
           {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
             seat={selfSeat?.serverSeatNumber ?? 0} active={selfSeat?.isActive ?? false} target={targetFor(self.id)}
-            busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact={isMobile} /></div>}
+            busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact={isMobile}
+            avatarReaction={avatarReactions[self.id]}
+            isShaking={avatarReactions[self.id] === 'hit-shake'} /></div>}
           <div className="board-local-skill-rail" aria-label="Kỹ năng của bạn">
             {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill}
               floating={pendingRequest?.command === 'AskForSkillInvoke'} />}

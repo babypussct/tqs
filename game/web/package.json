@@ -36,6 +36,7 @@
     "test:e2e:login": "tsx scripts/live-gateway-e2e/run.ts --login",
     "test:card-selection": "tsx --test scripts/card-selection.test.ts",
     "test:card-display": "tsx --test scripts/card-display.test.ts",
+    "test:card-effects": "tsx --test scripts/card-effects.test.ts",
     "test:cards-and-choice": "tsx --test scripts/cards-and-choice.test.ts",
     "test:native-dialogs": "tsx --test scripts/native-dialogs.test.ts",
     "test:room-pools": "tsx --test scripts/room-pools.test.ts",
