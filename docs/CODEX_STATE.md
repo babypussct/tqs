@@ -114,8 +114,8 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T04:20:59.080Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `1d7161bdf1ab`.
+- Ghi lúc: 2026-10-17T04:21:26.861Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `00eea36d9b07`.
 - File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -125,7 +125,7 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 Ba commit gần nhất:
 
 ```text
-1d7161bd feat: implement authentic equip icons and dynamic 2-line names for portrait board
+00eea36d feat: implement authentic equip icons and dynamic 2-line names for portrait board
 24290d9b docs: record latest Render HEAD redeploy
 b94f4a72 docs: record CP26 live translation deployment
 ```
