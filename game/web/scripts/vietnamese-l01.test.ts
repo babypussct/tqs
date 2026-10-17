@@ -105,6 +105,8 @@ test('C01 public log is localized only in exact skill markers', () => {
     'Tào Hồng / Vương Lăng (bạn) hồi phục 1 máu (Tinh Khởi)');
   assert.equal(localizedGameLog('Tướng ẩn / Lữ Đại rút 2 lá bài bài không xác định (以逸待劳)'),
     'Tướng ẩn / Lữ Đại rút 2 lá bài bài không xác định (Dĩ Dật Đãi Lao)');
+  assert.equal(localizedGameLog('Lăng Thao 观看了 Giới Thái Sử Từ (bạn) 的手牌'),
+    'Lăng Thao đã xem bài trên tay của Giới Thái Sử Từ (bạn).');
   assert.equal(VI_ADDITIONS.ol__guohuai, 'Quách Hoài');
   assert.equal(VI_ADDITIONS.ty_heg__yangwan, 'Dương Uyển');
 });

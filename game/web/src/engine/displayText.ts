@@ -183,9 +183,9 @@ export function localizedGameLog(raw: string): string {
     .replace(/^(.+?) 即将对 (.+?) 造成的 (\d+) 点 (.+?) 伤害变为 (\d+) 点$/,
       (_match, source: string, target: string, original: string, type: string, changed: string) =>
         `Sát thương ${type} do ${source} gây ra cho ${target} thay đổi từ ${original} thành ${changed} điểm.`)
-    .replace(/^(.+?) 观看了 (.+?) 的 (chủ tướng|phó tướng|bài trên tay)(?: (.+))?$/,
+    .replace(/^(.+?) 观看了 (.+?) 的\s*(chủ tướng|phó tướng|bài trên tay|手牌)(?: (.+))?$/,
       (_match, viewer: string, target: string, part: string, general?: string) =>
-        `${viewer} đã xem ${part} của ${target}${general ? `: ${general}` : ''}.`)
+        `${viewer} đã xem ${part === '手牌' ? 'bài trên tay' : part} của ${target}${general ? `: ${general}` : ''}.`)
     .replace(/^(.+?) 使用的 (.+?) 取消了目标 (.+)$/,
       (_match, source: string, card: string, target: string) =>
         `Mục tiêu ${target} đã bị hủy khỏi lá ${card} do ${source} sử dụng.`)
