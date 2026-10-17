@@ -16,18 +16,18 @@ import {
   getOpponentPosition,
 } from './store/seatLayout';
 
-function useIsMobile(query = '(max-width: 640px)'): boolean {
-  const [isMobile, setIsMobile] = useState(() =>
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia(query).matches : false
   );
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mql = window.matchMedia(query);
-    const onChange = () => setIsMobile(mql.matches);
+    const onChange = () => setMatches(mql.matches);
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
   }, [query]);
-  return isMobile;
+  return matches;
 }
 
 export { getDeterministicSeatPosition, getOpponentPosition };
@@ -48,10 +48,16 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
 }) {
   const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills } = useGameStore((s) => s);
   const text = useDisplayText();
-  const isMobile = useIsMobile();
-  const [showLogs, setShowLogs] = useState(() =>
-    typeof window === 'undefined' || !window.matchMedia('(max-width: 899px)').matches
-  );
+  const isMobilePortrait = useMediaQuery('(max-width: 640px) and (orientation: portrait)');
+  const isMobileLandscape = useMediaQuery('(orientation: landscape) and (max-height: 520px)');
+  const isCompactWidth = useMediaQuery('(max-width: 640px)');
+  const isPortrait = useMediaQuery('(orientation: portrait)');
+  const isMobile = isMobilePortrait || isMobileLandscape || isCompactWidth;
+  const [showLogs, setShowLogs] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    if (window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches) return false;
+    return !window.matchMedia('(max-width: 899px)').matches;
+  });
   const [followLogs, setFollowLogs] = useState(true);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
@@ -102,6 +108,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     gameplayActive,
     targetItems: gameplay.items.Photo,
     isMobile,
+    isPortrait,
   });
 
   return (

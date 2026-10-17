@@ -1,12 +1,26 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor và CP28 portrait self-equipment & 2-tier right block layout (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink và CP30 mobile landscape full-viewport layout & density checkpoint (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Mục tiêu và phạm vi
 
 Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng React + Wasmoon Lua + gateway, dùng FreeKill C++/Lua làm nguồn sự thật. Scope hiện tại là `new_heg_mode` với 14 package; không port luật server sang TypeScript và không trộn TQSShop.
 
 ## Handoff ngắn
+
+- **CP30 mobile landscape full-viewport layout & density checkpoint (local PASS, 17/10/2026):** tối ưu hóa toàn diện giao diện màn hình ngang (landscape) cho điện thoại thông minh theo phản hồi thực tế từ người dùng:
+  - **Khắc phục lỗi cuộn trang và khóa 100dvh:**
+    - `.shell-playing` trong chế độ landscape (`(orientation: landscape) and (max-height: 520px)`): áp dụng `height: 100dvh; max-height: 100dvh; overflow: hidden !important;`, đệm an toàn `env(safe-area-inset-*)`. Khắc phục triệt để hiện tượng trang bị cuộn dọc trên điện thoại xoay ngang.
+    - Giới hạn media query desktop `@media (min-width: 900px) and (min-height: 521px)` và `.board-table { min-height: 430px; }` để không làm điện thoại hiện đại xoay ngang (chiều cao 360–430px, bề rộng >= 900px) bị dính cột "Nhật ký trận đấu" 260px và min-height thừa của bàn cờ.
+    - Nhật ký trận đấu mặc định ẩn khi ở mobile landscape, mở dạng drawer modal khi người chơi cần tra cứu.
+  - **Cân chỉnh tọa độ ghế đối thủ trên bàn (`DETERMINISTIC_LANDSCAPE_SEATS`):**
+    - Hạ tọa độ hàng ghế đối thủ trên đỉnh bàn từ `top: 10%–12%` xuống `22%–25%`, giúp các ghế trên cùng hiển thị trọn vẹn trong bàn cờ, không còn bị lẹm đầu ra ngoài viền màn hình.
+    - Bổ sung tham số `isPortrait` vào `deriveSeatViewModels` và `getDeterministicSeatPosition` để tách biệt chính xác giữa scaling mobile và hướng xoay (portrait vs landscape).
+  - **Tái cấu trúc bảng điều khiển bản thân ở đáy (`.board-local-dashboard`):**
+    - Áp dụng bố cục CSS Grid 2 cột: `grid-template-columns: 104px minmax(0, 1fr)`.
+    - **Cột 1 (Góc trái):** Ô tướng bản thân 104×114px (`.board-local-seat`), khung chân dung chủ/phó 80px, dải 5 ô trang bị compact 32px ở đáy, huy hiệu số bài trên tay ở góc trên trang bị. Tách biệt hoàn toàn, không còn đè lên bài tay.
+    - **Cột 2 (Bên phải):** Dải kỹ năng trượt ngang (`.board-local-skill-rail`, cao 28px) ở dòng 1; thanh hành động / prompt ở dòng 2; dải bài trên tay trượt ngang kích thước 56×76px ở dòng 3.
+  - **Evidence quan sát:** `npm run typecheck` (0 errors), `test:store` **44/44**, `test:card-display` **14/14**, `test:connection` **31/31**, `test:gameplay` **16/16**, `test:choices` **3/3**, `test:native-dialogs` **7/7**, `test:vietnamese` **4/4**, `seat-layout.test.ts` **4/4**, `test:e2e` **21/21**, real-Lua E2E **63/63** PASS; artifact capture thêm ảnh tự động `844x390_landscape_mobile_4_players.png`, kiểm tra trực quan qua `view_file` hiển thị hoàn hảo 100% không gian, không cuộn dọc, ghế đối thủ trọn vẹn, bài tay và ô đại diện tách bạch. Đã build và đồng bộ root `dist/` (`diff -rq` 0 differences).
 
 - **CP29 portrait authentic equipment icon silhouettes & dynamic auto-shrink 2-line name (local PASS, 17/10/2026):** hoàn thiện cơ chế hiển thị icon và tên trang bị chuẩn 100% gốc FreeKill theo chỉ đạo trực tiếp của người dùng:
   - **Điều tra chính xác mã nguồn gốc FreeKill (`EquipItem.qml`, `SkinBank.qml`, `/image/card/equipIcon/`):**
@@ -116,20 +130,30 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T05:39:09.178Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `7176e2449e49`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-17T06:45:54.236Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `b348987b96b6`.
+- File thay đổi hiển thị: 11 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ D dist/assets/index-qj45-xAv.js
+ D dist/assets/index-zhKpn4Zx.css
+ M dist/index.html
+ M dist/sw.js
  M docs/CODEX_PLAN.md
+ M game/web/scripts/capture-m6-evidence.ts
+ M game/web/src/GameBoardScreen.tsx
+ M game/web/src/store/seatLayout.ts
+ M game/web/src/styles.css
+?? dist/assets/index-DDZtXaRz.js
+?? dist/assets/index-TL4Rnb9k.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+b348987b docs: record CP29 final Render smoke
 7176e244 fix: localize expanded hand-view logs
 a680d733 fix: localize expanded await-exhausted logs
-a616a18e fix: complete native equipment icon release assets
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

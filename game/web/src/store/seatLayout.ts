@@ -65,39 +65,39 @@ const DETERMINISTIC_PORTRAIT_SEATS: Record<number, Array<{ left: string; top: st
 
 const DETERMINISTIC_LANDSCAPE_SEATS: Record<number, Array<{ left: string; top: string }>> = {
   2: [
-    { left: '50%', top: '12%' },
+    { left: '50%', top: '25%' },
   ],
   4: [
-    { left: '86%', top: '38.5%' },
-    { left: '50%', top: '12%' },
-    { left: '14%', top: '38.5%' },
+    { left: '86%', top: '42%' },
+    { left: '50%', top: '25%' },
+    { left: '14%', top: '42%' },
   ],
   6: [
-    { left: '88%', top: '44%' },
-    { left: '74%', top: '15%' },
-    { left: '50%', top: '12%' },
-    { left: '26%', top: '15%' },
-    { left: '12%', top: '44%' },
+    { left: '88%', top: '48%' },
+    { left: '74%', top: '25%' },
+    { left: '50%', top: '23%' },
+    { left: '26%', top: '25%' },
+    { left: '12%', top: '48%' },
   ],
   8: [
-    { left: '89.5%', top: '52%' },
-    { left: '89.5%', top: '30%' },
-    { left: '73%', top: '12%' },
-    { left: '50%', top: '11%' },
-    { left: '27%', top: '12%' },
-    { left: '10.5%', top: '30%' },
-    { left: '10.5%', top: '52%' },
+    { left: '89.5%', top: '56%' },
+    { left: '89.5%', top: '34%' },
+    { left: '73%', top: '24%' },
+    { left: '50%', top: '22%' },
+    { left: '27%', top: '24%' },
+    { left: '10.5%', top: '34%' },
+    { left: '10.5%', top: '56%' },
   ],
   10: [
-    { left: '91%', top: '52%' },
-    { left: '91%', top: '32%' },
-    { left: '79%', top: '15%' },
-    { left: '62%', top: '11%' },
-    { left: '50%', top: '10%' },
-    { left: '38%', top: '11%' },
-    { left: '21%', top: '15%' },
-    { left: '9%', top: '32%' },
-    { left: '9%', top: '52%' },
+    { left: '91%', top: '56%' },
+    { left: '91%', top: '36%' },
+    { left: '79%', top: '25%' },
+    { left: '62%', top: '22%' },
+    { left: '50%', top: '20%' },
+    { left: '38%', top: '22%' },
+    { left: '21%', top: '25%' },
+    { left: '9%', top: '36%' },
+    { left: '9%', top: '56%' },
   ],
 };
 
@@ -124,9 +124,10 @@ export function getDeterministicSeatPosition(
   opponentIndex: number,
   totalSeats: number,
   isMobile: boolean,
+  isPortrait: boolean = isMobile,
 ): React.CSSProperties {
   const scale = getScale(totalSeats, isMobile);
-  const table = isMobile ? DETERMINISTIC_PORTRAIT_SEATS : DETERMINISTIC_LANDSCAPE_SEATS;
+  const table = isPortrait ? DETERMINISTIC_PORTRAIT_SEATS : DETERMINISTIC_LANDSCAPE_SEATS;
   const profile = table[totalSeats];
 
   if (profile && opponentIndex >= 0 && opponentIndex < profile.length) {
@@ -142,15 +143,15 @@ export function getDeterministicSeatPosition(
   if (totalSeats <= 2) {
     return {
       left: '50%',
-      top: isMobile ? '13%' : '12%',
+      top: isPortrait ? '13%' : '22%',
       transform: `translate(-50%, -50%) scale(${scale})`,
     };
   }
 
   const cX = 50;
-  const cY = isMobile ? 38 : 38.5;
-  const rX = isMobile ? 38 : 42.5;
-  const rY = isMobile ? 24.5 : 28;
+  const cY = isPortrait ? 38 : 38.5;
+  const rX = isPortrait ? 38 : 42.5;
+  const rY = isPortrait ? 24.5 : 28;
   const angleStep = 360 / totalSeats;
   const deg = 90 - (opponentIndex + 1) * angleStep;
   const rad = (deg * Math.PI) / 180;
@@ -175,6 +176,7 @@ export interface DeriveSeatViewModelsParams {
   gameplayActive: boolean;
   targetItems?: Record<string, GameplayItem>;
   isMobile: boolean;
+  isPortrait?: boolean;
 }
 
 /**
@@ -190,11 +192,13 @@ export function deriveSeatViewModels({
   gameplayActive,
   targetItems,
   isMobile,
+  isPortrait,
 }: DeriveSeatViewModelsParams): {
   selfSeat: SeatViewModel | null;
   opponentSeats: SeatViewModel[];
   allSeats: SeatViewModel[];
 } {
+  const resolvedPortrait = isPortrait ?? isMobile;
   const seatOrder = relativeSeatOrder(boardSeats, playerIds, ownId);
   const absoluteSeatNumbers = serverSeatNumbers(boardSeats, playerIds);
   const totalSeats = Math.max(2, seatOrder.length);
@@ -227,7 +231,7 @@ export function deriveSeatViewModels({
       isTargetable: !!target?.enabled,
       isSelectedTarget: !!target?.selected,
       isPrivate: false,
-      positionStyle: getDeterministicSeatPosition(opponentIndex, totalSeats, isMobile),
+      positionStyle: getDeterministicSeatPosition(opponentIndex, totalSeats, isMobile, resolvedPortrait),
     };
     opponentSeats.push(model);
     allSeats.push(model);

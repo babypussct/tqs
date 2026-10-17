@@ -159,6 +159,12 @@ async function run() {
     await page.screenshot({ path: path.join(outDir, 'board_4_players.png') });
     console.log('Saved board_4_players.png');
 
+    console.log('7b. Capturing 4 players layout in 844x390 mobile landscape...');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: path.join(outDir, '844x390_landscape_mobile_4_players.png') });
+    console.log('Saved 844x390_landscape_mobile_4_players.png');
+
     console.log('8. Capturing 8 players layout...');
     await page.evaluate(() => {
       const api = (window as any).__tqsRealLuaE2e;
