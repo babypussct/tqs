@@ -160,6 +160,12 @@ async function run() {
     console.log('Saved board_4_players.png');
 
     console.log('7b. Capturing 4 players layout in 844x390 mobile landscape...');
+    await page.evaluate(() => {
+      const api = (window as any).__tqsRealLuaE2e;
+      api.boardNotify('PropertyUpdate', "{17, 'role_shown', true}");
+      api.boardNotify('AddSkill', "{17, 'm_heg__qiangxi'}");
+      api.boardNotify('AddSkill', "{17, 'ld__wanwei'}");
+    });
     await page.setViewportSize({ width: 844, height: 390 });
     await page.waitForTimeout(600);
     await page.screenshot({ path: path.join(outDir, '844x390_landscape_mobile_4_players.png') });
@@ -182,6 +188,12 @@ async function run() {
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(outDir, '390_portrait_board_8_players.png') });
     console.log('Saved 390_portrait_board_8_players.png');
+
+    console.log('8c. Capturing 8 players layout in 844x390 mobile landscape...');
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: path.join(outDir, '844x390_landscape_mobile_8_players.png') });
+    console.log('Saved 844x390_landscape_mobile_8_players.png');
     await page.setViewportSize({ width: 1280, height: 720 });
 
     console.log('9. Capturing hidden main/deputy presentation...');

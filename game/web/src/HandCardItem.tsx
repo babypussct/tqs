@@ -691,11 +691,15 @@ export function HandCardItem({
   const overlapMobile = index > 0 && totalCards > 4
     ? Math.min(42, 14 + (totalCards - 4) * 4.5)
     : 0;
+  const overlapLandscape = index > 0 && totalCards > 7
+    ? Math.min(22, 10 + (totalCards - 7) * 2.5)
+    : 0;
   const cardStyle = {
     zIndex: item.selected ? 200 : (hovered || focused) ? 100 : index + 1,
     '--card-overlap': `${overlapDesktop}px`,
     '--card-overlap-desktop': `${overlapDesktop}px`,
     '--card-overlap-mobile': `${overlapMobile}px`,
+    '--card-overlap-landscape': `${overlapLandscape}px`,
   } as CSSProperties;
 
   const updateRect = () => {
@@ -881,11 +885,13 @@ export function IdleHandCard({
 
   const overlapDesktop = index > 0 && totalCards > 4 ? Math.min(38, 16 + (totalCards - 4) * 3.5) : 0;
   const overlapMobile = index > 0 && totalCards > 4 ? Math.min(42, 14 + (totalCards - 4) * 4.5) : 0;
+  const overlapLandscape = index > 0 && totalCards > 7 ? Math.min(22, 10 + (totalCards - 7) * 2.5) : 0;
   const cardStyle = {
     zIndex: showTooltip ? 100 : index + 1,
     '--card-overlap': `${overlapDesktop}px`,
     '--card-overlap-desktop': `${overlapDesktop}px`,
     '--card-overlap-mobile': `${overlapMobile}px`,
+    '--card-overlap-landscape': `${overlapLandscape}px`,
     opacity: 0.95,
     cursor: 'pointer',
   } as CSSProperties;

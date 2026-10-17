@@ -6138,25 +6138,32 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     box-sizing: border-box !important;
   }
 
+  .sg-board-table .board-center {
+    top: 56% !important;
+  }
+
   .sg-game-shell .board-toolbar,
   .sg-game-board .board-toolbar {
-    min-height: 28px !important;
-    height: 28px !important;
-    padding: 1px 6px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 0 8px !important;
     gap: 6px !important;
   }
   .sg-game-shell .board-toolbar h2,
   .sg-game-board .board-toolbar h2 {
-    font-size: .74rem !important;
+    font-size: .68rem !important;
     line-height: 1 !important;
     margin: 0 !important;
   }
+  .board-toolbar .section-label {
+    display: none !important;
+  }
   .sg-game-shell .board-toolbar .sg-toolbar-action,
   .sg-game-board .board-toolbar .sg-toolbar-action {
-    width: 28px !important;
-    min-width: 28px !important;
-    height: 24px !important;
-    min-height: 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 20px !important;
+    min-height: 20px !important;
     padding: 0 !important;
     justify-content: center !important;
   }
@@ -6167,22 +6174,22 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
   .sg-game-shell .board-ticker,
   .sg-game-board .board-ticker {
-    min-height: 24px !important;
-    height: 24px !important;
-    padding: 1px 6px !important;
+    min-height: 20px !important;
+    height: 20px !important;
+    padding: 0 8px !important;
     gap: 4px !important;
   }
   .sg-game-shell .board-ticker > strong,
-  .sg-game-board .board-ticker > strong { font-size: .58rem !important; }
+  .sg-game-board .board-ticker > strong { font-size: .56rem !important; }
   .sg-game-shell .board-ticker .board-moment,
   .sg-game-board .board-ticker .board-moment {
     padding-left: 4px !important;
-    font-size: .64rem !important;
+    font-size: .62rem !important;
   }
   .sg-ticker-log-toggle {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
   }
 
   .sg-board-table .board-opponents .sg-photo-panel {
@@ -6219,13 +6226,13 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-local-dashboard {
     flex: 0 0 auto !important;
     display: grid !important;
-    grid-template-columns: 104px minmax(0, 1fr) !important;
+    grid-template-columns: 108px minmax(0, 1fr) !important;
     grid-template-rows: auto auto !important;
     align-items: end !important;
-    gap: 3px 6px !important;
+    gap: 2px 8px !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 3px 6px !important;
+    padding: 3px 8px !important;
     border: none !important;
     border-top: 1.5px solid var(--sg-gold-hi, #d49b38) !important;
     border-radius: 8px 8px 0 0 !important;
@@ -6243,9 +6250,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     grid-column: 1 !important;
     grid-row: 1 / span 2 !important;
     order: 1 !important;
-    width: 104px !important;
-    min-width: 104px !important;
-    max-width: 104px !important;
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
     height: 114px !important;
     min-height: 114px !important;
     max-height: 114px !important;
@@ -6258,9 +6265,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 
   .board-local-seat .sg-photo-panel {
-    width: 104px !important;
-    min-width: 104px !important;
-    max-width: 104px !important;
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
     height: 114px !important;
     min-height: 114px !important;
     max-height: 114px !important;
@@ -6299,14 +6306,14 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 
   .board-local-seat .sg-photo-panel-compact .native-seat-player-name {
-    max-width: 54px !important;
+    max-width: 58px !important;
     font-size: 8px !important;
   }
 
   .board-local-seat .sg-photo-panel-compact .sg-hp-vertical-column {
     left: 2px !important;
     right: auto !important;
-    bottom: 35px !important;
+    bottom: 36px !important;
     transform: scale(.72) !important;
     transform-origin: left bottom !important;
     z-index: 6 !important;
@@ -6321,7 +6328,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-local-seat .sg-photo-panel-compact .sg-hand-count-badge {
     left: auto !important;
     right: 2px !important;
-    bottom: 34px !important;
+    bottom: 35px !important;
     transform: none !important;
     z-index: 10 !important;
   }
@@ -6331,9 +6338,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    width: 104px !important;
-    max-width: 104px !important;
-    height: 32px !important;
+    width: 108px !important;
+    max-width: 108px !important;
+    height: 33px !important;
     padding: 1px !important;
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
@@ -6365,11 +6372,11 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
   .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-icon {
     width: auto !important;
-    height: 9px !important;
+    height: 10px !important;
   }
   .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .sg-equip-icon {
-    width: 7px !important;
-    height: 7px !important;
+    width: 8px !important;
+    height: 8px !important;
   }
   .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-suit {
     font-size: 5.5px !important;
@@ -6377,12 +6384,15 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     margin: 0 !important;
   }
   .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-name {
-    font-size: 5px !important;
-    line-height: 1 !important;
-    display: block !important;
-    white-space: nowrap !important;
+    font-size: 5.2px !important;
+    line-height: 1.05 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    white-space: normal !important;
+    word-break: keep-all !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    text-align: center !important;
   }
 
   .board-local-skill-rail {
@@ -6427,30 +6437,46 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     grid-row: 2 !important;
     order: 3 !important;
     display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 2px !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
     min-width: 0 !important;
     width: 100% !important;
   }
 
   .sg-floating-controls-hud {
+    position: absolute !important;
+    bottom: calc(100% + 34px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: min(96%, 720px) !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
-    min-height: 26px !important;
-    width: 100% !important;
+    gap: 12px !important;
+    min-height: 28px !important;
+    z-index: 45 !important;
+    pointer-events: auto !important;
   }
 
   .sg-control-prompt-bar {
     flex: 1 1 auto !important;
     min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
+  }
+
+  .sg-floating-controls-hud .sg-timer-track {
+    width: min(320px, 85%) !important;
+    height: 3.5px !important;
   }
 
   .sg-control-prompt-bar .gameplay-prompt {
-    font-size: .74rem !important;
+    font-size: .78rem !important;
     margin: 0 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
@@ -6461,7 +6487,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     flex: 0 0 auto !important;
     display: flex !important;
     flex-direction: row !important;
-    gap: 4px !important;
+    gap: 5px !important;
   }
 
   .sg-action-bar .button {
@@ -6473,35 +6499,76 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     white-space: nowrap !important;
   }
 
+  .sg-action-bar .sg-btn-ok,
+  .sg-action-bar .button.primary {
+    background: linear-gradient(180deg, #c47d2b 0%, #874910 100%) !important;
+    border: 1.5px solid #ffcc66 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6) !important;
+  }
+  .sg-action-bar .sg-btn-cancel {
+    background: linear-gradient(180deg, #443224 0%, #291c12 100%) !important;
+    border: 1px solid #8c6843 !important;
+    color: #d8c2aa !important;
+  }
+  .sg-action-bar .sg-btn-end {
+    background: linear-gradient(180deg, #1c5253 0%, #0d2d2e 100%) !important;
+    border: 1.5px solid #38a3a5 !important;
+    color: #e0f4f4 !important;
+    font-weight: 700 !important;
+  }
+
   .sg-gameplay-controls .gameplay-card-section {
+    order: 1 !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: flex-end !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
-    width: 100% !important;
+    width: auto !important;
+  }
+
+  .sg-hand-scroll-hint {
+    display: none !important;
   }
 
   .sg-dashboard-left-tools {
+    order: 2 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 3px !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
     flex: 0 0 auto !important;
-    margin-right: 4px !important;
+    margin: 0 0 2px 0 !important;
+    align-self: flex-end !important;
   }
 
-  .sg-dashboard-left-tools .sg-tool-btn {
+  .sg-dashboard-left-tools .sg-tool-btn,
+  .sg-dashboard-left-tools .sg-sort-btn {
     height: 24px !important;
     min-height: 24px !important;
-    padding: 0 4px !important;
+    padding: 0 6px !important;
     font-size: 8px !important;
     line-height: 1 !important;
     white-space: nowrap !important;
+    background: linear-gradient(180deg, #2a1e13 0%, #17110c 100%) !important;
+    border: 1px solid rgba(212, 155, 56, 0.45) !important;
+    color: #e5c388 !important;
+    border-radius: 4px !important;
+  }
+
+  .sg-dashboard-left-tools .sg-tool-btn.active {
+    background: #6e481b !important;
+    color: #ffe299 !important;
+    border-color: #ffd97d !important;
   }
 
   .sg-gameplay-controls .sg-hand-fan,
   .board-local-idle-area .sg-hand-idle {
     flex: 1 1 auto !important;
     min-width: 0 !important;
+    width: 100% !important;
     min-height: 82px !important;
     height: 82px !important;
     gap: 4px !important;
@@ -6511,17 +6578,19 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     overflow-y: hidden !important;
     overscroll-behavior-x: contain !important;
     touch-action: pan-x !important;
+    justify-content: flex-start !important;
   }
 
   .sg-gameplay-controls .sg-hand-fan .sg-card-button,
   .board-local-idle-area .sg-hand-idle .sg-card-button {
-    flex: 0 0 56px !important;
-    width: 56px !important;
-    min-width: 56px !important;
-    height: 76px !important;
+    flex: 0 0 58px !important;
+    width: 58px !important;
+    min-width: 58px !important;
+    height: 78px !important;
     padding: 2px !important;
     border-radius: 5px !important;
     --card-lift: 0px !important;
+    margin-left: calc(-1 * var(--card-overlap-landscape, 0px)) !important;
   }
 
   .sg-hand-fan .sg-card-type-badge,
@@ -6544,6 +6613,14 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .sg-hand-fan .sg-card-top-left,
   .sg-hand-idle .sg-card-top-left {
     z-index: 5 !important;
+  }
+
+  .board-local-idle-area .board-status {
+    order: 3 !important;
+    flex: 0 0 auto !important;
+    align-self: center !important;
+    padding: 4px 8px !important;
+    font-size: .72rem !important;
   }
 
   .shell-playing .request-panel {

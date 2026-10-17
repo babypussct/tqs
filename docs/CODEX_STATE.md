@@ -1,12 +1,37 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink và CP30 mobile landscape full-viewport layout & density checkpoint (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink, CP30 mobile landscape full-viewport layout & density checkpoint và CP31 mobile landscape ergonomics overhaul & elliptical arch seat distribution (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Mục tiêu và phạm vi
 
 Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng React + Wasmoon Lua + gateway, dùng FreeKill C++/Lua làm nguồn sự thật. Scope hiện tại là `new_heg_mode` với 14 package; không port luật server sang TypeScript và không trộn TQSShop.
 
 ## Handoff ngắn
+
+- **CP31 mobile landscape ergonomics overhaul, center deck clearance & skill rail HUD elevation (local PASS, 17/10/2026):** khắc phục triệt để các bất cập thị giác và công thái học trên màn hình ngang (landscape) 844×390 theo phản hồi thực tế từ người dùng:
+  - **Hạ cọc bài / khu xử lý và nâng ghế giữa (`.board-center` & `seatLayout.ts`):**
+    - Hạ cụm cọc bài rút, bài bỏ và watermark khu vực xử lý (`.sg-board-table .board-center`) trong landscape từ `top: 48%` xuống `top: 56% !important;`.
+    - Nâng nhẹ tọa độ ghế giữa đối thủ trên đỉnh bàn 4 người (`DETERMINISTIC_LANDSCAPE_SEATS[4]`) từ `top: 22%` lên `top: 19%` (và bàn 2 người lên `19%`).
+    - Tạo khoảng đệm thoáng đạt 24–33px giữa đáy ô tướng đỉnh bàn và đỉnh cọc bài, loại bỏ 100% hiện tượng ghế đối thủ đè lên chữ "Quốc Chiến" hay cọc bài.
+  - **Nâng độ cao thanh thao tác nổi (`.sg-floating-controls-hud`) và hiển thị dải kỹ năng tướng (`.board-local-skill-rail`):**
+    - Điều chỉnh vị trí của `.sg-floating-controls-hud` từ `bottom: calc(100% + 6px)` lên `bottom: calc(100% + 34px) !important;`, đưa thanh thông báo lượt chơi ("Giai đoạn hành động...") và các nút [Xác nhận]/[Hủy]/[Kết thúc lượt] bay lơ lửng ngay ngắn trên thảm xanh, không còn che khuất hàng phím kỹ năng.
+    - Làm rõ vị trí dải kỹ năng tướng trong landscape: nằm ở **Hàng 1 của Cột 2** trên dashboard (ngay trên dải bài tay và bên phải ô đại diện bản thân). Các nút kỹ năng ("Cường Tập", "Vãn Nguy"...) có chiều cao 26px, rộng 64–96px, font 9px bold, hiển thị sắc nét và dễ bấm.
+  - **Tái phân bố ghế bàn 8 người và 10 người theo hình vòm cung elip (Elliptical Arch Poker Table):**
+    - Loại bỏ hoàn toàn lỗi xếp chồng dọc 2 ghế ở 2 bên sườn bàn cờ (trước đây: Ghế 7 đè Ghế 8 bên trái, Ghế 3 đè Ghế 2 bên phải trên chiều cao bàn cờ hẹp ~200px).
+    - Tận dụng tối đa bề rộng ngang 844px: 7 ghế đối thủ được phân bố uốn cong từ sườn trái (`left: 9%, top: 46%`) qua góc trên-trái (`20%, 26%`), đỉnh bàn (`35%, 19%` | `50%, 17%` | `65%, 19%`), góc trên-phải (`80%, 26%`), đến sườn phải (`91%, 46%`).
+    - Mỗi bên sườn chỉ có duy nhất 1 ghế độc lập; không có hai ghế nào cùng trục X hoặc va chạm nhau; khoảng cách giữa các tâm ghế đạt 70–80px, tạo không gian thoáng đãng, dễ chạm cảm ứng.
+  - **Giải phóng dải bài trên tay (Hand Rail Expansion & Dynamic Gentle Overlap):**
+    - Khắc phục triệt để hiện tượng bài tay bị dồn ép co cụm vào cụm 227px ở bên trái và để thừa 300px khoảng đen chết bên phải.
+    - Thêm biến độ chồng lấn riêng cho landscape `--card-overlap-landscape` trong `HandCardItem.tsx` và `IdleHandCard`: khi có <= 7 lá bài, overlap = 0 (hiển thị 100% kích thước nguyên bản 58×78px dàn đều với gap 4px); khi có >= 8 lá bài (kể cả 10 lá), overlap chỉ từ 12px đến 22px, hiển thị rõ ràng chất, số, tranh vẽ minh họa toàn lá bài và tên lá bài ở đáy.
+    - Ẩn dòng chữ nhắc nhở thừa thãi `.sg-hand-scroll-hint` ("Vuốt ngang để xem đủ 10 lá bài trên tay") ở landscape; bài tay chiếm trọn vẹn bề ngang trung tâm dashboard một cách tự nhiên.
+  - **Tái định vị cụm công cụ [Ủy thác] và [Sắp xếp] (`.sg-dashboard-left-tools`):**
+    - Đưa cụm nút neo gọn gàng ở góc ngoài cùng bên phải của dashboard (`order: 2`), căn chỉnh đồng trục đáy với dải bài tay, loại bỏ hiện tượng nút lơ lửng ở góc trên bên phải.
+  - **Mở rộng thanh Prompt & Thời gian thao tác (`.sg-floating-controls-hud`):**
+    - Mở rộng chiều rộng lên `min(96%, 720px)` và thanh tiến trình thời gian lên `min(320px, 85%)`.
+    - Triệt tiêu hoàn toàn dấu cắt chữ `...` trong dòng thông báo: câu nhắc "Giai đoạn hành động, hãy sử dụng 1 lá bài ( 26s )" hiển thị trọn vẹn 100%.
+  - **Thu gọn thanh Header (Compact Top Header):**
+    - Giảm chiều cao thanh toolbar xuống 22px và thanh ticker xuống 20px (tổng chiều cao ~42px so với 54px trước đây), giải phóng thêm 12px chiều cao cho bàn cờ.
+  - **Evidence quan sát:** `npm run typecheck` (0 errors), `test:store` **44/44**, `test:card-display` **14/14**, `test:connection` **31/31**, `test:gameplay` **16/16**, `test:choices` **3/3**, `test:native-dialogs` **7/7**, `test:vietnamese` **4/4**, `seat-layout.test.ts` **4/4**, `test:e2e` **21/21**, real-Lua E2E **63/63** PASS; artifact capture đầy đủ ảnh cập nhật: `844x390_landscape_mobile_4_players.png` và `844x390_landscape_mobile_8_players.png`, kiểm tra trực quan qua `view_file` hiển thị hoàn hảo 100% không gian, bàn 8 người vòm cung không chồng lấn, cọc bài/khu xử lý cách xa ghế giữa, dải kỹ năng tướng hiện rõ phía trên dải bài tay. Đã build và đồng bộ root `dist/` (`diff -rq` 0 differences).
 
 - **CP30 mobile landscape full-viewport layout & density checkpoint (local PASS, 17/10/2026):** tối ưu hóa toàn diện giao diện màn hình ngang (landscape) cho điện thoại thông minh theo phản hồi thực tế từ người dùng:
   - **Khắc phục lỗi cuộn trang và khóa 100dvh:**
@@ -132,20 +157,30 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T08:32:36.761Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `b95645cd974a`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-17T11:40:33.719Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `761104138b7b`.
+- File thay đổi hiển thị: 11 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ D dist/assets/index-DDZtXaRz.js
+ D dist/assets/index-TL4Rnb9k.css
+ M dist/index.html
+ M dist/sw.js
+ M docs/CODEX_PLAN.md
+ M game/web/scripts/capture-m6-evidence.ts
+ M game/web/src/HandCardItem.tsx
+ M game/web/src/store/seatLayout.ts
+ M game/web/src/styles.css
+?? dist/assets/index--wXokC1V.js
+?? dist/assets/index-D4UZB8-r.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+76110413 docs: refresh checkpoint snapshot
 b95645cd docs: record CP30 Render deployment
 7af2913b feat: optimize mobile landscape board layout
-b348987b docs: record CP29 final Render smoke
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
