@@ -132,20 +132,20 @@ Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; h
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T08:32:04.770Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `7af2913bdbc0`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-17T08:32:36.761Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `b95645cd974a`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+b95645cd docs: record CP30 Render deployment
 7af2913b feat: optimize mobile landscape board layout
 b348987b docs: record CP29 final Render smoke
-7176e244 fix: localize expanded hand-view logs
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
