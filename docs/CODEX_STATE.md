@@ -247,20 +247,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-18T12:53:12.551Z (UTC).
-- Nhánh: `main` · HEAD: `ef77ae6ddffc`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-18T12:53:55.342Z (UTC).
+- Nhánh: `main` · HEAD: `25bfa8566630`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+25bfa856 docs: record main production deployment
 ef77ae6d release: consolidate main deployment surfaces
 9888d248 fix: synchronize admin role and permissions
-3b874223 docs: record CP33 Render suspension blocker
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
