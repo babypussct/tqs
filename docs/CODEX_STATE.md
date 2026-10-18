@@ -12,7 +12,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 - **TQSShop admin access repair (LIVE, 18/10/2026):** tài khoản quản trị hiện tại đã được provision trực tiếp trong Firebase Authentication/Firestore với custom claim `super_admin`, hồ sơ `role: admin` và đầy đủ 10 cờ `adminPermissions`; dữ liệu hồ sơ không liên quan được giữ nguyên. Source fix trong [`src/contexts/AuthContext.tsx`](../src/contexts/AuthContext.tsx), [`src/components/admin/AdminPermissions.tsx`](../src/components/admin/AdminPermissions.tsx) và [`src/App.tsx`](../src/App.tsx) đã được commit `9888d248`, push lên GitHub và promote thành deployment Vercel production `7ZJAc3PmcaShv8sQPbNFCoaGsoxR`. Đã tải lại `https://tqsshop.vercel.app/admin` bằng phiên Chrome của tài khoản quản trị: dashboard và tab `Phân quyền` hiển thị, tài khoản có nút `Sửa quyền`; bundle production chứa token refresh cưỡng bức và luồng ghi đồng bộ `role` + `adminPermissions`. `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`, `npm test` (37 contract, 60 order service, 4 pricing, 10 media) và `git diff --check` đều PASS. Không ghi credential/token vào repository hoặc tài liệu.
 
-- **TQSShop admin game-permission UI (LOCAL PASS, production verification OPEN, 18/10/2026):** đổi tên mục sidebar thành `Tam Quốc Sát — Quốc Chiến`, thêm nhóm quyền cùng tên trong modal `Cấu hình quyền Admin`, mô tả rõ `manageGameAccess` (cấp/duyệt người chơi) và `manageGamePool` (bể tướng/bể bài), đồng thời giữ nguyên điều kiện ẩn menu và Firestore boundary theo từng quyền. Build TQSShop vào thư mục tạm `/tmp/tqs-admin-build.eiE7GF` PASS; `npm test` PASS (37 contract, 60 order service, 4 pricing, 10 media); `git diff --check` PASS. Chrome đã kiểm tra trực tiếp `https://tqsshop.vercel.app/admin` bằng phiên Admin: production vẫn chỉ có menu `Phân quyền`, modal vẫn dùng nhãn cũ và chưa có nhóm `Tam Quốc Sát — Quốc Chiến`; source local chưa được deploy. Root `npm run typecheck` không dùng làm bằng chứng mới vì checkout dirty hiện còn nhiều lỗi nền ở `game/web` và `scratch/`.
+- **TQSShop admin game-permission UI (DEPLOYED + Chrome PASS, 18/10/2026):** commit `ef77ae6d` trên `main` đổi tên mục sidebar thành `Tam Quốc Sát — Quốc Chiến`, thêm nhóm quyền cùng tên trong modal `Cấu hình quyền Admin`, mô tả rõ `manageGameAccess` (cấp/duyệt người chơi) và `manageGamePool` (bể tướng/bể bài), đồng thời giữ nguyên điều kiện ẩn menu và Firestore boundary theo từng quyền. Vercel deployment `dpl_GhQoZxyHsZxcDVgiFYpsFaPA442j` báo `READY` tại `https://tqsshop.vercel.app`; Pages deployment `f899c0b0.tqsvn.pages.dev` đã phát hành bundle 2.030 file và Functions; Firebase rules/indexes đã release. Chrome hard-reload bằng phiên Admin thật đã quan sát sidebar có menu game, nút `Sửa quyền`, nhóm `Tam Quốc Sát — Quốc Chiến` và hai checkbox mới; API no-token `401`, Pages CORS preflight `204`, gateway health `200 ok`. Build TQSShop, game-web build/audit, Pages gateway **5/5**, release verifier **4/4**, `npm test` (37 contract, 60 order service, 4 pricing, 10 media) PASS. Root `npm run typecheck` không dùng làm bằng chứng mới vì checkout trước đó còn lỗi nền ở `game/web`/`scratch/`; game-web typecheck đã PASS trong build.
 
 - **CP33 Pages same-origin gateway proxy (LIVE bounded, automatic rotation STAGED, 17/10/2026):** production `https://tqsvn.pages.dev` redeploy `da0f8a62` từ CP33 committed source `69780705`, build riêng bằng `VITE_GATEWAY_URL=/gateway` tránh chỉnh sửa CP34 đang dirty. Pages Functions `/gateway/*` đọc Cloudflare KV `TQS_GATEWAY_CONFIG` và proxy HTTPS/WSS tới Quick Tunnel; WebSocket preview **101**, production health/manifest/bundle **200**, **Chrome/Wasmoon → Pages → Oracle FreeKill C++ Setup/EnterLobby/clean disconnect PASS**, 14 packages, 5.279 files, runtime MD5 `29653b06…`; tests Pages Functions **5/5 PASS**. Các service gateway, tunnel, native giữ active. **Blocker:** native safety review từ chối thao tác tạo/chuyển registration secret. Oracle đã staging script và systemd units `tqs-tunnel-register.*`, **timer disabled**, Pages chưa cấu hình token; KV đang pin hostname Quick Tunnel hiện tại nên **chưa tự đồng bộ khi hostname đổi**. Có thể cập nhật KV mà không cần rebuild Pages; xem [`CLOUDFLARE_PAGES_QUICK_TUNNEL.md`](../deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md). Chưa test rotation, chưa device gameplay, không claim 24/7/official.
 
@@ -247,90 +247,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-18T12:36:39.846Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `9888d2480dbb`.
-- File thay đổi hiển thị: 2126 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-18T12:53:12.551Z (UTC).
+- Nhánh: `main` · HEAD: `ef77ae6ddffc`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M .env.example
- M deploy/freekill-native/scripts/bootstrap-source.sh
- M deploy/freekill-native/scripts/install-packages.sh
- M deploy/freekill-native/scripts/run-server.sh
- M deploy/freekill-native/server/freekill-native.service
- M deploy/freekill-native/server/freekill.server.config.json
- D dist/anim/analeptic/0.png
- D dist/anim/analeptic/1.png
- D dist/anim/analeptic/10.png
- D dist/anim/analeptic/11.png
- D dist/anim/analeptic/12.png
- D dist/anim/analeptic/13.png
- D dist/anim/analeptic/14.png
- D dist/anim/analeptic/15.png
- D dist/anim/analeptic/16.png
- D dist/anim/analeptic/2.png
- D dist/anim/analeptic/3.png
- D dist/anim/analeptic/4.png
- D dist/anim/analeptic/5.png
- D dist/anim/analeptic/6.png
- D dist/anim/analeptic/7.png
- D dist/anim/analeptic/8.png
- D dist/anim/analeptic/9.png
- D dist/anim/damage/0.png
- D dist/anim/damage/1.png
- D dist/anim/damage/2.png
- D dist/anim/damage/3.png
- D dist/anim/damage/4.png
- D dist/anim/damage/5.png
- D dist/anim/fire__slash/0.png
- D dist/anim/fire__slash/1.png
- D dist/anim/fire__slash/10.png
- D dist/anim/fire__slash/11.png
- D dist/anim/fire__slash/12.png
- D dist/anim/fire__slash/13.png
- D dist/anim/fire__slash/14.png
- D dist/anim/fire__slash/15.png
- D dist/anim/fire__slash/16.png
- D dist/anim/fire__slash/17.png
- D dist/anim/fire__slash/18.png
- D dist/anim/fire__slash/19.png
- D dist/anim/fire__slash/2.png
- D dist/anim/fire__slash/20.png
- D dist/anim/fire__slash/21.png
- D dist/anim/fire__slash/22.png
- D dist/anim/fire__slash/23.png
- D dist/anim/fire__slash/3.png
- D dist/anim/fire__slash/4.png
- D dist/anim/fire__slash/5.png
- D dist/anim/fire__slash/6.png
- D dist/anim/fire__slash/7.png
- D dist/anim/fire__slash/8.png
- D dist/anim/fire__slash/9.png
- D dist/anim/jink/0.png
- D dist/anim/jink/1.png
- D dist/anim/jink/10.png
- D dist/anim/jink/11.png
- D dist/anim/jink/12.png
- D dist/anim/jink/13.png
- D dist/anim/jink/14.png
- D dist/anim/jink/15.png
- D dist/anim/jink/16.png
- D dist/anim/jink/17.png
- D dist/anim/jink/18.png
- D dist/anim/jink/19.png
- D dist/anim/jink/2.png
- D dist/anim/jink/20.png
- D dist/anim/jink/21.png
- D dist/anim/jink/22.png
- D dist/anim/jink/3.png
-... và 2056 mục nữa; xem git status trực tiếp.
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+ef77ae6d release: consolidate main deployment surfaces
 9888d248 fix: synchronize admin role and permissions
 3b874223 docs: record CP33 Render suspension blocker
-69780705 feat: publish CP33 upstream FreeKill VFX assets
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
