@@ -8,6 +8,8 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Handoff ngắn
 
+- **GAME-ACCESS-02 / production Firebase auth repair (LIVE, 18/10/2026):** đã tạo private key production mới cho đúng Firebase project và cấu hình lại Vercel Production cùng `FIREBASE_PROJECT_ID`/`FIREBASE_DATABASE_ID`; không ghi nội dung key vào repository hoặc tài liệu. Source [`api/_lib/firebaseAdmin.ts`](../api/_lib/firebaseAdmin.ts) giờ truyền project ID tường minh cho Firebase Admin và fail-closed nếu JSON credential thuộc project khác; commit `233f5be4` đã push lên `main`, Vercel deployment `6b1KuAyaFpqcDsQo8tad2X1bsjGb` báo `READY`. File key tải tạm đã được đưa vào macOS Trash sau khi xác nhận deployment; clipboard đã được làm rỗng. Cloudflare Pages deployment có Functions là `553116bd.tqsvn.pages.dev`, alias production `https://tqsvn.pages.dev`; HTML production có đủ cả `mobile-web-app-capable` và `apple-mobile-web-app-capable`, POST không Bearer vẫn trả `401` đúng boundary. Chrome với phiên Firebase thật đã gọi được session và hiển thị `Chiến Thư Đang Chờ Phê Chuẩn` thay cho lỗi `401`, nghĩa là token đã được xác thực; tài khoản hiện còn chờ admin cấp quyền tham chiến nên chưa claim gameplay `200`. `game/web` typecheck/build và `git diff --check` PASS; root typecheck vẫn có lỗi nền ở các script `game/web`/snapshot `scratch/restores`, không thuộc patch này.
+
 - **Game access control / TQSShop SSO (DEPLOYED bounded, 18/10/2026):** game web dùng cùng Firebase Google identity với TQSShop; lần đầu gọi [`api/game/session.ts`](../api/game/session.ts) tạo `gameAccess/{uid}` ở trạng thái `pending`, admin có quyền `manageGameAccess` duyệt/tạm dừng và sửa tên hiển thị. API luôn phát danh tính native mới theo `tqs_<uid>`, bỏ qua mapping cũ; không có luồng giữ hoặc migrate tài khoản native cũ. API chỉ phát vé HMAC `TQS1` 5 phút cho tài khoản `approved`; LoginScreen đã bỏ username/password và tab tự đăng ký. `GameAdapter` refresh vé trước reconnect. Admin có quyền `manageGamePool` lưu policy revision cho pack tướng/bài; client hợp nhất lock vào request tạo phòng và native source patch thêm forced list. TQSShop production Vercel deployment `dpl_GxWyXxNPcpqpMcP5tdQiz1LzCiqy` đã `READY` và alias `https://tqsshop.vercel.app`; Cloudflare Pages production deployment `c928f1ff-48e1-4d85-9b84-df9eb9e91a52` alias `https://tqsvn.pages.dev`; Firebase rules/indexes đã release. Native replacement đã source-build từ commit `b8a2ad48305aea7b55ccca325fcbeb100cb8a01a`, runtime `/opt/freekill-hegemony/releases/freekill-asio-source-0.1.17`, verify package `14/14 PASS`, QA package verify PASS, `freekill-native.service active`, tmux và `*:9527 LISTEN`. Secret dùng chung đã đặt trong Vercel Production và `/etc/tqs-game-auth.env` mode `0600`; giá trị không ghi vào repository hoặc log. Quan sát public: API trực tiếp và Pages bridge thiếu Bearer đều `401`, preflight CORS đúng Pages origin `204`, `/gateway/healthz` `200 ok`, storefront `200`. Chưa chạy authenticated smoke bằng một tài khoản approved; đây là giới hạn kiểm chứng valid-ticket, không phải lỗi deployment. Không có mapping/migration tài khoản cũ; các row cũ trong `users.db` không được sử dụng và chỉ xoá bằng bước reset database riêng sau backup và phê duyệt.
 
 - **TQSShop admin access repair (LIVE, 18/10/2026):** tài khoản quản trị hiện tại đã được provision trực tiếp trong Firebase Authentication/Firestore với custom claim `super_admin`, hồ sơ `role: admin` và đầy đủ 10 cờ `adminPermissions`; dữ liệu hồ sơ không liên quan được giữ nguyên. Source fix trong [`src/contexts/AuthContext.tsx`](../src/contexts/AuthContext.tsx), [`src/components/admin/AdminPermissions.tsx`](../src/components/admin/AdminPermissions.tsx) và [`src/App.tsx`](../src/App.tsx) đã được commit `9888d248`, push lên GitHub và promote thành deployment Vercel production `7ZJAc3PmcaShv8sQPbNFCoaGsoxR`. Đã tải lại `https://tqsshop.vercel.app/admin` bằng phiên Chrome của tài khoản quản trị: dashboard và tab `Phân quyền` hiển thị, tài khoản có nút `Sửa quyền`; bundle production chứa token refresh cưỡng bức và luồng ghi đồng bộ `role` + `adminPermissions`. `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`, `npm test` (37 contract, 60 order service, 4 pricing, 10 media) và `git diff --check` đều PASS. Không ghi credential/token vào repository hoặc tài liệu.
@@ -247,20 +249,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-18T12:53:55.342Z (UTC).
-- Nhánh: `main` · HEAD: `25bfa8566630`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-18T15:18:50.816Z (UTC).
+- Nhánh: `main` · HEAD: `233f5be4d268`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+233f5be4 fix: align production Firebase auth project
+cb1abd31 docs: refresh final main checkpoint
 25bfa856 docs: record main production deployment
-ef77ae6d release: consolidate main deployment surfaces
-9888d248 fix: synchronize admin role and permissions
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
