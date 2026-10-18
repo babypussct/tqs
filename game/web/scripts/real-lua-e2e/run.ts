@@ -1240,6 +1240,28 @@ try {
       }
       await p.setViewportSize({ width: 390, height: 844 });
     }],
+    ['UI-02 stale admin policy skips invalid and duplicate packs in the actual lobby', async (p) => {
+      await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks({
+        generals: ['hegemony_nos', 'hegemony_standard', 'hegemony_standard'],
+        cards: ['m_lord_cards', 'hegemony_cards', 'missing_pack'],
+      }));
+      await p.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
+      const general = p.locator('input[data-pack-id="hegemony_standard"]');
+      const card = p.locator('input[data-pack-id="hegemony_cards"]');
+      assert.equal(await general.isChecked(), false);
+      assert.equal(await general.isDisabled(), true);
+      assert.equal(await card.isChecked(), false);
+      assert.equal(await card.isDisabled(), true);
+      assert.match(await p.getByText(/Policy quản trị chứa gói không thuộc bể/).innerText(),
+        /hegemony_nos.*m_lord_cards.*missing_pack/);
+      assert.match(await p.locator('.pool-summary').innerText(), /196 tướng.*109 lá/);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+      await p.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((item) => item.command === 'CreateRoom'));
+      const created = await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgeCreatedRoom());
+      assert.deepEqual(created.disabledPack, ['hegemony_standard', 'hegemony_cards']);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+    }],
     ['QA caller pool uses native disabledGenerals without exposing internal IDs', async (p) => {
       await p.evaluate(() => history.replaceState(null, '', '/?tqs-qa-general=hs__pangde&tqs-qa-pack=hegemony_standard'));
       await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks());
@@ -2166,6 +2188,8 @@ try {
   );
   const testsToRun = process.argv.includes('--qa-scenarios')
     ? tests.filter(([name]) => name.startsWith('QA Scenario Mode'))
+    : process.argv.includes('--room-pools')
+    ? tests.filter(([name]) => name.startsWith('UI-02'))
     : tests;
   let passed = 0;
   const failures: string[] = [];

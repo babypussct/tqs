@@ -12,6 +12,7 @@ import GameResultPanel from '../../src/GameResultPanel';
 import NativeDialogPanel from '../../src/NativeDialogPanel';
 import { LobbyScreen, WaitingRoomScreen } from '../../src/App';
 import { GameAdapter, type RoomPacks } from '../../src/engine/gameAdapter';
+import type { GameSession } from '../../src/gameAuth';
 import { VI_ADDITIONS } from '../../src/engine/vietnamese';
 import { GameConnection, type SocketHandlers } from '../../src/engine/connection';
 import { CLIENT_REPLY, PacketStream, PacketType, encodePacket, encodeTextArray, fromHex, toHex } from '../../src/engine/packet';
@@ -36,6 +37,9 @@ let publicKeyPem = '';
 let ready = false;
 let bootError: string | null = null;
 const roomAdapter = new GameAdapter('/gateway');
+// Native browser fixtures have no Firebase account. Stub only the SSO refresh;
+// the real adapter still validates pools and creates the Lua CBOR packet.
+(roomAdapter as unknown as { refreshGameSession: () => Promise<void> }).refreshGameSession = async () => {};
 
 interface FixtureBeginPlayOptions {
   /** Optional explicit pile; used only by the QA scenario director. */
@@ -117,7 +121,13 @@ function sentPackets() {
 const api = {
   get ready() { return ready; },
   get bootError() { return bootError; },
-  beginRoomPacks: () => {
+  beginRoomPacks: (disabledPacks: GameSession['poolPolicy']['disabledPacks'] = { generals: [], cards: [] }) => {
+    (roomAdapter as unknown as { gameSession: GameSession }).gameSession = {
+      uid: 'browser-test', displayName: 'Browser test', nativeName: 'tqs_browser_test',
+      ticket: 'local-fixture', expiresAt: 9999999999,
+      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1,
+        disabledPacks, appliesTo: 'new_rooms' },
+    };
     begin();
     serverNotify('EnterLobby', Uint8Array.of(0xf6));
     const packs = roomAdapter.getRoomPacks();

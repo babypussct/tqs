@@ -240,13 +240,16 @@ export function LobbyScreen({ adapter, run, busy }: {
   const [roomName, setRoomName] = useState('Quốc Chiến Mobile');
   const [capacity, setCapacity] = useState(4);
   const [timeout, setTimeoutSeconds] = useState(30);
-  const adminDisabledPacks = useMemo(() => adapter.getAdminDisabledPacks(), [adapter]);
-  const [disabledPacks, setDisabledPacks] = useState<string[]>(adminDisabledPacks);
-  const qaScenario = useMemo(readQaGeneralScenario, []);
-  const text = useDisplayText();
   const packs = useMemo(() => {
     try { return adapter.getRoomPacks(); } catch { return null; }
   }, [adapter]);
+  const adminRestrictions = useMemo(() => packs
+    ? adapter.getAdminPackRestrictions(packs)
+    : { disabled: [], unsupported: [] }, [adapter, packs]);
+  const adminDisabledPacks = adminRestrictions.disabled;
+  const [disabledPacks, setDisabledPacks] = useState<string[]>(adminDisabledPacks);
+  const qaScenario = useMemo(readQaGeneralScenario, []);
+  const text = useDisplayText();
   const qaPlan = useMemo<QaGeneralPlan | null>(() => {
     if (!qaScenario) return null;
     try { return buildQaGeneralPlan(adapter, qaScenario); }
@@ -396,6 +399,12 @@ export function LobbyScreen({ adapter, run, busy }: {
                 <p className="sg-pool-help-text">
                   Bỏ chọn gói để loại toàn bộ tướng hoặc bài thuộc gói đó khỏi ván. Hệ thống sẽ tự động loại các lựa chọn không phù hợp với phòng này.
                 </p>
+                {adminRestrictions.unsupported.length > 0 && (
+                  <p className="notice" role="status">
+                    Policy quản trị chứa gói không thuộc bể Quốc Chiến hiện tại ({adminRestrictions.unsupported.join(', ')}).
+                    Các gói này được bỏ qua khi tạo phòng; vui lòng cập nhật policy trong trang quản trị.
+                  </p>
+                )}
                 {packs ? (
                   <>
                     {packGroup('Bể tướng', packs.generals, 'generals')}

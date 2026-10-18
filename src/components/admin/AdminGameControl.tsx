@@ -17,10 +17,13 @@ import type { GameAccess, GamePoolPolicy, GameAccessStatus } from '../../types';
 type PackKind = 'generals' | 'cards';
 type AccessDraft = { gameName: string };
 
+// Excluded by the pinned new_heg_mode whitelist. Older saved policies may
+// still contain these IDs; administrators can remove them from custom fields.
+const UNAVAILABLE_PACKS = new Set(['hegemony_nos', 'm_lord_cards']);
+
 const PACK_OPTIONS: Record<PackKind, Array<{ id: string; label: string }>> = {
   generals: [
     { id: 'hegemony_standard', label: 'Quốc Chiến Tiêu Chuẩn' },
-    { id: 'hegemony_nos', label: 'Quốc Chiến Cổ Điển' },
     { id: 'formation', label: 'Trận Pháp' },
     { id: 'momentum', label: 'Biến Cục' },
     { id: 'transformation', label: 'Biến Hóa' },
@@ -40,7 +43,6 @@ const PACK_OPTIONS: Record<PackKind, Array<{ id: string; label: string }>> = {
     { id: 'strategic_advantage', label: 'Ưu Thế Chiến Lược' },
     { id: 'nine_variations', label: 'Quốc Chiến Cửu Biến' },
     { id: 'lord_cards', label: 'Quân Lâm Thiên Hạ' },
-    { id: 'm_lord_cards', label: 'Quân Lâm Thiên Hạ Mobile' },
   ],
 };
 
@@ -201,6 +203,11 @@ export default function AdminGameControl() {
     if (!adminUser || !canPool) return;
     const parseCustom = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
     const custom = [...parseCustom(customGenerals), ...parseCustom(customCards)];
+    const unavailable = custom.filter((id) => UNAVAILABLE_PACKS.has(id));
+    if (unavailable.length) {
+      toast.error(`Gói không khả dụng trong Quốc Chiến: ${[...new Set(unavailable)].join(', ')}. Hãy xóa ID khỏi danh sách bổ sung.`);
+      return;
+    }
     if (custom.some((id) => !/^[A-Za-z0-9_\-\u4e00-\u9fff]{1,100}$/u.test(id))) {
       toast.error('Pack bổ sung có ID không hợp lệ. Dùng các ký tự chữ, số, gạch ngang hoặc gạch dưới.');
       return;

@@ -39,6 +39,12 @@
 - Chrome authenticated smoke sau deploy đã đi qua Firebase Admin thành công và hiển thị `Chiến Thư Đang Chờ Phê Chuẩn`, không còn `401 Unauthorized`; tài khoản đang ở trạng thái `pending` nên chưa có bằng chứng gameplay `200`/vé native hợp lệ. `game/web` typecheck/build và `git diff --check` PASS. Root `npm run typecheck` vẫn FAIL vì lỗi nền đã tồn tại trong các test/script `game/web` và snapshot `scratch/restores`, không phát sinh từ patch này.
 - Giới hạn bảo mật: giá trị private key, ID token và credential không ghi vào repo/log/docs; file key tải tạm đã được đưa vào macOS Trash sau khi checkpoint cuối xác nhận deployment, và clipboard đã được làm rỗng.
 
+**GAME-ACCESS-03 — Ổn định lock package ở sảnh Quốc Chiến (LIVE bounded, 18/10/2026):**
+
+- [x] Lọc và khử trùng ID khóa từ admin policy theo `__web_room_packs('new_heg_mode')` trước khi tính Lua pool hoặc tạo `CreateRoom`; hiện cảnh báo ID bị loại, không cho chọn lại hai gói bị mode loại (`hegemony_nos`, `m_lord_cards`) ở trang admin. Native Lua vẫn kiểm tra nghiêm ngặt input bất hợp lệ.
+- [x] Unit Lua/CBOR regression **1/1 PASS**, `game/web` typecheck/build PASS, root build PASS. Chrome + real Lua regression của UI-02 PASS, gồm case policy cũ có duplicate, excluded và unknown IDs; full real-Lua E2E **64/65 PASS**, riêng UI-03 desktop 8 ghế chồng panel còn FAIL (scope layout khác); root typecheck còn lỗi nền của script/snapshot.
+- [x] Real-Lua `npm run test:e2e:lua -- --room-pools` **3/3 PASS** (chạy lại 18/10/2026), `npm run test:room-pools` **1/1 PASS**, `game/web` production build và `git diff --check` PASS. Cloudflare Pages production `396d63cb.tqsvn.pages.dev` + alias `https://tqsvn.pages.dev`: HTML/JS/CSS `200`, JS/CSS byte-match local, gateway healthz và manifest `200`, API thiếu Bearer `401`. Vercel TQSShop production `dpl_8ZPsRTuSVtBrdAJCqa4Zxti2jWLB` `READY` + alias `https://tqsshop.vercel.app`: admin bundle mới `200` có hai guard ID loại khỏi mode, session API thiếu Bearer `401`. **Giới hạn:** chưa có authenticated production smoke với tài khoản approved mang policy cũ; UI-03 desktop 8 ghế vẫn là ticket layout khác. Không thay native/Oracle/tunnel/KV.
+
 **SHOP-ADMIN-01 — Khôi phục và làm bền quyền quản trị TQSShop (LIVE, 18/10/2026):**
 
 - Firebase Authentication của tài khoản quản trị đã có custom claim `super_admin`; Firestore profile có `role: admin` và đầy đủ 10 quyền module. `/admin` trên domain production đã được mở bằng phiên Chrome thật, dashboard và `Phân quyền` đều hiển thị.

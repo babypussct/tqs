@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
 import { GameAdapter, type RoomGeneral, type RoomPack, type RoomPacks, type PoolSummary } from '../src/engine/gameAdapter';
+import type { GameSession } from '../src/gameAuth';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
 import { loadUpstreamFiles } from './upstream-packages';
 
@@ -169,11 +170,20 @@ async function main() {
     (adapter as unknown as {connection: unknown}).connection = {
       getStatus: () => ({kind: 'online'}), lua: rt,
     };
-    assert.throws(() => adapter.createRoom('Blocked', 2, 30, [...packs.generals.map((p) => p.id)]), /Bể tướng/);
-    assert.throws(() => adapter.createRoom('Blocked', 2, 30, [...packs.cards.map((p) => p.id)]), /Bể bài/);
-    assert.throws(() => adapter.createRoom('Blocked', 2, 30, ['fake']), /invalid or duplicate/);
+    const session: GameSession = {
+      uid: 'test', displayName: 'Test', nativeName: 'tqs_test', ticket: 'fixture', expiresAt: 9999999999,
+      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1,
+        disabledPacks: { generals: [], cards: [] }, appliesTo: 'new_rooms' },
+    };
+    (adapter as unknown as {gameSession: GameSession}).gameSession = session;
+    // This test runs without a Firebase account; refresh is tested at the API
+    // boundary, while the adapter still performs its real native pool checks.
+    (adapter as unknown as {refreshGameSession: () => Promise<void>}).refreshGameSession = async () => {};
+    await assert.rejects(adapter.createRoom('Blocked', 2, 30, [...packs.generals.map((p) => p.id)]), /Bể tướng/);
+    await assert.rejects(adapter.createRoom('Blocked', 2, 30, [...packs.cards.map((p) => p.id)]), /Bể bài/);
+    await assert.rejects(adapter.createRoom('Blocked', 2, 30, ['fake']), /invalid or duplicate/);
     assert.equal(notifications.length, 0, 'invalid pools must never send CreateRoom');
-    adapter.createRoom(' Gói chọn kiểm thử ', 2, 30, disabled);
+    await adapter.createRoom(' Gói chọn kiểm thử ', 2, 30, disabled);
     assert.equal(notifications.length, 1);
     const created = notifications[0];
     assert.equal(created.kind, 'notify');
@@ -190,7 +200,7 @@ async function main() {
     assert.equal(packet.settings.gameMode, 'new_heg_mode');
     assert.equal((packet.settings._game as Record<string, unknown>).generalNum, 5);
 
-    adapter.createRoom(' Caller QA ', 2, 30, [], qaDisabledGenerals);
+    await adapter.createRoom(' Caller QA ', 2, 30, [], qaDisabledGenerals);
     assert.equal(notifications.length, 2);
     const qaCreated = rt.eval<{settings: Record<string, unknown>}>(`
       local data = cbor.decode(__host_hex2bin('${notifications[1].hex}'))
@@ -198,7 +208,7 @@ async function main() {
     `);
     assert.deepEqual(qaCreated.settings.disabledGenerals, qaDisabledGenerals, 'CBOR must preserve deterministic native caller exclusions');
 
-    adapter.createRoom(' Battle Royal QA ', 2, 30, [], [], { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false, ignored: true });
+    await adapter.createRoom(' Battle Royal QA ', 2, 30, [], [], { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false, ignored: true });
     assert.equal(notifications.length, 3);
     const modeCreated = rt.eval<{settings: Record<string, unknown>}>(`
       local data = cbor.decode(__host_hex2bin('${notifications[2].hex}'))
@@ -206,6 +216,26 @@ async function main() {
     `);
     assert.deepEqual(modeCreated.settings._mode, { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false },
       'QA mode settings must preserve only the bounded native Battle Royal keys');
+
+    // A saved admin policy may include mode-excluded packages. The server
+    // remains strict; only supported locks may reach its Lua summary/wire.
+    session.poolPolicy.disabledPacks = {
+      generals: ['hegemony_nos', general.id, general.id],
+      cards: ['m_lord_cards', card.id, 'missing_pack'],
+    };
+    const restrictions = adapter.getAdminPackRestrictions(packs);
+    assert.deepEqual(restrictions.disabled, [general.id, card.id]);
+    assert.deepEqual(restrictions.unsupported, ['hegemony_nos', 'm_lord_cards', 'missing_pack']);
+    assert.deepEqual(adapter.getAdminDisabledPacks(), restrictions.disabled);
+    assert.deepEqual(adapter.getRoomPoolSummary(restrictions.disabled), summary);
+    await adapter.createRoom(' Policy cũ ', 2, 30);
+    assert.equal(notifications.length, 4);
+    const policyPacket = rt.eval<{settings: Record<string, unknown>}>(`
+      local data = cbor.decode(__host_hex2bin('${notifications[3].hex}'))
+      return {settings = data[4]}
+    `);
+    assert.deepEqual(policyPacket.settings.disabledPack, restrictions.disabled,
+      'stale mode-excluded policy IDs must never reach CreateRoom');
 
     // EnterRoom settings are server-owned. Verify client renders the echoed
     // package state and resets it when leaving / entering another room.

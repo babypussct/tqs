@@ -5,7 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { emptyBoard } from '../store/boardState';
 import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
 import { connectionProgress, connectionError } from './connectionMessages';
-import { createGameSessionForCurrentUser, type GameSession } from '../gameAuth';
+import type { GameSession } from '../gameAuth';
 
 export interface GameModeInfo {
   name: string;
@@ -152,6 +152,7 @@ export class GameAdapter {
 
   private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number, endSession: (reason: string) => void) {
     try {
+      const { createGameSessionForCurrentUser } = await import('../gameAuth');
       const session = await createGameSessionForCurrentUser();
       if (generation !== this.generation || this.connection !== connection) return;
       this.gameSession = session;
@@ -180,10 +181,22 @@ export class GameAdapter {
     return this.requireConnection().lua.call<RoomPacks>('__web_room_packs', 'new_heg_mode');
   }
 
-  getAdminDisabledPacks(): string[] {
+  getAdminPackRestrictions(packs?: RoomPacks): { disabled: string[]; unsupported: string[] } {
     const policy = this.gameSession?.poolPolicy;
-    if (!policy) return [];
-    return [...new Set([...policy.disabledPacks.generals, ...policy.disabledPacks.cards])];
+    if (!policy) return { disabled: [], unsupported: [] };
+    // Saved policies can outlive the installed mode whitelist; rely on the
+    // live Lua inventory before passing locks to the strict pool validator.
+    const available = packs ?? this.getRoomPacks();
+    const known = new Set([...available.generals, ...available.cards].map((pack) => pack.id));
+    const ids = [...new Set([...policy.disabledPacks.generals, ...policy.disabledPacks.cards])];
+    return {
+      disabled: ids.filter((id) => known.has(id)),
+      unsupported: ids.filter((id) => !known.has(id)),
+    };
+  }
+
+  getAdminDisabledPacks(): string[] {
+    return this.getAdminPackRestrictions().disabled;
   }
 
   getGameDisplayName(): string {
@@ -201,6 +214,7 @@ export class GameAdapter {
   private async refreshGameSession(): Promise<void> {
     const current = this.gameSession;
     if (!current) throw new Error('Chưa có phiên TQSShop để tạo phòng');
+    const { createGameSessionForCurrentUser } = await import('../gameAuth');
     const refreshed = await createGameSessionForCurrentUser();
     if (refreshed.uid !== current.uid || refreshed.nativeName !== current.nativeName) {
       throw new Error('Danh tính TQSShop đã thay đổi. Hãy ngắt kết nối và đăng nhập lại.');
