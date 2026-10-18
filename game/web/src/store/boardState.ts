@@ -187,7 +187,14 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     const p = data as Record<string, unknown>;
     const draw = typeof p.draw === 'number' && Number.isInteger(p.draw) && p.draw >= 0 ? p.draw : board.drawPileCount;
     const discard = typeof p.discard === 'number' && Number.isInteger(p.discard) && p.discard >= 0 ? p.discard : board.discardPileCount;
-    const topDiscard = publicCard(p.topDiscard) ?? (discard === 0 ? null : board.topDiscardCard);
+    // The bridge always includes topDiscard, including an explicit null when
+    // the discard pile has just been consumed. Do not fall back to the
+    // previous card in that case: keeping it makes the table show a stale
+    // discard after a draw, take or reshuffle.
+    const hasTopDiscard = Object.prototype.hasOwnProperty.call(p, 'topDiscard');
+    const topDiscard = hasTopDiscard
+      ? publicCard(p.topDiscard)
+      : (discard === 0 ? null : board.topDiscardCard);
     const processing = Array.isArray(p.processing)
       ? p.processing.map((c) => publicCard(c)!).filter(Boolean)
       : board.processingCards;
@@ -205,7 +212,9 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
       if (!item || typeof item !== 'object') return null;
       const card = publicCard(item);
       const id = (item as any).id;
-      return card && typeof id === 'number' ? { ...card, id } : null;
+      return card && typeof id === 'number' && Number.isSafeInteger(id) && id >= 0
+        ? { ...card, id }
+        : null;
     }).filter(Boolean) as (BoardEquipment & { id: number })[];
     return { ...board, selfHandCards: cards };
   }

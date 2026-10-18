@@ -14,6 +14,7 @@ die() {
 RUNTIME_DIR="${FREEKILL_RUNTIME_DIR:-$FREEKILL_INSTALL_ROOT/current}"
 PACKAGES_DIR="$RUNTIME_DIR/packages"
 PACKAGE_DB="$PACKAGES_DIR/packages.db"
+PACKAGE_SEED_DIR="${FREEKILL_PACKAGE_SEED_DIR:-$FREEKILL_INSTALL_ROOT/releases/freekill-asio-static-$FREEKILL_ASIO_RELEASE-amd64/packages}"
 
 [[ -d "$RUNTIME_DIR" ]] || die "Runtime directory does not exist: $RUNTIME_DIR"
 [[ -f "$PACKAGES_DIR/init.sql" ]] || die "Missing package schema: $PACKAGES_DIR/init.sql"
@@ -32,8 +33,22 @@ clone_at_commit() {
     die "Package path exists but is not a Git checkout: $destination"
   fi
 
+  if [[ ! -d "$destination/.git" && -d "$PACKAGE_SEED_DIR/$name/.git" ]]; then
+    # A previous verified runtime can seed the exact pinned checkout locally.
+    # This avoids downloading large, immutable package histories again when
+    # the source binary is rebuilt on a host with an unreliable remote link.
+    mkdir -p "$destination"
+    cp -a "$PACKAGE_SEED_DIR/$name/." "$destination/"
+  fi
+
   if [[ ! -d "$destination/.git" ]]; then
-    git clone --no-tags "$url" "$destination"
+    # Fetch the pinned object directly instead of cloning the moving default
+    # branch. Several of the pinned Gitee repositories are large enough that
+    # a full clone can lose its TLS connection before the exact revision is
+    # available locally.
+    mkdir -p "$destination"
+    git -C "$destination" init -q
+    git -C "$destination" remote add origin "$url"
   fi
 
   # Some Gitee repositories do not advertise older commit IDs through the
@@ -124,6 +139,24 @@ grep -Fq 'if not p:isFakeSkill(skill) then return end' "$CORE_ROOM" ||
   die "Native Room fake-skill ownership hardening did not apply"
 grep -Fq 'elseif not table.contains(p.prelighted_skills, skill) then' "$CORE_ROOM" ||
   die "Native Room stale-prelight cleanup hardening did not apply"
+
+# The parent native process owns the admin pack lock list and passes it to the
+# Lua worker through an environment value. Apply it after the mode's own
+# disabled list so a browser cannot re-enable an admin locked package by
+# changing CreateRoom settings.
+CORE_RPC_FK="$PACKAGES_DIR/freekill-core/lua/server/rpc/fk.lua"
+if grep -Fq 'function fk.GetDisabledPacks()' "$CORE_RPC_FK" &&
+    ! grep -Fq 'function fk.GetTqsLockedPacks()' "$CORE_RPC_FK"; then
+  perl -0pi -e 's{return os\.getenv\("FK_DISABLED_PACKS"\) or "\[\]"\nend}{return os.getenv("FK_DISABLED_PACKS") or "[]"\nend\n\n---@return string\nfunction fk.GetTqsLockedPacks()\n  return os.getenv("FK_TQS_LOCKED_PACKS") or "[]"\nend}s' "$CORE_RPC_FK"
+fi
+grep -Fq 'function fk.GetTqsLockedPacks()' "$CORE_RPC_FK" ||
+  die "TQS locked-pack RPC environment bridge did not apply"
+
+if ! grep -Fq 'fk.GetTqsLockedPacks()' "$CORE_ROOM"; then
+  perl -0pi -e 's{  self\.disabled_generals = self:getSettings\('\''disabledGenerals'\''\)}{  local tqs_locked_packs = json.decode(fk.GetTqsLockedPacks())\n  if type(tqs_locked_packs) == "table" then\n    table.insertTable(self.disabled_packs, tqs_locked_packs)\n  end\n  self.disabled_generals = self:getSettings('\''disabledGenerals'\'')}s' "$CORE_ROOM"
+fi
+grep -Fq 'fk.GetTqsLockedPacks()' "$CORE_ROOM" ||
+  die "TQS Room forced pack lock hardening did not apply"
 
 sqlite3 "$PACKAGE_DB" < "$PACKAGES_DIR/init.sql"
 sqlite3 "$PACKAGE_DB" <<SQL

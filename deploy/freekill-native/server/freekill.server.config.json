@@ -8,6 +8,9 @@
   "hiddenPacks": [],
   "enableBots": true,
   "enableWhitelist": false,
+  "tqsAuthRequired": true,
+  "tqsAuthSecret": "",
+  "tqsLockedPacks": [],
   "roomCountPerThread": 32,
   "maxPlayersPerDevice": 2,
   "tqsQa": {

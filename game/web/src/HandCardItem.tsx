@@ -1,6 +1,6 @@
 import { useId, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { useDisplayText } from './engine/displayText';
 import { objectValue } from './engine/gameplayInteraction';
 import type { GameplayItem } from './store/gameplayState';
@@ -685,8 +685,8 @@ export function HandCardItem({
   const metadataId = `card-meta-${reactId}`;
   const cardMetadata = [suitInfo.name, rank, category.label].filter(Boolean).join(' · ');
   const describedBy = [metadataId, showTooltip ? tooltipId : ''].filter(Boolean).join(' ');
-  const overlapDesktop = index > 0 && totalCards > 4
-    ? Math.min(38, 16 + (totalCards - 4) * 3.5)
+  const overlapDesktop = index > 0 && totalCards > 7
+    ? Math.min(36, 12 + (totalCards - 7) * 3)
     : 0;
   const overlapMobile = index > 0 && totalCards > 4
     ? Math.min(42, 14 + (totalCards - 4) * 4.5)
@@ -857,6 +857,31 @@ export function ResolvingCardView({ card }: { card: { name: string; suit: number
   );
 }
 
+/** Compact public card preview used for the latest card in the discard pile. */
+export function PublicPileCardPreview({
+  card,
+  label = 'Lá bỏ gần nhất',
+}: {
+  card: CardData;
+  label?: string;
+}) {
+  const text = useDisplayText();
+  const suitInfo = getSuitInfo(card.suit);
+  const rank = formatRank(card.number);
+  const { displayName } = resolveCardText(card, text);
+  const cardLabel = `${label}: ${displayName} · ${suitInfo.name} ${rank}`;
+
+  return (
+    <div className="native-pile-card-preview" aria-label={cardLabel} title={cardLabel}>
+      <CardArt card={card} />
+      <span className={`native-pile-card-rank ${suitInfo.colorClass}`} aria-hidden="true">
+        {suitInfo.symbol} {rank}
+      </span>
+      <span className="native-pile-card-name" aria-hidden="true">{displayName}</span>
+    </div>
+  );
+}
+
 /** Idle Hand Card for Bottom Dashboard (renders cards outside active turns) */
 export function IdleHandCard({
   card,
@@ -882,8 +907,9 @@ export function IdleHandCard({
   const metadataId = `card-meta-idle-${reactId}`;
   const cardMetadata = [suitInfo.name, rank, category.label].filter(Boolean).join(' · ');
   const showTooltip = hovered || focused;
+  const [inspectOpen, setInspectOpen] = useState(false);
 
-  const overlapDesktop = index > 0 && totalCards > 4 ? Math.min(38, 16 + (totalCards - 4) * 3.5) : 0;
+  const overlapDesktop = index > 0 && totalCards > 7 ? Math.min(36, 12 + (totalCards - 7) * 3) : 0;
   const overlapMobile = index > 0 && totalCards > 4 ? Math.min(42, 14 + (totalCards - 4) * 4.5) : 0;
   const overlapLandscape = index > 0 && totalCards > 7 ? Math.min(22, 10 + (totalCards - 7) * 2.5) : 0;
   const cardStyle = {
@@ -902,76 +928,98 @@ export function IdleHandCard({
     }
   };
 
+  const inspect = () => setInspectOpen(true);
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    inspect();
+  };
+
   return (
-    <div
-      ref={cardRef}
-      tabIndex={0}
-      role="button"
-      className={`gameplay-choice sg-card-button sg-card-idle ${category.className}`}
-      style={cardStyle}
-      aria-label={`${displayName} · ${suitInfo.name} ${rank}`}
-      aria-describedby={showTooltip ? tooltipId : metadataId}
-      onMouseEnter={() => { updateRect(); setHovered(true); }}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => { updateRect(); setFocused(true); }}
-      onBlur={() => setFocused(false)}
-    >
-      <span id={metadataId} className="sg-visually-hidden">
-        {cardMetadata ? `${cardMetadata}. ` : ''}{description}
-      </span>
-      {/* Layer 1: Top-Left Suit & Rank */}
-      <div className="sg-card-top-left" aria-hidden="true">
-        <span className="sg-card-rank">{rank || ' '}</span>
-        <span className={`sg-card-suit ${suitInfo.colorClass}`}>
-          {suitInfo.symbol}
+    <>
+      <div
+        ref={cardRef}
+        tabIndex={0}
+        role="button"
+        className={`gameplay-choice sg-card-button sg-card-idle ${category.className}`}
+        style={cardStyle}
+        aria-label={`${displayName} · ${suitInfo.name} ${rank}`}
+        aria-describedby={showTooltip ? tooltipId : metadataId}
+        title="Chạm để xem chi tiết lá bài"
+        onClick={inspect}
+        onKeyDown={handleKeyDown}
+        onMouseEnter={() => { updateRect(); setHovered(true); }}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => { updateRect(); setFocused(true); }}
+        onBlur={() => setFocused(false)}
+      >
+        <span id={metadataId} className="sg-visually-hidden">
+          {cardMetadata ? `${cardMetadata}. ` : ''}{description}
         </span>
-      </div>
-
-      {/* Layer 2: Top-Right Category Badge */}
-      {category.badge && (
-        <span className="sg-card-type-badge" aria-hidden="true">
-          {category.badge}
-        </span>
-      )}
-
-      {/* Layer 3: Central Illustration (Native Asset or Neutral Frame) */}
-      <CardArt card={card} />
-
-      {/* Layer 4: Card Name Banner */}
-      <div className="sg-card-banner">
-        <span className="sg-card-name">{displayName}</span>
-      </div>
-      {showTooltip && (
-        typeof document !== 'undefined' ? createPortal(
-          <div
-            id={tooltipId}
-            className="sg-card-popover-tooltip sg-card-popover-portal"
-            role="tooltip"
-            style={rect ? {
-              position: 'fixed',
-              left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
-              top: rect.top - 8,
-              transform: 'translate(-50%, -100%)',
-              zIndex: 99999,
-              pointerEvents: 'none',
-            } : undefined}
-          >
-            <strong className="sg-tip-title">
-              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
-            </strong>
-            {category.label && (
-              <span className="sg-tip-category">[{category.label}]</span>
-            )}
-            <span className="sg-tip-desc">{description}</span>
-          </div>,
-          document.body
-        ) : (
-          <span id={tooltipId} className="sg-card-popover-tooltip" role="tooltip">
-            <strong className="sg-tip-title">{displayName}</strong>
-            <span className="sg-tip-desc">{description}</span>
+        {/* Layer 1: Top-Left Suit & Rank */}
+        <div className="sg-card-top-left" aria-hidden="true">
+          <span className="sg-card-rank">{rank || ' '}</span>
+          <span className={`sg-card-suit ${suitInfo.colorClass}`}>
+            {suitInfo.symbol}
           </span>
-        )
-      )}
-    </div>
+        </div>
+
+        {/* Layer 2: Top-Right Category Badge */}
+        {category.badge && (
+          <span className="sg-card-type-badge" aria-hidden="true">
+            {category.badge}
+          </span>
+        )}
+
+        {/* Layer 3: Central Illustration (Native Asset or Neutral Frame) */}
+        <CardArt card={card} />
+
+        {/* Layer 4: Card Name Banner */}
+        <div className="sg-card-banner">
+          <span className="sg-card-name">{displayName}</span>
+        </div>
+        {showTooltip && (
+          typeof document !== 'undefined' ? createPortal(
+            <div
+              id={tooltipId}
+              className="sg-card-popover-tooltip sg-card-popover-portal"
+              role="tooltip"
+              style={rect ? {
+                position: 'fixed',
+                left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
+                top: rect.top - 8,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 99999,
+                pointerEvents: 'none',
+              } : undefined}
+            >
+              <strong className="sg-tip-title">
+                {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
+              </strong>
+              {category.label && (
+                <span className="sg-tip-category">[{category.label}]</span>
+              )}
+              <span className="sg-tip-desc">{description}</span>
+            </div>,
+            document.body
+          ) : (
+            <span id={tooltipId} className="sg-card-popover-tooltip" role="tooltip">
+              <strong className="sg-tip-title">{displayName}</strong>
+              <span className="sg-tip-desc">{description}</span>
+            </span>
+          )
+        )}
+      </div>
+      <CardDetailSheet
+        isOpen={inspectOpen}
+        onClose={() => setInspectOpen(false)}
+        displayName={displayName}
+        category={category}
+        suitInfo={suitInfo}
+        rank={rank}
+        description={description}
+        card={card}
+      />
+    </>
   );
 }

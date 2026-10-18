@@ -1,0 +1,189 @@
+diff --git a/src/server/rpc-lua/rpc-lua.cpp b/src/server/rpc-lua/rpc-lua.cpp
+index baa4a5e..eaf5308 100644
+--- a/src/server/rpc-lua/rpc-lua.cpp
++++ b/src/server/rpc-lua/rpc-lua.cpp
+@@ -5,6 +5,7 @@
+ #include "server/rpc-lua/jsonrpc.h"
+ 
+ #include "server/gamelogic/rpc-dispatchers.h"
++#include "server/server.h"
+ 
+ #include "core/util.h"
+ 
+@@ -442,6 +443,8 @@ RpcLua::RpcLua(asio::io_context &ctx) : io_ctx { ctx },
+     auto disabled_packs = PackMan::instance().getDisabledPacks();
+     auto json_string = json(disabled_packs).dump();
+     ::setenv("FK_DISABLED_PACKS", json_string.c_str(), 1);
++    auto tqs_locked_packs = json(Server::instance().config().tqsLockedPacks).dump();
++    ::setenv("FK_TQS_LOCKED_PACKS", tqs_locked_packs.c_str(), 1);
+ 
+     ::setenv("FK_RPC_MODE", "cbor", 1);
+ 
+diff --git a/src/server/server.cpp b/src/server/server.cpp
+index 7aab825..35090d1 100644
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -24,6 +24,7 @@
+ #include "core/c-wrapper.h"
+ #include "core/util.h"
+ #include "core/packman.h"
+ 
++#include <cstdlib>
+ #include <nlohmann/json.hpp>
+ 
+@@ -250,6 +250,11 @@ void ServerConfig::loadConf(const char* jsonStr) {
+   roomCountPerThread  = root.value("roomCountPerThread", roomCountPerThread);
+   maxPlayersPerDevice = root.value("maxPlayersPerDevice", maxPlayersPerDevice);
+   enableWhitelist     = root.value("enableWhitelist", enableWhitelist);
++  tqsAuthRequired     = root.value("tqsAuthRequired", tqsAuthRequired);
++  tqsAuthSecret       = root.value("tqsAuthSecret", tqsAuthSecret);
++  if (const char *env = std::getenv("TQS_GAME_TICKET_SECRET"); env && *env)
++    tqsAuthSecret = env;
++  loadStrVec(tqsLockedPacks, "tqsLockedPacks");
+ 
+   // 兼容一下之前的配置信息
+   if (root.value("enableBots", true) == false &&
+diff --git a/src/server/server.h b/src/server/server.h
+index 37cb5f9..a397194 100644
+--- a/src/server/server.h
++++ b/src/server/server.h
+@@ -27,6 +27,9 @@ struct ServerConfig {
+   bool enableWhitelist = false;
+   int roomCountPerThread = 2000;
+   int maxPlayersPerDevice = 1000;
++  bool tqsAuthRequired = false;
++  std::string tqsAuthSecret;
++  std::vector<std::string> tqsLockedPacks;
+ 
+   void loadConf(const char *json);
+ 
+diff --git a/src/server/user/auth.cpp b/src/server/user/auth.cpp
+index b553c2d..73746f8 100644
+--- a/src/server/user/auth.cpp
++++ b/src/server/user/auth.cpp
+@@ -14,10 +14,62 @@
+ #include <openssl/pem.h>
+ #include <openssl/sha.h>
+ #include <openssl/md5.h>
++#include <openssl/hmac.h>
++#include <openssl/crypto.h>
++#include <algorithm>
++#include <cctype>
++#include <chrono>
++#include <cstdint>
++#include <string_view>
+ 
+ #include <nlohmann/json.hpp>
+ using json = nlohmann::json;
+ 
++namespace {
++
++bool verifyTqsTicket(std::string_view name, std::string_view ticket, const std::string &secret) {
++  if (secret.size() < 32 || ticket.size() > 180) return false;
++
++  const std::string token(ticket);
++  const auto first = token.find('|');
++  const auto second = first == std::string::npos ? std::string::npos : token.find('|', first + 1);
++  if (first != 4 || second == std::string::npos || token.find('|', second + 1) != std::string::npos ||
++      token.substr(0, first) != "TQS1") return false;
++
++  const auto expiresText = token.substr(first + 1, second - first - 1);
++  const auto signature = token.substr(second + 1);
++  if (expiresText.empty() || signature.size() != SHA256_DIGEST_LENGTH * 2 ||
++      !std::all_of(expiresText.begin(), expiresText.end(), [](unsigned char c) { return std::isdigit(c); }) ||
++      !std::all_of(signature.begin(), signature.end(), [](unsigned char c) { return std::isxdigit(c); })) return false;
++
++  int64_t expiresAt = 0;
++  try {
++    expiresAt = std::stoll(expiresText);
++  } catch (...) {
++    return false;
++  }
++  const auto now = std::chrono::duration_cast<std::chrono::seconds>(
++    std::chrono::system_clock::now().time_since_epoch()).count();
++  if (expiresAt <= now || expiresAt > now + 15 * 60) return false;
++
++  const auto payload = std::string("TQS1|") + std::string(name) + "|" + expiresText;
++  unsigned char digest[EVP_MAX_MD_SIZE] = {0};
++  unsigned int digestLength = 0;
++  HMAC(EVP_sha256(), secret.data(), static_cast<int>(secret.size()),
++       reinterpret_cast<const unsigned char *>(payload.data()), payload.size(), digest, &digestLength);
++  static constexpr char hex[] = "0123456789abcdef";
++  std::string expected;
++  expected.reserve(digestLength * 2);
++  for (unsigned int i = 0; i < digestLength; ++i) {
++    expected.push_back(hex[digest[i] >> 4]);
++    expected.push_back(hex[digest[i] & 0x0f]);
++  }
++  return expected.size() == signature.size() &&
++    CRYPTO_memcmp(expected.data(), signature.data(), expected.size()) == 0;
++}
++
++} // namespace
++
+ #include "3rdparty/semver.hpp"
+ 
+ struct AuthManagerPrivate {
+@@ -371,6 +371,7 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+   auto &server = Server::instance();
+   auto &um = server.user_manager();
+   bool passed = false;
++  bool tqs_ticket_valid = false;
+   std::string error_msg = "";
+ 
+   // p_ptr的数据
+@@ -423,6 +465,17 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+     goto FAIL;
+   }
+ 
++  // When TQS SSO mode is enabled, an arbitrary native username/password is
++  // never enough to enter. The API signs a short-lived ticket with the same
++  // secret configured here; only a ticket issued for this exact native name
++  // can reach queryUserInfo (and therefore the deterministic account creation branch).
++  tqs_ticket_valid = !server.config().tqsAuthRequired ||
++    verifyTqsTicket(name, decrypted_pw, server.config().tqsAuthSecret);
++  if (!tqs_ticket_valid) {
++    error_msg = "game account is not approved";
++    goto FAIL;
++  }
++
+   obj = queryUserInfo(decrypted_pw);
+   if (obj.empty()) {
+     error_msg = "cannot register more new users on this device";
+@@ -445,18 +497,25 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+     }
+   }
+ 
+-  // check if password is the same
+-  decrypted_pw += obj["salt"];
+-  unsigned char hash[SHA256_DIGEST_LENGTH];
+-  SHA256((const u_char *)decrypted_pw.data(), decrypted_pw.size(), hash);
+-
+-  passwordHash.reserve(64);
+-  for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+-    char buf[3];
+-    snprintf(buf, sizeof(buf), "%02x", hash[i]);
+-    passwordHash += buf;
++  if (server.config().tqsAuthRequired) {
++    // The HMAC ticket above is the password proof in SSO mode. Do not compare
++    // it with a stored password hash, because every ticket is intentionally
++    // short-lived and different.
++    passed = true;
++  } else {
++    // check if password is the same
++    decrypted_pw += obj["salt"];
++    unsigned char hash[SHA256_DIGEST_LENGTH];
++    SHA256((const u_char *)decrypted_pw.data(), decrypted_pw.size(), hash);
++
++    passwordHash.reserve(64);
++    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
++      char buf[3];
++      snprintf(buf, sizeof(buf), "%02x", hash[i]);
++      passwordHash += buf;
++    }
++    passed = (passwordHash == obj["password"]);
+   }
+-  passed = (passwordHash == obj["password"]);
+   if (!passed) {
+     error_msg = "username or password error";
+     goto FAIL;

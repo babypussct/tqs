@@ -655,6 +655,49 @@ try {
       assert.equal(snap.replies.length, 0);
       assert.deepEqual(snap.luaErrors, []);
     }],
+    ['Native Lua Animate/Indicate and LogEvent/Damage reach React without log inference', async (p) => {
+      const { cardId } = await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
+      await p.locator(`button[data-card-id="${cardId}"]`).click();
+      await p.getByRole('article', { name: 'Bot fixture', exact: true })
+        .getByRole('button', { name: 'Chọn mục tiêu', exact: true }).click();
+      // User selection must not masquerade as the server's resolving indication.
+      assert.equal(await p.locator('.fk-indicator-line-beam').count(), 0);
+      await p.evaluate(() => {
+        window.__tqsRealLuaE2e.store.getState().dispatch('GameLog', '#UseCardToTargets:17:-1:slash');
+        window.__tqsRealLuaE2e.store.getState().dispatch('GameLog', '#Damage:17:-1:1:fire:fire__slash');
+      });
+      assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.store.getState().nativeVfxSequence), 0);
+      assert.equal(await p.locator('.fk-indicator-line-beam').count(), 0);
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('Animate', "{type='Indicate', from=17, to={{-1, 17}}}"));
+      await p.locator('.fk-indicator-line-beam').first().waitFor();
+      assert.equal(await p.locator('.fk-indicator-line-beam').count(), 2);
+      // The second link returns to the local seat. Both endpoints must resolve.
+      const chain = await p.locator('.fk-indicator-line-beam').evaluateAll((groups) =>
+        groups.map((group) => group.getAttribute('transform')));
+      assert.ok(chain.every((transform) => transform?.includes('translate(')));
+      const rendering = await p.locator('.fk-indicator-line-beam').first().evaluate((group) => {
+        const rects = Array.from(group.querySelectorAll('rect'));
+        const outer = group.ownerSVGElement?.querySelector('linearGradient[id$="-outer"] stop:last-child');
+        const grow = group.querySelector('.fk-indicator-grow');
+        const computed = grow ? getComputedStyle(grow) : null;
+        return { widths: rects.map((rect) => rect.getAttribute('width')),
+          lengths: rects.map((rect) => Number(rect.getAttribute('height'))),
+          opacity: outer?.getAttribute('stop-opacity'), animationName: computed?.animationName,
+          animationDuration: computed?.animationDuration };
+      });
+      assert.deepEqual(rendering.widths, ['6', '3']);
+      assert.ok(rendering.lengths.every((value) => value > 0));
+      assert.equal(rendering.opacity, '0.12');
+      assert.equal(rendering.animationName, 'fk-indicator-extend');
+      assert.equal(rendering.animationDuration, '0.2s');
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('LogEvent',
+        "{type='Damage', to=-1, damageType='fire_damage', damageNum=2}"));
+      const native = await p.evaluate(() => window.__tqsRealLuaE2e.store.getState().nativeVfxEvents);
+      assert.deepEqual(native.map((event) => event.kind), ['indicate', 'indicate', 'damage']);
+      assert.equal(native[2].targetPlayerId, -1);
+      assert.equal(native[2].damageNum, 2);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+    }],
     ['Real Lua PlayCard seeds React hand/targets and only card plus target plus OK replies', async (p) => {
       const { id, cardId } = await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       assert.equal(await p.getByText('Đang lượt', { exact: true }).count(), 1);

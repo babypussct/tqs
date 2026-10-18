@@ -182,6 +182,16 @@ const api = {
   begin,
   appActions: () => appActions.slice(),
   finishGame: () => emit('GameOver', '1'),
+  seedRoundData: () => {
+    emit('ArrangeSeats', [1, 2]);
+    emit('GameLog', 'Thông báo ván trước');
+    emit('LogEvent', { type: 'Damage', to: 2, damageType: 'fire_damage', damageNum: 1 });
+  },
+  startNextGame: () => emit('StartGame', ''),
+  roundState: () => {
+    const state = useGameStore.getState();
+    return { phase: state.phase, boardLogs: state.board.logs, nativeVfxEvents: state.nativeVfxEvents };
+  },
   replace: () => incoming(++nextId),
   addFakeSkill: () => emit('AddSkill', [1, 'hs__yiji', true]),
   addRegularSkill: () => emit('AddSkill', [1, 'hs__active']),

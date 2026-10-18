@@ -22,6 +22,12 @@ RUNTIME_DIR="${FREEKILL_RUNTIME_DIR:-$FREEKILL_INSTALL_ROOT/current}"
 
 cd "$RUNTIME_DIR"
 
+if grep -Eq '"tqsAuthRequired"[[:space:]]*:[[:space:]]*true' "$RUNTIME_DIR/freekill.server.config.json"; then
+  game_ticket_secret="${TQS_GAME_TICKET_SECRET:-}"
+  [[ "${#game_ticket_secret}" -ge 32 ]] || die 'TQS_GAME_TICKET_SECRET must contain at least 32 characters when tqsAuthRequired is enabled'
+  export TQS_GAME_TICKET_SECRET="$game_ticket_secret"
+fi
+
 lua54_prepare "$RUNTIME_DIR" || die 'Lua 5.4 runtime preflight failed; server was not started'
 printf 'Lua runtime: %s\n' "$TQS_LUA54_BIN"
 

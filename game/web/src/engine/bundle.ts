@@ -35,14 +35,14 @@ function assertManifest(raw: unknown): asserts raw is GatewayManifest {
 /** Fetch and verify bytes before they ever enter the Lua filesystem. */
 export async function loadGatewayBundle(baseUrl: string, signal?: AbortSignal, progress?: (stage: string) => void): Promise<LoadedBundle> {
   const base = baseUrl.replace(/\/$/, '');
-  progress?.('Đang nhận manifest…');
+  progress?.('Đang kết nối cổng doanh trại…');
   const metaResponse = await fetch(`${base}/manifest.json`, { cache: 'no-store', signal });
   if (!metaResponse.ok) throw new Error(`Manifest HTTP ${metaResponse.status}`);
   const raw: unknown = await metaResponse.json();
   assertManifest(raw);
   const manifest = raw;
 
-  progress?.('Đang tải package Lua…');
+  progress?.('Đang tải dữ liệu chiến trường…');
   const response = await fetch(`${base}/${manifest.bundle}`, { signal });
   if (!response.ok) throw new Error(`Bundle HTTP ${response.status}`);
   const declaredSize = Number(response.headers.get('content-length') ?? 0);
@@ -50,14 +50,14 @@ export async function loadGatewayBundle(baseUrl: string, signal?: AbortSignal, p
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (bytes.length > MAX_BUNDLE_BYTES) throw new Error('Bundle vượt giới hạn tải');
 
-  progress?.('Đang xác minh checksum…');
+  progress?.('Đang kiểm tra tính toàn vẹn…');
   const digest = await crypto.subtle.digest('SHA-1', bytes);
   const hash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
   if (hash.toLowerCase() !== manifest.bundleHash.toLowerCase()) {
     throw new Error('Bundle checksum không khớp manifest; đã chặn đăng nhập');
   }
 
-  progress?.('Đang giải nén và kiểm tra các tệp…');
+  progress?.('Đang chuẩn bị dữ liệu chiến trường…');
   let declaredTotal = 0;
   const unzipped = unzipSync(bytes, { filter: (file) => {
     declaredTotal += file.originalSize;

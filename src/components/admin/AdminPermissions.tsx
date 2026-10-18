@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, setDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { AppUser, AdminPermissions as IAdminPermissions } from '../../types';
-import { Shield, ShieldAlert, User, Mail, Search, Ban, Medal, ShoppingBag, Edit, X, RefreshCw } from 'lucide-react';
+import { Gamepad2, Shield, ShieldAlert, User, Mail, Search, Ban, Medal, ShoppingBag, Edit, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -23,6 +23,28 @@ const TIER_COLORS = {
   gold: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30',
   diamond: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
 };
+
+const SHOP_PERMISSION_MODULES: Array<{ key: keyof IAdminPermissions; label: string }> = [
+  { key: 'manageProducts', label: 'Quản lý Sản phẩm' },
+  { key: 'manageOrders', label: 'Quản lý Đơn hàng' },
+  { key: 'manageHomepage', label: 'Tùy chỉnh Giao diện' },
+  { key: 'manageDiscounts', label: 'Mã Giảm giá' },
+  { key: 'manageSettings', label: 'Thiết lập Hệ thống' },
+  { key: 'manageRoles', label: 'Quản lý Thành viên' },
+];
+
+const GAME_PERMISSION_MODULES: Array<{ key: keyof IAdminPermissions; label: string; description: string }> = [
+  {
+    key: 'manageGameAccess',
+    label: 'Cấp quyền người chơi Tam Quốc Sát — Quốc Chiến',
+    description: 'Duyệt, tạm dừng và đổi tên hiển thị người chơi game',
+  },
+  {
+    key: 'manageGamePool',
+    label: 'Quản lý bể tướng / bể bài Quốc Chiến',
+    description: 'Khóa pack cho các phòng Quốc Chiến tạo mới',
+  },
+];
 
 export default function AdminUsers() {
   const { adminUser: currentUser } = useAuth();
@@ -319,23 +341,19 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
             />
             <div>
               <div className="font-bold text-slate-900 dark:text-white">Cấp quyền Quản trị viên (Admin)</div>
-              <div className="text-xs text-slate-500">Giới hạn trong các module được phép bên dưới</div>
+              <div className="text-xs text-slate-500">Bật mục này trước, sau đó chọn các module được phép bên dưới</div>
             </div>
           </label>
 
           <div className={`space-y-4 transition-all ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
             <h4 className="font-medium text-sm text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Module được phép truy cập</h4>
+            {!isAdmin && (
+              <p className="-mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                Hãy bật <strong>Cấp quyền Quản trị viên (Admin)</strong> ở trên để mở nhóm quyền, trong đó có <strong>Tam Quốc Sát — Quốc Chiến</strong>.
+              </p>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { key: 'manageProducts' as keyof IAdminPermissions, label: 'Quản lý Sản phẩm' },
-                { key: 'manageOrders' as keyof IAdminPermissions, label: 'Quản lý Đơn hàng' },
-                { key: 'manageHomepage' as keyof IAdminPermissions, label: 'Tùy chỉnh Giao diện' },
-                { key: 'manageDiscounts' as keyof IAdminPermissions, label: 'Mã Giảm giá' },
-                { key: 'manageSettings' as keyof IAdminPermissions, label: 'Thiết lập Hệ thống' },
-                { key: 'manageRoles' as keyof IAdminPermissions, label: 'Quản lý Thành viên' },
-                { key: 'manageGameAccess' as keyof IAdminPermissions, label: 'Duyệt người chơi game' },
-                { key: 'manageGamePool' as keyof IAdminPermissions, label: 'Khóa bể tướng / bể bài' },
-              ].map(module => (
+              {SHOP_PERMISSION_MODULES.map(module => (
                 <label key={module.key} className="flex items-center justify-between p-3 border border-slate-100 dark:border-zinc-800 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/30">
                   <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">{module.label}</span>
                   <div className="relative inline-flex items-center">
@@ -344,6 +362,32 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
                       className="sr-only peer" 
                       checked={permissions[module.key]}
                       onChange={(e) => setPermissions({...permissions, [module.key]: e.target.checked})}
+                    />
+                    <div className="w-9 h-5 bg-slate-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
+                  </div>
+                </label>
+              ))}
+              <div className="sm:col-span-2 mt-2 border-t border-slate-100 pt-4 dark:border-zinc-800">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-zinc-200">
+                  <Gamepad2 className="w-4 h-4 text-indigo-500" />
+                  Tam Quốc Sát — Quốc Chiến
+                </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+                  Bật quyền tương ứng để menu Tam Quốc Sát — Quốc Chiến xuất hiện trong Admin Dashboard.
+                </p>
+              </div>
+              {GAME_PERMISSION_MODULES.map(module => (
+                <label key={module.key} className="flex items-center justify-between gap-3 p-3 border border-indigo-100 dark:border-indigo-500/20 rounded-lg cursor-pointer bg-indigo-50/40 dark:bg-indigo-500/5 hover:bg-indigo-50 dark:hover:bg-indigo-500/10">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-700 dark:text-zinc-300">{module.label}</span>
+                    <span className="mt-0.5 block text-xs font-normal text-slate-500 dark:text-zinc-400">{module.description}</span>
+                  </span>
+                  <div className="relative inline-flex shrink-0 items-center">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={permissions[module.key] === true}
+                      onChange={(e) => setPermissions({ ...permissions, [module.key]: e.target.checked })}
                     />
                     <div className="w-9 h-5 bg-slate-200 dark:bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-500"></div>
                   </div>

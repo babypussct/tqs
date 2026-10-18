@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import type { NativeVfxEvent } from './nativeVfxEvents';
 
 /**
  * Card VFX and Animation State Management.
@@ -42,10 +43,20 @@ export interface TargetingLine {
   toPlayerId: number;
 }
 
+export interface ActiveCardTargetIndicator {
+  id: string;
+  fromPlayerId: number;
+  toPlayerIds: number[];
+  cardName: string;
+  createdAt: number;
+  durationMs: number;
+}
+
 export interface CardVfxState {
   flyingCards: FlyingCardEvent[];
   impacts: ImpactVfxEvent[];
   avatarReactions: Record<number, AvatarReactionType>;
+  activeTargetIndicators: ActiveCardTargetIndicator[];
 }
 
 export function createInitialVfxState(): CardVfxState {
@@ -53,6 +64,7 @@ export function createInitialVfxState(): CardVfxState {
     flyingCards: [],
     impacts: [],
     avatarReactions: {},
+    activeTargetIndicators: [],
   };
 }
 
@@ -221,8 +233,11 @@ export function resolveCardImpactKind(cardName: string): ImpactVfxKind {
  */
 export function parseCardToken(token: string): { name: string; suit?: number; number?: number } {
   if (!token) return { name: '' };
-  const match = token.match(/^([a-zA-Z0-9_]+)(?:\[([a-zA-Z0-9_]+):([0-9]+)\])?$/);
-  if (!match) return { name: token };
+  const match = token.match(/^([a-zA-Z0-9_]+)(?:\[([a-zA-Z0-9_]+):([a-zA-Z0-9]+)\])?$/);
+  if (!match) {
+    const cleanName = token.replace(/\[.*$/, '').trim();
+    return { name: cleanName || token };
+  }
   const name = match[1];
   let suit: number | undefined;
   if (match[2]) {
@@ -232,7 +247,18 @@ export function parseCardToken(token: string): { name: string; suit?: number; nu
     else if (s.includes('heart')) suit = 3;
     else if (s.includes('diamond')) suit = 4;
   }
-  const number = match[3] ? Number(match[3]) : undefined;
+  let number: number | undefined;
+  if (match[3]) {
+    const rawNum = match[3].toUpperCase();
+    if (rawNum === 'A') number = 1;
+    else if (rawNum === 'J') number = 11;
+    else if (rawNum === 'Q') number = 12;
+    else if (rawNum === 'K') number = 13;
+    else {
+      const n = Number(rawNum);
+      if (Number.isFinite(n)) number = n;
+    }
+  }
   const result: { name: string; suit?: number; number?: number } = { name };
   if (suit !== undefined) result.suit = suit;
   if (number !== undefined) result.number = number;
@@ -264,7 +290,7 @@ export interface ParsedVfxFromLog {
 export function parseVfxFromGameLog(rawLog: string): ParsedVfxFromLog | null {
   if (!rawLog || typeof rawLog !== 'string') return null;
   const parts = rawLog.split(':');
-  const [tag, p1, p2, p3, p4] = parts;
+  const [tag, p1, p2] = parts;
 
   if (tag === '#UseCardToTargets') {
     const fromId = Number(p1);
@@ -285,6 +311,7 @@ export function parseVfxFromGameLog(rawLog: string): ParsedVfxFromLog | null {
       };
       if (parsedCard.suit !== undefined) flyingCard.suit = parsedCard.suit;
       if (parsedCard.number !== undefined) flyingCard.number = parsedCard.number;
+
       return { flyingCard };
     }
   }
@@ -330,42 +357,12 @@ export function parseVfxFromGameLog(rawLog: string): ParsedVfxFromLog | null {
       };
       if (parsedCard.suit !== undefined) flyingCard.suit = parsedCard.suit;
       if (parsedCard.number !== undefined) flyingCard.number = parsedCard.number;
-      return {
+      // Only native LogEvent/Damage owns hit-shake and damage audio.
+      return kind === 'jink' ? {
         flyingCard,
-        impact: {
-          targetPlayerId: fromId,
-          kind: kind === 'generic_impact' ? 'jink' : kind,
-        },
-        avatarReaction: {
-          playerId: fromId,
-          type: kind === 'jink' ? 'dodge-slide' : 'hit-shake',
-        },
-      };
-    }
-  }
-
-  if (tag === '#Damage') {
-    // #Damage:from:to:damage:nature:card
-    const toId = Number(p2);
-    const amount = Number(p3) || 1;
-    const nature = (p4 || '').toLowerCase();
-    if (Number.isInteger(toId)) {
-      const kind: ImpactVfxKind = nature.includes('thunder')
-        ? 'thunder_slash'
-        : nature.includes('fire')
-        ? 'fire_slash'
-        : 'slash';
-      return {
-        impact: {
-          targetPlayerId: toId,
-          kind,
-          damageAmount: amount,
-        },
-        avatarReaction: {
-          playerId: toId,
-          type: 'hit-shake',
-        },
-      };
+        impact: { targetPlayerId: fromId, kind: 'jink' },
+        avatarReaction: { playerId: fromId, type: 'dodge-slide' },
+      } : { flyingCard };
     }
   }
 
@@ -408,7 +405,9 @@ export function useCardVfx() {
   const [flyingCards, setFlyingCards] = useState<FlyingCardEvent[]>([]);
   const [impacts, setImpacts] = useState<ImpactVfxEvent[]>([]);
   const [avatarReactions, setAvatarReactions] = useState<Record<number, AvatarReactionType>>({});
+  const [activeTargetIndicators, setActiveTargetIndicators] = useState<ActiveCardTargetIndicator[]>([]);
   const lastProcessedLogCount = useRef<number>(0);
+  const lastNativeSequence = useRef(0);
 
   const triggerCardFly = useCallback((card: Omit<FlyingCardEvent, 'id' | 'createdAt' | 'phase'>) => {
     const id = `fly-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -448,6 +447,20 @@ export function useCardVfx() {
         return next;
       });
     }, durationMs);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const triggerActiveTargetIndicator = useCallback((indicator: Omit<ActiveCardTargetIndicator, 'id' | 'createdAt'>) => {
+    const id = `ind-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newInd: ActiveCardTargetIndicator = {
+      ...indicator,
+      id,
+      createdAt: Date.now(),
+    };
+    setActiveTargetIndicators((prev) => [...prev, newInd]);
+    const timer = setTimeout(() => {
+      setActiveTargetIndicators((prev) => prev.filter((i) => i.id !== id));
+    }, indicator.durationMs || 2200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -504,6 +517,7 @@ export function useCardVfx() {
       if (parsed.avatarReaction) {
         newReactions.push(parsed.avatarReaction);
       }
+
     });
 
     if (newFlying.length > 0) {
@@ -519,16 +533,38 @@ export function useCardVfx() {
     }
   }, [triggerAvatarReaction]);
 
+  const processNativeEvents = useCallback((events: NativeVfxEvent[]) => {
+    for (const event of events) {
+      if (event.sequence <= lastNativeSequence.current) continue;
+      lastNativeSequence.current = event.sequence;
+      // Don't replay notifications retained before a board remount.
+      if (Date.now() - event.createdAt > 1000) continue;
+      if (event.kind === 'indicate') {
+        triggerActiveTargetIndicator({ fromPlayerId: event.fromPlayerId,
+          toPlayerIds: event.toPlayerIds, cardName: '', durationMs: 700 });
+      } else if (event.kind === 'damage') {
+        triggerCombatImpact({ targetPlayerId: event.targetPlayerId,
+          kind: event.damageType === 'fire_damage' ? 'fire_slash'
+            : event.damageType === 'thunder_damage' ? 'thunder_slash' : 'slash',
+          damageAmount: event.damageNum });
+        triggerAvatarReaction(event.targetPlayerId, 'hit-shake');
+      }
+    }
+  }, [triggerActiveTargetIndicator, triggerCombatImpact, triggerAvatarReaction]);
+
   return {
     flyingCards,
     impacts,
     avatarReactions,
+    activeTargetIndicators,
     triggerCardFly,
     triggerCombatImpact,
     triggerAvatarReaction,
+    triggerActiveTargetIndicator,
     onFlyingCardDone,
     onImpactDone,
     processGameLogs,
+    processNativeEvents,
     setFlyingCards,
     setImpacts,
   };

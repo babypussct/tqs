@@ -165,7 +165,12 @@ function mergeItem(prior: GameplayItem | undefined, raw: unknown): GameplayItem 
 export function reduceGameplay(scene: GameplayScene, raw: unknown): GameplayScene {
   const delta = record(raw);
   if (!delta || typeof delta._type !== 'string' || delta._type.length > 80) return scene;
-  const base = scene.sceneType === delta._type ? scene : emptyGameplay();
+  // A Lua snapshot after MoveCards is authoritative for the whole request
+  // scene. Reuse is correct for ordinary deltas, but would retain a card that
+  // was discarded or taken if the replacement has the same scene type.
+  const base = delta._replace === true
+    ? emptyGameplay()
+    : (scene.sceneType === delta._type ? scene : emptyGameplay());
   const items = { ...base.items };
   for (const type of GAMEPLAY_ITEMS) items[type] = { ...base.items[type] };
 

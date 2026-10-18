@@ -36,6 +36,8 @@ ROOT="$FREEKILL_INSTALL_ROOT"
 SOURCE_DIR="$ROOT/source/freekill-asio"
 RELEASE_DIR="$ROOT/releases/freekill-asio-source-$FREEKILL_ASIO_RELEASE"
 PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/reconnect-safe-tempban.patch"
+COMPILER_COMPAT_PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/tqs-compiler-compat.patch"
+GAME_ACCESS_PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/tqs-game-access.patch"
 TOOL_ROOT="${FREEKILL_TOOL_ROOT:-/opt/tqs-toolchain}"
 CMAKE_VERSION="4.1.1"
 CMAKE_ARCHIVE="$TOOL_ROOT/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
@@ -44,6 +46,8 @@ CMAKE_URL="https://cmake.org/files/v4.1/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz
 CMAKE_SHA256="5a6c61cb62b38e153148a2c8d4af7b3d387f0c8c32b6dbceb5eb4af113efd65a"
 
 [[ -f "$PATCH_FILE" ]] || die "Missing native reconnect/temp-ban patch: $PATCH_FILE"
+[[ -f "$COMPILER_COMPAT_PATCH_FILE" ]] || die "Missing compiler compatibility patch: $COMPILER_COMPAT_PATCH_FILE"
+[[ -f "$GAME_ACCESS_PATCH_FILE" ]] || die "Missing TQS game access patch: $GAME_ACCESS_PATCH_FILE"
 
 install -d -m 0755 "$TOOL_ROOT"
 if [[ ! -x "$CMAKE_DIR/bin/cmake" ]]; then
@@ -77,7 +81,18 @@ managed_patch_applied() {
       "$SOURCE_DIR/src/server/user/user_manager.cpp"
 }
 
-if [[ -n "$(git -C "$SOURCE_DIR" status --porcelain)" ]] && ! managed_patch_applied; then
+game_access_patch_applied() {
+  grep -Fq 'verifyTqsTicket' "$SOURCE_DIR/src/server/user/auth.cpp" &&
+    grep -Fq 'tqsAuthRequired' "$SOURCE_DIR/src/server/server.h" &&
+    grep -Fq 'FK_TQS_LOCKED_PACKS' "$SOURCE_DIR/src/server/rpc-lua/rpc-lua.cpp"
+}
+
+compiler_compat_patch_applied() {
+  grep -Fq '#include "api_help_embed.inc"' "$SOURCE_DIR/src/server/admin/admin_http.cpp"
+}
+
+source_status="$(git -C "$SOURCE_DIR" status --porcelain | grep -v -E '^\?\? (build/|src/server/admin/api_help_embed\.inc$)' || true)"
+if [[ -n "$source_status" ]] && ! managed_patch_applied; then
   die "Source checkout has uncommitted changes outside the managed reconnect patch: $SOURCE_DIR"
 fi
 
@@ -94,6 +109,36 @@ if ! managed_patch_applied; then
   patch --batch -p1 -d "$SOURCE_DIR" < "$PATCH_FILE" >/dev/null
 fi
 printf 'Native reconnect/temp-ban patch: %s\n' "$(basename "$PATCH_FILE")"
+
+API_HELP_SOURCE="$SOURCE_DIR/src/server/admin/api_help.html"
+API_HELP_EMBED="$SOURCE_DIR/src/server/admin/api_help_embed.inc"
+[[ -f "$API_HELP_SOURCE" ]] || die "Missing embedded admin API help source: $API_HELP_SOURCE"
+command -v python3 >/dev/null 2>&1 || die 'python3 is required to generate the admin API help embed'
+python3 - "$API_HELP_SOURCE" "$API_HELP_EMBED" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).read_bytes()
+target = Path(sys.argv[2])
+values = []
+for offset in range(0, len(source), 16):
+    values.append(', '.join(f'0x{byte:02x}' for byte in source[offset:offset + 16]))
+target.write_text(',\n'.join(values) + '\n', encoding='ascii')
+PY
+
+if ! compiler_compat_patch_applied; then
+  patch --dry-run --batch -p1 -d "$SOURCE_DIR" < "$COMPILER_COMPAT_PATCH_FILE" >/dev/null ||
+    die "Compiler compatibility patch does not apply cleanly to $actual_source"
+  patch --batch -p1 -d "$SOURCE_DIR" < "$COMPILER_COMPAT_PATCH_FILE" >/dev/null
+fi
+printf 'Compiler compatibility patch: %s\n' "$(basename "$COMPILER_COMPAT_PATCH_FILE")"
+
+if ! game_access_patch_applied; then
+  patch --dry-run --batch -p1 -d "$SOURCE_DIR" < "$GAME_ACCESS_PATCH_FILE" >/dev/null ||
+    die "TQS game access patch does not apply cleanly to $actual_source"
+  patch --batch -p1 -d "$SOURCE_DIR" < "$GAME_ACCESS_PATCH_FILE" >/dev/null
+fi
+printf 'TQS game access and forced-pack patch: %s\n' "$(basename "$GAME_ACCESS_PATCH_FILE")"
 
 export CC="${CC:-gcc-14}"
 export CXX="${CXX:-g++-14}"

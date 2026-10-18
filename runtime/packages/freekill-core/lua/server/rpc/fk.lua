@@ -104,6 +104,14 @@ function fk.GetDisabledPacks()
   return os.getenv("FK_DISABLED_PACKS") or "[]"
 end
 
+-- TQS admin controlled forced pack locks. The native parent process owns this
+-- value and injects it into the Lua worker; browser supplied room settings do
+-- not replace it.
+---@return string
+function fk.GetTqsLockedPacks()
+  return os.getenv("FK_TQS_LOCKED_PACKS") or "[]"
+end
+
 -- swig/qt.i
 
 fk.QList = function(arr)

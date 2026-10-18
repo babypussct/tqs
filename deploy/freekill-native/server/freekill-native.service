@@ -7,6 +7,9 @@ After=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/freekill-hegemony/current
+# The value is kept outside the repository in a root-readable 0600 file.
+# The source-built native process uses it to verify TQS1 game tickets.
+EnvironmentFile=-/etc/tqs-game-auth.env
 
 # The Ubuntu image ships a default INPUT reject after SSH. Keep the game
 # ports open on reboot while leaving the admin HTTP port private.

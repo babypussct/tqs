@@ -516,6 +516,35 @@ local function report(err)
   return detail
 end
 
+-- Refresh the browser's request scene from the native handler after a public
+-- card movement. A MoveCards callback can happen while PlayCard or a card
+-- response is still open; the native scene then owns the new hand, enabled
+-- states and selected cards, but React would otherwise keep the old snapshot
+-- until the next unrelated UI delta arrives.
+local function emit_web_request_snapshot()
+  local h = ClientInstance and ClientInstance.current_request_handler
+  local scene = h and h.scene
+  if not scene then return end
+  local snapshot_prompt = h.prompt
+  if snapshot_prompt == nil or snapshot_prompt == '' then
+    snapshot_prompt = h._web_prompt_fallback or ''
+  end
+  local snapshot = { _type = scene.scene_name, _prompt = snapshot_prompt, _new = {}, _replace = true }
+  for _, kind in ipairs({'CardItem', 'Photo', 'Button', 'SkillButton', 'SpecialSkills', 'Interaction'}) do
+    for _, item in pairs(scene:getAllItems(kind)) do
+      local value = item:toData()
+      if kind == 'CardItem' then
+        project_card_item(value)
+        annotate_card_reason(value)
+      end
+      table.insert(snapshot._new, {type = kind, data = value})
+    end
+  end
+  local encoded, payload = pcall(to_json, snapshot)
+  if not encoded then error(report(payload), 0) end
+  J.ui('UpdateRequestUI', payload)
+end
+
 function __host_recv(command, hex, is_request)
   local ok, err = xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
   if not ok then error(tostring(err), 0) end
@@ -606,6 +635,10 @@ function __host_recv(command, hex, is_request)
       end
       J.ui('SelfHand', to_json(self_hand))
     end
+    -- Keep an already-open card request aligned with the same native state.
+    -- This is what makes a discard followed by a draw visible immediately,
+    -- instead of waiting for another request delta.
+    emit_web_request_snapshot()
   end
   -- Hegemony uses anjiang publicly and private marks for the actual pair.
   -- Read only Self's two marks, never enumerate another player's marks.
@@ -636,30 +669,7 @@ function __host_recv(command, hex, is_request)
   -- actual Lua scene once per supported request; later deltas stay incremental.
   if is_request and (command == 'PlayCard' or command == 'AskForUseActiveSkill'
       or command == 'AskForUseCard' or command == 'AskForResponseCard') then
-    local h = ClientInstance and ClientInstance.current_request_handler
-    local scene = h and h.scene
-    if scene then
-      local snapshot_prompt = h.prompt
-      if snapshot_prompt == nil or snapshot_prompt == '' then
-        snapshot_prompt = h._web_prompt_fallback or ''
-      end
-      local snapshot = { _type = scene.scene_name, _prompt = snapshot_prompt, _new = {} }
-      for _, kind in ipairs({'CardItem', 'Photo', 'Button', 'SkillButton', 'SpecialSkills', 'Interaction'}) do
-        for _, item in pairs(scene:getAllItems(kind)) do
-          local value = item:toData()
-          if kind == 'CardItem' then
-            -- Project the native Card object for both real and virtual cards.
-            -- This is the same path used by incremental _new/CardItem deltas.
-            project_card_item(value)
-          end
-          if kind == 'CardItem' then annotate_card_reason(value) end
-          table.insert(snapshot._new, {type = kind, data = value})
-        end
-      end
-      local encoded, payload = pcall(to_json, snapshot)
-      if not encoded then error(report(payload), 0) end
-      J.ui('UpdateRequestUI', payload)
-    end
+    emit_web_request_snapshot()
   end
 end
 

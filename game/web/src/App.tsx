@@ -115,7 +115,7 @@ export default function App() {
       {snapshot.phase === 'room' && snapshot.result && <GameResultPanel result={snapshot.result} busy={busy}
         leave={() => run(() => adapter.leaveRoom())} />}
       {snapshot.phase === 'room' && <WaitingRoomScreen adapter={adapter} run={run} busy={busy} />}
-      {snapshot.phase === 'playing' && <GameBoardScreen busy={busy} leave={() => setExitAction('leave')}
+      {snapshot.phase === 'playing' && <GameBoardScreen key={snapshot.roundId} busy={busy} leave={() => setExitAction('leave')}
         toggleTrust={() => run(() => adapter.toggleTrust())}
         regularSkills={snapshot.regularSkills}
         prelightSkill={(skillName, prelight) => run(() => adapter.prelightSkill(skillName, prelight))}

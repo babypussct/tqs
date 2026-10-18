@@ -1,0 +1,23 @@
+# The Vercel project is the TQSShop/API surface. The game client and native
+# release inputs deploy through their own pipelines and must not be uploaded
+# with the storefront deployment.
+node_modules
+.git
+/.wrangler/
+/scratch/
+/game/
+/runtime/
+/deploy/
+/docs/
+/tests/
+/scripts/
+/spikes/
+RELEASE.json
+*.log
+*.test.*
+test-run.ts
+fix-*.cjs
+fix-*.js
+rewrite_hero.py
+update-admin.ts
+update-admin-fix.ts

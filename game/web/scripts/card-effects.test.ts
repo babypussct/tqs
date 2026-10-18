@@ -12,6 +12,8 @@ import { calculateBezierCurve, TargetingArrowOverlay } from '../src/TargetingOve
 import { CardFlyOverlay } from '../src/CardVfxOverlay';
 import { soundManager, SoundManager } from '../src/engine/webAudioSfx';
 import { CATALOG_CARD_ART_NAMES } from '../src/catalogCardArt';
+import { projectNativeVfx } from '../src/store/nativeVfxEvents';
+import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
 import { ANIM_FRAME_COUNTS, preloadAnimFrames } from '../src/NativeVfxAnim';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -69,6 +71,17 @@ test('parseVfxFromGameLog correctly parses single and multi-target card usages a
     suit: 1,
     number: 7,
   });
+  assert.equal('activeTargetIndicator' in slashLog, false);
+
+  // Thuận Thủ Khiên Dương chỉ định mục tiêu rõ ràng
+  const snatchLog = parseVfxFromGameLog('#UseCardToTargets:1:3:snatch[diamond:3]');
+  assert.ok(snatchLog);
+  assert.equal('activeTargetIndicator' in snatchLog, false);
+
+  // Quá Hà Triệt Kiều chỉ định mục tiêu rõ ràng
+  const dismantlementLog = parseVfxFromGameLog('#UseCardToTargets:2:1:dismantlement[spade:Q]');
+  assert.ok(dismantlementLog);
+  assert.equal('activeTargetIndicator' in dismantlementLog, false);
 
   // Đa mục tiêu
   const fireSlashLog = parseVfxFromGameLog('#UseCardToTargets:1:2,3,4:fire__slash');
@@ -78,6 +91,7 @@ test('parseVfxFromGameLog correctly parses single and multi-target card usages a
     toPlayerIds: [2, 3, 4],
     cardName: 'fire__slash',
   });
+  assert.equal('activeTargetIndicator' in fireSlashLog, false);
 
   // #UseCard:from:card (không có mục tiêu cụ thể, ví dụ Đào / Tửu)
   const peachLog = parseVfxFromGameLog('#UseCard:1:peach[heart:12]');
@@ -104,25 +118,9 @@ test('parseVfxFromGameLog correctly parses single and multi-target card usages a
     type: 'dodge-slide',
   });
 
-  // #Damage:from:to:damage:nature:card -> avatar reaction: hit-shake
-  const thunderDamageLog = parseVfxFromGameLog('#Damage:1:3:2:thunder:thunder__slash');
-  assert.ok(thunderDamageLog);
-  assert.equal(thunderDamageLog.impact?.targetPlayerId, 3);
-  assert.equal(thunderDamageLog.impact?.kind, 'thunder_slash');
-  assert.equal(thunderDamageLog.impact?.damageAmount, 2);
-  assert.deepEqual(thunderDamageLog.avatarReaction, {
-    playerId: 3,
-    type: 'hit-shake',
-  });
-
-  const fireDamageLog = parseVfxFromGameLog('#Damage:1:4:1:fire:fire_attack');
-  assert.ok(fireDamageLog);
-  assert.equal(fireDamageLog.impact?.targetPlayerId, 4);
-  assert.equal(fireDamageLog.impact?.kind, 'fire_slash');
-  assert.deepEqual(fireDamageLog.avatarReaction, {
-    playerId: 4,
-    type: 'hit-shake',
-  });
+  // GameLog strings never trigger native damage VFX.
+  assert.equal(parseVfxFromGameLog('#Damage:1:3:2:thunder:thunder__slash'), null);
+  assert.equal(parseVfxFromGameLog('#Damage:1:4:1:fire:fire_attack'), null);
 
   // #HpRecover:player:num -> avatar reaction: heal-glow
   const healLog = parseVfxFromGameLog('#HpRecover:2:1');
@@ -324,4 +322,33 @@ test('soundManager handles native damage sounds, card voices, equip sounds, and 
   assert.equal(soundManager.isUseNativeAudio(), false);
   soundManager.setUseNativeAudio(true);
   assert.equal(soundManager.isUseNativeAudio(), true);
+});
+
+test('native Indicate fan-out and sequential target chains are handled exactly', () => {
+  const data = { type: 'Indicate', from: 1, to: [[2], [3, 4, 5]] };
+  assert.deepEqual(projectNativeVfx('Animate', data), [
+    { kind: 'indicate', fromPlayerId: 1, toPlayerIds: [2] },
+    { kind: 'indicate', fromPlayerId: 1, toPlayerIds: [3] },
+    { kind: 'indicate', fromPlayerId: 3, toPlayerIds: [4, 5] },
+  ]);
+  assert.deepEqual(projectNativeVfx('Animate', { type: 'Emotion', from: 1, to: [[2]] }), []);
+  assert.deepEqual(projectNativeVfx('Animate', { type: 'Indicate', from: 1, to: ['2', [], [0]] }), []);
+  const logOnly = reduceUiEvent(initialSnapshot, 'GameLog', '#UseCardToTargets:1:2:slash');
+  assert.equal(logOnly.nativeVfxSequence, 0);
+  const next = reduceUiEvent(logOnly, 'Animate', data);
+  assert.equal(next.nativeVfxSequence, 3);
+  assert.deepEqual(next.nativeVfxEvents.map((event) => event.sequence), [1, 2, 3]);
+});
+
+test('LogEvent Damage is the only native damage visual trigger', () => {
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: -2, damageType: 'fire_damage', damageNum: 2 }),
+    [{ kind: 'damage', targetPlayerId: -2, damageType: 'fire_damage', damageNum: 2 }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: 4 }),
+    [{ kind: 'damage', targetPlayerId: 4, damageType: 'normal_damage', damageNum: 1 }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'LoseHP', to: -2 }), []);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: '2' }), []);
+  assert.equal(parseVfxFromGameLog('#Damage:1:2:1:fire:fire_attack'), null);
+  const next = reduceUiEvent(initialSnapshot, 'LogEvent', { type: 'Damage', to: -2, damageType: 'fire_damage', damageNum: 2 });
+  assert.equal(next.nativeVfxSequence, 1);
+  assert.equal(next.nativeVfxEvents[0].kind, 'damage');
 });

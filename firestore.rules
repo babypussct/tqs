@@ -203,6 +203,42 @@ service cloud.firestore {
     }
 
     // -----------------------------------------------------------------------
+    // Game access and admin controlled room pool
+    // -----------------------------------------------------------------------
+
+    match /gameAccess/{userId} {
+      // A player may inspect only their own approval state. Creation and
+      // status changes are server/admin operations; the game client cannot
+      // approve itself or choose a native account name.
+      allow read: if isOwner(userId) || hasAdminPermission('manageGameAccess');
+      allow create, update: if hasAdminPermission('manageGameAccess') &&
+        request.resource.data.uid == userId &&
+        request.resource.data.status in ['pending', 'approved', 'suspended'] &&
+        isValidString(request.resource.data.gameName, 1, 80) &&
+        isValidString(request.resource.data.nativeName, 2, 80) &&
+        request.resource.data.nativeName.matches('^tqs_[A-Za-z0-9_-]{1,64}$') &&
+        request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if hasAdminPermission('manageGameAccess');
+    }
+
+    match /gamePoolPolicies/{mode} {
+      allow read: if hasAdminPermission('manageGamePool');
+      allow create, update: if hasAdminPermission('manageGamePool') &&
+        request.resource.data.schemaVersion == 1 &&
+        request.resource.data.mode == mode &&
+        request.resource.data.appliesTo == 'new_rooms' &&
+        request.resource.data.revision is number &&
+        request.resource.data.revision >= 0 &&
+        request.resource.data.disabledPacks is map &&
+        request.resource.data.disabledPacks.generals is list &&
+        request.resource.data.disabledPacks.cards is list &&
+        request.resource.data.disabledPacks.generals.size() <= 128 &&
+        request.resource.data.disabledPacks.cards.size() <= 128 &&
+        request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if hasAdminPermission('manageGamePool');
+    }
+
+    // -----------------------------------------------------------------------
     // Canonical v1 orders, append-only events and idempotency
     // -----------------------------------------------------------------------
 

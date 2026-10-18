@@ -188,6 +188,29 @@ test('native GameOver keeps winner names after bot removal and clears on the nex
   assert.equal(reduceUiEvent(won, 'EnterRoom', [2, 30, { gameMode: 'new_heg_mode' }]).result, null);
 });
 
+test('a second game in the same session cannot replay the previous game visual events', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  const firstRoundId = state.roundId;
+  state = reduceUiEvent(state, 'LogEvent', { type: 'Damage', to: -1, damageType: 'fire_damage', damageNum: 2 });
+  assert.equal(state.nativeVfxEvents.length, 1);
+  assert.equal(state.nativeVfxSequence, 1);
+
+  const over = reduceUiEvent(state, 'GameOver', '');
+  assert.deepEqual(over.nativeVfxEvents, [], 'GameOver must drop round-scoped visual events');
+  assert.equal(over.nativeVfxSequence, 1, 'the sequence stays monotonic for the mounted VFX hook');
+
+  const nextGame = reduceUiEvent(over, 'StartGame', null);
+  assert.equal(nextGame.roundId, firstRoundId + 1, 'a new game remounts round-local board UI');
+  assert.deepEqual(nextGame.nativeVfxEvents, [], 'StartGame must begin with an empty visual-event queue');
+  const nextEvent = reduceUiEvent(nextGame, 'LogEvent', { type: 'Damage', to: 17 });
+  assert.equal(nextEvent.nativeVfxEvents.length, 1);
+  assert.equal(nextEvent.nativeVfxEvents[0].sequence, 2, 'the new game gets a fresh event sequence');
+  assert.equal(nextEvent.nativeVfxEvents[0].targetPlayerId, 17);
+
+  assert.deepEqual(reduceUiEvent(nextEvent, 'EnterRoom', [2, 30, { gameMode: 'new_heg_mode' }]).nativeVfxEvents, []);
+  assert.deepEqual(reduceUiEvent(nextEvent, 'EnterLobby', null).nativeVfxEvents, []);
+});
+
 test('draw, unknown observer and malformed results never invent a winner', () => {
   const state = { ...initialSnapshot, ownId: 3 };
   assert.deepEqual(reduceUiEvent(state, 'GameOver', '').result, { outcome: 'draw', winners: [] });

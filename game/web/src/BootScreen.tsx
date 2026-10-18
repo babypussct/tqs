@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GamePhase } from './store/gameStore';
 import HeroSpotlight from './HeroSpotlight';
+import { GUOZHAN_TIPS } from './guozhanTips';
 
 interface BootScreenProps {
   phase: GamePhase;
@@ -9,12 +10,24 @@ interface BootScreenProps {
   retry: () => void;
 }
 
+function humanizeProgress(raw: string): string {
+  if (!raw) return 'Đang chuẩn bị chiến trường…';
+  const lower = raw.toLowerCase();
+  if (lower.includes('manifest') || lower.includes('gateway')) return 'Đang kết nối cổng doanh trại…';
+  if (lower.includes('package') || lower.includes('lua') || lower.includes('bundle')) return 'Đang tải dữ liệu chiến trường…';
+  if (lower.includes('checksum') || lower.includes('xác minh')) return 'Đang kiểm tra tính toàn vẹn…';
+  if (lower.includes('giải nén') || lower.includes('kiểm tra')) return 'Đang hoàn tất chuẩn bị…';
+  if (lower.includes('wasm') || lower.includes('khởi tạo')) return 'Đang khởi tạo trận địa…';
+  return raw;
+}
+
 function estimatePercent(progress: string): number {
   if (!progress) return 30;
-  if (progress.includes('manifest')) return 25;
-  if (progress.includes('tải package') || progress.includes('package Lua')) return 50;
-  if (progress.includes('checksum') || progress.includes('xác minh')) return 75;
-  if (progress.includes('giải nén') || progress.includes('kiểm tra')) return 92;
+  const lower = progress.toLowerCase();
+  if (lower.includes('manifest') || lower.includes('gateway') || lower.includes('doanh trại')) return 25;
+  if (lower.includes('package') || lower.includes('tải') || lower.includes('nạp dữ liệu')) return 55;
+  if (lower.includes('checksum') || lower.includes('toàn vẹn') || lower.includes('xác minh')) return 80;
+  if (lower.includes('giải nén') || lower.includes('hoàn tất') || lower.includes('chuẩn bị')) return 95;
   return 60;
 }
 
@@ -22,10 +35,24 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
   const booting = phase === 'boot';
   const [activeModal, setActiveModal] = useState<'guide' | 'support' | null>(null);
   const [audioMuted, setAudioMuted] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
+
+  // Auto-rotate tips every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % GUOZHAN_TIPS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextTip = () => {
+    setTipIndex((prev) => (prev + 1) % GUOZHAN_TIPS.length);
+  };
 
   if (!booting && !error) return null;
 
-  const progressText = progress || 'Đang chuẩn bị tài nguyên…';
+  const currentTip = GUOZHAN_TIPS[tipIndex];
+  const progressText = humanizeProgress(progress);
   const percent = estimatePercent(progress);
 
   return (
@@ -35,7 +62,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
         <button
           type="button"
           className="sg-icon-btn"
-          title="Binh Thư (Hướng dẫn tân thủ)"
+          title="Binh Thư (Sắp ra mắt)"
           onClick={() => setActiveModal('guide')}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -67,7 +94,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
         <button
           type="button"
           className="sg-icon-btn"
-          title="Hỗ Trợ Quân Sư"
+          title="Quân Sư Hỗ Trợ"
           onClick={() => setActiveModal('support')}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -90,7 +117,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
       <div className="sg-main-content">
         <HeroSpotlight />
 
-        {/* LOADING PROGRESS / DRAGON JADE BAR */}
+        {/* LOADING PROGRESS / MODERN DRAGON JADE BAR */}
         <div className="sg-loading-wrap" role="status">
           <div className="sg-dragon-bar-head">
             <span className="sg-loading-status-text">{progressText}</span>
@@ -107,8 +134,22 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
             <div className="sg-dragon-bar-fill" style={{ width: `${percent}%` }} />
           </div>
 
-          <div className="sg-loading-note">
-            Vui lòng giữ kết nối mạng ổn định trong quá trình chuẩn bị chiến trường
+          {/* TACTICAL TIP CARD (MODERN GUOZHAN TIP) */}
+          <div
+            className="sg-tip-card"
+            role="button"
+            tabIndex={0}
+            onClick={nextTip}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && nextTip()}
+            title="Nhấp để đổi mẹo khác"
+          >
+            <div className="sg-tip-card-head">
+              <span className="sg-tip-badge">MẸO QUỐC CHIẾN</span>
+              <span className="sg-tip-title">{currentTip.title}</span>
+              <span className="sg-tip-counter">{tipIndex + 1}/{GUOZHAN_TIPS.length}</span>
+            </div>
+            <p className="sg-tip-body">{currentTip.content}</p>
+            <span className="sg-tip-footer-hint">Chạm để xem mẹo tiếp theo</span>
           </div>
         </div>
 
@@ -116,7 +157,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
           <div className="notice error-notice sg-error-notice" role="alert">
             <span className="sg-error-copy">{error}</span>
             {booting && (
-              <button className="button small-button" type="button" onClick={retry}>
+              <button className="button small-button sg-retry-btn" type="button" onClick={retry}>
                 Thử lại
               </button>
             )}
@@ -129,11 +170,17 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
         <div className="sg-modal-backdrop open" onClick={() => setActiveModal(null)}>
           <div className="sg-dialog-card" onClick={(e) => e.stopPropagation()}>
             <h3 className="sg-dialog-title">Binh Thư Tân Thủ</h3>
-            <p className="sg-dialog-desc">
-              Tam Quốc Sát Quốc Chiến là chế độ chiến thuật đồng đội theo thế lực Nguỵ - Thục - Ngô - Quần.
-              Mỗi chúa công xuất chinh với 2 võ tướng (Chủ tướng và Phó tướng).
-              Hãy phối hợp cùng đồng minh cùng thế lực để tiêu diệt các phe khác và thống nhất thiên hạ!
-            </p>
+            <div className="sg-dialog-desc">
+              <p style={{ margin: '0 0 10px 0', color: '#ffe699', fontWeight: 600 }}>
+                Thư viện tra cứu tướng & lá bài: <em>Đang biên tập (Sắp ra mắt)</em>
+              </p>
+              <p style={{ margin: '0 0 8px 0' }}>
+                Tam Quốc Sát Quốc Chiến là chế độ chiến thuật đồng đội theo 4 thế lực: <strong>Nguỵ · Thục · Ngô · Quần</strong>.
+              </p>
+              <p style={{ margin: 0 }}>
+                Mỗi chúa công xuất trận với 2 võ tướng cùng phe (Chủ tướng và Phó tướng). Hãy phối hợp cùng đồng minh để quét sạch các phe khác và thống nhất thiên hạ!
+              </p>
+            </div>
             <div className="sg-dialog-actions">
               <button type="button" className="sg-dialog-btn-gold" onClick={() => setActiveModal(null)}>
                 Đã hiểu binh pháp
@@ -150,6 +197,7 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
             <h3 className="sg-dialog-title">Quân Sư Hỗ Trợ</h3>
             <p className="sg-dialog-desc">
               Nếu gặp khó khăn khi tải tài nguyên hoặc kết nối máy chủ, quý chúa công hãy thử bấm nút &quot;Thử lại&quot; hoặc làm mới trang trình duyệt.
+              Chúc chúa công có những trận xuất kích bách chiến bách thắng!
             </p>
             <div className="sg-dialog-actions">
               <button type="button" className="sg-dialog-btn-gold" onClick={() => setActiveModal(null)}>
@@ -164,9 +212,9 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
       <div className="sg-bottom-footer">
         <div className="sg-ping-box">
           <span className="sg-ping-indicator-dot" />
-          <span className="sg-ping-text">Máy chủ: Chuẩn bị tài nguyên</span>
+          <span className="sg-ping-text">Tín hiệu: Sẵn sàng</span>
         </div>
-        <span>Phiên bản: BETA</span>
+        <span>Phiên bản: Thử nghiệm</span>
       </div>
     </div>
   );

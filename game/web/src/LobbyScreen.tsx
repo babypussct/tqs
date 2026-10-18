@@ -240,7 +240,8 @@ export function LobbyScreen({ adapter, run, busy }: {
   const [roomName, setRoomName] = useState('Quốc Chiến Mobile');
   const [capacity, setCapacity] = useState(4);
   const [timeout, setTimeoutSeconds] = useState(30);
-  const [disabledPacks, setDisabledPacks] = useState<string[]>([]);
+  const adminDisabledPacks = useMemo(() => adapter.getAdminDisabledPacks(), [adapter]);
+  const [disabledPacks, setDisabledPacks] = useState<string[]>(adminDisabledPacks);
   const qaScenario = useMemo(readQaGeneralScenario, []);
   const text = useDisplayText();
   const packs = useMemo(() => {
@@ -258,11 +259,13 @@ export function LobbyScreen({ adapter, run, busy }: {
   }, [adapter, packs, disabledPacks, disabledGenerals]);
   const createDisabledReason = roomPoolDisabledReason(pool, capacity, qaPlan?.error);
   const validPool = createDisabledReason === null;
-  const togglePack = (name: string) => setDisabledPacks((previous) => previous.includes(name)
-    ? previous.filter((id) => id !== name) : [...previous, name]);
+  const togglePack = (name: string) => {
+    if (adminDisabledPacks.includes(name)) return;
+    setDisabledPacks((previous) => previous.includes(name)
+      ? previous.filter((id) => id !== name) : [...previous, name]);
+  };
 
-  const savedUsername = typeof window !== 'undefined' ? localStorage.getItem('tqs_saved_username') : null;
-  const username = savedUsername?.trim() || 'Chúa Công';
+  const username = adapter.getGameDisplayName();
 
   const packGroup = (title: string, items: RoomPack[], type: string) => (
     <fieldset className="pool-group" aria-label={title}>
@@ -270,20 +273,21 @@ export function LobbyScreen({ adapter, run, busy }: {
       <div className="pool-options">
         {items.map((pack) => {
           const isChecked = !disabledPacks.includes(pack.id);
+          const adminLocked = adminDisabledPacks.includes(pack.id);
           const packLabel = getPackLabel(pack, text);
           return (
-            <label key={pack.id} className={`pool-option sg-pool-chip ${isChecked ? 'active' : 'disabled'}`}>
+            <label key={pack.id} className={`pool-option sg-pool-chip ${isChecked ? 'active' : 'disabled'} ${adminLocked ? 'admin-locked' : ''}`} title={adminLocked ? 'Đang bị quản trị viên khóa' : undefined}>
               <input
                 type="checkbox"
                 data-pack-id={pack.id}
                 data-pack-type={type}
                 checked={isChecked}
-                disabled={busy}
+                disabled={busy || adminLocked}
                 onChange={() => togglePack(pack.id)}
               />
               <div className="sg-pool-option-content">
                 <span className="sg-pool-pack-name">{packLabel}</span>
-                <span className="sg-pool-pack-count">{pack.count} {type === 'generals' ? 'tướng' : 'lá'}</span>
+                <span className="sg-pool-pack-count">{adminLocked ? 'Admin đã khóa' : `${pack.count} ${type === 'generals' ? 'tướng' : 'lá'}`}</span>
               </div>
             </label>
           );
@@ -507,8 +511,7 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
     ? `Còn ${readiness.missingReadyCount} tướng lĩnh chưa sẵn sàng.`
     : 'Phòng đã đủ người và có thể bắt đầu.';
 
-  const savedUsername = typeof window !== 'undefined' ? localStorage.getItem('tqs_saved_username') : null;
-  const username = savedUsername?.trim() || 'Chúa Công';
+  const username = adapter.getGameDisplayName();
 
   return (
     <div className="sg-waiting-screen sg-game-canvas">

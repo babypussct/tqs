@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FlyingCardEvent, ImpactVfxEvent } from './store/cardVfxState';
 import { soundManager } from './engine/webAudioSfx';
 import { useDisplayText } from './engine/displayText';
@@ -24,6 +24,8 @@ export default function CardVfxOverlay({
   const text = useDisplayText();
   const [positions, setPositions] = useState<Record<string, { start: { x: number; y: number }; center: { x: number; y: number }; target?: { x: number; y: number } }>>({});
   const [impactCoords, setImpactCoords] = useState<Record<string, { x: number; y: number }>>({});
+  const playedCardIds = useRef(new Set<string>());
+  const playedImpactIds = useRef(new Set<string>());
 
   // Cập nhật tọa độ của các FlyingCard
   useEffect(() => {
@@ -110,6 +112,8 @@ export default function CardVfxOverlay({
   // Âm thanh khi có FlyingCard xuất hiện
   useEffect(() => {
     for (const card of flyingCards) {
+      if (playedCardIds.current.has(card.id)) continue;
+      playedCardIds.current.add(card.id);
       soundManager.playFlySound();
       soundManager.playCardVoice(card.cardName, 'male');
     }
@@ -118,6 +122,8 @@ export default function CardVfxOverlay({
   // Âm thanh khi có Impact xuất hiện
   useEffect(() => {
     for (const imp of impacts) {
+      if (playedImpactIds.current.has(imp.id)) continue;
+      playedImpactIds.current.add(imp.id);
       if (imp.kind === 'slash') soundManager.playDamageSound('normal_damage', imp.damageAmount || 1);
       else if (imp.kind === 'fire_slash') soundManager.playDamageSound('fire_damage', imp.damageAmount || 1);
       else if (imp.kind === 'thunder_slash' || imp.kind === 'lightning') soundManager.playDamageSound('thunder_damage', imp.damageAmount || 1);

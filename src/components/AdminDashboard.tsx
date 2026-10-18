@@ -4,7 +4,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useHomepage } from '../hooks/useHomepage';
 import { HomepageConfig } from '../types';
-import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon, FileBarChart, PanelBottom } from 'lucide-react';
+import { Plus, Save, Package, ShoppingBag, LayoutTemplate, Ticket, Palette, Settings, Shield, Database, Star, FileText, ChevronRight, ImageIcon, FileBarChart, PanelBottom, Gamepad2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Admin Sub-components
@@ -21,6 +21,7 @@ import AdminOrders from './admin/AdminOrders';
 import AdminHomepageLayout from './admin/AdminHomepageLayout';
 import AdminRevenueStatistics from './admin/AdminRevenueStatistics';
 import AdminFooterEditor from './admin/AdminFooterEditor';
+import AdminGameControl from './admin/AdminGameControl';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
   const { adminUser } = useAuth();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'homepage' | 'navigation' | 'footer' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'revenue' | 'homepage' | 'navigation' | 'footer' | 'discounts' | 'settings' | 'rewards' | 'permissions' | 'rules' | 'posts' | 'game'>('products');
   const [homeConfig, setHomeConfig] = useState<HomepageConfig>(initialConfig);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
     { id: 'settings', label: 'Cấu hình chung', icon: Settings, requiredPermission: 'manageSettings' },
     { id: 'rewards', label: 'Hạng & Điểm', icon: Star, requiredPermission: 'manageRewards' },
     { id: 'posts', label: 'Bài viết', icon: FileText, requiredPermission: 'managePosts' },
+    { id: 'game', label: 'Tam Quốc Sát — Quốc Chiến', icon: Gamepad2, requiredPermission: null },
     { id: 'permissions', label: 'Phân quyền', icon: Shield, requiredPermission: 'manageRoles' },
     { id: 'rules', label: 'Bảo trì dữ liệu', icon: Database, requiredPermission: null },
   ];
@@ -73,6 +75,10 @@ export default function AdminDashboard() {
         <nav className="flex md:block px-2 py-2 md:px-3 md:pb-6 space-x-2 md:space-x-0 md:space-y-1 w-max md:w-auto">
           {tabs.map((tab) => {
             if (tab.requiredPermission && !adminUser?.isSuperAdmin && !(adminUser?.permissions as any)?.[tab.requiredPermission]) {
+              return null;
+            }
+            if (tab.id === 'game' && !adminUser?.isSuperAdmin &&
+              !adminUser?.permissions.manageGameAccess && !adminUser?.permissions.manageGamePool) {
               return null;
             }
             const Icon = tab.icon as any;
@@ -168,6 +174,7 @@ export default function AdminDashboard() {
             {activeTab === 'rewards' && <AdminRewardsConfig />}
             {activeTab === 'permissions' && <AdminPermissions />}
             {activeTab === 'rules' && <AdminDatabaseRules />}
+            {activeTab === 'game' && <AdminGameControl />}
           </div>
           
         </div>

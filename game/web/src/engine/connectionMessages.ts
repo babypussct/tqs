@@ -2,9 +2,9 @@ import type { ConnectionStatus } from './connection';
 
 export function connectionProgress(status: ConnectionStatus): string {
   switch (status.kind) {
-    case 'booting': return 'Đang khởi tạo Lua WASM…';
-    case 'connecting': return 'Đang kết nối máy chủ…';
-    case 'authenticating': return 'Đang xác thực…';
+    case 'booting': return 'Đang khởi tạo trận địa…';
+    case 'connecting': return 'Đang kết nối chiến trường…';
+    case 'authenticating': return 'Đang kiểm tra lệnh bài tham chiến…';
     case 'online':
     case 'closed': return '';
   }

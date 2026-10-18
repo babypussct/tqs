@@ -141,6 +141,12 @@ export class GameConnection {
     return this.status;
   }
 
+  updateCredentials(username: string, password: string) {
+    if (!username.trim() || !password) throw new Error('Phiên xác thực game không hợp lệ');
+    this.opts.username = username;
+    this.opts.password = password;
+  }
+
   toggleTrust() {
     if (this.status.kind !== 'online' || !this.socket) throw new Error('Chưa xác thực với máy chủ');
     this.lua.call('__web_notify', 'Trust', '');

@@ -1,12 +1,45 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-> Cập nhật handoff: 17/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink, CP30 mobile landscape full-viewport layout & density checkpoint, CP31 mobile landscape ergonomics overhaul & elliptical arch seat distribution, CP32 card animation & visual effects engine và CP33 authentic upstream FreeKill assets & frame animation engine (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
+> Cập nhật handoff: 18/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó, CP17 UI checkpoint, CP18 native private-skill bridge deployment, CP19 self-equipment ordering fix, CP20 live native interaction matrix, CP21 compact self-equipment Render redeploy, CP22 portrait density checkpoint, CP23 live-translation regression fix + Render artifact redeploy, CP24 official translation catalog + Render/VM live smoke, CP25 portrait mobile UI/UX ergonomics overhaul, CP26 expanded wild-marker live translation fix, CP27 portrait full-viewport stage & footer anchor, CP28 portrait self-equipment & 2-tier right block layout, CP29 portrait equipment silhouettes & 2-line auto-shrink, CP30 mobile landscape full-viewport layout & density checkpoint, CP31 mobile landscape ergonomics overhaul & elliptical arch seat distribution, CP32 card animation & visual effects engine, CP33 authentic upstream FreeKill assets & frame animation engine, CP34 in-play resolving card targeting & combat reticle system, CP35 waiting-phase hand synchronization và CP36 same-session round projection isolation (giờ Việt Nam). Đây là trạng thái hiện hành, không phải nhật ký commit. Chi tiết luật/evidence chỉ giữ ở [`web-client/QUOC_CHIEN_RULE_AUDIT.md`](web-client/QUOC_CHIEN_RULE_AUDIT.md); hồ sơ vận hành Oracle/SSH chỉ giữ ở [`deploy/freekill-native/README.md`](../deploy/freekill-native/README.md).
 
 ## Mục tiêu và phạm vi
 
 Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng React + Wasmoon Lua + gateway, dùng FreeKill C++/Lua làm nguồn sự thật. Scope hiện tại là `new_heg_mode` với 14 package; không port luật server sang TypeScript và không trộn TQSShop.
 
 ## Handoff ngắn
+
+- **Game access control / TQSShop SSO (DEPLOYED bounded, 18/10/2026):** game web dùng cùng Firebase Google identity với TQSShop; lần đầu gọi [`api/game/session.ts`](../api/game/session.ts) tạo `gameAccess/{uid}` ở trạng thái `pending`, admin có quyền `manageGameAccess` duyệt/tạm dừng và sửa tên hiển thị. API luôn phát danh tính native mới theo `tqs_<uid>`, bỏ qua mapping cũ; không có luồng giữ hoặc migrate tài khoản native cũ. API chỉ phát vé HMAC `TQS1` 5 phút cho tài khoản `approved`; LoginScreen đã bỏ username/password và tab tự đăng ký. `GameAdapter` refresh vé trước reconnect. Admin có quyền `manageGamePool` lưu policy revision cho pack tướng/bài; client hợp nhất lock vào request tạo phòng và native source patch thêm forced list. TQSShop production Vercel deployment `dpl_GxWyXxNPcpqpMcP5tdQiz1LzCiqy` đã `READY` và alias `https://tqsshop.vercel.app`; Cloudflare Pages production deployment `c928f1ff-48e1-4d85-9b84-df9eb9e91a52` alias `https://tqsvn.pages.dev`; Firebase rules/indexes đã release. Native replacement đã source-build từ commit `b8a2ad48305aea7b55ccca325fcbeb100cb8a01a`, runtime `/opt/freekill-hegemony/releases/freekill-asio-source-0.1.17`, verify package `14/14 PASS`, QA package verify PASS, `freekill-native.service active`, tmux và `*:9527 LISTEN`. Secret dùng chung đã đặt trong Vercel Production và `/etc/tqs-game-auth.env` mode `0600`; giá trị không ghi vào repository hoặc log. Quan sát public: API trực tiếp và Pages bridge thiếu Bearer đều `401`, preflight CORS đúng Pages origin `204`, `/gateway/healthz` `200 ok`, storefront `200`. Chưa chạy authenticated smoke bằng một tài khoản approved; đây là giới hạn kiểm chứng valid-ticket, không phải lỗi deployment. Không có mapping/migration tài khoản cũ; các row cũ trong `users.db` không được sử dụng và chỉ xoá bằng bước reset database riêng sau backup và phê duyệt.
+
+- **TQSShop admin access repair (LIVE, 18/10/2026):** tài khoản quản trị hiện tại đã được provision trực tiếp trong Firebase Authentication/Firestore với custom claim `super_admin`, hồ sơ `role: admin` và đầy đủ 10 cờ `adminPermissions`; dữ liệu hồ sơ không liên quan được giữ nguyên. Source fix trong [`src/contexts/AuthContext.tsx`](../src/contexts/AuthContext.tsx), [`src/components/admin/AdminPermissions.tsx`](../src/components/admin/AdminPermissions.tsx) và [`src/App.tsx`](../src/App.tsx) đã được commit `9888d248`, push lên GitHub và promote thành deployment Vercel production `7ZJAc3PmcaShv8sQPbNFCoaGsoxR`. Đã tải lại `https://tqsshop.vercel.app/admin` bằng phiên Chrome của tài khoản quản trị: dashboard và tab `Phân quyền` hiển thị, tài khoản có nút `Sửa quyền`; bundle production chứa token refresh cưỡng bức và luồng ghi đồng bộ `role` + `adminPermissions`. `NODE_OPTIONS=--max-old-space-size=8192 npm run typecheck`, `npm test` (37 contract, 60 order service, 4 pricing, 10 media) và `git diff --check` đều PASS. Không ghi credential/token vào repository hoặc tài liệu.
+
+- **TQSShop admin game-permission UI (LOCAL PASS, production verification OPEN, 18/10/2026):** đổi tên mục sidebar thành `Tam Quốc Sát — Quốc Chiến`, thêm nhóm quyền cùng tên trong modal `Cấu hình quyền Admin`, mô tả rõ `manageGameAccess` (cấp/duyệt người chơi) và `manageGamePool` (bể tướng/bể bài), đồng thời giữ nguyên điều kiện ẩn menu và Firestore boundary theo từng quyền. Build TQSShop vào thư mục tạm `/tmp/tqs-admin-build.eiE7GF` PASS; `npm test` PASS (37 contract, 60 order service, 4 pricing, 10 media); `git diff --check` PASS. Chrome đã kiểm tra trực tiếp `https://tqsshop.vercel.app/admin` bằng phiên Admin: production vẫn chỉ có menu `Phân quyền`, modal vẫn dùng nhãn cũ và chưa có nhóm `Tam Quốc Sát — Quốc Chiến`; source local chưa được deploy. Root `npm run typecheck` không dùng làm bằng chứng mới vì checkout dirty hiện còn nhiều lỗi nền ở `game/web` và `scratch/`.
+
+- **CP33 Pages same-origin gateway proxy (LIVE bounded, automatic rotation STAGED, 17/10/2026):** production `https://tqsvn.pages.dev` redeploy `da0f8a62` từ CP33 committed source `69780705`, build riêng bằng `VITE_GATEWAY_URL=/gateway` tránh chỉnh sửa CP34 đang dirty. Pages Functions `/gateway/*` đọc Cloudflare KV `TQS_GATEWAY_CONFIG` và proxy HTTPS/WSS tới Quick Tunnel; WebSocket preview **101**, production health/manifest/bundle **200**, **Chrome/Wasmoon → Pages → Oracle FreeKill C++ Setup/EnterLobby/clean disconnect PASS**, 14 packages, 5.279 files, runtime MD5 `29653b06…`; tests Pages Functions **5/5 PASS**. Các service gateway, tunnel, native giữ active. **Blocker:** native safety review từ chối thao tác tạo/chuyển registration secret. Oracle đã staging script và systemd units `tqs-tunnel-register.*`, **timer disabled**, Pages chưa cấu hình token; KV đang pin hostname Quick Tunnel hiện tại nên **chưa tự đồng bộ khi hostname đổi**. Có thể cập nhật KV mà không cần rebuild Pages; xem [`CLOUDFLARE_PAGES_QUICK_TUNNEL.md`](../deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md). Chưa test rotation, chưa device gameplay, không claim 24/7/official.
+
+- **CP34 authentic FreeKill target indicator line reproduction (Authentic IndicatorLine.qml) (local PASS, 17/10/2026):** tái hiện 100% chuẩn gốc cơ chế chỉ báo mục tiêu từ mã nguồn upstream FreeKill (`RoomBase.qml` và `IndicatorLine.qml`), loại bỏ hoàn toàn các thành phần tự vẽ:
+  - **Tái hiện 1:1 chuẩn FreeKill `IndicatorLine.qml` & `RoomBase.qml doIndicate(from, tos)`:**
+    - Tia sáng thẳng (straight beam) màu vàng đồng cổ điển đặc trưng của FreeKill: `color: "#96943D"`.
+    - Cấu trúc thanh chỉ thị gồm 2 lớp đúng nguyên bản:
+      - Thân ngoài rộng 6px với dải gradient mờ dần (`Qt.rgba(200, 200, 200, 0.18)`).
+      - Lõi sáng bên trong rộng 3px với ánh sáng viền vàng (`Qt.lighter("#96943D")` / `#e5e382`).
+    - Nối thẳng từ tâm avatar người đánh bài (`fromPos = mapFromItem(fromItem)`) đến tâm avatar của các mục tiêu (`toPos = mapFromItem(toItem)`).
+    - Chu kỳ thời gian hoạt ảnh đúng 700ms nguyên bản FreeKill: phóng dài 200ms (`Easing.OutCubic`) -> dừng giữ 200ms -> mờ dần và biến mất trong 300ms (`Easing.InQuart`).
+  - **Loại bỏ triệt để các thành phần tự vẽ ngoại lai:**
+    - Tháo bỏ toàn bộ tâm ngắm xoay tròn sci-fi, emoji badges (`🎯 SÁT`, `🎯 THUẬN...`), viền đỏ nhấp nháy trên avatar và nhãn chữ bay trên đường cong.
+    - Giữ nguyên vẹn 100% giao diện avatar người chơi (`PlayerPhotoPanel.tsx`) theo chuẩn FreeKill.
+  - **Kết hợp hiệu ứng chiến đấu chuẩn gốc FreeKill:**
+    - Khi trúng đòn hoặc nhận sát thương, avatar hiển thị đúng chuỗi ảnh PixmapAnimation chính thống của FreeKill (`slash` 24 frame, `damage` 6 frame...) và âm thanh gốc (`normal_damage.mp3`, `slash.mp3`...).
+  - **Bằng chứng kiểm thử & Build:**
+    - Unit test `npm run test:card-effects` **11/11 PASS**, `npm run typecheck` **0 errors**, `npm run test:store` **44/44 PASS**, `npm run test:e2e` **21/21 PASS**.
+    - Ảnh chụp trực quan xác thực trong artifact:
+      - `390_portrait_snatch_target_indicator.png`: xác thực tia sáng thẳng vàng đồng `#96943D` chuẩn gốc FreeKill phóng thẳng từ người chơi 1 sang avatar bot 2 khi dùng Thuận Thủ Khiên Dương.
+      - `390_portrait_card_vfx_combat_impact.png`: xác thực tia chỉ định Sát chuẩn FreeKill kèm nhát chém máu 24 frame chính thống trên avatar đối thủ.
+    - Build web bundle và đồng bộ root `dist/` byte-for-byte (`diff -rq` 0 differences).
+
+- **CP35 waiting-phase hand synchronization (local PASS, 18/10/2026):** thay thông báo kỹ thuật `Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.` bằng `Đang cập nhật diễn biến ván đấu…`; vùng bài ngoài lượt luôn hiển thị, có trạng thái tay rỗng và cho phép chạm/nhấn để xem chi tiết trong lúc chờ. Cầu nối Lua phát lại snapshot công khai đầy đủ của request sau `MoveCards`/`Reconnect` với cờ thay thế toàn bộ, nên lá bị bỏ/lấy/rút thêm và trạng thái enabled không còn giữ snapshot cũ; reducer `PilesUpdate` xóa `topDiscardCard` khi nhận `null`, đồng thời bàn hiển thị lá bỏ gần nhất. Không đưa raw MoveCards/card ID private sang React. Bằng chứng hiện tại: `npm run typecheck` PASS, `test:gameplay` **16/16**, `test:store` **44/44**, `test:card-display` **14/14**, `test:lua-lifecycle` **5/5**, `test:e2e` **21/21**; Real Lua **63/64**, ca còn lại là assertion hình học ghế 8 người của UI-03 trên phần bố cục/VFX dirty có trước phiên, không liên quan hand snapshot.
+- **CP36 same-session round projection isolation (local PASS, 18/10/2026):** hàng đợi native VFX được xem là dữ liệu theo ván và được dọn tại `GameOver`, `StartGame`, `EnterRoom`, `EnterLobby`; bộ đếm sequence vẫn tăng liên tục để hook VFX không bỏ qua sự kiện của ván mới. `App` dùng `roundId` tăng theo `StartGame` làm khóa remount `GameBoardScreen`, nên animation/state cục bộ cũng không thể sống sang ván kế tiếp khi hai sự kiện vòng đời đến sát nhau. Regression store mô phỏng ván 1 → GameOver → ván 2 cùng phiên và kiểm tra log/hiệu ứng không bị phát lại; browser E2E Chrome kiểm tra cùng chuỗi qua App thật. Bằng chứng hiện tại: `test:store` **45/45**, `test:card-effects` **12/12**, `test:e2e` **22/22**, `npm run typecheck` trong `game/web` PASS, `git diff --check` PASS. Chưa deploy; không thay đổi server/native.
+
+- **CP33 Cloudflare Pages → Quick Tunnel → Oracle (CANDIDATE LIVE, 17/10/2026):** project Pages `tqsvn` đã upload thành công **2.030 tệp** lên production [`tqsvn.pages.dev`](https://tqsvn.pages.dev) (deployment [`e406acd0`](https://e406acd0.tqsvn.pages.dev)). Frontend build từ source CP33 với `VITE_GATEWAY_URL=https://keys-mar-evaluate-winter.trycloudflare.com`. Oracle `freekill-hegemony-qa` có hai service mới `tqs-gateway.service`/`tqs-quick-tunnel.service` (active/enabled), Node 22.23.2 và cloudflared 2026.10.1; giữ `freekill-native.service` nguyên trạng. Gateway bind `127.0.0.1:8080`, manifest **14 package / 5.279 file / MD5 `29653b06…`**, bundle `ce342f067f61796e`. HTTPS tunnel health `ok`, CORS đúng Pages; public HTML/WASM/JS/CSS, frame `slash`/`fire__slash`/`damage` và MP3 sát thương byte-match build. E2E Chrome **Pages → WSS Quick Tunnel → Oracle gateway → FreeKill C++ thật: Setup → EnterLobby → ngắt sạch PASS** với tài khoản test đã có. **Giới hạn:** URL Quick Tunnel thay đổi khi tạo tunnel mới; Pages cần rebuild/redeploy khi URL thay đổi; chưa kiểm full gameplay trên thiết bị thật, chưa official/G7 sign-off. Runbook và hash trong [`CLOUDFLARE_PAGES_QUICK_TUNNEL.md`](../deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md). Render vẫn suspended và không nhận deployment CP33.
 
 - **CP33 authentic upstream FreeKill assets & frame animation engine (Authentic SFX, Voices, & Frame Animations) (local PASS, 17/10/2026):** tích hợp 100% tài nguyên âm thanh và hoạt ảnh thị giác chính thống từ upstream FreeKill (`packages/standard_cards`, `packages/maneuvering`, `audio/system`, `image/anim`) mang lại cảm giác thân thuộc, sống động chuẩn Tam Quốc Sát:
   - **Tài nguyên âm thanh chính thống (Authentic FreeKill SFX & Voice Lines):**
@@ -181,7 +214,7 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 - **CP33 chưa thể publish lên Render (BLOCKED, 17/10/2026):** source [`69780705`](https://github.com/babypussct/tqs/commit/69780705606cdde08047895d3b77a0119a57bd56) đã push và release snapshot sạch/verify PASS với 16.813 files, 14 package, runtime MD5 `29653b06…`, HTML SHA-256 `a527c8ef…`. Render dashboard báo workspace `suspended` do hết 5 GB free bandwidth; public `/gateway/healthz` trả HTTP 503 `Service Suspended`. Chưa có CP33 deployment ID/live probe; VM native không đổi. Cần người có quyền billing khôi phục quota rồi manual deploy và rerun health/assets/manifest/live Render → VM.
 
-- **Final active deployment:** Render deployment [`dep-db9m3bnavr4c73ej7ntg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db9m3bnavr4c73ej7ntg) từ source [`e5d383cf`](https://github.com/babypussct/tqs/commit/e5d383cf69f80fc9f34030e4fba766756e232f30) báo `Deploy succeeded | Live`; đây là candidate CP31 mobile landscape. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `e21686fcbbbf42be0e9bbdfba733473173e451d28fdc82f79d34554e2e6b0a08` / `5ed300cee6a67278e1315fad7aef412e193cd065be733a4d19d5719310db242f` / `34dfe7fab6fdd0c2b66a0d5069aceee7037644cb45e64362a081c72b4584f07e` khớp local `dist`; manifest public giữ 14 package/5.279 file, bundle `ce342f067f61796e`, runtime bundle MD5 `29653b06…`. Live UI translation smoke thấy 91 visible texts/0 unresolved và clean GameOver/lobby/disconnect; evidence [`ui-01-live-cpp-cp31-render-live-20261017.json`](../scratch/evidence/ui-01-live-cpp-cp31-render-live-20261017.json); gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra read-only: `freekill-native.service active + enabled`, `*:9527 LISTEN` và flist MD5 đúng. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
+- **Historical last Render deployment (before suspension):** Render deployment [`dep-db9m3bnavr4c73ej7ntg`](https://dashboard.render.com/web/srv-db63aclckfvc73bvrli0/deploys/dep-db9m3bnavr4c73ej7ntg) từ source [`e5d383cf`](https://github.com/babypussct/tqs/commit/e5d383cf69f80fc9f34030e4fba766756e232f30) báo `Deploy succeeded | Live`; đây là candidate CP31 mobile landscape. Public `/gateway/healthz` trả `ok`; HTML/JS/CSS SHA-256 lần lượt `e21686fcbbbf42be0e9bbdfba733473173e451d28fdc82f79d34554e2e6b0a08` / `5ed300cee6a67278e1315fad7aef412e193cd065be733a4d19d5719310db242f` / `34dfe7fab6fdd0c2b66a0d5069aceee7037644cb45e64362a081c72b4584f07e` khớp local `dist`; manifest public giữ 14 package/5.279 file, bundle `ce342f067f61796e`, runtime bundle MD5 `29653b06…`. Live UI translation smoke thấy 91 visible texts/0 unresolved và clean GameOver/lobby/disconnect; evidence [`ui-01-live-cpp-cp31-render-live-20261017.json`](../scratch/evidence/ui-01-live-cpp-cp31-render-live-20261017.json); gateway log xác nhận Render → VM `161.33.209.212:9527`; VM `freekill-hegemony-qa` đã được kiểm tra read-only: `freekill-native.service active + enabled`, `*:9527 LISTEN` và flist MD5 đúng. Đây là candidate hiện hành cho user smoke test, chưa phải official release hoặc device sign-off. CSV đã được compile vào `officialTranslations.json` và nằm trong artifact.
 
 ## Việc còn mở theo thứ tự
 
@@ -201,27 +234,103 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Bước tiếp theo có thể chạy ngay
 
-Giữ Render candidate và Oracle replacement theo cùng web/runtime identity; CP33 source hiện là commit `69780705606cdde08047895d3b77a0119a57bd56`, runtime MD5 `29653b06f1db4a1cece2941f79cbe648`, release snapshot 16.813 files/14 package, HTML SHA-256 `a527c8ef…`. Render workspace đang suspended vì quota bandwidth và public health 503, nên deployment hiện hành vẫn là `dep-db9m3bnavr4c73ej7ntg` từ source `e5d383cf`; chưa được gọi CP33 LIVE. QA replacement vẫn `tempBanTime=0`; production template là 5 nhưng native guard chưa active trên VM cũ. Sau khi có quyền billing khôi phục workspace, manual deploy CP33 rồi kiểm tra public UI health/HTML/JS/CSS, asset animation/audio, package/runtime identity và live Render → VM. **CP33 local gates:** `npm --prefix game/web run test:e2e:lua` **63/63**, `test:e2e` **21/21**, card-effects **10/10**, store **44/44**, connection **31/31**, gameplay **16/16**, card-display **14/14**, release/QA contract **44/44**, typecheck/build và diff check PASS. Không nâng mức official chỉ từ deployment; không đánh dấu goal hoàn tất khi exhaustive effect matrix, interaction matrix hoặc official release còn mở.
+**18/10/2026 — USER ACCEPTED (xác nhận của người dùng, không phải test tự động trong phiên):**
+- [x] Đã kiểm thử **trọn vẹn một ván trên Cloudflare Pages** (`https://tqsvn.pages.dev`).
+- [x] Đã kiểm tra **giao diện và thao tác trên điện thoại thật**. Người dùng chưa cung cấp model/OS/mạng hay log nên nghiệm thu này chỉ áp dụng đúng hai mục được xác nhận, không mở rộng thành chứng nhận mọi thiết bị.
+
+**Công việc còn lại:** ổn định Quick Tunnel/KV registration, rotation và rollback/monitoring, production reconnect, native rule/interaction matrix cùng các gate official release. Hai mục smoke kể trên đã đóng theo nghiệm thu của người dùng.
+
+CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành source `69780705` (build gắn Quick Tunnel hiện hành), 2.030 tệp, manifest MD5 `29653b06f1db4a1cece2941f79cbe648`/14 package/5.279 file; test browser → Pages → Quick Tunnel → gateway Oracle → FreeKill C++ xác nhận Setup, EnterLobby và ngắt kết nối sạch. Runbook tại `deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md`. **Bước tiếp theo:** đã nhận nghiệm thu từ người dùng cho gameplay trọn ván trên Pages và giao diện/thao tác điện thoại thật; chuẩn bị hostname tunnel cố định/rollback/giám sát để tránh Pages hỏng khi URL Quick Tunnel đổi. Render còn bị suspended và không có deployment CP33. Native QA giữ `tempBanTime=0`; production template 5 chưa được xác minh active; full native interaction/effect matrix và official vẫn OPEN.
 
 **Bổ sung evidence sau M3/M4/M5:** PWA E2E PASS; recovery **3/3**, protocol **5/5**, room-pools **1/1**, Vietnamese **4/4** và Lua lifecycle **5/5** đều PASS trên checkout hiện hành. Capture M6 đã chạy lại sau waiting-room hint, card long-press và portrait hand correction; bộ ảnh gồm **12 ảnh chuẩn + 1 ảnh 10 lá + 1 ảnh card-detail long-press**. `RequestTimer` đã được tách repaint cục bộ để giữ hand rail ổn định khi đếm ngược. Diff check riêng các file thuộc UI/docs slice PASS; lệnh toàn repo hiện dừng ở `docs/translations/ZH_CN_ORIGINAL_TRANSLATION_SHEET.csv` do CRLF bị báo trailing whitespace trong file CSV dirty ngoài slice, không được chuẩn hóa trong phiên này. Đây là regression evidence local, không thay thế device smoke/candidate smoke.
 
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-17T14:23:25.948Z (UTC).
-- Nhánh: `codex/cp89-render-current` · HEAD: `69780705606c`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-18T12:36:39.846Z (UTC).
+- Nhánh: `codex/cp89-render-current` · HEAD: `9888d2480dbb`.
+- File thay đổi hiển thị: 2126 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+ M .env.example
+ M deploy/freekill-native/scripts/bootstrap-source.sh
+ M deploy/freekill-native/scripts/install-packages.sh
+ M deploy/freekill-native/scripts/run-server.sh
+ M deploy/freekill-native/server/freekill-native.service
+ M deploy/freekill-native/server/freekill.server.config.json
+ D dist/anim/analeptic/0.png
+ D dist/anim/analeptic/1.png
+ D dist/anim/analeptic/10.png
+ D dist/anim/analeptic/11.png
+ D dist/anim/analeptic/12.png
+ D dist/anim/analeptic/13.png
+ D dist/anim/analeptic/14.png
+ D dist/anim/analeptic/15.png
+ D dist/anim/analeptic/16.png
+ D dist/anim/analeptic/2.png
+ D dist/anim/analeptic/3.png
+ D dist/anim/analeptic/4.png
+ D dist/anim/analeptic/5.png
+ D dist/anim/analeptic/6.png
+ D dist/anim/analeptic/7.png
+ D dist/anim/analeptic/8.png
+ D dist/anim/analeptic/9.png
+ D dist/anim/damage/0.png
+ D dist/anim/damage/1.png
+ D dist/anim/damage/2.png
+ D dist/anim/damage/3.png
+ D dist/anim/damage/4.png
+ D dist/anim/damage/5.png
+ D dist/anim/fire__slash/0.png
+ D dist/anim/fire__slash/1.png
+ D dist/anim/fire__slash/10.png
+ D dist/anim/fire__slash/11.png
+ D dist/anim/fire__slash/12.png
+ D dist/anim/fire__slash/13.png
+ D dist/anim/fire__slash/14.png
+ D dist/anim/fire__slash/15.png
+ D dist/anim/fire__slash/16.png
+ D dist/anim/fire__slash/17.png
+ D dist/anim/fire__slash/18.png
+ D dist/anim/fire__slash/19.png
+ D dist/anim/fire__slash/2.png
+ D dist/anim/fire__slash/20.png
+ D dist/anim/fire__slash/21.png
+ D dist/anim/fire__slash/22.png
+ D dist/anim/fire__slash/23.png
+ D dist/anim/fire__slash/3.png
+ D dist/anim/fire__slash/4.png
+ D dist/anim/fire__slash/5.png
+ D dist/anim/fire__slash/6.png
+ D dist/anim/fire__slash/7.png
+ D dist/anim/fire__slash/8.png
+ D dist/anim/fire__slash/9.png
+ D dist/anim/jink/0.png
+ D dist/anim/jink/1.png
+ D dist/anim/jink/10.png
+ D dist/anim/jink/11.png
+ D dist/anim/jink/12.png
+ D dist/anim/jink/13.png
+ D dist/anim/jink/14.png
+ D dist/anim/jink/15.png
+ D dist/anim/jink/16.png
+ D dist/anim/jink/17.png
+ D dist/anim/jink/18.png
+ D dist/anim/jink/19.png
+ D dist/anim/jink/2.png
+ D dist/anim/jink/20.png
+ D dist/anim/jink/21.png
+ D dist/anim/jink/22.png
+ D dist/anim/jink/3.png
+... và 2056 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+9888d248 fix: synchronize admin role and permissions
+3b874223 docs: record CP33 Render suspension blocker
 69780705 feat: publish CP33 upstream FreeKill VFX assets
-79568212 docs: refresh checkpoint snapshot
-572b5dac docs: record CP31 Render deployment
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

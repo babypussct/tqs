@@ -74,6 +74,14 @@ if (deploymentUrl) {
   'TQS_LIVE_URL must use HTTPS or local HTTP');
   assert.ok(login, 'Deployment verification requires an explicit login mode');
 }
+const deploymentGatewayUrl = process.env.TQS_LIVE_GATEWAY_URL;
+if (deploymentGatewayUrl) {
+  const url = new URL(deploymentGatewayUrl);
+  assert.ok(deploymentUrl, 'TQS_LIVE_GATEWAY_URL requires TQS_LIVE_URL');
+  assert.ok(url.protocol === 'https:' ||
+    (url.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(url.hostname)),
+  'TQS_LIVE_GATEWAY_URL must use HTTPS or local HTTP');
+}
 const idleSeconds = Number(process.env.TQS_LIVE_IDLE_SECONDS ?? 0);
 assert.ok(Number.isInteger(idleSeconds) && idleSeconds >= 0 && idleSeconds <= 300,
   'TQS_LIVE_IDLE_SECONDS must be an integer from 0 to 300');
@@ -432,7 +440,15 @@ async function verifyUiTranslations(page: Page) {
     await page.evaluate(String.raw`(() => {
       const observed = new Set();
       const layout = { maxLogEntries: 0, maxMoments: 0, logVisible: false, horizontalOverflow: false };
+      const vfx = { indicatorAppearances: 0, maxSimultaneousBeams: 0, damageReactions: 0 };
+      let lastBeams = 0, lastHits = 0;
       const record = () => {
+        const beams = document.querySelectorAll('.fk-indicator-line-beam').length;
+        const hits = document.querySelectorAll('.sg-photo-panel.hit-shake').length;
+        vfx.indicatorAppearances += Math.max(0, beams - lastBeams);
+        vfx.damageReactions += Math.max(0, hits - lastHits);
+        vfx.maxSimultaneousBeams = Math.max(vfx.maxSimultaneousBeams, beams);
+        lastBeams = beams; lastHits = hits;
         document.querySelectorAll('.board-logs li, .board-moments .board-moment, .board-player .board-mark, .board-banners .board-mark, .board-generals span')
           .forEach((node) => {
             const value = node.textContent?.trim();
@@ -445,9 +461,12 @@ async function verifyUiTranslations(page: Page) {
         layout.horizontalOverflow ||= document.documentElement.scrollWidth > window.innerWidth;
       };
       record();
-      new MutationObserver(record).observe(document.body, { childList: true, characterData: true, subtree: true });
+      new MutationObserver(record).observe(document.body, {
+        childList: true, characterData: true, attributes: true, attributeFilter: ['class'], subtree: true,
+      });
       window.__tqsDisplayAudit = () => [...observed];
       window.__tqsLayoutAudit = () => layout;
+      window.__tqsVfxAudit = () => ({ ...vfx });
     })()`);
     await screenshot(`ui-01-live-board-${evidenceTag}.png`);
     await page.getByRole('button', { name: 'BOT chơi hộ' }).click();
@@ -455,8 +474,18 @@ async function verifyUiTranslations(page: Page) {
     console.log('UI-01: server accepted native Trust; recording live visible logs until GameOver');
     await page.getByRole('button', { name: 'Về sảnh' }).waitFor({ timeout: 480_000 });
     const frames = await page.evaluate(() => (window as unknown as { __tqsLiveCapture: { incoming: number[][] } }).__tqsLiveCapture.incoming);
-    gameOver = packetFrames(frames).some((packet) => packet.command === 'GameOver');
+    const nativePackets = packetFrames(frames);
+    gameOver = nativePackets.some((packet) => packet.command === 'GameOver');
     assert.ok(gameOver, 'A real C++ GameOver is required before ending this test');
+    const nativeVfxCommands = {
+      Animate: nativePackets.filter((packet) => packet.command === 'Animate').length,
+      LogEvent: nativePackets.filter((packet) => packet.command === 'LogEvent').length,
+    };
+    const visualVfx = await page.evaluate(() => (window as unknown as { __tqsVfxAudit: () => {
+      indicatorAppearances: number; maxSimultaneousBeams: number; damageReactions: number;
+    } }).__tqsVfxAudit());
+    if (visualVfx.indicatorAppearances) assert.ok(nativeVfxCommands.Animate, 'Beam appeared without native Animate');
+    if (visualVfx.damageReactions) assert.ok(nativeVfxCommands.LogEvent, 'Damage reaction appeared without native LogEvent');
     const visible = await page.evaluate(() => (window as unknown as { __tqsDisplayAudit: () => string[] }).__tqsDisplayAudit());
     const presentation = await page.evaluate(() => (window as unknown as { __tqsLayoutAudit: () => {
       maxLogEntries: number; maxMoments: number; logVisible: boolean; horizontalOverflow: boolean;
@@ -474,6 +503,8 @@ async function verifyUiTranslations(page: Page) {
       context: 'Chrome 390px + React/Wasmoon/Lua + Gateway + real FreeKill C++',
       deploymentUrl: deploymentUrl ?? null,
       presentation,
+      nativeVfx: { ...visualVfx, commands: nativeVfxCommands,
+        note: 'Counted only rendered DOM indications and native C++ command types; no private packet payload is retained.' },
       generalLabels: translatedNames, visibleText: samples, unresolved,
       gameOver, status: unresolved.length ? 'live-audit-found-untranslated' : 'live-audit-no-untranslated-in-observed-text',
       note: 'Only DOM text publicly rendered to this test player; snapshot, passwords, hand data and frames are excluded.',
@@ -482,6 +513,7 @@ async function verifyUiTranslations(page: Page) {
     await page.getByRole('button', { name: 'Về sảnh' }).click();
     await page.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
     console.log(`PASS UI-01 live C++ GameOver + lobby; ${samples.length} unique visible texts, ${unresolved.length} possible untranslated strings`);
+    console.log(`Native VFX capture: Animate ${nativeVfxCommands.Animate}, LogEvent ${nativeVfxCommands.LogEvent}, beams ${visualVfx.indicatorAppearances}, damage reactions ${visualVfx.damageReactions}`);
   } finally {
     if (gameStarted && !gameOver && !page.isClosed()) {
       // Do not intentionally drop an active FreeKill game: it can temp-ban IPs.
@@ -523,7 +555,9 @@ try {
 
   let pageUrl = deploymentUrl;
   const port = deploymentUrl ? undefined : await freePort();
-  const gatewayUrl = deploymentUrl
+  const gatewayUrl = deploymentGatewayUrl
+    ? deploymentGatewayUrl.replace(/\/$/, '')
+    : deploymentUrl
     ? new URL('gateway/', deploymentUrl).href.replace(/\/$/, '')
     : `http://127.0.0.1:${port}`;
   if (!deploymentUrl) {

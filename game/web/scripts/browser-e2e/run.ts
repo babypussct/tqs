@@ -122,7 +122,7 @@ async function runSuite(page: Page) {
       assert.equal(s.requestId, null);
       assert.equal(s.sent.length, 1);
       assert.deepEqual(s.sent[0], { requestId: id, type: 0x212, hex: '44646f6e65' });
-      assert.match(await p.getByRole('status').last().innerText(), /Đang chờ máy chủ/);
+      assert.match(await p.getByRole('status').last().innerText(), /Đang cập nhật diễn biến ván đấu/);
       await p.waitForTimeout(80);
       assert.equal((await snapshot(p)).replyCount, 1);
     }],
@@ -204,7 +204,7 @@ async function runSuite(page: Page) {
     ['Lua CancelRequest invalidates UI and old actions', async (p) => {
       const id = await start(p, 'choices');
       await p.evaluate(() => window.__tqsE2e.cancel());
-      await p.getByText('Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.').waitFor();
+      await p.getByText('Đang cập nhật diễn biến ván đấu…').waitFor();
       assert.equal((await snapshot(p)).requestId, null);
       const error = await p.evaluate((n) => window.__tqsE2e.attempt(n), id);
       assert.match(error ?? '', /không còn hiệu lực/);
@@ -305,6 +305,23 @@ async function runSuite(page: Page) {
       await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
       assert.equal(await p.getByRole('alertdialog').count(), 0);
       assert.equal((await p.evaluate(() => window.__tqsE2e.appActions())).at(-1), 'disconnect');
+      await p.goto('/e2e.html');
+    }],
+    ['A second game in the same session starts without the previous game projection', async (p) => {
+      await p.goto('/e2e.html?app=1');
+      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
+      await p.evaluate(() => window.__tqsE2e.begin('choices'));
+      await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
+      await p.evaluate(() => window.__tqsE2e.seedRoundData());
+      await p.getByText('Thông báo ván trước', { exact: true }).waitFor();
+      await p.evaluate(() => window.__tqsE2e.finishGame());
+      await p.getByRole('heading', { name: 'Bạn đã thắng!', exact: true }).waitFor();
+      await p.evaluate(() => window.__tqsE2e.startNextGame());
+      await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
+      assert.equal(await p.getByText('Thông báo ván trước', { exact: true }).count(), 0);
+      assert.deepEqual(await p.evaluate(() => window.__tqsE2e.roundState()), {
+        phase: 'playing', boardLogs: [], nativeVfxEvents: [],
+      });
       await p.goto('/e2e.html');
     }],
     ['Responsive layout stays within the viewport on phone and desktop widths', async (p) => {

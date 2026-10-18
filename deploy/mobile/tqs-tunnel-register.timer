@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep the Cloudflare Pages gateway target synchronized
+
+[Timer]
+OnBootSec=45s
+OnUnitInactiveSec=60s
+Persistent=true
+Unit=tqs-tunnel-register.service
+
+[Install]
+WantedBy=timers.target

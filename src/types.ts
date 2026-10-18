@@ -200,6 +200,8 @@ export interface AdminPermissions {
   manageRoles: boolean;
   manageRewards?: boolean;
   managePosts?: boolean;
+  manageGameAccess?: boolean;
+  manageGamePool?: boolean;
 }
 
 export interface AdminUser {
@@ -231,6 +233,36 @@ export interface AppUser {
   createdAt: any;
   adminPermissions?: AdminPermissions | null; // Migrated from AdminUser
   savedVouchers?: string[]; // IDs of collected discount codes
+}
+
+export type GameAccessStatus = 'pending' | 'approved' | 'suspended';
+
+export interface GameAccess {
+  uid: string;
+  status: GameAccessStatus;
+  email?: string | null;
+  displayName?: string | null;
+  gameName?: string;
+  /** New deterministic FreeKill account name in the tqs_<uid> namespace. */
+  nativeName?: string;
+  note?: string;
+  createdAt: any;
+  updatedAt: any;
+  updatedBy?: string;
+}
+
+export interface GamePoolPolicy {
+  schemaVersion: 1;
+  mode: 'new_heg_mode';
+  revision: number;
+  disabledPacks: {
+    generals: string[];
+    cards: string[];
+  };
+  appliesTo: 'new_rooms';
+  updatedAt: any;
+  updatedBy: string;
+  note?: string;
 }
 
 export interface TierConfig {

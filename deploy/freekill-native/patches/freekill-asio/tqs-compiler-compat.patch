@@ -1,0 +1,15 @@
+diff --git a/src/server/admin/admin_http.cpp b/src/server/admin/admin_http.cpp
+index 6aa8f0b..1b70d37 100644
+--- a/src/server/admin/admin_http.cpp
++++ b/src/server/admin/admin_http.cpp
+@@ -5,9 +5,9 @@
+ #include "server/admin/admin_service.h"
+ #include <nlohmann/json.hpp>
+ 
+ constexpr char API_HELP_HTML[] = {
+-  #embed "api_help.html"
++#include "api_help_embed.inc"
+   , 0
+ };
+ 
+ namespace asio = boost::asio;

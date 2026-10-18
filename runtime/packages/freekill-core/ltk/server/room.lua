@@ -69,6 +69,10 @@ function Room:initialize(_room)
   end
 
   table.insertTableIfNeed(self.disabled_packs, Fk.game_mode_disabled[self:getSettings('gameMode')])
+  local tqs_locked_packs = json.decode(fk.GetTqsLockedPacks())
+  if type(tqs_locked_packs) == "table" then
+    table.insertTableIfNeed(self.disabled_packs, tqs_locked_packs)
+  end
   self.disabled_generals = self:getSettings('disabledGenerals')
 
   self:addCallback("prelight", self.handlePrelight)

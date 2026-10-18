@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
 import type { BoardMoment } from './store/boardState';
 import { useGameStore, type RoomPlayer } from './store/gameStore';
 import { GameplayControls, GameplaySkillDock, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
 import { GAMEPLAY_REQUESTS } from './store/gameplayState';
 import PlayerPhotoPanel from './PlayerPhotoPanel';
-import { IdleHandCard, ResolvingCardView } from './HandCardItem';
+import { IdleHandCard, PublicPileCardPreview, ResolvingCardView } from './HandCardItem';
 import FakeSkillDock from './FakeSkillDock';
 import RegularSkillDock from './RegularSkillDock';
 import { ToolbarBotIcon, ToolbarExitIcon } from './EquipIcons';
@@ -49,7 +49,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   toggleTrust?: () => void; prelightSkill: (skillName: string, prelight: boolean) => void;
   regularSkills?: RegularSkill[];
 }) {
-  const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills } = useGameStore((s) => s);
+  const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills, nativeVfxEvents } = useGameStore((s) => s);
   const text = useDisplayText();
   const isMobilePortrait = useMediaQuery('(max-width: 640px) and (orientation: portrait)');
   const isMobileLandscape = useMediaQuery('(orientation: landscape) and (max-height: 520px)');
@@ -108,35 +108,20 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     flyingCards,
     impacts,
     avatarReactions,
+    activeTargetIndicators,
     onFlyingCardDone,
     onImpactDone,
     processGameLogs,
+    processNativeEvents,
   } = useCardVfx();
 
   useEffect(() => {
     processGameLogs(board.logs);
   }, [board.logs, processGameLogs]);
 
-  // Danh sách các playerId đối thủ đang được chọn làm mục tiêu (hoặc auto-lock khi có 1 mục tiêu duy nhất)
-  const selectedTargetPlayerIds = useMemo(() => {
-    if (!gameplayActive) return [];
-    const selected = Object.values(gameplay.items.Photo)
-      .filter((item) => item.selected)
-      .map((item) => Number(item.id))
-      .filter((n) => Number.isInteger(n));
-    if (selected.length > 0) return selected;
-
-    // Khi người chơi đã chọn lá bài trên tay, tự động vẽ đường ngắm tới mục tiêu hợp lệ nếu chỉ có 1 mục tiêu
-    const hasCardSelected = Object.values(gameplay.items.CardItem).some((c) => c.selected);
-    if (hasCardSelected) {
-      const enabledTargets = Object.values(gameplay.items.Photo)
-        .filter((item) => item.enabled)
-        .map((item) => Number(item.id))
-        .filter((n) => Number.isInteger(n));
-      if (enabledTargets.length === 1) return enabledTargets;
-    }
-    return [];
-  }, [gameplayActive, gameplay.items.Photo, gameplay.items.CardItem]);
+  useEffect(() => {
+    processNativeEvents(nativeVfxEvents);
+  }, [nativeVfxEvents, processNativeEvents]);
 
   const { selfSeat, opponentSeats } = deriveSeatViewModels({
     boardSeats: board.seats,
@@ -249,9 +234,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           {/* Lớp hiển thị đường mũi tên ngắm mục tiêu (toàn màn hình bàn chơi và bài tay) */}
           <TargetingOverlay
             boardContainerRef={boardMainRef}
-            selectedTargetPlayerIds={selectedTargetPlayerIds}
-            sourcePlayerId={ownId}
-            active={gameplayActive}
+            activeIndicators={activeTargetIndicators}
           />
 
           {/* Lớp hiệu ứng lá bài bay và va chạm chiến đấu */}
@@ -300,8 +283,9 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             </div>
 
             {/* Chồng bài bỏ */}
-            <div className="native-deck-slot discard-pile" title="Chồng bài bỏ">
+            <div className={`native-deck-slot discard-pile${board.topDiscardCard ? ' has-top-card' : ''}`} title="Chồng bài bỏ">
               <span className="native-deck-badge">{board.discardPileCount ?? 0}</span>
+              {board.topDiscardCard && <PublicPileCardPreview card={board.topDiscardCard} />}
               <span className="native-deck-label">Bỏ</span>
             </div>
           </div>
@@ -345,20 +329,23 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
                 </button>
               )}
             </div>
-            {board.selfHandCards && board.selfHandCards.length > 0 && (
-              <div className="gameplay-hand sg-hand-fan sg-hand-idle gameplay-options" aria-label="Bài trên tay (ngoài lượt)">
-                {board.selfHandCards.map((card, index) => (
-                  <IdleHandCard
-                    key={card.id ?? index}
-                    card={card}
-                    index={index}
-                    totalCards={board.selfHandCards.length}
-                  />
-                ))}
-              </div>
-            )}
+            <div
+              className={`gameplay-hand sg-hand-fan sg-hand-idle gameplay-options${board.selfHandCards.length > 4 ? ' sg-hand-overlap' : ''}`}
+              aria-label={`Bài trên tay, ${board.selfHandCards.length} lá. Chạm vào một lá để xem chi tiết.`}
+            >
+              {board.selfHandCards.length > 0 ? board.selfHandCards.map((card, index) => (
+                <IdleHandCard
+                  key={card.id ?? index}
+                  card={card}
+                  index={index}
+                  totalCards={board.selfHandCards.length}
+                />
+              )) : (
+                <span className="sg-hand-empty">Không có lá bài trên tay</span>
+              )}
+            </div>
             <div className="board-status" role="status">
-              Đang chờ máy chủ và Lua xử lý giai đoạn tiếp theo.
+              Đang cập nhật diễn biến ván đấu…
             </div>
           </div>
         )}

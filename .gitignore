@@ -5,3 +5,4 @@ node_modules
 scratch/
 game/web/public/glue.wasm
 game/web/dist/
+.vercel

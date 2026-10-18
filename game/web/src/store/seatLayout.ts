@@ -109,10 +109,10 @@ function getScale(totalSeats: number, isMobile: boolean): number {
     if (totalSeats >= 4) return 0.75;
     return 0.88;
   }
-  if (totalSeats >= 10) return 0.60;
-  if (totalSeats >= 8) return 0.72;
-  if (totalSeats >= 6) return 0.80;
-  if (totalSeats >= 4) return 0.88;
+  if (totalSeats >= 10) return 0.68;
+  if (totalSeats >= 8) return 0.80;
+  if (totalSeats >= 6) return 0.86;
+  if (totalSeats >= 4) return 0.92;
   return 1.0;
 }
 

@@ -5,6 +5,7 @@ import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from '../engine/
 import { emptyBoard, updateBoard, type BoardState } from './boardState';
 import { emptyGameplay, reduceGameplay, type GameplayScene } from './gameplayState';
 import { connectionError } from '../engine/connectionMessages';
+import { projectNativeVfx, type NativeVfxEvent } from './nativeVfxEvents';
 import { parseSkillInvokePrompt, type SkillInvokePrompt } from '../engine/skillInvoke';
 export type { SkillInvokePrompt } from '../engine/skillInvoke';
 
@@ -90,6 +91,8 @@ function completedResult(state: GameSnapshot, data: unknown): GameResult {
 
 export interface GameSnapshot {
   phase: GamePhase;
+  /** Monotonic key for remounting round-local board UI after StartGame. */
+  roundId: number;
   connection: ConnectionStatus;
   manifest: GatewayManifest | null;
   progress: string;
@@ -110,13 +113,15 @@ export interface GameSnapshot {
   regularSkills: RegularSkill[];
   initialGeneral: InitialGeneralPrompt | null;
   board: BoardState;
+  nativeVfxEvents: NativeVfxEvent[];
+  nativeVfxSequence: number;
   gameplay: GameplayScene;
   result: GameResult | null;
   translations: Record<string, string>;
 }
 
 export const initialSnapshot: GameSnapshot = {
-  phase: 'boot', connection: { kind: 'booting' }, manifest: null,
+  phase: 'boot', roundId: 0, connection: { kind: 'booting' }, manifest: null,
   progress: '', error: null, rooms: [], roomName: '', roomMode: '', roomIsObserver: false,
   roomDisabledPacks: [], roomDisabledGenerals: [],
   capacity: 0, players: [], observers: [], ownId: null, pendingRequest: null, skillInvoke: null,
@@ -124,6 +129,7 @@ export const initialSnapshot: GameSnapshot = {
   regularSkills: [],
   initialGeneral: null,
   board: emptyBoard(),
+  nativeVfxEvents: [], nativeVfxSequence: 0,
   gameplay: emptyGameplay(),
   result: null,
   translations: {},
@@ -166,6 +172,15 @@ function clearSkillState(state: GameSnapshot): GameSnapshot {
 
 /** Pure reducer: the Lua client has already decoded and handled this event. */
 export function reduceUiEvent(state: GameSnapshot, command: string, data: unknown): GameSnapshot {
+  if (command === 'Animate' || command === 'LogEvent') {
+    const projected = projectNativeVfx(command, data);
+    if (!projected.length) return state;
+    const now = Date.now();
+    const events = projected.map((event, index) => ({ ...event,
+      sequence: state.nativeVfxSequence + index + 1, createdAt: now }));
+    return { ...state, nativeVfxEvents: [...state.nativeVfxEvents, ...events].slice(-64),
+      nativeVfxSequence: state.nativeVfxSequence + events.length };
+  }
   if (command === 'SelfIdentity') return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
     ? { ...state, ownId: data, ...(state.ownId === data ? {} : { fakeSkills: [], regularSkills: [] }) } : state;
   const arr = entries(data);
@@ -185,7 +200,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         result: null,
         capacity: 0, players: [], observers: [], pendingRequest: null, skillInvoke: null, initialGeneral: null,
         fakeSkills: [],
-        regularSkills: [],
+        regularSkills: [], nativeVfxEvents: [],
         board: emptyBoard(), gameplay: emptyGameplay() };
     case 'CancelRequest':
       return { ...state, pendingRequest: null, skillInvoke: null, initialGeneral: null,
@@ -221,7 +236,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
         roomDisabledGenerals: Array.isArray(settings.disabledGenerals) ? settings.disabledGenerals.filter((p): p is string => typeof p === 'string') : [],
         capacity: Number(arr[0]) || 0, pendingRequest: null, skillInvoke: null, initialGeneral: null,
         fakeSkills: [],
-        regularSkills: [],
+        regularSkills: [], nativeVfxEvents: [],
         board: emptyBoard(), gameplay: emptyGameplay() };
     }
     case 'AddPlayer':
@@ -276,13 +291,15 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'RoomOwner':
       return { ...state, players: state.players.map((p) => ({ ...p, owner: p.id === arr[0] })) };
     case 'StartGame':
-      return { ...state, phase: 'playing', pendingRequest: null,
+      return { ...state, phase: 'playing', roundId: state.roundId + 1, pendingRequest: null,
         result: null,
-        skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
+        skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, nativeVfxEvents: [],
+        board: emptyBoard(), gameplay: emptyGameplay() };
     case 'GameOver':
       return { ...state, phase: 'room', pendingRequest: null, skillInvoke: null,
         result: completedResult(state, data),
-        fakeSkills: [], regularSkills: [], initialGeneral: null, board: emptyBoard(), gameplay: emptyGameplay() };
+        fakeSkills: [], regularSkills: [], initialGeneral: null, nativeVfxEvents: [],
+        board: emptyBoard(), gameplay: emptyGameplay() };
     case 'Reconnect':
       // Native ClientBase:reconnect() emits EnterLobby/EnterRoom/StartGame,
       // then ClientPlayer:sendDataToUI() rebuilds the current dashboard, and

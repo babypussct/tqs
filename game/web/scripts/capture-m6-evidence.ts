@@ -7,7 +7,7 @@ import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { loadUpstreamFiles } from './upstream-packages';
 
-const outDir = process.env.TQS_CAPTURE_OUT_DIR || '/Users/otada/.gemini/antigravity/brain/0c526d04-3873-40d7-8f73-d4599c2f79a6';
+const outDir = process.env.TQS_CAPTURE_OUT_DIR || '/Users/otada/.gemini/antigravity/brain/9c4f3e22-d108-4e9f-86d8-5c2eed2ab42f';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const upstream = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
 
@@ -122,16 +122,28 @@ async function run() {
     await page.screenshot({ path: path.join(outDir, '390_portrait_board_target.png') });
     console.log('Saved 390_portrait_board_target.png');
 
-    console.log('4-vfx. Capturing card fly-out and slash impact combat VFX...');
+    console.log('4-vfx. Capturing card fly-out, in-play target indicator beam and slash impact combat VFX...');
     await page.evaluate(() => {
       const api = (window as any).__tqsRealLuaE2e;
       api.store.getState().dispatch('GameLog', '#UseCardToTargets:17:-1:slash');
-      api.store.getState().dispatch('GameLog', '#Damage:17:-1:1:normal:slash');
+      api.store.getState().dispatch('Animate', { type: 'Indicate', from: 17, to: [[-1]] });
+      api.store.getState().dispatch('LogEvent', { type: 'Damage', to: -1, damageType: 'normal_damage', damageNum: 1 });
     });
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, '390_portrait_card_vfx_combat_impact.png') });
     console.log('Saved 390_portrait_card_vfx_combat_impact.png');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(600);
+
+    console.log('4-vfx2. Capturing in-play Snatch (Thuận Thủ) target indicator from center processing area...');
+    await page.evaluate(() => {
+      const api = (window as any).__tqsRealLuaE2e;
+      api.store.getState().dispatch('GameLog', '#UseCardToTargets:17:-1:snatch');
+      api.store.getState().dispatch('Animate', { type: 'Indicate', from: 17, to: [[-1]] });
+    });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(outDir, '390_portrait_snatch_target_indicator.png') });
+    console.log('Saved 390_portrait_snatch_target_indicator.png');
+    await page.waitForTimeout(600);
 
     console.log('4b. Capturing 390x844 portrait board with ten-card hand...');
     await page.evaluate(() => (window as any).__tqsRealLuaE2e.beginVisualHand(10));

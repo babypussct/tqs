@@ -5,6 +5,7 @@ import { useGameStore } from '../store/gameStore';
 import { emptyBoard } from '../store/boardState';
 import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
 import { connectionProgress, connectionError } from './connectionMessages';
+import { createGameSessionForCurrentUser, type GameSession } from '../gameAuth';
 
 export interface GameModeInfo {
   name: string;
@@ -31,6 +32,7 @@ export class GameAdapter {
   private generation = 0;
   private recovery: SessionRecovery | null = null;
   private readonly gateway: string;
+  private gameSession: GameSession | null = null;
 
   constructor(gateway: string) {
     this.gateway = gateway.replace(/\/$/, '');
@@ -38,33 +40,38 @@ export class GameAdapter {
 
   async boot(signal?: AbortSignal): Promise<void> {
     const generation = ++this.generation;
-    useGameStore.getState().update({ phase: 'boot', error: null, progress: 'Đang kết nối Gateway…' });
+    useGameStore.getState().update({ phase: 'boot', error: null, progress: 'Đang kết nối cổng doanh trại…' });
     try {
       const loaded = await loadGatewayBundle(this.gateway, signal, (progress) => {
         if (this.generation === generation) useGameStore.getState().update({ progress });
       });
       if (generation !== this.generation || signal?.aborted) return;
       this.loaded = loaded;
-      useGameStore.getState().update({ phase: 'login', manifest: loaded.manifest, progress: 'Package đã được xác minh' });
+      useGameStore.getState().update({ phase: 'login', manifest: loaded.manifest, progress: 'Dữ liệu chiến trường đã sẵn sàng' });
     } catch (error) {
       if (generation !== this.generation || signal?.aborted) return;
       useGameStore.getState().update({ progress: '', error: String((error as Error).message) });
     }
   }
 
-  async login(username: string, password: string): Promise<void> {
-    if (!this.loaded) throw new Error('Chưa tải và xác minh package Lua');
-    const name = username.trim();
-    if (!name || !password) throw new Error('Nhập tài khoản và mật khẩu hợp lệ');
+  async login(session: GameSession): Promise<void> {
+    if (!this.loaded) throw new Error('Dữ liệu chiến trường chưa được nạp xong. Vui lòng tải lại trang.');
+    const name = session.nativeName.trim();
+    if (!name || !session.ticket || session.expiresAt <= Math.floor(Date.now() / 1000)) {
+      throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    }
+    this.gameSession = session;
     this.disconnect();
     const generation = ++this.generation;
     const store = useGameStore.getState();
-    store.update({ progress: 'Đang khởi tạo Lua WASM…', error: null,
+    store.update({ progress: 'Đang khởi tạo trận địa…', error: null,
       phase: 'login', connection: { kind: 'booting' }, rooms: [], players: [], observers: [], ownId: null, roomIsObserver: false, fakeSkills: [], regularSkills: [], result: null, board: emptyBoard() });
     useGameStore.getState().update({ gameplay: emptyGameplay() });
 
-    // Keep credentials in the connection only. Neither Zustand nor browser
-    // storage receives them; this server auto-registers unknown usernames.
+    // The browser keeps only the short-lived signed ticket in the connection.
+    // The native server accepts it only after its HMAC and expiry checks; the
+    // old arbitrary username/password auto-registration path is disabled when
+    // tqsAuthRequired is enabled in the native deployment.
     let hadOnline = false;
     let serverRejected = false;
     let recovery: SessionRecovery;
@@ -75,7 +82,7 @@ export class GameAdapter {
         progress: '', error: useGameStore.getState().error || connectionError(reason) });
     };
     const connection = new GameConnection({
-      files: this.loaded.files, username: name, password,
+      files: this.loaded.files, username: name, password: session.ticket,
       md5: this.loaded.manifest.md5,
       uuid: crypto.randomUUID(),
       wasmUrl: `${import.meta.env.BASE_URL}glue.wasm`,
@@ -124,7 +131,10 @@ export class GameAdapter {
         useGameStore.getState().update({ progress: `Mất kết nối. Đang thử khôi phục phiên (${attempt}/5)…`,
           pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, gameplay: emptyGameplay(), board: emptyBoard() });
       },
-      connect: () => { if (generation === this.generation) connection.connect(); },
+      connect: () => {
+        if (generation !== this.generation) return;
+        void this.refreshSessionBeforeReconnect(connection, generation, endSession);
+      },
       timeout: () => { if (generation === this.generation) connection.abortTransport('recovery timeout'); },
       exhausted: () => { if (generation === this.generation) endSession('Không thể khôi phục sau 5 lần thử. Hãy kiểm tra mạng và đăng nhập lại.'); },
     });
@@ -137,6 +147,19 @@ export class GameAdapter {
       if (generation !== this.generation) return;
       this.disconnect();
       useGameStore.getState().update({ phase: 'login', progress: '', error: String((error as Error).message) });
+    }
+  }
+
+  private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number, endSession: (reason: string) => void) {
+    try {
+      const session = await createGameSessionForCurrentUser();
+      if (generation !== this.generation || this.connection !== connection) return;
+      this.gameSession = session;
+      connection.updateCredentials(session.nativeName, session.ticket);
+      connection.connect();
+    } catch (error) {
+      if (generation !== this.generation || this.connection !== connection) return;
+      endSession(error instanceof Error ? error.message : 'Không thể cấp lại vé vào game.');
     }
   }
 
@@ -157,6 +180,16 @@ export class GameAdapter {
     return this.requireConnection().lua.call<RoomPacks>('__web_room_packs', 'new_heg_mode');
   }
 
+  getAdminDisabledPacks(): string[] {
+    const policy = this.gameSession?.poolPolicy;
+    if (!policy) return [];
+    return [...new Set([...policy.disabledPacks.generals, ...policy.disabledPacks.cards])];
+  }
+
+  getGameDisplayName(): string {
+    return this.gameSession?.displayName || 'Chúa Công';
+  }
+
   getRoomGenerals(disabledPacks: string[] = []): RoomGeneral[] {
     return this.requireConnection().lua.call<RoomGeneral[]>('__web_room_generals', 'new_heg_mode', disabledPacks);
   }
@@ -165,13 +198,26 @@ export class GameAdapter {
     return this.requireConnection().lua.call<PoolSummary>('__web_room_pool_summary', 'new_heg_mode', disabledPacks, disabledGenerals);
   }
 
-  createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = [], disabledGenerals: string[] = [], modeSettings: Record<string, boolean> = {}) {
+  private async refreshGameSession(): Promise<void> {
+    const current = this.gameSession;
+    if (!current) throw new Error('Chưa có phiên TQSShop để tạo phòng');
+    const refreshed = await createGameSessionForCurrentUser();
+    if (refreshed.uid !== current.uid || refreshed.nativeName !== current.nativeName) {
+      throw new Error('Danh tính TQSShop đã thay đổi. Hãy ngắt kết nối và đăng nhập lại.');
+    }
+    this.gameSession = refreshed;
+    this.connection?.updateCredentials(refreshed.nativeName, refreshed.ticket);
+  }
+
+  async createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = [], disabledGenerals: string[] = [], modeSettings: Record<string, boolean> = {}) {
     const roomName = name.trim();
     if (!roomName || roomName.length > 80) throw new Error('Tên phòng phải dài từ 1 đến 80 ký tự');
+    await this.refreshGameSession();
     const conn = this.requireConnection();
     const feasible = conn.lua.call<boolean>('__web_room_feasible', 'new_heg_mode', capacity, timeout);
     if (!feasible) throw new Error('Số người chơi không hợp lệ theo luật Quốc Chiến');
-    const pool = this.getRoomPoolSummary(disabledPacks, disabledGenerals);
+    const effectiveDisabledPacks = [...new Set([...this.getAdminDisabledPacks(), ...disabledPacks])];
+    const pool = this.getRoomPoolSummary(effectiveDisabledPacks, disabledGenerals);
     if (pool.generals < capacity * 5) {
       throw new Error(`Bể tướng còn ${pool.generals} tướng khác tên, cần ít nhất ${capacity * 5} cho ${capacity} người.`);
     }
@@ -186,7 +232,7 @@ export class GameAdapter {
         disableSameConvert: false, enableObserverViewCard: false, enableObserverViewFakeSkills: false },
       _mode: Object.fromEntries(Object.entries(modeSettings).filter(([key, value]) =>
         ['old_battle_royal', 'enterBattleRoyalOnFirstShuffle', 'revealAllOnStart'].includes(key) && typeof value === 'boolean')),
-      disabledPack: [...disabledPacks], disabledGenerals: [...disabledGenerals] };
+      disabledPack: effectiveDisabledPacks, disabledGenerals: [...disabledGenerals] };
     this.notify('CreateRoom', [roomName, capacity, timeout, settings]);
   }
 
