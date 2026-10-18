@@ -24,6 +24,13 @@
 | G7 release | **TQSShop SSO + admin access + game permissions + Pages gateway LIVE bounded; rotation auto-registration STAGED; official OPEN** | Main commit `ef77ae6d` đã được deploy: Vercel TQSShop `dpl_GhQoZxyHsZxcDVgiFYpsFaPA442j` READY, Pages `f899c0b0.tqsvn.pages.dev` và production alias `https://tqsvn.pages.dev`, Firebase rules/indexes released. Chrome hard-reload xác nhận sidebar `Tam Quốc Sát — Quốc Chiến` và modal `Phân quyền` có nhóm quyền mới; API no-token `401`, CORS `204`, gateway health `200 ok`; native source release/14 package pin vẫn giữ nguyên. Render remains suspended. | Secret rotation, uptime/quota/rollback and official sign-off remain OPEN; authenticated valid-ticket gameplay and full release acceptance are still separate gates. Quick Tunnel KV may need manual hostname update while registrar timer is disabled. See `deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md`. |
 | `PLAYABLE_MOBILE` | **FALSE** | — | Chỉ đóng sau khi P0 gameplay/native interaction và release criteria pass. |
 
+**GAME-ACCESS-04 — PWA Google OAuth popup không phản hồi (LIVE bounded, 18/10/2026):**
+
+- [x] Chuẩn bị Firebase local persistence và trạng thái auth trước khi bật nút; gọi thao tác từ click ngay, mở popup trước các `await`; thông báo rõ popup bị chặn/đóng, lỗi mạng và lỗi domain.
+- [x] Chrome E2E fixture mô phỏng popup bị chặn **PASS** và production Chrome mobile viewport 390×844 **PASS** (user activation + thông báo retry). `typecheck`, full production build/audits, PWA SW test, Pages gateway **5/5**, `git diff --check` PASS.
+- [x] Cloudflare Pages production `6c206b9a.tqsvn.pages.dev` và alias `https://tqsvn.pages.dev`: JS/CSS/manifest/SW byte-match local, gateway `200`, API thiếu Bearer `401`.
+- [ ] Xác nhận đăng nhập Google thành công và phiên được giữ trên PWA **iPhone cài ở Màn hình chính** bằng thao tác tài khoản thật; Chrome E2E không thay thế nghiệm thu iOS vật lý.
+
 **GAME-ACCESS-01 — TQSShop SSO, duyệt người chơi và khóa pool (DEPLOYED bounded, 18/10/2026):**
 
 - TQSShop API xác thực Firebase ID token, tạo request `gameAccess/{uid}` ở trạng thái `pending`, chỉ phát vé HMAC ngắn hạn khi admin duyệt; native source patch kiểm tra chữ ký/expiry và chặn đường đăng nhập username/password tự chọn khi `tqsAuthRequired=true`.

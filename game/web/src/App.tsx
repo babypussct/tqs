@@ -65,7 +65,15 @@ export default function App() {
     if (busy) return;
     setBusy(true);
     useGameStore.getState().update({ error: null });
-    void Promise.resolve().then(action).catch((error: unknown) => {
+    // OAuth popups must start in the original click event. Scheduling the
+    // action in a microtask loses user activation on some installed PWAs.
+    let result: void | Promise<void>;
+    try {
+      result = action();
+    } catch (error) {
+      result = Promise.reject(error);
+    }
+    void Promise.resolve(result).catch((error: unknown) => {
       useGameStore.getState().update({ error: error instanceof Error ? error.message : String(error) });
     }).finally(() => setBusy(false));
   };

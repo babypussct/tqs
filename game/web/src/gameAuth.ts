@@ -56,6 +56,12 @@ async function ensurePersistence(): Promise<void> {
   await persistenceReady;
 }
 
+/** Prepare Firebase storage before the user presses the Google button. */
+export async function prepareGameAuth(): Promise<void> {
+  await ensurePersistence();
+  await gameAuth.authStateReady();
+}
+
 async function requestGameSession(user: User): Promise<GameSession> {
   const idToken = await user.getIdToken();
   const response = await fetch(sessionUrl, {
@@ -98,8 +104,32 @@ async function requestGameSession(user: User): Promise<GameSession> {
 }
 
 export async function signInAndCreateGameSession(): Promise<GameSession> {
-  await ensurePersistence();
-  const result = await signInWithPopup(gameAuth, googleProvider);
+  // Do not await storage setup here: iOS Home Screen PWAs can reject a
+  // window.open when the click's transient user activation has expired.
+  // LoginScreen enables its button only after prepareGameAuth succeeds.
+  let result: Awaited<ReturnType<typeof signInWithPopup>>;
+  try {
+    result = await signInWithPopup(gameAuth, googleProvider);
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+      throw new GameAccessError('GOOGLE_POPUP_BLOCKED',
+        'Không mở được cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên hoặc thử mở trang bằng Safari/Chrome.');
+    }
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      throw new GameAccessError('GOOGLE_POPUP_CLOSED',
+        'Cửa sổ Google đã đóng trước khi đăng nhập hoàn tất. Hãy bấm Tiếp tục với Google để thử lại.');
+    }
+    if (code === 'auth/unauthorized-domain') {
+      throw new GameAccessError('GOOGLE_DOMAIN_NOT_AUTHORIZED',
+        'Tên miền game chưa được cấp quyền đăng nhập Google. Vui lòng liên hệ quản trị viên.');
+    }
+    if (code === 'auth/network-request-failed') {
+      throw new GameAccessError('GOOGLE_NETWORK_ERROR',
+        'Không kết nối được với dịch vụ đăng nhập Google. Kiểm tra mạng và thử lại.');
+    }
+    throw error;
+  }
   return requestGameSession(result.user);
 }
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { GameAdapter } from './engine/gameAdapter';
 import { useGameStore } from './store/gameStore';
 import HeroSpotlight from './HeroSpotlight';
-import { createGameSessionForCurrentUser, GameAccessError, logoutGame, signInAndCreateGameSession, watchGameUser } from './gameAuth';
+import { createGameSessionForCurrentUser, GameAccessError, logoutGame, prepareGameAuth, signInAndCreateGameSession, watchGameUser } from './gameAuth';
 
 interface LoginScreenProps {
   adapter: GameAdapter;
@@ -21,10 +21,20 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
   const connection = useGameStore((s) => s.connection);
   const storeError = useGameStore((s) => s.error);
 
-  useEffect(() => watchGameUser((user) => {
-    setGameUser(user);
-    setAuthLoading(false);
-  }), []);
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = watchGameUser((user) => {
+      if (active) setGameUser(user);
+    });
+    void prepareGameAuth().then(() => {
+      if (active) setAuthLoading(false);
+    }).catch(() => {
+      if (active) {
+        setLocalError('Không khởi tạo được phiên đăng nhập trên thiết bị này. Kiểm tra cài đặt lưu trữ của trình duyệt và tải lại trang.');
+      }
+    });
+    return () => { active = false; unsubscribe(); };
+  }, []);
 
   const connectToBattlefield = () => {
     setLocalError(null);
@@ -195,7 +205,9 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
                   type="button"
                   onClick={connectToBattlefield}
                 >
-                  {connection.kind === 'authenticating' ? (
+                  {busy && !isConnecting ? (
+                    'Đang đăng nhập…'
+                  ) : connection.kind === 'authenticating' ? (
                     'Đang kiểm tra lệnh bài…'
                   ) : connection.kind === 'connecting' ? (
                     'Đang vào chiến trường…'

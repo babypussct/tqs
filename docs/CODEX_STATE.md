@@ -8,6 +8,8 @@ Hoàn thiện client Tam Quốc Sát trên trình duyệt điện thoại bằng
 
 ## Handoff ngắn
 
+- **GAME-ACCESS-04 / Google popup của PWA game không phản hồi (LIVE bounded, 18/10/2026):** Trong [`App.tsx`](../game/web/src/App.tsx), `run()` gọi thao tác trực tiếp từ click thay vì xếp `Promise.resolve().then(action)`; [`gameAuth.ts`](../game/web/src/gameAuth.ts) và [`LoginScreen.tsx`](../game/web/src/LoginScreen.tsx) khởi tạo persistence + Firebase auth state trước khi bật nút Google, không `await` trước `signInWithPopup`, bổ sung lỗi popup bị chặn/đóng/tên miền/mạng và trạng thái `Đang đăng nhập…`. Regression Chrome chạy App + Firebase SDK và mô phỏng popup bị chặn ở [`auth-popup-e2e/run.ts`](../game/web/scripts/auth-popup-e2e/run.ts): **PASS** (user activation còn hiệu lực, auth handler được mở, thông báo retry hiển thị). `npm run typecheck`, full production build/audit, `test:e2e:pwa`, Pages gateway **5/5**, `git diff --check` PASS. Cloudflare Pages production deployment `6c206b9a.tqsvn.pages.dev` phục vụ `https://tqsvn.pages.dev`; JS/CSS/manifest/SW public khớp byte bản build, `/gateway/healthz` và manifest `200`, session thiếu Bearer `401`. Chrome production viewport 390×844 kiểm chứng popup user activation + xử lý bị chặn **PASS**. **Chưa kiểm iOS standalone trên điện thoại thật hay hoàn tất Google OAuth với tài khoản thật ở deployment mới**; cần device smoke và xác nhận phiên Firebase sau khi trở về PWA. Không thay native/VM, Vercel, KV hoặc rule Firebase.
+
 - **GAME-ACCESS-03 / lỗi Lua `invalid or duplicate disabled package` (LIVE bounded, 18/10/2026):** nguồn lỗi là policy khóa pack quản trị cũ chứa ID không thuộc whitelist `new_heg_mode` (`hegemony_nos`, `m_lord_cards`, ID lạ) hoặc trùng, bị Lua `__web_room_pool_summary` từ chối mỗi lần sảnh render. [`gameAdapter.ts`](../game/web/src/engine/gameAdapter.ts) lọc/khử trùng policy theo inventory `__web_room_packs` và dùng tập hợp hợp lệ trong `createRoom`; [`LobbyScreen.tsx`](../game/web/src/LobbyScreen.tsx) khởi tạo lock hợp lệ và thông báo ID đã bỏ qua; [`AdminGameControl.tsx`](../src/components/admin/AdminGameControl.tsx) bỏ hai pack bị mode loại khỏi checkbox và chặn lưu lại chúng qua custom ID. Regression Lua+CBOR ở [`room-pools.test.ts`](../game/web/scripts/room-pools.test.ts) PASS **1/1** (14 general packs, 4 card packs). Browser real-Lua E2E với fixture SSO cập nhật PASS cả đường tạo phòng thường và policy lỗi, thêm scenario kiểm tra UI cảnh báo/checkbox/CBOR; **full suite 64/65 PASS**, riêng UI-03 desktop 8 ghế có lỗi chồng panel không thuộc phạm vi fix. `game/web` typecheck/build PASS; root build PASS nhưng đã phục hồi tracked `dist/` và dọn riêng output untracked; root typecheck (8 GB) FAIL bởi các lỗi nền ở script/snapshot. Đã deploy Cloudflare Pages bản `396d63cb.tqsvn.pages.dev` và alias production `https://tqsvn.pages.dev`; JS/CSS production trùng byte với build local, gateway healthz `200 ok`, manifest `200`, Pages session POST không Bearer `401`. Vercel TQSShop production `dpl_8ZPsRTuSVtBrdAJCqa4Zxti2jWLB` `READY` tại `https://tqsshop.vercel.app`: HTTP `200`, admin JS bundle `200` có cả guard ID `hegemony_nos`/`m_lord_cards` và thông báo từ chối; session POST không Bearer `401`. Chưa chạy authenticated production smoke bằng account approved có policy cũ. **Kiểm tra bổ sung:** `npm run test:e2e:lua -- --room-pools` **3/3 PASS**, `git diff --check` PASS. **Tiếp theo:** dùng account được duyệt để xác minh policy cũ tạo phòng trên production; tách lỗi UI-03 desktop sang ticket layout. Không restart native/VM hay thay KV gateway trong đợt phát hành này.
 
 - **GAME-ACCESS-02 / production Firebase auth repair (LIVE, 18/10/2026):** đã tạo private key production mới cho đúng Firebase project và cấu hình lại Vercel Production cùng `FIREBASE_PROJECT_ID`/`FIREBASE_DATABASE_ID`; không ghi nội dung key vào repository hoặc tài liệu. Source [`api/_lib/firebaseAdmin.ts`](../api/_lib/firebaseAdmin.ts) giờ truyền project ID tường minh cho Firebase Admin và fail-closed nếu JSON credential thuộc project khác; commit `233f5be4` đã push lên `main`, Vercel deployment `6b1KuAyaFpqcDsQo8tad2X1bsjGb` báo `READY`. File key tải tạm đã được đưa vào macOS Trash sau khi xác nhận deployment; clipboard đã được làm rỗng. Cloudflare Pages deployment có Functions là `553116bd.tqsvn.pages.dev`, alias production `https://tqsvn.pages.dev`; HTML production có đủ cả `mobile-web-app-capable` và `apple-mobile-web-app-capable`, POST không Bearer vẫn trả `401` đúng boundary. Chrome với phiên Firebase thật đã gọi được session và hiển thị `Chiến Thư Đang Chờ Phê Chuẩn` thay cho lỗi `401`, nghĩa là token đã được xác thực; tài khoản hiện còn chờ admin cấp quyền tham chiến nên chưa claim gameplay `200`. `game/web` typecheck/build và `git diff --check` PASS; root typecheck vẫn có lỗi nền ở các script `game/web`/snapshot `scratch/restores`, không thuộc patch này.
@@ -251,26 +253,27 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-18T16:09:44.752Z (UTC).
-- Nhánh: `main` · HEAD: `d84ca2079b0d`.
-- File thay đổi hiển thị: 7 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-18T16:29:19.616Z (UTC).
+- Nhánh: `main` · HEAD: `fadb29c44a3e`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/room-pools.test.ts
- M game/web/src/LobbyScreen.tsx
- M game/web/src/engine/gameAdapter.ts
- M src/components/admin/AdminGameControl.tsx
+ M game/web/package.json
+ M game/web/src/App.tsx
+ M game/web/src/LoginScreen.tsx
+ M game/web/src/gameAuth.ts
+?? game/web/auth-e2e.html
+?? game/web/scripts/auth-popup-e2e/run.ts
+?? game/web/src/authE2eFixture.tsx
 ```
 
 Ba commit gần nhất:
 
 ```text
+fadb29c4 fix: sanitize disabled game packages before room creation
 d84ca207 docs: record production auth repair
 233f5be4 fix: align production Firebase auth project
-cb1abd31 docs: refresh final main checkpoint
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
