@@ -13,6 +13,8 @@ const DEFAULT_PERMISSIONS: IAdminPermissions = {
   manageDiscounts: false,
   manageSettings: false,
   manageRoles: false,
+  manageGameAccess: false,
+  manageGamePool: false,
 };
 
 const TIER_COLORS = {
@@ -90,7 +92,13 @@ export default function AdminUsers() {
 
   const handleSavePermissions = async (userId: string, permissions: IAdminPermissions | null) => {
     try {
-      const updateData = permissions ? { adminPermissions: permissions } : { adminPermissions: null };
+      // The route guard and Firestore Rules both require the role and the
+      // permission map to agree. Persist them atomically so "Cấp Admin"
+      // actually promotes a customer and removing all permissions revokes
+      // the admin role as well.
+      const updateData = permissions
+        ? { role: 'admin' as const, adminPermissions: permissions }
+        : { role: 'customer' as const, adminPermissions: null };
       await setDoc(doc(db, 'users', userId), updateData, { merge: true });
       toast.success('Đã cấu hình quyền Quản trị viên');
       setEditingUser(null);
@@ -278,7 +286,7 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
   const [permissions, setPermissions] = useState<IAdminPermissions>(
     user.adminPermissions || DEFAULT_PERMISSIONS
   );
-  const [isAdmin, setIsAdmin] = useState<boolean>(!!user.adminPermissions);
+  const [isAdmin, setIsAdmin] = useState<boolean>(user.role === 'admin' && !!user.adminPermissions);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -325,6 +333,8 @@ function PermissionModal({ user, onClose, onSave }: { user: AppUser, onClose: ()
                 { key: 'manageDiscounts' as keyof IAdminPermissions, label: 'Mã Giảm giá' },
                 { key: 'manageSettings' as keyof IAdminPermissions, label: 'Thiết lập Hệ thống' },
                 { key: 'manageRoles' as keyof IAdminPermissions, label: 'Quản lý Thành viên' },
+                { key: 'manageGameAccess' as keyof IAdminPermissions, label: 'Duyệt người chơi game' },
+                { key: 'manageGamePool' as keyof IAdminPermissions, label: 'Khóa bể tướng / bể bài' },
               ].map(module => (
                 <label key={module.key} className="flex items-center justify-between p-3 border border-slate-100 dark:border-zinc-800 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/30">
                   <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">{module.label}</span>

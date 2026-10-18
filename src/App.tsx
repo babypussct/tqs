@@ -36,9 +36,20 @@ const SupportPage = lazy(() => import('./components/SupportPage'));
 
 // Protected Route Component - Admin only
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading || isAdmin) return;
+    toast.error(
+      user
+        ? 'Tài khoản này chưa được cấp quyền quản trị viên.'
+        : 'Vui lòng đăng nhập bằng tài khoản quản trị viên để tiếp tục.',
+      { id: 'admin-access-denied' },
+    );
+  }, [isAdmin, loading, user]);
+
   if (loading) return <div>Đang tải...</div>;
-  return isAdmin ? <>{children}</> : <Navigate to="/" />;
+  return isAdmin ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 // Protected Route Component - Requires login

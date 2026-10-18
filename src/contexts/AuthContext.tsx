@@ -98,12 +98,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       manageDiscounts: true,
       manageSettings: true,
       manageRoles: true,
+      manageRewards: true,
+      managePosts: true,
+      manageGameAccess: true,
+      manageGamePool: true,
     };
 
     const subscribeToAuthority = async () => {
       let hasSuperAdminClaim = false;
       try {
-        const tokenResult = await user.getIdTokenResult();
+        // Claims are set server-side and Firebase may otherwise keep the old
+        // ID token for up to an hour. Force one refresh here so a newly
+        // provisioned Super Admin does not remain locked out after signing
+        // in with an already-open session.
+        const tokenResult = await user.getIdTokenResult(true);
         hasSuperAdminClaim = tokenResult.claims.super_admin === true;
       } catch (error) {
         console.error('Error reading Firebase authority claims:', error);
