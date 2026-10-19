@@ -40,6 +40,40 @@ const nativeCardAssetPaths = [
 ];
 const upstreamRoot = path.resolve(__dirname, '../../scratch/upstream');
 
+const RUNTIME_MEDIA_ROOTS = [
+  'image/card',
+  'audio/card',
+  'image/anim',
+] as const;
+
+/** Keep the browser's package resolver in lockstep with the checked-in runtime media. */
+function collectRuntimeMediaAssetPaths(): string[] {
+  const packagesRoot = path.join(runtimeRoot, 'packages');
+  if (!fs.existsSync(packagesRoot)) return [];
+  const result: string[] = [];
+  const walk = (directory: string, relativeDirectory: string) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const absolutePath = path.join(directory, entry.name);
+      const relativePath = path.join(relativeDirectory, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath, relativePath);
+        continue;
+      }
+      if (!entry.isFile() || !/\.(?:png|jpe?g|webp|mp3)$/i.test(entry.name)) continue;
+      const normalized = relativePath.split(path.sep).join('/');
+      if (RUNTIME_MEDIA_ROOTS.some((root) => normalized.includes(`/${root}/`))) {
+        result.push(normalized);
+      }
+    }
+  };
+  for (const entry of fs.readdirSync(packagesRoot, { withFileTypes: true })) {
+    if (entry.isDirectory()) walk(path.join(packagesRoot, entry.name), `packages/${entry.name}`);
+  }
+  return result.sort();
+}
+
+const runtimeMediaAssetPaths = collectRuntimeMediaAssetPaths();
+
 type CatalogCard = {
   name?: unknown;
   art?: { src?: unknown };
@@ -112,9 +146,9 @@ const servePackagesPlugin: Plugin = {
         const isInsideRuntime = relativeToRuntime === '' ||
           (!relativeToRuntime.startsWith('..') && !path.isAbsolute(relativeToRuntime));
         const ext = path.extname(filePath).toLowerCase();
-        const supported = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+        const supported = new Set(['.png', '.jpg', '.jpeg', '.webp', '.mp3']);
         if (isInsideRuntime && supported.has(ext) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-          res.setHeader('Content-Type', ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg');
+          res.setHeader('Content-Type', ext === '.mp3' ? 'audio/mpeg' : ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg');
           res.setHeader('Cache-Control', 'no-cache');
           fs.createReadStream(filePath).pipe(res);
           return;
@@ -124,7 +158,8 @@ const servePackagesPlugin: Plugin = {
     });
   },
   generateBundle() {
-    for (const relativePath of nativeCardAssetPaths) {
+    const mediaPaths = [...new Set([...nativeCardAssetPaths, ...runtimeMediaAssetPaths])];
+    for (const relativePath of mediaPaths) {
       const filePath = path.resolve(runtimeRoot, relativePath);
       if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
         this.warn(`Native card asset is unavailable and will use the neutral fallback: ${relativePath}`);

@@ -375,6 +375,8 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'SetBanner':
     case 'GameLog':
     case 'PilesUpdate':
+    case 'ShowVirtualCard':
+    case 'TableCardsFlash':
     case 'SelfHand':
       return { ...state, board: updateBoard(state.board, command, data, state.players.map((p) => p.id), state.ownId,
         state.roomMode === 'new_heg_mode') };
@@ -387,7 +389,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     }
     case 'ErrorMsg':
     case 'ErrorDlg':
-      return { ...state, error: connectionError(typeof data === 'string' ? data : JSON.stringify(data)) };
+      return { ...state, error: connectionError(data) };
     default:
       return state;
   }

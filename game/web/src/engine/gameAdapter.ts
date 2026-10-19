@@ -4,8 +4,9 @@ import { GameConnection, webSocketOpener } from './connection';
 import { useGameStore } from '../store/gameStore';
 import { emptyBoard } from '../store/boardState';
 import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
-import { connectionProgress, connectionError } from './connectionMessages';
+import { connectionProgress, connectionError, userFacingError } from './connectionMessages';
 import type { GameSession } from '../gameAuth';
+import { normalizeInitialGeneralCount } from '../../../../src/game/gamePoolPacks';
 
 export interface GameModeInfo {
   name: string;
@@ -50,7 +51,7 @@ export class GameAdapter {
       useGameStore.getState().update({ phase: 'login', manifest: loaded.manifest, progress: 'Dữ liệu chiến trường đã sẵn sàng' });
     } catch (error) {
       if (generation !== this.generation || signal?.aborted) return;
-      useGameStore.getState().update({ progress: '', error: String((error as Error).message) });
+      useGameStore.getState().update({ progress: '', error: userFacingError(error, 'boot') });
     }
   }
 
@@ -75,7 +76,7 @@ export class GameAdapter {
     let hadOnline = false;
     let serverRejected = false;
     let recovery: SessionRecovery;
-    const endSession = (reason: string) => {
+    const endSession = (reason: unknown) => {
       recovery.stop();
       useGameStore.getState().update({ phase: 'login', pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, observers: [], roomIsObserver: false,
         board: emptyBoard(), gameplay: emptyGameplay(), result: null,
@@ -146,11 +147,11 @@ export class GameAdapter {
     } catch (error) {
       if (generation !== this.generation) return;
       this.disconnect();
-      useGameStore.getState().update({ phase: 'login', progress: '', error: String((error as Error).message) });
+      useGameStore.getState().update({ phase: 'login', progress: '', error: userFacingError(error, 'connection') });
     }
   }
 
-  private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number, endSession: (reason: string) => void) {
+  private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number, endSession: (reason: unknown) => void) {
     try {
       const { createGameSessionForCurrentUser } = await import('../gameAuth');
       const session = await createGameSessionForCurrentUser();
@@ -160,7 +161,7 @@ export class GameAdapter {
       connection.connect();
     } catch (error) {
       if (generation !== this.generation || this.connection !== connection) return;
-      endSession(error instanceof Error ? error.message : 'Không thể cấp lại vé vào game.');
+      endSession(error);
     }
   }
 
@@ -203,6 +204,10 @@ export class GameAdapter {
     return this.gameSession?.displayName || 'Chúa Công';
   }
 
+  getInitialGeneralCount(): number {
+    return normalizeInitialGeneralCount(this.gameSession?.poolPolicy.generalNum);
+  }
+
   getRoomGenerals(disabledPacks: string[] = []): RoomGeneral[] {
     return this.requireConnection().lua.call<RoomGeneral[]>('__web_room_generals', 'new_heg_mode', disabledPacks);
   }
@@ -232,8 +237,9 @@ export class GameAdapter {
     if (!feasible) throw new Error('Số người chơi không hợp lệ theo luật Quốc Chiến');
     const effectiveDisabledPacks = [...new Set([...this.getAdminDisabledPacks(), ...disabledPacks])];
     const pool = this.getRoomPoolSummary(effectiveDisabledPacks, disabledGenerals);
-    if (pool.generals < capacity * 5) {
-      throw new Error(`Bể tướng còn ${pool.generals} tướng khác tên, cần ít nhất ${capacity * 5} cho ${capacity} người.`);
+    const generalNum = this.getInitialGeneralCount();
+    if (pool.generals < capacity * generalNum) {
+      throw new Error(`Bể tướng còn ${pool.generals} tướng khác tên, cần ít nhất ${capacity * generalNum} cho ${capacity} người.`);
     }
     if (pool.cards < capacity * 4) {
       throw new Error(`Bể bài còn ${pool.cards} lá, cần ít nhất ${capacity * 4} lá chia ban đầu.`);
@@ -241,7 +247,7 @@ export class GameAdapter {
     // Match native _game settings: choosing generals and creating requests
     // require generalNum/generalTimeout; luckTime controls the opening redraw.
     const settings = { gameMode: 'new_heg_mode', roomName, password: '',
-      _game: { generalNum: 5, generalTimeout: timeout, timeoutAsGeneralTimeout: true,
+      _game: { generalNum, generalTimeout: timeout, timeoutAsGeneralTimeout: true,
         luckTime: 0, enableFreeAssign: false, enableDeputy: true,
         disableSameConvert: false, enableObserverViewCard: false, enableObserverViewFakeSkills: false },
       _mode: Object.fromEntries(Object.entries(modeSettings).filter(([key, value]) =>

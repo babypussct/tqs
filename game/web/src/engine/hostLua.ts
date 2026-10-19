@@ -432,6 +432,136 @@ local function notify_reconnect_skill_projection(command, data)
   return true
 end
 
+-- Project only the visible face of a table card. In FreeKill, a card in
+-- Processing is normally public, but VisibilitySkill may still conceal it.
+-- Never resolve a hidden ID into its true name or artwork on the JS side.
+local function project_public_card(card, owner)
+  if not card then return nil end
+  local result = {name = card.name, suit = card.suit, number = card.number}
+  local subtype_ok, subtype = pcall(card.getSubtypeString, card)
+  if subtype_ok and type(subtype) == 'string' and #subtype <= 40 then result.subtype = subtype end
+  local package = card.package
+  local extension = package and package.extensionName
+  if type(extension) == 'string' and #extension <= 120 and extension ~= '' then result.extension = extension end
+  if type(card.getPicName) == 'function' then
+    local pic_ok, pic_name = pcall(card.getPicName, card)
+    if pic_ok and type(pic_name) == 'string' and #pic_name <= 120 and pic_name ~= '' then
+      result.picName = pic_name
+    end
+  end
+  if result.subtype == 'weapon' and type(card.getAttackRange) == 'function' then
+    local range_ok, range = pcall(card.getAttackRange, card, owner)
+    if range_ok and finite_number(range) then result.range = range end
+  end
+  return result
+end
+
+local web_table_notes = {}
+local web_table_virtual_names = {}
+local web_pending_discard = {}
+-- FreeKill's parseMsg() can return translated, multi-line annotations much
+-- longer than a tooltip. Keep the complete native text within the bridge's
+-- bounded message budget instead of dropping notes after 240 UTF-8 bytes.
+local WEB_TABLE_NOTE_MAX_BYTES = 65536
+-- RoomModel.qml constructs the table CardModel with visible_data[id] at
+-- MoveCards time. Rechecking cardVisible(id) later loses moveVisible,
+-- visiblePlayers and VisibilitySkill's move-specific answer.
+local web_table_visibility = {}
+local function capture_table_visibility(data)
+  if type(data) ~= 'table' or type(data.merged) ~= 'table' then return end
+  for _, move in ipairs(data.merged) do
+    if type(move) == 'table' and type(move.ids) == 'table' then
+      local from_table = move.fromArea == Card.Processing or move.fromArea == Card.DiscardPile
+      local to_table = move.toArea == Card.Processing or move.toArea == Card.DiscardPile
+      for _, id in ipairs(move.ids) do
+        if type(id) == 'number' then
+          if to_table then
+            if not from_table or web_table_visibility[id] == nil then
+              -- RoomModel reuses the known flag for cards already on its
+              -- processing/discard models. Visible equipment and our own
+              -- hand also have an existing face-up model.
+              local source_known = (move.fromArea == Card.PlayerEquip or
+                move.fromArea == Card.PlayerJudge or
+                (move.fromArea == Card.PlayerHand and Self and move.from == Self.id))
+              web_table_visibility[id] = (source_known or data[tostring(id)] == true) and true or false
+            end
+            if move.toArea == Card.DiscardPile and #web_pending_discard < 200 then
+              -- TablePile.qml keeps newly discarded cards visible during its
+              -- 1500ms two-phase vanish timer, even after Processing is empty.
+              -- Defer projection until moveCards has applied native footnotes.
+              web_pending_discard[#web_pending_discard + 1] = id
+            end
+          else
+            web_table_visibility[id] = nil
+          end
+        end
+      end
+    end
+  end
+end
+local function in_native_table(id)
+  local c = ClientInstance
+  return c and (table.contains(c.processing_area or {}, id) or table.contains(c.discard_pile or {}, id))
+end
+
+local function table_card_ids_for_annotation(id, virtual)
+  if type(id) ~= 'number' then return {} end
+  if not virtual then return in_native_table(id) and {id} or {} end
+  -- RoomModel.find() updates the *first* matching model, checking Processing
+  -- before DiscardPile. Do the same when virtual identities are shared.
+  local c = ClientInstance
+  if not c then return {} end
+  for _, physical_id in ipairs(c.processing_area or {}) do
+    local card = Fk:getCardById(physical_id)
+    if card and card.virt_id == id then return {physical_id} end
+  end
+  for _, physical_id in ipairs(c.discard_pile or {}) do
+    local card = Fk:getCardById(physical_id)
+    if card and card.virt_id == id then return {physical_id} end
+  end
+  return {}
+end
+
+local function project_table_card(id)
+  local visible = web_table_visibility[id]
+  if visible == nil and Self and type(Self.cardVisible) == 'function' then
+    local ok, known = pcall(Self.cardVisible, Self, id)
+    visible = ok and known == true
+  end
+  if not visible then return {known = false} end
+  local card = Fk:getCardById(id)
+  local result = project_public_card(card, nil)
+  if not result then return {known = false} end
+  result.known = true
+  local note = web_table_notes[id]
+  local virtual_name = web_table_virtual_names[id]
+  if note then result.footnote = note end
+  if virtual_name then result.virtName = virtual_name end
+  return result
+end
+
+local function emit_web_piles()
+  local client = ClientInstance
+  if not client then return end
+  local draw = client.draw_pile or {}
+  local discard = client.discard_pile or {}
+  local processing = client.processing_area or {}
+  local active = {}
+  for _, id in ipairs(discard) do active[id] = true end
+  for _, id in ipairs(processing) do active[id] = true end
+  for id in pairs(web_table_notes) do if not active[id] then web_table_notes[id] = nil end end
+  for id in pairs(web_table_virtual_names) do if not active[id] then web_table_virtual_names[id] = nil end end
+  for id in pairs(web_table_visibility) do if not active[id] then web_table_visibility[id] = nil end end
+  local cards = {}
+  for _, id in ipairs(processing) do cards[#cards + 1] = project_table_card(id) end
+  J.ui('PilesUpdate', to_json({
+    draw = #draw,
+    discard = #discard,
+    topDiscard = #discard > 0 and project_table_card(discard[#discard]) or nil,
+    processing = cards,
+  }))
+end
+
 function FClient:notifyUI(command, data)
   if command == 'EnterRoom' then install_reconnect_skill_projection() end
   if notify_reconnect_skill_projection(command, data) then return end
@@ -440,19 +570,51 @@ function FClient:notifyUI(command, data)
   -- React does not use that private snapshot (the individual EnterRoom,
   -- StartGame, ArrangeSeats, MoveCards and PropertyUpdate events are the web
   -- projection), so do not serialize and cross the whole object a second
-  -- time. ShowVirtualCard can likewise contain a native Card object with a
-  -- large graph of derived fields; the current web reducer ignores it. Keep
-  -- both event boundaries with a tiny marker instead of creating a peak-sized
-  -- CBOR/JSON copy in the browser or failing the whole Lua dispatch at the
-  -- serializer budget.
-  if command == 'Reconnect' or command == 'ShowVirtualCard' then
+  -- time. Do not serialize that private snapshot.
+  if command == 'Reconnect' then
     J.ui(command, '{}')
+    return
+  end
+  if command == 'ShowVirtualCard' then
+    -- Native TablePile also shows short-lived virtual/revealed cards which
+    -- never enter ClientInstance.processing_area. Project the visible Card
+    -- fields and parsed footnote, omitting the raw Card object and its IDs.
+    local projected = {}
+    if type(data) == 'table' and type(data[1]) == 'table' then
+      for i, card in ipairs(data[1]) do
+        if i > 200 then break end
+        local face = project_public_card(card, nil)
+        if face then projected[#projected + 1] = face end
+      end
+    end
+    local note = type(data) == 'table' and data[3] or nil
+    if type(note) ~= 'string' or #note > WEB_TABLE_NOTE_MAX_BYTES then note = nil end
+    J.ui(command, to_json({cards = projected, footnote = note}))
+    return
+  end
+  if command == 'SetCardFootnote' or command == 'SetCardVirtName' then
+    -- Match the native RoomModel: notes apply only to a card already in the
+    -- processing/discard models. Do not forward physical/virtual IDs to JS.
+    if type(data) == 'table' then
+      local ids = command == 'SetCardFootnote' and {data[1]} or data[1]
+      local value = data[2]
+      if type(ids) == 'table' and type(value) == 'string' and #value <= WEB_TABLE_NOTE_MAX_BYTES then
+        for _, id in ipairs(ids) do
+          for _, card_id in ipairs(table_card_ids_for_annotation(id, data[3] == true)) do
+            if command == 'SetCardFootnote' then web_table_notes[card_id] = value
+            else web_table_virtual_names[card_id] = value end
+          end
+        end
+      end
+    end
+    emit_web_piles()
     return
   end
   -- MoveCards contains raw card IDs and visibility maps. The web projection
   -- gets hand counts/equipment from __host_recv instead, so preserve only the
   -- event boundary and never cross the private move graph.
   if command == 'MoveCards' then
+    capture_table_visibility(data)
     J.ui(command, '{}')
     return
   end
@@ -569,26 +731,6 @@ function __host_recv(command, hex, is_request)
   -- Lua tracks all hand sizes while MoveCards only forwards visibility data
   -- to QML. Publish counts for the board without forwarding any card IDs.
   if command == 'MoveCards' or command == 'Reconnect' then
-    local function project_public_card(card, owner)
-      if not card then return nil end
-      local result = {name = card.name, suit = card.suit, number = card.number}
-      local subtype_ok, subtype = pcall(card.getSubtypeString, card)
-      if subtype_ok and type(subtype) == 'string' and #subtype <= 40 then result.subtype = subtype end
-      local package = card.package
-      local extension = package and package.extensionName
-      if type(extension) == 'string' and #extension <= 120 and extension ~= '' then result.extension = extension end
-      if type(card.getPicName) == 'function' then
-        local pic_ok, pic_name = pcall(card.getPicName, card)
-        if pic_ok and type(pic_name) == 'string' and #pic_name <= 120 and pic_name ~= '' then
-          result.picName = pic_name
-        end
-      end
-      if result.subtype == 'weapon' and type(card.getAttackRange) == 'function' then
-        local range_ok, range = pcall(card.getAttackRange, card, owner)
-        if range_ok and finite_number(range) then result.range = range end
-      end
-      return result
-    end
     for _, player in ipairs(ClientInstance.players) do
       J.ui('PropertyUpdate', to_json({player.id, 'handcardNum', player:getHandcardNum()}))
       local equipment = {}
@@ -605,23 +747,15 @@ function __host_recv(command, hex, is_request)
       end
       J.ui('EquipmentUpdate', to_json({player.id, equipment, delayed_tricks}))
     end
-    local draw_num = (ClientInstance and ClientInstance.draw_pile) and #ClientInstance.draw_pile or 0
-    local discard_num = (ClientInstance and ClientInstance.discard_pile) and #ClientInstance.discard_pile or 0
-    local top_discard = nil
-    if ClientInstance and ClientInstance.discard_pile and #ClientInstance.discard_pile > 0 then
-      local top_id = ClientInstance.discard_pile[#ClientInstance.discard_pile]
-      local top_card = Fk:getCardById(top_id)
-      top_discard = project_public_card(top_card, nil)
-    end
-    local processing_cards = {}
-    if ClientInstance and ClientInstance.processing_area then
-      for _, id in ipairs(ClientInstance.processing_area) do
-        local c = Fk:getCardById(id)
-        local proj = project_public_card(c, nil)
-        if proj then table.insert(processing_cards, proj) end
+    emit_web_piles()
+    if command == 'MoveCards' and #web_pending_discard > 0 then
+      local cards = {}
+      for _, id in ipairs(web_pending_discard) do
+        cards[#cards + 1] = project_table_card(id)
       end
+      J.ui('TableCardsFlash', to_json({cards = cards}))
     end
-    J.ui('PilesUpdate', to_json({draw = draw_num, discard = discard_num, topDiscard = top_discard, processing = processing_cards}))
+    web_pending_discard = {}
 
     if Self and ClientInstance and table.contains(ClientInstance.players, Self) then
       local self_hand = {}
@@ -639,6 +773,9 @@ function __host_recv(command, hex, is_request)
     -- This is what makes a discard followed by a draw visible immediately,
     -- instead of waiting for another request delta.
     emit_web_request_snapshot()
+  elseif command == 'SyncDrawPile' or command == 'ShuffleDrawPile' or command == 'ChangeCardArea' then
+    -- These native callbacks can change both piles without a MoveCards.
+    emit_web_piles()
   end
   -- Hegemony uses anjiang publicly and private marks for the actual pair.
   -- Read only Self's two marks, never enumerate another player's marks.

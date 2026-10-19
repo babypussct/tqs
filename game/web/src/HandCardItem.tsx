@@ -6,15 +6,39 @@ import { objectValue } from './engine/gameplayInteraction';
 import type { GameplayItem } from './store/gameplayState';
 import { CATALOG_CARD_ART_NAMES, catalogCardArtUrl } from './catalogCardArt';
 
+/** Keep portal tooltips within the viewport even for long translated cards. */
+function cardTooltipStyle(rect: DOMRect | null): CSSProperties | undefined {
+  if (!rect || typeof window === 'undefined') return undefined;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const halfWidth = Math.min(130, Math.max(0, (viewportWidth - 16) / 2));
+  const x = Math.max(8 + halfWidth, Math.min(viewportWidth - 8 - halfWidth, rect.left + rect.width / 2));
+  const above = rect.top >= 104 || viewportHeight - rect.bottom < rect.top;
+  const available = above ? rect.top - 16 : viewportHeight - rect.bottom - 16;
+  return {
+    position: 'fixed',
+    left: x,
+    top: above ? Math.max(8, rect.top - 8) : Math.min(viewportHeight - 8, rect.bottom + 8),
+    transform: above ? 'translate(-50%, -100%)' : 'translateX(-50%)',
+    maxHeight: Math.max(40, Math.min(180, available)),
+    zIndex: 99999,
+    pointerEvents: 'none',
+  };
+}
+
 export interface CardData {
   name?: string;
   trueName?: string;
+  known?: boolean;
   /** FreeKill package that owns the card definition (e.g. gamemode/mobile). */
   extension?: string;
   /** Optional FilterSkill-selected picture name, equivalent to native pic_name. */
   picName?: string;
   suit?: number;
   number?: number;
+  /** Public FreeKill TablePile annotations; never supplied for concealed cards. */
+  footnote?: string;
+  virtName?: string;
 }
 
 export interface CardSuitInfo {
@@ -68,22 +92,25 @@ const NORMAL_TRICKS = new Set([
 const WEAPONS = new Set([
   'qinggang_sword', 'double_swords', 'blade', 'spear', 'axe', 'halberd',
   'kylin_bow', 'crossbow', 'ice_sword', 'guding_blade', 'fan', 'scaly_wings',
+  'triblade', 'dragon_phoenix', 'yangsui_spear', 'serpent_slayer_sword',
 ]);
 
 const ARMORS = new Set([
-  'eight_diagram', 'nioh_shield', 'silver_lion', 'vine',
+  'eight_diagram', 'nioh_shield', 'silver_lion', 'vine', 'breastplate',
+  'iron_armor', 'amiantus_robe', 'peace_spell',
 ]);
 
 const DEFENSIVE_RIDES = new Set([
-  'jueying', 'dilu', 'zhuahuangfeidian',
+  'jueying', 'dilu', 'zhuahuangfeidian', 'white_kylin', 'liulongcanjia',
 ]);
 
 const OFFENSIVE_RIDES = new Set([
-  'chitu', 'dayuan', 'zixing', 'jingfan',
+  'chitu', 'dayuan', 'zixing', 'jingfan', 'tianlu',
 ]);
 
 const TREASURES = new Set([
-  'wooden_ox', 'role__wooden_ox', 'jade_seal', 'luminous_pearl', 'peace_spell',
+  'wooden_ox', 'role__wooden_ox', 'jade_seal', 'luminous_pearl', 'dunjia_book',
+  'nine_tripod_cauldrons', 'turban_shell_cup',
 ]);
 
 export function getCardCategory(rawName: string | undefined): CardCategoryInfo {
@@ -114,6 +141,17 @@ export function getCardCategory(rawName: string | undefined): CardCategoryInfo {
     return { typeKey: 'equip', label: 'Bảo Vật', className: 'type-equip', badge: 'Bảo Vật' };
   }
   return { typeKey: 'unknown', label: '', className: 'type-unknown' };
+}
+
+/** Resolve the common FreeKill equip sound subtype used by UseCardEvent. */
+export function getCardEquipAudioType(rawName: string | undefined): 'weapon' | 'armor' | 'horse' | null {
+  if (!rawName) return null;
+  const name = rawName.replace(/^.*__/, '');
+  if (WEAPONS.has(name) || WEAPONS.has(rawName)) return 'weapon';
+  if (DEFENSIVE_RIDES.has(name) || DEFENSIVE_RIDES.has(rawName) ||
+      OFFENSIVE_RIDES.has(name) || OFFENSIVE_RIDES.has(rawName)) return 'horse';
+  if (ARMORS.has(name) || ARMORS.has(rawName) || TREASURES.has(name) || TREASURES.has(rawName)) return 'armor';
+  return null;
 }
 
 /** Baseline standard card descriptions when Lua translation table is deferred */
@@ -414,25 +452,52 @@ function safeNativeAssetName(value: string | undefined): string | null {
   return value && /^[A-Za-z0-9_-]+$/.test(value) ? value : null;
 }
 
-export function getNativeCardArtUrl(cardOrName: CardData | string | undefined): string | null {
+/**
+ * Return the same ordered candidates as FreeKill's SkinBank:
+ * package-local art first, then the focused catalogue/global fallback.
+ *
+ * The package candidate is deliberately generated from the safe extension and
+ * card name as well as the small static map.  That keeps newly installed
+ * upstream package art usable in development and production without making a
+ * variant borrow another package's face when the exact file is available.
+ */
+export function getNativeCardArtCandidates(cardOrName: CardData | string | undefined): string[] {
   const card: CardData = typeof cardOrName === 'string' ? { name: cardOrName } : (cardOrName ?? {});
-  // The focused catalogue is authoritative for the active Quốc Chiến pool.
-  // Match the actual definition name only; a picName is a rendering hint and
-  // must not make a variant borrow the generic card face.
-  const catalogName = safeNativeAssetName(card.name);
-  if (catalogName && CATALOG_CARD_ART_NAMES.has(catalogName)) return catalogCardArtUrl(catalogName);
   const names = [card.picName, card.name].map(safeNativeAssetName).filter((name): name is string => !!name);
+  const candidates: string[] = [];
+  const add = (url: string | undefined) => {
+    if (url && !candidates.includes(url)) candidates.push(url);
+  };
+
+  // Match the actual definition name first.  picName is only a rendering
+  // hint and cannot override a package-local definition with the same name.
+  const definitionName = safeNativeAssetName(card.name);
+  if (card.extension && definitionName) {
+    add(NATIVE_CARD_ASSETS[`${card.extension}/${definitionName}`]);
+    add(`/packages/${card.extension}/image/card/${definitionName}.png`);
+  }
+
+  // The focused catalogue is the cross-package fallback used by the active
+  // Quốc Chiến pool.  It is intentionally consulted after an exact package
+  // asset so mobile/gamemode variants never silently use a generic face.
+  if (definitionName && CATALOG_CARD_ART_NAMES.has(definitionName)) {
+    add(catalogCardArtUrl(definitionName));
+  }
+
   for (const name of names) {
     if (card.extension) {
-      const exact = NATIVE_CARD_ASSETS[`${card.extension}/${name}`];
-      if (exact) return exact;
+      add(NATIVE_CARD_ASSETS[`${card.extension}/${name}`]);
     }
     // This fallback is still exact by card definition name; it is only used
     // when that name occurs in one package in the shipped native manifest.
     const unique = NATIVE_CARD_ASSETS_BY_NAME.get(name);
-    if (unique) return unique;
+    add(unique);
   }
-  return null;
+  return candidates;
+}
+
+export function getNativeCardArtUrl(cardOrName: CardData | string | undefined): string | null {
+  return getNativeCardArtCandidates(cardOrName)[0] ?? null;
 }
 
 /** Native Card Art Renderer or Neutral Frame (Strict adherence to native assets) */
@@ -441,17 +506,18 @@ function CardArt({ card, alt = '', sheet = false }: {
   alt?: string;
   sheet?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [card?.extension, card?.picName, card?.name]);
-  const artUrl = getNativeCardArtUrl(card);
-  if (artUrl && !failed) {
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const candidates = getNativeCardArtCandidates(card);
+  const artUrl = candidates[candidateIndex] ?? null;
+  useEffect(() => setCandidateIndex(0), [card?.extension, card?.picName, card?.name]);
+  if (artUrl) {
     return (
       <img
         className={sheet ? 'sg-sheet-native-art' : 'sg-card-native-art'}
         src={artUrl}
         alt={alt}
         aria-hidden={alt ? undefined : true}
-        onError={() => setFailed(true)}
+        onError={() => setCandidateIndex((index) => index + 1)}
       />
     );
   }
@@ -477,6 +543,7 @@ export function CardDetailSheet({
   rank,
   description,
   card,
+  details = [],
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -486,6 +553,7 @@ export function CardDetailSheet({
   rank: string;
   description: string;
   card?: CardData;
+  details?: { label: string; value: string }[];
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -552,7 +620,7 @@ export function CardDetailSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="card-sheet-title"
-        aria-describedby="card-sheet-description"
+        aria-describedby={details.length ? 'card-sheet-description card-sheet-native-details' : 'card-sheet-description'}
         tabIndex={-1}
         ref={dialogRef}
       >
@@ -586,6 +654,11 @@ export function CardDetailSheet({
             {displayName}
           </h3>
           <p id="card-sheet-description" className="sg-sheet-desc">{description}</p>
+          {details.length > 0 && <dl className="sg-sheet-native-details" id="card-sheet-native-details">
+            {details.map(({ label, value }) => <div key={label}>
+              <dt>{label}</dt><dd>{value}</dd>
+            </div>)}
+          </dl>}
         </div>
 
         <div className="sg-sheet-footer">
@@ -665,8 +738,6 @@ export function HandCardItem({
 
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggeredRef = useRef(false);
 
@@ -679,12 +750,9 @@ export function HandCardItem({
   const { displayName, description } = resolveCardText(card, text);
 
   const disabled = busy || !item.enabled;
-  const showTooltip = (hovered || focused) && !disabled;
   const reactId = useId().replace(/:/g, '');
-  const tooltipId = `card-tip-${reactId}`;
   const metadataId = `card-meta-${reactId}`;
   const cardMetadata = [suitInfo.name, rank, category.label].filter(Boolean).join(' · ');
-  const describedBy = [metadataId, showTooltip ? tooltipId : ''].filter(Boolean).join(' ');
   const overlapDesktop = index > 0 && totalCards > 7
     ? Math.min(36, 12 + (totalCards - 7) * 3)
     : 0;
@@ -701,12 +769,6 @@ export function HandCardItem({
     '--card-overlap-mobile': `${overlapMobile}px`,
     '--card-overlap-landscape': `${overlapLandscape}px`,
   } as CSSProperties;
-
-  const updateRect = () => {
-    if (buttonRef.current) {
-      setRect(buttonRef.current.getBoundingClientRect());
-    }
-  };
 
   const cancelLongPress = () => {
     if (longPressTimerRef.current !== null) {
@@ -732,7 +794,6 @@ export function HandCardItem({
 
   return (
     <button
-      ref={buttonRef}
       type="button"
       className={`gameplay-choice sg-card-button ${category.className} ${
         item.selected ? 'selected' : ''
@@ -741,7 +802,7 @@ export function HandCardItem({
       data-card-id={typeof item.id === 'number' ? item.id : undefined}
       aria-pressed={item.selected}
       aria-label={displayName}
-      aria-describedby={describedBy}
+      aria-describedby={metadataId}
       disabled={disabled}
       onPointerDown={startLongPress}
       onPointerUp={finishLongPress}
@@ -758,9 +819,9 @@ export function HandCardItem({
         }
         onClick();
       }}
-      onMouseEnter={() => { updateRect(); setHovered(true); }}
+      onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => { updateRect(); setFocused(true); }}
+      onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
     >
       <span id={metadataId} className="sg-visually-hidden">
@@ -789,71 +850,60 @@ export function HandCardItem({
         <span className="sg-card-name">{displayName}</span>
       </div>
 
-      {/* Desktop Tooltip for Hover / Keyboard Focus via Portal */}
-      {showTooltip && (
-        typeof document !== 'undefined' ? createPortal(
-          <div
-            id={tooltipId}
-            className="sg-card-popover-tooltip sg-card-popover-portal"
-            role="tooltip"
-            style={rect ? {
-              position: 'fixed',
-              left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
-              top: rect.top - 8,
-              transform: 'translate(-50%, -100%)',
-              zIndex: 99999,
-              pointerEvents: 'none',
-            } : undefined}
-          >
-            <strong className="sg-tip-title">
-              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
-            </strong>
-            {category.label && (
-              <span className="sg-tip-category">[{category.label}]</span>
-            )}
-            <span className="sg-tip-desc">{description}</span>
-          </div>,
-          document.body
-        ) : (
-          <span
-            id={tooltipId}
-            className="sg-card-popover-tooltip"
-            role="tooltip"
-            aria-hidden={!showTooltip}
-          >
-            <strong className="sg-tip-title">
-              {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
-            </strong>
-            {category.label && (
-              <span className="sg-tip-category">[{category.label}]</span>
-            )}
-            <span className="sg-tip-desc">{description}</span>
-          </span>
-        )
-      )}
+      {/* Selecting a playable card never opens a passive tooltip. Details are
+          available through long press or the selected-card summary action. */}
     </button>
   );
 }
 
 /** Authentic Center In-Play Card Resolution (Table Pile / Processing Area) */
-export function ResolvingCardView({ card }: { card: { name: string; suit: number; number: number; extension?: string; picName?: string } }) {
+export function ResolvingCardView({ card, activity = 'processing' }: { card: { name: string; suit: number; number: number; known?: boolean; footnote?: string; virtName?: string; extension?: string; picName?: string }; activity?: 'processing' | 'discard' | 'reveal' }) {
+  const [inspectOpen, setInspectOpen] = useState(false);
   const text = useDisplayText();
+  const description = activity === 'discard' ? 'Vừa bỏ' : activity === 'reveal' ? 'Đang cho xem' : 'Đang xử lý';
+  // Native PokerCard.qml uses its card back whenever CardModel.known is false.
+  // Avoid even computing a translated title for a concealed table card.
+  if (card.known === false) {
+    return <div className="native-resolving-card native-resolving-hidden" aria-label={`${description}: bài úp`}>
+      <span className="native-resolving-hidden-label">Bài úp</span>
+    </div>;
+  }
   const suitInfo = getSuitInfo(card.suit);
   const rank = formatRank(card.number);
   const category = getCardCategory(card.name);
-  const { displayName } = resolveCardText(card, text);
+  const { displayName, description: cardDescription } = resolveCardText(card, text);
 
+  const virtualName = card.virtName && card.virtName !== card.name ? text(card.virtName) : '';
+  const footnote = card.footnote ? text(card.footnote) : '';
+  const label = `${description}: ${displayName} · ${suitInfo.name} ${rank}${virtualName ? ` · Dùng như ${virtualName}` : ''}${footnote ? ` · ${footnote}` : ''}`;
   return (
-    <div className="native-resolving-card" aria-label={`Đang xử lý: ${displayName} · ${suitInfo.name} ${rank}`}>
-      <div className="card-head">
-        <span className={suitInfo.colorClass}>{suitInfo.symbol} {rank}</span>
-        <span className="card-cat-badge">{category.label || 'Bài'}</span>
+    <>
+    <button type="button" className="native-resolving-card" aria-label={`Xem chi tiết ${label}`} title={label}
+      onClick={() => setInspectOpen(true)}>
+      <div className="native-resolving-topline">
+        <div className="card-head">
+          <span className={suitInfo.colorClass}>
+            <span className="native-resolving-rank">{rank}</span>
+            <span className="native-resolving-suit">{suitInfo.symbol}</span>
+          </span>
+          <span className="card-cat-badge">{category.label || 'Bài'}</span>
+        </div>
+        <div className="card-foot">{displayName}</div>
       </div>
       <div className="card-thumb">
         <CardArt card={card} alt={displayName} />
       </div>
-      <div className="card-foot">【 {displayName.toUpperCase()} 】</div>
-    </div>
+      {virtualName && <span className="native-resolving-virtual-name">{virtualName}</span>}
+      {footnote && <div className="native-resolving-footnote">{footnote}</div>}
+    </button>
+    {inspectOpen && createPortal(<CardDetailSheet isOpen onClose={() => setInspectOpen(false)}
+      displayName={displayName} category={category} suitInfo={suitInfo} rank={rank}
+      description={cardDescription} card={card} details={[
+        { label: 'Trạng thái', value: description },
+        ...(virtualName ? [{ label: 'Dùng như', value: virtualName }] : []),
+        ...(footnote ? [{ label: 'Chú thích FreeKill', value: footnote }] : []),
+      ]} />, document.body)}
+    </>
   );
 }
 
@@ -865,20 +915,38 @@ export function PublicPileCardPreview({
   card: CardData;
   label?: string;
 }) {
+  const [inspectOpen, setInspectOpen] = useState(false);
   const text = useDisplayText();
+  if (card.known === false) {
+    return <div className="native-pile-card-preview native-pile-card-hidden"
+      aria-label={`${label}: bài úp`} title={`${label}: bài úp`} />;
+  }
   const suitInfo = getSuitInfo(card.suit);
   const rank = formatRank(card.number);
-  const { displayName } = resolveCardText(card, text);
+  const { displayName, description } = resolveCardText(card, text);
+  const category = getCardCategory(card.name);
+  const virtualName = card.virtName && card.virtName !== card.name ? text(card.virtName) : '';
+  const footnote = card.footnote ? text(card.footnote) : '';
   const cardLabel = `${label}: ${displayName} · ${suitInfo.name} ${rank}`;
 
   return (
-    <div className="native-pile-card-preview" aria-label={cardLabel} title={cardLabel}>
+    <>
+    <button type="button" className="native-pile-card-preview" aria-label={`Xem chi tiết ${cardLabel}`} title={cardLabel}
+      onClick={() => setInspectOpen(true)}>
       <CardArt card={card} />
       <span className={`native-pile-card-rank ${suitInfo.colorClass}`} aria-hidden="true">
         {suitInfo.symbol} {rank}
       </span>
       <span className="native-pile-card-name" aria-hidden="true">{displayName}</span>
-    </div>
+    </button>
+    {inspectOpen && createPortal(<CardDetailSheet isOpen onClose={() => setInspectOpen(false)}
+      displayName={displayName} category={category} suitInfo={suitInfo} rank={rank}
+      description={description} card={card} details={[
+        { label: 'Vị trí', value: label },
+        ...(virtualName ? [{ label: 'Dùng như', value: virtualName }] : []),
+        ...(footnote ? [{ label: 'Chú thích FreeKill', value: footnote }] : []),
+      ]} />, document.body)}
+    </>
   );
 }
 
@@ -984,14 +1052,7 @@ export function IdleHandCard({
               id={tooltipId}
               className="sg-card-popover-tooltip sg-card-popover-portal"
               role="tooltip"
-              style={rect ? {
-                position: 'fixed',
-                left: Math.max(120, Math.min(window.innerWidth - 120, rect.left + rect.width / 2)),
-                top: rect.top - 8,
-                transform: 'translate(-50%, -100%)',
-                zIndex: 99999,
-                pointerEvents: 'none',
-              } : undefined}
+              style={cardTooltipStyle(rect)}
             >
               <strong className="sg-tip-title">
                 {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}

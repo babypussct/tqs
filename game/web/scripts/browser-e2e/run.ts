@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, type Page } from 'playwright-core';
+import { chromium, type Locator, type Page } from 'playwright-core';
 import { createServer } from 'vite';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -42,6 +42,51 @@ async function waitReplies(page: Page, count: number) {
   await page.waitForFunction((n) => window.__tqsE2e.snapshot().replyCount >= n, count);
 }
 
+async function assertCrowdedSkillRail(page: Page, selector: string, viewport: { width: number; height: number }) {
+  const check = await page.evaluate((source) => {
+    const rail = document.querySelector<HTMLElement>('.board-local-skill-rail')!;
+    const sourceButton = rail.querySelector<HTMLElement>(source)!;
+    const dock = sourceButton.parentElement!;
+    // Only clone existing DOM for the crowding check. Never mutate Lua skill
+    // permissions, game state, or the native protocol.
+    const clones: HTMLElement[] = [];
+    for (let i = 0; i < 12; i++) {
+      const clone = sourceButton.cloneNode(true) as HTMLElement;
+      clone.textContent = `Kỹ năng ${i + 1}`;
+      dock.appendChild(clone);
+      clones.push(clone);
+    }
+    const railRect = rail.getBoundingClientRect();
+    const geometry = [...rail.querySelectorAll<HTMLElement>('.sg-skill-button')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width };
+    });
+    const state = { display: getComputedStyle(rail).display,
+      direction: getComputedStyle(rail).flexDirection,
+      overflowX: getComputedStyle(rail).overflowX,
+      scrollWidth: rail.scrollWidth, clientWidth: rail.clientWidth,
+      railTop: railRect.top, railBottom: railRect.bottom, geometry };
+    rail.scrollLeft = rail.scrollWidth;
+    const last = clones.at(-1)!.getBoundingClientRect();
+    const lastVisible = last.right <= railRect.right + 1 && last.left >= railRect.left - 1;
+    clones.forEach((el) => el.remove());
+    return { ...state, lastVisible };
+  }, selector);
+  assert.equal(check.display, 'flex');
+  assert.equal(check.direction, 'row');
+  assert.equal(check.overflowX, 'auto');
+  assert.ok(check.geometry.length >= 14, `dense skill fixture absent: ${JSON.stringify(check)}`);
+  assert.ok(check.geometry.every((button) => button.width > 0 &&
+    button.top >= check.railTop - 2 && button.bottom <= check.railBottom + 2),
+  `skills escape their rail at ${viewport.width}x${viewport.height}: ${JSON.stringify(check)}`);
+  for (let i = 1; i < check.geometry.length; i++) {
+    assert.ok(check.geometry[i].left >= check.geometry[i - 1].right - 1,
+      `skills overlap at ${viewport.width}x${viewport.height}: ${JSON.stringify(check)}`);
+  }
+  assert.ok(check.scrollWidth > check.clientWidth + 100 && check.lastVisible,
+    `crowded skills must scroll to the end at ${viewport.width}x${viewport.height}: ${JSON.stringify(check)}`);
+}
+
 async function runSuite(page: Page) {
   const tests: [string, (page: Page) => Promise<void>][] = [
     ['Main app renders in actual Chrome', async (p) => {
@@ -52,16 +97,41 @@ async function runSuite(page: Page) {
       }));
       await p.goto('/');
       await p.getByRole('heading', { name: /Tam Quốc Sát/ }).waitFor();
-      await p.getByText('Đang chuẩn bị tài nguyên…').waitFor();
-      await p.getByRole('alert').getByText('Manifest HTTP 503').waitFor();
+      await p.getByRole('alert').getByText('Máy chủ đang tạm thời không khả dụng. Vui lòng thử tải lại trò chơi sau ít phút.').waitFor();
       await p.goto('/e2e.html');
       await p.unroute('**/gateway/manifest.json');
       await p.getByRole('heading', { name: 'TQS browser E2E cục bộ' }).waitFor();
+    }],
+    ['Game errors remain visible in the active match and hide native protocol details', async (p) => {
+      await p.goto('/e2e.html?app=1');
+      await p.evaluate(() => window.__tqsE2e.begin('choices'));
+      await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
+      await p.evaluate(() => window.__tqsE2e.emitUiError('backend error'));
+      await p.getByRole('alert').getByText('Không thể liên lạc với máy chủ trò chơi. Hãy kiểm tra mạng và thử lại sau ít phút.').waitFor();
+      await p.evaluate(() => window.__tqsE2e.emitUiError('internal socket diagnostics'));
+      await p.getByRole('alert').getByText('Kết nối đến máy chủ bị gián đoạn. Hãy kiểm tra mạng và đăng nhập lại.').waitFor();
+      assert.equal(await p.getByText('internal socket diagnostics').count(), 0);
+      await p.goto('/e2e.html');
     }],
     ['Card, target and skill clicks update the Lua scene without sending', async (p) => {
       const id = await start(p, 'choices');
       await p.getByRole('button', { name: 'Sát', exact: true }).click();
       await p.getByRole('button', { name: 'Chọn mục tiêu' }).click();
+      const choiceGeometry = await p.evaluate(() => {
+        const dock = document.querySelector<HTMLElement>('.sg-inline-choice-dock')!;
+        const skill = document.querySelector<HTMLElement>('.board-local-skill-rail')!;
+        const hand = document.querySelector<HTMLElement>('.sg-hand-fan')!;
+        const choice = dock.getBoundingClientRect();
+        const rail = skill.getBoundingClientRect();
+        const cards = hand.getBoundingClientRect();
+        return { choice: { top: choice.top, bottom: choice.bottom },
+          skill: { top: rail.top, bottom: rail.bottom },
+          hand: { top: cards.top, bottom: cards.bottom } };
+      });
+      assert.ok(choiceGeometry.choice.bottom <= choiceGeometry.skill.top,
+        `Special usage choices must clear the skill rail: ${JSON.stringify(choiceGeometry)}`);
+      assert.ok(choiceGeometry.choice.bottom <= choiceGeometry.hand.top,
+        `Special usage choices must clear card selection: ${JSON.stringify(choiceGeometry)}`);
       await p.getByRole('button', { name: 'longdan' }).click();
       await p.getByRole('button', { name: 'convert' }).click();
       await waitActions(p, 4);
@@ -113,6 +183,337 @@ async function runSuite(page: Page) {
       assert.equal(await skill.isDisabled(), true);
       assert.match(await p.evaluate((n) => window.__tqsE2e.attemptSkill(n), id) ?? '', /không được Lua cho phép|không hợp lệ|không còn hiệu lực/);
       assert.deepEqual((await snapshot(p)).regularSkills, [{ name: 'hs__active' }]);
+    }],
+    ['Skills from fake, regular and Lua docks remain horizontal and scroll when crowded', async (p) => {
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+        { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        await p.evaluate(() => window.__tqsE2e.addFakeSkill());
+        await p.locator('.board-local-skill-rail .fake-skill-button').waitFor();
+        await p.evaluate(() => window.__tqsE2e.addRegularSkill());
+        // Request-in-progress uses GameplaySkillDock, including disabled
+        // regular skills; idle uses RegularSkillDock. Test both real states.
+        await p.locator('.board-local-skill-rail .gameplay-skill-dock .sg-skill-button').first().waitFor();
+        await assertCrowdedSkillRail(p, '.gameplay-skill-dock .sg-skill-button', viewport);
+        await p.evaluate(() => window.__tqsE2e.cancel());
+        await p.locator('.board-local-skill-rail .regular-skill-button').waitFor();
+        assert.equal(await p.locator('.board-local-skill-rail .fake-skill-button').count(), 1);
+        await assertCrowdedSkillRail(p, '.regular-skill-dock .regular-skill-button', viewport);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
+    ['Waiting message occupies the table corner; desktop equipment has its own column', async (p) => {
+      const evidenceDir = process.env.TQS_EVIDENCE_DIR ? path.resolve(process.env.TQS_EVIDENCE_DIR) : null;
+      if (evidenceDir) mkdirSync(evidenceDir, { recursive: true });
+      for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 },
+        { width: 390, height: 844 }, { width: 320, height: 568 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        if (viewport.width === 1280) {
+          await p.locator('.board-local-self-equipment .native-equip-plate').waitFor({ state: 'attached' });
+          assert.equal(await p.locator('.board-local-self-equipment .native-equip-row, .board-local-self-equipment .native-equip-half').count(), 5);
+          assert.equal(await p.locator('.board-local-seat .native-equip-plate').count(), 0);
+          const equipment = await p.evaluate(() => {
+            const seat = document.querySelector('.board-local-seat')!.getBoundingClientRect();
+            const plate = document.querySelector('.board-local-self-equipment .native-equip-plate')!.getBoundingClientRect();
+            return { seatRight: seat.right, plateLeft: plate.left, plateRight: plate.right,
+              width: plate.width, height: plate.height };
+          });
+          assert.ok(equipment.plateLeft >= equipment.seatRight - 1 && equipment.width >= 110 &&
+            equipment.height >= 80, `desktop equipment must clear the avatar: ${JSON.stringify(equipment)}`);
+        } else {
+          await p.locator('.board-local-seat .native-equip-plate').waitFor();
+          assert.equal(await p.locator('.board-local-self-equipment .native-equip-plate').count(), 0);
+        }
+        const actionHit = await p.evaluate(() => {
+          const button = document.querySelector<HTMLElement>('.sg-btn-ok')!;
+          const choice = document.querySelector<HTMLElement>('.sg-inline-choice-dock')!;
+          const hud = document.querySelector<HTMLElement>('.sg-floating-controls-hud')!;
+          const r = button.getBoundingClientRect();
+          const point = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          const hit = document.elementFromPoint(point.x, point.y);
+          return { point, button: r.toJSON(), choice: choice.getBoundingClientRect().toJSON(),
+            hud: hud.getBoundingClientRect().toJSON(), hit: hit?.className ?? '' };
+        });
+        assert.ok(/sg-btn-ok/.test(String(actionHit.hit)),
+          `OK button is obstructed at ${viewport.width}x${viewport.height}: ${JSON.stringify(actionHit)}`);
+        await p.getByRole('button', { name: 'Xác nhận' }).click();
+        await waitReplies(p, 1);
+        const placement = await p.evaluate(() => {
+          const table = document.querySelector('.sg-board-table')!.getBoundingClientRect();
+          const status = document.querySelector<HTMLElement>('.board-table-status')!;
+          const r = status.getBoundingClientRect();
+          const opponentRects = [...document.querySelectorAll<HTMLElement>('.board-opponents .sg-photo-panel')]
+            .map((el) => el.getBoundingClientRect());
+          const opponentsCovered = opponentRects.some((op) =>
+            Math.max(0, Math.min(r.right, op.right) - Math.max(r.left, op.left)) > 0.5 &&
+            Math.max(0, Math.min(r.bottom, op.bottom) - Math.max(r.top, op.top)) > 0.5);
+          return { tableLeft: table.left, tableTop: table.top, tableRight: table.right,
+            statusLeft: r.left, statusTop: r.top, statusRight: r.right,
+            statusBottom: r.bottom, opponentsCovered,
+            pointerEvents: getComputedStyle(status).pointerEvents,
+            parent: status.parentElement?.className ?? '' };
+        });
+        assert.match(placement.parent, /sg-board-table/);
+        assert.equal(placement.pointerEvents, 'none');
+        assert.ok(placement.statusLeft >= placement.tableLeft - 1 &&
+          placement.statusRight <= placement.tableRight + 1 &&
+          placement.statusTop >= placement.tableTop - 1 &&
+          placement.statusTop <= placement.tableTop + 20,
+        `waiting notice must stay at table's upper-left corner: ${JSON.stringify(placement)}`);
+        assert.equal(placement.opponentsCovered, false,
+          `waiting notice must not cover an opponent at ${viewport.width}x${viewport.height}: ${JSON.stringify(placement)}`);
+        if (evidenceDir) await p.screenshot({ path: path.join(evidenceDir,
+          `ui-rail-equipment-idle-${viewport.width}x${viewport.height}-20261019.png`) });
+      }
+    }],
+    ['Horse +1/-1 slots stay inside their equipment plate on portrait, landscape and desktop', async (p) => {
+      const evidenceDir = process.env.TQS_EVIDENCE_DIR ? path.resolve(process.env.TQS_EVIDENCE_DIR) : null;
+      if (evidenceDir) mkdirSync(evidenceDir, { recursive: true });
+      try {
+        for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+          { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+          await p.setViewportSize(viewport);
+          for (const equipped of [false, true]) {
+            await start(p, 'choices');
+            await p.evaluate((filled) => window.__tqsE2e.seedHorseEquipment(filled), equipped);
+            const desktop = viewport.width >= 900 && viewport.height >= 521;
+            // The desktop equipment column is populated by a React portal after
+            // the media query updates. Wait for that move to finish before
+            // comparing geometry, including when rotating back to mobile.
+            await p.waitForFunction((expectDesktop) => {
+              const inSeat = document.querySelector('.board-local-seat .native-equip-plate');
+              const inColumn = document.querySelector('.board-local-self-equipment .native-equip-plate');
+              return expectDesktop ? !!inColumn && !inSeat : !!inSeat && !inColumn;
+            }, desktop);
+            const metrics = await p.evaluate(() => {
+            const plates = [...document.querySelectorAll<HTMLElement>(
+              '.board-local-seat .native-equip-plate, .board-local-self-equipment .native-equip-plate, .board-opponents .native-equip-plate',
+            )];
+            return plates.map((plate) => {
+              const rect = plate.getBoundingClientRect();
+              const halves = [...plate.querySelectorAll<HTMLElement>('.native-equip-half')];
+              const cells = [...plate.querySelectorAll<HTMLElement>('.native-equip-row, .native-equip-half')];
+              const cellBoxes = cells.map((cell) => cell.getBoundingClientRect());
+              const rideBoxes = halves.map((half) => half.getBoundingClientRect());
+              return {
+                compact: plate.classList.contains('native-equip-plate-compact'),
+                desktop: !!plate.closest('.board-local-self-equipment'),
+                plate: rect.toJSON(),
+                scrollWidth: plate.scrollWidth, clientWidth: plate.clientWidth,
+                cells: cells.length,
+                rideBoxes: rideBoxes.map((r) => r.toJSON()),
+                ridesContained: rideBoxes.every((r) => r.width > 5 && r.height > 5 &&
+                  r.left >= rect.left - 1 && r.right <= rect.right + 1 &&
+                  r.top >= rect.top - 1 && r.bottom <= rect.bottom + 1),
+                ridesDisjoint: rideBoxes.length === 2 &&
+                  !(rideBoxes[0].left < rideBoxes[1].right - 1 && rideBoxes[1].left < rideBoxes[0].right - 1 &&
+                    rideBoxes[0].top < rideBoxes[1].bottom - 1 && rideBoxes[1].top < rideBoxes[0].bottom - 1),
+                compactCellsAligned: cellBoxes.every((r) => r.width > 5 &&
+                  r.left >= rect.left - 1 && r.right <= rect.right + 1 &&
+                  Math.abs(r.top - cellBoxes[0].top) <= 1 && Math.abs(r.height - cellBoxes[0].height) <= 1),
+                desktopRowsAligned: cellBoxes.every((r, i) =>
+                  r.width > 0 && r.height > 0 && r.left >= rect.left - 1 && r.right <= rect.right + 1 &&
+                  r.top >= rect.top - 1 && r.bottom <= rect.bottom + 1 &&
+                  (i === 0 || r.top >= cellBoxes[i - 1].bottom - 1)),
+                horseNames: halves.map((half) => half.querySelector('.native-eq-name')?.textContent?.trim()),
+                horseSuits: halves.map((half) => !!half.querySelector('.native-eq-suit')),
+                horseParts: halves.map((half) => ({
+                  slot: half.getBoundingClientRect().toJSON(),
+                  children: [...half.querySelectorAll<HTMLElement>('.native-eq-icon, .native-eq-name, .native-eq-suit')]
+                    .map((part) => ({ className: part.className, text: part.textContent?.trim(),
+                      rect: part.getBoundingClientRect().toJSON() })),
+                })),
+                visibleHorsePartsContained: halves.every((half) => {
+                  const slot = half.getBoundingClientRect();
+                  return [...half.querySelectorAll<HTMLElement>('.native-eq-icon, .native-eq-name, .native-eq-suit')]
+                    .every((part) => {
+                      const r = part.getBoundingClientRect();
+                      return r.width > 0 && r.height > 0 && r.left >= slot.left - 1 &&
+                        r.right <= slot.right + 1 && r.top >= slot.top - 1 && r.bottom <= slot.bottom + 1;
+                    });
+                }),
+              };
+            });
+          });
+            assert.ok(metrics.length >= 2, `horse equipment fixture missing: ${JSON.stringify(metrics)}`);
+            for (const plate of metrics) {
+              const info = `${viewport.width}x${viewport.height} (equipped=${equipped}): ${JSON.stringify(plate)}`;
+              assert.equal(plate.cells, 5, `five equipment slots should mount at ${info}`);
+              assert.ok(plate.ridesContained && plate.ridesDisjoint, `+1/-1 horses overlap or escape at ${info}`);
+              assert.ok(plate.scrollWidth <= plate.clientWidth + 1, `equipment content overflows at ${info}`);
+              if (plate.compact && !plate.desktop) {
+                assert.ok(plate.compactCellsAligned, `+1/-1 horses must share the mobile five-cell row at ${info}`);
+              }
+              if (plate.desktop) {
+                assert.ok(plate.desktopRowsAligned, `desktop equipment slots must form five distinct rows at ${info}`);
+              }
+              assert.ok(plate.horseNames.every(Boolean), `horse labels missing at ${info}`);
+              assert.deepEqual(plate.horseSuits, [equipped, equipped], `horse suit/rank missing at ${info}`);
+              assert.ok(plate.visibleHorsePartsContained, `horse icon, name or suit/rank escapes slot at ${info}`);
+              if (equipped) {
+                assert.deepEqual(plate.horseNames, ['Trảo Hoàng Phi Điện', 'Xích Thố'],
+                  `equipped horses must show their translated names at ${info}`);
+              } else {
+                assert.deepEqual(plate.horseNames, ['+1', '-1'], `empty horse labels changed at ${info}`);
+              }
+            }
+            if (evidenceDir && equipped) {
+              await p.screenshot({ path: path.join(evidenceDir,
+                `ui-horses-equipped-${viewport.width}x${viewport.height}-20261019.png`) });
+            }
+          }
+        }
+      } finally {
+        await p.setViewportSize({ width: 390, height: 844 });
+      }
+    }],
+    ['Desktop board columns, self seat and skill rail stay fixed across requests and log toggles', async (p) => {
+      await p.setViewportSize({ width: 1280, height: 800 });
+      await start(p, 'choices');
+      await p.evaluate(() => window.__tqsE2e.addRegularSkill());
+      const geometry = () => p.evaluate(() => {
+        const board = document.querySelector<HTMLElement>('.board-layout')!.getBoundingClientRect();
+        const main = document.querySelector<HTMLElement>('.board-main')!.getBoundingClientRect();
+        const seat = document.querySelector<HTMLElement>('.board-local-seat')!.getBoundingClientRect();
+        const rail = document.querySelector<HTMLElement>('.board-local-skill-rail')!.getBoundingClientRect();
+        const dashboard = document.querySelector<HTMLElement>('.board-local-dashboard')!.getBoundingClientRect();
+        return {
+          board: { left: board.left, top: board.top, width: board.width, height: board.height },
+          main: { left: main.left, top: main.top, width: main.width, height: main.height },
+          seat: { left: seat.left, top: seat.top, width: seat.width, height: seat.height },
+          rail: { left: rail.left, top: rail.top, width: rail.width, height: rail.height },
+          dashboard: { left: dashboard.left, top: dashboard.top, width: dashboard.width, height: dashboard.height },
+          columns: getComputedStyle(document.querySelector('.board-layout')!).gridTemplateColumns,
+        };
+      });
+      const baseline = await geometry();
+      assert.equal(await p.locator('.board-local-seat .sg-photo-panel-compact').count(), 1,
+        'desktop self seat must use the compact landscape equipment layout');
+      assert.ok(baseline.rail.height > 0 && baseline.rail.height <= 29);
+      await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
+      const expanded = await geometry();
+      await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).click();
+      const collapsed = await geometry();
+      await p.getByRole('button', { name: 'Xác nhận' }).click();
+      await waitReplies(p, 1);
+      await p.getByRole('status').getByText('Đang cập nhật diễn biến ván đấu…').waitFor();
+      const idle = await geometry();
+      for (const [stage, current] of [['logs open', expanded], ['logs closed', collapsed],
+        ['waiting for server', idle]] as const) {
+        assert.equal(current.columns, baseline.columns, `${stage}: desktop column tracks shifted`);
+        for (const key of ['main', 'seat', 'rail', 'dashboard'] as const) {
+          for (const dimension of ['left', 'top', 'width', 'height'] as const) {
+            assert.ok(Math.abs(current[key][dimension] - baseline[key][dimension]) <= 1.5,
+              `${stage}: ${key}.${dimension} changed: ${JSON.stringify({ baseline, current })}`);
+          }
+        }
+      }
+      assert.equal(await p.locator('.board-local-skill-rail').getByRole('button', { name: 'hs__active' }).count(), 1,
+        'regular skills must remain in the same rail while the server is updating');
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
+    ['Choice dock stays bounded and hand selection never opens a tooltip', async (p) => {
+      for (const viewport of [
+        { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 800 },
+      ]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        const card = p.getByRole('button', { name: 'Sát', exact: true });
+        await card.hover();
+        assert.equal(await p.locator('.sg-card-popover-portal').count(), 0,
+          'hovering a playable card should not show its description over the controls');
+        await card.focus();
+        assert.equal(await p.locator('.sg-card-popover-portal').count(), 0,
+          'keyboard focus on a playable card should not open its tooltip');
+        const geometry = await p.evaluate(() => {
+          const dock = document.querySelector<HTMLElement>('.sg-inline-choice-dock')!.getBoundingClientRect();
+          const skill = document.querySelector<HTMLElement>('.board-local-skill-rail')!.getBoundingClientRect();
+          const hand = document.querySelector<HTMLElement>('.sg-hand-fan')!.getBoundingClientRect();
+          return { dock: { left: dock.left, right: dock.right, top: dock.top, bottom: dock.bottom },
+            skillTop: skill.top, handTop: hand.top, handBottom: hand.bottom,
+            documentWidth: document.documentElement.scrollWidth };
+        });
+        assert.ok(geometry.dock.left >= -1 && geometry.dock.right <= viewport.width + 1 &&
+          geometry.dock.top >= -1 && geometry.dock.bottom <= viewport.height + 1,
+        `choice dock escapes ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.dock.bottom <= geometry.skillTop + 1 &&
+          geometry.dock.bottom <= geometry.handTop + 1,
+        `choice dock overlaps cards/skills at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.documentWidth <= viewport.width + 1);
+        await card.click();
+        assert.equal(await card.getAttribute('aria-pressed'), 'true');
+        assert.equal(await p.locator('.sg-card-popover-portal').count(), 0,
+          'selecting a card should not leave a popup requiring dismissal');
+        await p.getByRole('button', { name: 'Xem chi tiết Sát' }).click();
+        await p.getByRole('dialog', { name: 'Sát' }).waitFor();
+        await p.keyboard.press('Escape');
+        assert.equal(await p.getByRole('dialog', { name: 'Sát' }).count(), 0);
+        assert.equal(await card.getAttribute('aria-pressed'), 'true',
+          'inspection should not change the Lua card selection');
+        await card.click();
+        assert.equal(await card.getAttribute('aria-pressed'), 'false', 'a second click should deselect');
+        await card.click();
+        await p.getByRole('button', { name: 'Xác nhận' }).click();
+        await waitReplies(p, 1);
+        assert.equal((await snapshot(p)).actions.filter((action) => action[0] === 'CardItem').length, 3);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
+    ['Touch taps select and confirm cards without sticky tooltip or modal', async (p) => {
+      const browser = p.context().browser();
+      assert.ok(browser);
+      const context = await browser.newContext({
+        viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
+      });
+      try {
+        const touchPage = await context.newPage();
+        touchPage.setDefaultTimeout(8_000);
+        await touchPage.goto(p.url());
+        const tap = async (locator: Locator) => {
+          await locator.scrollIntoViewIfNeeded();
+          const bounds = await locator.boundingBox();
+          assert.ok(bounds);
+          await touchPage.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        };
+        for (const { viewport, action, nativeId } of [
+          { viewport: { width: 390, height: 844 }, action: 'Xác nhận', nativeId: 'OK' },
+          { viewport: { width: 844, height: 390 }, action: 'Hủy', nativeId: 'Cancel' },
+        ]) {
+          await touchPage.setViewportSize(viewport);
+          await start(touchPage, 'choices');
+          const card = touchPage.getByRole('button', { name: 'Sát', exact: true });
+          await tap(card);
+          assert.equal(await card.getAttribute('aria-pressed'), 'true');
+          assert.equal(await touchPage.locator('.sg-card-popover-portal, .sg-card-modal-backdrop').count(), 0);
+          await tap(touchPage.getByRole('button', { name: action, exact: true }));
+          await waitReplies(touchPage, 1);
+          assert.deepEqual((await snapshot(touchPage)).actions.slice(0, 2), [
+            ['CardItem', 7, 'click', { selected: true }],
+            ['Button', nativeId, 'click', {}],
+          ]);
+        }
+      } finally {
+        await context.close();
+      }
+    }],
+    ['Keyboard selection and confirmation do not raise a card tooltip', async (p) => {
+      await start(p, 'choices');
+      const card = p.getByRole('button', { name: 'Sát', exact: true });
+      await card.focus();
+      await p.keyboard.press('Enter');
+      assert.equal(await card.getAttribute('aria-pressed'), 'true');
+      await p.keyboard.press('Space');
+      assert.equal(await card.getAttribute('aria-pressed'), 'false');
+      await p.keyboard.press('Enter');
+      assert.equal(await card.getAttribute('aria-pressed'), 'true');
+      assert.equal(await p.locator('.sg-card-popover-portal').count(), 0);
+      const ok = p.getByRole('button', { name: 'Xác nhận' });
+      await ok.focus();
+      await p.keyboard.press('Enter');
+      await waitReplies(p, 1);
+      assert.equal((await snapshot(p)).actions.filter((action) => action[0] === 'CardItem').length, 3);
     }],
     ['OK replies with exactly one CBOR packet generated by Lua', async (p) => {
       const id = await start(p, 'choices');
@@ -265,7 +666,7 @@ async function runSuite(page: Page) {
     }],
     ['App protects a running match from leaving, disconnecting and reload, with BOT alternative', async (p) => {
       await p.goto('/e2e.html?app=1');
-      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
+      await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
       await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
       const baseline = await p.evaluate(() => window.__tqsE2e.appActions());
@@ -302,14 +703,14 @@ async function runSuite(page: Page) {
         return event.defaultPrevented;
       }), false);
       await p.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click();
-      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
+      await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
       assert.equal(await p.getByRole('alertdialog').count(), 0);
       assert.equal((await p.evaluate(() => window.__tqsE2e.appActions())).at(-1), 'disconnect');
       await p.goto('/e2e.html');
     }],
     ['A second game in the same session starts without the previous game projection', async (p) => {
       await p.goto('/e2e.html?app=1');
-      await p.getByRole('heading', { name: 'Đăng nhập Tam Quốc Sát', exact: true }).waitFor();
+      await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
       await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.seedRoundData());

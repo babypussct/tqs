@@ -15,6 +15,7 @@ import BootScreen from './BootScreen';
 import LoginScreen from './LoginScreen';
 import LobbyScreen, { WaitingRoomScreen } from './LobbyScreen';
 import InitialGeneralPanel from './InitialGeneralPanel';
+import { userFacingError } from './engine/connectionMessages';
 
 export { default as LobbyScreen } from './LobbyScreen';
 export { WaitingRoomScreen } from './LobbyScreen';
@@ -74,7 +75,7 @@ export default function App() {
       result = Promise.reject(error);
     }
     void Promise.resolve(result).catch((error: unknown) => {
-      useGameStore.getState().update({ error: error instanceof Error ? error.message : String(error) });
+      useGameStore.getState().update({ error: userFacingError(error, snapshot.phase === 'playing' ? 'gameplay' : snapshot.phase === 'login' ? 'auth' : 'action') });
     }).finally(() => setBusy(false));
   };
 
@@ -104,6 +105,8 @@ export default function App() {
       {!networkOnline && <p className="notice" role="status">Bạn đang ngoại tuyến. Kết nối mạng để đăng nhập hoặc tiếp tục ván.</p>}
       <BootScreen phase={snapshot.phase} progress={snapshot.progress} error={snapshot.error}
         retry={() => run(() => adapter.boot())} />
+      {snapshot.error && ['lobby', 'room', 'playing'].includes(snapshot.phase) &&
+        <div className="notice error-notice" role="alert">{snapshot.error}</div>}
       {exitAction && snapshot.phase === 'playing' && <section className="panel" role="alertdialog" aria-labelledby="exit-title" aria-describedby="exit-warning">
         <h2 id="exit-title">Ván vẫn đang chạy</h2>
         <p id="exit-warning">Rời trận hoặc ngắt kết nối khi còn sống có thể khiến máy chủ tạm chặn IP. Nếu cần tạm nghỉ, hãy bật BOT chơi hộ và giữ trang mở.</p>
@@ -171,7 +174,7 @@ export default function App() {
         !snapshot.pendingRequest.cardsAndChoicePrompt &&
         !(snapshot.pendingRequest.command === 'CustomDialog' && snapshot.initialGeneral) &&
         !(['AskForChoices', 'AskForOptions'].includes(snapshot.pendingRequest.command) && snapshot.pendingRequest.choicePrompt) &&
-        <div className="notice error-notice" role="alert">Máy chủ đang chờ phản hồi: {snapshot.pendingRequest.command}. Bộ điều khiển gameplay chưa hỗ trợ yêu cầu này.</div>}
+        <div className="notice error-notice" role="alert">Trò chơi vừa nhận một yêu cầu chưa được phiên bản này hỗ trợ. Hãy tải lại trang; nếu vẫn gặp lỗi, vui lòng liên hệ ban điều hành.</div>}
       {snapshot.connection.kind === 'online' && <footer className="footer"><span>{snapshot.manifest?.fileCount ?? 0} tệp đã xác minh</span><button className="button ghost" disabled={busy} onClick={() => snapshot.phase === 'playing' ? setExitAction('disconnect') : run(disconnect)}>Ngắt kết nối</button></footer>}
     </main>
   );

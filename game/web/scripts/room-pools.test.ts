@@ -10,6 +10,7 @@ import { LuaRuntime } from '../src/engine/luaRuntime';
 import { GameAdapter, type RoomGeneral, type RoomPack, type RoomPacks, type PoolSummary } from '../src/engine/gameAdapter';
 import type { GameSession } from '../src/gameAuth';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
+import { GAME_POOL_PACKS } from '../../../src/game/gamePoolPacks';
 import { loadUpstreamFiles } from './upstream-packages';
 
 const upstream = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
@@ -47,6 +48,10 @@ async function main() {
     const packs = rt.call<RoomPacks>('__web_room_packs', 'new_heg_mode');
     assert.ok(packs.generals.length > 0, 'mode must advertise general packages');
     assert.ok(packs.cards.length > 0, 'mode must advertise card packages');
+    assert.deepEqual(packs.generals.map((pack) => pack.id).sort(),
+      GAME_POOL_PACKS.generals.map((pack) => pack.id).sort(), 'admin general options must match the installed mode');
+    assert.deepEqual(packs.cards.map((pack) => pack.id).sort(),
+      GAME_POOL_PACKS.cards.map((pack) => pack.id).sort(), 'admin card options must match the installed mode');
     const packageIds = [...packs.generals, ...packs.cards].map((p) => p.id);
     assert.equal(new Set(packageIds).size, packageIds.length, 'duplicate package IDs');
     assert.deepEqual(rt.eval(`
@@ -172,7 +177,7 @@ async function main() {
     };
     const session: GameSession = {
       uid: 'test', displayName: 'Test', nativeName: 'tqs_test', ticket: 'fixture', expiresAt: 9999999999,
-      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1,
+      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1, generalNum: 5,
         disabledPacks: { generals: [], cards: [] }, appliesTo: 'new_rooms' },
     };
     (adapter as unknown as {gameSession: GameSession}).gameSession = session;
@@ -217,6 +222,29 @@ async function main() {
     assert.deepEqual(modeCreated.settings._mode, { enterBattleRoyalOnFirstShuffle: true, old_battle_royal: false },
       'QA mode settings must preserve only the bounded native Battle Royal keys');
 
+    // The admin-selected opening hand is carried by the same session policy
+    // all the way to the native _game settings. The ten-general QA pool also
+    // proves the adapter rejects a two-seat room when seven choices each are
+    // required.
+    session.poolPolicy.generalNum = 7;
+    await assert.rejects(adapter.createRoom('Thiếu tướng theo policy', 2, 30, [], qaDisabledGenerals), /còn 10 tướng khác tên, cần ít nhất 14/);
+    assert.equal(notifications.length, 3, 'a pool below capacity * generalNum must not send CreateRoom');
+    await adapter.createRoom('Bảy lá tướng', 2, 30, disabled);
+    assert.equal(notifications.length, 4);
+    const sevenCreated = rt.eval<{settings: Record<string, unknown>}>(`
+      local data = cbor.decode(__host_hex2bin('${notifications[3].hex}'))
+      return {settings = data[4]}
+    `);
+    assert.equal((sevenCreated.settings._game as Record<string, unknown>).generalNum, 7);
+    session.poolPolicy.generalNum = 10;
+    await adapter.createRoom('Mười lá tướng', 2, 30, disabled);
+    assert.equal(notifications.length, 5);
+    const tenCreated = rt.eval<{settings: Record<string, unknown>}>(`
+      local data = cbor.decode(__host_hex2bin('${notifications[4].hex}'))
+      return {settings = data[4]}
+    `);
+    assert.equal((tenCreated.settings._game as Record<string, unknown>).generalNum, 10);
+
     // A saved admin policy may include mode-excluded packages. The server
     // remains strict; only supported locks may reach its Lua summary/wire.
     session.poolPolicy.disabledPacks = {
@@ -229,9 +257,9 @@ async function main() {
     assert.deepEqual(adapter.getAdminDisabledPacks(), restrictions.disabled);
     assert.deepEqual(adapter.getRoomPoolSummary(restrictions.disabled), summary);
     await adapter.createRoom(' Policy cũ ', 2, 30);
-    assert.equal(notifications.length, 4);
+    assert.equal(notifications.length, 6);
     const policyPacket = rt.eval<{settings: Record<string, unknown>}>(`
-      local data = cbor.decode(__host_hex2bin('${notifications[3].hex}'))
+      local data = cbor.decode(__host_hex2bin('${notifications[5].hex}'))
       return {settings = data[4]}
     `);
     assert.deepEqual(policyPacket.settings.disabledPack, restrictions.disabled,

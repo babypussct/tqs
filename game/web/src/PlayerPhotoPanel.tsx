@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BASELINE_NAMES, formatRank, getSuitInfo } from './HandCardItem';
 import { useDisplayText } from './engine/displayText';
 import type { GameplayItem } from './store/gameplayState';
@@ -34,6 +35,7 @@ export interface PlayerPhotoPanelProps {
   style?: React.CSSProperties;
   isShaking?: boolean;
   avatarReaction?: AvatarReactionType | null;
+  equipmentPortalTarget?: HTMLElement | null;
 }
 
 type EquipmentSlotKey = 'treasure' | 'weapon' | 'armor' | 'defensive_ride' | 'offensive_ride';
@@ -329,13 +331,17 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, equipmentPortalTarget,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
   const isDeputyRevealed = !!game?.deputyGeneral && game.deputyGeneral !== 'anjiang';
   const main = (isMainRevealed ? game.general : (self ? (game?.selfGeneral || (game?.general && game?.general !== 'anjiang' ? game?.general : null)) : null)) ?? null;
   const deputy = (isDeputyRevealed ? game.deputyGeneral : (self ? (game?.selfDeputyGeneral || (game?.deputyGeneral && game?.deputyGeneral !== 'anjiang' ? game?.deputyGeneral : null)) : null)) ?? null;
+  // Keep both halves mounted. When exactly one general is revealed, the other
+  // half shows its card back even if the local player knows its private name.
+  const mainPortrait = isDeputyRevealed && !isMainRevealed ? null : main;
+  const deputyPortrait = isMainRevealed && !isDeputyRevealed ? null : deputy;
   const mainExtension = isMainRevealed ? game.generalExtension : self ? (game?.selfGeneralExtension ?? game?.generalExtension) ?? null : null;
   const deputyExtension = isDeputyRevealed ? game.deputyGeneralExtension : self ? (game?.selfDeputyGeneralExtension ?? game?.deputyGeneralExtension) ?? null : null;
   const kingdom = game?.visibleKingdom || game?.kingdom;
@@ -354,10 +360,10 @@ export default function PlayerPhotoPanel({
     RoundStart: 'Bắt đầu lượt', Start: 'Chuẩn bị', Judge: 'Phán định', Draw: 'Rút bài',
     Play: 'Đánh bài', Discard: 'Bỏ bài', Finish: 'Kết thúc lượt', NotActive: 'Ngoài lượt', PhaseNone: 'Chuyển giai đoạn',
   } as Record<string, string>)[String(game.phase)] ?? String(game.phase);
-  const faceLabel = main ? text(main) : 'Chủ tướng ẩn';
-  const deputyLabel = deputy ? text(deputy) : 'Phó tướng ẩn';
-  const mainCompat = !main ? faceLabel : self && !game?.general ? `${faceLabel} · Chưa lật` : null;
-  const deputyCompat = !deputy ? deputyLabel : self && !game?.deputyGeneral ? `${deputyLabel} · Chưa lật` : null;
+  const faceLabel = mainPortrait ? text(mainPortrait) : 'Chủ tướng ẩn';
+  const deputyLabel = deputyPortrait ? text(deputyPortrait) : 'Phó tướng ẩn';
+  const mainCompat = !main ? faceLabel : self && !game?.general ? `${text(main)} · Chưa lật` : null;
+  const deputyCompat = !deputy ? deputyLabel : self && !game?.deputyGeneral ? `${text(deputy)} · Chưa lật` : null;
 
   const mainUnrevealed = self && !isMainRevealed && !!main;
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
@@ -387,11 +393,11 @@ export default function PlayerPhotoPanel({
     </div>
 
     {/* 2. FULL-BLEED DUAL GENERAL PORTRAIT FRAME */}
-    <div className={`sg-portrait-frame native-portrait-canvas ${deputy ? 'has-deputy' : 'single'} ${game?.faceup === false ? 'is-face-turned' : ''}`}
+    <div className={`sg-portrait-frame native-portrait-canvas has-deputy ${game?.faceup === false ? 'is-face-turned' : ''}`}
       aria-label={`${faceLabel}; ${deputyLabel}`}>
-      <PortraitImage name={main} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : mainUnrevealed} />
-      <PortraitImage name={deputy} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : deputyUnrevealed} />
-      {deputy && <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />}
+      <PortraitImage name={mainPortrait} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : mainUnrevealed} />
+      <PortraitImage name={deputyPortrait} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : deputyUnrevealed} />
+      <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />
       {bothUnrevealed && <span className="sg-unrevealed-badge sg-unrevealed-badge-pair" aria-hidden="true">Chưa lật</span>}
       <PortraitOverlays game={game} self={self} />
       {avatarReaction === 'hit-shake' && (
@@ -416,7 +422,9 @@ export default function PlayerPhotoPanel({
     <HandCardBadge count={game?.handcardNum} />
 
     {/* 5. AUTHENTIC 4-ROW / 5-SLOT EQUIPMENT PLATE */}
-    <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />
+    {equipmentPortalTarget
+      ? createPortal(<EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />, equipmentPortalTarget)
+      : <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />}
 
     {/* 6. MARKS AND DOM COMPATIBILITY HOOKS */}
     {marks.length > 0 && <div className="sg-photo-marks" aria-label="Dấu hiệu công khai">

@@ -9,6 +9,8 @@ import {
   getCardCategory,
   resolveCardText,
   normalizeCardDisplayName,
+  getCardEquipAudioType,
+  getNativeCardArtCandidates,
   getNativeCardArtUrl,
   type CardData,
 } from '../src/HandCardItem';
@@ -227,6 +229,19 @@ test('getNativeCardArtUrl uses the focused catalogue before exact package fallba
   assert.equal(getNativeCardArtUrl(undefined), null);
 });
 
+test('native card art candidates preserve package identity before catalogue fallback', () => {
+  assert.deepEqual(getNativeCardArtCandidates({ extension: 'hegemony', name: 'slash' }).slice(0, 2), [
+    '/packages/hegemony/image/card/slash.png',
+    '/card-catalog-art/slash.png',
+  ]);
+  assert.equal(getNativeCardArtCandidates({ extension: 'gamemode', name: 'drowning' })[0],
+    '/packages/gamemode/image/card/drowning.png');
+  assert.equal(getCardEquipAudioType('sa__breastplate'), 'armor');
+  assert.equal(getCardEquipAudioType('liulongcanjia'), 'horse');
+  assert.equal(getCardEquipAudioType('yangsui_spear'), 'weapon');
+  assert.equal(getCardEquipAudioType('ex_nihilo'), null);
+});
+
 test('Vite emits the native card whitelist into production output as well as serving it in dev', () => {
   const source = readFileSync(path.join(rootDir, 'vite.config.ts'), 'utf8');
   assert.match(source, /generateBundle/);
@@ -234,6 +249,9 @@ test('Vite emits the native card whitelist into production output as well as ser
   assert.match(source, /quoc-chien-card-inventory\.json/);
   assert.match(source, /card-catalog-art/);
   assert.match(source, /emitFile/);
+  assert.match(source, /collectRuntimeMediaAssetPaths/);
+  assert.match(source, /audio\/card/);
+  assert.match(source, /\.mp3/);
 });
 
 test('styles.css contains log scrollbar, single-line ticker, and skill font styles', () => {
@@ -269,16 +287,16 @@ test('portrait toolbar uses compact icons without removing accessible action nam
   assert.match(css, /@media \(max-width: 600px\) and \(orientation: portrait\) and \(pointer: coarse\)/);
 });
 
-test('version is displayed as BETA across screens rather than hardcoded 2.4.1', () => {
+test('current trial labels appear on boot/login and BETA in lobby without hardcoded 2.4.1', () => {
   const bootScreen = readFileSync(path.join(rootDir, 'src/BootScreen.tsx'), 'utf8');
   const loginScreen = readFileSync(path.join(rootDir, 'src/LoginScreen.tsx'), 'utf8');
   const lobbyScreen = readFileSync(path.join(rootDir, 'src/LobbyScreen.tsx'), 'utf8');
 
   assert.doesNotMatch(bootScreen, /2\.4\.1/);
-  assert.match(bootScreen, /Phiên bản:\s*BETA/);
+  assert.match(bootScreen, /Phiên bản:\s*Thử nghiệm/);
 
   assert.doesNotMatch(loginScreen, /2\.4\.1/);
-  assert.match(loginScreen, /Phiên bản:\s*BETA/);
+  assert.match(loginScreen, /Phiên bản:\s*Thử nghiệm/);
 
   assert.doesNotMatch(lobbyScreen, /2\.4\.1/);
   assert.match(lobbyScreen, /Bản\s*BETA/);

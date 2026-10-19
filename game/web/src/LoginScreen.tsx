@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { GameAdapter } from './engine/gameAdapter';
 import { useGameStore } from './store/gameStore';
 import HeroSpotlight from './HeroSpotlight';
-import { createGameSessionForCurrentUser, GameAccessError, logoutGame, prepareGameAuth, signInAndCreateGameSession, watchGameUser } from './gameAuth';
+import { completeGameGoogleRedirect, createGameSessionForCurrentUser, gameGoogleLoginMode, GameAccessError, logoutGame, prepareGameAuth, signInAndCreateGameSession, watchGameUser } from './gameAuth';
+import { userFacingError } from './engine/connectionMessages';
 
 interface LoginScreenProps {
   adapter: GameAdapter;
@@ -26,7 +27,12 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
     const unsubscribe = watchGameUser((user) => {
       if (active) setGameUser(user);
     });
-    void prepareGameAuth().then(() => {
+    void prepareGameAuth().then(async () => {
+      try {
+        await completeGameGoogleRedirect();
+      } catch (error) {
+        if (active) setLocalError(userFacingError(error, 'auth'));
+      }
       if (active) setAuthLoading(false);
     }).catch(() => {
       if (active) {
@@ -44,6 +50,7 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
         const session = gameUser
           ? await createGameSessionForCurrentUser()
           : await signInAndCreateGameSession();
+        if (!session) return; // Redirecting to Google in the current tab.
         await adapter.login(session);
       } catch (error) {
         if (error instanceof GameAccessError) {
@@ -55,7 +62,7 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
             setAccessIssue('suspended');
             return;
           }
-          setLocalError(error.message);
+          setLocalError(userFacingError(error, 'auth'));
           return;
         }
         throw error;
@@ -201,7 +208,7 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
 
                 <button
                   className="button primary sg-btn-hero"
-                  disabled={busy || isConnecting || authLoading}
+                  disabled={busy || isConnecting || authLoading || (!gameUser && gameGoogleLoginMode === 'open-in-browser')}
                   type="button"
                   onClick={connectToBattlefield}
                 >
@@ -237,6 +244,13 @@ export default function LoginScreen({ adapter, run, busy }: LoginScreenProps) {
                     </>
                   )}
                 </button>
+
+                {!gameUser && gameGoogleLoginMode === 'open-in-browser' && (
+                  <p className="sg-auth-welcome-note" role="status">
+                    Trên iPhone, đăng nhập Google trong ứng dụng đã thêm vào Màn hình chính có thể mất phiên xác thực.
+                    Hãy <a href="https://tqsvn.pages.dev/" target="_blank" rel="noopener noreferrer">mở trò chơi bằng Safari</a> để đăng nhập và chơi.
+                  </p>
+                )}
 
                 {gameUser && (
                   <button

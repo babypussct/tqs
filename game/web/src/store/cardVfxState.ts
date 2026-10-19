@@ -24,10 +24,20 @@ export interface FlyingCardEvent {
   fromPlayerId: number;
   toPlayerIds: number[];
   cardName: string;
+  /** Public card-model hints, when the same card was projected by Lua. */
+  trueName?: string;
+  extension?: string;
+  picName?: string;
   suit?: number;
   number?: number;
   createdAt: number;
   phase: 'fly_to_center' | 'holding' | 'projectile_to_target' | 'done';
+}
+
+export interface CardAssetHint {
+  trueName?: string;
+  extension?: string;
+  picName?: string;
 }
 
 export interface ImpactVfxEvent {
@@ -472,8 +482,23 @@ export function useCardVfx() {
     setImpacts((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
-  const processGameLogs = useCallback((logs: string[]) => {
+  const processGameLogs = useCallback((logs: string[], cardAssetHints: Readonly<Record<string, CardAssetHint>> = {}) => {
+    const enrichKnownCardAssets = () => {
+      setFlyingCards((current) => {
+        let changed = false;
+        const next = current.map((card) => {
+          const hint = cardAssetHints[card.cardName];
+          if (!hint || (card.extension === hint.extension && card.picName === hint.picName && card.trueName === hint.trueName)) {
+            return card;
+          }
+          changed = true;
+          return { ...card, ...hint };
+        });
+        return changed ? next : current;
+      });
+    };
     if (logs.length <= lastProcessedLogCount.current) {
+      enrichKnownCardAssets();
       if (logs.length < lastProcessedLogCount.current) {
         lastProcessedLogCount.current = logs.length;
       }
@@ -492,11 +517,15 @@ export function useCardVfx() {
       const baseId = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 6)}`;
 
       if (parsed.flyingCard) {
+        const hint = cardAssetHints[parsed.flyingCard.cardName];
         newFlying.push({
           id: `fly-${baseId}`,
           fromPlayerId: parsed.flyingCard.fromPlayerId,
           toPlayerIds: parsed.flyingCard.toPlayerIds,
           cardName: parsed.flyingCard.cardName,
+          trueName: hint?.trueName,
+          extension: hint?.extension,
+          picName: hint?.picName,
           suit: parsed.flyingCard.suit,
           number: parsed.flyingCard.number,
           createdAt: Date.now(),

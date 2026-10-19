@@ -10,7 +10,7 @@ import {
 } from '../src/store/cardVfxState';
 import { calculateBezierCurve, TargetingArrowOverlay } from '../src/TargetingOverlay';
 import { CardFlyOverlay } from '../src/CardVfxOverlay';
-import { soundManager, SoundManager } from '../src/engine/webAudioSfx';
+import { cardAudioUrlCandidates, soundManager, SoundManager } from '../src/engine/webAudioSfx';
 import { CATALOG_CARD_ART_NAMES } from '../src/catalogCardArt';
 import { projectNativeVfx } from '../src/store/nativeVfxEvents';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
@@ -299,6 +299,12 @@ test('authentic upstream FreeKill audio and animation assets exist on disk in we
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
     assert.ok(files.length >= 6, `Folder ${folder} must contain at least 6 frames, found ${files.length}`);
   }
+
+  // Source package media remains available for exact extension/name lookup.
+  const runtimeRoot = path.resolve(new URL('../../../runtime', import.meta.url).pathname);
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/gamemode/image/card/drowning.png')));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/gamemode/audio/card/male/drowning.mp3')));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/mobile/audio/card/ex_crossbow.mp3')));
 });
 
 test('soundManager handles native damage sounds, card voices, equip sounds, and toggle modes', () => {
@@ -322,6 +328,23 @@ test('soundManager handles native damage sounds, card voices, equip sounds, and 
   assert.equal(soundManager.isUseNativeAudio(), false);
   soundManager.setUseNativeAudio(true);
   assert.equal(soundManager.isUseNativeAudio(), true);
+});
+
+test('card audio candidates follow package and gender fallback order', () => {
+  const gamemodeFemale = cardAudioUrlCandidates('drowning', { extension: 'gamemode', gender: 'female' });
+  assert.deepEqual(gamemodeFemale.slice(0, 3), [
+    '/packages/gamemode/audio/card/female/drowning.mp3',
+    '/audio/card/female/drowning.mp3',
+    '/packages/mobile/audio/card/female/drowning.mp3',
+  ]);
+  const mobileEquipSkill = cardAudioUrlCandidates('ex_crossbow', { extension: 'mobile', gender: 'male' });
+  assert.equal(mobileEquipSkill[0], '/packages/mobile/audio/card/male/ex_crossbow.mp3');
+  assert.ok(mobileEquipSkill.includes('/packages/mobile/audio/card/ex_crossbow.mp3'));
+  const femaleFallback = cardAudioUrlCandidates('slash', { gender: 'female' });
+  assert.deepEqual(femaleFallback.slice(0, 2), [
+    '/audio/card/female/slash.mp3',
+    '/packages/gamemode/audio/card/female/slash.mp3',
+  ]);
 });
 
 test('native Indicate fan-out and sequential target chains are handled exactly', () => {

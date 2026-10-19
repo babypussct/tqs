@@ -3,6 +3,7 @@ import type { RequestInfo } from './engine/connection';
 import { GameAdapter } from './engine/gameAdapter';
 import type { InitialGeneralPrompt } from './engine/generalSelection';
 import { plainText, useDisplayText } from './engine/displayText';
+import { userFacingError } from './engine/connectionMessages';
 
 interface InitialGeneralPanelProps {
   adapter: GameAdapter;
@@ -54,7 +55,7 @@ export default function InitialGeneralPanel({ adapter, run, busy, request, promp
         }
         setChosen([chosen[0], name]);
       } catch (error) {
-        setWarning(error instanceof Error ? error.message : 'Không thể kiểm tra cặp tướng bằng Lua.');
+        setWarning(userFacingError(error, 'gameplay'));
       }
     }
   };

@@ -88,6 +88,19 @@ const DETERMINISTIC_LANDSCAPE_SEATS: Record<number, Array<{ left: string; top: s
     { left: '20%', top: '26%' },
     { left: '9%', top: '46%' },
   ],
+  // Eight opponents around self. The generic ellipse places the upper side
+  // seats only ~98px apart vertically at 1280px desktop, less than the
+  // rendered 114px photo panel, so two target surfaces overlap.
+  9: [
+    { left: '78%', top: '59%' },
+    { left: '92%', top: '46%' },
+    { left: '86%', top: '22%' },
+    { left: '65%', top: '12%' },
+    { left: '35%', top: '12%' },
+    { left: '14%', top: '22%' },
+    { left: '8%', top: '46%' },
+    { left: '22%', top: '59%' },
+  ],
   10: [
     { left: '92%', top: '48%' },
     { left: '83%', top: '30%' },

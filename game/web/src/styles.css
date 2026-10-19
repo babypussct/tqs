@@ -2312,6 +2312,9 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .sg-card-detail-sheet {
   width: 100%;
   max-width: 440px;
+  max-height: min(90dvh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #1a130d;
   border: 2px solid var(--sg-gold);
   border-radius: 14px 14px 0 0;
@@ -2377,6 +2380,30 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   line-height: 1.45;
   text-align: left;
   margin: 0;
+}
+.sg-sheet-native-details {
+  width: 100%;
+  margin: 0;
+  display: grid;
+  gap: 9px;
+  text-align: left;
+}
+.sg-sheet-native-details > div {
+  border-top: 1px solid rgba(212, 155, 56, .28);
+  padding-top: 7px;
+}
+.sg-sheet-native-details dt {
+  color: var(--sg-gold-hi);
+  font-size: 12px;
+  font-weight: 800;
+}
+.sg-sheet-native-details dd {
+  margin: 3px 0 0;
+  color: var(--sg-cream);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .sg-sheet-footer {
   display: flex;
@@ -2444,6 +2471,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   gap: 16px;
   pointer-events: none;
   margin-bottom: 6px;
+  width: 100%;
+  min-width: 0;
 }
 
 .native-deck-slot {
@@ -2469,6 +2498,15 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .native-deck-slot.discard-pile {
   background: #1a120c;
   border: 1px solid rgba(140, 110, 80, 0.5);
+}
+.native-deck-slot.discard-pile.has-top-card {
+  /* .board-center disables pointer events for its decorative background.
+     Re-enable only the public discard card's inspect action. */
+  pointer-events: auto;
+}
+.native-deck-slot.discard-pile.has-top-card > .native-deck-badge,
+.native-deck-slot.discard-pile.has-top-card > .native-deck-label {
+  pointer-events: none;
 }
 .native-deck-badge {
   background: rgba(0, 0, 0, 0.82);
@@ -2497,6 +2535,13 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   border-radius: 3px;
   background: #f0ebe1;
   z-index: 1;
+  padding: 0;
+  cursor: pointer;
+}
+.native-pile-card-preview:focus-visible,
+.native-resolving-card:focus-visible {
+  outline: 2px solid #fff2bb;
+  outline-offset: 2px;
 }
 .native-pile-card-preview .sg-card-native-art {
   inset: 0;
@@ -2549,11 +2594,20 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .native-table-pile {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 8px;
   padding: 4px 8px;
-  min-width: 80px;
+  min-width: 0;
   min-height: 74px;
+  flex: 1 1 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  pointer-events: auto;
+  touch-action: pan-x;
   background: rgba(10, 20, 15, 0.72);
   border: 1px solid rgba(212, 155, 56, 0.45);
   border-radius: 8px;
@@ -2573,6 +2627,60 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   animation: native-card-popup 260ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
   position: relative;
   flex: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+.native-resolving-hidden,
+.native-pile-card-hidden {
+  background: #1e1610 url('/photo-assets/back/wei.png') center/cover no-repeat;
+  border-color: #b48d51;
+}
+.native-resolving-hidden {
+  justify-content: flex-end;
+  align-items: center;
+}
+.native-resolving-hidden-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff5df;
+  background: rgba(0, 0, 0, .82);
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 5px;
+}
+.native-resolving-virtual-name {
+  position: absolute;
+  z-index: 2;
+  inset: 39% 1px auto;
+  padding: 1px 2px;
+  background: rgba(255, 253, 241, .93);
+  border: 1px solid #6f491e;
+  border-radius: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #30150d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.native-resolving-footnote {
+  position: absolute;
+  z-index: 2;
+  inset: auto 1px 14px;
+  padding: 2px 1px;
+  background: rgba(255, 249, 223, .95);
+  border-radius: 2px;
+  color: #30150d;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 @keyframes native-card-popup {
   0% { transform: scale(0.65) translateY(16px); opacity: 0; }
@@ -2580,6 +2688,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 
 .native-resolving-card .card-head {
+  position: relative;
+  z-index: 2;
   font-size: 7.5px;
   font-weight: bold;
   padding: 2px 3px;
@@ -2609,6 +2719,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   object-fit: cover;
 }
 .native-resolving-card .card-foot {
+  position: relative;
+  z-index: 2;
   font-size: 7.5px;
   font-weight: 800;
   text-align: center;
@@ -2695,8 +2807,6 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .sg-portrait-frame.has-deputy .sg-portrait-slot.sg-portrait-main { width: 50%; }
 .sg-portrait-frame.has-deputy .sg-portrait-slot.sg-portrait-deputy { width: 50%; }
-.sg-portrait-frame.single .sg-portrait-slot.sg-portrait-main { width: 100%; }
-.sg-portrait-frame.single .sg-portrait-slot.sg-portrait-deputy { display: none; }
 
 /* UNREVEALED (CHƯA LẬT) GENERAL GRAYSCALE RULE */
 .sg-portrait-slot.is-unrevealed img {
@@ -3063,6 +3173,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 }
 .native-eq-name {
   flex: 1;
+  min-width: 0;
   font-weight: 800;
   color: #ffe299;
   white-space: nowrap;
@@ -3107,9 +3218,13 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   display: flex;
   gap: 1px;
   height: 10px;
+  min-width: 0;
 }
 .native-equip-half {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3408,6 +3523,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .sg-board-table .board-center {
     top: 56% !important;
   }
+
   .board-local-dashboard {
     flex: 0 0 auto !important;
     display: grid !important;
@@ -4304,7 +4420,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     font-size: 7px;
   }
   .sg-board-table .native-table-pile {
-    min-width: 50px;
+    min-width: 0;
     min-height: 48px;
     padding: 2px 4px;
     gap: 4px;
@@ -4418,6 +4534,22 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 @media (max-width: 899px) and (orientation: portrait), (max-width: 640px) and (orientation: portrait) {
   .sg-board-table .board-center {
     top: 38%;
+    width: min(342px, 96vw);
+    min-width: 0;
+    max-width: 96vw;
+  }
+  /* Keep the actual resolving faces and their native footnotes legible on a
+   * tall phone; a wide batch still scrolls inside the table pile. */
+  .sg-board-table .native-resolving-card {
+    width: 56px;
+    height: 78px;
+  }
+  .sg-board-table .native-resolving-card .card-head,
+  .sg-board-table .native-resolving-card .card-foot {
+    font-size: 8px;
+  }
+  .sg-board-table .native-resolving-footnote {
+    font-size: 8px;
   }
 }
 
@@ -6514,7 +6646,6 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 }
 
-/* SHORT LANDSCAPE SCREENS (PHONES ROTATED SIDEWAYS) */
 @media (orientation: landscape) and (max-height: 520px) {
   .sg-logo-area {
     display: none;
@@ -6655,6 +6786,17 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 
   .sg-board-table .board-center {
+    top: 56% !important;
+  }
+
+  /* The native resolving row needs its full card height inside the felt.
+   * On shallow two-seat boards, move the other seat aside so it cannot
+   * cover the face, footnote or cards before their 1500ms vanish steps. */
+  .sg-board-table.board-table-seats-2 .board-opponents .sg-photo-panel {
+    left: 17% !important;
+    top: 40% !important;
+  }
+  .sg-board-table.board-table-seats-2 .board-center-seats-2 {
     top: 56% !important;
   }
 
@@ -7572,4 +7714,586 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 @keyframes fk-indicator-fade {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+/* Game board geometry must not depend on the current Lua request. */
+.board-local-skill-rail > .regular-skill-dock,
+.board-local-skill-rail > .gameplay-skill-dock,
+.board-local-skill-rail .regular-skill-dock .native-skill-options,
+.board-local-skill-rail .gameplay-skill-dock .native-skill-options {
+  display: contents !important;
+}
+.board-local-skill-rail .regular-skill-dock .native-skill-header { display: none !important; }
+
+/* Modal requests live in document.body so parent transforms and clipped
+   game boards cannot create an unexpected containing block. */
+.sg-request-dialog.request-panel {
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100100 !important;
+  display: block !important;
+  width: min(520px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: clamp(10px, 2vw, 20px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+  box-shadow: 0 18px 52px rgba(0,0,0,.9), 0 0 0 100vmax rgba(0,0,0,.72) !important;
+}
+.sg-request-dialog.request-panel > [role="region"] { min-width: 0; max-width: 100%; }
+.sg-request-dialog.request-panel .gameplay-options { min-width: 0; max-width: 100%; }
+
+/* Special usage modes (Trùng Chú, normal use, Quyết Chiến) occupy a bounded
+   drawer above the HUD, never an extra column alongside the hand cards. */
+.sg-gameplay-controls > .sg-inline-choice-dock {
+  position: absolute !important;
+  bottom: calc(100% + 78px) !important;
+  right: 0 !important;
+  width: min(340px, calc(100vw - 24px)) !important;
+  max-width: 100% !important;
+  max-height: min(30dvh, 220px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  z-index: 65 !important;
+  border: 1px solid var(--sg-gold-hi);
+  border-radius: 7px;
+  background: rgba(21, 16, 12, .98);
+  box-shadow: 0 8px 28px rgba(0,0,0,.78);
+  font-size: 12px;
+}
+.sg-inline-choice-dock > summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  cursor: pointer;
+  padding: 5px 9px;
+  background: #302217;
+  color: var(--sg-gold-hi);
+  font-size: 11px;
+  font-weight: 700;
+}
+.sg-inline-choice-content { display: grid; gap: 7px; padding: 6px; }
+.sg-inline-choice-group { min-width: 0; }
+.sg-inline-choice-group h3 { margin: 0 0 4px; font-size: 11px; }
+.sg-inline-choice-group .gameplay-options { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.sg-inline-choice-group .gameplay-choice {
+  flex: 1 1 110px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 7px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.sg-card-popover-tooltip.sg-card-popover-portal {
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  overflow: hidden;
+}
+.sg-card-popover-portal .sg-tip-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.sg-card-popover-portal .sg-tip-title { overflow-wrap: anywhere; }
+
+@media (min-width: 900px) and (min-height: 521px) {
+  /* Reserve the log column even while its contents are collapsed. */
+  /* Keep the usage drawer clear of the action buttons at the right end of
+     the floating HUD, including after an ancestor scrollIntoView. */
+  .sg-gameplay-controls > .sg-inline-choice-dock {
+    left: 0 !important;
+    right: auto !important;
+  }
+  .sg-game-board .board-layout,
+  .sg-game-board .board-layout.logs-collapsed,
+  .sg-game-board .board-layout.has-logs-open {
+    grid-template-columns: minmax(0, 1fr) 260px !important;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel .board-log-heading {
+    height: 42px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px !important;
+  }
+  .board-layout.logs-collapsed .sg-board-log-panel .board-log-heading strong {
+    writing-mode: horizontal-tb !important;
+    letter-spacing: normal !important;
+    font-size: 12px !important;
+  }
+  .board-local-dashboard {
+    grid-template-columns: 108px minmax(0, 1fr) !important;
+    grid-template-rows: 28px 90px !important;
+    gap: 2px 8px !important;
+    padding: 3px 8px !important;
+  }
+  .board-local-seat {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    height: 114px !important;
+    min-height: 114px !important;
+    max-height: 114px !important;
+  }
+  .board-local-seat .sg-photo-panel {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    height: 114px !important;
+    min-height: 114px !important;
+    max-height: 114px !important;
+    overflow: visible !important;
+  }
+  .board-local-seat .sg-photo-panel-compact .sg-portrait-frame { height: 80px !important; }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 108px !important;
+    max-width: 108px !important;
+    height: 33px !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-rows: 1fr !important;
+    gap: 1px !important;
+    padding: 1px !important;
+    box-sizing: border-box !important;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-rides-split {
+    display: contents !important;
+  }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-row,
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-half { min-width: 0 !important; }
+  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-name {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    overflow-wrap: anywhere;
+    font-size: 6px !important;
+    line-height: 1.05 !important;
+  }
+  .board-local-skill-rail { height: 28px !important; max-height: 28px !important; }
+  .board-local-skill-rail .sg-skill-button,
+  .board-local-skill-rail .fake-skill-button,
+  .board-local-skill-rail .regular-skill-button {
+    min-height: 26px !important;
+    height: 26px !important;
+    min-width: 64px !important;
+    max-width: 112px !important;
+    font-size: 10px !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan,
+  .board-local-idle-area .sg-hand-idle {
+    height: 84px !important;
+    min-height: 84px !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button,
+  .board-local-idle-area .sg-hand-idle .sg-card-button {
+    flex: 0 0 58px !important;
+    width: 58px !important;
+    min-width: 58px !important;
+    height: 78px !important;
+    padding: 2px !important;
+  }
+  .board-local-idle-area .board-status { font-size: 11px !important; }
+}
+
+/* Keep the idle hand identical in size to the active hand. The status label
+   floats above the dashboard, leaving the entire hand row for cards. */
+.board-local-idle-area { position: relative !important; }
+.board-local-idle-area .board-status {
+  position: absolute !important;
+  right: 0 !important;
+  bottom: calc(100% + 12px) !important;
+  max-width: min(245px, 70%) !important;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  pointer-events: none;
+  z-index: 26 !important;
+}
+
+@media (max-width: 899px) {
+  .sg-gameplay-controls > .sg-inline-choice-dock {
+    bottom: calc(100% + 42px) !important;
+    max-height: min(24dvh, 150px) !important;
+  }
+}
+@media (min-width: 601px) and (max-width: 899px) and (orientation: landscape) {
+  /* The landscape action HUD floats above the dashboard: leave clearance for
+     its OK/Cancel buttons even when the choice drawer is expanded. */
+  .sg-gameplay-controls > .sg-inline-choice-dock {
+    bottom: calc(100% + 80px) !important;
+  }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .sg-gameplay-controls > .sg-inline-choice-dock {
+    /* The skill rail is immediately above the hand on portrait phones. */
+    bottom: calc(100% + 75px) !important;
+    max-height: min(20dvh, 150px) !important;
+  }
+  .board-local-idle-area .board-status { bottom: calc(100% + 4px) !important; font-size: 9px !important; }
+}
+
+/* The three native skill docks share one horizontal flex row.  Flatten only
+   docks mounted in this rail; the AskForSkillInvoke portal retains its layout. */
+.board-local-skill-rail {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  min-width: 0;
+}
+.board-local-skill-rail > .native-skill-dock,
+.board-local-skill-rail > .fake-skill-dock,
+.board-local-skill-rail > .regular-skill-dock,
+.board-local-skill-rail > .gameplay-skill-dock,
+.board-local-skill-rail .native-skill-options,
+.board-local-skill-rail .fake-skill-dock .native-skill-options,
+.board-local-skill-rail .regular-skill-dock .native-skill-options,
+.board-local-skill-rail .gameplay-skill-dock .native-skill-options {
+  display: contents !important;
+}
+.board-local-skill-rail .native-skill-header { display: none !important; }
+.board-local-skill-rail .sg-skill-button,
+.board-local-skill-rail .fake-skill-button,
+.board-local-skill-rail .regular-skill-button {
+  flex: 0 0 auto !important;
+  min-width: 64px !important;
+  width: max-content !important;
+  max-width: 112px !important;
+  position: relative;
+  box-sizing: border-box !important;
+}
+
+/* Idle status belongs to the empty upper-left corner of the TABLE, away from
+   the hand and skill controls.  Seats draw above it and all clicks pass through. */
+.sg-board-table > .board-table-status {
+  position: absolute !important;
+  top: clamp(5px, 1.2vw, 14px) !important;
+  left: clamp(5px, 1.2vw, 14px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: max-content;
+  max-width: min(215px, 28%) !important;
+  padding: 3px 6px !important;
+  margin: 0 !important;
+  font-size: clamp(9px, .78vw, 11px) !important;
+  line-height: 1.2;
+  font-weight: 600;
+  color: rgba(225, 229, 201, .85);
+  background: rgba(12, 28, 18, .45) !important;
+  border: 1px solid rgba(166, 172, 130, .24) !important;
+  box-shadow: none !important;
+  overflow-wrap: break-word;
+  pointer-events: none !important;
+  z-index: 3 !important;
+}
+
+/* Center labels stay single-line, inspectable by title, and scroll when many
+   event/target banners arrive instead of covering the processing pile. */
+.sg-board-table .board-center-seat-count {
+  margin: 1px 0 0 !important;
+  font-size: 9px !important;
+  line-height: 1.1;
+}
+.sg-board-table .board-banners {
+  display: flex;
+  justify-content: safe center;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 3px;
+  margin: 2px 0 0 !important;
+  max-width: min(100%, 340px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+.sg-board-table .board-banners .board-mark {
+  flex: 0 0 auto;
+  max-width: min(180px, 65vw);
+  padding: 2px 5px !important;
+  font-size: 9px !important;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(43, 35, 22, .48);
+}
+
+/* Processing cards: the artwork fills the card; rank and suit form a vertical
+   corner column, with the full name wrapping beside it on a transparent label. */
+.native-resolving-card .card-thumb {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100%;
+  height: 100%;
+}
+.native-resolving-card .native-resolving-topline {
+  position: absolute;
+  z-index: 4;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  pointer-events: none;
+}
+.sg-board-table .native-resolving-card .card-head {
+  position: static !important;
+  display: block !important;
+  flex: 0 0 11px;
+  width: 11px;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 1px #000, 1px 0 1px #000;
+}
+.native-resolving-card .card-head > span:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.native-resolving-card .native-resolving-rank,
+.native-resolving-card .native-resolving-suit { display: block; }
+.native-resolving-card .card-cat-badge { display: none !important; }
+.sg-board-table .native-resolving-card .card-foot {
+  position: static !important;
+  flex: 1 1 0;
+  min-width: 0;
+  max-height: 39px;
+  display: block;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  color: #fff5dc !important;
+  font-size: 8px !important;
+  font-weight: 900 !important;
+  line-height: 1.03;
+  text-align: left;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  text-overflow: clip !important;
+  text-shadow: -1px -1px 1px #241309, 1px -1px 1px #241309,
+               -1px 1px 1px #241309, 1px 1px 1px #241309;
+}
+.native-resolving-card .native-resolving-virtual-name {
+  inset: 55% 1px auto;
+  font-size: 7px;
+}
+.native-resolving-card .native-resolving-footnote {
+  bottom: 2px;
+  font-size: 7px;
+  padding: 1px;
+}
+
+@media (max-width: 899px) {
+  .sg-board-table > .board-table-status {
+    top: 4px !important;
+    left: 5px !important;
+    max-width: min(128px, 31%) !important;
+    font-size: 8px !important;
+    padding: 2px 4px !important;
+  }
+  .sg-board-table .native-resolving-card .card-head {
+    flex-basis: 9px;
+    width: 9px;
+    font-size: 7.5px !important;
+  }
+  .sg-board-table .native-resolving-card .card-foot { font-size: 7px !important; }
+  .sg-board-table .board-banners .board-mark { font-size: 8px !important; }
+}
+@media (min-width: 601px) and (max-width: 899px) and (orientation: landscape) {
+  /* The first opponent can begin about 100px from the table's left edge.
+     Keep the waiting notice inside the free corner even at 844x390. */
+  .sg-board-table > .board-table-status {
+    max-width: min(94px, 12%) !important;
+  }
+}
+
+/* Desktop: one equipment plate moves into its own five-row column beside the
+   avatar, leaving the first control row for scrolling skills. */
+@media (min-width: 900px) and (min-height: 521px) {
+  .board-local-dashboard {
+    grid-template-columns: 108px 158px minmax(0, 1fr) !important;
+    column-gap: 8px !important;
+  }
+  .board-local-seat { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
+  .board-local-self-equipment {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    min-width: 0;
+    position: relative;
+    z-index: 22;
+  }
+  .board-local-skill-rail {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+  }
+  .board-local-dashboard > .sg-gameplay-controls,
+  .board-local-dashboard > .board-local-idle-area {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+  }
+  .board-local-self-equipment > .native-equip-plate {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    box-sizing: border-box;
+    padding: 3px 5px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    border: 1px solid rgba(212, 155, 56, .32);
+    border-radius: 5px;
+    background: rgba(15, 12, 9, .65) !important;
+    pointer-events: auto !important;
+  }
+  .board-local-self-equipment .native-equip-rides-split { display: contents !important; }
+  .board-local-self-equipment .native-equip-row,
+  .board-local-self-equipment .native-equip-half {
+    height: auto !important;
+    min-height: 0 !important;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    padding: 1px 3px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+  .board-local-self-equipment .native-equip-row.empty,
+  .board-local-self-equipment .native-equip-half.empty { opacity: .65; }
+  .board-local-self-equipment .native-eq-icon { width: 15px; flex: 0 0 15px; }
+  .board-local-self-equipment .native-eq-thumb { height: 13px; max-width: 15px; }
+  .board-local-self-equipment .sg-equip-icon { width: 13px; height: 13px; }
+  .board-local-self-equipment .native-eq-name {
+    min-width: 0;
+    flex: 1 1 0;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis;
+  }
+  .board-local-self-equipment .native-eq-suit { font-size: 9px; }
+}
+
+/* A compact plate flattens the ride wrapper into two grid cells via
+   display: contents. The half cells are still DOM grandchildren, so the
+   original direct-child slot rules do not reach them. Apply the same bounded
+   geometry as the weapon/armor/treasure cells at both phone orientations. */
+.board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-equip-rides-split > .native-equip-half {
+  box-sizing: border-box;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: auto !important;
+  height: 100% !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+.board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-equip-rides-split > .native-equip-half .native-eq-icon {
+  /* Reserve a visible icon footprint even before the upstream PNG loads. */
+  flex: 0 0 8px !important;
+  width: 8px !important;
+  min-width: 8px !important;
+  height: 8px !important;
+  min-height: 8px !important;
+}
+.board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-equip-rides-split > .native-equip-half .native-eq-thumb {
+  height: 8px;
+  max-width: 8px;
+}
+.board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-equip-rides-split > .native-equip-half .native-eq-suit {
+  flex: 0 0 6px !important;
+  line-height: 6px !important;
+  margin: 0 !important;
+}
+.board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-equip-rides-split > .native-equip-half .native-eq-name {
+  /* Leave enough room for the long two-line horse name below icon and rank. */
+  flex: 1 1 0 !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  margin: 0 !important;
+}
+
+/* Opponent equipment plates can be narrower than 50px in landscape.  Keep
+   each horse's icon, truncated label and suit within its own half; the full
+   translated name and suit/rank remain in the slot title/ARIA description. */
+.board-opponents .native-equip-rides-split {
+  min-width: 0;
+  overflow: hidden;
+}
+.board-opponents .native-equip-half {
+  min-width: 0;
+  gap: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+.board-opponents .native-equip-half .native-eq-icon {
+  flex: 0 0 6px;
+  width: 6px;
+  min-width: 6px;
+}
+.board-opponents .native-equip-half .native-eq-thumb,
+.board-opponents .native-equip-half .sg-equip-icon {
+  width: 6px;
+  max-width: 6px;
+  height: 6px;
+}
+.board-opponents .native-equip-half .native-eq-name {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font-size: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.board-opponents .native-equip-half .native-eq-suit {
+  flex: 0 0 auto;
+  font-size: 5px;
+  line-height: 1;
 }

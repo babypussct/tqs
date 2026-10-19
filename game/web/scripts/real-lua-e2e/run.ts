@@ -86,10 +86,269 @@ try {
   assert.equal(bootError, null, `Real Lua WASM boot failed: ${bootError}`);
 
   const tests: [string, (page: Page) => Promise<void>][] = [
+    ['Native Lua MoveCards keeps draw/discard counts, concealed processing faces and concurrent reveals in the center', async (p) => {
+      const pileEvidenceDir = process.env.TQS_EVIDENCE_DIR ? path.resolve(process.env.TQS_EVIDENCE_DIR) : null;
+      if (pileEvidenceDir) mkdirSync(pileEvidenceDir, { recursive: true });
+      const { cards, initialDraw } = await p.evaluate(() => window.__tqsRealLuaE2e.beginTablePile());
+      const first = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
+      assert.equal(first.drawPileCount, initialDraw);
+      assert.equal(first.processingCards.length, 3);
+      assert.equal(first.processingCards[0].name, cards[0].name);
+      assert.equal(first.processingCards[0].footnote, 'Đang giải quyết kỹ năng');
+      assert.equal(first.processingCards[0].virtName, 'fire__slash');
+      assert.deepEqual(first.processingCards[1], { name: '', suit: 0, number: 0, known: false });
+      assert.equal(first.processingCards[2].name, cards[2].name);
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-card').count(), 3);
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-hidden').count(), 1);
+      assert.match(await p.locator('#nativeProcessingArea .native-resolving-card').first().getAttribute('title') ?? '',
+        /Đang giải quyết kỹ năng/);
+      const shownCard = p.locator('#nativeProcessingArea .native-resolving-card').first();
+      assert.match(await shownCard.locator('.card-head').innerText(), /[A234567890JQK]|10/);
+      assert.ok((await shownCard.locator('.card-foot').innerText()).length > 2);
+      assert.ok((await shownCard.locator('.native-resolving-virtual-name').innerText()).length > 0);
+      assert.equal(await shownCard.locator('.native-resolving-footnote').innerText(), 'Đang giải quyết kỹ năng');
+      const fullNote = await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileLongNote(id), cards[0].id);
+      assert.ok(new TextEncoder().encode(fullNote).length > 240,
+        'regression must exercise native annotations that exceed the former 240-byte cutoff');
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).processingCards[0].footnote, fullNote);
+      const repliesBeforeInspect = (await snapshot(p)).replies.length;
+      await shownCard.click();
+      const detail = p.getByRole('dialog', { name: /Sát|Thiểm|Đào|.+/ });
+      await detail.waitFor();
+      assert.equal(await detail.locator('.sg-sheet-native-details dd').last().innerText(), fullNote,
+        'tap must reveal the entire native annotation despite the two-line overlay');
+      assert.ok((await detail.innerText()).includes('Dùng như'), 'virtual card identity must stay readable');
+      assert.ok((await detail.innerText()).includes('Hỏa Sát'), 'translated virtual name must stay readable');
+      assert.equal(await p.locator('body > .sg-card-modal-backdrop').count(), 1,
+        'card detail must portal above the horizontally scrollable native table');
+      if (pileEvidenceDir) await p.screenshot({ path: path.join(pileEvidenceDir,
+        'native-piles-long-note-detail-390x844-20261019.png') });
+      assert.equal((await snapshot(p)).replies.length, repliesBeforeInspect,
+        'inspecting processing cards must never reply or select a gameplay action');
+      await p.keyboard.press('Escape');
+      await detail.waitFor({ state: 'hidden' });
+      assert.equal(await shownCard.evaluate((el) => document.activeElement === el), true,
+        'closing the detail sheet must return keyboard focus to the card');
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-hidden button').count(), 0,
+        'concealed native cards must not expose an inspection action');
+      const alias = await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileVirtualAlias(id), cards[0].id);
+      assert.equal(alias[0].virtName, 'thunder__slash', 'virtual ID must resolve to the public native card');
+      assert.equal(alias[0].footnote, 'Bài ảo đang xử lý');
+      const hiddenAlias = await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileVirtualAlias(id, false), cards[1].id);
+      assert.deepEqual(hiddenAlias[1], { name: '', suit: 0, number: 0, known: false },
+        'virtual metadata must never reveal an unknown processing card');
+      const sharedAlias = await p.evaluate(([first, second]) =>
+        window.__tqsRealLuaE2e.tablePileSharedVirtualAlias(first, second), [cards[0].id, cards[2].id]);
+      assert.equal(sharedAlias[0].footnote, 'Chỉ lá đầu tiên có mã ảo trùng');
+      assert.notEqual(sharedAlias[2].footnote, sharedAlias[0].footnote,
+        'RoomModel.find must update only the first card with a matching virtual ID');
+
+      for (const viewport of [{ width: 320, height: 568 }, { width: 320, height: 844 },
+        { width: 390, height: 844 }, { width: 740, height: 360 },
+        { width: 844, height: 390 }, { width: 932, height: 430 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        const position = await p.locator('#nativeProcessingArea').evaluate((el) => {
+          const rect = el.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, width: rect.width, scroll: el.scrollWidth,
+            client: el.clientWidth, overflow: getComputedStyle(el).overflowX };
+        });
+        assert.ok(position.left >= -1 && position.right <= viewport.width + 1,
+          `center processing must remain in viewport ${viewport.width}x${viewport.height}: ${JSON.stringify(position)}`);
+        assert.equal(position.overflow, 'auto');
+        const overlap = await p.evaluate(() => {
+          const processing = document.querySelector('#nativeProcessingArea')!.getBoundingClientRect();
+          const stage = document.querySelector('.sg-board-table')!.getBoundingClientRect();
+          const opponents = [...document.querySelectorAll('.board-opponents .sg-photo-panel')]
+            .map((seat) => seat.getBoundingClientRect());
+          const collides = opponents.some((seat) =>
+            seat.left < processing.right && seat.right > processing.left &&
+            seat.top < processing.bottom && seat.bottom > processing.top);
+          return {
+            processing: { x: processing.x, y: processing.y, right: processing.right, bottom: processing.bottom },
+            stage: { top: stage.top, bottom: stage.bottom },
+            opponents: opponents.map((seat) => ({ x: seat.x, y: seat.y, right: seat.right, bottom: seat.bottom })),
+            collides,
+          };
+        });
+        assert.equal(overlap.collides, false,
+          `opponent must not obscure any processing card at ${viewport.width}x${viewport.height}: ${JSON.stringify(overlap)}`);
+        assert.ok(overlap.processing.y >= overlap.stage.top - 1 &&
+          overlap.processing.bottom <= overlap.stage.bottom + 1,
+        `processing card art and notes must remain inside the table at ${viewport.width}x${viewport.height}: ${JSON.stringify(overlap)}`);
+        if (viewport.width === 390 || viewport.width === 844) {
+          const layers = await shownCard.evaluate((el) => {
+            const rank = el.querySelector<HTMLElement>('.card-head')!;
+            const footer = el.querySelector<HTMLElement>('.card-foot')!;
+            const note = el.querySelector<HTMLElement>('.native-resolving-footnote')!;
+            const picture = el.querySelector<HTMLElement>('.sg-card-native-art');
+            const headline = el.querySelector<HTMLElement>('.native-resolving-topline')!;
+            const rankValue = el.querySelector<HTMLElement>('.native-resolving-rank')!;
+            const suitValue = el.querySelector<HTMLElement>('.native-resolving-suit')!;
+            const rankBox = rankValue.getBoundingClientRect();
+            const suitBox = suitValue.getBoundingClientRect();
+            const footerBox = footer.getBoundingClientRect();
+            const cardBox = el.getBoundingClientRect();
+            return {
+              rank: getComputedStyle(rank).zIndex, footer: getComputedStyle(footer).zIndex,
+              note: getComputedStyle(note).zIndex,
+              picture: picture ? getComputedStyle(picture).zIndex : '0',
+              noteSize: note.getBoundingClientRect().height,
+              topLayer: getComputedStyle(headline).zIndex,
+              nameBackground: getComputedStyle(footer).backgroundColor,
+              nameSize: { height: footerBox.height, scrollHeight: footer.scrollHeight,
+                left: footerBox.left, right: footerBox.right, top: footerBox.top },
+              card: { left: cardBox.left, right: cardBox.right, top: cardBox.top },
+              rankBox: { left: rankBox.left, top: rankBox.top, bottom: rankBox.bottom },
+              suitBox: { left: suitBox.left, top: suitBox.top, bottom: suitBox.bottom },
+            };
+          });
+          assert.ok(layers.noteSize > 0 && +layers.topLayer > +layers.picture && +layers.note > +layers.picture,
+          `native suit/rank/name/footnote must paint above card art: ${JSON.stringify(layers)}`);
+          assert.ok(layers.rankBox.bottom <= layers.suitBox.top + 1 &&
+            Math.abs(layers.rankBox.left - layers.suitBox.left) < 4 &&
+            layers.rankBox.top >= layers.card.top - 1,
+          `rank and suit must stack vertically at the card's upper-left: ${JSON.stringify(layers)}`);
+          assert.ok(layers.nameSize.left >= layers.suitBox.left + 6 &&
+            layers.nameSize.right <= layers.card.right + 1 &&
+            layers.nameSize.top <= layers.suitBox.top + 3 &&
+            layers.nameSize.scrollHeight <= layers.nameSize.height + 1,
+          `full compact card name must fit beside rank/suit: ${JSON.stringify(layers)}`);
+          assert.equal(layers.nameBackground, 'rgba(0, 0, 0, 0)',
+            'processing card title must not have an opaque/semitransparent backdrop');
+        }
+        if (viewport.width === 844) {
+          await shownCard.click();
+          const sheetFits = await p.locator('.sg-card-detail-sheet').evaluate((el) => {
+            const rect = el.getBoundingClientRect();
+            return { top: rect.top, bottom: rect.bottom, viewport: window.innerHeight,
+              overflowY: getComputedStyle(el).overflowY };
+          });
+          assert.ok(sheetFits.top >= -1 && sheetFits.bottom <= sheetFits.viewport + 1 &&
+            sheetFits.overflowY === 'auto', `long annotation must remain accessible in landscape: ${JSON.stringify(sheetFits)}`);
+          if (pileEvidenceDir) await p.screenshot({ path: path.join(pileEvidenceDir,
+            'native-piles-long-note-detail-844x390-20261019.png') });
+          await p.getByRole('button', { name: 'Đóng bảng chi tiết lá bài' }).click();
+        }
+        if (pileEvidenceDir && (viewport.width === 390 || viewport.width === 844)) {
+          await p.screenshot({ path: path.join(pileEvidenceDir,
+            `native-piles-processing-${viewport.width}x${viewport.height}-20261019.png`) });
+        }
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+      const afterMove = await p.evaluate((ids) => window.__tqsRealLuaE2e.tablePileMoveToDiscard(ids),
+        [cards[0].id, cards[1].id]);
+      assert.equal(afterMove.processingCards.length, 1);
+      assert.equal(afterMove.discardPileCount, 2);
+      assert.equal(afterMove.topDiscardCard?.known, false, 'hidden face must stay concealed from processing to discard');
+      assert.equal(await p.locator('.discard-pile .native-pile-card-hidden').count(), 1);
+      assert.equal(afterMove.discardReveals.at(-1)?.cards.length, 2,
+        'native TablePile retains both discarded cards until the two-phase vanish timer');
+      assert.match(afterMove.discardReveals.at(-1)?.cards[0].footnote ?? '', /bỏ lá/,
+        'FreeKill replaces the old resolving footnote with its native discard note');
+      assert.equal(afterMove.discardReveals.at(-1)?.cards[1].known, false);
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-card').count(), 3,
+        'departing cards remain visible at the center even though physical processing has one card');
+      assert.equal(await p.locator('.discard-pile button').count(), 0,
+        'the last discarded hidden card must not allow inspection');
+      if (pileEvidenceDir) await p.screenshot({ path: path.join(pileEvidenceDir,
+        'native-piles-discard-transition-390x844-20261019.png') });
+
+      await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileReveal(id, ''), cards[0].id);
+      await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileReveal(id, 'Đang xem bài'), cards[2].id);
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-card').count(), 5,
+        'two rapid ShowVirtualCard callbacks must coexist with physical cards and recent discards');
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).processingCards.length, 1,
+        'virtual reveals must never change physical processing count');
+      await p.waitForFunction(() => document.querySelectorAll('#nativeProcessingArea .native-resolving-card').length === 1,
+        undefined, { timeout: 8500 });
+      await p.evaluate((ids) => window.__tqsRealLuaE2e.tablePileRevealBurst(ids),
+        [cards[0].id, cards[2].id]);
+      await p.waitForFunction(() => document.querySelectorAll('#nativeProcessingArea .native-resolving-card').length === 3,
+        undefined, { timeout: 1500 });
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).virtualReveals.length, 4,
+        'both same-tick native reveals must survive React state batching');
+      const parsedNote = await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileRevealParsedNote(id), cards[0].id);
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).virtualReveals.at(-1)?.cards[0].footnote,
+        parsedNote, 'native LogMessage for ShowVirtualCard must keep its parsed footnote');
+      await p.evaluate((id) => window.__tqsRealLuaE2e.tablePileMoveToDiscard([id]), cards[2].id);
+      assert.equal(await p.locator('.discard-pile .native-pile-card-preview').count(), 1);
+      await p.locator('.discard-pile .native-pile-card-preview').click();
+      assert.equal(await p.locator('body > .sg-card-modal-backdrop').count(), 1,
+        'the newest public discard must open the native card detail above the table');
+      await p.getByRole('button', { name: 'Đóng bảng chi tiết lá bài' }).click();
+      assert.equal((await snapshot(p)).replies.length, repliesBeforeInspect);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+      const dense = await p.evaluate(() => window.__tqsRealLuaE2e.beginTablePile(12));
+      await p.setViewportSize({ width: 320, height: 844 });
+      assert.equal(await p.locator('#nativeProcessingArea .native-resolving-card').count(), 12);
+      const denseGeometry = await p.locator('#nativeProcessingArea').evaluate((el) => ({
+        scroll: el.scrollWidth, client: el.clientWidth, right: el.getBoundingClientRect().right,
+      }));
+      assert.ok(denseGeometry.scroll > denseGeometry.client + 100,
+        `12 concurrent native cards must be horizontally reachable: ${JSON.stringify(denseGeometry)}`);
+      assert.ok(denseGeometry.right <= 321);
+      const lastCardReachable = await p.locator('#nativeProcessingArea').evaluate((el) => {
+        el.scrollLeft = el.scrollWidth;
+        // Known cards render as buttons; concealed cards remain divs. The
+        // selector :last-of-type would otherwise select an earlier hidden div.
+        const last = [...el.querySelectorAll('.native-resolving-card')].at(-1);
+        if (!last) return { reachable: false, scrollLeft: el.scrollLeft, scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth, last: null };
+        const item = last.getBoundingClientRect();
+        const view = el.getBoundingClientRect();
+        return { reachable: item.left >= view.left - 1 && item.right <= view.right + 1,
+          scrollLeft: el.scrollLeft, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
+          last: { left: item.left, right: item.right }, view: { left: view.left, right: view.right } };
+      });
+      assert.ok(lastCardReachable.reachable,
+        `the twelfth native processing card must be reachable by scrolling: ${JSON.stringify(lastCardReachable)}`);
+      assert.equal(dense.cards.length, 12);
+      if (pileEvidenceDir) await p.screenshot({ path: path.join(pileEvidenceDir,
+        'native-piles-12-processing-320x844-20261019.png') });
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+    }],
     ['FreeKill Lua VM boots and produces actual skill prompt in React', async (p) => {
       await start(p);
       await p.getByRole('heading', { name: 'Kích hoạt kỹ năng?' }).waitFor();
       await p.getByText('Kích hoạt kỹ năng thử?').waitFor();
+      assert.equal((await snapshot(p)).replies.length, 0);
+    }],
+    ['In-match request popup stays centered and independent from board columns', async (p) => {
+      await start(p);
+      const dialog = p.getByRole('dialog', { name: 'Kích hoạt kỹ năng?' });
+      await dialog.waitFor();
+      for (const viewport of [
+        { width: 320, height: 844 }, { width: 390, height: 844 },
+        { width: 844, height: 390 }, { width: 1280, height: 800 },
+      ]) {
+        await p.setViewportSize(viewport);
+        const geometry = await p.evaluate(() => {
+          const element = document.querySelector<HTMLElement>('.sg-request-dialog')!;
+          const bounds = element.getBoundingClientRect();
+          const board = document.querySelector<HTMLElement>('.board-layout');
+          return {
+            parentIsBody: element.parentElement === document.body,
+            position: getComputedStyle(element).position,
+            left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom,
+            centerX: bounds.left + bounds.width / 2,
+            centerY: bounds.top + bounds.height / 2,
+            boardExists: board !== null,
+            documentWidth: document.documentElement.scrollWidth,
+          };
+        });
+        assert.equal(geometry.parentIsBody, true, 'request must portal outside the layout grid');
+        assert.equal(geometry.position, 'fixed');
+        assert.equal(geometry.boardExists, true);
+        assert.ok(geometry.left >= -1 && geometry.right <= viewport.width + 1 &&
+          geometry.top >= -1 && geometry.bottom <= viewport.height + 1,
+        `request popup must fit ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+        assert.ok(Math.abs(geometry.centerX - viewport.width / 2) < 2 &&
+          Math.abs(geometry.centerY - viewport.height / 2) < 2,
+        `request popup must stay centered: ${JSON.stringify(geometry)}`);
+        assert.ok(geometry.documentWidth <= viewport.width + 1,
+          `request popup must not expand the document: ${JSON.stringify(geometry)}`);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
       assert.equal((await snapshot(p)).replies.length, 0);
     }],
     ['Real Lua gameplay hand renders catalogue art and remains horizontally scrollable', async (p) => {
@@ -1006,6 +1265,18 @@ try {
       await notify('PropertyUpdate', "{-1, 'general', 'ld__bianfuren'}");
       await bot.getByText('Biện Phu Nhân', { exact: true }).waitFor();
       await bot.getByText('Phó tướng ẩn', { exact: true }).waitFor();
+      const assertSplitPortrait = async (seat: typeof self, hidden: 'main' | 'deputy') => {
+        const sizes = await seat.locator('.sg-portrait-frame').evaluate((frame) => {
+          const left = frame.querySelector<HTMLElement>('.sg-portrait-main')!;
+          const right = frame.querySelector<HTMLElement>('.sg-portrait-deputy')!;
+          return [frame.getBoundingClientRect().width, left.getBoundingClientRect().width, right.getBoundingClientRect().width];
+        });
+        assert.ok(Math.abs(sizes[1] - sizes[0] / 2) < 1 && Math.abs(sizes[2] - sizes[0] / 2) < 1,
+          `Chủ/phó phải chiếm mỗi bên 50%: ${sizes.join(' / ')}`);
+        assert.equal(await seat.locator(`.sg-portrait-${hidden} .sg-portrait-card-back`).count(), 1);
+        assert.equal(await seat.locator(`.sg-portrait-${hidden} .sg-portrait-name`).count(), 0);
+      };
+      await assertSplitPortrait(bot, 'deputy');
       for (const source of ["{17, 'chained', true}", "{17, 'faceup', false}", "{17, 'hp', -1}"])
         await notify('PropertyUpdate', source);
       await self.getByText('Đang bị xích', { exact: true }).waitFor();
@@ -1017,7 +1288,12 @@ try {
       for (const source of ["{17, 'general', 'ld__bianfuren'}", "{17, 'chained', false}",
         "{17, 'faceup', true}", "{17, 'hp', 1}"]) await notify('PropertyUpdate', source);
       await self.getByText('Biện Phu Nhân', { exact: true }).waitFor();
-      for (const label of ['Biện Phu Nhân · Chưa lật', 'Hấp hối', 'Đang bị xích', 'Úp mặt'])
+      await assertSplitPortrait(self, 'deputy');
+      await notify('PropertyUpdate', "{17, 'general', 'anjiang'}");
+      await notify('PropertyUpdate', "{17, 'deputyGeneral', 'm_heg__dianwei'}");
+      await assertSplitPortrait(self, 'main');
+      await self.getByText('Biện Phu Nhân · Chưa lật', { exact: true }).waitFor();
+      for (const label of ['Hấp hối', 'Đang bị xích', 'Úp mặt'])
         assert.equal(await self.getByText(label, { exact: true }).count(), 0);
       board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
       assert.equal(board.player[17].hp, 1);
@@ -1252,8 +1528,11 @@ try {
       assert.equal(await general.isDisabled(), true);
       assert.equal(await card.isChecked(), false);
       assert.equal(await card.isDisabled(), true);
-      assert.match(await p.getByText(/Policy quản trị chứa gói không thuộc bể/).innerText(),
-        /hegemony_nos.*m_lord_cards.*missing_pack/);
+      const notice = await p.getByText(/Một số gói trong cấu hình cũ/).innerText();
+      assert.match(notice, /tự động bỏ qua.*tạo phòng bình thường/);
+      assert.doesNotMatch(notice, /hegemony_nos|m_lord_cards|missing_pack|policy|Lua|ID/i);
+      const displayedLobby = await p.locator('.sg-lobby-screen').innerText();
+      assert.doesNotMatch(displayedLobby, /hegemony_nos|m_lord_cards|missing_pack|Policy quản trị/);
       assert.match(await p.locator('.pool-summary').innerText(), /196 tướng.*109 lá/);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
       await p.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
@@ -2188,6 +2467,8 @@ try {
   );
   const testsToRun = process.argv.includes('--qa-scenarios')
     ? tests.filter(([name]) => name.startsWith('QA Scenario Mode'))
+    : process.argv.includes('--table-piles')
+    ? tests.filter(([name]) => name.startsWith('Native Lua MoveCards keeps draw/discard'))
     : process.argv.includes('--room-pools')
     ? tests.filter(([name]) => name.startsWith('UI-02'))
     : tests;

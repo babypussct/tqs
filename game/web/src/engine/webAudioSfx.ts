@@ -27,6 +27,66 @@ export type SfxName =
   | 'armor'
   | 'horse';
 
+export type CardAudioGender = 'male' | 'female';
+export type CardEquipAudioType = 'weapon' | 'armor' | 'horse';
+
+export interface CardAudioOptions {
+  gender?: CardAudioGender;
+  /** FreeKill package extensionName, when it is present in the public card model. */
+  extension?: string;
+  /** Original card name used by FreeKill when a view-as name has no voice asset. */
+  trueName?: string;
+  equipType?: CardEquipAudioType | null;
+  onMissing?: () => void;
+}
+
+const SAFE_AUDIO_PART = /^[A-Za-z0-9_-]+$/;
+const SOURCE_AUDIO_PACKAGES = ['gamemode', 'mobile'] as const;
+
+function safeAudioPart(value: string | undefined): string | null {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && SAFE_AUDIO_PART.test(normalized) ? normalized : null;
+}
+
+/**
+ * Resolve audio in the same order as FreeKill's usecard.lua:
+ * package-local voice first, then the browser's standard voice catalogue and
+ * the shipped package media.  Mobile package voices are root-level assets,
+ * while gamemode voices use the male/female subdirectories.
+ */
+export function cardAudioUrlCandidates(cardName: string, options: CardAudioOptions = {}): string[] {
+  const names = [...new Set([cardName, options.trueName]
+    .map(safeAudioPart)
+    .filter((name): name is string => !!name))];
+  const extension = safeAudioPart(options.extension);
+  const genders: CardAudioGender[] = options.gender === 'female' ? ['female', 'male'] : ['male'];
+  const packages = [...new Set([
+    extension,
+    ...SOURCE_AUDIO_PACKAGES,
+  ].filter((name): name is string => !!name))];
+  const candidates: string[] = [];
+  const add = (url: string) => {
+    if (!candidates.includes(url)) candidates.push(url);
+  };
+
+  for (const name of names) {
+    for (const gender of genders) {
+      if (extension) add(`/packages/${extension}/audio/card/${gender}/${name}.mp3`);
+      add(`/audio/card/${gender}/${name}.mp3`);
+      for (const packageName of packages) {
+        if (packageName === extension) continue;
+        add(`/packages/${packageName}/audio/card/${gender}/${name}.mp3`);
+      }
+    }
+    // Some upstream package effects use a non-gendered card sound (notably
+    // mobile derived equipment skills).
+    for (const packageName of packages) {
+      add(`/packages/${packageName}/audio/card/${name}.mp3`);
+    }
+  }
+  return candidates;
+}
+
 export class SoundManager {
   private ctx: AudioContext | null = null;
   private enabled = true;
@@ -133,25 +193,78 @@ export class SoundManager {
     }
   }
 
+  /** Try native URLs in order and invoke the resilient fallback only after all fail. */
+  private playAudioCandidates(urls: string[], onMissing?: () => void): boolean {
+    if (!this.enabled) return true;
+    if (!this.useNativeAudio || typeof Audio === 'undefined') {
+      onMissing?.();
+      return false;
+    }
+    const candidates = [...new Set(urls.filter(Boolean))];
+    if (!candidates.length) {
+      onMissing?.();
+      return false;
+    }
+
+    let index = 0;
+    let settled = false;
+    const tryNext = () => {
+      if (settled) return;
+      const url = candidates[index++];
+      if (!url) {
+        settled = true;
+        onMissing?.();
+        return;
+      }
+      let audio: HTMLAudioElement;
+      try {
+        audio = new Audio(url);
+        const next = () => {
+          if (settled) return;
+          tryNext();
+        };
+        audio.onerror = next;
+        const playResult = audio.play();
+        if (playResult && typeof playResult.then === 'function') {
+          playResult.then(() => {
+            settled = true;
+          }).catch(next);
+        } else {
+          // Test doubles and older WebViews may not return the play Promise.
+          settled = true;
+        }
+      } catch {
+        tryNext();
+      }
+    };
+    tryNext();
+    return true;
+  }
+
   /**
    * Plays native card voice lines (male/female) identical to upstream FreeKill.
    */
-  public playCardVoice(cardName: string, gender: 'male' | 'female' = 'male'): boolean {
-    if (!this.enabled || !this.useNativeAudio || typeof Audio === 'undefined') return false;
-    try {
-      const cleanName = cardName.trim().toLowerCase();
-      const audio = new Audio(`/audio/card/${gender}/${cleanName}.mp3`);
-      audio.play().catch(() => {
-        // Fallback to male if female is missing, or silent if not found
-        if (gender === 'female') {
-          const fallbackAudio = new Audio(`/audio/card/male/${cleanName}.mp3`);
-          fallbackAudio.play().catch(() => {});
-        }
-      });
-      return true;
-    } catch {
-      return false;
+  public playCardVoice(cardName: string, gender: CardAudioGender = 'male', options: Omit<CardAudioOptions, 'gender' | 'equipType'> = {}): boolean {
+    return this.playAudioCandidates(
+      cardAudioUrlCandidates(cardName, { ...options, gender }),
+      options.onMissing,
+    );
+  }
+
+  /** Play the source card-use sound: common equip subtype or package voice. */
+  public playCardUseSound(cardName: string, options: CardAudioOptions = {}): boolean {
+    const fallback = options.onMissing ?? (() => this.playCardPlaySound());
+    if (options.equipType) {
+      return this.playAudioCandidates(
+        [`/audio/card/common/${options.equipType}.mp3`],
+        fallback,
+      );
     }
+    return this.playCardVoice(cardName, options.gender ?? 'male', {
+      extension: options.extension,
+      trueName: options.trueName,
+      onMissing: fallback,
+    });
   }
 
   /**

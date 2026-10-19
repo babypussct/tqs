@@ -19,10 +19,11 @@ export function roomPoolDisabledReason(
   pool: RoomPoolSummary | null,
   capacity: number,
   qaError?: string,
+  generalNum = 5,
 ): string | null {
   if (qaError) return qaError;
   if (!pool) return 'Không thể kiểm tra bể tướng và bể bài từ Lua.';
-  const requiredGenerals = capacity * 5;
+  const requiredGenerals = capacity * generalNum;
   const requiredCards = capacity * 4;
   const missing: string[] = [];
   if (pool.generals < requiredGenerals) {

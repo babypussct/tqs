@@ -49,7 +49,9 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
     setTipIndex((prev) => (prev + 1) % GUOZHAN_TIPS.length);
   };
 
-  if (!booting && !error) return null;
+  // Login and in-game errors belong to their active screen; showing the boot
+  // overlay as well would duplicate a notice and obscure the next action.
+  if (!booting) return null;
 
   const currentTip = GUOZHAN_TIPS[tipIndex];
   const progressText = humanizeProgress(progress);

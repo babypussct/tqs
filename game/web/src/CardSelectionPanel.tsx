@@ -3,6 +3,7 @@ import type { RequestInfo } from './engine/connection';
 import type { CardSelectionPrompt, PoxiView } from './engine/cardSelection';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
+import { userFacingError } from './engine/connectionMessages';
 
 export default function CardSelectionPanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardSelectionPrompt; busy: boolean;
@@ -22,7 +23,7 @@ export default function CardSelectionPanel({ request, prompt, busy, view, respon
   let error = '';
   if (!expired) {
     try { rules = view(selected); }
-    catch (e) { error = (e as Error).message; }
+    catch (e) { error = userFacingError(e, 'gameplay'); }
   }
   const disabled = busy || expired || !!error;
   return <RequestDialog className="panel request-panel" label="Chọn bài đối thủ"

@@ -3,6 +3,7 @@ import type { RequestInfo } from './engine/connection';
 import type { CardsAndChoicePrompt } from './engine/cardsAndChoice';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
+import { userFacingError } from './engine/connectionMessages';
 
 export default function CardsAndChoicePanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardsAndChoicePrompt; busy: boolean;
@@ -23,7 +24,7 @@ export default function CardsAndChoicePanel({ request, prompt, busy, view, respo
   let error = '';
   if (!expired) {
     try { rules = view(selected); }
-    catch (e) { error = (e as Error).message; }
+    catch (e) { error = userFacingError(e, 'gameplay'); }
   }
   const disabled = busy || expired;
   const label = (card: CardsAndChoicePrompt['cards'][number]) => <>

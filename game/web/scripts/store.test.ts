@@ -38,6 +38,82 @@ const generalDialog = (overrides: Record<string, unknown> = {}) => ({
   } },
 });
 
+test('native draw/discard/processing projection preserves all cards and clears reshuffled discard', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  state = reduceUiEvent(state, 'PilesUpdate', {
+    draw: 75, discard: 2,
+    topDiscard: { name: 'jink', suit: 2, number: 9, known: true },
+    processing: [
+      { name: 'slash', suit: 1, number: 7, known: true, footnote: 'Người A sử dụng', virtName: 'fire__slash' },
+      { known: false, name: 'hidden-secret', suit: 3, number: 13, picName: 'hidden-secret', footnote: 'private' },
+      { name: 'peach', suit: 3, number: 3, known: true },
+    ],
+  });
+  assert.equal(state.board.drawPileCount, 75);
+  assert.equal(state.board.discardPileCount, 2);
+  assert.equal(state.board.topDiscardCard?.name, 'jink');
+  assert.equal(state.board.processingCards.length, 3);
+  assert.equal(state.board.processingCards[0].virtName, 'fire__slash');
+  assert.equal(state.board.processingCards[0].footnote, 'Người A sử dụng');
+  assert.deepEqual(state.board.processingCards[1], { name: '', suit: 0, number: 0, known: false },
+    'hidden card metadata must never be retained by the board store');
+
+  state = reduceUiEvent(state, 'PilesUpdate', {
+    draw: 77, discard: 0, topDiscard: null,
+    processing: [{ known: false }],
+  });
+  assert.equal(state.board.drawPileCount, 77);
+  assert.equal(state.board.discardPileCount, 0);
+  assert.equal(state.board.topDiscardCard, null, 'reshuffling must remove the previous discard preview');
+  assert.equal(state.board.processingCards.length, 1);
+  const previous = state;
+  state = reduceUiEvent(state, 'PilesUpdate', { draw: -1, discard: '80', processing: Array(201).fill({}) });
+  assert.deepEqual(state.board, previous.board, 'invalid data must not overwrite the last valid projection');
+});
+
+test('native ShowVirtualCard is separate from processing, bounded, and reset on next round', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  state = reduceUiEvent(state, 'PilesUpdate', { draw: 24, discard: 0,
+    topDiscard: null, processing: [{ name: 'slash', suit: 1, number: 7 }] });
+  state = reduceUiEvent(state, 'ShowVirtualCard', {
+    cards: [{ name: 'jink', suit: 2, number: 2 }, { name: 'peach', suit: 3, number: 3 }],
+    footnote: 'Người chơi cho xem',
+  });
+  assert.equal(state.board.virtualSequence, 1);
+  assert.deepEqual(state.board.virtualCards.map((c) => c.footnote),
+    ['Người chơi cho xem', 'Người chơi cho xem']);
+  assert.equal(state.board.processingCards.length, 1);
+  state = reduceUiEvent(state, 'ShowVirtualCard', { cards: [{ known: false, name: 'hidden' }] });
+  assert.equal(state.board.virtualSequence, 2);
+  assert.deepEqual(state.board.virtualCards, [{ name: '', suit: 0, number: 0, known: false, footnote: undefined }]);
+  state = reduceUiEvent(state, 'GameOver', '17');
+  assert.deepEqual(state.board.virtualCards, []);
+  assert.equal(state.board.virtualSequence, 0);
+});
+
+test('native discard arrivals stay as distinct brief table events with only permitted card faces', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  state = reduceUiEvent(state, 'PilesUpdate', { draw: 18, discard: 2, topDiscard: null,
+    processing: [{ name: 'slash', suit: 1, number: 7 }] });
+  state = reduceUiEvent(state, 'TableCardsFlash', { cards: [
+    { name: 'slash', suit: 1, number: 7, known: true, footnote: 'Bỏ bài' },
+    { known: false, name: 'private', suit: 2, number: 12, footnote: 'Private note' },
+  ] });
+  assert.equal(state.board.discardSequence, 1);
+  assert.equal(state.board.discardReveals[0].cards[0].footnote, 'Bỏ bài');
+  assert.deepEqual(state.board.discardReveals[0].cards[1], { name: '', suit: 0, number: 0, known: false });
+  assert.equal(state.board.processingCards.length, 1, 'a temporary discard does not enter physical processing');
+  state = reduceUiEvent(state, 'TableCardsFlash', { cards: [{ name: 'peach', suit: 3, number: 9 }] });
+  assert.equal(state.board.discardSequence, 2);
+  assert.equal(state.board.discardReveals.length, 2, 'consecutive native moves must not overwrite each other');
+  const before = state.board;
+  state = reduceUiEvent(state, 'TableCardsFlash', { cards: Array(201).fill({ name: 'jink', suit: 2, number: 8 }) });
+  assert.equal(state.board, before, 'unbounded data must be rejected');
+  state = reduceUiEvent(state, 'GameOver', '17');
+  assert.equal(state.board.discardSequence, 0);
+  assert.deepEqual(state.board.discardReveals, []);
+});
+
 test('only a valid two-general Hegemony dialog becomes a selectable prompt', () => {
   assert.deepEqual(parseInitialGeneralPrompt(generalDialog()), {
     generals: ['caocao', 'xiahoudun', 'liubei'], choiceNum: 2,
@@ -279,6 +355,9 @@ test('waiting-room readiness mirrors native owner/full/non-owner semantics', () 
   assert.equal(roomPoolDisabledReason(null, 4), 'Không thể kiểm tra bể tướng và bể bài từ Lua.');
   assert.equal(roomPoolDisabledReason({ generals: 19, cards: 16 }, 4),
     'Chưa thể tạo phòng: thiếu tướng (19/20).');
+  assert.equal(roomPoolDisabledReason({ generals: 27, cards: 28 }, 4, undefined, 7),
+    'Chưa thể tạo phòng: thiếu tướng (27/28).');
+  assert.equal(roomPoolDisabledReason({ generals: 28, cards: 28 }, 4, undefined, 7), null);
   assert.equal(roomPoolDisabledReason({ generals: 20, cards: 15 }, 4),
     'Chưa thể tạo phòng: thiếu bài (15/16).');
   assert.equal(roomPoolDisabledReason({ generals: 20, cards: 16 }, 4), null);

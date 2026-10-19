@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
-import type { BoardMoment } from './store/boardState';
+import type { BoardEquipment, BoardMoment } from './store/boardState';
 import { useGameStore, type RoomPlayer } from './store/gameStore';
 import { GameplayControls, GameplaySkillDock, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
 import { GAMEPLAY_REQUESTS } from './store/gameplayState';
@@ -17,7 +17,7 @@ import {
 } from './store/seatLayout';
 import TargetingOverlay from './TargetingOverlay';
 import CardVfxOverlay from './CardVfxOverlay';
-import { useCardVfx } from './store/cardVfxState';
+import { useCardVfx, type CardAssetHint } from './store/cardVfxState';
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>
@@ -28,6 +28,10 @@ function useMediaQuery(query: string): boolean {
     const mql = window.matchMedia(query);
     const onChange = () => setMatches(mql.matches);
     mql.addEventListener('change', onChange);
+    // A viewport can change between the render that initialized state and
+    // this effect's subscription (notably during responsive navigation).
+    // Read the current value once so we never strand desktop-only content.
+    onChange();
     return () => mql.removeEventListener('change', onChange);
   }, [query]);
   return matches;
@@ -56,12 +60,93 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const isCompactWidth = useMediaQuery('(max-width: 640px)');
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const isMobile = isMobilePortrait || isMobileLandscape || isCompactWidth;
+  const isDesktopEquipment = useMediaQuery('(min-width: 900px) and (min-height: 521px)');
+  const [desktopEquipmentHost, setDesktopEquipmentHost] = useState<HTMLDivElement | null>(null);
   const [showLogs, setShowLogs] = useState(() => {
     if (typeof window === 'undefined') return true;
     if (window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches) return false;
     return !window.matchMedia('(max-width: 899px)').matches;
   });
   const [followLogs, setFollowLogs] = useState(true);
+  const [temporaryTableCards, setTemporaryTableCards] = useState<
+    { eventKey: string; index: number; card: BoardEquipment; kind: 'virtual' | 'discard' }[]
+  >([]);
+  const shownTableRevealKeys = useRef(new Set<string>());
+  const tableCardsPendingVanish = useRef(new Set<string>());
+  // TablePile.qml's triggeredOnStart timer immediately enters its first
+  // 1500ms phase, then alternates capture / mark / vanish at each tick.
+  const tableVanishPhase = useRef(true);
+  const lastTableReveal = useRef(0);
+  const lastDiscardReveal = useRef(0);
+  const cardAssetHints = useMemo<Readonly<Record<string, CardAssetHint>>>(() => {
+    const hints: Record<string, CardAssetHint | null> = {};
+    const add = (card: { name?: string; extension?: string; picName?: string }) => {
+      if (!card.name || (!card.extension && !card.picName)) return;
+      const next: CardAssetHint = {
+        extension: card.extension,
+        picName: card.picName,
+      };
+      const current = hints[card.name];
+      if (current === null) return;
+      if (current && ((current.extension && next.extension && current.extension !== next.extension) ||
+        (current.picName && next.picName && current.picName !== next.picName))) {
+        hints[card.name] = null;
+        return;
+      }
+      hints[card.name] = { ...current, ...next };
+    };
+    board.processingCards.forEach(add);
+    board.virtualCards.forEach(add);
+    if (board.topDiscardCard) add(board.topDiscardCard);
+    board.selfHandCards.forEach(add);
+    Object.values(board.player).forEach((player) => {
+      player.equipment.forEach(add);
+      player.delayedTricks.forEach(add);
+    });
+    return Object.fromEntries(Object.entries(hints).filter((entry): entry is [string, CardAssetHint] => entry[1] !== null));
+  }, [board.processingCards, board.virtualCards, board.topDiscardCard, board.selfHandCards, board.player]);
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (tableVanishPhase.current) {
+        // This is TablePile's toVanish branch: retire the previous cohort,
+        // then stage every newly shown card for the next full two-phase cycle.
+        const retiring = tableCardsPendingVanish.current;
+        if (retiring.size) {
+          setTemporaryTableCards((old) => old.filter((item) => !retiring.has(item.eventKey)));
+          for (const key of retiring) shownTableRevealKeys.current.delete(key);
+        }
+        tableCardsPendingVanish.current = new Set(shownTableRevealKeys.current);
+      }
+      tableVanishPhase.current = !tableVanishPhase.current;
+    }, 1500);
+    return () => window.clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    if (!board.virtualSequence && !board.discardSequence) {
+      shownTableRevealKeys.current.clear();
+      tableCardsPendingVanish.current.clear();
+      tableVanishPhase.current = true;
+      lastTableReveal.current = 0;
+      lastDiscardReveal.current = 0;
+      setTemporaryTableCards([]);
+      return;
+    }
+    // TablePile.qml keeps discarded and virtual cards for a repeating 1500ms
+    // two-phase vanish timer. Process *all* events since the previous render:
+    // React may batch several native callbacks into a single commit.
+    const incoming = [
+      ...board.virtualReveals.filter((item) => item.sequence > lastTableReveal.current)
+        .map((item) => ({ ...item, eventKey: `virtual-${item.sequence}`, kind: 'virtual' as const })),
+      ...board.discardReveals.filter((item) => item.sequence > lastDiscardReveal.current)
+        .map((item) => ({ ...item, eventKey: `discard-${item.sequence}`, kind: 'discard' as const })),
+    ];
+    lastTableReveal.current = board.virtualSequence;
+    lastDiscardReveal.current = board.discardSequence;
+    if (incoming.length === 0) return;
+    for (const { eventKey } of incoming) shownTableRevealKeys.current.add(eventKey);
+    setTemporaryTableCards((old) => [...old, ...incoming.flatMap(({ eventKey, kind, cards }) =>
+      cards.map((card, index) => ({ eventKey, kind, index, card })))].slice(-200));
+  }, [board.virtualSequence, board.virtualReveals, board.discardSequence, board.discardReveals]);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
   const lastMomentId = board.moments.at(-1)?.id;
@@ -116,8 +201,8 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   } = useCardVfx();
 
   useEffect(() => {
-    processGameLogs(board.logs);
-  }, [board.logs, processGameLogs]);
+    processGameLogs(board.logs, cardAssetHints);
+  }, [board.logs, cardAssetHints, processGameLogs]);
 
   useEffect(() => {
     processNativeEvents(nativeVfxEvents);
@@ -246,7 +331,10 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             onImpactDone={onImpactDone}
           />
 
-          <div className="board-table sg-board-table">
+          <div className={`board-table sg-board-table board-table-seats-${seatProfile}`}>
+        {!gameplayActive && <div className="board-status board-table-status" role="status">
+          Đang cập nhật diễn biến ván đấu…
+        </div>}
 
         <div className="board-opponents" aria-label="Các ghế khác">
           {opponentSeats.map((seat) => {
@@ -263,19 +351,22 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           <div className="native-table-center" aria-label="Tâm bàn chơi">
             {/* Chồng bài rút */}
             <div className="native-deck-slot draw-pile" title="Chồng bài rút">
-              <span className="native-deck-badge">{board.drawPileCount ?? 100}</span>
+              <span className="native-deck-badge">{board.drawPileCount ?? '–'}</span>
               <span className="native-deck-label">Rút</span>
             </div>
 
             {/* Vùng bài đang giải quyết hoặc watermark Quốc Chiến */}
-            <div className="native-table-pile" id="nativeProcessingArea">
-              {board.processingCards && board.processingCards.length > 0 ? (
-                board.processingCards.map((c, i) => (
-                  <ResolvingCardView key={i} card={c} />
-                ))
-              ) : null}
+            <div className="native-table-pile" id="nativeProcessingArea" role="region"
+              aria-label={`Bài đang xử lý: ${board.processingCards.length} lá${temporaryTableCards.length ? `, ${temporaryTableCards.length} lá vừa bỏ hoặc đang lật xem` : ''}`}
+              tabIndex={board.processingCards.length + temporaryTableCards.length > 2 ? 0 : -1}>
+              {board.processingCards.map((c, i) => (
+                <ResolvingCardView key={`processing-${i}`} card={c} />
+              ))}
+              {temporaryTableCards.map(({ card, eventKey, kind, index }) => (
+                <ResolvingCardView key={`${eventKey}-${index}`} card={card} activity={kind === 'discard' ? 'discard' : 'reveal'} />
+              ))}
               <span
-                className={`board-center-symbol${board.processingCards && board.processingCards.length > 0 ? ' sg-visually-hidden' : ''}`}
+                className={`board-center-symbol${board.processingCards.length + temporaryTableCards.length > 0 ? ' sg-visually-hidden' : ''}`}
                 aria-hidden="true"
               >
                 Quốc Chiến
@@ -284,7 +375,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
 
             {/* Chồng bài bỏ */}
             <div className={`native-deck-slot discard-pile${board.topDiscardCard ? ' has-top-card' : ''}`} title="Chồng bài bỏ">
-              <span className="native-deck-badge">{board.discardPileCount ?? 0}</span>
+              <span className="native-deck-badge">{board.discardPileCount ?? '–'}</span>
               {board.topDiscardCard && <PublicPileCardPreview card={board.topDiscardCard} />}
               <span className="native-deck-label">Bỏ</span>
             </div>
@@ -293,7 +384,10 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           <p className="board-center-seat-count">{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
           <div className="board-banners">
             {Object.entries(board.banners).filter(([, v]) => v !== 0 && v !== false && v !== '').map(([key, value]) =>
-              <span className="board-mark" key={key}>{text(key)}: {typeof value === 'string' ? text(value) : String(value)}</span>)}
+              <span className="board-mark" key={key}
+                title={`${text(key)}: ${typeof value === 'string' ? text(value) : String(value)}`}>
+                {text(key)}: {typeof value === 'string' ? text(value) : String(value)}
+              </span>)}
           </div>
         </div>
       </div>
@@ -301,9 +395,11 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         <div className="board-local-utility-row" aria-label="Thông tin và kỹ năng của bạn">
           {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
             seat={selfSeat?.serverSeatNumber ?? 0} active={selfSeat?.isActive ?? false} target={targetFor(self.id)}
-            busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact={isMobile}
+            busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact
+            equipmentPortalTarget={isDesktopEquipment ? desktopEquipmentHost : null}
             avatarReaction={avatarReactions[self.id]}
             isShaking={avatarReactions[self.id] === 'hit-shake'} /></div>}
+          {isDesktopEquipment && <div className="board-local-self-equipment" ref={setDesktopEquipmentHost} />}
           <div className="board-local-skill-rail" aria-label="Kỹ năng của bạn">
             {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill}
               floating={pendingRequest?.command === 'AskForSkillInvoke'} />}
@@ -343,9 +439,6 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
               )) : (
                 <span className="sg-hand-empty">Không có lá bài trên tay</span>
               )}
-            </div>
-            <div className="board-status" role="status">
-              Đang cập nhật diễn biến ván đấu…
             </div>
           </div>
         )}

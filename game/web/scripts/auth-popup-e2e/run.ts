@@ -52,6 +52,23 @@ try {
       .waitFor({ timeout: 15_000 });
     assert.deepEqual(errors, []);
     console.log('PASS Google OAuth popup: synchronous user activation, blocked-popup guidance, no real account');
+
+    // Until the Google OAuth callback is allowlisted, an installed iOS PWA
+    // must offer a working Safari path without opening an unfinishable popup.
+    const iosPage = await browser.newPage({
+      baseURL, viewport: { width: 390, height: 844 }, hasTouch: true,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1',
+    });
+    await iosPage.addInitScript(() => {
+      Object.defineProperty(navigator, 'standalone', { configurable: true, value: true });
+    });
+    await iosPage.goto('/auth-e2e.html');
+    const iosLogin = iosPage.getByRole('button', { name: 'Tiếp tục với Google' });
+    await iosLogin.waitFor();
+    assert.equal(await iosLogin.isDisabled(), true);
+    const safariLink = iosPage.getByRole('link', { name: 'mở trò chơi bằng Safari' });
+    assert.equal(await safariLink.getAttribute('href'), 'https://tqsvn.pages.dev/');
+    console.log('PASS iOS standalone PWA: blocked broken popup and displayed Safari recovery link');
   } finally {
     await browser.close();
   }

@@ -14,6 +14,11 @@ export interface BoardEquipment {
   name: string;
   suit: number;
   number: number;
+  /** False is a face-down card; its real metadata never crosses the bridge. */
+  known?: boolean;
+  /** FreeKill CardModel's table-only presentation fields. */
+  footnote?: string;
+  virtName?: string;
   /** Public native subtype; never contains a private card id. */
   subtype?: BoardCardSubtype;
   /** Native weapon range, when this public card is a weapon. */
@@ -65,6 +70,14 @@ export interface BoardState {
   discardPileCount: number | null;
   topDiscardCard: BoardEquipment | null;
   processingCards: BoardEquipment[];
+  /** Short-lived ShowVirtualCard display, separate from the real processing pile. */
+  virtualCards: BoardEquipment[];
+  virtualSequence: number;
+  /** Recent distinct reveals so synchronous Lua events cannot be batched away by React. */
+  virtualReveals: { sequence: number; cards: BoardEquipment[] }[];
+  /** Visible native DiscardPile arrivals retained temporarily by TablePile.qml. */
+  discardSequence: number;
+  discardReveals: { sequence: number; cards: BoardEquipment[] }[];
   selfHandCards: (BoardEquipment & { id: number })[];
 }
 
@@ -98,6 +111,11 @@ export function emptyBoard(): BoardState {
     discardPileCount: null,
     topDiscardCard: null,
     processingCards: [],
+    virtualCards: [],
+    virtualSequence: 0,
+    virtualReveals: [],
+    discardSequence: 0,
+    discardReveals: [],
     selfHandCards: [],
   };
 }
@@ -142,9 +160,17 @@ const BOARD_CARD_SUBTYPES = new Set<BoardCardSubtype>([
   'delayed_trick', 'normal_trick', 'basic', 'unknown',
 ]);
 
+// A FreeKill log template can expand into a long localized annotation. This
+// limit is a transport safeguard, not a clipping threshold for card details.
+const MAX_NATIVE_TABLE_TEXT = 65536;
+
 function publicCard(value: unknown): BoardEquipment | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const card = value as Record<string, unknown>;
+  if (card.known === false) {
+    // Do not accept any forged name/art/notes on a face-down card.
+    return { name: '', suit: 0, number: 0, known: false };
+  }
   if (typeof card.name !== 'string' || card.name.length > 120 ||
       !Number.isInteger(card.suit) || (card.suit as number) < 0 || (card.suit as number) > 5 ||
       !Number.isInteger(card.number) || (card.number as number) < 0 || (card.number as number) > 13) return null;
@@ -153,6 +179,9 @@ function publicCard(value: unknown): BoardEquipment | null {
     suit: card.suit as number,
     number: card.number as number,
   };
+  if (card.known === true) result.known = true;
+  if (typeof card.footnote === 'string' && card.footnote.length <= MAX_NATIVE_TABLE_TEXT) result.footnote = card.footnote;
+  if (typeof card.virtName === 'string' && card.virtName.length <= MAX_NATIVE_TABLE_TEXT) result.virtName = card.virtName;
   if (typeof card.subtype === 'string' && BOARD_CARD_SUBTYPES.has(card.subtype as BoardCardSubtype))
     result.subtype = card.subtype as BoardCardSubtype;
   if (typeof card.range === 'number' && Number.isInteger(card.range) && card.range >= 0 && card.range <= 99)
@@ -172,6 +201,29 @@ function optionalExtension(value: unknown): string | null {
 /** Ignore unknown fields: server state can contain private Lua properties. */
 export function updateBoard(board: BoardState, command: string, data: unknown, knownIds: number[], ownId: number | null = null,
   hiddenKingdomMode = false): BoardState {
+  if (command === 'TableCardsFlash') {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return board;
+    const payload = data as Record<string, unknown>;
+    if (!Array.isArray(payload.cards) || payload.cards.length === 0 || payload.cards.length > 200) return board;
+    const cards = payload.cards.map(publicCard);
+    if (cards.some((card) => !card)) return board;
+    const sequence = board.discardSequence + 1;
+    return { ...board, discardSequence: sequence,
+      discardReveals: [...board.discardReveals, { sequence, cards: cards as BoardEquipment[] }].slice(-16) };
+  }
+  if (command === 'ShowVirtualCard') {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return board;
+    const payload = data as Record<string, unknown>;
+    if (!Array.isArray(payload.cards) || payload.cards.length > 200) return board;
+    const cards = payload.cards.map(publicCard);
+    if (cards.some((card) => !card)) return board;
+    const footnote = typeof payload.footnote === 'string' && payload.footnote.length <= MAX_NATIVE_TABLE_TEXT
+      ? payload.footnote : undefined;
+    const revealed = cards.map((card) => ({ ...card!, footnote }));
+    const sequence = board.virtualSequence + 1;
+    return { ...board, virtualCards: revealed, virtualSequence: sequence,
+      virtualReveals: [...board.virtualReveals, { sequence, cards: revealed }].slice(-16) };
+  }
   if (command === 'ArrangeSeats') {
     if (!Array.isArray(data) || data.length < 1 || data.length > 20 ||
         !data.every(validId) || new Set(data).size !== data.length) return board;
@@ -195,7 +247,7 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     const topDiscard = hasTopDiscard
       ? publicCard(p.topDiscard)
       : (discard === 0 ? null : board.topDiscardCard);
-    const processing = Array.isArray(p.processing)
+    const processing = Array.isArray(p.processing) && p.processing.length <= 200
       ? p.processing.map((c) => publicCard(c)!).filter(Boolean)
       : board.processingCards;
     return {

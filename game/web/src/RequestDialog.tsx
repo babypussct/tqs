@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 const FOCUSABLE = [
   'button:not(:disabled)',
@@ -68,10 +69,10 @@ export default function RequestDialog({
     }
   };
 
-  return (
+  const dialog = (
     <section
       ref={ref}
-      className={className}
+      className={`${className} sg-request-dialog`}
       role="dialog"
       aria-modal="true"
       aria-label={label}
@@ -84,6 +85,9 @@ export default function RequestDialog({
       </div>
     </section>
   );
+  // The game board uses transforms/overflow for its fixed-height stage. A
+  // request inside that stage can become clipped or resize the board.
+  return typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog;
 }
 
 function panelElements(panel: HTMLElement | null): HTMLElement[] {

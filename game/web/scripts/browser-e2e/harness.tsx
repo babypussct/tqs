@@ -180,6 +180,7 @@ function sentPackets() {
 // performed through the visible React DOM by the external Chrome test runner.
 const api = {
   begin,
+  emitUiError: (value: unknown) => emit('ErrorDlg', value),
   appActions: () => appActions.slice(),
   finishGame: () => emit('GameOver', '1'),
   seedRoundData: () => {
@@ -195,6 +196,13 @@ const api = {
   replace: () => incoming(++nextId),
   addFakeSkill: () => emit('AddSkill', [1, 'hs__yiji', true]),
   addRegularSkill: () => emit('AddSkill', [1, 'hs__active']),
+  seedHorseEquipment: (equipped: boolean) => {
+    const horses = equipped ? [
+      { name: 'zhuahuangfeidian', subtype: 'defensive_ride', suit: 2, number: 13 },
+      { name: 'chitu', subtype: 'offensive_ride', suit: 3, number: 12 },
+    ] : [];
+    for (const id of [1, 2]) emit('EquipmentUpdate', [id, horses, []]);
+  },
   damageSelf: () => emit('PropertyUpdate', [1, 'hp', 3]),
   cancel: () => emit('CancelRequest', null),
   disconnect: () => sockets.at(-1)!.handlers.onClose('Mất kết nối thử nghiệm'),

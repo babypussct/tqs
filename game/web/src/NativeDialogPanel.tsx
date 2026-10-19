@@ -3,6 +3,7 @@ import type { RequestInfo } from './engine/connection';
 import type { NativeDialogPrompt } from './engine/nativeDialogs';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
+import { userFacingError } from './engine/connectionMessages';
 
 export default function NativeDialogPanel({ request, prompt, busy, view, move, chooseGeneral, respond }: {
   request: RequestInfo; prompt: NativeDialogPrompt; busy: boolean;
@@ -20,7 +21,7 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
   const expired = request.expiresAt !== null && Math.max(now, Date.now()) >= request.expiresAt;
   let rows = prompt.rows; let feasible = false; let error = '';
   let selectedTokens: string[] | undefined; let selectableTokens: string[] | undefined;
-  if (!expired) { try { ({ rows, feasible, selectedTokens, selectableTokens } = view()); } catch (e) { error = (e as Error).message; } }
+  if (!expired) { try { ({ rows, feasible, selectedTokens, selectableTokens } = view()); } catch (e) { error = userFacingError(e, 'gameplay'); } }
   const disabled = busy || expired || !!error;
   const cardLabel = (token: string) => {
     const card = prompt.cards.find(c => c.token === token);

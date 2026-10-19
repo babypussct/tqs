@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FlyingCardEvent, ImpactVfxEvent } from './store/cardVfxState';
 import { soundManager } from './engine/webAudioSfx';
 import { useDisplayText } from './engine/displayText';
-import { CATALOG_CARD_ART_NAMES, catalogCardArtUrl } from './catalogCardArt';
-import { getSuitInfo, formatRank, getCardCategory } from './HandCardItem';
+import { getSuitInfo, formatRank, getCardCategory, getCardEquipAudioType, getNativeCardArtCandidates } from './HandCardItem';
 import NativeVfxAnim from './NativeVfxAnim';
 
 export interface CardVfxOverlayProps {
@@ -24,6 +23,7 @@ export default function CardVfxOverlay({
   const text = useDisplayText();
   const [positions, setPositions] = useState<Record<string, { start: { x: number; y: number }; center: { x: number; y: number }; target?: { x: number; y: number } }>>({});
   const [impactCoords, setImpactCoords] = useState<Record<string, { x: number; y: number }>>({});
+  const [cardArtAttempts, setCardArtAttempts] = useState<Record<string, number>>({});
   const playedCardIds = useRef(new Set<string>());
   const playedImpactIds = useRef(new Set<string>());
 
@@ -109,13 +109,26 @@ export default function CardVfxOverlay({
     setImpactCoords(newImpacts);
   }, [impacts, boardContainerRef]);
 
+  useEffect(() => {
+    const activeIds = new Set(flyingCards.map((card) => card.id));
+    setCardArtAttempts((current) => {
+      const next = Object.fromEntries(Object.entries(current).filter(([id]) => activeIds.has(id)));
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [flyingCards]);
+
   // Âm thanh khi có FlyingCard xuất hiện
   useEffect(() => {
     for (const card of flyingCards) {
       if (playedCardIds.current.has(card.id)) continue;
       playedCardIds.current.add(card.id);
       soundManager.playFlySound();
-      soundManager.playCardVoice(card.cardName, 'male');
+      soundManager.playCardUseSound(card.cardName, {
+        gender: 'male',
+        extension: card.extension,
+        trueName: card.trueName,
+        equipType: getCardEquipAudioType(card.cardName),
+      });
     }
   }, [flyingCards]);
 
@@ -155,8 +168,14 @@ export default function CardVfxOverlay({
         if (!pos) return null;
 
         const category = getCardCategory(card.cardName);
-        const hasArt = CATALOG_CARD_ART_NAMES.has(card.cardName);
-        const artUrl = hasArt ? catalogCardArtUrl(card.cardName) : null;
+        const artCandidates = getNativeCardArtCandidates({
+          name: card.cardName,
+          trueName: card.trueName,
+          extension: card.extension,
+          picName: card.picName,
+        });
+        const artIndex = cardArtAttempts[card.id] ?? 0;
+        const artUrl = artCandidates[artIndex] ?? null;
         const suitInfo = card.suit ? getSuitInfo(card.suit) : null;
         const rankStr = formatRank(card.number);
 
@@ -189,9 +208,17 @@ export default function CardVfxOverlay({
               </div>
               <div className="vfx-card-body">
                 {artUrl ? (
-                  <img src={artUrl} alt={text(card.cardName)} className="vfx-card-art-img" />
+                  <img
+                    src={artUrl}
+                    alt={text(card.cardName)}
+                    className="vfx-card-art-img"
+                    onError={() => setCardArtAttempts((current) => ({
+                      ...current,
+                      [card.id]: (current[card.id] ?? 0) + 1,
+                    }))}
+                  />
                 ) : (
-                  <span className="vfx-card-symbol">🎴</span>
+                  <span className="vfx-card-symbol">✦</span>
                 )}
               </div>
             </div>

@@ -472,31 +472,37 @@ export function GameplayControls({ scene, request, busy, dispatch, direct, toggl
       )}
 
       {/* 4. Tương tác đặc biệt SpecialSkills & InteractionPicker */}
-      {specials.filter((item) => item.skills?.length).map((item) => (
-        <div key={item.id}>
-          <h3>Cách sử dụng lá bài</h3>
-          <div className="gameplay-options">
-            {item.skills?.map((skill) => (
-              <button
-                key={skill}
-                type="button"
-                className="gameplay-choice"
-                disabled={waiting || !item.enabled}
-                onClick={() => dispatch('SpecialSkills', item.id, 'click', skill)}
-              >
-                {skill === '_normal_use' ? 'Sử dụng thông thường' : text(skill)}
-              </button>
+      {(specials.some((item) => item.skills?.length) || interactions.length > 0) && (
+        <details className="sg-inline-choice-dock" open>
+          <summary>Cách dùng bài / Tương tác</summary>
+          <div className="sg-inline-choice-content">
+            {specials.filter((item) => item.skills?.length).map((item) => (
+              <div key={item.id} className="sg-inline-choice-group">
+                <h3>Cách sử dụng lá bài</h3>
+                <div className="gameplay-options">
+                  {item.skills?.map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      className="gameplay-choice"
+                      disabled={waiting || !item.enabled}
+                      onClick={() => dispatch('SpecialSkills', item.id, 'click', skill)}
+                    >
+                      {skill === '_normal_use' ? 'Sử dụng thông thường' : text(skill)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {interactions.map((item) => (
+              <div key={item.id} className="sg-inline-choice-group">
+                <h3>Tương tác kỹ năng{item.skill_name ? `: ${text(item.skill_name)}` : ''}</h3>
+                <InteractionPicker item={item} dispatch={dispatch} direct={direct} busy={waiting} />
+              </div>
             ))}
           </div>
-        </div>
-      ))}
-
-      {interactions.map((item) => (
-        <div key={item.id}>
-          <h3>Tương tác kỹ năng{item.skill_name ? `: ${text(item.skill_name)}` : ''}</h3>
-          <InteractionPicker item={item} dispatch={dispatch} direct={direct} busy={waiting} />
-        </div>
-      ))}
+        </details>
+      )}
 
       {expired && <p className="notice error-notice">Yêu cầu đã hết thời gian.</p>}
 

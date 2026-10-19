@@ -192,7 +192,7 @@ export function buildQaGeneralPlan(adapter: GameAdapter, scenario: QaGeneralScen
   const target = candidates.find((general) => general.id === scenario.generalId && general.package === scenario.packId);
   if (!target) return { disabledGenerals: [], kept: [], error: 'Caller QA không có trong package native đã cài.' };
 
-  const requiredGenerals = scenario.capacity * 5;
+  const requiredGenerals = scenario.capacity * adapter.getInitialGeneralCount();
   const kept: RoomGeneral[] = [target];
   const trueNames = new Set([target.trueName]);
   const targetKingdoms = new Set([target.kingdom, target.subkingdom].filter((value): value is string => !!value));
@@ -240,6 +240,7 @@ export function LobbyScreen({ adapter, run, busy }: {
   const [roomName, setRoomName] = useState('Quốc Chiến Mobile');
   const [capacity, setCapacity] = useState(4);
   const [timeout, setTimeoutSeconds] = useState(30);
+  const initialGeneralCount = adapter.getInitialGeneralCount();
   const packs = useMemo(() => {
     try { return adapter.getRoomPacks(); } catch { return null; }
   }, [adapter]);
@@ -260,7 +261,7 @@ export function LobbyScreen({ adapter, run, busy }: {
     if (!packs) return null;
     try { return adapter.getRoomPoolSummary(disabledPacks, disabledGenerals); } catch { return null; }
   }, [adapter, packs, disabledPacks, disabledGenerals]);
-  const createDisabledReason = roomPoolDisabledReason(pool, capacity, qaPlan?.error);
+  const createDisabledReason = roomPoolDisabledReason(pool, capacity, qaPlan?.error, initialGeneralCount);
   const validPool = createDisabledReason === null;
   const togglePack = (name: string) => {
     if (adminDisabledPacks.includes(name)) return;
@@ -345,6 +346,7 @@ export function LobbyScreen({ adapter, run, busy }: {
               <div>
                 <span className="sg-panel-kicker">Khai Lập Trận Địa</span>
                 <h2 id="create-title" className="sg-panel-title">Tạo phòng mới</h2>
+                <p className="sg-pool-help-text">Mỗi người được chia {initialGeneralCount} lá tướng lúc khởi đầu (theo cài đặt quản trị).</p>
               </div>
             </div>
 
@@ -401,8 +403,7 @@ export function LobbyScreen({ adapter, run, busy }: {
                 </p>
                 {adminRestrictions.unsupported.length > 0 && (
                   <p className="notice" role="status">
-                    Policy quản trị chứa gói không thuộc bể Quốc Chiến hiện tại ({adminRestrictions.unsupported.join(', ')}).
-                    Các gói này được bỏ qua khi tạo phòng; vui lòng cập nhật policy trong trang quản trị.
+                    Một số gói trong cấu hình cũ không còn được hỗ trợ và đã được tự động bỏ qua. Bạn vẫn có thể tạo phòng bình thường.
                   </p>
                 )}
                 {packs ? (
@@ -417,12 +418,12 @@ export function LobbyScreen({ adapter, run, busy }: {
                     {qaPlan?.error && <p className="notice error-notice">{qaPlan.error}</p>}
                     <p className={`pool-summary ${validPool ? 'ok' : 'pool-warning'}`} role="status">
                       {pool
-                        ? `${pool.generals} tướng khác tên · ${pool.cards} lá bài. Cần tối thiểu ${capacity * 5} tướng và ${capacity * 4} lá cho ${capacity} người.`
+                        ? `${pool.generals} tướng khác tên · ${pool.cards} lá bài. Cần tối thiểu ${capacity * initialGeneralCount} tướng và ${capacity * 4} lá cho ${capacity} người.`
                         : 'Không thể kiểm tra bể tướng/bài.'}
                     </p>
                   </>
                 ) : (
-                  <p className="notice error-notice">Không tải được danh sách gói từ Lua.</p>
+                  <p className="notice error-notice">Không tải được danh sách tướng và bài. Hãy thử vào lại sảnh.</p>
                 )}
               </details>
 

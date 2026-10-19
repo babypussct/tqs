@@ -2,19 +2,39 @@ import { initializeApp } from 'firebase/app';
 import {
   browserLocalPersistence,
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   setPersistence,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from 'firebase/auth';
 import firebaseConfig from '../../../firebase-applet-config.json';
+import { userFacingError } from './engine/connectionMessages';
+import { googleLoginMode } from './googleAuthRouting';
+import { normalizeInitialGeneralCount } from '../../../src/game/gamePoolPacks';
+
+const REDIRECT_ATTEMPT_KEY = 'tqs-game-google-redirect-attempt';
+export const gameGoogleLoginMode = googleLoginMode({
+  userAgent: navigator.userAgent,
+  standalone: Boolean((navigator as Navigator & { standalone?: boolean }).standalone) ||
+    window.matchMedia('(display-mode: standalone)').matches,
+  maxTouchPoints: navigator.maxTouchPoints || 0,
+  hostname: window.location.hostname,
+  sameOriginEnabled: import.meta.env.VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH === 'true',
+  authDomainOverridden: Boolean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  expectedProjectId: firebaseConfig.projectId,
+});
 
 const config = {
   ...firebaseConfig,
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  authDomain: gameGoogleLoginMode === 'same-origin-redirect'
+    ? window.location.hostname
+    : import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
@@ -31,6 +51,7 @@ export interface GamePoolPolicyPayload {
   schemaVersion: 1;
   mode: 'new_heg_mode';
   revision: number;
+  generalNum: number;
   disabledPacks: { generals: string[]; cards: string[] };
   appliesTo: 'new_rooms';
 }
@@ -62,6 +83,30 @@ export async function prepareGameAuth(): Promise<void> {
   await gameAuth.authStateReady();
 }
 
+/** Called once after returning from Google. Auth state can be restored even
+ * when getRedirectResult is empty; never exchange a missing user for a ticket. */
+export async function completeGameGoogleRedirect(): Promise<void> {
+  if (gameGoogleLoginMode !== 'same-origin-redirect') return;
+  let pending = false;
+  try {
+    pending = sessionStorage.getItem(REDIRECT_ATTEMPT_KEY) === '1';
+    sessionStorage.removeItem(REDIRECT_ATTEMPT_KEY);
+  } catch {
+    throw new GameAccessError('GOOGLE_STORAGE_UNAVAILABLE',
+      'Trình duyệt không cho lưu trạng thái đăng nhập Google. Hãy mở trò chơi bằng Safari và thử lại.');
+  }
+  if (!pending) return;
+  try {
+    const result = await getRedirectResult(gameAuth);
+    if (!result?.user && !gameAuth.currentUser) {
+      throw new GameAccessError('GOOGLE_REDIRECT_INCOMPLETE',
+        'Google chưa hoàn tất đăng nhập. Hãy chọn Tiếp tục với Google để thử lại.');
+    }
+  } catch (error) {
+    throw googleLoginError(error);
+  }
+}
+
 async function requestGameSession(user: User): Promise<GameSession> {
   const idToken = await user.getIdToken();
   const response = await fetch(sessionUrl, {
@@ -71,9 +116,12 @@ async function requestGameSession(user: User): Promise<GameSession> {
   });
   const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok || payload.success !== true) {
+    // The API message may contain diagnostics. Display only known public codes.
+    const code = typeof payload.code === 'string' ? payload.code
+      : response.status >= 500 ? 'GAME_AUTH_UNAVAILABLE' : 'GAME_AUTH_FAILED';
     throw new GameAccessError(
-      typeof payload.code === 'string' ? payload.code : 'GAME_AUTH_FAILED',
-      typeof payload.message === 'string' ? payload.message : 'Không thể tạo phiên game.',
+      code,
+      userFacingError({ code }, 'auth'),
     );
   }
 
@@ -94,6 +142,7 @@ async function requestGameSession(user: User): Promise<GameSession> {
       schemaVersion: 1,
       mode: 'new_heg_mode',
       revision: Number.isInteger(policy.revision) ? Number(policy.revision) : 0,
+      generalNum: normalizeInitialGeneralCount(policy.generalNum),
       disabledPacks: {
         generals: disabledPacks.generals.filter((id): id is string => typeof id === 'string'),
         cards: disabledPacks.cards.filter((id): id is string => typeof id === 'string'),
@@ -103,7 +152,49 @@ async function requestGameSession(user: User): Promise<GameSession> {
   };
 }
 
-export async function signInAndCreateGameSession(): Promise<GameSession> {
+function googleLoginError(error: unknown): Error {
+  if (error instanceof GameAccessError) return error;
+  const code = (error as { code?: string } | null)?.code;
+  if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+    return new GameAccessError('GOOGLE_POPUP_BLOCKED',
+      'Không mở được cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên hoặc thử mở trang bằng Safari/Chrome.');
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return new GameAccessError('GOOGLE_POPUP_CLOSED',
+      'Cửa sổ Google đã đóng trước khi đăng nhập hoàn tất. Hãy bấm Tiếp tục với Google để thử lại.');
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return new GameAccessError('GOOGLE_DOMAIN_NOT_AUTHORIZED',
+      'Tên miền game chưa được cấp quyền đăng nhập Google. Vui lòng liên hệ quản trị viên.');
+  }
+  if (code === 'auth/network-request-failed') {
+    return new GameAccessError('GOOGLE_NETWORK_ERROR',
+      'Không kết nối được với dịch vụ đăng nhập Google. Kiểm tra mạng và thử lại.');
+  }
+  return error instanceof Error ? error : new Error('Google login failed');
+}
+
+/** Returns null when a full-page Google redirect has started. */
+export async function signInAndCreateGameSession(): Promise<GameSession | null> {
+  if (gameGoogleLoginMode === 'open-in-browser') {
+    throw new GameAccessError('GOOGLE_OPEN_IN_BROWSER',
+      'Đăng nhập Google từ ứng dụng đã cài trên iPhone chưa được hỗ trợ. Hãy mở tqsvn.pages.dev trong Safari.');
+  }
+  if (gameGoogleLoginMode === 'same-origin-redirect') {
+    try {
+      sessionStorage.setItem(REDIRECT_ATTEMPT_KEY, '1');
+    } catch {
+      throw new GameAccessError('GOOGLE_STORAGE_UNAVAILABLE',
+        'Trình duyệt không cho lưu trạng thái đăng nhập Google. Hãy mở trò chơi bằng Safari.');
+    }
+    try {
+      await signInWithRedirect(gameAuth, googleProvider);
+      return null;
+    } catch (error) {
+      try { sessionStorage.removeItem(REDIRECT_ATTEMPT_KEY); } catch { /* Already blocked. */ }
+      throw googleLoginError(error);
+    }
+  }
   // Do not await storage setup here: iOS Home Screen PWAs can reject a
   // window.open when the click's transient user activation has expired.
   // LoginScreen enables its button only after prepareGameAuth succeeds.
@@ -111,24 +202,7 @@ export async function signInAndCreateGameSession(): Promise<GameSession> {
   try {
     result = await signInWithPopup(gameAuth, googleProvider);
   } catch (error) {
-    const code = (error as { code?: string } | null)?.code;
-    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
-      throw new GameAccessError('GOOGLE_POPUP_BLOCKED',
-        'Không mở được cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên hoặc thử mở trang bằng Safari/Chrome.');
-    }
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      throw new GameAccessError('GOOGLE_POPUP_CLOSED',
-        'Cửa sổ Google đã đóng trước khi đăng nhập hoàn tất. Hãy bấm Tiếp tục với Google để thử lại.');
-    }
-    if (code === 'auth/unauthorized-domain') {
-      throw new GameAccessError('GOOGLE_DOMAIN_NOT_AUTHORIZED',
-        'Tên miền game chưa được cấp quyền đăng nhập Google. Vui lòng liên hệ quản trị viên.');
-    }
-    if (code === 'auth/network-request-failed') {
-      throw new GameAccessError('GOOGLE_NETWORK_ERROR',
-        'Không kết nối được với dịch vụ đăng nhập Google. Kiểm tra mạng và thử lại.');
-    }
-    throw error;
+    throw googleLoginError(error);
   }
   return requestGameSession(result.user);
 }

@@ -125,7 +125,7 @@ const api = {
     (roomAdapter as unknown as { gameSession: GameSession }).gameSession = {
       uid: 'browser-test', displayName: 'Browser test', nativeName: 'tqs_browser_test',
       ticket: 'local-fixture', expiresAt: 9999999999,
-      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1,
+      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 1, generalNum: 5,
         disabledPacks, appliesTo: 'new_rooms' },
     };
     begin();
@@ -164,6 +164,73 @@ const api = {
   store: useGameStore,
   getConn: () => conn,
   boardNotify: (command: string, source: string) => serverNotify(command, serverCbor(source)),
+  beginTablePile: (count = 3) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cards = conn.lua.eval<{ id: number; name: string }[]>(`return table.map({table.unpack(ClientInstance.draw_pile, 1, ${count})}, function(id)
+      return {id=id, name=Fk:getCardById(id).name} end)`);
+    if (cards.length !== count) throw new Error('Native draw pile has too few cards');
+    const moves = cards.map((card, i) => `{toArea=Card.Processing, moveReason=fk.ReasonPut,
+      moveInfo={{cardId=${card.id}, fromArea=Card.DrawPile}}, moveVisible=${i === 1 ? 'false' : 'true'}}`);
+    serverNotify('MoveCards', serverCbor(`{{${moves.join(',')}}, 1}`));
+    // These are the same parsed UI commands RoomModel.qml receives from
+    // Client:setCardNote() and room:setCardVirtualName().
+    conn.lua.eval(`ClientInstance:notifyUI('SetCardFootnote', {${cards[0].id}, 'Đang giải quyết kỹ năng', false})
+      ClientInstance:notifyUI('SetCardVirtName', {{${cards[0].id}}, 'fire__slash', false})`);
+    return { cards, initialDraw: useGameStore.getState().board.drawPileCount };
+  },
+  tablePileMoveToDiscard: (ids: number[]) => {
+    const moves = ids.map((id) => `{toArea=Card.DiscardPile, moveReason=fk.ReasonDiscard,
+      moveInfo={{cardId=${id}, fromArea=Card.Processing}}, moveVisible=false}`);
+    serverNotify('MoveCards', serverCbor(`{{${moves.join(',')}}, 2}`));
+    return useGameStore.getState().board;
+  },
+  tablePileLongNote: (id: number) => {
+    // A literal FreeKill UI notification tests that native footnotes can be
+    // inspected in full even when the small painted card truncates them.
+    const note = 'Kỹ năng đang xử lý: giữ nguyên thứ tự các lá; đối chiếu mọi người chơi liên quan trước khi kết toán; chú thích đầy đủ không bị rút gọn trên điện thoại. '.repeat(8);
+    conn.lua.eval(`ClientInstance:notifyUI('SetCardFootnote', {${id}, '${note}', false})`);
+    return note;
+  },
+  tablePileVirtualAlias: (id: number, knownAlias = true) => {
+    // Match the server's virtual=true variant of sendCardVirtName/sendFootnote.
+    // Use a temporary native virt_id on a card already in the table, so raw
+    // identifiers never cross the web UI boundary.
+    conn.lua.eval(`local card = Fk:getCardById(${id})
+      local saved = card.virt_id
+      card.virt_id = ${knownAlias ? '798321' : '798322'}
+      ClientInstance:notifyUI('SetCardVirtName', {{card.virt_id}, 'thunder__slash', true})
+      ClientInstance:notifyUI('SetCardFootnote', {card.virt_id, 'Bài ảo đang xử lý', true})
+      card.virt_id = saved`);
+    return useGameStore.getState().board.processingCards;
+  },
+  tablePileSharedVirtualAlias: (first: number, second: number) => {
+    conn.lua.eval(`local first = Fk:getCardById(${first})
+      local second = Fk:getCardById(${second})
+      local old_first, old_second = first.virt_id, second.virt_id
+      first.virt_id, second.virt_id = 798323, 798323
+      ClientInstance:notifyUI('SetCardFootnote', {798323, 'Chỉ lá đầu tiên có mã ảo trùng', true})
+      first.virt_id, second.virt_id = old_first, old_second`);
+    return useGameStore.getState().board.processingCards;
+  },
+  tablePileRevealParsedNote: (id: number) => {
+    const note = conn.lua.eval<string>("return ClientInstance:parseMsg({type='##ShowCard', from=17}, true)");
+    conn.lua.eval(`ClientInstance:showVirtualCard({{Fk:getCardById(${id})}, 17, {type='##ShowCard', from=17}, 3})`);
+    return note;
+  },
+  tablePileReveal: (id: number, footnote: string) => {
+    // Exercise actual FreeKill Client:showVirtualCard -> notifyUI, separate
+    // from the physical processing/discard list.
+    if (footnote) {
+      conn.lua.eval(`ClientInstance:notifyUI('ShowVirtualCard', {{Fk:getCardById(${id})}, 17, '${footnote}', 3})`);
+    } else {
+      conn.lua.eval(`ClientInstance:showVirtualCard({{Fk:getCardById(${id})}, 17, nil, 3})`);
+    }
+    return useGameStore.getState().board.virtualSequence;
+  },
+  tablePileRevealBurst: (ids: number[]) => {
+    for (const id of ids) conn.lua.eval(`ClientInstance:showVirtualCard({{Fk:getCardById(${id})}, 17, nil, 3})`);
+    return useGameStore.getState().board.virtualSequence;
+  },
   equipBot: () => {
     const id = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
       return Fk:getCardById(id).type == Card.TypeEquip end)`);
