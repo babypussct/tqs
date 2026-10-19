@@ -119,6 +119,14 @@ routing.registerRoute(
   new NetworkOnly()
 );
 
+// Firebase's OAuth helper must always be fetched from the same-origin proxy.
+// Never cache its handler/iframe or serve the offline app shell in its place.
+routing.registerRoute(
+  ({ url }) => url.origin === self.location.origin &&
+    (url.pathname.startsWith('/__/auth/') || url.pathname === '/__/firebase/init.json'),
+  new NetworkOnly()
+);
+
 // ─── Route 7: Static assets (images from origin) — CacheFirst ───────────────
 routing.registerRoute(
   ({ request, url }) =>
@@ -155,6 +163,10 @@ routing.registerRoute(
 
 // ─── Offline Fallback cho Navigation ─────────────────────────────────────────
 routing.setCatchHandler(async ({ request }) => {
+  const requestUrl = new URL(request.url);
+  if (requestUrl.pathname.startsWith('/__/auth/') || requestUrl.pathname === '/__/firebase/init.json') {
+    return Response.error();
+  }
   if (request.mode === 'navigate') {
     // Serve offline.html từ precache khi mất mạng
     const offlinePage = await caches.match('/offline.html');

@@ -8,8 +8,18 @@ Repository này chứa storefront TQSShop, order service server-authoritative v�
 các API quản trị/notification. Kiến trúc sau refactor được mô tả tại
 [`docs/architecture/SHOP_REFACTOR.md`](./docs/architecture/SHOP_REFACTOR.md).
 
-The repository currently tracks `dist/`; regenerate it with `npm run build`
-before a deployment that consumes the checked-in static output.
+The repository still tracks the historical game files in root `dist/`.
+Do not use root `dist/` as a build destination. The two Vite applications
+have separate outputs:
+
+- TQSShop: `npm run build` writes `dist-shop/`; Vercel uses `outputDirectory`
+  from `vercel.json`, and `npm run clean` clears only `dist-shop/`.
+- Tam Quốc Sát web game: build in `game/web/` writes `game/web/dist/`;
+  Cloudflare Pages and mobile packaging read that directory.
+
+Both generated output directories are ignored by Git. Existing tracked
+files under root `dist/` are kept for compatibility; only migrate their
+history/removal in a separately reviewed change.
 
 ## Firebase environments
 

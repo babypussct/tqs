@@ -255,6 +255,7 @@ export interface GamePoolPolicy {
   schemaVersion: 1;
   mode: 'new_heg_mode';
   revision: number;
+  generalNum: number;
   disabledPacks: {
     generals: string[];
     cards: string[];

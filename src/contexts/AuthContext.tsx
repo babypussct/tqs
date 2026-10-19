@@ -1,9 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { User, getRedirectResult, onAuthStateChanged, signInWithRedirect, signOut } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';
 import { AdminUser, AdminPermissions, AppUser } from '../types';
 import { toast } from 'sonner';
+import { googleLoginErrorMessage } from '../utils/googleAuthFlow';
+
+const REDIRECT_LOGIN_KEY = 'tqs-shop-google-redirect-pending';
 
 interface AuthContextType {
   user: User | null;
@@ -11,7 +14,7 @@ interface AuthContextType {
   adminUser: AdminUser | null;
   isAdmin: boolean;
   loading: boolean;
-  login: () => Promise<boolean>;
+  login: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -24,6 +27,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const loginInFlight = useRef(false);
+
+  useEffect(() => {
+    // A redirect returns to this PWA in a new page load. Consume Firebase's
+    // result once, and surface failures that previously disappeared on reload.
+    if (sessionStorage.getItem(REDIRECT_LOGIN_KEY) !== '1') return;
+    void getRedirectResult(auth).then(async (result) => {
+      // Persistence restoration can finish after the redirect result is read.
+      await auth.authStateReady();
+      if (result || auth.currentUser) {
+        toast.success('Đăng nhập Google thành công.');
+      } else {
+        toast.error('Google chưa hoàn tất đăng nhập. Hãy bấm Đăng nhập để thử lại.');
+      }
+    }).catch((error) => {
+      console.error('Google redirect login failed', error);
+      const message = googleLoginErrorMessage(error);
+      if (message) toast.error(message, { duration: 7000 });
+    }).finally(() => {
+      sessionStorage.removeItem(REDIRECT_LOGIN_KEY);
+    });
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -194,7 +219,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user]);
 
-  const login = async (): Promise<boolean> => {
+  const login = async (): Promise<void> => {
+    if (loginInFlight.current) return;
+    loginInFlight.current = true;
     try {
       // Phát hiện các trình duyệt nhúng trong ứng dụng (Facebook, Zalo, Instagram, TikTok...)
       const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
@@ -204,19 +231,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error('Trình duyệt này chặn đăng nhập Google. Vui lòng chọn "Mở bằng trình duyệt" (Chrome/Safari) từ menu để tiếp tục.', {
           duration: 10000,
         });
-        return false;
+        return;
       }
 
-      await signInWithPopup(auth, googleProvider);
-      return true;
+      // Redirect in the current tab on Safari, Chrome and installed PWAs.
+      // Firebase restores the session after Google returns to this URL.
+      sessionStorage.setItem(REDIRECT_LOGIN_KEY, '1');
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       console.error('Login failed', error);
-      if (error.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, do nothing
-      } else {
-        toast.error('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.', { duration: 4000 });
-      }
-      return false;
+      sessionStorage.removeItem(REDIRECT_LOGIN_KEY);
+      const message = googleLoginErrorMessage(error);
+      if (message) toast.error(message, { duration: 7000 });
+    } finally {
+      loginInFlight.current = false;
     }
   };
 

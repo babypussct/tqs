@@ -217,14 +217,9 @@ export default function CartDrawer() {
               aria-label={!user ? 'Đăng nhập để thanh toán' : 'Thanh toán ngay'}
               onClick={async () => {
                 if (!user) {
-                  try {
-                    const loggedIn = await login();
-                    if (loggedIn) {
-                      toast.success('Đăng nhập thành công! Bạn có thể tiếp tục thanh toán.');
-                    }
-                  } catch {
-                    toast.error('Đăng nhập thất bại. Vui lòng thử lại.');
-                  }
+                  // Google redirects away from the page; AuthProvider reports
+                  // the result after returning, so avoid premature toasts.
+                  await login();
                   return;
                 }
                 onClose();

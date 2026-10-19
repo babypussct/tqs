@@ -18,6 +18,8 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
+      // Keep storefront output separate from the legacy, Git-tracked game assets in /dist.
+      outDir: 'dist-shop',
       rollupOptions: {
         output: {
           manualChunks: {

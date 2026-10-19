@@ -5,4 +5,9 @@ node_modules
 scratch/
 game/web/public/glue.wasm
 game/web/dist/
+/dist-shop/
+# Legacy tracked game assets remain readable, but new root build artifacts are ignored.
+/dist/
+.DS_Store
+firestore-debug.log
 .vercel

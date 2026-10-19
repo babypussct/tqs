@@ -229,6 +229,9 @@ service cloud.firestore {
         request.resource.data.appliesTo == 'new_rooms' &&
         request.resource.data.revision is number &&
         request.resource.data.revision >= 0 &&
+        request.resource.data.generalNum is int &&
+        request.resource.data.generalNum >= 5 &&
+        request.resource.data.generalNum <= 10 &&
         request.resource.data.disabledPacks is map &&
         request.resource.data.disabledPacks.generals is list &&
         request.resource.data.disabledPacks.cards is list &&

@@ -4,13 +4,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '../_lib/firebaseAdmin.js';
 import { authenticateActor } from '../_lib/auth.js';
 import type { GamePoolPolicy } from '../../src/types.js';
+import { normalizeInitialGeneralCount, sanitizeDisabledGamePacks } from '../../src/game/gamePoolPacks.js';
 
 const GAME_MODE = 'new_heg_mode' as const;
 const TICKET_TTL_SECONDS = 5 * 60;
-const MAX_PACK_IDS = 128;
-const PACK_ID_PATTERN = /^[A-Za-z0-9_\-\u4e00-\u9fff]{1,100}$/u;
 
-type NormalizedPoolPolicy = Pick<GamePoolPolicy, 'schemaVersion' | 'mode' | 'revision' | 'disabledPacks' | 'appliesTo'>;
+type NormalizedPoolPolicy = Pick<GamePoolPolicy, 'schemaVersion' | 'mode' | 'revision' | 'generalNum' | 'disabledPacks' | 'appliesTo'>;
 
 function allowedOrigins(): Set<string> {
   return new Set(
@@ -50,15 +49,7 @@ function nativeNameFor(uid: string): string {
   return `tqs_${suffix || 'player'}`.slice(0, 80);
 }
 
-function normalizePackIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return [...new Set(value.filter((item): item is string => typeof item === 'string' && PACK_ID_PATTERN.test(item)))].slice(0, MAX_PACK_IDS);
-}
-
 function normalizePolicy(value: FirebaseFirestore.DocumentData | undefined): NormalizedPoolPolicy {
-  const disabled = value?.disabledPacks && typeof value.disabledPacks === 'object'
-    ? value.disabledPacks as Record<string, unknown>
-    : {};
   const rawRevision = value?.revision;
   const revision = typeof rawRevision === 'number' && Number.isInteger(rawRevision) && rawRevision >= 0
     ? rawRevision
@@ -67,10 +58,8 @@ function normalizePolicy(value: FirebaseFirestore.DocumentData | undefined): Nor
     schemaVersion: 1,
     mode: GAME_MODE,
     revision,
-    disabledPacks: {
-      generals: normalizePackIds(disabled.generals),
-      cards: normalizePackIds(disabled.cards),
-    },
+    generalNum: normalizeInitialGeneralCount(value?.generalNum),
+    disabledPacks: sanitizeDisabledGamePacks(value?.disabledPacks).disabledPacks,
     appliesTo: 'new_rooms',
   };
 }
