@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_current_candidate_baseline_full_match",
+  "capturedAt": "2026-10-22T08:07:20+07:00",
+  "scope": "isolated local macOS native QA; metadata-only candidate/baseline comparison; no production change",
+  "question": "On the same scenario, seed and package identity, does the current candidate remain free of invalid AI replies when compared with the QA baseline that intentionally disables the selected Prompt 4 strategies?",
+  "identity": {
+    "runtimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "qaSourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "qaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "pairing": {
+    "scenario": "general-pair-match-mixed-a",
+    "seed": 1780421000,
+    "candidateId": "cp98",
+    "baselineId": "cp99",
+    "samePackageIdentity": true,
+    "sameScenarioAndSeed": true,
+    "matchedRequestState": false,
+    "matchedRequestStateReason": "A full match changes subsequent gameplay state when Prompt 4 strategies are disabled; this pair is a safety/context comparison, not a matched causal replay."
+  },
+  "candidate": {
+    "tqsPrompt4Baseline": false,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "realClientSeats": 2,
+    "nativeBotSeats": 2,
+    "aggregateRequestMetrics": {
+      "total": 143,
+      "accepted": 76,
+      "fallback": 67,
+      "invalid": 0,
+      "noDecision": 67,
+      "fallbackIncludesNoDecision": true,
+      "reasonCounts": { "no_decision": 39, "no_strategy": 28 },
+      "invalidDetails": {}
+    },
+    "perCommand": [
+      { "command": "AskForCardChosen", "total": 9, "fallback": 9, "invalid": 0, "noDecision": 9, "reasons": { "no_strategy": 9 } },
+      { "command": "AskForChoices", "total": 10, "fallback": 0, "invalid": 0, "noDecision": 0, "reasons": {} },
+      { "command": "AskForSkillInvoke", "total": 15, "fallback": 6, "invalid": 0, "noDecision": 6, "reasons": { "no_strategy": 6 } },
+      { "command": "AskForUseActiveSkill", "total": 13, "fallback": 6, "invalid": 0, "noDecision": 6, "reasons": { "no_decision": 6 } },
+      { "command": "AskForUseCard", "total": 33, "fallback": 25, "invalid": 0, "noDecision": 25, "reasons": { "no_decision": 12, "no_strategy": 13 } },
+      { "command": "PlayCard", "total": 63, "fallback": 21, "invalid": 0, "noDecision": 21, "reasons": { "no_decision": 21 } }
+    ]
+  },
+  "baseline": {
+    "tqsPrompt4Baseline": true,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "realClientSeats": 2,
+    "nativeBotSeats": 2,
+    "aggregateRequestMetrics": {
+      "total": 181,
+      "accepted": 100,
+      "fallback": 81,
+      "invalid": 0,
+      "noDecision": 78,
+      "fallbackIncludesNoDecision": true,
+      "reasonCounts": { "no_decision": 53, "no_strategy": 25, "unsupported_command": 3 },
+      "invalidDetails": {}
+    },
+    "perCommand": [
+      { "command": "AskForCardChosen", "total": 4, "fallback": 4, "invalid": 0, "noDecision": 4, "reasons": { "no_strategy": 4 } },
+      { "command": "AskForChoices", "total": 12, "fallback": 0, "invalid": 0, "noDecision": 0, "reasons": {} },
+      { "command": "AskForResponseCard", "total": 1, "fallback": 1, "invalid": 0, "noDecision": 1, "reasons": { "no_decision": 1 } },
+      { "command": "AskForSkillInvoke", "total": 20, "fallback": 10, "invalid": 0, "noDecision": 10, "reasons": { "no_strategy": 10 } },
+      { "command": "AskForUseActiveSkill", "total": 25, "fallback": 14, "invalid": 0, "noDecision": 14, "reasons": { "no_decision": 14 } },
+      { "command": "AskForUseCard", "total": 36, "fallback": 23, "invalid": 0, "noDecision": 23, "reasons": { "no_decision": 12, "no_strategy": 11 } },
+      { "command": "EmptyRequest", "total": 3, "fallback": 3, "invalid": 0, "noDecision": 0, "reasons": { "unsupported_command": 3 } },
+      { "command": "PlayCard", "total": 80, "fallback": 26, "invalid": 0, "noDecision": 26, "reasons": { "no_decision": 26 } }
+    ]
+  },
+  "excludedAttempts": [
+    {
+      "id": "cp99-ai-trace-baseline",
+      "scenario": "ai-trace",
+      "seed": 1780420130,
+      "tqsPrompt4Baseline": true,
+      "runnerExit": 1,
+      "runnerGameOverGate": "FAIL; every live client had not observed native GameOver at the bounded verification point",
+      "serverProbe": "5 deterministic trace decisions and 0 probe errors were observed; GameOver was only reached during the runner's bounded soft-cleanup attempt",
+      "countedInGate": false,
+      "evidence": "scratch/evidence/cp99-ai-trace-multiplayer-live-1792628362659.json",
+      "reasonExcluded": "The baseline no-strategy branch cannot be treated as matched ai-trace evidence when its lifecycle does not complete through the runner's normal GameOver path."
+    }
+  ],
+  "verification": {
+    "candidateEvidence": "PASS; cp98 current mixed-a runner EXIT 0 and GameOver",
+    "baselineEvidence": "PASS; cp99 baseline mixed-a runner EXIT 0 and GameOver",
+    "candidateBrowserErrors": 0,
+    "baselineBrowserErrors": 0,
+    "candidatePublicBotSkillLogs": 0,
+    "baselinePublicBotSkillLogs": 0,
+    "candidateInvalid": 0,
+    "baselineInvalid": 0,
+    "allPackageIdentitiesMatch": true,
+    "perCommandInvalidCounts": "PASS; candidate and baseline all zero",
+    "evidenceSanitizer": "PASS; metadata-only evidence has no forbidden credential/private-payload keys",
+    "qaCleanup": "PASS; ports 9527/9000 closed, native/Lua/browser/gateway stopped, QA symlink removed",
+    "qaSwitchNote": "macOS host had no ss; the launcher warning was handled by switching the isolated QA symlink only after the listener was observed; public runtime identity was checked before QA enablement"
+  },
+  "evidenceSources": [
+    "scratch/evidence/cp98-general-pair-match-mixed-a-multiplayer-live-1792630188062.json",
+    "scratch/evidence/cp99-general-pair-match-mixed-a-multiplayer-live-1792631188632.json",
+    "docs/web-client/SMARTAI_PROMPT4_NATIVE_REQUEST_SAFETY_CP98_MATRIX_2026-10-22.json",
+    "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+    "runtime/packages/freekill-core/ltk/server/ai/ai.lua",
+    "runtime/packages/freekill-core/lua/server/ai.lua"
+  ],
+  "limitations": [
+    "The candidate and baseline are paired by scenario, seed and package identity but not by a request-state fingerprint after the first divergent decision.",
+    "The baseline intentionally hides the selected Prompt 4 strategies; its no_strategy/unsupported_command fallbacks are expected configuration behavior, not a quality regression claim.",
+    "Zero invalid replies in both trajectories is bounded safety evidence, not an exhaustive legal denominator or proof of zero invalid replies in the wider game.",
+    "This comparison does not measure tactical quality, resource value, downstream effect, win rate, reconnect, physical-device readiness, release/rollback or canary stability.",
+    "No raw logs, credentials, card/target identifiers, private hands/generals, prompts or exception payloads are stored in this artifact."
+  ],
+  "gate": {
+    "p0CandidateInvalidReplies": "PASS",
+    "p0BaselineInvalidReplies": "PASS",
+    "p0MatchedCausalSafety": "OPEN",
+    "p0AggregateRequestSafety": "OPEN",
+    "requestSafetyStatus": "REQUEST_SAFETY_OPEN",
+    "production": "NO-GO"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_request_safety_followup",
+  "source": "saved sanitized native evidence; no new native execution",
+  "boundedMatchedChooser": {
+    "status": "PASS",
+    "comparedCases": 6,
+    "mismatchedCases": [],
+    "skillCount": 3,
+    "nativeInputAndOfferHashesMatch": true,
+    "baseline": {
+      "opportunities": 6,
+      "accepted": 6,
+      "acted": 3,
+      "optionalAcceptedNoAction": 3,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0
+    },
+    "candidate": {
+      "opportunities": 6,
+      "accepted": 6,
+      "acted": 3,
+      "optionalAcceptedNoAction": 3,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0
+    },
+    "acceptedOptionalNoActionIsFallback": false,
+    "nativeFeasibilityValidated": true,
+    "limitations": "Six fixed scenario cases with FNV32 hashes; no full native-state snapshot or tactical quality measurement"
+  },
+  "observedCandidateMatch": {
+    "aggregate": {
+      "total": 247,
+      "accepted": 142,
+      "fallback": 105,
+      "invalid": 7,
+      "noDecision": 95,
+      "otherFallback": 3
+    },
+    "allCommandsReconciled": true,
+    "invalidByCommand": {
+      "AskForUseActiveSkill": 2,
+      "PlayCard": 5
+    },
+    "otherFallbackByCommand": {
+      "EmptyRequest": 3
+    },
+    "perCommandReasonDetailAvailable": false,
+    "semanticRootCauseEstablished": false
+  },
+  "earlierUnmatchedNativeAb": {
+    "delta": {
+      "total": -31,
+      "fallback": 39,
+      "invalid": 69,
+      "noDecision": -29
+    },
+    "matchedRequestState": false,
+    "causalAttributionAvailable": false
+  },
+  "historicalActiveCounterLabelsReconciled": true,
+  "gate": {
+    "boundedChooserRequestSafety": "PASS",
+    "fullPrompt4": "REQUEST_SAFETY_OPEN",
+    "matchedEighteenSkillRequestsAvailable": false,
+    "fullSnapshotAvailable": false,
+    "nativeTargetCardResourceValueAvailable": false,
+    "winRateAttributionAvailable": false
+  }
+}

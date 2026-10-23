@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-21",
+  "mode": "new_heg_mode",
+  "runner": "game/web/scripts/multiplayer-e2e/run.ts --audit-bots",
+  "environment": "isolated local macOS native build with the current candidate runtime; no production or QA-host rollout",
+  "runtimeMD5": "09e68be3617576fd2c5b5c2f2263df7f",
+  "distIndexSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+  "seatCapacity": 4,
+  "realClientSeats": 2,
+  "nativeBotSeats": 2,
+  "gameOverPerClient": [1, 1],
+  "gameLogPerClient": [264, 264],
+  "skillHistoryUpdatesPerClient": {
+    "add": [44, 44],
+    "set": [914, 914],
+    "branch": [913, 913]
+  },
+  "browserErrors": 0,
+  "cleanLobbyDisconnect": true,
+  "nativeQaGateSeen": false,
+  "nativeFallbackTelemetryObserved": true,
+  "nativeFallbackCategories": [
+    "no_decision",
+    "no_strategy",
+    "malformed_prompt",
+    "feasibility_rejected"
+  ],
+  "observedMatchFrequencyUpdated": false,
+  "perSkillAttributionAvailable": false,
+  "pairedBaselineAvailable": false,
+  "winRateAvailable": false,
+  "rawEvidenceRetained": false,
+  "status": "local-native-gameover-pass",
+  "interpretation": "The current candidate completed one real four-seat match through GameOver and returned both browser clients to the lobby. This proves end-to-end local native compatibility for this run, but it does not attribute activations by skill, establish opportunity/miss rates, or support a candidate-versus-baseline win-rate claim.",
+  "privacy": "Only sanitized metadata is retained; raw public logs, card IDs, target IDs, hand/general state, credentials and packet payloads are not retained."
+}

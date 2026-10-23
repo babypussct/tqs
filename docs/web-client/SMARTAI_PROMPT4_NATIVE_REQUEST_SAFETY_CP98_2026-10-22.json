@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_current_full_match",
+  "capturedAt": "2026-10-22T07:49:48+07:00",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Does the current AI/request adapter and SmartAI dispatcher complete a mixed four-seat native match without invalid AI replies on the current package identity?",
+  "identity": {
+    "runtimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "qaSourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "qaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "execution": {
+    "candidateId": "cp98",
+    "scenario": "general-pair-match-mixed-a",
+    "seed": 1780421000,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "realClientSeats": 2,
+    "nativeBotSeats": 2,
+    "qaPort": 9527,
+    "adminPort": 9000,
+    "qaSwitchWasManual": true,
+    "qaSwitchReason": "macOS runner host had no ss; the symlink was switched only after both listeners were observed",
+    "productionTouched": false
+  },
+  "aggregateRequestMetrics": {
+    "source": "sanitized AI_MATCH_METRICS and AI_MATCH_METRICS_COMMAND lines observed on the native server",
+    "total": 143,
+    "accepted": 76,
+    "fallback": 67,
+    "invalid": 0,
+    "noDecision": 67,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 39,
+      "no_strategy": 28
+    },
+    "invalidDetails": {},
+    "status": "NO_INVALID_NATIVE_REPLIES_IN_TRAJECTORY"
+  },
+  "perCommand": [
+    { "command": "AskForCardChosen", "total": 9, "fallback": 9, "invalid": 0, "noDecision": 9, "reasons": { "no_strategy": 9 } },
+    { "command": "AskForChoices", "total": 10, "fallback": 0, "invalid": 0, "noDecision": 0, "reasons": {} },
+    { "command": "AskForSkillInvoke", "total": 15, "fallback": 6, "invalid": 0, "noDecision": 6, "reasons": { "no_strategy": 6 } },
+    { "command": "AskForUseActiveSkill", "total": 13, "fallback": 6, "invalid": 0, "noDecision": 6, "reasons": { "no_decision": 6 } },
+    { "command": "AskForUseCard", "total": 33, "fallback": 25, "invalid": 0, "noDecision": 25, "reasons": { "no_decision": 12, "no_strategy": 13 } },
+    { "command": "PlayCard", "total": 63, "fallback": 21, "invalid": 0, "noDecision": 21, "reasons": { "no_decision": 21 } }
+  ],
+  "prompt4Provenance": [
+    { "skill": "hs__wusheng", "command": "PlayCard", "reason": "no_decision", "detail": "none", "count": 4 }
+  ],
+  "verification": {
+    "candidateIdentity": "PASS",
+    "qaPackageIdentity": "PASS",
+    "nativeRunner": "EXIT 0; mixed four-seat native match reached GameOver/result",
+    "browserTrace": "PASS; browser errors 0",
+    "nativeBotAudit": "PASS; 0 public skill logs attributed to native BOT names",
+    "commandMetricReconciliation": "PASS; per-command totals sum to 143, fallback 67, invalid 0",
+    "qaCleanup": "PASS; ports 9527/9000 closed, native/Lua/browser/gateway stopped, QA symlink removed",
+    "evidenceSanitizer": "PASS; runner evidence contains no forbidden credential/private-payload fields"
+  },
+  "evidenceSources": [
+    "scratch/evidence/cp98-general-pair-match-mixed-a-multiplayer-live-1792630188062.json",
+    "deploy/freekill-native/scripts/run-server.sh",
+    "runtime/packages/freekill-core/lua/server/ai.lua",
+    "runtime/packages/freekill-core/ltk/server/ai/ai.lua",
+    "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua"
+  ],
+  "limitations": [
+    "This is one mixed full-match trajectory and does not close aggregate request safety for every Prompt 4 state, roster, seed or command context.",
+    "Fallback/no_decision remains present; zero invalid replies here does not prove zero invalid replies in the wider game.",
+    "Per-command provenance is complete for this trajectory, while per-skill provenance is partial and is not a matched baseline/candidate comparison.",
+    "The run is not a Prompt 4-only denominator and does not measure tactical quality, resource value, downstream effect, win rate, reconnect, physical-device readiness, release/rollback or canary stability.",
+    "Manual QA symlink switching was required by the macOS host; the public runtime identity was checked before the symlink was enabled.",
+    "No raw logs, credentials, card/target identifiers, private hands/generals, prompts or exception payloads are stored in this artifact."
+  ],
+  "gate": {
+    "p0TrajectoryInvalidReplies": "PASS",
+    "p0AggregateRequestSafety": "OPEN",
+    "requestSafetyStatus": "REQUEST_SAFETY_OPEN",
+    "production": "NO-GO"
+  }
+}

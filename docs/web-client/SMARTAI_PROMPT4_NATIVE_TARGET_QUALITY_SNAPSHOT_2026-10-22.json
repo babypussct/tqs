@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_target_quality_snapshot",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Do the bounded native Prompt 4 replies select the expected coarse target role and expose bounded card/target counts?",
+  "scenario": "ai-trace",
+  "seed": 1780420130,
+  "qaPackage": {
+    "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "packageSha256": "1e1c661446194a48f793fa381e73d4a2c0f8fd8b131c9cb87ae4cdc0b3700709",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "candidateRuntimeMd5": "2c60950bb710a882df152a4b49b26818",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserTraceSaved": true,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "traceSummary": {
+    "decisions": 18,
+    "opportunities": 18,
+    "accepted": 18,
+    "acted": 18,
+    "misses": 0,
+    "fallback": 0,
+    "invalid": 0,
+    "errors": 0,
+    "pairVerified": true,
+    "stateVerified": true,
+    "fixtureVerified": true,
+    "shapeMetadataVerified": true
+  },
+  "targetQuality": {
+    "nativeTargetQualityAvailable": true,
+    "nativeReplySnapshotAvailable": true,
+    "expected": 18,
+    "unexpected": 0,
+    "noAction": 0,
+    "notApplicable": 0,
+    "unknown": 0
+  },
+  "expectedTargetProfiles": {
+    "tianyi": "enemy",
+    "shangyi": "enemy",
+    "tiaoxin": "enemy",
+    "hs__zhiheng": "none",
+    "hs__kurou": "none",
+    "hs__qiangxi": "enemy",
+    "hs__longdan": "enemy",
+    "hs__luanji": "mixed",
+    "hs__wusheng": "enemy",
+    "huoji": "enemy",
+    "jijiu": "none",
+    "kanpo": "none",
+    "aocai": "none",
+    "beizhu": "enemy",
+    "dimeng": "mixed",
+    "choufa": "ally",
+    "cunsi": "ally",
+    "duanfa": "none"
+  },
+  "perSkill": [
+    { "skill": "tianyi", "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "shangyi", "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "tiaoxin", "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "hs__zhiheng", "targetProfile": "none", "selectedCards": 3, "selectedTargets": 0, "targetQuality": "expected" },
+    { "skill": "hs__kurou", "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": "expected" },
+    { "skill": "hs__qiangxi", "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "hs__longdan", "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "hs__luanji", "targetProfile": "mixed", "selectedCards": 2, "selectedTargets": 3, "targetQuality": "expected" },
+    { "skill": "hs__wusheng", "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "huoji", "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "jijiu", "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": "expected" },
+    { "skill": "kanpo", "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": "expected" },
+    { "skill": "aocai", "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": "expected" },
+    { "skill": "beizhu", "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "dimeng", "targetProfile": "mixed", "selectedCards": 1, "selectedTargets": 2, "targetQuality": "expected" },
+    { "skill": "choufa", "targetProfile": "ally", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "cunsi", "targetProfile": "ally", "selectedCards": 0, "selectedTargets": 1, "targetQuality": "expected" },
+    { "skill": "duanfa", "targetProfile": "none", "selectedCards": 3, "selectedTargets": 0, "targetQuality": "expected" }
+  ],
+  "sourceChanges": [
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native trace instrumentation",
+      "purpose": "Emit bounded selected-card count, selected-target count, and coarse target-quality metadata from the real native player.ai:makeReply() path.",
+      "sha256": "2eeac679e2e86b6fa6f6fd23e92147adc5c552dbb318635062bbc64a4b0da1e2"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-prompt4-native-skill-trace.ts",
+      "layer": "QA-only parser and paired analyzer",
+      "purpose": "Parse the optional bounded reply snapshot and expose target-quality availability without retaining card/target IDs or private state.",
+      "sha256": "ce55bc89551a54c0b6386e5f4ff1c6abe03196799ecc687e573dd6c4d325215d"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa-catalog.test.mjs",
+      "layer": "QA contract",
+      "purpose": "Require the new metadata fields and the declared expected target-role profile for every bounded fixture skill.",
+      "sha256": "afd74d772472826e73fd483a9fc4d8977509e2728ec922776d51d7bd40a87211"
+    }
+  ],
+  "verification": {
+    "nativeTraceParser": "7/7 PASS",
+    "qaServerContract": "48/48 PASS",
+    "lua54Syntax": "PASS",
+    "runner": "EXIT 0; GameOver reached",
+    "officialParserSummary": "18 decisions, 18 opportunities, 18 accepted, 18 acted, 0 fallback, 0 invalid, 0 errors",
+    "officialParserTargetQuality": "expected=18, unexpected=0, unknown=0"
+  },
+  "limitations": [
+    "The fixture uses coarse role classes (none, ally, enemy, mixed); expected means the bounded role class matches the declared fixture expectation, not that the tactical choice is optimal.",
+    "Selected-card and selected-target values are counts only. No card ID, target ID, hand, general, prompt, credential, or raw exception is stored.",
+    "This run calls the real native player.ai:makeReply() path and native feasibility, but it is one bounded seed/roster trajectory rather than a population estimate or full Prompt 4 safety gate.",
+    "No resource value, downstream effect, win-rate, reconnect, physical-device, release/rollback, or canary conclusion follows from this artifact.",
+    "The QA package was isolated and unpinned for the probe; no production runtime, deployment, release artifact, or upstream pin was changed."
+  ]
+}

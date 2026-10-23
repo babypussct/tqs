@@ -21,6 +21,25 @@ Both generated output directories are ignored by Git. Existing tracked
 files under root `dist/` are kept for compatibility; only migrate their
 history/removal in a separately reviewed change.
 
+Build and clean now enforce this boundary before modifying output and verify
+both game output directories by SHA-256 afterward. Run `npm run test:build-safety`
+for the regression guard and `npm run typecheck:all` for shop/API, game app and
+game tooling. The repeatable local/Vercel checks and device acceptance evidence
+are described in [`docs/deploy/SHOP_BUILD_RELEASE.md`](docs/deploy/SHOP_BUILD_RELEASE.md).
+
+## Independent pipelines
+
+Run `npm run changes:plan` to see whether local changes affect TQSShop, TQSVN or
+both. CI checks only affected applications; shared auth/policy/Firebase and
+pipeline changes check both. Unknown paths or missing Git history check both.
+Documentation-only changes skip application jobs while reporting `Pipeline gate`.
+
+Vercel skips game-only Git changes using the scoped ignore command. TQSVN Pages
+currently uses Direct Upload, so pushing Shop code does not publish the game.
+Game CI prepares its 14 pinned upstream source checkouts explicitly with
+`npm --prefix game/web run prepare:upstream`; it does not install Shop dependencies.
+See the release runbook for the complete scope map and hosted settings.
+
 ## Firebase environments
 
 TQSShop production uses one canonical Firebase project and one named Firestore

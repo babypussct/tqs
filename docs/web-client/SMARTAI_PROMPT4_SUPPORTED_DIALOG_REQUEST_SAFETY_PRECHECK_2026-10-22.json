@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_supported_general_pair_custom_dialog_request_safety_precheck",
+  "capturedAt": "2026-10-22",
+  "status": "LOCAL_LUA_PASS_NATIVE_RUN_NOT_COMPLETED",
+  "scope": {
+    "mode": "new_heg_mode",
+    "qaOnly": true,
+    "coreAiModified": false,
+    "productionTouched": false,
+    "release": "NO_GO"
+  },
+  "newProbe": {
+    "nativeSource": "deploy/freekill-native/qa/tqs_qa/init.lua",
+    "independentDetachedMetrics": true,
+    "realSmartAiStrategyLegalCalls": 2,
+    "plannedNativeCasesPerRun": 10,
+    "plannedAccepted": 2,
+    "plannedInvalidNonNil": 6,
+    "plannedNilFallback": 2,
+    "categories": [
+      "strategy_legal",
+      "strategy_repeat",
+      "duplicate_general",
+      "unoffered_general",
+      "disabled_kingdom",
+      "wrong_reply_type",
+      "missing_kingdom",
+      "invalid_offer",
+      "nil_no_strategy",
+      "nil_no_decision"
+    ],
+    "nativeExecutionsObserved": 0,
+    "nativeClassificationCountsVerified": false
+  },
+  "verification": {
+    "qaServerContract": "48/48 PASS",
+    "smartAiLuaIntegration": "12/12 PASS (including new 10-case CustomDialog regression)",
+    "lua54Syntax": "PASS",
+    "typecheckAll": "PASS",
+    "nativeServerLaunch": "listener started then clean CLI exit 0; no native QA room or browser runner executed",
+    "nativeRuntimePortsClosedAfterExit": true,
+    "qaSymlinkCleanup": "PENDING_LINK_REMAINS_IN_ISOLATED_RUNTIME"
+  },
+  "blockedAction": {
+    "kind": "isolated QA link switch after native listener starts",
+    "result": "local command rejected: rm -f style commands are not permitted. Use a safer approach",
+    "approvalBypassAttempted": false
+  },
+  "identity": {
+    "qaSourceRevision": "4f605d05e37dfd5227a26fa2e7c62ab2e7394549",
+    "qaPackageSha256": "19f66527cf24bced4561ef701e416482274e72256f3c0b5bea1310d46c66cf39",
+    "qaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3",
+    "runtimeFlistMd5": "dae6049e5b5e557cd00db6105e1c99cb",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54"
+  },
+  "p1Preserved": {
+    "evidencePath": "docs/web-client/SMARTAI_PROMPT4_NATIVE_DOWNSTREAM_EFFECT_REPLAY_MATRIX_2026-10-22.json",
+    "cleanSkillProofs": 18,
+    "allSkillsCount": 18,
+    "publicRuntimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "qaSourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "preservedNoCoreAiMutation": true,
+    "rerun18SkillMatrixBeforeNextCoreAiChange": true
+  },
+  "priorEvidence": {
+    "crossCommandMalformed": "docs/web-client/SMARTAI_PROMPT4_NATIVE_REQUEST_SAFETY_MALFORMED_CROSS_COMMAND_2026-10-22.json",
+    "p2Role": "docs/web-client/SMARTAI_PROMPT4_NATIVE_TARGET_QUALITY_MATRIX_2026-10-22.json",
+    "p2Resource": "docs/web-client/SMARTAI_PROMPT4_NATIVE_RESOURCE_VALUE_MATRIX_2026-10-22.json"
+  },
+  "gate": {
+    "p0CrossCommandNative": "44 cases x2 PASS_BOUNDED (prior identity)",
+    "p0SupportedDialog": "LOCAL_10_CASE_PASS_NATIVE_PENDING",
+    "p1Downstream": "18/18 PASS_BOUNDED (preserved original identity)",
+    "p2Tactical": "PARTIAL",
+    "p0Aggregate": "OPEN",
+    "production": "NO_GO"
+  }
+}

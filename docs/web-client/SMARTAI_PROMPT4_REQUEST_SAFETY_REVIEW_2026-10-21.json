@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_saved_evidence_safety_review",
+  "scope": "sanitized saved evidence only; no new native execution",
+  "exploratoryProbe": {
+    "preFix": {
+      "total": 156,
+      "recordedAccepted": 68,
+      "acceptedImpliedByFallback": 68,
+      "fallback": 88,
+      "invalid": 41,
+      "noDecision": 47,
+      "otherFallback": 0,
+      "counterConsistent": true,
+      "issues": []
+    },
+    "fixed": {
+      "total": 95,
+      "recordedAccepted": 46,
+      "acceptedImpliedByFallback": 46,
+      "fallback": 49,
+      "invalid": 12,
+      "noDecision": 35,
+      "otherFallback": 2,
+      "counterConsistent": true,
+      "issues": []
+    },
+    "activeSkillRequest": {
+      "preFix": {
+        "total": 31,
+        "recordedAccepted": 23,
+        "acceptedImpliedByFallback": null,
+        "fallback": 16,
+        "invalid": 7,
+        "noDecision": 7,
+        "otherFallback": 2,
+        "counterConsistent": false,
+        "issues": [
+          "accepted_plus_fallback_mismatch"
+        ]
+      },
+      "fixed": {
+        "total": 6,
+        "recordedAccepted": 1,
+        "acceptedImpliedByFallback": null,
+        "fallback": 1,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 1,
+        "counterConsistent": false,
+        "issues": [
+          "accepted_plus_fallback_mismatch"
+        ]
+      },
+      "correctedNative": {
+        "preFix": {
+          "total": 31,
+          "acceptedDerived": 8,
+          "fallback": 23,
+          "invalid": 16,
+          "noDecision": 7
+        },
+        "fixed": {
+          "total": 6,
+          "acceptedDerived": 5,
+          "fallback": 1,
+          "invalid": 1,
+          "noDecision": 0
+        }
+      }
+    },
+    "matchedRequestState": false,
+    "causalAttributionAvailable": false
+  },
+  "earlierNativeAb": {
+    "baseline": {
+      "total": 783,
+      "recordedAccepted": 412,
+      "acceptedImpliedByFallback": 412,
+      "fallback": 371,
+      "invalid": 85,
+      "noDecision": 278,
+      "otherFallback": 8,
+      "counterConsistent": true,
+      "issues": []
+    },
+    "candidate": {
+      "total": 752,
+      "recordedAccepted": 342,
+      "acceptedImpliedByFallback": 342,
+      "fallback": 410,
+      "invalid": 154,
+      "noDecision": 249,
+      "otherFallback": 7,
+      "counterConsistent": true,
+      "issues": []
+    },
+    "matchedRequestState": false,
+    "delta": {
+      "total": -31,
+      "fallback": 39,
+      "invalid": 69,
+      "noDecision": -29
+    }
+  },
+  "observedCandidateMatch": {
+    "aggregate": {
+      "total": 247,
+      "recordedAccepted": 142,
+      "acceptedImpliedByFallback": 142,
+      "fallback": 105,
+      "invalid": 7,
+      "noDecision": 95,
+      "otherFallback": 3,
+      "counterConsistent": true,
+      "issues": []
+    },
+    "commands": {
+      "AskForCardChosen": {
+        "total": 5,
+        "recordedAccepted": 0,
+        "acceptedImpliedByFallback": 0,
+        "fallback": 5,
+        "invalid": 0,
+        "noDecision": 5,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForCardsAndChoice": {
+        "total": 5,
+        "recordedAccepted": 5,
+        "acceptedImpliedByFallback": 5,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForChoices": {
+        "total": 19,
+        "recordedAccepted": 19,
+        "acceptedImpliedByFallback": 19,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForResponseCard": {
+        "total": 2,
+        "recordedAccepted": 2,
+        "acceptedImpliedByFallback": 2,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForSkillInvoke": {
+        "total": 39,
+        "recordedAccepted": 15,
+        "acceptedImpliedByFallback": 15,
+        "fallback": 24,
+        "invalid": 0,
+        "noDecision": 24,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForUseActiveSkill": {
+        "total": 20,
+        "recordedAccepted": 16,
+        "acceptedImpliedByFallback": 16,
+        "fallback": 4,
+        "invalid": 2,
+        "noDecision": 2,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "AskForUseCard": {
+        "total": 38,
+        "recordedAccepted": 11,
+        "acceptedImpliedByFallback": 11,
+        "fallback": 27,
+        "invalid": 0,
+        "noDecision": 27,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "CustomDialog": {
+        "total": 2,
+        "recordedAccepted": 2,
+        "acceptedImpliedByFallback": 2,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "EmptyRequest": {
+        "total": 3,
+        "recordedAccepted": 0,
+        "acceptedImpliedByFallback": 0,
+        "fallback": 3,
+        "invalid": 0,
+        "noDecision": 0,
+        "otherFallback": 3,
+        "counterConsistent": true,
+        "issues": []
+      },
+      "PlayCard": {
+        "total": 114,
+        "recordedAccepted": 72,
+        "acceptedImpliedByFallback": 72,
+        "fallback": 42,
+        "invalid": 5,
+        "noDecision": 37,
+        "otherFallback": 0,
+        "counterConsistent": true,
+        "issues": []
+      }
+    },
+    "commandCoverageConsistent": true,
+    "invalidContributionsByCommand": {
+      "AskForUseActiveSkill": 2,
+      "PlayCard": 5
+    }
+  },
+  "gate": {
+    "savedAggregateCountersConsistent": true,
+    "activeSkillAcceptedCounterConsistent": false,
+    "legacyActiveAcceptedUsable": false,
+    "nativeActiveCountersReconciled": true,
+    "matchedBaselineFixedReplayAvailable": false,
+    "nativeSkillOpportunityDenominatorAvailable": false,
+    "nativeTargetResourceQualityAvailable": false,
+    "status": "REQUEST_SAFETY_OPEN"
+  },
+  "limitations": [
+    "Historical active command fields were positionally mislabeled; arithmetic using their saved fallback field is invalid. Native accepted is derived only from verified total minus native fallback.",
+    "A corrected native command tuple can establish counter provenance but does not provide request-state matching or causal evidence.",
+    "Pre-fix and fixed trajectories differ in pair selection and gameplay state; changes in rates or totals cannot be attributed to the chooser patch.",
+    "Earlier A/B aggregate mixes many commands and lacks matched request-state and per-command reason detail in its saved artifact.",
+    "An observed request is not a denominator of every legal opportunity to activate a skill.",
+    "No raw private payloads, card/target identifiers or native logs were used or retained."
+  ]
+}

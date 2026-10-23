@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_mixed_full_match",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Does the current SmartAI request-safety behavior remain safe outside the bounded eighteen-skill fixture?",
+  "sourceChanges": [
+    {
+      "path": "runtime/packages/freekill-core/standard/aux_skills_dir/discard_skill.lua",
+      "layer": "skill-specific AI strategy",
+      "sha256": "fad8501bf15a8e80867d8a12a1f358aaf5587fc1c0628d142684841496d80b8b"
+    },
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+      "layer": "common SmartAI dispatcher",
+      "sha256": "e38a69445a2d334259508eb74b2211be6fe743755db3a0f29eddabcad2ed8ddd"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native scenario package",
+      "sha256": "2eeac679e2e86b6fa6f6fd23e92147adc5c552dbb318635062bbc64a4b0da1e2"
+    }
+  ],
+  "qaPackage": {
+    "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "packageSha256": "1e1c661446194a48f793fa381e73d4a2c0f8fd8b131c9cb87ae4cdc0b3700709",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "candidateRuntimeMd5": "cc96cd86ae653a2866e4705e0d3e05c7",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "candidateId": "cp27",
+    "scenario": "general-pair-match-mixed-a",
+    "seed": 1780421000,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "gameOverMarkers": 1,
+    "resultMarkers": 1,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "aggregateRequestMetrics": {
+    "source": "one sanitized AI_MATCH_METRICS aggregate and one sanitized AI_MATCH_METRICS_DETAIL aggregate emitted by the native match",
+    "total": 196,
+    "accepted": 120,
+    "fallback": 76,
+    "invalid": 0,
+    "noDecision": 72,
+    "fallbackIncludesNoDecision": true,
+    "detailRecordsAvailable": true,
+    "detailRecords": 1,
+    "reasonCounts": {
+      "no_decision": 53,
+      "no_strategy": 19,
+      "unsupported_command": 4
+    },
+    "invalidDetails": {},
+    "perCommandReasonProvenanceAvailable": false,
+    "status": "NO_INVALID_NATIVE_REPLIES_IN_TRAJECTORY"
+  },
+  "verification": {
+    "nativeRunner": "EXIT 0; full four-seat match reached native GameOver/result",
+    "browserTrace": "saved; browser errors 0",
+    "nativeBotLogAudit": "0 public skill logs attributed to native BOT names",
+    "qaProcessAndPortCleanup": "PASS"
+  },
+  "limitations": [
+    "This is one bounded full-match trajectory and does not close the aggregate request-safety gate for all Prompt 4 states or all commands.",
+    "The aggregate counters contain the full match request stream, not a Prompt 4-only denominator; fallback/no_decision remains present.",
+    "The server emitted only one aggregate AI_MATCH_METRICS_DETAIL record; reason counts are available at full-match scope, but per-command/per-skill provenance is not.",
+    "No matched baseline, target/card/resource valuation, downstream-effect, win-rate, reconnect, physical-device, release/rollback or canary conclusion is drawn from this run.",
+    "No raw logs, credentials, card IDs, target IDs, private hands, private generals, prompts or exception payloads are stored in this artifact."
+  ]
+}

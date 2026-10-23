@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "kind": "smartai_prompt4_real_handler_native_request_safety",
+  "capturedAt": "2026-10-22",
+  "status": "PASS_BOUNDED_NATIVE_X3",
+  "scope": {
+    "game": "TQSVN",
+    "mode": "new_heg_mode",
+    "isolatedQa": true,
+    "coreAiModifiedInThisMilestone": false,
+    "productionTouched": false,
+    "release": "NO_GO"
+  },
+  "identity": {
+    "isolatedQaSourceRevision": "5d8c183baeb4ded9c906b6675c3b3bdde6f4f7f2",
+    "isolatedQaPackageSha256": "57b7b8cec6b903b9aafbba15ece0ddd1efd3f1633daf450d1f77145483e3a0c4",
+    "isolatedQaPackageManifestSha256": "747fa6be0bb7143d18c73ecbcca633d6cd4733cd19266accdf4fef764ec28581",
+    "isolatedQaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3",
+    "pinnedReleaseManifestSha256": "88c9f0d62dedf2ebe79f458e5a52f6223e8936a2655ce2c6a72687edcda338b0",
+    "publicRuntimeFlistMd5": "dae6049e5b5e557cd00db6105e1c99cb",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "temporarySourceCommitOnly": true
+  },
+  "nativeExecution": {
+    "seed": 1780420130,
+    "scenario": "ai-trace",
+    "independentRuns": 3,
+    "realHandlerProbe": {
+      "realNativeHandlerClasses": [
+        "AskForUseActiveSkill",
+        "AskForUseCard",
+        "AskForResponseCard",
+        "PlayCard"
+      ],
+      "casesPerRun": 16,
+      "acceptedPerRun": 0,
+      "fallbackPerRun": 16,
+      "expectedNegativeInvalidPerRun": 8,
+      "invalidReplyPerRun": 4,
+      "illegalReplyPerRun": 4,
+      "feasibilityRejectedPerRun": 4,
+      "noStrategyPerRun": 4,
+      "noDecisionReasonPerRun": 4,
+      "noDecisionMetricPerRun": 8,
+      "stateRestoredEachRun": true,
+      "nonNilMalformedAndInfeasibleCoverage": true,
+      "realHandlerClassFeasibleInvoked": true,
+      "probeIsDetached": true,
+      "counterClassificationIdenticalAcrossRuns": true
+    },
+    "crossCommandMalformedRegression": {
+      "casesPerRun": 44,
+      "acceptedPerRun": 4,
+      "fallbackPerRun": 40,
+      "expectedNegativeInvalidPerRun": 30,
+      "noDecisionMetricPerRun": 9,
+      "unsupportedPerRun": 1,
+      "reasonsPerRun": {
+        "invalid_reply": 22,
+        "illegal_reply": 8,
+        "no_strategy": 4,
+        "no_decision": 5,
+        "unsupported_command": 1
+      },
+      "nativeHandlerFeasibleControlledByQa": true,
+      "preserved": true
+    },
+    "supportedGeneralPairCustomDialogRegression": {
+      "casesPerRun": 10,
+      "acceptedPerRun": 2,
+      "fallbackPerRun": 8,
+      "expectedNegativeInvalidPerRun": 6,
+      "noDecisionMetricPerRun": 2,
+      "reasonsPerRun": {
+        "invalid_reply": 6,
+        "no_strategy": 1,
+        "no_decision": 1
+      },
+      "realAcceptedPairsPerRun": 2,
+      "preserved": true
+    },
+    "prompt4": {
+      "decisionsPerRun": 18,
+      "acceptedPerRun": 18,
+      "actedPerRun": 18,
+      "fallbackPerRun": 0,
+      "invalidPerRun": 0,
+      "errorsPerRun": 0
+    },
+    "liveGameplay": {
+      "requestsPerRun": 25,
+      "acceptedPerRun": 24,
+      "fallbackPerRun": 1,
+      "invalidPerRun": 0,
+      "noDecisionPerRun": 1,
+      "fallbackReason": "no_decision",
+      "mainCommandMetricsFormat": "total:fallback:invalid:no_decision",
+      "mainCommandsPerRun": {
+        "AskForResponseCard": {
+          "total": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "AskForUseActiveSkill": {
+          "total": 17,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "AskForUseCard": {
+          "total": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "CustomDialog": {
+          "total": 2,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "PlayCard": {
+          "total": 4,
+          "fallback": 1,
+          "invalid": 0,
+          "noDecision": 1
+        }
+      },
+      "nativeMatchCountersIdenticalAcrossRuns": true
+    },
+    "browserRuns": [
+      {
+        "evidencePath": "scratch/evidence/cp08-ai-trace-multiplayer-live-1792644057930.json",
+        "runnerExit": 0,
+        "result": "PASS",
+        "realClientSeats": 2,
+        "nativeBotSeats": 2,
+        "gameOverClients": 2,
+        "browserErrors": 0,
+        "browserErrorContexts": 0
+      },
+      {
+        "evidencePath": "scratch/evidence/cp08-ai-trace-multiplayer-live-1792644150111.json",
+        "runnerExit": 0,
+        "result": "PASS",
+        "realClientSeats": 2,
+        "nativeBotSeats": 2,
+        "gameOverClients": 2,
+        "browserErrors": 0,
+        "browserErrorContexts": 0
+      },
+      {
+        "evidencePath": "scratch/evidence/cp08-ai-trace-multiplayer-live-1792644224837.json",
+        "runnerExit": 0,
+        "result": "PASS",
+        "realClientSeats": 2,
+        "nativeBotSeats": 2,
+        "gameOverClients": 2,
+        "browserErrors": 0,
+        "browserErrorContexts": 0
+      }
+    ]
+  },
+  "p2BoundedReplay": {
+    "nativePrompt4DecisionsTotal": 54,
+    "decisionSequencesPerRun": 18,
+    "semanticAndOfferFingerprintAndOutputShapeMatchedAllThreeRuns": true,
+    "matchedDecisionCountPerRun": 18,
+    "matchedCaseIndicesAcrossRuns": 18,
+    "matchAttributes": [
+      "seq",
+      "skill",
+      "command",
+      "input",
+      "offer",
+      "target_profile",
+      "card_profile",
+      "resource_shape",
+      "target_quality",
+      "resource_value",
+      "output"
+    ],
+    "targetProfilesPerRun": {
+      "ally": 2,
+      "enemy": 8,
+      "mixed": 2,
+      "none": 6
+    },
+    "resourceValuePerRun": {
+      "low": 12,
+      "none": 6
+    },
+    "resourceShapesPerRun": {
+      "many_cards": 2,
+      "none": 6,
+      "one_card": 9,
+      "two_cards": 1
+    },
+    "targetQualityExpectedPerRun": 18,
+    "unknownResourceValuePerRun": 0,
+    "differentialPrivateInformationNativeProven": false,
+    "fullStateCausalEquivalenceProven": false,
+    "tacticalOptimalityProven": false,
+    "skillNativeEffectProofsPreservedFromOriginalP1": 18,
+    "cardAndTargetAcceptabilityEvidence": "18/18 real Prompt4 decisions accepted+acted per run; 18/18 native downstream skill effects preserved at pinned original P1 identity; coarse resource/role classes only",
+    "localPrivacyNegativeFixture": "PASS as part of 12/12 smart-ai test; native differential still open"
+  },
+  "p1OriginalDownstreamBaseline": {
+    "evidencePath": "docs/web-client/SMARTAI_PROMPT4_NATIVE_DOWNSTREAM_EFFECT_REPLAY_MATRIX_2026-10-22.json",
+    "cleanSkills": 18,
+    "totalSkills": 18,
+    "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "publicRuntimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "preservedOriginalIdentity": true,
+    "needFullRerunIfCoreAiChanges": true
+  },
+  "verification": {
+    "nativeRealHandlerLogEntries": 3,
+    "nativeMalformed44SummaryEntriesForRun": 3,
+    "nativeSupportedDialog10SummaryEntriesForRun": 3,
+    "nativePrompt4SummaryEntriesForRun": 3,
+    "nativeGameplayMetricEntriesForRun": 3,
+    "browserResultPassAndTwoClientGameOverRuns": 3,
+    "browserErrorsTotal": 0,
+    "isolatedNativeServerQuitExit": 0,
+    "qaTcp9527Closed": true,
+    "qaTcp9000Closed": true,
+    "qaSymlinkCleaned": true,
+    "pinnedManifestHashVerified": true,
+    "allBrowserIdentitiesVerified": true,
+    "nativeLogMetricsReconciled": true,
+    "p2ThreeWayReplayIdentical": true,
+    "excludedAttempts": {
+      "missingManifestBeforeNative": 1,
+      "qaAllowlistBlockedBeforeValidNativeProof": 1
+    },
+    "excludeFailedAttemptsFromPassedDenominator": true,
+    "qaContractTests": "49/49 PASS",
+    "smartAiTests": "12/12 PASS",
+    "prompt4Tests": "5/5 PASS",
+    "nativeReplayTests": "7/7 PASS",
+    "nativeSkillTraceTests": "7/7 PASS",
+    "lua54Syntax": "PASS",
+    "typecheckAll": "PASS",
+    "gitDiffCheck": "PASS",
+    "p1OriginalArtifactIdentityReconciled": true,
+    "ephemeralIsolatedQaTicketSecretRemoved": true
+  },
+  "gates": {
+    "p0SnapshotMainCommands": "CLOSED_BOUNDED_NATIVE_X3",
+    "p0RealHandlerFeasibility": "PASS_BOUNDED_NATIVE_X3",
+    "p0StructuralMalformed": "PASS_BOUNDED_NATIVE_X3",
+    "p0SupportedCustomDialog": "PASS_BOUNDED_NATIVE_X3",
+    "p0SampledGameplayInvalid": "ZERO_OBSERVED_X3",
+    "p0AggregateUnbounded": "OPEN",
+    "p1Downstream": "18/18_PASS_BOUNDED_PRESERVED_ORIGINAL",
+    "p2TacticalQuality": "PARTIAL_BOUNDED",
+    "production": "NO_GO"
+  },
+  "limitations": [
+    "Four genuine native handler classes tested with their feasible() methods against a QA detached room; this does not exhaust all engine request states.",
+    "Real-handler probes deliberately contain eight invalid negatives per run; live gameplay remains zero-invalid per run.",
+    "Real-handler matrix contains negative cases; accepted positives for live play/skills and CustomDialog are separate evidence.",
+    "P1 18/18 effects are preserved from their pinned original identity, not re-executed for this QA-only change.",
+    "Three seeded QA runs match semantic request/offer fingerprints and coarse role/resource class; does not prove hidden-hand noninterference for full native states, all target/card legality, tactical optimality or production/device readiness.",
+    "Two earlier preflight attempts were excluded before counting three PASS native runs.",
+    "Native logs remain in isolated local runtime; report stores only bounded counters and sanitized file references."
+  ]
+}

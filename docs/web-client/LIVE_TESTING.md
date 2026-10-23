@@ -1,8 +1,12 @@
 # Kiểm thử web client với FreeKill thật
 
-Các lệnh bên dưới chạy trong `game/web/`, dùng Node 22+, Chrome và package Git đã pin trong `scratch/upstream/`. Gateway và Vite chỉ chạy trong thời gian bài test; runner đóng trình duyệt, dừng các process do nó tạo và xóa thư mục tạm khi kết thúc.
+Các lệnh bên dưới chạy trong `game/web/` và dùng Node 22+, Chrome. Các bài
+**native legacy** dùng package Git đã pin trong `scratch/upstream/`, khởi động
+gateway/Vite tạm và đóng process sau bài test. Runner **public Google OAuth**
+ở mục riêng truy cập trực tiếp bản đã deploy qua HTTPS/WSS và dùng Chrome
+profile QA riêng, không cần Vite/gateway local.
 
-## Cấu hình một lần
+## Cấu hình một lần cho native legacy
 
 ```sh
 npm run configure:live
@@ -16,11 +20,111 @@ Không dùng chỉ các file hiện trên working tree để sinh hash: sparse c
 
 Thông tin tài khoản test mới được sinh ngẫu nhiên và lưu trong `~/.codex/secrets/tqs-live-test.env`, quyền `0600`, ngoài repository. Có thể chọn đường dẫn khác bằng `TQS_LIVE_CONFIG`. Script không in giá trị tài khoản/mật khẩu và từ chối ghi đè cấu hình đã tồn tại. Tài khoản chỉ được server đăng ký khi chạy test đăng nhập lần đầu thành công; các lần sau dùng lại cùng cấu hình.
 
-## Kiểm chứng đăng nhập
+## Native QA: provenance P1 và ticket xác thực được phép
+
+P0/P2 native không được chạy trên `current` hoặc trên runtime chỉ “gần giống”
+P1. Runner hiện khóa ba lớp provenance của baseline: `freekill-core` của
+`smart_ai.lua`, `room.lua`, và QA SmartAI overlay; đồng thời bắt buộc
+`TQS_QA_EXPECTED_RUNTIME_MD5` trùng `runtime/flist.txt` của runtime cô lập. QA
+package vẫn là candidate hiện tại và phải có `TQS_QA_EXPECTED_REVISION`; điều đó
+cho phép overlay P0/P2 thay đổi có chủ đích mà không làm lẫn public core với
+baseline. Nếu thiếu một biến identity, runner dừng trước khi mở gateway/browser.
+
+Replacement VM giữ secret game trong `/etc/tqs-game-auth.env` với quyền root,
+không đưa secret về máy phát triển. Khi không thể dùng `TQS_LIVE_TICKET_SECRET`
+trong một secret store cục bộ đã được phê duyệt, dùng helper SSH chỉ đọc:
+
+```sh
+TQS_LIVE_NATIVE_QA=1 \
+TQS_LIVE_TICKET_HELPER="$PWD/game/web/scripts/multiplayer-e2e/mint-qa-ticket-via-ssh.mjs" \
+TQS_LIVE_QA_SSH_ALIAS=tqs-native-qa-replacement \
+TQS_LIVE_GATEWAY_TARGET=http://127.0.0.1:<local-gateway-port> \
+TQS_QA_EXPECTED_RUNTIME_MD5=<isolated-runtime-flist-md5> \
+npm run test:e2e:multiplayer -- --audit-bots
+```
+
+Helper chỉ gửi một script Python qua `ssh -T -o BatchMode=yes` tới
+`sudo -n python3 -`; Python đọc `TQS_GAME_TICKET_SECRET` trên VM, ký TQS1 trong
+bộ nhớ và trả về đúng ticket ngắn hạn. Không dùng SCP, không in secret, không
+ghi secret vào log/evidence. Cổng native QA phải đi qua một SSH tunnel riêng;
+`TQS_LIVE_GATEWAY_TARGET` chỉ là gateway đã nối tới cổng cô lập đó. Hai tài
+khoản trong file cấu hình local phải nằm trong allowlist QA của package đang
+chạy; không dùng tài khoản production.
+
+Trước P0/P2, ghi lại ở evidence cả `runtimeMD5`, binary SHA-256, source
+revision, QA package/catalog SHA-256 và browser `dist/index.html` SHA-256. Nếu
+không còn binary/flist đúng lịch sử P1, tạo identity cô lập mới rồi chạy lại
+P1 baseline trong chính identity đó; không gắn nhãn PASS cho một phép so sánh
+giữa hai provenance khác nhau. Chỉ sau P0 thật-handler + synthetic PASS mới
+chạy P2 differential/privacy, rồi mới mở P3 reconnect.
+
+## Public OAuth E2E sau deploy (Google, tài khoản QA đã được cấp quyền)
+
+Bộ kiểm thử public mới chạy trên **chính** `https://tqsvn.pages.dev/` và gateway
+`wss://tqsvn.pages.dev/gateway/ws`, dùng màn hình Google hiện hành. Không dùng
+form username/password, QA preauth localhost, mật khẩu/ticket giả hoặc fixture.
+Chỉ chạy khi tài khoản Google QA đã được cấp quyền vào game và không có ván đang
+chơi trên chính tài khoản đó. Cần Node/tsx, Playwright và Google Chrome cài sẵn.
+
+Đăng nhập tài khoản QA **một lần** trong cửa sổ Chrome dành riêng cho runner:
+
+```sh
+cd game/web
+TQS_PUBLIC_QA_EMAIL='<approved-qa-email>' npm run test:e2e:public -- --enroll
+```
+
+Chọn đúng tài khoản QA và hoàn tất Google/2FA bằng tay trong cửa sổ Chrome.
+Runner chỉ PASS khi Firebase ID token có email QA đã xác thực và backend cấp
+session thật để vào được sảnh qua WebSocket; sau đó ngắt kết nối khỏi sảnh.
+Chrome profile được giữ riêng tại `~/.codex/secrets/tqs-public-oauth-chrome-profile`
+(thư mục quyền `0700`, không nằm trong repo). Có thể đặt đường dẫn khác bằng
+`TQS_PUBLIC_QA_PROFILE`, nhưng tuyệt đối giữ ngoài repo/CI artifacts và giới
+hạn quyền truy cập. Profile chứa dữ liệu đăng nhập thật: chỉ dùng trên runner
+riêng, không chia sẻ, upload, commit hoặc lưu làm Playwright storageState.
+
+Sau mỗi lần deploy, chạy **một lệnh** (với cùng Chrome profile và email):
+
+```sh
+cd game/web
+TQS_PUBLIC_QA_EMAIL='<approved-qa-email>' npm run test:e2e:public
+```
+
+Runner headless xác minh HTML public, Google/Firebase session của đúng QA account,
+vào sảnh, WebSocket WSS cùng origin có gửi/nhận, tạo phòng `new_heg_mode` 2 ghế,
+thêm bot, bắt đầu, chọn cặp chủ/phó tướng hợp lệ, bật BOT chơi hộ (native Trust),
+chờ GameOver, trở về sảnh, ngắt socket, đăng xuất Firebase bằng **Đổi tài khoản
+khác**, đăng nhập Google lần nữa và vào sảnh qua một WebSocket mới. Popup Google
+có bộ chọn tài khoản chỉ click email QA khớp tuyệt đối. Nếu Google yêu cầu lại
+mật khẩu/2FA, hết phiên hoặc chặn Chrome automation, lệnh **FAIL** với mã giai
+đoạn an toàn; mở lại `--enroll` bằng tay để làm mới profile, rồi chạy lệnh hậu
+deploy. Không có cơ chế né Google challenge hoặc ngụy tạo OAuth trong production.
+
+Mặc định chờ 75 giây cho từng giai đoạn UI (240 giây khi enroll), tối đa 15 phút
+cho ván; tùy chỉnh `TQS_PUBLIC_UI_TIMEOUT_MS` và `TQS_PUBLIC_MATCH_TIMEOUT_MS`
+(milliseconds) nếu máy chủ chạy chậm. Ván chạy trên production thật, có thể tạo
+phòng và kéo dài lâu hơn dự kiến, nên dùng khung thời gian QA ít người chơi.
+Có thể đặt `TQS_CHROME_PATH` cho Chrome cài ở vị trí khác, và `TQS_PUBLIC_URL`
+cho deployment HTTPS cùng cấu trúc gateway/session (mặc định là Pages production).
+Khi timeout giữa ván, runner thử giữ native Trust trước khi đóng Chrome; kết quả
+vẫn FAIL, cần kiểm tra phòng và khả năng temp-ban trước khi chạy lại.
+
+Evidence ở `scratch/evidence/public-oauth-e2e/*.json` (file `0600`) chỉ ghi
+PASS/FAIL, mã giai đoạn, bộ đếm WebSocket và số lần xác minh session; **không**
+lưu email, mật khẩu, JWT, GameTicket, header, frame/payload WebSocket, dữ liệu
+bài/tướng riêng, screenshot, console error hay raw exception. Lệnh
+`npm run test:e2e:public:unit` kiểm tra hợp đồng nhận diện WSS/email/URL và
+quy tắc che thông tin nhạy cảm mà không cần tài khoản thật. PASS unit/local
+không thay thế PASS OAuth/GameOver public thật.
+
+## Kiểm chứng đăng nhập legacy cho native QA cô lập
 
 ```sh
 npm run test:e2e:login
 ```
+
+Lệnh legacy này vẫn dùng form username/password của runner snapshot cũ, **không
+phù hợp để nghiệm thu Google OAuth public hiện tại**. Dùng `test:e2e:public`
+ở mục trên khi kiểm tra bản đã triển khai; không gắn PASS của legacy vào public.
 
 Runner tự đọc cấu hình private, phục vụ bundle từ snapshot, chạy React trong Chrome ở viewport 390×844 và gửi `Setup` qua Gateway đến FreeKill C++. Điều kiện PASS gồm challenge RSA, đúng một `Setup`, server phản hồi `Setup` + `EnterLobby`, Lua xử lý thành công, React hiển thị sảnh/đã kết nối, gửi `RefreshRoomList`, không có lỗi JS/Lua/application, rồi nút ngắt kết nối đưa UI về login. Bài này không tạo/vào phòng hoặc bắt đầu ván.
 

@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_generic_chooser_normalized_request_safety",
+  "status": "BOUNDED_MATCHED_REQUEST_SAFETY_PASS",
+  "overallPrompt4Gate": "REQUEST_SAFETY_OPEN",
+  "executionDateLocal": "2026-10-21",
+  "scope": "six fixed-roster/fixed-hand native generic chooser requests only",
+  "identity": {
+    "qaRevision": "309cae77f7a9dfade2719c7c4a69af49386d7cc8",
+    "seed": 1780420132,
+    "qaPackageSha256": "6031e3f1ae113ac1f0a00ce7a6bff918bbdd5a9c8a6f23003b4528d3436143d8",
+    "binarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "qaInitSha256": "d9c6a7a153ff7f308441239a24a265b7c8c1bfcbd25d7a16132480c261890b1c",
+    "baselineVsCandidatePackagesDifferOnlyIn": [
+      "freekill-core/standard/aux_skills_dir/choose_cards_skill.lua",
+      "freekill-core/standard/aux_skills_dir/choose_players_skill.lua",
+      "freekill-core/standard/aux_skills_dir/ex__choose_skill.lua"
+    ]
+  },
+  "matching": {
+    "comparableRequestInputs": true,
+    "matchedCaseCount": 6,
+    "mismatchedCases": [],
+    "requestInputNormalization": "native target player IDs mapped to stable seat indices in QA-only fingerprint; makeReply receives original native request",
+    "offeredLegalSetCountMatched": true,
+    "decisionCountAndShapeMatched": true,
+    "hashLimitation": "FNV32 is a bounded equality guard, not a collision-resistant full native-state snapshot"
+  },
+  "variants": {
+    "baseline": {
+      "binarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+      "packageSha256": "6031e3f1ae113ac1f0a00ce7a6bff918bbdd5a9c8a6f23003b4528d3436143d8",
+      "runtimeMD5": "fd1491964a3e510a8fe092afd66bbc2f",
+      "browserRunner": "PASS",
+      "nativeGameOver": true,
+      "fixture": {
+        "seatRosters": "verified",
+        "fixedHands": "semantic_v1_verified"
+      },
+      "requestMetrics": {
+        "total": 8,
+        "accepted": 8,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "askForUseActiveSkill": 6,
+        "customDialog": 2
+      },
+      "chooser": {
+        "opportunities": 6,
+        "accepted": 6,
+        "acted": 3,
+        "optionalAcceptedNoAction": 3,
+        "fallback": 0,
+        "invalid": 0,
+        "errors": 0
+      },
+      "cases": [
+        {
+          "seq": 1,
+          "skill": "choose_players_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "d12f418b",
+          "offerFingerprint": "ddd75d36",
+          "offeredCards": 0,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 0,
+          "chosenTargets": 1,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 2,
+          "skill": "choose_cards_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "fd297aa1",
+          "offerFingerprint": "c2b17f33",
+          "offeredCards": 1,
+          "offeredTargets": 0,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 1,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 3,
+          "skill": "ex__choose_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "39d14627",
+          "offerFingerprint": "51bd375c",
+          "offeredCards": 1,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 1,
+          "chosenTargets": 1,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 4,
+          "skill": "choose_players_skill",
+          "variant": "optional",
+          "inputFingerprint": "a89b43b6",
+          "offerFingerprint": "1cce932b",
+          "offeredCards": 0,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 5,
+          "skill": "choose_cards_skill",
+          "variant": "optional",
+          "inputFingerprint": "7e169587",
+          "offerFingerprint": "af841130",
+          "offeredCards": 1,
+          "offeredTargets": 0,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 6,
+          "skill": "ex__choose_skill",
+          "variant": "optional",
+          "inputFingerprint": "3e030ff3",
+          "offerFingerprint": "ef26a34d",
+          "offeredCards": 1,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        }
+      ]
+    },
+    "candidate": {
+      "binarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+      "packageSha256": "6031e3f1ae113ac1f0a00ce7a6bff918bbdd5a9c8a6f23003b4528d3436143d8",
+      "runtimeMD5": "dc9c3dda232f1c1aff9fb53199b6af5a",
+      "browserRunner": "PASS",
+      "nativeGameOver": true,
+      "fixture": {
+        "seatRosters": "verified",
+        "fixedHands": "semantic_v1_verified"
+      },
+      "requestMetrics": {
+        "total": 8,
+        "accepted": 8,
+        "fallback": 0,
+        "invalid": 0,
+        "noDecision": 0,
+        "askForUseActiveSkill": 6,
+        "customDialog": 2
+      },
+      "chooser": {
+        "opportunities": 6,
+        "accepted": 6,
+        "acted": 3,
+        "optionalAcceptedNoAction": 3,
+        "fallback": 0,
+        "invalid": 0,
+        "errors": 0
+      },
+      "cases": [
+        {
+          "seq": 1,
+          "skill": "choose_players_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "d12f418b",
+          "offerFingerprint": "ddd75d36",
+          "offeredCards": 0,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 0,
+          "chosenTargets": 1,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 2,
+          "skill": "choose_cards_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "fd297aa1",
+          "offerFingerprint": "c2b17f33",
+          "offeredCards": 1,
+          "offeredTargets": 0,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 1,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 3,
+          "skill": "ex__choose_skill",
+          "variant": "mandatory",
+          "inputFingerprint": "39d14627",
+          "offerFingerprint": "51bd375c",
+          "offeredCards": 1,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 1,
+          "chosenCards": 1,
+          "chosenTargets": 1,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 4,
+          "skill": "choose_players_skill",
+          "variant": "optional",
+          "inputFingerprint": "a89b43b6",
+          "offerFingerprint": "1cce932b",
+          "offeredCards": 0,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 5,
+          "skill": "choose_cards_skill",
+          "variant": "optional",
+          "inputFingerprint": "7e169587",
+          "offerFingerprint": "af841130",
+          "offeredCards": 1,
+          "offeredTargets": 0,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        },
+        {
+          "seq": 6,
+          "skill": "ex__choose_skill",
+          "variant": "optional",
+          "inputFingerprint": "3e030ff3",
+          "offerFingerprint": "ef26a34d",
+          "offeredCards": 1,
+          "offeredTargets": 3,
+          "accepted": 1,
+          "acted": 0,
+          "chosenCards": 0,
+          "chosenTargets": 0,
+          "invalid": 0,
+          "reason": "accepted"
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "schemaVersion": 2,
+    "kind": "prompt4_native_generic_chooser_matched_request_replay",
+    "status": "MATCHED_BOUNDED_REQUESTS",
+    "scenario": "chooser-trace",
+    "seed": 1780420132,
+    "comparedCases": 6,
+    "mismatchedCases": [],
+    "bySkill": {
+      "choose_players_skill": {
+        "baseline": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        },
+        "candidate": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        }
+      },
+      "choose_cards_skill": {
+        "baseline": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        },
+        "candidate": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        }
+      },
+      "ex__choose_skill": {
+        "baseline": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        },
+        "candidate": {
+          "opportunities": 2,
+          "misses": 1,
+          "accepted": 2,
+          "acted": 1,
+          "fallback": 0,
+          "invalid": 0,
+          "acceptedNoAction": 1,
+          "voluntaryOptionalCancel": 1,
+          "optionalNoDecisionFallback": 0
+        }
+      }
+    },
+    "nativeFeasibilityValidatedForAccepted": true,
+    "nativeLegalOfferCountsAvailable": true,
+    "nativeStrategicTargetQualityAvailable": false,
+    "nativeResourceValueAvailable": false,
+    "observedMatchFrequencyAvailable": false,
+    "winRateAvailable": false,
+    "limitations": [
+      "FNV32 inputs and offer hashes are collision-prone bounded guards, not a complete native state snapshot.",
+      "Six synthetic requests share a fixed hand and roster; no observed match frequency or population inference.",
+      "Accepted replies passed native request feasibility; legality counts do not score tactical target or resource value.",
+      "Accepted optional empty choices are no-action opportunities; these are kept separate from fallback and invalid counts.",
+      "Optional no_decision/cancel fallbacks are reported separately; their intent cannot be inferred."
+    ]
+  },
+  "assessment": {
+    "nativeFeasibilityValidAcceptedBoth": true,
+    "invalidReplyRegressionObserved": false,
+    "fallbackRegressionObserved": false,
+    "missedOpportunityRegressionObserved": false,
+    "strategicQualityImprovementEstablished": false,
+    "optionalAcceptedNoActionMeaning": "native accepted empty optional reply; not a structural fallback or invalid reply",
+    "fullRequestSafetyStatus": "OPEN",
+    "reason": "18-skill coverage, tactical target/card/resource value, observed gameplay frequency, and complete deterministic snapshots remain unverified"
+  },
+  "evidence": {
+    "sanitizedTraceFiles": [
+      "/private/tmp/tqs-chooser-paired.pK5MZp/baseline/chooser-trace-normalized.sanitized.log",
+      "/private/tmp/tqs-chooser-paired.pK5MZp/candidate/chooser-trace-normalized.sanitized.log"
+    ],
+    "nativeRunnerLogsPrivate": true,
+    "productionOrDeviceValidation": false
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_chooser_matched_wasmoon_decision_fixture",
+  "baselineSource": "repository revision b8527d28; three archived pre-fix Lua adapters",
+  "mode": "new_heg_mode chooser decision semantics (isolated Wasmoon strategy)",
+  "cases": {
+    "cards_duplicate": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "cards_empty": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "cards_invalid": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "cards_valid": {
+      "baseline": "legal",
+      "fixed": "legal"
+    },
+    "combined_card_required": {
+      "baseline": "infeasible",
+      "fixed": "legal"
+    },
+    "combined_disabled_target": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "combined_duplicate_targets": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "combined_empty": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "combined_valid": {
+      "baseline": "infeasible",
+      "fixed": "legal"
+    },
+    "players_card_required": {
+      "baseline": "infeasible",
+      "fixed": "legal"
+    },
+    "players_disabled_target": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    },
+    "players_empty": {
+      "baseline": "infeasible",
+      "fixed": "fallback"
+    }
+  },
+  "total": 12,
+  "fixedInfeasible": 0,
+  "baselineInfeasible": 11,
+  "improved": 11,
+  "regressions": 0,
+  "inputEquivalence": "identical test script and synthetic request/dashboard semantics; fresh runtime state per variant",
+  "nativeRequestStateMatched": false,
+  "skillOpportunityDenominatorAvailable": false,
+  "nativeTargetQualityAvailable": false,
+  "winRateAvailable": false,
+  "limitations": [
+    "This compares actual Lua chooser strategies, but the dashboard/request is a deterministic Wasmoon fixture, not a native ServerPlayer AI:makeReply request.",
+    "Legal here means the fixture selection satisfies its public constraints; native feasible() and full game effects still require separate checks.",
+    "No real opponent private cards, target IDs, request contents, or gameplay logs are included in the output."
+  ]
+}

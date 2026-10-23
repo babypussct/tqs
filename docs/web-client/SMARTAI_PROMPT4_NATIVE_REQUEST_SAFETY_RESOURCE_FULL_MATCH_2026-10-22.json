@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_resource_full_match",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Does the current QA package, including resource-value trace instrumentation, still complete a mixed four-seat native match without invalid AI replies?",
+  "sourceChanges": [
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native scenario and telemetry package",
+      "purpose": "Current staged package includes the bounded resource_value emitter and the existing sanitized match metrics.",
+      "sha256": "f88992f2544a8669308c488a0d50820fc0d193af12ea9ce198e39f6ee0992cf6"
+    }
+  ],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "packageSha256": "e6b2b528e8f092517d9feb1eebda98373b94b81509aea193ca47a862bba38e0a",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "f119c616549a21ab38a552b2b10df721",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "candidateId": "cp34",
+    "scenario": "general-pair-match-mixed-a",
+    "seed": 1780421000,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "commandMetricRecords": 8,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "aggregateRequestMetrics": {
+    "source": "one sanitized AI_MATCH_METRICS aggregate and eight sanitized AI_MATCH_METRICS_COMMAND records emitted by the native match",
+    "total": 113,
+    "accepted": 57,
+    "fallback": 56,
+    "invalid": 0,
+    "noDecision": 49,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 28,
+      "no_strategy": 21,
+      "unsupported_command": 7
+    },
+    "invalidDetails": {},
+    "perCommandReasonProvenanceAvailable": true,
+    "perSkillReasonProvenanceAvailable": true,
+    "perSkillProvenanceEntries": 1,
+    "perSkillProvenanceOverflow": 0,
+    "status": "NO_INVALID_NATIVE_REPLIES_IN_TRAJECTORY"
+  },
+  "perCommand": [
+    { "command": "AskForCardChosen", "total": 3, "fallback": 3, "invalid": 0, "reasons": { "no_strategy": 3 } },
+    { "command": "AskForChoices", "total": 9, "fallback": 0, "invalid": 0, "reasons": {} },
+    { "command": "AskForResponseCard", "total": 2, "fallback": 1, "invalid": 0, "reasons": { "no_decision": 1 } },
+    { "command": "AskForSkillInvoke", "total": 10, "fallback": 5, "invalid": 0, "reasons": { "no_strategy": 5 } },
+    { "command": "AskForUseActiveSkill", "total": 6, "fallback": 3, "invalid": 0, "reasons": { "no_decision": 3 } },
+    { "command": "AskForUseCard", "total": 31, "fallback": 25, "invalid": 0, "reasons": { "no_decision": 12, "no_strategy": 13 } },
+    { "command": "EmptyRequest", "total": 7, "fallback": 7, "invalid": 0, "reasons": { "unsupported_command": 7 } },
+    { "command": "PlayCard", "total": 45, "fallback": 12, "invalid": 0, "reasons": { "no_decision": 12 } }
+  ],
+  "perSkillReasonProvenance": [
+    { "skill": "hs__wusheng", "command": "PlayCard", "reason": "no_decision", "detail": "none", "count": 2 }
+  ],
+  "verification": {
+    "nativeRunner": "EXIT 0; mixed four-seat native match reached GameOver/result",
+    "browserTrace": "saved; browser errors 0",
+    "nativeBotLogAudit": "0 public skill logs attributed to native BOT names",
+    "commandMetricReconciliation": "per-command totals sum to aggregate 113; fallback 56; invalid 0",
+    "skillMetricProvenance": "one bounded allowlisted Prompt 4 skill/reason entry observed; no overflow",
+    "qaProcessAndPortCleanup": "PASS"
+  },
+  "limitations": [
+    "This is one mixed full-match trajectory and does not close aggregate request safety for all Prompt 4 states or all commands.",
+    "Fallback/no_decision remains present; zero invalid replies in this trajectory does not prove zero invalid replies in the wider game.",
+    "Per-command provenance is available here; per-skill provenance is only partial in this trajectory (one allowlisted entry) and is not a matched baseline/candidate comparison.",
+    "The run is not a Prompt 4-only denominator and does not measure resource value, downstream effect, target quality, win rate, reconnect, physical-device readiness, release/rollback or canary stability.",
+    "The package manifest revision is retained for the isolated runner while packageSha256 identifies the staged working-tree QA tree; no clean-commit or production-release claim follows.",
+    "No raw logs, credentials, card/target IDs, private hands/generals, prompts or exception payloads are stored in this artifact."
+  ]
+}

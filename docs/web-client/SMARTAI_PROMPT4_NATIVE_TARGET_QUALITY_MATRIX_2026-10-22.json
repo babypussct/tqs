@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_target_quality_matrix",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "scenario": "ai-trace",
+  "seeds": [1780420130, 1780420131, 1780420132],
+  "runCount": 3,
+  "qaPackage": {
+    "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "packageSha256": "1e1c661446194a48f793fa381e73d4a2c0f8fd8b131c9cb87ae4cdc0b3700709",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "cc96cd86ae653a2866e4705e0d3e05c7",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "successfulRunnerRuns": 3,
+    "runnerExitZero": 3,
+    "gameOver": 3,
+    "browserTraceSaved": 3,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "prompt4TraceAggregate": {
+    "decisions": 54,
+    "opportunities": 54,
+    "accepted": 54,
+    "acted": 54,
+    "misses": 0,
+    "fallback": 0,
+    "invalid": 0,
+    "errors": 0,
+    "pairVerified": true,
+    "stateVerified": true,
+    "fixtureVerified": true,
+    "shapeMetadataVerified": true,
+    "nativeTargetQualityAvailable": true,
+    "nativeReplySnapshotAvailable": true
+  },
+  "targetQualityAggregate": {
+    "expected": 54,
+    "unexpected": 0,
+    "noAction": 0,
+    "notApplicable": 0,
+    "unknown": 0,
+    "targetProfiles": {
+      "enemy": 24,
+      "none": 18,
+      "mixed": 6,
+      "ally": 6
+    },
+    "selectedCardCounts": {
+      "0": 18,
+      "1": 27,
+      "2": 3,
+      "3": 6
+    },
+    "selectedTargetCounts": {
+      "0": 18,
+      "1": 30,
+      "2": 3,
+      "3": 3
+    }
+  },
+  "perSeed": [
+    {
+      "seed": 1780420130,
+      "decisions": 18,
+      "opportunities": 18,
+      "accepted": 18,
+      "acted": 18,
+      "misses": 0,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0,
+      "targetQuality": { "expected": 18, "unexpected": 0, "unknown": 0 }
+    },
+    {
+      "seed": 1780420131,
+      "decisions": 18,
+      "opportunities": 18,
+      "accepted": 18,
+      "acted": 18,
+      "misses": 0,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0,
+      "targetQuality": { "expected": 18, "unexpected": 0, "unknown": 0 }
+    },
+    {
+      "seed": 1780420132,
+      "decisions": 18,
+      "opportunities": 18,
+      "accepted": 18,
+      "acted": 18,
+      "misses": 0,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0,
+      "targetQuality": { "expected": 18, "unexpected": 0, "unknown": 0 }
+    }
+  ],
+  "perSkill": [
+    { "skill": "tianyi", "runs": 3, "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "shangyi", "runs": 3, "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "tiaoxin", "runs": 3, "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__zhiheng", "runs": 3, "targetProfile": "none", "selectedCards": 3, "selectedTargets": 0, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__kurou", "runs": 3, "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__qiangxi", "runs": 3, "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__longdan", "runs": 3, "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__luanji", "runs": 3, "targetProfile": "mixed", "selectedCards": 2, "selectedTargets": 3, "targetQuality": { "expected": 3 } },
+    { "skill": "hs__wusheng", "runs": 3, "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "huoji", "runs": 3, "targetProfile": "enemy", "selectedCards": 1, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "jijiu", "runs": 3, "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": { "expected": 3 } },
+    { "skill": "kanpo", "runs": 3, "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": { "expected": 3 } },
+    { "skill": "aocai", "runs": 3, "targetProfile": "none", "selectedCards": 1, "selectedTargets": 0, "targetQuality": { "expected": 3 } },
+    { "skill": "beizhu", "runs": 3, "targetProfile": "enemy", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "dimeng", "runs": 3, "targetProfile": "mixed", "selectedCards": 1, "selectedTargets": 2, "targetQuality": { "expected": 3 } },
+    { "skill": "choufa", "runs": 3, "targetProfile": "ally", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "cunsi", "runs": 3, "targetProfile": "ally", "selectedCards": 0, "selectedTargets": 1, "targetQuality": { "expected": 3 } },
+    { "skill": "duanfa", "runs": 3, "targetProfile": "none", "selectedCards": 3, "selectedTargets": 0, "targetQuality": { "expected": 3 } }
+  ],
+  "legacyGlobalMetricsReview": {
+    "perRun": { "total": 25, "accepted": 24, "fallback": 1, "invalid": 0, "noDecision": 1 },
+    "aggregate": { "total": 75, "accepted": 72, "fallback": 3, "invalid": 0, "noDecision": 3 },
+    "interpretation": "These AI_MATCH_METRICS counters include the legacy ai-trace and other bounded requests; they are not the Prompt 4-only trace denominator and are not used to claim zero fallback for the whole match."
+  },
+  "sourceChanges": [
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native trace instrumentation",
+      "purpose": "Emit bounded selected-card count, selected-target count, and coarse target-quality metadata from the real native player.ai:makeReply() path.",
+      "sha256": "2eeac679e2e86b6fa6f6fd23e92147adc5c552dbb318635062bbc64a4b0da1e2"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-prompt4-native-skill-trace.ts",
+      "layer": "QA-only parser and paired analyzer",
+      "purpose": "Parse the optional bounded reply snapshot and expose target-quality availability without retaining card/target IDs or private state.",
+      "sha256": "ce55bc89551a54c0b6386e5f4ff1c6abe03196799ecc687e573dd6c4d325215d"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa-catalog.test.mjs",
+      "layer": "QA contract",
+      "purpose": "Require the new metadata fields and the declared expected target-role profile for every bounded fixture skill.",
+      "sha256": "afd74d772472826e73fd483a9fc4d8977509e2728ec922776d51d7bd40a87211"
+    }
+  ],
+  "verification": {
+    "successfulNativeRuns": "3/3 EXIT 0",
+    "officialParser": "3/3 traces parsed; all counters and identities accepted",
+    "nativeTraceParserRegression": "7/7 PASS",
+    "qaServerContract": "48/48 PASS",
+    "smartAiRegression": "11/11 PASS",
+    "prompt4Regression": "5/5 PASS",
+    "typecheckAll": "PASS",
+    "lua54Syntax": "PASS",
+    "qaProcessAndPortCleanup": "PASS"
+  },
+  "limitations": [
+    "The three declared seeds use bounded semantic roster variants; they are not a population sample and do not establish observed match frequency or win rate.",
+    "The fixture uses coarse role classes (none, ally, enemy, mixed); expected means the bounded role class matches the declared fixture expectation, not that the tactical choice is optimal.",
+    "Selected-card and selected-target values are counts only. No card ID, target ID, hand, general, prompt, credential, or raw exception is stored.",
+    "Accepted/acted and target-quality alignment do not prove downstream effect success, resource value, reconnect/device readiness, release/rollback, or canary stability.",
+    "The QA runtime was isolated and unpinned for the probe; no production runtime, deployment, release artifact, or upstream pin was changed."
+  ]
+}

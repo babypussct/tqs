@@ -179,7 +179,7 @@ try {
       md += '\n';
     }
   }
-  fs.writeFileSync(path.join(out,'VIETNAMESE_GAP_INVENTORY.md'),md);
+  fs.writeFileSync(path.join(out,'VIETNAMESE_GAP_INVENTORY.md'),md.trimEnd()+'\n');
   // A compact, editable work queue for Quốc Chiến. Keep the full catalog above as
   // provenance, including false positives, so nothing is silently discarded.
   const hegemonyIssues = issues.filter(row => row.scope === 'hegemony_core_dependency');
@@ -193,7 +193,9 @@ try {
   const queue = [...hegemonyIssues].sort((a,b) =>
     priorityOrder.indexOf(workPriority(a)) - priorityOrder.indexOf(workPriority(b)) ||
     a.category.localeCompare(b.category) || a.key.localeCompare(b.key));
-  const csvEscape = (value: string) => `"${value.replace(/"/g,'""')}"`;
+  // One physical CSV row per translation key so Git review and spreadsheet
+  // imports can reliably count rows. A visible \\n denotes source line breaks.
+  const csvEscape = (value: string) => `"${value.replace(/\r?\n/g,'\\n').replace(/"/g,'""')}"`;
   const csvColumns = ['priority','review_hint','category','key','status','ui_status','zh_CN','current_lua_vi','current_react','sources','proposed_vi','review'];
   const csv = [csvColumns.join(','),...queue.map(row => [
     workPriority(row), isLiteral(row) ? 'literal_not_translation_key' :
@@ -203,7 +205,7 @@ try {
       'verify_reachable_ui_and_translate',
     row.category,row.key,row.status,row.uiStatus,row.zh,row.lua,row.react,
     row.sources.join('; '),row.proposed_vi,row.review,
-  ].map(value => csvEscape(String(value))).join(','))].join('\r\n')+'\r\n';
+  ].map(value => csvEscape(String(value))).join(','))].join('\n')+'\n';
   fs.writeFileSync(path.join(out,'HEGEMONY_VIETNAMESE_WORK_QUEUE.csv'),'\ufeff'+csv);
   const reviewByPriority = Object.fromEntries(priorityOrder.map(p =>
     [p, queue.filter(row => workPriority(row) === p).length]));

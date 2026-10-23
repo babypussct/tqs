@@ -1,5 +1,9 @@
 # Audit luật Quốc Chiến: source gốc và React đang deploy
 
+> **Phạm vi nghiệm thu chốt 19/10/2026:** Quốc Chiến Hegemony `new_heg_mode` và phần core/skill/card/helper thực sự cần cho Quốc Chiến vận hành. Con số 14 package là tập source/dependency runtime hiện tại, không phải yêu cầu triển khai mọi mode hoặc chứng nhận mọi skill của cả 14 repo. Audit ngoài scope không là release blocker trừ khi chứng minh được tác động tới Quốc Chiến (kể cả lỗi boot/registry/protocol/privacy dùng chung). Bằng chứng lịch sử bên dưới giữ nguyên tầng/identity, không tự chuyển thành PASS khi thu hẹp phạm vi.
+
+> **Cập nhật Prompt 1, 20/10/2026:** native QA acceptance cuối đã PASS trên replacement VM `freekill-hegemony-qa` với source pin `b8a2ad4…`, binary SHA-256 `080b2d14…`, runtime MD5 `f296114df3385358f1cd09ae70f4a3a7`, QA revision `f05c424b…`, package/catalog/manifest đã verify. Bằng chứng gồm 4 ghế (2 account thật + 2 native BOT), interaction thật Long Đảm/Ân Oán/Di Kế/Phản Quỹ, GameOver và controlled reconnect. Đây là **NATIVE QA bounded PASS** cho Prompt 1; không thay thế full effect matrix, official release hoặc device acceptance. Evidence chi tiết và phân tích diagnostic timeout nằm ở [`CODEX_STATE.md`](../CODEX_STATE.md).
+
 > Audit cập nhật 16/10/2026 sau CP15 hidden Ký Ly/Jilix chủ/phó trên identity Render → Oracle mới (giờ Việt Nam). Đây là tài liệu canonical cho câu hỏi “đã chơi được đến đâu”, không phải danh sách mọi commit lịch sử.
 
 ## Kết luận
@@ -31,7 +35,7 @@ Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Rende
 | Evidence native-local trước đó | Các identity staged của Yiji/Xiaoji/Guanxing/Yingzi/Tiandu/Phản Gián… giữ trong từng evidence JSON; không lặp hash ở bảng này |
 | Probe native remote cũ cho Thiên Đố | Lượt thử trước replacement bị dừng trước readiness gate (`nativeQaGateSeen=false`); evidence [`1792066870927`](../../scratch/evidence/reconnect-failure-1792066870927.json). Đây là **diagnostic lịch sử**, không dùng để đánh giá `FinishJudge`; đã được supersede bởi identity Oracle replacement bên dưới |
 | Cài đặt native local | Lua 5.4 + `luasocket`/`luafilesystem` và package QA; ca Thiên Hương dùng runtime cô lập `flist MD5 79ef20f9a8fff39dc92310500269add0`, ca Đoạn Trường dùng `flist MD5 cc9ffae8858f3fff68f4b4f4c3d1bc9b`; chỉ phục vụ kiểm thử cục bộ, **không phải Oracle/production** |
-| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; runtime MD5 `29653b06f1db4a1cece2941f79cbe648`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; current `tqs_qa` revision `a6c47982d6f0140eaa2869cbaa6c5a780d688396`, package SHA `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog SHA `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`; service enabled/active, port 9527 reachable |
+| Oracle replacement package identity | `freekill-hegemony-qa` / `161.33.209.212`; Prompt 1 runtime MD5 `f296114df3385358f1cd09ae70f4a3a7`; Lua `5.4.8` + LuaSocket/LuaFileSystem; 14/14 package pin + hardening; current `tqs_qa` revision `f05c424b5538290bb6c18583cd64b3c7e98d1bc6`, package SHA `5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2`, catalog SHA `945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe`; service enabled/active, port 9527 reachable |
 | Oracle hidden-trigger QA | Current QA: Ký Ly/Jilix `TargetConfirmed` + second `DamageInflicted` chủ/phó hosted PASS với revision `a6c47982…`; Ân Oán và Phụ Âm vẫn có current proof; các family khác giữ nhãn bounded/historical. QA luôn ở `qa_packages/tqs_qa`, ngoài public `packages/` |
 | CP92/CP96 UI + lifecycle hotfix | Artifact đã build/typecheck/release-verify PASS; root `dist/` đồng bộ `game/web/dist`; deployment cuối và byte probe được ghi ở các dòng trên |
 | Hotfix hiện hành | Commit `32ac4be2` đã Live trên Render tại deployment `dep-db8pmpcs728c73akbvr0`; đây vẫn là candidate để smoke test, không phải official |
@@ -40,7 +44,7 @@ Bản candidate hiện đạt **MVP browser có server thật**. Tuyến **Rende
 
 Probe public của deployment `dep-db8pmpcs728c73akbvr0` trả `healthz=ok`, HTML SHA-256 `591c51f1…`, manifest 5.279 file với runtime MD5 `29653b06…`, bundle `ce342f067f61796e`. Login thật và Ký Ly/Jilix chủ/phó đã đi xuyên gateway tới Oracle replacement ở QA identity mới; evidence cũ của các family khác vẫn được giữ theo revision tương ứng. Đây là hosted bounded acceptance, không phải full gameplay acceptance hoặc official release.
 
-Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **44/44**, flist algorithm **2/2**, mobile release packaging **4/4**, Wasmoon/React Lua E2E `63/63` (bằng chứng trước CP11), hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. CP15 Ký Ly/Jilix chủ/phó hosted PASS trên QA revision `a6c47982…`; Ân Oán và Phụ Âm vẫn giữ hosted PASS trên QA current. Ma trận effect native-local hiện là `29/607` cặp trên `16/53` event kinds; evidence hosted không được cộng vào native-local ratio, chưa phải full matrix. `fazheng-enyuan` broad contract vẫn là scope riêng cần hoàn thiện.
+Re-validation local/native sau CP96 UI hiện ở catalog/source `57/57`, `test:qa-server-contract` **44/44**, flist algorithm **2/2**, mobile release packaging **4/4**, Wasmoon/React Lua E2E `63/63` (bằng chứng trước CP11), hidden-skill lifecycle `520/520`, slot-route `155.168/155.168`, skill activation `0` hard failure. CP15 Ký Ly/Jilix chủ/phó hosted PASS trên QA revision cũ; Ân Oán/Phụ Âm và Prompt 1 `fazheng-enyuan` có evidence theo từng QA identity mới nhất. Ma trận effect native-local hiện là `29/607` cặp trên `16/53` event kinds; evidence hosted không được cộng vào native-local ratio, chưa phải full matrix. Prompt 1 đã đóng bounded native gate; full effect/interaction parity vẫn mở.
 
 Runtime source hiện có hardening ở `ServerPlayer:prelightSkill`, `ServerPlayer:addFakeSkill` và `Room:handlePrelight`. `install-packages.sh` đã áp dụng chúng vào runtime native local và Oracle replacement; native verifier và hosted identity đều PASS. `render.yaml` đã ghim `FK_HOST` vào replacement, nên các deployment sau tiếp tục đi cùng tuyến Render → Oracle này.
 
@@ -55,9 +59,9 @@ Regression source-law gate `npm --prefix game/web run test:hidden-rule-contract`
 - `scripts/run-server.sh` và `scripts/verify-install.sh` dùng cùng helper; vận hành native phải đi qua `run-server.sh`, không gọi binary trực tiếp.
 - Bằng chứng local hiện hành: catalog/source scenarios **57/57**, `test:qa-server-contract` **44/44** subtests, flist algorithm **2/2**, release packaging **4/4**, launcher preflight PASS, Lua 5.4 + 18 extension; các scenario hidden main/deputy đã có evidence được liệt kê duy nhất ở bảng bên dưới. Current QA package có Ký Ly/Jilix, Ân Oán và Phụ Âm hosted PASS; CP13 Chế Man và các family khác giữ revision trước/historical. Corpus 51 run cũ được tách khỏi current proof. Full matrix và official LIVE vẫn mở.
 
-QA package hiện hành là `a6c47982…` / `5b45411a…` / `945b063…`, với `tempBanTime=0` chỉ trong `qa_packages/tqs_qa`; production template vẫn giữ `tempBanTime=5` để cho phép reconnect khoảng hai phút mà không mở rộng cửa sổ chống-abandon ngoài dự kiến. Native reconnect guard production chưa được claim active trên VM cũ.
+QA package hiện hành cho Prompt 1 là `f05c424b…` / `5b45411a…` / `945b063…`, với `tempBanTime=0` chỉ trong `qa_packages/tqs_qa`; production template vẫn giữ `tempBanTime=5` để cho phép reconnect khoảng hai phút mà không mở rộng cửa sổ chống-abandon ngoài dự kiến. Native reconnect guard production chưa được claim active trên VM cũ.
 
-Current package note: dòng evidence local phía trên là corpus cũ và không phải identity pin; current hosted acceptance dùng QA `a6c47982…` / package `5b45411a…` / catalog `945b063…`, còn Ký Ly/Jilix current được liệt kê ở phần CP15 bên dưới.
+Current package note: dòng evidence local phía trên là corpus cũ và không phải identity pin; Prompt 1 native QA acceptance dùng QA `f05c424b…` / package `5b45411a…` / catalog `945b063…`. Các hosted proof cũ bên dưới giữ nguyên identity/revision tại thời điểm chạy và không tự chuyển thành current.
 
 Ghi chú môi trường: native local được biên dịch từ commit C++ pin trên macOS. Harness tạm ngoài repository chỉ thay cách kiểm tra tiến trình con (`waitpid`) vì upstream dùng `/proc`, vốn không có trên macOS; patch này không nằm trong source/deploy và không được coi là thay đổi production/Oracle. Kết quả native local chứng minh vòng đời Lua/C++ và bridge của các scenario, không chứng minh binary Linux đang chạy trên VM.
 
@@ -74,14 +78,14 @@ Nguồn luật chính:
 - [`util.lua`](../../runtime/packages/hegemony/util.lua): so phe, expected kingdom, wild kingdom, founding/build country và Hegemony marks.
 - Các skill luật: [`vanguard.lua`](../../runtime/packages/hegemony/pkg/gamemodes/skills/vanguard.lua), [`companion_skill.lua`](../../runtime/packages/hegemony/pkg/gamemodes/skills/companion_skill.lua), [`wild_skill.lua`](../../runtime/packages/hegemony/pkg/gamemodes/skills/wild_skill.lua), [`new_battle_royal.lua`](../../runtime/packages/hegemony/pkg/gamemodes/skills/new_battle_royal.lua), [`new_battle_royal_event.lua`](../../runtime/packages/hegemony/pkg/gamemodes/skills/new_battle_royal_event.lua), [`weimu.lua`](../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua).
 
-Các nhóm luật không được bỏ sót trong scope 14 package:
+Các nhóm luật Quốc Chiến không được bỏ sót trong nội dung đang bật:
 
 - Chọn hai tướng, ẩn/lộ tướng, tướng chính/phụ, tính HP và các mark.
 - Chu kỳ lượt, card/target/response, reward và punishment khi chết.
 - Phe thường, wild/ambitious, chọn kingdom và founding/build country.
 - Vanguard, Yin-Yang Fish, Companion, Alliance, Rare Treasure, Formation, Command, Lord, dual faction và transformation.
 - Battle Royal cũ/mới, bao gồm Peach view-as và các event theo round.
-- Winner getter, surrender, lord death, shuffle/conversion và các card/skill của 14 package.
+- Winner getter, surrender, lord death, shuffle/conversion và các card/skill thực sự được Quốc Chiến sử dụng, kể cả implementation nằm trong repo phụ.
 
 ## Case P0 — Quách Gia úp và Di Kế sau khi nhận sát thương
 

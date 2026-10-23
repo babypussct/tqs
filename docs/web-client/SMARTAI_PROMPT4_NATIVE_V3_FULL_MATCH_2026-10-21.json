@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_v3_full_match_skill_provenance",
+  "generatedAt": "2026-10-21",
+  "source": "isolated local macOS native QA runtime; metadata-only extraction from the completed candidate run",
+  "mode": "new_heg_mode",
+  "scenario": "general-pair-match-a",
+  "seed": 1780420132,
+  "identity": {
+    "binarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeFlistMd5": "973208654922977267b5b828e29f4499",
+    "qaSourceRevision": "0f152c1c26aaee7c929e86182ba1d9be530ff5d8",
+    "qaCatalogSha256": "fd10dba3de141353b8287b6c75f6e1001917f090eb95e6cfad20db6cbd003c96",
+    "qaPackageSha256": "bc943e767f53ea27de1f8f41534955522e17227fa3138a1cbadd74dee1475627"
+  },
+  "execution": {
+    "runnerExitCode": 0,
+    "realClientSeats": 2,
+    "nativeBotSeats": 2,
+    "gameOverPerClient": [1, 1],
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "qaScenarioSummarySeen": true,
+    "pairDecision": {
+      "decisions": 2,
+      "accepted": 2,
+      "fallback": 0,
+      "invalid": 0,
+      "overflow": false
+    }
+  },
+  "aggregate": {
+    "total": 38,
+    "accepted": 30,
+    "fallback": 8,
+    "invalid": 3,
+    "noDecision": 5,
+    "errors": 0
+  },
+  "reasons": {
+    "illegal_reply": 3,
+    "malformed_prompt": 2,
+    "no_decision": 3
+  },
+  "invalidDetails": {
+    "feasibility_rejected": 3
+  },
+  "commands": {
+    "AskForAG": {
+      "total": 3,
+      "fallback": 0,
+      "invalid": 0,
+      "noDecision": 0
+    },
+    "AskForCardChosen": {
+      "total": 2,
+      "fallback": 2,
+      "invalid": 0,
+      "noDecision": 2,
+      "reasons": {"malformed_prompt": 2}
+    },
+    "AskForChoices": {
+      "total": 8,
+      "fallback": 0,
+      "invalid": 0,
+      "noDecision": 0
+    },
+    "AskForSkillInvoke": {
+      "total": 1,
+      "fallback": 0,
+      "invalid": 0,
+      "noDecision": 0
+    },
+    "AskForUseActiveSkill": {
+      "total": 8,
+      "fallback": 3,
+      "invalid": 3,
+      "noDecision": 0,
+      "reasons": {"illegal_reply": 3},
+      "invalidDetails": {"feasibility_rejected": 3}
+    },
+    "PlayCard": {
+      "total": 16,
+      "fallback": 3,
+      "invalid": 0,
+      "noDecision": 3,
+      "reasons": {"no_decision": 3}
+    }
+  },
+  "skills": {
+    "amazing_grace_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "analeptic_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "await_exhausted_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "choose_cards_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "default_equip_skill": {"requests": 5, "accepted": 5, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "discard_skill": {"requests": 7, "accepted": 4, "fallback": 3, "invalid": 3, "noDecision": 0},
+    "game_rule": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "heg_rule": {"requests": 7, "accepted": 7, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "indulgence_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "iron_chain_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "part_ways_skill": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "reveal_intention_skill": {"requests": 2, "accepted": 2, "fallback": 0, "invalid": 0, "noDecision": 0},
+    "tiandu": {"requests": 1, "accepted": 1, "fallback": 0, "invalid": 0, "noDecision": 0}
+  },
+  "trace": {
+    "scenario": "ai-trace",
+    "fixture": "semantic_v3",
+    "decisions": 5,
+    "fallback": 2,
+    "probeErrors": 0,
+    "pair": "verified",
+    "hands": "verified",
+    "attributedAcceptedSkills": ["slash_skill", "duel_skill", "hs__zhiheng"],
+    "unattributedDecisions": 2
+  },
+  "gate": {
+    "status": "bounded_native_v3_pass",
+    "requestSafety": "open",
+    "matchedBaselineAvailable": false,
+    "full18SkillCoverage": false,
+    "targetCardResourceValueComplete": false,
+    "productionTouched": false,
+    "rawEvidenceRetained": false
+  },
+  "limitations": [
+    "This is one candidate trajectory, not a matched baseline/candidate replay and not a population-level estimate.",
+    "The 13 skill buckets are observed requests only; they do not establish opportunity denominators for all 18 Prompt 4 skills.",
+    "The three discard_skill feasibility rejections identify the validator outcome and skill bucket, but not the deeper semantic legality cause.",
+    "AskForCardChosen malformed_prompt fallbacks have no originating skill attribution in this run.",
+    "No target-quality, card/resource-value or device/reconnect evidence is included in this artifact."
+  ]
+}

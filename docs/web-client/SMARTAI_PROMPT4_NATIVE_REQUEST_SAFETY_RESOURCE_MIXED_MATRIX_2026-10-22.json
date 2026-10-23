@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_resource_mixed_matrix",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Does the current QA package complete multiple mixed four-seat native trajectories without invalid AI replies, and which bounded command/skill reason buckets are observed?",
+  "scenarioFamily": "general-pair-match-mixed-a/b/c/d",
+  "seeds": [1780421000, 1780421001, 1780421002, 1780421003],
+  "seatSwaps": ["a", "b", "c", "d"],
+  "sourceChanges": [
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native scenario and telemetry package",
+      "purpose": "Current staged package includes sanitized command metrics, partial Prompt 4 skill/reason provenance, and resource-value support used by the matched fixture.",
+      "sha256": "f88992f2544a8669308c488a0d50820fc0d193af12ea9ce198e39f6ee0992cf6"
+    }
+  ],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "packageSha256": "e6b2b528e8f092517d9feb1eebda98373b94b81509aea193ca47a862bba38e0a",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "f119c616549a21ab38a552b2b10df721",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "successfulRunnerRuns": 4,
+    "runnerExitZero": 4,
+    "gameOver": 4,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "commandMetricRecords": 32,
+    "qaProcessAndPortCleanAfterEveryRun": true
+  },
+  "aggregateRequestMetrics": {
+    "total": 614,
+    "accepted": 300,
+    "fallback": 314,
+    "invalid": 0,
+    "noDecision": 295,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 200,
+      "no_strategy": 94,
+      "unsupported_command": 19,
+      "malformed_prompt": 1
+    },
+    "invalidDetails": {},
+    "perCommandReasonProvenanceAvailable": true,
+    "perSkillReasonProvenanceAvailable": true,
+    "perSkillProvenanceEntries": 5,
+    "perSkillProvenanceRequestCount": 11,
+    "perSkillProvenanceOverflow": 0,
+    "status": "NO_INVALID_NATIVE_REPLIES_IN_FOUR_TRAJECTORIES"
+  },
+  "perSkillReasonProvenance": [
+    { "skill": "dimeng", "category": "PlayCard/no_decision/none", "count": 4 },
+    { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 6 },
+    { "skill": "huoji", "category": "PlayCard/no_decision/none", "count": 1 }
+  ],
+  "aggregatePerCommand": [
+    { "command": "AskForAG", "total": 3, "fallback": 0, "invalid": 0, "reasons": {} },
+    { "command": "AskForCardChosen", "total": 10, "fallback": 10, "invalid": 0, "reasons": { "no_strategy": 9, "malformed_prompt": 1 } },
+    { "command": "AskForCardsAndChoice", "total": 1, "fallback": 0, "invalid": 0, "reasons": {} },
+    { "command": "AskForChoices", "total": 39, "fallback": 0, "invalid": 0, "reasons": {} },
+    { "command": "AskForResponseCard", "total": 11, "fallback": 5, "invalid": 0, "reasons": { "no_decision": 5 } },
+    { "command": "AskForSkillInvoke", "total": 78, "fallback": 45, "invalid": 0, "reasons": { "no_strategy": 43, "no_decision": 2 } },
+    { "command": "AskForUseActiveSkill", "total": 80, "fallback": 46, "invalid": 0, "reasons": { "no_decision": 44, "no_strategy": 2 } },
+    { "command": "AskForUseCard", "total": 146, "fallback": 119, "invalid": 0, "reasons": { "no_decision": 79, "no_strategy": 40 } },
+    { "command": "CustomDialog", "total": 1, "fallback": 1, "invalid": 0, "reasons": { "no_decision": 1 } },
+    { "command": "EmptyRequest", "total": 19, "fallback": 19, "invalid": 0, "reasons": { "unsupported_command": 19 } },
+    { "command": "PlayCard", "total": 226, "fallback": 69, "invalid": 0, "reasons": { "no_decision": 69 } }
+  ],
+  "perRun": [
+    {
+      "seatSwap": "a",
+      "scenario": "general-pair-match-mixed-a",
+      "seed": 1780421000,
+      "candidateId": "cp34",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 113, "accepted": 57, "fallback": 56, "invalid": 0, "noDecision": 49 },
+      "reasonCounts": { "no_decision": 28, "no_strategy": 21, "unsupported_command": 7 },
+      "commandMetricRecords": 8,
+      "perSkillReasonProvenance": [
+        { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 2 }
+      ],
+      "provenanceEntries": 1,
+      "provenanceOverflow": 0
+    },
+    {
+      "seatSwap": "b",
+      "scenario": "general-pair-match-mixed-b",
+      "seed": 1780421001,
+      "candidateId": "cp35",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 117, "accepted": 54, "fallback": 63, "invalid": 0, "noDecision": 63 },
+      "reasonCounts": { "no_decision": 44, "no_strategy": 19 },
+      "commandMetricRecords": 6,
+      "perSkillReasonProvenance": [
+        { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 3 }
+      ],
+      "provenanceEntries": 1,
+      "provenanceOverflow": 0
+    },
+    {
+      "seatSwap": "c",
+      "scenario": "general-pair-match-mixed-c",
+      "seed": 1780421002,
+      "candidateId": "cp36",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 247, "accepted": 111, "fallback": 136, "invalid": 0, "noDecision": 124 },
+      "reasonCounts": { "malformed_prompt": 1, "no_decision": 86, "no_strategy": 37, "unsupported_command": 12 },
+      "commandMetricRecords": 10,
+      "perSkillReasonProvenance": [
+        { "skill": "dimeng", "category": "PlayCard/no_decision/none", "count": 4 },
+        { "skill": "huoji", "category": "PlayCard/no_decision/none", "count": 1 }
+      ],
+      "provenanceEntries": 2,
+      "provenanceOverflow": 0
+    },
+    {
+      "seatSwap": "d",
+      "scenario": "general-pair-match-mixed-d",
+      "seed": 1780421003,
+      "candidateId": "cp37",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 137, "accepted": 78, "fallback": 59, "invalid": 0, "noDecision": 59 },
+      "reasonCounts": { "no_decision": 42, "no_strategy": 17 },
+      "commandMetricRecords": 8,
+      "perSkillReasonProvenance": [
+        { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 1 }
+      ],
+      "provenanceEntries": 1,
+      "provenanceOverflow": 0
+    }
+  ],
+  "verification": {
+    "aggregateReconciliation": "per-run and aggregate command records were parsed from allowlisted metadata; no invalid_details observed",
+    "nativeRunners": "4/4 EXIT 0; all four mixed trajectories reached GameOver/result",
+    "browserAndBotAudit": "browser errors 0 and public native-BOT skill log count 0 in each run",
+    "qaProcessAndPortCleanup": "PASS after every run"
+  },
+  "limitations": [
+    "These four trajectories are not a matched baseline/candidate experiment and do not prove causal improvement, tactical quality or win rate.",
+    "Fallback/no_decision remains high; zero invalid replies across four trajectories is bounded evidence, not a global safety proof.",
+    "Per-command provenance is complete for the emitted records, but per-skill provenance is partial and covers only 11 allowlisted request outcomes across three observed skills.",
+    "The aggregate contains all native AI commands, not a Prompt 4-only opportunity denominator; malformed_prompt and unsupported_command remain request-safety review items even when invalid=0.",
+    "The package manifest revision is retained for the isolated runner while packageSha256 identifies the staged working-tree QA tree; no clean-commit or production-release claim follows.",
+    "No raw logs, credentials, card/target IDs, private hands/generals, prompts or exception payloads are stored in this artifact."
+  ]
+}

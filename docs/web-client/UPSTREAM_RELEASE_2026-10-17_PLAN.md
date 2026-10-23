@@ -2,7 +2,15 @@
 
 Trạng thái: **ĐỀ XUẤT / CHƯA TRIỂN KHAI** · Lập ngày 19/10/2026.
 
+> **Kế hoạch tổng kết và prompt giao việc U0–U8:** [UPSTREAM_IMPLEMENTATION_SUMMARY.md](UPSTREAM_IMPLEMENTATION_SUMMARY.md). Core và các repo luật/phụ thuộc bắt buộc được đánh giá trong scope Quốc Chiến; quyết định giữ/nâng cần có bằng chứng tương thích và tác động luật/privacy, không chỉ START PASS. Dùng bản tổng kết để giao từng giai đoạn; tài liệu này giữ chi tiết kỹ thuật và số liệu khảo sát ban đầu.
+
+> **Chốt phạm vi theo yêu cầu người dùng 19/10/2026:** TQSVN chỉ phục vụ Quốc Chiến `new_heg_mode`. Mục tiêu nâng cấp là **Hegemony và các luật/phụ thuộc thực sự liên quan**; giữ pin các repo khác, chỉ nâng dependency khi có bằng chứng cần thiết. Không mặc định nâng 14 repo lên HEAD. `mobile_heg`, `online_heg`, `tenyear_heg`, `overseas_heg` là nhóm nội dung trong chính Hegemony; các repo Mobile/OL/Tenyear/SP… đang được nạp để cung cấp implementation/helper/card. Xem kết quả và nguyên tắc lọc phạm vi tại [UPSTREAM_SURVEY_2026-10-19.md](UPSTREAM_SURVEY_2026-10-19.md).
+>
+> Probe **chỉ Hegemony mới + toàn bộ dependency pin cũ** đã chạy lại: START PASS, 0 reference skill active thiếu; chưa phải nghiệm thu effect/native E2E. Lỗi `mou__daqiao` chỉ là blocker của phương án nâng đồng thời Mobile/Mưu Công, **không phải điều kiện bắt buộc trước U3 theo phạm vi hiện tại**. Thay đổi danh mục 301→233 và overseas 76→5 vẫn thuộc scope Hegemony và cần U5. Thống kê 171 commit toàn hệ sinh thái chỉ là tham khảo, không phải backlog bắt buộc của bản nâng cấp này.
+
 ## 1. Quyết định và phạm vi
+
+**Mục tiêu dự án có hiệu lực:** Quốc Chiến Hegemony `new_heg_mode` phải vận hành được. Các bước U0–U8 chỉ nhằm đạt mục tiêu đó; core và dependency chỉ làm theo nhu cầu của Quốc Chiến. Tính năng/mode/skill không liên quan và việc nâng tất cả HEAD không phải yêu cầu nghiệm thu. Các thống kê toàn repo bên dưới phục vụ khảo sát, không tự mở thêm backlog.
 
 Đây là đợt nâng cấp **major về rủi ro game-rule/tích hợp** đối với `new_heg_mode`, dù upstream không nhất thiết gắn nhãn phiên bản major. Không cập nhật trực tiếp candidate/live, không đổi `versions.env` trên `main`, không tự động theo `master`, không restart dịch vụ, và không chạm TQSShop (`src/`, `api/`), trừ khi một thay đổi hợp đồng được phân tích và mở ticket riêng.
 
@@ -47,21 +55,21 @@ Tổng `164` là tổng khoảng cách commit của báo cáo, **không phải**
 
 **Đạt khi:** không còn pin đích rút gọn/moving branch; mỗi thay đổi P0 có hành vi trước/sau và bài kiểm thử dự kiến. Nếu SHA đã tiến xa hơn snapshot 17/10, lập delta mới và duyệt phạm vi trước khi cố định target.
 
-### Bước 2 — Spike tương thích core và bản vá native (U2)
+### Bước 2 — Kiểm tương thích core và bản vá native; spike nếu cần nâng core (U2)
 
-**Thực hiện:** trong sandbox disposable, thử nâng **riêng `freekill-core` để phát hiện breakage** của installer/Lua/server; đây là bước chẩn đoán, tuyệt đối không dùng một tập pin lệch này để release. Kiểm tra từng patch fail-closed và liệu upstream đã sửa chính thức các lỗi prelight, fake-skill ownership, locked packs hay chưa. Giữ các assertion hành vi kể cả khi bỏ patch vì upstream đã tự sửa. Chạy Lua 5.4/module preflight và contract tests liên quan.
+**Thực hiện:** đánh giá Hegemony đích với native/core/utility và các repo luật phụ thuộc ở U1, kể cả sửa lỗi luật/privacy liên quan dù pin cũ vẫn khởi động. Spike trong sandbox để chọn giữ/nâng từng repo có bằng chứng; không mặc định theo HEAD. Khi core được đổi, kiểm từng patch fail-closed và liệu upstream đã sửa chính thức prelight, fake-skill ownership, locked packs hay chưa. Giữ assertion hành vi kể cả khi bỏ patch vì upstream đã tự sửa. Chạy Lua 5.4/module preflight và contract tests liên quan.
 
-**Bàn giao:** bảng `patch hiện tại → upstream shape → quyết định giữ/đổi/bỏ → test bắt buộc`, diff patch tối thiểu, log lệnh PASS/FAIL.
+**Bàn giao:** bảng `repo → pin cũ/đích → giữ/nâng → lý do/bằng chứng`, bảng `patch hiện tại → upstream shape → quyết định giữ/đổi/bỏ → test bắt buộc`, diff patch tối thiểu và log lệnh PASS/FAIL. Bộ SHA này là đầu vào U3.
 
-**Đạt khi:** cài/bật core mới trong môi trường riêng không fail do patch shape; không mất hardening; có test cho hidden/main/deputy, prelight idempotence, stale cleanup và owner check. Nếu installer fail, **dừng** để sửa có chứng cứ; không tắt fail-closed cho qua.
+**Đạt khi:** Hegemony đích hoạt động với core đã chọn trong môi trường riêng, không mất hardening; có test cho hidden/main/deputy, prelight idempotence, stale cleanup và owner check. Nếu không cần nâng core, ghi rõ quyết định giữ pin và bằng chứng. Nếu installer fail, **dừng** để sửa có chứng cứ; không tắt fail-closed cho qua.
 
-### Bước 3 — Tạo snapshot 14 package nhất quán (U3)
+### Bước 3 — Tạo snapshot Hegemony và dependency pin nhất quán (U3)
 
-**Thực hiện:** đóng băng `hegemony` cùng nhóm phụ thuộc `tenyear`, `OL`, `mobile`, `SP`, `utility`, `yj`, `overseas`, `shzl`; đánh giá `gamemode` theo virtual card và giữ 3 repo không đổi nếu tương thích. `freekill-asio` xét riêng vì bản static đã `0.1.17`. Chỉnh đồng bộ `versions.env`, `UPSTREAM_PACKAGES`, `DECLARATION_REPAIRS` và installer **chỉ trong nhánh thử**. Kiểm toàn bộ 14 package không thiếu, không lệch owner/skill/commit; so hash sau repair ở native với byte tương ứng của browser.
+**Thực hiện:** đóng băng target `hegemony` và bắt đầu với **toàn bộ dependency giữ pin hiện tại**. Chỉ đưa core/utility/tenyear/OL/mobile/SP/gamemode… vào danh sách nâng khi U1/U2 xác định được skill/helper/card/API hoặc lỗi tích hợp thực sự cần sửa; ghi rõ lý do cho từng repo đổi. `freekill-asio` giữ pin nếu không có yêu cầu tương thích native mới. Chỉnh đồng bộ `versions.env`, `UPSTREAM_PACKAGES`, `DECLARATION_REPAIRS` và installer **chỉ trong nhánh thử**. Kiểm tập 14 package hiện tại không thiếu, không lệch owner/skill/commit; so hash sau repair ở native với byte tương ứng của browser. Chỉ mở việc migration Mobile/Mưu Công nếu chọn nâng Mobile hoặc phát hiện dependency buộc phải đổi; không làm việc này như điều kiện mặc định.
 
 **Bàn giao:** manifest pin SHA đầy đủ 14/14, diff source/repair, các quyết định hoãn/giữ pin và lý do.
 
-**Đạt khi:** native/browser/QA cùng snapshot và cùng semantics; không phát sinh skill trùng/thiếu, no floating refs. Nếu buộc trì hoãn một repo, nêu ma trận tương thích cụ thể của snapshot rút gọn đó.
+**Đạt khi:** native/browser/QA cùng snapshot và cùng semantics; không phát sinh skill trùng/thiếu, no floating refs. Các repo giữ pin là baseline được chọn có chủ đích; không coi việc không theo HEAD là thiếu phạm vi nghiệm thu. Nếu thay đổi tập repo, phải có lý do và kiểm chứng chuyển owner riêng.
 
 ### Bước 4 — Build native và browser từ snapshot cùng nguồn (U4)
 
@@ -73,7 +81,7 @@ Tổng `164` là tổng khoảng cách commit của báo cáo, **không phải**
 
 ### Bước 5 — Audit luật Quốc Chiến, pool và privacy (U5)
 
-**Thực hiện:** chạy inventory trước/sau cho tướng, cặp chủ/phó, tên skill/owner, unique IDs, danh sách gói được phép/bị khoá, pool phòng 5/7/10 người, bài/tướng và bản dịch. Kiểm trực tiếp các ca `hegemony`: Quốc Chiến 27, Tào Phi/Lưu Thiện/Tôn Sách/Đổng Trác, Cửu Biến/Tả Từ, YiGui, formation/strategic advantage, `lord_ex`, `mobile_heg`, `overseas_heg`. Kiểm những skill mới/sửa trong `tenyear`/`OL`/`mobile`/`SP` và các gói nhỏ; bổ sung fixture từ chính diff.
+**Thực hiện:** chạy inventory trước/sau cho tướng, cặp chủ/phó, tên skill/owner, unique IDs, danh sách gói được phép/bị khoá, pool theo `capacity × generalNum` với 5/7/10 lá tướng mỗi người, bài/tướng và bản dịch. Kiểm trực tiếp các ca `hegemony`: Quốc Chiến 27, Tào Phi/Lưu Thiện/Tôn Sách/Đổng Trác, Cửu Biến/Tả Từ, YiGui, formation/strategic advantage, `lord_ex`, `mobile_heg`, `overseas_heg`. Kiểm những skill mới/sửa trong `tenyear`/`OL`/`mobile`/`SP` và các gói nhỏ; bổ sung fixture từ chính diff.
 
 **Kiểm riêng tư bắt buộc:** thông tin của bản thân/đối thủ/quan sát viên, main/deputy đang úp, private marks và牌堆, trình tự Add/Lose/Prelight/reveal, death/GameOver, reconnect/replay/double-notify; không rò tay bài, mark hay tướng ẩn. Kiểm kết quả trong native và projection browser.
 

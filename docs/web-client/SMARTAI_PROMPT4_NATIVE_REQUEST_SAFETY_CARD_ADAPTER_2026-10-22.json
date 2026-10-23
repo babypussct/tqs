@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_card_chosen_adapter",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Does preserving the explicit skill name in AskForCardChosen request metadata prevent valid custom display prompts from being classified as malformed_prompt?",
+  "scenario": "general-pair-match-mixed-c",
+  "seed": 1780421002,
+  "candidateId": "cp38",
+  "changeUnderTest": {
+    "requestAdapter": "Room:askToChooseCard appends skill_name as a fourth request-data field; the client continues to render only the first three fields.",
+    "aiDispatcher": "SmartAI:handleAskForCardChosen prefers the explicit fourth field and falls back to the legacy prompt parser when it is absent.",
+    "skillMechanicsChanged": false,
+    "emptyRequestPolicy": "EmptyRequest remains an intentional unsupported operational no-op from Room:animDelay and is not converted into an AI decision."
+  },
+  "sourceChanges": [
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/room.lua",
+      "layer": "common request adapter",
+      "sha256": "f71e71a7fd12a35f609942657d221a71b4e80cef9d6fa001a022f006e223036c"
+    },
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+      "layer": "common SmartAI dispatcher",
+      "sha256": "9185a68ba0e35caf9b60388f9291886f4d48a50d2327b70749e496a700b907e3"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/ltk/server/ai/smart_ai.lua",
+      "layer": "QA overlay copy of the common dispatcher",
+      "sha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-response.test.ts",
+      "layer": "local response regression test",
+      "sha256": "ff05ba4fea0d89ada85686bd0777dbe75fa7412992a689c01af0b59d83d3f9c7"
+    }
+  ],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "packageSha256": "e722bafad7aadc91ba904bbba50bdb5d701d58696a01e45d2c93d8ad645c3d05",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "660d3e1a66ddf61ab46aac1d7fcbe725",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "execution": {
+    "nodeRunnerOutcome": "PASS: the runner emitted candidate identity, client/bot audit, GameOver/result and sanitized trace PASS lines",
+    "wrapperExitCode": 1,
+    "wrapperExitNote": "The post-run zsh wrapper assigned $? to the read-only variable status after the Node runner had completed; this is a wrapper bookkeeping error, not a native/gameplay failure.",
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "aggregateRequestMetrics": {
+    "total": 206,
+    "accepted": 97,
+    "fallback": 109,
+    "invalid": 0,
+    "noDecision": 109,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 78,
+      "no_strategy": 31
+    },
+    "invalidDetails": {},
+    "unsupportedCommand": 0,
+    "malformedPrompt": 0
+  },
+  "askForCardChosen": {
+    "total": 3,
+    "fallback": 3,
+    "invalid": 0,
+    "reasons": {
+      "no_strategy": 3
+    },
+    "malformedPrompt": 0,
+    "interpretation": "All three requests now use an explicit safe no_strategy fallback when no bounded chooser strategy exists; none is misclassified as malformed_prompt or invalid."
+  },
+  "comparisonToPriorMixedMatrix": {
+    "priorMalformedPromptCount": 1,
+    "priorArtifact": "SMARTAI_PROMPT4_NATIVE_REQUEST_SAFETY_RESOURCE_MIXED_MATRIX_2026-10-22.json",
+    "currentTargetedMalformedPromptCount": 0,
+    "comparisonIsCausalProof": false
+  },
+  "localVerification": {
+    "smartAiResponseTest": "7/7 PASS",
+    "lua54Syntax": "PASS for public room.lua, public smart_ai.lua and QA overlay smart_ai.lua",
+    "gitDiffCheck": "PASS"
+  },
+  "upstreamPorting": {
+    "reusable": true,
+    "portingUnits": [
+      "The request-adapter fourth field in Room:askToChooseCard",
+      "The explicit-skill-name preference plus legacy-parser fallback in SmartAI:handleAskForCardChosen"
+    ],
+    "mergeRule": "Port these hunks against the upstream versions of the two files; do not overwrite whole files. Keep the QA overlay synchronized separately.",
+    "skillAiBlocksRemainSeparate": true
+  },
+  "limitations": [
+    "This is one bounded candidate full-match trajectory, not a full 18-skill denominator or a matched baseline/candidate experiment.",
+    "The run still has 109 fallback outcomes and 31 no_strategy outcomes; safe classification is not proof of tactical quality or downstream success.",
+    "The wrapper exit was not a clean zero because of the reserved-variable bookkeeping mistake; the Node runner's gameplay PASS evidence was observed before the wrapper error.",
+    "No reconnect/device, release/rollback, canary or production evidence is included. Production remains NO-GO and REQUEST_SAFETY_OPEN.",
+    "No raw logs, credentials, prompts, card/target IDs, private hands/generals or exception payloads are stored here."
+  ]
+}

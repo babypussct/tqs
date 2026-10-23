@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "kind": "smartai_prompt4_native_ab",
+  "generatedAt": "2026-10-21T03:08:12.901Z",
+  "scope": "local isolated native QA; new_heg_mode; four paired full-match rows",
+  "runId": "p4-ab-20261021",
+  "matrix": {
+    "family": "general-pair-winrate-v1",
+    "scenarios": [
+      "general-pair-match-mixed-a",
+      "general-pair-match-mixed-b",
+      "general-pair-match-mixed-c",
+      "general-pair-match-mixed-d"
+    ],
+    "seedRange": {
+      "min": 1780421000,
+      "max": 1780421000,
+      "seedsPerSeatSwap": 1
+    },
+    "rosterSets": ["r1"],
+    "seatSwaps": ["A", "B", "C", "D"],
+    "initialGeneralCount": 10,
+    "parsedRuns": 8
+  },
+  "identity": {
+    "runtimeFlistMd5": "b0ebebe01c1334dae43418c226dfafca",
+    "runtimeBinarySha256": "8b132e5f5e1e043603d621cd1980d1c8b033e9183edfb8c555febba09114a9d8",
+    "catalogSha256": "70f16488280b4209e43f26b988f8f6a089c0b486aaa9c81dbf7798a5b11ee831",
+    "qaPackageSha256": "7d429f7c84660dc53214ff956417b4c946b25a0eaff97b837c366122f0fbd09e",
+    "qaSourceRevision": "b8527d28a5808e4580829c17e55968149d9ca3b1"
+  },
+  "pairing": {
+    "baselineBranch": "baseline",
+    "candidateBranch": "candidate",
+    "pairs": 4,
+    "baselineRuns": 4,
+    "candidateRuns": 4,
+    "coverageBySeatSwap": {
+      "A": 1,
+      "B": 1,
+      "C": 1,
+      "D": 1
+    },
+    "coverageByRosterSet": {
+      "r1": 4
+    },
+    "missingBaseline": [],
+    "missingCandidate": [],
+    "duplicateKeys": [],
+    "inputMismatchKeys": [],
+    "rosterOrSeatMismatchKeys": []
+  },
+  "fullMatch": {
+    "baseline": {
+      "matches": 4,
+      "oneWinner": 4,
+      "draws": 0,
+      "multiWinner": 0,
+      "winRate": 1,
+      "wilson95": {
+        "low": 0.5101091635454027,
+        "high": 1
+      }
+    },
+    "candidate": {
+      "matches": 4,
+      "oneWinner": 4,
+      "draws": 0,
+      "multiWinner": 0,
+      "winRate": 1,
+      "wilson95": {
+        "low": 0.5101091635454027,
+        "high": 1
+      }
+    },
+    "pairedWinRateDelta": {
+      "n": 4,
+      "mean": 0,
+      "ci95": {
+        "low": 0,
+        "high": 0
+      }
+    }
+  },
+  "generalPairDecision": {
+    "baseline": {
+      "decisionRecords": 11,
+      "accepted": 8,
+      "fallback": 3,
+      "invalid": 3,
+      "noDecision": 3,
+      "fallbackRate": 0.2727272727272727,
+      "missingChoicePool": 0
+    },
+    "candidate": {
+      "decisionRecords": 8,
+      "accepted": 8,
+      "fallback": 0,
+      "invalid": 0,
+      "noDecision": 0,
+      "fallbackRate": 0,
+      "missingChoicePool": 0
+    }
+  },
+  "nativeAiMetrics": {
+    "baseline": {
+      "matchCount": 4,
+      "total": 783,
+      "accepted": 412,
+      "fallback": 371,
+      "invalid": 85,
+      "noDecision": 278
+    },
+    "candidate": {
+      "matchCount": 4,
+      "total": 752,
+      "accepted": 342,
+      "fallback": 410,
+      "invalid": 154,
+      "noDecision": 249
+    },
+    "candidateMinusBaseline": {
+      "total": -31,
+      "accepted": -70,
+      "fallback": 39,
+      "invalid": 69,
+      "noDecision": -29
+    },
+    "selectedSkillObserved": {
+      "tianyi": null,
+      "shangyi": null,
+      "tiaoxin": null,
+      "hs__zhiheng": {
+        "candidate": {
+          "requests": 10,
+          "accepted": 10,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "baseline": null
+      },
+      "hs__kurou": null,
+      "hs__qiangxi": null,
+      "hs__longdan": {
+        "candidate": {
+          "requests": 3,
+          "accepted": 3,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "baseline": null
+      },
+      "hs__luanji": null,
+      "hs__wusheng": {
+        "candidate": {
+          "requests": 15,
+          "accepted": 15,
+          "fallback": 0,
+          "invalid": 0,
+          "noDecision": 0
+        },
+        "baseline": null
+      },
+      "huoji": null,
+      "jijiu": null,
+      "kanpo": null,
+      "aocai": null,
+      "beizhu": null,
+      "dimeng": null,
+      "choufa": null,
+      "cunsi": null,
+      "duanfa": null
+    }
+  },
+  "gate": {
+    "analyzer": "READY_FOR_TUNING_REVIEW",
+    "integrityPass": true,
+    "sampleSufficientForPairedMatrix": true,
+    "fullPrompt4Complete": false,
+    "group4Opened": false
+  },
+  "limitations": [
+    "One seed and roster r1 only; this is not population-level or causal win-rate evidence.",
+    "Skill counters are observed request buckets, not opportunity denominators. Fifteen of the eighteen selected skills had no observed bucket and are not interpreted as having no opportunity.",
+    "Across these four different match trajectories, candidate aggregate invalid was 154 versus baseline 85 and fallback was 410 versus baseline 371. This is not a causal attribution, but it keeps the no-new-request-error gate open for review.",
+    "Native target-quality, resource-value, and per-skill opportunity/miss denominators are not available in this run.",
+    "The paired general-pair matrix measures full-match outcomes and pair-selection decisions; it does not isolate the causal effect of every Prompt 4 skill."
+  ],
+  "decision": "Do not open group 4. Keep Prompt 4 open until per-skill opportunity denominators, native target/resource telemetry, broader seed/roster coverage, and the aggregate invalid/fallback review are resolved."
+}

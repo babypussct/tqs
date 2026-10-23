@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 2,
+  "kind": "prompt4_supported_general_pair_custom_dialog_native_request_safety",
+  "capturedAt": "2026-10-22",
+  "status": "PASS_BOUNDED_NATIVE_X2",
+  "scope": {
+    "mode": "new_heg_mode",
+    "qaOnly": true,
+    "coreAiModifiedInThisMilestone": false,
+    "productionTouched": false,
+    "release": "NO_GO"
+  },
+  "identity": {
+    "isolatedQaSourceRevision": "4f605d05e37dfd5227a26fa2e7c62ab2e7394549",
+    "isolatedQaPackageSha256": "19f66527cf24bced4561ef701e416482274e72256f3c0b5bea1310d46c66cf39",
+    "isolatedQaManifestSha256": "79673fa9a768d9d7efb8a0eae72b93b2b8267e14013f7ef1223ae3a08f939d16",
+    "qaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3",
+    "publicRuntimeFlistMd5": "dae6049e5b5e557cd00db6105e1c99cb",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "temporarySourceCommitOnly": true
+  },
+  "nativeExecution": {
+    "seed": 1780420130,
+    "scenario": "ai-trace",
+    "runs": 2,
+    "supportedGeneralPairCustomDialog": {
+      "casesPerRun": 10,
+      "acceptedPerRun": 2,
+      "fallbackPerRun": 8,
+      "deliberateInvalidNonNilPerRun": 6,
+      "noDecisionMetricPerRun": 2,
+      "unsupportedPerRun": 0,
+      "reasonsPerRun": {
+        "invalid_reply": 6,
+        "no_strategy": 1,
+        "no_decision": 1
+      },
+      "strategyLegalPerRun": 2,
+      "deterministicClassification": true,
+      "testedNegativeCategories": [
+        "duplicate_general",
+        "unoffered_general",
+        "disabled_kingdom",
+        "wrong_reply_type",
+        "missing_kingdom",
+        "invalid_offer"
+      ],
+      "nilFallbackCategories": [
+        "no_strategy",
+        "no_decision"
+      ]
+    },
+    "crossCommandMalformedRegression": {
+      "casesPerRun": 44,
+      "acceptedPerRun": 4,
+      "fallbackPerRun": 40,
+      "invalidPerRun": 30,
+      "noDecisionMetricPerRun": 9,
+      "unsupportedPerRun": 1,
+      "reasonsPerRun": {
+        "invalid_reply": 22,
+        "illegal_reply": 8,
+        "no_strategy": 4,
+        "no_decision": 5,
+        "unsupported_command": 1
+      },
+      "perCommandSampleSize": {
+        "AskForUseActiveSkill": 10,
+        "AskForUseCard": 10,
+        "AskForResponseCard": 10,
+        "PlayCard": 10,
+        "CustomDialog": 3,
+        "TqsQaUnsupported": 1
+      },
+      "preservedPriorBaseline": true
+    },
+    "prompt4": {
+      "decisionsPerRun": 18,
+      "acceptedPerRun": 18,
+      "actedPerRun": 18,
+      "fallbackPerRun": 0,
+      "invalidPerRun": 0,
+      "errorsPerRun": 0
+    },
+    "liveMatch": {
+      "requestsPerRun": 25,
+      "acceptedPerRun": 24,
+      "fallbackPerRun": 1,
+      "invalidPerRun": 0,
+      "noDecisionPerRun": 1,
+      "fallbackReason": "no_decision",
+      "allMainCommandBucketsInvalidZero": true
+    },
+    "browserRuns": [
+      {
+        "evidencePath": "scratch/evidence/cp08-ai-trace-multiplayer-live-1792640900421.json",
+        "runnerExit": 0,
+        "gameOver": true,
+        "browserErrors": 0,
+        "browserErrorContexts": 0
+      },
+      {
+        "evidencePath": "scratch/evidence/cp08-ai-trace-multiplayer-live-1792640973726.json",
+        "runnerExit": 0,
+        "gameOver": true,
+        "browserErrors": 0,
+        "browserErrorContexts": 0
+      }
+    ]
+  },
+  "p2BoundedReplay": {
+    "nativePrompt4CasesPerRun": 18,
+    "matchedSemanticRequestFingerprintPairs": 18,
+    "matchedOfferFingerprintPairs": 18,
+    "matchedSkillAndCommandPairs": 18,
+    "matchedTargetRoleClassificationPairs": 18,
+    "matchedResourceValuePairs": 18,
+    "matchedOutputShapePairs": 18,
+    "targetProfilesPerRun": {
+      "ally": 2,
+      "enemy": 8,
+      "mixed": 2,
+      "none": 6
+    },
+    "resourceValuesPerRun": {
+      "low": 12,
+      "none": 6
+    },
+    "resourceShapesPerRun": {
+      "many_cards": 2,
+      "none": 6,
+      "one_card": 9,
+      "two_cards": 1
+    },
+    "targetQualityExpectedPerRun": 18,
+    "unknownResourceValueCount": 0,
+    "noPrivateGeneralOrHandValuesWrittenToEvidence": true,
+    "differentialHiddenInformationNativeProof": false,
+    "fullStateCausalEquivalenceProven": false
+  },
+  "p1OriginalDownstreamBaseline": {
+    "evidencePath": "docs/web-client/SMARTAI_PROMPT4_NATIVE_DOWNSTREAM_EFFECT_REPLAY_MATRIX_2026-10-22.json",
+    "cleanSkills": 18,
+    "totalSkills": 18,
+    "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "publicRuntimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "preservedOriginalIdentity": true,
+    "needFullRerunIfCoreAiChanges": true
+  },
+  "verification": {
+    "nativeQaRunExit": [
+      0,
+      0
+    ],
+    "browserGameOver": [
+      true,
+      true
+    ],
+    "browserErrors": [
+      0,
+      0
+    ],
+    "luaIntegration": "12/12 PASS (previous milestone)",
+    "qaContract": "48/48 PASS (previous milestone)",
+    "prompt4Tests": "5/5 PASS (previous milestone)",
+    "nativeReplayTests": "7/7 PASS (previous milestone)",
+    "nativeSkillTraceTests": "7/7 PASS (previous milestone)",
+    "typecheckAll": "PASS (previous milestone)",
+    "crossRunCountersAndP2MetadataMatched": true,
+    "serverQuitExit": 0,
+    "qaTcp9527Closed": true,
+    "qaTcp9000Closed": true,
+    "isolatedQaSymlinkCleaned": true,
+    "ephemeralTicketSecretRemoved": true,
+    "macOsQaLink": "atomic os.replace after listener; launcher auto-link watcher only supports ss and timed out; native game/QA trace unaffected"
+  },
+  "gate": {
+    "p0CrossCommandMalformed": "PASS_BOUNDED_NATIVE_X2",
+    "p0SupportedGeneralPairCustomDialog": "PASS_BOUNDED_NATIVE_X2",
+    "p0SampledLiveInvalid": "ZERO_OBSERVED_X2",
+    "p0Aggregate": "OPEN",
+    "p1Downstream": "18/18_PASS_BOUNDED_PRESERVED_ORIGINAL",
+    "p2Tactical": "PARTIAL",
+    "production": "NO_GO"
+  },
+  "limitations": [
+    "Detached malformed probes use controlled feasibility handlers for main commands; not exhaustive real production feasibility.",
+    "Ten-case CustomDialog only covers bounded general-pair offer/response shapes.",
+    "Each live run is a seeded QA scenario, not exhaustive gameplay or production/device proof.",
+    "P2 compares bounded hash and coarse role/resource classes; private-information native differential and full-state optimality not demonstrated.",
+    "QA-only macOS symlink activation required after native listener; launcher ss watcher timed out.",
+    "Raw native logs kept only inside isolated runtime; artifact contains allowlisted counters and file references."
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_BOUNDED",
+  "recordedAt": "2026-10-22T02:56:46+07:00",
+  "objective": "Verify that one accepted native Prompt 4 AI reply reaches a real downstream skill-effect path without changing production runtime.",
+  "scope": {
+    "mode": "new_heg_mode",
+    "scenario": "ai-trace",
+    "seed": 1780420130,
+    "candidateId": "cp50",
+    "qaOnly": true,
+    "productionChanged": false,
+    "physicalDevice": false
+  },
+  "identity": {
+    "publicRuntimeMd5": "01dc027eaa8c8171fc5e4c1e8afc6f50",
+    "browserDistIndexSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "qaPackage": {
+      "sourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+      "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3",
+      "packageSha256": "78a05d82911f5930bd42622f74541f7480b7e0fce752d3d46de1d049194f2845",
+      "manifestSha256": "f530018d8983e2b7193607f8ac2d227e8cc087008169729d7aa3bbb053cb5666",
+      "sourceInitSha256": "2a998120fdda608b281770668cc3cd12a5872984b34615b8e73907389c94b172"
+    },
+    "sourceHashes": {
+      "roomLuaSha256": "f71e71a7fd12a35f609942657d221a71b4e80cef9d6fa001a022f006e223036c",
+      "smartAiLuaSha256": "9185a68ba0e35caf9b60388f9291886f4d48a50d2327b70749e496a700b907e3",
+      "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e"
+    },
+    "releaseManifestGate": "UNPINNED_DIAGNOSTIC_ONLY"
+  },
+  "requestTrace": {
+    "implementation": "real player.ai:makeReply plus native request-handler feasibility",
+    "decisions": 18,
+    "opportunities": 18,
+    "accepted": 18,
+    "acted": 18,
+    "fallback": 0,
+    "invalid": 0,
+    "errors": 0,
+    "gameOver": true,
+    "runnerExitCode": 0,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0
+  },
+  "downstreamEffectReplay": {
+    "skill": "hs__kurou",
+    "allowlistReason": "safe active skill with one discard, one HP loss and bounded draw; no nested QA request",
+    "attempted": true,
+    "acceptedReply": true,
+    "handledByRoomHandleUseCardReply": true,
+    "skillEffectObservations": 4,
+    "skillEffectObservationNote": "The global QA director is visited once per room player by the native trigger dispatcher; this is fan-out of one real effect, not four replay invocations.",
+    "fakeSkill": false,
+    "hpBefore": 3,
+    "hpAfter": 2,
+    "hpDelta": -1,
+    "errors": 0
+  },
+  "cleanup": {
+    "nativeGamePort": 19647,
+    "adminPort": 9000,
+    "portsClosed": true,
+    "nativeAndLuaProcessesStopped": true,
+    "gatewayAndBrowserStopped": true,
+    "qaSwitchSymlinksRemoved": true,
+    "publicFlistMd5Preserved": true
+  },
+  "limitations": [
+    "This is one downstream replay for 1 of 18 skills; the other accepted replies were not applied through their full effect/event chains.",
+    "The replay proves request-to-effect reachability and the hs__kurou HP assertion, not tactical quality, win rate, reconnect/device behavior, release/rollback, or canary safety.",
+    "The runner used the explicit local unpinned diagnostic allowance because no release manifest was supplied; the public runtime MD5, native binary, browser dist and QA package hashes are retained for reproducibility.",
+    "The QA package was staged manually in an isolated temp runtime because the working-tree QA source was intentionally dirty; no commit, push, deploy or production runtime mutation was made."
+  ],
+  "gate": {
+    "requestSafety": "OPEN",
+    "p0": "OPEN",
+    "p1": "OPEN",
+    "p2": "OPEN",
+    "p3": "OPEN",
+    "p4": "OPEN",
+    "p5": "OPEN",
+    "production": "NO-GO"
+  },
+  "upstreamPortability": {
+    "status": "PORTABLE_BY_HUNK",
+    "guidance": "Keep the hs__kurou replay as QA-only harness code; when upstream changes, port the request adapter, common SmartAI dispatcher, skill-specific addAI blocks, QA overlay and this bounded assertion separately. Do not overwrite whole upstream files."
+  },
+  "evidenceSources": [
+    "scratch/evidence/cp50-ai-trace-multiplayer-live-1792612620334.json",
+    "deploy/freekill-native/qa/tqs_qa/init.lua",
+    "runtime/packages/freekill-core/ltk/server/room.lua",
+    "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua"
+  ]
+}

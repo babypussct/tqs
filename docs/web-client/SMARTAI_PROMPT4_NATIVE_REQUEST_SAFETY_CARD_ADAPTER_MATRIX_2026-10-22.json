@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_card_chosen_adapter_matrix",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "After preserving explicit skill metadata for AskForCardChosen, do multiple mixed native full matches remain free of invalid replies and malformed chooser-prompt classification?",
+  "scenarioFamily": "general-pair-match-mixed-a/b/c/d",
+  "seeds": [1780421000, 1780421001, 1780421002, 1780421003],
+  "seatSwaps": ["a", "b", "c", "d"],
+  "candidateIds": ["cp40", "cp41", "cp42", "cp43"],
+  "sourceChanges": [
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/room.lua",
+      "layer": "common request adapter",
+      "purpose": "Keep skill_name as explicit AskForCardChosen metadata beside the display prompt.",
+      "sha256": "f71e71a7fd12a35f609942657d221a71b4e80cef9d6fa001a022f006e223036c"
+    },
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+      "layer": "common SmartAI dispatcher",
+      "purpose": "Prefer explicit skill metadata and retain the legacy prompt parser fallback.",
+      "sha256": "9185a68ba0e35caf9b60388f9291886f4d48a50d2327b70749e496a700b907e3"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/ltk/server/ai/smart_ai.lua",
+      "layer": "QA overlay copy",
+      "purpose": "Keep the isolated QA dispatcher aligned with the public SmartAI adapter.",
+      "sha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e"
+    }
+  ],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "packageSha256": "e722bafad7aadc91ba904bbba50bdb5d701d58696a01e45d2c93d8ad645c3d05",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "01dc027eaa8c8171fc5e4c1e8afc6f50",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "qaPackageOutsidePublicPackages": true,
+    "productionTouched": false
+  },
+  "execution": {
+    "successfulRunnerRuns": 4,
+    "runnerExitZero": 4,
+    "gameOver": 4,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "qaProcessAndPortCleanAfterMatrix": true,
+    "publicFlistIdentityMatchedBeforeAndAfterRuns": true
+  },
+  "aggregateRequestMetrics": {
+    "total": 621,
+    "accepted": 295,
+    "fallback": 326,
+    "invalid": 0,
+    "noDecision": 314,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 216,
+      "no_strategy": 98,
+      "unsupported_command": 12
+    },
+    "invalidDetails": {},
+    "malformedPrompt": 0,
+    "aggregateStatus": "NO_INVALID_NATIVE_REPLIES_IN_FOUR_CLEAN_TRAJECTORIES"
+  },
+  "askForCardChosen": {
+    "total": 10,
+    "fallback": 10,
+    "invalid": 0,
+    "reasons": {
+      "no_strategy": 10
+    },
+    "malformedPrompt": 0,
+    "interpretation": "Chooser requests without a bounded strategy now use an explicit safe no_strategy fallback; no request was classified as malformed_prompt or invalid."
+  },
+  "perSkillReasonProvenance": {
+    "entries": 4,
+    "requestCount": 13,
+    "overflow": 0,
+    "observed": [
+      { "skill": "hs__longdan", "category": "PlayCard/no_decision/none", "count": 5 },
+      { "skill": "dimeng", "category": "PlayCard/no_decision/none", "count": 3 },
+      { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 5 }
+    ],
+    "coverage": "partial_allowlisted_provenance; not a full 18-skill denominator"
+  },
+  "perRun": [
+    {
+      "seatSwap": "a",
+      "scenario": "general-pair-match-mixed-a",
+      "seed": 1780421000,
+      "candidateId": "cp40",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 225, "accepted": 97, "fallback": 128, "invalid": 0, "noDecision": 120 },
+      "reasonCounts": { "no_decision": 99, "no_strategy": 21, "unsupported_command": 8 },
+      "askForCardChosen": { "total": 2, "fallback": 2, "invalid": 0, "reasons": { "no_strategy": 2 } },
+      "provenance": [
+        { "skill": "hs__longdan", "category": "PlayCard/no_decision/none", "count": 5 }
+      ]
+    },
+    {
+      "seatSwap": "b",
+      "scenario": "general-pair-match-mixed-b",
+      "seed": 1780421001,
+      "candidateId": "cp41",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 119, "accepted": 62, "fallback": 57, "invalid": 0, "noDecision": 53 },
+      "reasonCounts": { "no_decision": 27, "no_strategy": 26, "unsupported_command": 4 },
+      "askForCardChosen": { "total": 3, "fallback": 3, "invalid": 0, "reasons": { "no_strategy": 3 } },
+      "provenance": []
+    },
+    {
+      "seatSwap": "c",
+      "scenario": "general-pair-match-mixed-c",
+      "seed": 1780421002,
+      "candidateId": "cp42",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 168, "accepted": 80, "fallback": 88, "invalid": 0, "noDecision": 88 },
+      "reasonCounts": { "no_decision": 64, "no_strategy": 24 },
+      "askForCardChosen": { "total": 2, "fallback": 2, "invalid": 0, "reasons": { "no_strategy": 2 } },
+      "provenance": [
+        { "skill": "dimeng", "category": "PlayCard/no_decision/none", "count": 3 },
+        { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 3 }
+      ]
+    },
+    {
+      "seatSwap": "d",
+      "scenario": "general-pair-match-mixed-d",
+      "seed": 1780421003,
+      "candidateId": "cp43",
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "aggregate": { "total": 109, "accepted": 56, "fallback": 53, "invalid": 0, "noDecision": 53 },
+      "reasonCounts": { "no_decision": 26, "no_strategy": 27 },
+      "askForCardChosen": { "total": 3, "fallback": 3, "invalid": 0, "reasons": { "no_strategy": 3 } },
+      "provenance": [
+        { "skill": "hs__wusheng", "category": "PlayCard/no_decision/none", "count": 2 }
+      ]
+    }
+  ],
+  "verification": {
+    "runnerEvidence": "All four corrected wrappers reported RUNNER_EXIT=0; each log emitted client/bot audit and GameOver/result PASS lines.",
+    "identityEvidence": "All four runner logs reported the same public runtime MD5 01dc027eaa8c8171fc5e4c1e8afc6f50 and the same QA package identity.",
+    "requestSafetyEvidence": "All four sanitized AI_MATCH_METRICS records had invalid=0 and all AskForCardChosen command records had malformed_prompt=0.",
+    "cleanupEvidence": "After the matrix, native and gateway processes were stopped, QA symlinks were removed from the temp runtime, and ports 19647/9000 had no listeners."
+  },
+  "excludedAttempts": [
+    {
+      "kind": "identity_staging",
+      "reason": "An earlier temp run used a pending symlink that still resolved to qa_packages, so its runtime MD5 included the QA tree; it is excluded from this matrix."
+    },
+    {
+      "kind": "preflight",
+      "reason": "Two shell preflight attempts omitted a scenario or used a missing temp log path; they opened no native gameplay and contribute no metrics."
+    }
+  ],
+  "limitations": [
+    "These are four candidate trajectories, not a matched baseline/candidate experiment and not a full 18-skill opportunity denominator.",
+    "Fallback/no_decision remains substantial; zero invalid replies and zero malformed chooser prompts are bounded request-safety evidence, not tactical-quality, downstream-effect or win-rate proof.",
+    "Per-skill provenance covers only 13 allowlisted requests across three observed skills; missing attribution is not assigned to any skill.",
+    "No reconnect/device, release/rollback, canary or production evidence is included. REQUEST_SAFETY_OPEN remains open and production remains NO-GO.",
+    "No raw logs, credentials, prompts, card/target IDs, private hands/generals or exception payloads are stored in this artifact."
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_discard_replay",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence",
+  "question": "Does the request-safety fix belong to a skill strategy or to the common AI dispatcher?",
+  "sourceChanges": [
+    {
+      "path": "runtime/packages/freekill-core/standard/aux_skills_dir/discard_skill.lua",
+      "layer": "skill-specific AI strategy",
+      "purpose": "Replay selected cards through the live enabled-card and active-skill feasibility controls before serializing the discard reply; return no decision when the selection is stale or infeasible.",
+      "sha256": "fad8501bf15a8e80867d8a12a1f358aaf5587fc1c0628d142684841496d80b8b"
+    },
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+      "layer": "common SmartAI dispatcher",
+      "purpose": "Classify a nil strategy result as no_decision instead of invalid_strategy_reply for PlayCard and AskForUseCard; preserve invalid classification for non-nil wrong-type replies.",
+      "sha256": "e38a69445a2d334259508eb74b2211be6fe743755db3a0f29eddabcad2ed8ddd"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-response.test.ts",
+      "layer": "regression test",
+      "purpose": "Exercise discard feasibility replay and nil PlayCard classification through the Lua-backed test harness.",
+      "sha256": "43e3c68f19beea9e1ef3e511b9957ae5792ca4a52a8f145136ee9cce0cdc0df7"
+    }
+  ],
+  "qaPackage": {
+    "sourceRevision": "1f5e5fe9fd86c300d2aeb2f4af4b3974e2af4b82",
+    "packageSha256": "c936abe85bb0e878ad81564da0083791b4daf67d907adf6bbb4da3a206062667",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "candidateRuntimeMd5": "08d476c215de11aef99ed4b568014006",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "fixedScenarioComparison": {
+    "scenario": "general-pair-match-a",
+    "seed": 1780420132,
+    "prePatch": {
+      "gameOver": true,
+      "browserErrors": 0,
+      "total": 21,
+      "fallback": 7,
+      "invalid": 3,
+      "noDecision": 4,
+      "accepted": 14,
+      "discardSkill": {
+        "requests": 6,
+        "accepted": 3,
+        "fallback": 3,
+        "invalid": 3,
+        "noDecision": 0
+      },
+      "askForUseActiveSkill": {
+        "total": 6,
+        "fallback": 3,
+        "invalid": 3,
+        "invalidDetail": "feasibility_rejected"
+      }
+    },
+    "postDiscardReplay": {
+      "gameOver": true,
+      "browserErrors": 0,
+      "total": 23,
+      "fallback": 8,
+      "invalid": 0,
+      "noDecision": 8,
+      "accepted": 15,
+      "discardSkill": {
+        "requests": 6,
+        "accepted": 3,
+        "fallback": 3,
+        "invalid": 0,
+        "noDecision": 3
+      },
+      "askForUseActiveSkill": {
+        "total": 6,
+        "fallback": 3,
+        "invalid": 0,
+        "reasons": {
+          "no_decision": 3
+        }
+      }
+    }
+  },
+  "mixedScenarioPostNilClassification": {
+    "scenario": "general-pair-match-mixed-a",
+    "seed": 1780421000,
+    "runnerExit": 0,
+    "gameOver": true,
+    "browserErrors": 0,
+    "publicBotSkillLogCount": 0,
+    "total": 111,
+    "fallback": 61,
+    "invalid": 0,
+    "noDecision": 58,
+    "accepted": 50,
+    "reasons": {
+      "no_decision": 37,
+      "no_strategy": 21,
+      "unsupported_command": 3
+    },
+    "discardSkill": {
+      "requests": 10,
+      "accepted": 4,
+      "fallback": 6,
+      "invalid": 0,
+      "noDecision": 6
+    },
+    "commands": {
+      "AskForUseActiveSkill": {
+        "total": 16,
+        "fallback": 11,
+        "invalid": 0,
+        "noDecision": 11
+      },
+      "PlayCard": {
+        "total": 39,
+        "fallback": 12,
+        "invalid": 0,
+        "noDecision": 12
+      }
+    }
+  },
+  "verification": {
+    "smartAiTests": "11/11 PASS",
+    "qaServerContract": "48/48 PASS",
+    "nativeSkillTraceParser": "6/6 PASS",
+    "typecheckAll": "PASS",
+    "lua54Syntax": "PASS",
+    "gitDiffCheck": "PASS",
+    "qaProcessAndPortClean": true
+  },
+  "limitations": [
+    "The fixed pre/post comparison is a bounded native trajectory, not a population estimate or a full Prompt 4 request-safety gate.",
+    "discard_skill.lua is a skill-specific strategy fix; smart_ai.lua is a reusable dispatcher classification fix. They address different failure layers and should remain separate when porting upstream changes.",
+    "The nil classification change makes nil safe no_decision, but it does not make non-nil malformed replies legal; those still remain invalid and require their own strategy or handler fix.",
+    "The QA runtime was isolated and allowed an unpinned local runtime identity for this probe; no production runtime, deployment, release, or upstream pin was changed.",
+    "No raw logs, credentials, card IDs, target IDs, private hands, private generals, or exception payloads are stored in this artifact."
+  ]
+}

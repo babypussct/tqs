@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_current_mixed_matrix",
+  "capturedAt": "2026-10-22T08:00:51+07:00",
+  "scope": "isolated local macOS native QA; metadata-only evidence; four current mixed trajectories; no production change",
+  "question": "Does the current AI/request adapter and SmartAI dispatcher complete four seat-swapped mixed native matches without invalid AI replies on one stable package identity?",
+  "identity": {
+    "runtimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "qaSourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+    "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+    "qaCatalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runs": [
+    {
+      "candidateId": "cp98",
+      "scenario": "general-pair-match-mixed-a",
+      "seed": 1780421000,
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "publicBotSkillLogCount": 0,
+      "total": 143,
+      "accepted": 76,
+      "fallback": 67,
+      "invalid": 0,
+      "noDecision": 67,
+      "reasons": { "no_decision": 39, "no_strategy": 28 },
+      "evidence": "scratch/evidence/cp98-general-pair-match-mixed-a-multiplayer-live-1792630188062.json"
+    },
+    {
+      "candidateId": "cp98",
+      "scenario": "general-pair-match-mixed-b",
+      "seed": 1780421001,
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "publicBotSkillLogCount": 0,
+      "total": 170,
+      "accepted": 86,
+      "fallback": 84,
+      "invalid": 0,
+      "noDecision": 84,
+      "reasons": { "no_decision": 52, "no_strategy": 32 },
+      "evidence": "scratch/evidence/cp98-general-pair-match-mixed-b-multiplayer-live-1792630479898.json"
+    },
+    {
+      "candidateId": "cp98",
+      "scenario": "general-pair-match-mixed-c",
+      "seed": 1780421002,
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "publicBotSkillLogCount": 0,
+      "total": 204,
+      "accepted": 90,
+      "fallback": 114,
+      "invalid": 0,
+      "noDecision": 114,
+      "reasons": { "no_decision": 78, "no_strategy": 36 },
+      "evidence": "scratch/evidence/cp98-general-pair-match-mixed-c-multiplayer-live-1792630681967.json"
+    },
+    {
+      "candidateId": "cp98",
+      "scenario": "general-pair-match-mixed-d",
+      "seed": 1780421003,
+      "runnerExit": 0,
+      "gameOver": true,
+      "browserErrors": 0,
+      "publicBotSkillLogCount": 0,
+      "total": 138,
+      "accepted": 75,
+      "fallback": 63,
+      "invalid": 0,
+      "noDecision": 63,
+      "reasons": { "no_decision": 34, "no_strategy": 29 },
+      "evidence": "scratch/evidence/cp98-general-pair-match-mixed-d-multiplayer-live-1792630839522.json"
+    }
+  ],
+  "aggregateRequestMetrics": {
+    "total": 655,
+    "accepted": 327,
+    "fallback": 328,
+    "invalid": 0,
+    "noDecision": 328,
+    "fallbackIncludesNoDecision": true,
+    "reasonCounts": {
+      "no_decision": 203,
+      "no_strategy": 125
+    },
+    "invalidDetails": {},
+    "status": "NO_INVALID_NATIVE_REPLIES_IN_FOUR_CURRENT_TRAJECTORIES"
+  },
+  "aggregatePerCommand": [
+    { "command": "AskForCardChosen", "total": 19, "fallback": 19, "invalid": 0, "noDecision": 19, "reasons": { "no_strategy": 19 } },
+    { "command": "AskForCardsAndChoice", "total": 3, "fallback": 0, "invalid": 0, "noDecision": 0, "reasons": {} },
+    { "command": "AskForChoices", "total": 57, "fallback": 0, "invalid": 0, "noDecision": 0, "reasons": {} },
+    { "command": "AskForResponseCard", "total": 13, "fallback": 4, "invalid": 0, "noDecision": 4, "reasons": { "no_decision": 4 } },
+    { "command": "AskForSkillInvoke", "total": 69, "fallback": 54, "invalid": 0, "noDecision": 54, "reasons": { "no_strategy": 54 } },
+    { "command": "AskForUseActiveSkill", "total": 101, "fallback": 63, "invalid": 0, "noDecision": 63, "reasons": { "no_decision": 59, "no_strategy": 4 } },
+    { "command": "AskForUseCard", "total": 139, "fallback": 102, "invalid": 0, "noDecision": 102, "reasons": { "no_decision": 54, "no_strategy": 48 } },
+    { "command": "PlayCard", "total": 254, "fallback": 86, "invalid": 0, "noDecision": 86, "reasons": { "no_decision": 86 } }
+  ],
+  "verification": {
+    "runCount": 4,
+    "allRunnerExit0": true,
+    "allGameOver": true,
+    "allBrowserErrors0": true,
+    "allPublicBotSkillLogs0": true,
+    "allPackageIdentitiesMatch": true,
+    "aggregateReconciles": true,
+    "allCommandInvalidCounts0": true,
+    "evidenceSanitizer": "PASS for all four runner evidence files",
+    "qaCleanup": "PASS; ports 9527/9000 closed, native/Lua/browser/gateway stopped, QA symlink removed"
+  },
+  "evidenceSources": [
+    "scratch/evidence/cp98-general-pair-match-mixed-a-multiplayer-live-1792630188062.json",
+    "scratch/evidence/cp98-general-pair-match-mixed-b-multiplayer-live-1792630479898.json",
+    "scratch/evidence/cp98-general-pair-match-mixed-c-multiplayer-live-1792630681967.json",
+    "scratch/evidence/cp98-general-pair-match-mixed-d-multiplayer-live-1792630839522.json",
+    "docs/web-client/SMARTAI_PROMPT4_NATIVE_REQUEST_SAFETY_CP98_2026-10-22.json"
+  ],
+  "limitations": [
+    "This is a four-trajectory mixed full-match matrix, not a complete denominator for all legal Prompt 4 opportunities or all roster/seed states.",
+    "Fallback/no_decision remains high; zero invalid replies in these trajectories does not prove zero invalid replies in the wider game.",
+    "Per-command reason provenance is aggregated from sanitized server metrics; per-skill provenance remains partial and is not a matched baseline/candidate causal comparison.",
+    "The matrix does not measure tactical quality, resource value, downstream effect, win rate, reconnect, physical-device readiness, release/rollback or canary stability.",
+    "Manual QA symlink switching was required by the macOS host; public runtime identity was checked before QA was enabled.",
+    "No raw logs, credentials, card/target identifiers, private hands/generals, prompts or exception payloads are stored in this artifact."
+  ],
+  "gate": {
+    "p0FourTrajectoryInvalidReplies": "PASS",
+    "p0AggregateRequestSafety": "OPEN",
+    "requestSafetyStatus": "REQUEST_SAFETY_OPEN",
+    "production": "NO-GO"
+  }
+}

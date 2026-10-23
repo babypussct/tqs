@@ -1,5 +1,7 @@
 # TQS Mobile — Kế hoạch thực thi từ mã nguồn hiện tại đến chơi Quốc Chiến trên điện thoại
 
+> **Định hướng có hiệu lực 19/10/2026 theo người dùng:** TQSVN chỉ có mục tiêu bắt buộc là Quốc Chiến từ [Hegemony](https://gitee.com/qsgs-fans/hegemony), mode `new_heg_mode`, vận hành được từ đầu đến cuối trên web/điện thoại. Core/dependency/auth/gateway/hạ tầng chỉ phục vụ mục tiêu đó; giữ pin đang tương thích và chỉ nâng phần có bằng chứng cần cho Quốc Chiến. Mode khác, nội dung ngoài Quốc Chiến, chat/replay/VFX nâng cao và parity toàn bộ FreeKill không thuộc điều kiện nghiệm thu bắt buộc. Các roadmap mở rộng/lịch sử phía dưới không được đưa lên đường găng nếu không liên quan Quốc Chiến. Quyết định này không tự xác nhận hệ thống đã chạy được hoặc cho phép phát hành.
+
 > **Ngày lập:** 09/10/2026 · **Trạng thái:** kế hoạch đã thống nhất về kiến trúc, **chưa phải báo cáo hệ thống chạy được**.
 >
 > **Tài liệu kiến trúc gốc:** [WEB_CLIENT_PLAN.md](./WEB_CLIENT_PLAN.md).

@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_malformed_probe",
+  "capturedAt": "2026-10-22",
+  "status": "PASS_BOUNDED_NATIVE_MALFORMED_PROBE",
+  "scope": {
+    "mode": "new_heg_mode",
+    "scenario": "ai-trace",
+    "seed": 1780420130,
+    "qaOnly": true,
+    "newCoreAiChanges": false,
+    "hostedProductionTouched": false,
+    "releaseStatus": "NO_GO"
+  },
+  "nativeRun": {
+    "timeLocal": "2026-10-22T09:12:13+07:00",
+    "browserRunnerExitCode": 0,
+    "twoDistinctAccountsAuthenticated": true,
+    "nativeGameOver": true,
+    "browserTraceSaved": true,
+    "browserEvidencePath": "scratch/evidence/cp01-ai-trace-multiplayer-live-1792635147413.json",
+    "nativeLogLocalOnly": "/private/tmp/tqs-p0-malformed.SM8JJf/runtime/freekill.log",
+    "prompt4Trace": {
+      "decisions": 18,
+      "opportunities": 18,
+      "accepted": 18,
+      "acted": 18,
+      "fallback": 0,
+      "invalid": 0,
+      "errors": 0
+    },
+    "semanticNativeReplay": {
+      "decisions": 5,
+      "fallback": 1,
+      "probeErrors": 0,
+      "fixture": "semantic_v3",
+      "fixedHandsVerified": true,
+      "pairVerified": true
+    }
+  },
+  "malformedIsolatedRoom": {
+    "implementation": "real SmartAI:new(player):makeReply -> Base.AI shape validator/feasibility dispatch; detached-room handler has QA-controlled feasible() result",
+    "counts": {
+      "schema": 1,
+      "seed": 1780420130,
+      "cases": 11,
+      "accepted": 1,
+      "fallback": 10,
+      "invalid": 7,
+      "no_decision": 2,
+      "unsupported": 1,
+      "invalid_reply": 5,
+      "illegal_reply": 2,
+      "no_strategy": 1,
+      "no_decision_reason": 1,
+      "unsupported_command": 1,
+      "feasibility_rejected": 1,
+      "special_skill_missing": 1
+    },
+    "cases": {
+      "validControl": 1,
+      "nonNilInvalidReply": 5,
+      "nonNilIllegalReply": 2,
+      "noStrategy": 1,
+      "noDecision": 1,
+      "unsupportedCommand": 1
+    },
+    "nonNilNegativeExamples": [
+      "card_type",
+      "subcards_type",
+      "targets_type",
+      "target_missing",
+      "target_non_integer",
+      "feasibility_rejected",
+      "special_skill_missing"
+    ],
+    "expectedInvalidOnlyInDetachedProbe": 7,
+    "mixedWithLiveGameMetrics": false
+  },
+  "actualGameplay": {
+    "metrics": {
+      "total": 25,
+      "accepted": 24,
+      "fallback": 1,
+      "invalid": 0,
+      "no_decision": 1
+    },
+    "perCommand": {
+      "AskForResponseCard": {
+        "total": 1,
+        "fallback": 0,
+        "invalid": 0
+      },
+      "AskForUseActiveSkill": {
+        "total": 17,
+        "fallback": 0,
+        "invalid": 0
+      },
+      "AskForUseCard": {
+        "total": 1,
+        "fallback": 0,
+        "invalid": 0
+      },
+      "CustomDialog": {
+        "total": 2,
+        "fallback": 0,
+        "invalid": 0
+      },
+      "PlayCard": {
+        "total": 4,
+        "fallback": 1,
+        "invalid": 0
+      }
+    },
+    "reasonCategories": {
+      "no_decision": 1,
+      "no_strategy": 0,
+      "unsupported_command": 0,
+      "invalid": 0
+    },
+    "allMainCommandInvalidZero": true
+  },
+  "replayBaseline": {
+    "evidencePath": "docs/web-client/SMARTAI_PROMPT4_NATIVE_REQUEST_SAFETY_CARD_ADAPTER_MATCHED_AB_2026-10-22.json",
+    "seeds": [
+      1780420130,
+      1780420131,
+      1780420132
+    ],
+    "pairedRequestStates": 54,
+    "requestStateMismatches": 0,
+    "candidateInvalid": 0,
+    "baselineInvalid": 0,
+    "replayEquivalenceLimit": "semantic request fingerprint only; full engine-state causal equivalence not established"
+  },
+  "p1DownstreamBaseline": {
+    "evidencePath": "docs/web-client/SMARTAI_PROMPT4_NATIVE_DOWNSTREAM_EFFECT_REPLAY_MATRIX_2026-10-22.json",
+    "cleanSkillProofs": 18,
+    "allSkillsCount": 18,
+    "identityOriginal": {
+      "publicRuntimeMd5": "bdac5407da6539b59b17907f0e432d14",
+      "qaPackageSha256": "5c28e9790552e465d4d3becc489ee0be9373f0428140ff9f31d9a9a77309c02c",
+      "qaManifestSha256": "23ee5d8103a5a307527fa59959e1e63cf2dd7b60d0de7b99fffefa8b04f2449c",
+      "qaSourceRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+      "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+      "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba"
+    },
+    "preservedWithoutCoreAiModification": true
+  },
+  "currentProbeIdentity": {
+    "qaSourceRevision": "7e00e6946d20266c6a969547ed96baa995dbe587",
+    "qaPackageSha256": "edaf401abff9290b8743dafabe235c6240b4f2877a37bebf8582c1655db6672a",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3",
+    "runtimeFlistMd5": "9b3d6078ffcf692bb6a445d960e30a1f",
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "runtimeMd5MatchesP1": false,
+    "runtimeFlistDifferenceCause": "3 stale QA symlink entries in isolated cloned flist; these symlinks were removed after execution",
+    "runtimeAndPackageDoNotReplaceP1Identity": true
+  },
+  "p2Partial": {
+    "targetEvidence": "docs/web-client/SMARTAI_PROMPT4_NATIVE_TARGET_QUALITY_MATRIX_2026-10-22.json",
+    "resourceEvidence": "docs/web-client/SMARTAI_PROMPT4_NATIVE_RESOURCE_VALUE_MATRIX_2026-10-22.json",
+    "boundedPairedDecisions": 54,
+    "expectedCoarseRoleClass": 54,
+    "targetProfileCounts": {
+      "enemy": 24,
+      "none": 18,
+      "mixed": 6,
+      "ally": 6
+    },
+    "boundedResourceClass": {
+      "low": 36,
+      "none": 18,
+      "unknown": 0
+    },
+    "resourceLegality": "accepted native feasibility + isolated bounded unit tests; not a census of all legal cards",
+    "privacyNegativeFixture": {
+      "test": "game/web/scripts/smart-ai-response.test.ts:820",
+      "assertions": [
+        "changing unrevealed opponent hand/general leaves tactical relation and fixed seeded decision unchanged",
+        "opponent hidden marks and hand card IDs are guarded against access",
+        "unrevealed opponent stays unknown until public reveal"
+      ],
+      "observedTest": "test:smart-ai PASS (11/11)"
+    },
+    "limits": "coarse role and resource classes; no optimality, hidden-state noninterference across all native skill paths, or win-rate guarantee"
+  },
+  "verification": {
+    "qaContract": "48/48 PASS",
+    "smartAi": "11/11 PASS",
+    "prompt4": "5/5 PASS",
+    "nativeReplay": "7/7 PASS",
+    "nativeSkillTrace": "7/7 PASS",
+    "typecheckAll": "PASS",
+    "lua54Syntax": "PASS",
+    "gitDiffCheck": "PASS",
+    "qaPorts9527And9000Closed": true,
+    "isolatedQaSymlinksRemoved": true
+  },
+  "gates": {
+    "p0NativeMalformedReplyProbe": "PASS_BOUNDED",
+    "p0MainCommandInvalidObserved": "PASS_BOUNDED",
+    "p0AggregateRequestSafety": "OPEN",
+    "p0FullStateMatchedCausality": "OPEN",
+    "p1DownstreamEffect": "PASS_BOUNDED_18_OF_18",
+    "p2Tactical": "PARTIAL",
+    "production": "NO_GO"
+  },
+  "limitations": [
+    "7 expected invalid cases are in a detached negative-test probe and are excluded from live match metrics.",
+    "Malformed/non-nil probe currently exercises AskForUseActiveSkill shape and feasibility; cross-command malformed exhaustive coverage remains open.",
+    "P1 provenance refers to an earlier clean QA package/runtime MD5; the current isolated probe package/flist differs.",
+    "Run uses fixed QA roster and seed, with no population, reconnect/device or production proof.",
+    "The malformed probe injects an isolated QA feasibility handler to force accept/reject and classify errors; it does not prove every production native handler feasibility rule."
+  ]
+}

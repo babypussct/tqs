@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 1,
+  "status": "FAIL_OPEN",
+  "recordedAt": "2026-10-22T19:31:05+07:00",
+  "scope": {
+    "project": "TQSVN/game",
+    "scenario": "ai-trace",
+    "seed": 1780420130,
+    "nativeQAOnly": true,
+    "productionChanged": false,
+    "physicalDeviceVerified": false
+  },
+  "runtimeIdentity": {
+    "qaTempRevision": "61b5bf55a9c71062457ddb877e10fa7c4a40008f",
+    "qaPackageSha256": "53d18759232f50c27114e6ea1c85f36873f316e67e0de377a36d5c5ff48ca73a",
+    "runtimeMd5": "f296114df3385358f1cd09ae70f4a3a7",
+    "coreSmartAiSha256": "afd8dcc515da730d3ab247197d0919447806e0099e110b4a0e9e3bd1612ca3c0",
+    "baselineP1CoreSmartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "baselineP1RuntimeMd5": "bdac5407da6539b59b17907f0e432d14",
+    "identityMatchedToBaseline": false
+  },
+  "p0RealHandler": {
+    "coverageGate": "OPEN",
+    "expectedCases": 17,
+    "observedPassingCases": 0,
+    "failedCases": 1,
+    "untestedCases": 16,
+    "sameStateAfterRejectedReply": "UNVERIFIED",
+    "snapshotCases": [
+      {
+        "snapshot": "tianyi",
+        "command": "AskForUseActiveSkill",
+        "error": "malformed_non_nil",
+        "expectedReason": "invalid_reply",
+        "execution": "FAILED_CLASSIFICATION",
+        "observedReply": "cancel",
+        "observedReason": "none",
+        "observedDetail": "none",
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "tianyi",
+        "command": "AskForUseActiveSkill",
+        "error": "infeasible_non_nil",
+        "expectedReason": "illegal_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "tianyi",
+        "command": "AskForUseActiveSkill",
+        "error": "no_strategy",
+        "expectedReason": "no_strategy",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "tianyi",
+        "command": "AskForUseActiveSkill",
+        "error": "no_decision",
+        "expectedReason": "no_decision",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "kanpo",
+        "command": "AskForUseCard",
+        "error": "malformed_non_nil",
+        "expectedReason": "invalid_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "kanpo",
+        "command": "AskForUseCard",
+        "error": "infeasible_non_nil",
+        "expectedReason": "illegal_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "kanpo",
+        "command": "AskForUseCard",
+        "error": "no_strategy",
+        "expectedReason": "no_strategy",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "kanpo",
+        "command": "AskForUseCard",
+        "error": "no_decision",
+        "expectedReason": "no_decision",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "aocai",
+        "command": "AskForResponseCard",
+        "error": "malformed_non_nil",
+        "expectedReason": "invalid_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "aocai",
+        "command": "AskForResponseCard",
+        "error": "infeasible_non_nil",
+        "expectedReason": "illegal_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "aocai",
+        "command": "AskForResponseCard",
+        "error": "no_strategy",
+        "expectedReason": "no_strategy",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "aocai",
+        "command": "AskForResponseCard",
+        "error": "no_decision",
+        "expectedReason": "no_decision",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "play_card",
+        "command": "PlayCard",
+        "error": "malformed_non_nil",
+        "expectedReason": "invalid_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "play_card",
+        "command": "PlayCard",
+        "error": "infeasible_non_nil",
+        "expectedReason": "illegal_reply",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "play_card",
+        "command": "PlayCard",
+        "error": "no_strategy",
+        "expectedReason": "no_strategy",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "play_card",
+        "command": "PlayCard",
+        "error": "no_decision",
+        "expectedReason": "no_decision",
+        "execution": "NOT_EXECUTED",
+        "observedReply": null,
+        "observedReason": null,
+        "observedDetail": null,
+        "stateUnchanged": null
+      },
+      {
+        "snapshot": "unsupported",
+        "command": "TqsQaUnsupported",
+        "error": "unsupported",
+        "expectedReason": "unsupported_command",
+        "execution": "NOT_EXECUTED",
+        "stateUnchanged": null
+      }
+    ]
+  },
+  "p0Synthetic44": {
+    "status": "BLOCKED_ON_DIFFERENT_RUNTIME",
+    "lastObservedFailure": "AskForUseActiveSkill/valid",
+    "reason": "current QA runtime does not satisfy previously passing dispatcher contract"
+  },
+  "p2TacticalLegality": {
+    "status": "OPEN",
+    "decisions": 18,
+    "accepted": 1,
+    "acted": 1,
+    "fallback": 17,
+    "nativeFeasibilityVerified": 1,
+    "nativeFeasibilityExpected": 18,
+    "perSkill": [
+      {
+        "skill": "tianyi",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "shangyi",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "tiaoxin",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 2
+      },
+      {
+        "skill": "hs__zhiheng",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 8,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "hs__kurou",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 8,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "hs__qiangxi",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 1,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "hs__longdan",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 1,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "hs__luanji",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 8,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "hs__wusheng",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 5,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "huoji",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 5,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "jijiu",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 5,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "kanpo",
+        "command": "AskForUseCard",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 3,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "aocai",
+        "command": "AskForResponseCard",
+        "accepted": 1,
+        "acted": 1,
+        "reason": "accepted",
+        "detail": "none",
+        "offeredCardCount": 2,
+        "offeredTargetCount": 0
+      },
+      {
+        "skill": "beizhu",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "dimeng",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "choufa",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 0,
+        "offeredTargetCount": 3
+      },
+      {
+        "skill": "cunsi",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 8,
+        "offeredTargetCount": 4
+      },
+      {
+        "skill": "duanfa",
+        "command": "AskForUseActiveSkill",
+        "accepted": 0,
+        "acted": 0,
+        "reason": "fallback",
+        "detail": "none",
+        "offeredCardCount": 3,
+        "offeredTargetCount": 0
+      }
+    ]
+  },
+  "p2PrivacyDifferential": {
+    "status": "NOT_EXECUTED",
+    "reason": "strict 18/18 legality gate failed before differential"
+  },
+  "p1DownstreamEffects": {
+    "historicalBoundedPass": "18/18",
+    "rerunUnderCurrentRuntime": false
+  },
+  "e2e": {
+    "authLobbyRoomStartAndGeneralPair": true,
+    "twoBrowserGameOver": false,
+    "runnerExitCode": 1,
+    "nativeQaGateSeen": false
+  },
+  "p3Reconnect": {
+    "status": "NOT_EXECUTED",
+    "reason": "P0/P2 gates remain open"
+  },
+  "release": {
+    "status": "NO_GO",
+    "productionMutated": false
+  },
+  "evidencePolicy": "metadata only; no private cards, targets, hands, generals, raw prompts, secrets, or raw exceptions"
+}

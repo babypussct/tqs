@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_resource_value_matrix",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only evidence; no production change",
+  "question": "Can the matched eighteen-skill native snapshot expose a bounded AI resource-value class without retaining card identities or private state?",
+  "scenario": "ai-trace",
+  "seeds": [1780420130, 1780420131, 1780420132],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "manifestRevisionNote": "The isolated QA manifest retains the expected 40-hex revision for the runner; packageSha256 identifies the actual staged tree, which includes the captured working-tree QA init.lua change.",
+    "packageSha256": "e6b2b528e8f092517d9feb1eebda98373b94b81509aea193ca47a862bba38e0a",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "candidateRuntimeMd5": "f119c616549a21ab38a552b2b10df721",
+    "baselineRuntimeMd5": "f119c616549a21ab38a552b2b10df721",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "branchConfig": {
+    "candidate": { "tqsPrompt4Baseline": false },
+    "baseline": { "tqsPrompt4Baseline": true }
+  },
+  "execution": {
+    "candidateRunnerRuns": 3,
+    "baselineRunnerRuns": 3,
+    "candidateRunnerExitZero": 3,
+    "baselineRunnerExitZero": 3,
+    "candidateGameOver": 3,
+    "baselineGameOver": 3,
+    "candidateBrowserTracesSaved": 3,
+    "baselineBrowserTracesSaved": 3,
+    "qaProcessAndPortCleanAfterRun": true
+  },
+  "matchedPrompt4Trace": {
+    "status": "MATCHED_NATIVE_SKILLS",
+    "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+    "matchedRequests": 54,
+    "baselineDecisions": 54,
+    "candidateDecisions": 54,
+    "baselineOpportunities": 54,
+    "candidateOpportunities": 54,
+    "baselineAccepted": 3,
+    "candidateAccepted": 54,
+    "baselineActed": 3,
+    "candidateActed": 54,
+    "baselineFallback": 51,
+    "candidateFallback": 0,
+    "baselineInvalid": 0,
+    "candidateInvalid": 0,
+    "baselineErrors": 0,
+    "candidateErrors": 0,
+    "requestStateMismatches": 0,
+    "changedOpportunities": 0,
+    "changedAccepted": 51,
+    "changedActed": 51,
+    "changedOutputShapes": 51,
+    "changedFallbackReasons": 51,
+    "changedTargetProfiles": 36,
+    "changedCardProfiles": 51,
+    "changedResourceShapes": 33,
+    "changedResourceValues": 33,
+    "changedSelectedCardCounts": 33,
+    "changedSelectedTargetCounts": 36,
+    "changedTargetQualities": 51,
+    "changedInvalid": 0,
+    "nativeTargetQualityAvailable": true,
+    "nativeReplySnapshotAvailable": true,
+    "nativeResourceValueAvailable": true,
+    "winRateAvailable": false
+  },
+  "resourceValue": {
+    "definition": "A coarse class derived from the real AI keep_value valuation for selected resource cards: none means no selected resource card, low is a summed value at or below 30, medium is above 30 and at or below 45, high is above 45, and unknown means the value could not be safely classified.",
+    "candidateAggregate": { "none": 18, "low": 36, "medium": 0, "high": 0, "unknown": 0 },
+    "baselineAggregate": { "none": 51, "low": 3, "medium": 0, "high": 0, "unknown": 0 },
+    "availableForBothBranches": true,
+    "changedAcrossMatchedRequests": 33,
+    "exactValuesStored": false
+  },
+  "perSeed": [
+    {
+      "seed": 1780420130,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "requestStateMismatches": 0,
+      "baselineAccepted": 1,
+      "candidateAccepted": 18,
+      "baselineActed": 1,
+      "candidateActed": 18,
+      "baselineInvalid": 0,
+      "candidateInvalid": 0,
+      "baselineResourceValues": { "none": 17, "low": 1 },
+      "candidateResourceValues": { "none": 6, "low": 12 },
+      "changedResourceValues": 11
+    },
+    {
+      "seed": 1780420131,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "requestStateMismatches": 0,
+      "baselineAccepted": 1,
+      "candidateAccepted": 18,
+      "baselineActed": 1,
+      "candidateActed": 18,
+      "baselineInvalid": 0,
+      "candidateInvalid": 0,
+      "baselineResourceValues": { "none": 17, "low": 1 },
+      "candidateResourceValues": { "none": 6, "low": 12 },
+      "changedResourceValues": 11
+    },
+    {
+      "seed": 1780420132,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "requestStateMismatches": 0,
+      "baselineAccepted": 1,
+      "candidateAccepted": 18,
+      "baselineActed": 1,
+      "candidateActed": 18,
+      "baselineInvalid": 0,
+      "candidateInvalid": 0,
+      "baselineResourceValues": { "none": 17, "low": 1 },
+      "candidateResourceValues": { "none": 6, "low": 12 },
+      "changedResourceValues": 11
+    }
+  ],
+  "sourceChanges": [
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/init.lua",
+      "layer": "QA-only native trace instrumentation",
+      "purpose": "Emit a sanitized coarse keep_value resource class from the real native player.ai:makeReply() result without retaining exact card values or identities.",
+      "sha256": "f88992f2544a8669308c488a0d50820fc0d193af12ea9ce198e39f6ee0992cf6"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-prompt4-native-skill-trace.ts",
+      "layer": "QA-only parser and paired analyzer",
+      "purpose": "Parse optional resource_value metadata, compare bounded bucket changes, and expose availability without retaining native IDs or private state.",
+      "sha256": "57756be970fa770d50aecfc8260f71601e5f7d8f8a0064215c8a4935a2572085"
+    },
+    {
+      "path": "game/web/scripts/smart-ai-prompt4-native-skill-trace.test.ts",
+      "layer": "QA parser regression",
+      "purpose": "Verify unknown legacy traces and known resource-value traces remain compatible and compare correctly.",
+      "sha256": "7ecadfb71a80a471ad2d7ca65640a5baf7951189de8c0ef10dbe7cf563e9962b"
+    }
+  ],
+  "verification": {
+    "officialPairedParser": "3/3 pairs parsed; all status MATCHED_NATIVE_SKILLS with zero request-state mismatch",
+    "candidateNativeRuns": "3/3 EXIT 0; fixed four-seat native trace reached GameOver",
+    "baselineNativeRuns": "3/3 EXIT 0; fixed four-seat native trace reached GameOver",
+    "resourceValueAvailability": "54/54 candidate and 54/54 baseline decisions classified without unknown",
+    "nativeTraceParserRegression": "7/7 PASS",
+    "smartAiRegression": "11/11 PASS",
+    "prompt4Regression": "5/5 PASS",
+    "qaServerContract": "48/48 PASS",
+    "typecheckAll": "PASS",
+    "lua54Syntax": "PASS",
+    "jsonAndSourceHashIntegrity": "PASS",
+    "gitDiffCheck": "PASS",
+    "qaProcessAndPortCleanup": "PASS after every run"
+  },
+  "limitations": [
+    "The baseline intentionally disables the selected Prompt 4 strategies; reply and resource-bucket deltas are expected behavior deltas, not causal proof of improved gameplay or win rate.",
+    "The resource_value field is a coarse AI keep_value class for selected resource cards. It is not an exact resource cost, tactical value, downstream-effect result, or win-rate metric.",
+    "none includes replies with no selected resource card and does not distinguish every skill-specific reason for not spending a card.",
+    "The pair gate proves bounded request-state equality using sanitized fingerprints and matching native handler metadata; it is not a full engine-state serialization or an exhaustive opportunity denominator.",
+    "Three seeds and one declared roster matrix are not a population sample; aggregate request safety outside the fixture, full-game/reconnect/device, release/rollback and canary gates remain open.",
+    "No raw logs, card/target IDs, private hands/generals, prompts, credentials, exact keep_value numbers or exception payloads are stored in this artifact."
+  ]
+}

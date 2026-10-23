@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_active_counter_provenance",
+  "scope": "read-only native match-metric line reconciliation; no native QA executed",
+  "nativeCommandSchema": [
+    "total",
+    "fallback",
+    "invalid",
+    "no_decision"
+  ],
+  "historicalArtifactStatus": "preserved_unmodified_with_mislabeled_command_fields",
+  "preFix": {
+    "originalArtifact": {
+      "total": 31,
+      "accepted": 23,
+      "fallback": 16,
+      "invalid": 7,
+      "noDecision": 7
+    },
+    "nativeCommand": {
+      "total": 31,
+      "acceptedDerived": 8,
+      "fallback": 23,
+      "invalid": 16,
+      "noDecision": 7
+    },
+    "sourceAggregateMatched": true,
+    "historicalLabelShiftVerified": true
+  },
+  "fixed": {
+    "originalArtifact": {
+      "total": 6,
+      "accepted": 1,
+      "fallback": 1,
+      "invalid": 0,
+      "noDecision": 0
+    },
+    "nativeCommand": {
+      "total": 6,
+      "acceptedDerived": 5,
+      "fallback": 1,
+      "invalid": 1,
+      "noDecision": 0
+    },
+    "sourceAggregateMatched": true,
+    "historicalLabelShiftVerified": true
+  },
+  "nativeMatchedRequestState": false,
+  "nativeSkillOpportunityDenominatorAvailable": false,
+  "nativeTargetResourceQualityAvailable": false,
+  "gate": "REQUEST_SAFETY_OPEN",
+  "limitations": [
+    "Accepted by command is derived as total minus fallback; there is no native command-level accepted field.",
+    "Reconciliation establishes historical field provenance, not a new game run or equivalent input state.",
+    "The pre-fix and fixed runs used different general pairs and gameplay trajectories; no causal delta is established."
+  ]
+}

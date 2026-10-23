@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 2,
+  "kind": "prompt4_native_generic_chooser_matched_request_replay",
+  "status": "INCONCLUSIVE",
+  "scenario": "chooser-trace",
+  "seed": 1780420132,
+  "comparedCases": 6,
+  "mismatchedCases": [
+    1,
+    3,
+    4,
+    6
+  ],
+  "bySkill": {
+    "choose_players_skill": {
+      "baseline": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      },
+      "candidate": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      }
+    },
+    "choose_cards_skill": {
+      "baseline": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      },
+      "candidate": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      }
+    },
+    "ex__choose_skill": {
+      "baseline": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      },
+      "candidate": {
+        "opportunities": 2,
+        "misses": 1,
+        "accepted": 2,
+        "acted": 1,
+        "fallback": 0,
+        "invalid": 0,
+        "acceptedNoAction": 1,
+        "voluntaryOptionalCancel": 1,
+        "optionalNoDecisionFallback": 0
+      }
+    }
+  },
+  "nativeFeasibilityValidatedForAccepted": true,
+  "nativeLegalOfferCountsAvailable": true,
+  "nativeStrategicTargetQualityAvailable": false,
+  "nativeResourceValueAvailable": false,
+  "observedMatchFrequencyAvailable": false,
+  "winRateAvailable": false,
+  "limitations": [
+    "FNV32 inputs and offer hashes are collision-prone bounded guards, not a complete native state snapshot.",
+    "Six synthetic requests share a fixed hand and roster; no observed match frequency or population inference.",
+    "Accepted replies passed native request feasibility; legality counts do not score tactical target or resource value.",
+    "Accepted optional empty choices are no-action opportunities; these are kept separate from fallback and invalid counts.",
+    "Optional no_decision/cancel fallbacks are reported separately; their intent cannot be inferred."
+  ]
+}

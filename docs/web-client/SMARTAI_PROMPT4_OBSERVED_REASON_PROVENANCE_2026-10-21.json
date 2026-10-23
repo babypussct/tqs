@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_observed_native_reason_provenance",
+  "source": "isolated original native QA log; metadata-only, no new native execution",
+  "sourceMatchWindow": {
+    "startLine": 501,
+    "endLine": 630,
+    "matchingSummaryIndex": 2,
+    "summariesInLog": 10
+  },
+  "aggregate": {
+    "total": 247,
+    "accepted": 142,
+    "fallback": 105,
+    "invalid": 7,
+    "no_decision": 95,
+    "otherFallback": 3
+  },
+  "reasons": {
+    "illegal_reply": 2,
+    "invalid_strategy_reply": 5,
+    "no_decision": 53,
+    "no_strategy": 42,
+    "unsupported_command": 3
+  },
+  "invalidDetails": {
+    "feasibility_rejected": 2
+  },
+  "commands": {
+    "AskForCardChosen": {
+      "total": 5,
+      "fallback": 5,
+      "invalid": 0,
+      "no_decision": 5,
+      "reasons": {
+        "no_strategy": 5
+      },
+      "invalidDetails": {}
+    },
+    "AskForCardsAndChoice": {
+      "total": 5,
+      "fallback": 0,
+      "invalid": 0,
+      "no_decision": 0,
+      "reasons": {},
+      "invalidDetails": {}
+    },
+    "AskForChoices": {
+      "total": 19,
+      "fallback": 0,
+      "invalid": 0,
+      "no_decision": 0,
+      "reasons": {},
+      "invalidDetails": {}
+    },
+    "AskForResponseCard": {
+      "total": 2,
+      "fallback": 0,
+      "invalid": 0,
+      "no_decision": 0,
+      "reasons": {},
+      "invalidDetails": {}
+    },
+    "AskForSkillInvoke": {
+      "total": 39,
+      "fallback": 24,
+      "invalid": 0,
+      "no_decision": 24,
+      "reasons": {
+        "no_decision": 1,
+        "no_strategy": 23
+      },
+      "invalidDetails": {}
+    },
+    "AskForUseActiveSkill": {
+      "total": 20,
+      "fallback": 4,
+      "invalid": 2,
+      "no_decision": 2,
+      "reasons": {
+        "illegal_reply": 2,
+        "no_strategy": 2
+      },
+      "invalidDetails": {
+        "feasibility_rejected": 2
+      }
+    },
+    "AskForUseCard": {
+      "total": 38,
+      "fallback": 27,
+      "invalid": 0,
+      "no_decision": 27,
+      "reasons": {
+        "no_decision": 15,
+        "no_strategy": 12
+      },
+      "invalidDetails": {}
+    },
+    "CustomDialog": {
+      "total": 2,
+      "fallback": 0,
+      "invalid": 0,
+      "no_decision": 0,
+      "reasons": {},
+      "invalidDetails": {}
+    },
+    "EmptyRequest": {
+      "total": 3,
+      "fallback": 3,
+      "invalid": 0,
+      "no_decision": 0,
+      "reasons": {
+        "unsupported_command": 3
+      },
+      "invalidDetails": {}
+    },
+    "PlayCard": {
+      "total": 114,
+      "fallback": 42,
+      "invalid": 5,
+      "no_decision": 37,
+      "reasons": {
+        "invalid_strategy_reply": 5,
+        "no_decision": 37
+      },
+      "invalidDetails": {}
+    }
+  },
+  "reconciliation": {
+    "uniqueMatchedSummary": true,
+    "fallbackLines": 105,
+    "perCommandFallbackInvalidNoDecision": true,
+    "aggregateCounters": true
+  },
+  "causalAttributionAvailable": false,
+  "matchedRequestState": false,
+  "semanticStrategyRootCauseEstablished": false,
+  "limitations": [
+    "Legacy [AI] fallback lines contain command/reason/detail but no room ID; isolation assumes sequential rooms between native match summaries.",
+    "feasibility_rejected is a validator outcome; it does not identify the originating strategy or semantic legality defect.",
+    "PlayCard invalid_strategy_reply is a reply-shape category and does not identify a specific skill or card.",
+    "One observed candidate match cannot establish 18-skill opportunity coverage, paired attribution, target/resource value or win-rate."
+  ]
+}

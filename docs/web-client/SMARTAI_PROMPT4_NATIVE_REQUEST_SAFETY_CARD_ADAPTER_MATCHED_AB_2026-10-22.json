@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "kind": "prompt4_native_request_safety_card_chosen_adapter_matched_ab",
+  "capturedAt": "2026-10-22",
+  "scope": "isolated local macOS native QA; metadata-only matched A/B evidence; no production change",
+  "question": "After the AskForCardChosen metadata adapter fix, do candidate and baseline still receive matched Prompt 4 native request states without invalid replies, and what bounded reply-shape deltas are observed?",
+  "scenario": "ai-trace",
+  "seeds": [1780420130, 1780420131, 1780420132],
+  "branches": {
+    "candidate": { "tqsPrompt4Baseline": false, "runs": 3, "runnerExitZero": 3, "gameOver": 3 },
+    "baseline": { "tqsPrompt4Baseline": true, "runs": 3, "runnerExitZero": 3, "gameOver": 3 }
+  },
+  "sourceChanges": [
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/room.lua",
+      "layer": "common request adapter",
+      "sha256": "f71e71a7fd12a35f609942657d221a71b4e80cef9d6fa001a022f006e223036c"
+    },
+    {
+      "path": "runtime/packages/freekill-core/ltk/server/ai/smart_ai.lua",
+      "layer": "common SmartAI dispatcher",
+      "sha256": "9185a68ba0e35caf9b60388f9291886f4d48a50d2327b70749e496a700b907e3"
+    },
+    {
+      "path": "deploy/freekill-native/qa/tqs_qa/ltk/server/ai/smart_ai.lua",
+      "layer": "QA overlay copy",
+      "sha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e"
+    }
+  ],
+  "qaPackage": {
+    "manifestRevision": "3c4d9cb8a359725674882b803204e0671dfca400",
+    "manifestRevisionIsCleanCommit": false,
+    "packageSha256": "e722bafad7aadc91ba904bbba50bdb5d701d58696a01e45d2c93d8ad645c3d05",
+    "catalogSha256": "f7ca32fafaf8ff3adbdc39a2ca90aff05a09020385233376d26f8cf9f08cbef3"
+  },
+  "runtimeIdentity": {
+    "nativeBinarySha256": "de24b9078ae13879e1548387c87af7fc8cd94ebfb1435979a4930b89940980ba",
+    "runtimeMd5": "01dc027eaa8c8171fc5e4c1e8afc6f50",
+    "browserDistSha256": "029f742b3e2e0afe03bc02b3b8ec7a9a7cb15b42dfd4b16fb2935918f079ba54",
+    "qaPort": 19647,
+    "productionTouched": false
+  },
+  "nativeExecution": {
+    "candidateBrowserErrors": 0,
+    "baselineBrowserErrors": 0,
+    "candidatePublicBotSkillLogs": 0,
+    "baselinePublicBotSkillLogs": 0,
+    "qaProcessAndPortCleanAfterRun": true,
+    "publicFlistIdentityStableAcrossBranches": true
+  },
+  "pairedResult": {
+    "pairCount": 3,
+    "pairStatus": "MATCHED_NATIVE_SKILLS",
+    "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+    "matchedRequests": 54,
+    "requestStateMismatches": 0,
+    "candidateDecisions": 54,
+    "baselineDecisions": 54,
+    "candidateOpportunities": 54,
+    "baselineOpportunities": 54,
+    "candidateAccepted": 54,
+    "candidateActed": 54,
+    "candidateFallback": 0,
+    "candidateInvalid": 0,
+    "baselineAccepted": 3,
+    "baselineActed": 3,
+    "baselineFallback": 51,
+    "baselineInvalid": 0,
+    "changedAccepted": 51,
+    "changedActed": 51,
+    "changedOutputShapes": 51,
+    "changedFallbackReasons": 51,
+    "changedTargetProfiles": 36,
+    "changedCardProfiles": 51,
+    "changedResourceShapes": 33,
+    "changedResourceValues": 33,
+    "changedSelectedCardCounts": 33,
+    "changedSelectedTargetCounts": 36,
+    "changedTargetQualities": 51,
+    "changedInvalid": 0,
+    "nativeTargetQualityAvailable": true,
+    "nativeReplySnapshotAvailable": true,
+    "nativeResourceValueAvailable": true
+  },
+  "perSeed": [
+    {
+      "seed": 1780420130,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "candidateAccepted": 18,
+      "candidateActed": 18,
+      "candidateFallback": 0,
+      "candidateInvalid": 0,
+      "baselineAccepted": 1,
+      "baselineActed": 1,
+      "baselineFallback": 17,
+      "baselineInvalid": 0,
+      "changedResourceValues": 11,
+      "changedTargetQualities": 17,
+      "changedSelectedCardCounts": 11,
+      "changedSelectedTargetCounts": 12
+    },
+    {
+      "seed": 1780420131,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "candidateAccepted": 18,
+      "candidateActed": 18,
+      "candidateFallback": 0,
+      "candidateInvalid": 0,
+      "baselineAccepted": 1,
+      "baselineActed": 1,
+      "baselineFallback": 17,
+      "baselineInvalid": 0,
+      "changedResourceValues": 11,
+      "changedTargetQualities": 17,
+      "changedSelectedCardCounts": 11,
+      "changedSelectedTargetCounts": 12
+    },
+    {
+      "seed": 1780420132,
+      "status": "MATCHED_NATIVE_SKILLS",
+      "safetyStatus": "NO_INVALID_NATIVE_REPLIES",
+      "matchedRequests": 18,
+      "candidateAccepted": 18,
+      "candidateActed": 18,
+      "candidateFallback": 0,
+      "candidateInvalid": 0,
+      "baselineAccepted": 1,
+      "baselineActed": 1,
+      "baselineFallback": 17,
+      "baselineInvalid": 0,
+      "changedResourceValues": 11,
+      "changedTargetQualities": 17,
+      "changedSelectedCardCounts": 11,
+      "changedSelectedTargetCounts": 12
+    }
+  ],
+  "interpretation": [
+    "The adapter fix did not alter the matched request-state contract: all 54 candidate/baseline opportunities paired with zero request-state mismatch.",
+    "The candidate/baseline reply delta is expected because baseline intentionally hides the selected Prompt 4 strategies; it is not causal proof of tactical improvement or win rate.",
+    "Target quality, selected-card/target counts and resource value are bounded coarse reply metadata. They do not prove downstream skill-effect success or full native-state equivalence."
+  ],
+  "limitations": [
+    "This is a three-seed matched fixture, not an exhaustive native-state or full 18-skill production-frequency study.",
+    "The trace invokes real player.ai:makeReply() and real request feasibility, but the bounded probe does not apply every accepted reply through a full skill-effect event chain.",
+    "No reconnect/device, release/rollback, canary or production evidence is included. REQUEST_SAFETY_OPEN remains open and production remains NO-GO.",
+    "No raw logs, credentials, prompts, card/target IDs, private hands/generals or exception payloads are stored in this artifact."
+  ]
+}
