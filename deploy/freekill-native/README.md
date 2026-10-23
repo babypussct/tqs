@@ -1,5 +1,39 @@
 # FreeKill native deployment
 
+## TQS2 game display names (staged)
+
+In SSO mode, keep the stable native account identifier (`tqs_<uid>`) for
+authentication and user database lookup. The game ticket API can sign a public
+UTF-8 display name from the approved `gameAccess.gameName` as `TQS2`, authenticated
+by the same HMAC secret. The FreeKill source patch in
+`patches/freekill-asio/tqs-game-access.patch` validates the token and supplies
+the public name to `ServerPlayer` for all clients in a room.
+
+**Rollout order:** build and deploy a native server supporting both TQS1/TQS2,
+then enable `TQS_GAME_TICKET_V2=true` on the session API and deploy the game web
+client. The API defaults to TQS1 until that flag is enabled. Avoid switching
+the flag before native is upgraded: old servers reject TQS2 tickets. On active
+in-game reconnect, an existing ServerPlayer keeps its current server-wide name
+through the match; a fresh player session picks up admin name changes.
+The web client uses the API name as a local seat fallback only for TQS1 and
+holds that fallback across reconnects. For TQS2 it displays the public name
+sent by native, keeping the room header, opponent views and GameOver aligned
+when an administrator edits the name during an active match.
+
+Local native token validation: `node --test
+deploy/freekill-native/qa/tqs-game-ticket.test.mjs` (requires pinned
+`scratch/upstream/freekill-asio`, a C++20 compiler and OpenSSL/pkg-config).
+This compiles the native verifier in isolation; full binary and two-account
+gameplay still require separate release verification.
+
+Local account temp-ban and ticket validation:
+`npm --prefix game/web run test:qa-tempban`.
+This applies the source-managed patches to the pinned checkout and compiles
+deterministic native verifiers for zero/negative duration, renewal, independent
+account state, stale expiry and TQS1/TQS2 authentication; it also checks the
+Firebase-to-native account namespace mapping and both punishment trigger IDs.
+It does not start a native server or change any runtime configuration.
+
 This directory is the first deployment slice for the Hegemony project. It is
 intentionally separate from the existing React/Firebase storefront in this
 repository.
@@ -131,26 +165,32 @@ coverage or an official release.
 
 ### QA temp-ban isolation
 
-The upstream native server temporarily bans the player address when an active
-room is abandoned. The production template now keeps `tempBanTime: 5`. The
-server-only QA installer overrides this value to `0` in the isolated QA runtime
-and the verifier rejects a QA runtime that is still ban-prone. The multiplayer
-QA runner also tries `BOT chơi hộ`/`GameOver` cleanup for a bounded period before
+The source-managed native patch records an abandonment penalty against the
+authenticated `userinfo.id`, not the TCP peer address or `lastLoginIp`. The
+production template keeps `tempBanTime: 5`; the isolated QA installer overrides
+it to `0`, which the patched server treats as no effective account lock. The
+verifier rejects a QA runtime that is still ban-prone, and the multiplayer QA
+runner also tries `BOT chơi hộ`/`GameOver` cleanup for a bounded period before
 closing a failed session. This policy applies only to the QA replacement VM;
 it must not be copied into a production runtime.
 
 For source-built production runtimes, `scripts/bootstrap-source.sh` applies
-`patches/freekill-asio/reconnect-safe-tempban.patch`. It moves the temporary-IP
-check after password verification and permits it only when the authenticated
-account still owns a player inside an active room; new accounts and accounts no
-longer in a room remain blocked. This preserves the five-minute abandonment
-policy while allowing a real reconnect during the room lifetime. The capacity
-check is also deferred until after authentication, so an offline player can
-reclaim its existing slot while a new account is still rejected when the server
-is full. The patch does not resurrect a room that has already finalized or been
-removed. The current amd64 static artifact cannot receive a C++ source patch in
-place; it must be replaced by a source-built release before this guard is
-claimed active there.
+`patches/freekill-asio/reconnect-safe-tempban.patch`. It keeps the two existing
+`Room` abandonment triggers, stores an account expiry on a monotonic clock,
+renews with `max(old_expiry, now + tempBanTime)`, and checks the account only
+after password/TQS-ticket authentication. A different account behind the same
+gateway is independent; the punished account is allowed through only when its
+authenticated `ServerPlayer` is still inside the active room **and in
+`state=Offline`**, so a genuine network reconnect can recover the existing seat
+without opening a new lobby session. A player in `state=Run` after an explicit
+leave is not a reconnect exception and cannot bypass the active account ban with
+a fresh ticket. The capacity check is also deferred until after authentication,
+so an offline player can reclaim its existing slot while a new account is still
+rejected when the server is full. Permanent `banip` handling remains a separate
+pre-auth policy. The
+current amd64 static artifact cannot receive a C++ source patch in place; it
+must be replaced by a source-built release before this guard is claimed active
+there.
 
 ## Administrator access
 
@@ -245,37 +285,41 @@ Native port:     9527
 SSH alias:       tqs-native-qa-replacement
 SSH key:         ~/.ssh/tqs-native-qa
 SSH fingerprint: SHA256:eDNynrUrAW0NqI74OOT3Lyj37QMH/6kP8eiqZfdRCgw
-Status:          CP15/QA verify PASS before CP16; source-build transition
-                 interrupted by VM resource exhaustion before runtime switch;
-                 service/SSH require recovery. Backup archive verified;
-                 CP15 Ký Ly/Jilix current package main/deputy PASS; CP14 Phụ Âm
-                 current package main/deputy PASS; CP13 Chế Man pre-refresh
-                 package main/deputy PASS; full parity OPEN. Do not delete the
-                 old VM until this replacement is healthy and reconnect PASS.
+Status:          Prompt 1 native QA bounded acceptance PASS (2026-10-20);
+                 source build/runtime switch completed on this replacement;
+                 service active, TCP 9527 listening, backup and verification
+                 PASS. Four-seat BOT audit, final two-account skill scenario
+                 and controlled reconnect all PASS. This remains an isolated
+                 QA target, not an official/public release; keep the old VM
+                 until a separately authorized production rollout/rollback gate.
 ```
 
 Observed SSH verification on the replacement: `id`, hostname and the
 presence of `tqs-native-qa@tqs` in `/home/ubuntu/.ssh/authorized_keys` all
-passed before CP16. The replacement had Lua 5.4.8, the pinned 14-package
-registry, the verified server-only `tqs_qa` package and an enabled
-`freekill-native` service listening on port 9527. The old VM remains untouched
-and is the rollback/reference host. It is a **QA-verified native target**, not
-an official/public release; after the interrupted source compile, service/port
-must be reverified before deleting the old VM.
+passed before CP16. The final Prompt 1 recheck also passed Lua 5.4.8/module
+preflight, the pinned 14-package registry, the server-only `tqs_qa` package,
+the source-built binary identity, an enabled `freekill-native` service and
+TCP port 9527. The old VM remains untouched and is the rollback/reference
+host. This is a **QA-verified native target**, not an official/public release;
+do not delete the old VM until a separately authorized production rollout has
+its own rollback evidence.
 
 The verified replacement identity is recorded here so a later session can
 recreate the exact runner without guessing:
 
 ```text
-Runtime:          /opt/freekill-hegemony/current (last verified static release;
-                  source transition not yet active)
-Static release:   freekill-asio v0.1.17 amd64
-Runtime flist MD5: 29653b06f1db4a1cece2941f79cbe648
+Runtime:          /opt/freekill-hegemony/current ->
+                  freekill-asio-source-0.1.17-prompt1
+Source commit:    b8a2ad48305aea7b55ccca325fcbeb100cb8a01a
+Binary SHA-256:   080b2d14e1e7840275ae431ae2474c679ff904a3351baf242c188d78c5bcf14b
+Static release:   freekill-asio v0.1.17 pin (source-built Linux candidate)
+Runtime flist MD5: f296114df3385358f1cd09ae70f4a3a7
 Package registry: 14/14 pinned commits and enabled flags verified
 Lua runtime:      Lua 5.4.8; LuaSocket + LuaFileSystem loaded
-QA revision:      a6c47982d6f0140eaa2869cbaa6c5a780d688396
+QA revision:      f05c424b5538290bb6c18583cd64b3c7e98d1bc6
 QA package SHA:   5b45411afa767898860e81ee8a8307b52e1ad936b0b3bc67ee08839257be9ef2
 QA catalog SHA:   945b063fa44264a058a41141d3324275b48690018bdd4b4f23be97961ca76bbe
+QA manifest SHA:  7332820bd91d40c9b8728751549489ede46a045e77c7d86cf85fef8e1e43b7df
 QA config:        last verified enabled; tempBanTime=0; room prefix TQSQA/;
                   two private allowlisted accounts. Production source config
                   with tempBanTime=5 is staged in the repository but not yet
@@ -284,10 +328,22 @@ QA path:          /opt/freekill-hegemony/current/qa_packages/tqs_qa
 Public QA path:   packages/tqs_qa absent; no packages.db row
 QA backups:       /opt/freekill-hegemony/qa-backups/tqs_qa-before-zhiman-observer-install-20261016T014332Z.tar.gz
                   /opt/freekill-hegemony/qa-backups/tqs_qa-before-jianzhi-fix-20261016T010210Z.tar.gz
-Service:          was enabled/active before CP16; currently requires recovery
-                  after resource-exhausted source compile; TCP 9527 must be
-                  reverified before any old-VM deletion
+Service:          enabled/active; TCP 9527 listening; Prompt 1 evidence and
+                  final QA package verification recorded in CODEX_STATE.md
 ```
+
+For the isolated native P0/P2 runner, do not copy the game-ticket secret to the
+development machine. The approved helper
+`game/web/scripts/multiplayer-e2e/mint-qa-ticket-via-ssh.mjs` uses the verified
+`tqs-native-qa-replacement` SSH alias and `sudo -n python3 -` to read the secret
+on the VM, sign one short-lived TQS1 ticket in memory, and return only that
+ticket. It does not use SCP and suppresses remote stderr. Set
+`TQS_LIVE_TICKET_HELPER` and `TQS_LIVE_QA_SSH_ALIAS` in the private live-test
+configuration; retain `tqsAuthRequired=true` and the explicit QA allowlist.
+The runner also requires the isolated runtime MD5 plus the P1 `smart_ai.lua`,
+`room.lua`, and QA overlay hashes before it starts a native scenario. This is a
+QA-only path; it neither changes the systemd service nor authorizes a
+production login.
 
 `qa_packages/tqs_qa` is deliberately outside the public `packages/` namespace.
 `run-server.sh` creates a broken runtime-only symlink while the native process

@@ -1,0 +1,113 @@
+name: Build isolation and types
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect affected applications
+    runs-on: ubuntu-latest
+    outputs:
+      shop: ${{ steps.scopes.outputs.shop }}
+      game: ${{ steps.scopes.outputs.game }}
+      shared: ${{ steps.scopes.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test build/change-scopes.test.mjs
+      - id: scopes
+        run: node build/change-scopes.mjs --github
+
+  shop:
+    name: TQSShop checks
+    needs: changes
+    if: needs.changes.outputs.shop == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run test:build-safety
+      - run: npm run check:build
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:auth
+      - run: npm run build
+      - run: npm run clean
+      - run: npm run build
+      - run: git diff --exit-code -- dist
+
+  game:
+    name: TQSVN checks
+    needs: changes
+    if: needs.changes.outputs.game == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            game/web/package-lock.json
+            game/gateway/package-lock.json
+      - run: npm --prefix game/web ci
+      - run: npm --prefix game/gateway ci
+      - run: npm --prefix game/web run test:upstream-preparation
+      - uses: actions/cache@v4
+        with:
+          path: scratch/upstream
+          key: upstream-${{ runner.os }}-${{ hashFiles('game/web/scripts/upstream-packages.ts') }}
+      - run: npm --prefix game/web run prepare:upstream
+      - run: npm --prefix game/web run typecheck
+      - run: npm --prefix game/web run typecheck:tools
+      - run: npm --prefix game/web run build
+      - run: npm --prefix game/web run test:store
+      - run: npm --prefix game/web run test:connection
+      - run: npm --prefix game/web run test:messages
+      - run: npm --prefix game/web run test:room-pools
+      - run: npm --prefix game/web run test:auth-routing
+      - run: diff -ru gateway/src game/gateway/src
+      - run: diff -u gateway/package-lock.json game/gateway/package-lock.json
+      - run: npm --prefix game/gateway test
+      - run: npm --prefix game/web run test:e2e
+      - run: npm --prefix game/web run test:e2e:lua
+      - run: git diff --exit-code -- dist
+
+  gate:
+    # Keep this status stable for branch protection, including documentation-only PRs.
+    name: Pipeline gate
+    needs: [changes, shop, game]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      CHANGE_RESULT: ${{ needs.changes.result }}
+      SHOP_REQUIRED: ${{ needs.changes.outputs.shop }}
+      SHOP_RESULT: ${{ needs.shop.result }}
+      GAME_REQUIRED: ${{ needs.changes.outputs.game }}
+      GAME_RESULT: ${{ needs.game.result }}
+    steps:
+      - name: Require success from each affected application
+        run: |
+          test "$CHANGE_RESULT" = success
+          case "$SHOP_REQUIRED:$GAME_REQUIRED" in true:true|true:false|false:true|false:false) ;; *) exit 1 ;; esac
+          if [ "$SHOP_REQUIRED" = true ]; then test "$SHOP_RESULT" = success; else test "$SHOP_RESULT" = skipped; fi
+          if [ "$GAME_REQUIRED" = true ]; then test "$GAME_RESULT" = success; else test "$GAME_RESULT" = skipped; fi

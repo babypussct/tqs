@@ -147,4 +147,92 @@ local longdan_draw_spec = {
 longdan:addEffect(fk.CardUsing, longdan_draw_spec)
 longdan:addEffect(fk.CardResponding, longdan_draw_spec)
 
+-- Prompt 4: choose the legal Slash/Jink conversion instead of accepting the
+-- first raw card.  The response branch only sees the requested pattern; the
+-- play branch evaluates the converted Slash against public faction state.
+longdan:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local skill = Fk.skills[self.skill_name]
+    local requested = type(ai.data) == "table" and ai.data[2] or ""
+    local is_response = ai.command == "AskForResponseCard"
+    local extra_data = type(ai.data) == "table" and
+      ((type(ai.data[5]) == "table" and ai.data[5]) or
+       (type(ai.data[4]) == "table" and ai.data[4])) or {}
+    local best, best_value = nil, -100000
+    local cards = ai:getEnabledCards()
+
+    for _, id in ipairs(cards) do
+      local card = skill:viewAs(ai.player, { id })
+      if card then
+        if is_response then
+          local pattern_ok = type(requested) == "string" and
+            Exppattern:Parse(requested):match(card)
+          if pattern_ok then
+            local value = 1 - (ai:getCardValue(id, "keep_value") or 0) * 0.01
+            if value > best_value then
+              best, best_value = { { id }, {} }, value
+            end
+          end
+        elseif card.trueName == "slash" then
+          ai:selectSkill(self.skill_name, true)
+          ai:selectCard(id, true)
+          -- getDefaultTarget() is intentionally random.  Exhaust every
+          -- server-legal public target here so the native probe and real AI
+          -- do not turn the same request into a different reply merely from
+          -- Lua RNG state, and so an ally is never selected when an enemy is
+          -- available.  The target list is server-derived; no hidden hand or
+          -- general information is consulted.
+          for _, target in ipairs(card:getAvailableTargets(ai.player, extra_data)) do
+            local targets = { target }
+            local value = ai:getBenefitOfEvents(function(logic)
+              logic:useCard{ from = ai.player, tos = targets, card = card }
+            end)
+            value = value - (ai:getCardValue(id, "keep_value") or 0) * 12
+            if value > best_value then
+              best, best_value = { { id }, targets }, value
+            end
+          end
+          ai:unSelectAll()
+        end
+      end
+    end
+
+    if best and (is_response or best_value > 0) then return best, best_value end
+  end,
+})
+
+-- The cancellation follow-up is a separate choose-players request.  Damage
+-- is reserved for a public/probable enemy; recovery is reserved for a
+-- confirmed or sufficiently evidenced ally, using no hidden hand/general
+-- information.
+longdan:addAI(Fk.Ltk.AI.newChoosePlayersStrategy {
+  choose_players = function(self, ai)
+    local prompt = type(ai.data) == "table" and ai.data[2] or ""
+    local is_recover = type(prompt) == "string" and prompt:startsWith("#longdan_jink-ask")
+    local best, best_value = nil, -100000
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local allowed = is_recover
+        and (relation.state == "friend" or
+          (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude > 0.25))
+        or (relation.state == "enemy" or
+          (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude < -0.25))
+      if allowed then
+        local value = ai:getBenefitOfEvents(function(logic)
+          if is_recover then
+            logic:recover{ who = target, num = 1, recoverBy = ai.player, skillName = self.skill_name }
+          else
+            logic:damage{ from = ai.player, to = target, damage = 1, skillName = self.skill_name }
+          end
+        end)
+        if value > best_value then best, best_value = target, value end
+      end
+    end
+
+    local cancelable = type(ai.data) == "table" and ai.data[3] == true
+    if best and (best_value > 0 or not cancelable) then return { best }, best_value end
+    if cancelable then return {}, 0 end
+  end,
+})
+
 return longdan

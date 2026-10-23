@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import GameBoardScreen from '../../src/GameBoardScreen';
+import { IdleHandCard } from '../../src/HandCardItem';
 import App from '../../src/App';
 import { GameAdapter } from '../../src/engine/gameAdapter';
 import { GameConnection, type SocketHandlers } from '../../src/engine/connection';
@@ -204,6 +205,11 @@ const api = {
     for (const id of [1, 2]) emit('EquipmentUpdate', [id, horses, []]);
   },
   damageSelf: () => emit('PropertyUpdate', [1, 'hp', 3]),
+  setHealth: (hp: number, maxHp: number, shield = 0) => {
+    emit('PropertyUpdate', [1, 'maxHp', maxHp]);
+    emit('PropertyUpdate', [1, 'hp', hp]);
+    emit('PropertyUpdate', [1, 'shield', shield]);
+  },
   cancel: () => emit('CancelRequest', null),
   disconnect: () => sockets.at(-1)!.handlers.onClose('Mất kết nối thử nghiệm'),
   reconnectSameId: () => {
@@ -258,6 +264,13 @@ function Fixture() {
   };
   return <main className="shell shell-playing">
     <h1>TQS browser E2E cục bộ</h1>
+    {new URLSearchParams(location.search).has('idle-suit-preview') && (
+      <div className="sg-idle-suit-preview" style={{ display: 'flex', gap: 8 }}>
+        {([1, 2, 3, 4] as const).map((suit, index) => (
+          <IdleHandCard key={suit} card={{ name: 'slash', suit, number: [1, 10, 12, 13][index] }} />
+        ))}
+      </div>
+    )}
     {error && <div className="notice error-notice" role="alert">{error}</div>}
     <GameBoardScreen busy={busy} leave={() => {}}
       regularSkills={regularSkills}

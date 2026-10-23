@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
@@ -32,6 +32,14 @@ async function waitForHealth(url, child) {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   throw new Error('local gateway did not start within the test timeout');
+}
+
+function admissionProtocol(identity, expiresAt, secret) {
+  const encodedIdentity = Buffer.from(identity, 'utf8').toString('base64url');
+  const signature = createHmac('sha256', secret)
+    .update(`TQSA1|${identity}|${expiresAt}`).digest('hex');
+  const wire = Buffer.from(`TQSA1|${expiresAt}|${encodedIdentity}|${signature}`, 'utf8').toString('base64url');
+  return `tqs-admission-v1.${wire}`;
 }
 
 test('local gateway serves verified versioned bundle and bridges binary WebSocket to TCP', { timeout: 10000 }, async () => {
@@ -177,5 +185,205 @@ test('global websocket cap rejects excess clients and flood closes only its conn
     for(const peer of peers) peer.terminate();
     if(child && child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}
     await new Promise(resolve=>backend.close(resolve));rmSync(root,{recursive:true,force:true});
+  }
+});
+
+test('default per-peer websocket quota rejects the seventh connection and recovers after close', { timeout: 10000 }, async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-gateway-peer-cap-'));
+  const backend = net.createServer(socket => socket.on('data', () => {}));
+  const peers = [];
+  let child;
+  try {
+    backend.listen(0, '127.0.0.1');
+    await once(backend, 'listening');
+    const port = await reservePort();
+    child = spawn(process.execPath, [path.resolve(here, '../src/server.mjs')], {
+      env: {
+        ...process.env,
+        WEB_DIST: '',
+        FK_ROOT: root,
+        FK_HOST: '127.0.0.1',
+        FK_PORT: String(backend.address().port),
+        PORT: String(port),
+        BIND_HOST: '127.0.0.1',
+        ALLOW_ORIGIN: 'https://game.example.com',
+        TRUSTED_PROXIES: '',
+        MAX_WS_PER_IP: '6',
+        MAX_CONNECTIONS: '128',
+      },
+      stdio: 'ignore',
+    });
+    await waitForHealth(`http://127.0.0.1:${port}`, child);
+
+    const url = `ws://127.0.0.1:${port}/ws`;
+    for (let i = 0; i < 6; i += 1) {
+      const ws = new WebSocket(url, { origin: 'https://game.example.com' });
+      peers.push(ws);
+      await once(ws, 'open');
+    }
+
+    // The gateway is deliberately configured without trusted proxies here:
+    // browser-controlled forwarding headers must not manufacture a new quota
+    // identity. Both seventh/eighth attempts therefore share the loopback
+    // peer and must be closed with the per-peer policy code.
+    for (const headers of [
+      { 'cf-connecting-ip': '198.51.100.7' },
+      { 'x-forwarded-for': '198.51.100.8' },
+    ]) {
+      const extra = new WebSocket(url, { origin: 'https://game.example.com', headers });
+      extra.on('error', () => {});
+      const [code, reason] = await once(extra, 'close');
+      assert.equal(code, 1008);
+      assert.equal(reason.toString(), 'too many connections');
+    }
+
+    const closed = once(peers[0], 'close');
+    peers[0].close();
+    await closed;
+    const replacement = new WebSocket(url, { origin: 'https://game.example.com' });
+    peers.push(replacement);
+    await once(replacement, 'open');
+  } finally {
+    for (const peer of peers) peer.terminate();
+    if (child && child.exitCode === null) {
+      child.kill('SIGTERM');
+      await once(child, 'exit');
+    }
+    await new Promise(resolve => backend.close(resolve));
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('signed identity admission lets independent accounts share a peer while capping one account', { timeout: 10000 }, async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-gateway-account-cap-'));
+  const backend = net.createServer(socket => socket.on('data', () => {}));
+  const peers = [];
+  let child;
+  const secret = 'gateway-admission-secret-with-at-least-32-characters';
+  try {
+    backend.listen(0, '127.0.0.1');
+    await once(backend, 'listening');
+    const port = await reservePort();
+    child = spawn(process.execPath, [path.resolve(here, '../src/server.mjs')], {
+      env: {
+        ...process.env,
+        WEB_DIST: '',
+        FK_ROOT: root,
+        FK_HOST: '127.0.0.1',
+        FK_PORT: String(backend.address().port),
+        PORT: String(port),
+        BIND_HOST: '127.0.0.1',
+        ALLOW_ORIGIN: 'https://game.example.com',
+        TRUSTED_PROXIES: '',
+        MAX_WS_PER_IP: '1',
+        MAX_WS_PER_ACCOUNT: '2',
+        MAX_CONNECTIONS: '128',
+        TQS_GATEWAY_ADMISSION_SECRET: secret,
+        REQUIRE_WS_ADMISSION: '1',
+      },
+      stdio: 'ignore',
+    });
+    await waitForHealth(`http://127.0.0.1:${port}`, child);
+
+    const expiresAt = Math.floor(Date.now() / 1000) + 300;
+    const url = `ws://127.0.0.1:${port}/ws`;
+    const missing = new WebSocket(url, { origin: 'https://game.example.com' });
+    missing.on('error', () => {});
+    const [missingError] = await once(missing, 'error');
+    assert.match(missingError.message, /Unexpected server response: 401/);
+
+    const openFor = async (identity) => {
+      const ws = new WebSocket(url, admissionProtocol(identity, expiresAt, secret), {
+        origin: 'https://game.example.com',
+      });
+      peers.push(ws);
+      await once(ws, 'open');
+      return ws;
+    };
+
+    // The loopback peer is limited to one unauthenticated socket, but two
+    // signed connections for each of two accounts are admitted independently.
+    await openFor('tqs_account_a');
+    await openFor('tqs_account_a');
+    await openFor('tqs_account_b');
+    await openFor('tqs_account_b');
+
+    const excess = new WebSocket(url, admissionProtocol('tqs_account_a', expiresAt, secret), {
+      origin: 'https://game.example.com',
+    });
+    peers.push(excess);
+    excess.on('error', () => {});
+    const [code, reason] = await once(excess, 'close');
+    assert.equal(code, 1008);
+    assert.equal(reason.toString(), 'too many connections');
+  } finally {
+    for (const peer of peers) peer.terminate();
+    if (child && child.exitCode === null) {
+      child.kill('SIGTERM');
+      await once(child, 'exit');
+    }
+    await new Promise(resolve => backend.close(resolve));
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('signed identity admission supports eight independent accounts on one peer', { timeout: 10000 }, async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-gateway-eight-account-cap-'));
+  const backend = net.createServer(socket => socket.on('data', () => {}));
+  const peers = [];
+  let child;
+  const secret = 'gateway-admission-secret-with-at-least-32-characters';
+  try {
+    backend.listen(0, '127.0.0.1');
+    await once(backend, 'listening');
+    const port = await reservePort();
+    child = spawn(process.execPath, [path.resolve(here, '../src/server.mjs')], {
+      env: {
+        ...process.env,
+        WEB_DIST: '',
+        FK_ROOT: root,
+        FK_HOST: '127.0.0.1',
+        FK_PORT: String(backend.address().port),
+        PORT: String(port),
+        BIND_HOST: '127.0.0.1',
+        ALLOW_ORIGIN: 'https://game.example.com',
+        TRUSTED_PROXIES: '',
+        MAX_WS_PER_IP: '1',
+        MAX_WS_PER_ACCOUNT: '1',
+        MAX_CONNECTIONS: '128',
+        TQS_GATEWAY_ADMISSION_SECRET: secret,
+        REQUIRE_WS_ADMISSION: '1',
+      },
+      stdio: 'ignore',
+    });
+    await waitForHealth(`http://127.0.0.1:${port}`, child);
+
+    const expiresAt = Math.floor(Date.now() / 1000) + 300;
+    const url = `ws://127.0.0.1:${port}/ws`;
+    const identities = Array.from({ length: 8 }, (_, index) => `tqs_account_${index + 1}`);
+    for (const identity of identities) {
+      const ws = new WebSocket(url, admissionProtocol(identity, expiresAt, secret), {
+        origin: 'https://game.example.com',
+      });
+      peers.push(ws);
+      await once(ws, 'open');
+    }
+
+    const excess = new WebSocket(url, admissionProtocol(identities[0], expiresAt, secret), {
+      origin: 'https://game.example.com',
+    });
+    peers.push(excess);
+    excess.on('error', () => {});
+    const [code, reason] = await once(excess, 'close');
+    assert.equal(code, 1008);
+    assert.equal(reason.toString(), 'too many connections');
+  } finally {
+    for (const peer of peers) peer.terminate();
+    if (child && child.exitCode === null) {
+      child.kill('SIGTERM');
+      await once(child, 'exit');
+    }
+    await new Promise(resolve => backend.close(resolve));
+    rmSync(root, { recursive: true, force: true });
   }
 });

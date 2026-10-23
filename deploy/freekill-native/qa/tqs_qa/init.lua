@@ -6,6 +6,252 @@ if not config or config.enabled ~= true then
   return nil
 end
 
+-- Optional QA-only downstream replay.  The default is disabled, and every
+-- enabled skill has an explicit state profile.  Profiles with nested player
+-- requests must declare exact per-command deltas; a SkillEffect observation
+-- alone is never enough to enter the clean gate. Never enable an arbitrary
+-- skill here from a production configuration; an undeclared request could
+-- block the deterministic probe or consume unrelated match state.
+local prompt4EffectReplaySkill = type(config.prompt4EffectReplaySkill) == "string" and
+  config.prompt4EffectReplaySkill or nil
+local prompt4EffectReplayProfiles = {
+  hs__kurou = {
+    reason = "active discard, one HP loss and bounded draw; no nested QA request",
+    expectedHpDelta = -1,
+    expectedHandDelta = 2,
+  },
+  hs__zhiheng = {
+    reason = "active discard/draw exchange; no nested QA request",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    promoteFakeSkill = true,
+  },
+  hs__qiangxi = {
+    reason = "active weapon-or-HP cost plus direct damage; no nested QA request",
+    expectedHpDeltas = { [-1] = true, [0] = true },
+    expectedTargetHpDelta = -1,
+    expectedTargetCount = 1,
+  },
+  cunsi = {
+    reason = "active target grant and draw; no nested QA request",
+    expectedHpDelta = 0,
+    expectedTargetHandDelta = 2,
+    expectedTargetSkill = "yongjue",
+    expectedTargetCount = 1,
+  },
+  dimeng = {
+    reason = "active discard and hand swap; no nested QA request",
+    expectedHpDelta = 0,
+    expectedTargetHandTotalDelta = 0,
+    expectedTargetCount = 2,
+  },
+  duanfa = {
+    reason = "active black-card discard/draw exchange; no nested QA request",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    minimumMark = { name = "duanfa-phase", value = 1 },
+  },
+  jijiu = {
+    reason = "view-as Peach direct recovery; execute returned useResult without nested QA request",
+    expectedHpDelta = 0,
+    expectedTargetHpDelta = 1,
+    expectedTargetCount = 1,
+    targetFromExtraData = true,
+    executeUseResult = true,
+  },
+  hs__wusheng = {
+    reason = "view-as Slash; QA drives the nested Jink request through a native BOT target",
+    expectedHpDelta = 0,
+    expectedHandDelta = -1,
+    -- The native BOT answers the generated Slash with Jink in this fixed
+    -- semantic fixture: the target spends one card and takes no damage.
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    expectedReplayCardCount = 1,
+    targetPolicy = "native_bot",
+    executeUseResult = true,
+  },
+  hs__longdan = {
+    reason = "view-as Slash from Jink reaches the native direct-damage path",
+    expectedHpDelta = 0,
+    expectedHandDelta = -1,
+    expectedTargetHpDelta = -1,
+    expectedTargetHandDelta = 0,
+    expectedTargetHandTotalDelta = 0,
+    expectedTargetCount = 1,
+    promoteFakeSkill = true,
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+    executeUseResult = true,
+  },
+  hs__luanji = {
+    reason = "view-as Archery Attack from two distinct suits with native Jink response",
+    expectedHpDelta = 0,
+    -- The two browser-seat resources are remapped to the native actor only
+    -- in the QA execution copy. Keep the downstream gate on the real
+    -- Archery Attack effect and native Jink response; the engine's virtual
+    -- card hand counter is not a stable portability contract for this copy.
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    promoteFakeSkill = true,
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+    executeUseResult = true,
+    -- Luanji's material law is two hand cards of distinct suits; the
+    -- browser reply may choose any legal pair from the seven-card fixture.
+    -- Match that law-level predicate when remapping to the native actor.
+    resourceMatchMode = "distinct_suits",
+    nestedMetrics = {
+      { command = "AskForResponseCard", total = 1, fallback = 0, invalid = 0 },
+    },
+  },
+  huoji = {
+    reason = "view-as Fire Attack with same-suit discard and native target reveal",
+    expectedHpDelta = 0,
+    expectedHandDelta = -2,
+    expectedTargetHpDelta = -1,
+    expectedTargetHandDelta = 0,
+    expectedTargetHandTotalDelta = 0,
+    expectedTargetCount = 1,
+    promoteFakeSkill = true,
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+    executeUseResult = true,
+    -- Huoji's ViewAs filter constrains the source to a red non-equipment
+    -- card; it does not constrain the source trueName.  The browser-seat
+    -- reply may therefore choose Slash while the native replay actor owns
+    -- Peach of the same suit (or vice versa).  Remap by the actual ViewAs
+    -- law instead of imposing an unrelated trueName equality.
+    resourceMatchMode = "huoji_red",
+    nestedMetrics = {
+      { command = "AskForUseActiveSkill", total = 2, fallback = 0, invalid = 0 },
+    },
+  },
+  kanpo = {
+    reason = "contextual black-card Nullification response against a harmful public effect",
+    expectedHpDelta = 0,
+    expectedHandDelta = -1,
+    expectedTargetCount = 0,
+    expectedReplayCardCount = 1,
+    promoteFakeSkill = true,
+    executeUseResult = true,
+  },
+  beizhu = {
+    reason = "active hostile hand inspection followed by native visible-card discard",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    promoteFakeSkill = true,
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+    nestedMetrics = {
+      { command = "AskForCardChosen", total = 1, fallback = 0, invalid = 0 },
+      { command = "AskForSkillInvoke", total = 1, fallback = 1, invalid = 0 },
+    },
+  },
+  tianyi = {
+    reason = "active pindian and bounded turn mark through native nested card requests",
+    expectedHpDelta = 0,
+    expectedHandDelta = -1,
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    -- The replay uses one native BOT as the pindian actor and a separate BOT
+    -- as the target.  Either result is legal for the downstream proof; the
+    -- source skill must set exactly one of these turn marks.
+    markAny = { "tianyi_win-turn", "tianyi_lose-turn" },
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+  },
+  tiaoxin = {
+    reason = "active provocation followed by native Slash and Jink response",
+    expectedHpDelta = 0,
+    expectedHandDelta = -1,
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    -- The target BOT spends a real Slash and the replay actor answers with
+    -- the reserved Jink.  This keeps the branch away from tiaoxin's
+    -- AskForCardChosen fallback and proves both nested card paths are native.
+    -- FreeKill routes both the forced Slash and the Slash-offset Jink through
+    -- AskForUseCard; retain an explicit zero AskForResponseCard expectation
+    -- so a future command split cannot silently change this proof.
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_tiaoxin",
+    nestedMetrics = {
+      { command = "AskForUseCard", total = 2, fallback = 0, invalid = 0 },
+      { command = "AskForResponseCard", total = 0, fallback = 0, invalid = 0 },
+    },
+  },
+  choufa = {
+    reason = "active friendly target followed by native visible-card choice",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = 0,
+    expectedTargetHandTotalDelta = 0,
+    expectedTargetCount = 1,
+    -- Choufa's onUse asks the real actor to choose one visible card from the
+    -- target hand, then applies temporary card marks.  The target is a
+    -- distinct native BOT so the AskForCardChosen request is not aliased with
+    -- the replay actor's own hand.
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+    nestedMetrics = {
+      { command = "AskForCardChosen", total = 1, fallback = 0, invalid = 0 },
+    },
+  },
+  aocai = {
+    reason = "response ViewAs basic card from the two-card draw-pile offer",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    expectedTargetCount = 0,
+    expectedReplayCardCount = 1,
+    promoteFakeSkill = true,
+    -- AskForResponseCard must execute the returned card through the native
+    -- RespondCard event, not through an ordinary UseCard event.  The source
+    -- card remains a real draw-pile card selected by the live ViewAs handler.
+    executeResponseResult = true,
+  },
+  shangyi = {
+    reason = "active target view followed by a choice and visible-card discard",
+    expectedHpDelta = 0,
+    expectedHandDelta = 0,
+    expectedTargetHpDelta = 0,
+    expectedTargetHandDelta = -1,
+    expectedTargetHandTotalDelta = -1,
+    expectedTargetCount = 1,
+    -- The accepted active reply is captured from the browser-seat AI, but the
+    -- downstream skill opens AskForChoices and AskForCardsAndChoice.  Use an
+    -- isolated native BOT only as the replay actor so both nested requests
+    -- are answered through the real Request/SmartAI path without waiting for
+    -- a browser client.  The target is a separate native BOT so every nested
+    -- request remains deterministic and does not make the actor target itself.
+    actorPolicy = "native_bot",
+    targetPolicy = "native_bot_other",
+  },
+}
+-- ViewAs skills that can open a second response/choice request (for example
+-- Slash/Jink or Fire Attack) stay out of this table unless the profile declares
+-- an explicit nested-request policy. A server-side SkillEffect observation
+-- alone is not enough to call such a replay a clean PASS.
+local prompt4EffectReplayProfile = prompt4EffectReplaySkill and
+  prompt4EffectReplayProfiles[prompt4EffectReplaySkill] or nil
+
+-- The verified package carries the general-pair module. The QA launcher
+-- exposes it through a symlink at the native require path; the symlink is
+-- ignored by the public flist walk, so the browser/native identity stays
+-- paired with the public gateway.
+
 local function fail(message)
   error("[tqs_qa] " .. message)
 end
@@ -40,6 +286,112 @@ if catalog.schemaVersion ~= 1 or catalog.package ~= "tqs_qa" or
 end
 
 local scenarioById = {}
+
+local function cloneList(values)
+  local copy = {}
+  for index, value in ipairs(values or {}) do copy[index] = value end
+  return copy
+end
+
+local function cloneScenario(scenario)
+  local copy = {}
+  for key, value in pairs(scenario) do copy[key] = value end
+  return copy
+end
+
+-- Prompt 4 uses one scenario id with a small, explicit seed/roster matrix.
+-- Keeping the matrix behind the existing ai-trace room contract means the
+-- browser runner and paired parser still have one stable protocol, while the
+-- native director refuses arbitrary seed/roster combinations.
+local function resolveAiTraceScenario(scenario, seed)
+  if scenario.trigger ~= "ai-trace" or type(scenario.seedVariants) ~= "table" then
+    return nil
+  end
+  local range = scenario.seedRange
+  if type(range) ~= "table" or type(range.min) ~= "number" or type(range.max) ~= "number" or
+      seed < range.min or seed > range.max then
+    return nil
+  end
+  for _, variant in ipairs(scenario.seedVariants) do
+    if variant.seed == seed then
+      local resolved = cloneScenario(scenario)
+      resolved.seatRosters = variant.seatRosters
+      resolved.fixedHands = variant.fixedHands
+      return resolved
+    end
+  end
+  return nil
+end
+
+-- The win-rate matrix keeps its public roster definitions in catalog.json but
+-- uses the four existing mixed-match scenario ids as seat-swap templates. A
+-- seed in the declared range selects one roster set; the scenario's A/B/C/D
+-- permutation then maps kingdom groups onto seats. This makes baseline and
+-- candidate runs pairable by (scenario, seed) without copying 16 large offer
+-- arrays into the catalog or allowing an arbitrary room to select a roster.
+local generalPairMatrix = catalog.generalPairMatrix
+local function matrixGeneralCount()
+  local count = type(generalPairMatrix) == "table" and generalPairMatrix.initialGeneralCount or nil
+  if type(count) ~= "number" or count % 1 ~= 0 or count < 5 or count > 10 then
+    fail("general-pair matrix initialGeneralCount must be an integer from five through ten")
+  end
+  return count
+end
+
+local function resolveGeneralPairScenario(scenario, seed)
+  local aiTraceResolved = resolveAiTraceScenario(scenario, seed)
+  if aiTraceResolved then return aiTraceResolved end
+  if type(scenario.matrixFamily) ~= "string" then
+    return seed == scenario.seed and scenario or nil
+  end
+  if type(generalPairMatrix) ~= "table" or generalPairMatrix.schemaVersion ~= 1 or
+      type(generalPairMatrix.rosterSets) ~= "table" or
+      type(generalPairMatrix.seatPermutations) ~= "table" then
+    fail("general-pair matrix metadata is missing or invalid")
+  end
+  local range = scenario.seedRange
+  if type(range) ~= "table" or type(range.min) ~= "number" or type(range.max) ~= "number" or
+      seed < range.min or seed > range.max then
+    if seed == scenario.seed then
+      local fixed = cloneScenario(scenario)
+      fixed.matrixRosterSet = "fixed"
+      fixed.matrixSeatPermutation = scenario.matrixSeatPermutation or "fixed"
+      return fixed
+    end
+    return nil
+  end
+  local rosterNames = scenario.matrixRosterSets
+  local permutation = generalPairMatrix.seatPermutations[scenario.matrixSeatPermutation]
+  if type(rosterNames) ~= "table" or #rosterNames == 0 or
+      type(permutation) ~= "table" or #permutation ~= 4 then
+    fail("general-pair matrix scenario has invalid roster/permutation metadata")
+  end
+  local ordinal = ((seed - range.min) % #rosterNames) + 1
+  local rosterName = rosterNames[ordinal]
+  local rosterSet = generalPairMatrix.rosterSets[rosterName]
+  local expectedCount = matrixGeneralCount()
+  if type(rosterSet) ~= "table" or type(rosterSet.offeredGroups) ~= "table" or
+      #rosterSet.offeredGroups ~= 4 then
+    fail("general-pair matrix roster set is missing four offered groups: " .. tostring(rosterName))
+  end
+  local resolved = cloneScenario(scenario)
+  resolved.offeredGroups = {}
+  for seat, sourceSeat in ipairs(permutation) do
+    if type(sourceSeat) ~= "number" or type(rosterSet.offeredGroups[sourceSeat]) ~= "table" then
+      fail("general-pair matrix permutation points outside roster set " .. tostring(rosterName))
+    end
+    if #rosterSet.offeredGroups[sourceSeat] ~= expectedCount then
+      fail("general-pair matrix roster set " .. tostring(rosterName) .. " source seat " ..
+        tostring(sourceSeat) .. " must offer exactly " .. tostring(expectedCount) .. " generals")
+    end
+    resolved.offeredGroups[seat] = cloneList(rosterSet.offeredGroups[sourceSeat])
+  end
+  resolved.enabledKingdoms = cloneList(rosterSet.enabledKingdoms or scenario.enabledKingdoms)
+  resolved.matrixRosterSet = tostring(rosterName)
+  resolved.matrixSeatPermutation = tostring(scenario.matrixSeatPermutation)
+  return resolved
+end
+
 local function validateDamageExchangeScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("damage-exchange scenarios must define exactly two players")
@@ -1045,6 +1397,186 @@ local function validateHiddenDuanchangScenario(scenario)
   end
 end
 
+local function validateAiTraceScenario(scenario)
+  if scenario.playerCount ~= 4 or type(scenario.seatRosters) ~= "table" or
+      #scenario.seatRosters ~= 4 then
+    fail("ai-trace must define exactly four fixed seat rosters")
+  end
+  if type(scenario.fixedHands) ~= "table" or #scenario.fixedHands ~= 4 then
+    fail("ai-trace must define exactly four semantic fixed hands")
+  end
+  if scenario.expectedCommand ~= "PlayCard" or #scenario.cards ~= 0 then
+    fail("ai-trace must use PlayCard as its command anchor and reserve no cards")
+  end
+  if scenario.trigger == "ai-trace" then
+    local expectedPrompt4Skills = {
+      "tianyi", "shangyi", "tiaoxin", "hs__zhiheng", "hs__kurou", "hs__qiangxi",
+      "hs__longdan", "hs__luanji", "hs__wusheng", "huoji", "jijiu", "kanpo",
+      "aocai", "beizhu", "dimeng", "choufa", "cunsi", "duanfa",
+    }
+    if type(scenario.prompt4Skills) ~= "table" or #scenario.prompt4Skills ~= #expectedPrompt4Skills then
+      fail("ai-trace must pin the eighteen Prompt 4 native skills")
+    end
+    for index, skillName in ipairs(expectedPrompt4Skills) do
+      local missingNativeSkill = type(Fk) == "table" and type(Fk.skills) == "table" and not Fk.skills[skillName]
+      if scenario.prompt4Skills[index] ~= skillName or missingNativeSkill then
+        fail("ai-trace Prompt 4 skill order or installation drift at " .. tostring(index))
+      end
+    end
+
+    if scenario.seedRange ~= nil or scenario.seedVariants ~= nil then
+      local range = scenario.seedRange
+      if type(range) ~= "table" or type(range.min) ~= "number" or type(range.max) ~= "number" or
+          range.min > range.max or type(scenario.seedVariants) ~= "table" or #scenario.seedVariants < 2 then
+        fail("ai-trace seed matrix metadata is invalid")
+      end
+      local seenSeeds = {}
+      for _, variant in ipairs(scenario.seedVariants) do
+        if type(variant) ~= "table" or type(variant.seed) ~= "number" or seenSeeds[variant.seed] or
+            variant.seed < range.min or variant.seed > range.max then
+          fail("ai-trace seed matrix contains an invalid or duplicate seed")
+        end
+        seenSeeds[variant.seed] = true
+        validateAiTraceScenario({
+          id = scenario.id .. "/" .. tostring(variant.seed),
+          trigger = scenario.trigger,
+          playerCount = scenario.playerCount,
+          seatRosters = variant.seatRosters,
+          fixedHands = variant.fixedHands,
+          expectedCommand = scenario.expectedCommand,
+          cards = scenario.cards,
+          prompt4Skills = scenario.prompt4Skills,
+        })
+      end
+      if not seenSeeds[scenario.seed] then
+        fail("ai-trace seed matrix must include the default seed")
+      end
+    end
+  end
+  for seat, roster in ipairs(scenario.seatRosters) do
+    if type(roster) ~= "table" or type(roster.general) ~= "string" or
+        type(roster.deputy) ~= "string" or type(roster.kingdom) ~= "string" then
+      fail("ai-trace has an invalid roster at seat " .. tostring(seat))
+    end
+    local matcher = scenario.fixedHands[seat]
+    if type(matcher) ~= "table" or type(matcher.trueName) ~= "string" or
+        matcher.trueName == "" or
+        (matcher.suit ~= "heart" and matcher.suit ~= "diamond" and
+         matcher.suit ~= "spade" and matcher.suit ~= "club") or
+        (matcher.color ~= "red" and matcher.color ~= "black") or
+        ((matcher.suit == "heart" or matcher.suit == "diamond") ~= (matcher.color == "red")) then
+      fail("ai-trace has an invalid semantic fixed hand at seat " .. tostring(seat))
+    end
+  end
+end
+
+local function validateChooserTraceScenario(scenario)
+  -- Reuse the proven semantic hand/roster contract but keep the five-decision
+  -- ai-trace protocol completely independent.
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" then
+    fail("chooser-trace must anchor AskForUseActiveSkill")
+  end
+  local shadow = { playerCount = scenario.playerCount, seatRosters = scenario.seatRosters,
+    fixedHands = scenario.fixedHands, expectedCommand = "PlayCard", cards = scenario.cards }
+  validateAiTraceScenario(shadow)
+  local expected = { "choose_players_skill", "choose_cards_skill", "ex__choose_skill" }
+  if type(scenario.cases) ~= "table" or #scenario.cases ~= 6 then
+    fail("chooser-trace must declare six bounded cases")
+  end
+  for index, spec in ipairs(scenario.cases) do
+    if type(spec) ~= "table" or spec.skill ~= expected[(index - 1) % 3 + 1] or
+        spec.variant ~= (index <= 3 and "mandatory" or "optional") then
+      fail("chooser-trace case order, skill or variant drift")
+    end
+  end
+end
+
+local function validateGeneralPairTraceScenario(scenario)
+  local label = scenario.id or "general-pair-trace"
+  if scenario.playerCount ~= 4 or type(scenario.offeredGroups) ~= "table" or
+      #scenario.offeredGroups ~= 4 then
+    fail(label .. " must define exactly four offered general groups")
+  end
+  if scenario.expectedCommand ~= "CustomDialog" or #scenario.cards ~= 0 then
+    fail(label .. " must use CustomDialog as its command anchor and reserve no cards")
+  end
+  if type(scenario.enabledKingdoms) ~= "table" or #scenario.enabledKingdoms == 0 then
+    fail(label .. " must define at least one enabled kingdom")
+  end
+  local enabled = {}
+  for _, kingdom in ipairs(scenario.enabledKingdoms) do
+    if type(kingdom) ~= "string" or kingdom == "" then
+      fail(label .. " has an invalid enabled kingdom")
+    end
+    enabled[kingdom] = true
+  end
+  for seat, offered in ipairs(scenario.offeredGroups) do
+    if type(offered) ~= "table" or #offered ~= 5 then
+      fail(label .. " seat " .. tostring(seat) .. " must offer exactly five generals")
+    end
+    local seen = {}
+    for _, name in ipairs(offered) do
+      local general = type(Fk) == "table" and type(Fk.generals) == "table" and
+        type(name) == "string" and Fk.generals[name] or nil
+      -- The standalone catalog loader intentionally supplies no engine. The
+      -- native package performs the stronger Fk.generals/kingdom check once
+      -- the pinned packages have loaded.
+      local invalidDefinition = type(Fk) == "table" and type(Fk.generals) == "table" and
+        (not general or not enabled[general.kingdom])
+      if type(name) ~= "string" or seen[name] or invalidDefinition then
+        fail(label .. " has an invalid or duplicate general at seat " .. tostring(seat))
+      end
+      seen[name] = true
+    end
+  end
+  if scenario.matrixFamily ~= nil then
+    if scenario.matrixFamily ~= "general-pair-winrate-v1" or
+        type(scenario.matrixRosterSets) ~= "table" or #scenario.matrixRosterSets == 0 or
+        type(scenario.matrixSeatPermutation) ~= "string" or
+        type(scenario.seedRange) ~= "table" or
+        type(scenario.seedRange.min) ~= "number" or type(scenario.seedRange.max) ~= "number" or
+        scenario.seedRange.min > scenario.seedRange.max or
+        type(generalPairMatrix) ~= "table" then
+      fail(label .. " has invalid win-rate matrix metadata")
+    end
+    local permutation = generalPairMatrix.seatPermutations and
+      generalPairMatrix.seatPermutations[scenario.matrixSeatPermutation]
+    if type(permutation) ~= "table" or #permutation ~= 4 then
+      fail(label .. " has no four-seat permutation in the win-rate matrix")
+    end
+    for _, rosterName in ipairs(scenario.matrixRosterSets) do
+      local rosterSet = generalPairMatrix.rosterSets and generalPairMatrix.rosterSets[rosterName]
+      local expectedCount = matrixGeneralCount()
+      if type(rosterSet) ~= "table" or type(rosterSet.offeredGroups) ~= "table" or
+          #rosterSet.offeredGroups ~= 4 then
+        fail(label .. " references an invalid roster set " .. tostring(rosterName))
+      end
+      local rosterKingdoms = rosterSet.enabledKingdoms
+      if type(rosterKingdoms) ~= "table" or #rosterKingdoms ~= 4 then
+        fail(label .. " roster set " .. tostring(rosterName) .. " must define four kingdoms")
+      end
+      for sourceSeat, offered in ipairs(rosterSet.offeredGroups) do
+        if type(offered) ~= "table" or #offered ~= expectedCount then
+          fail(label .. " roster set " .. tostring(rosterName) .. " seat " .. tostring(sourceSeat) ..
+            " must offer exactly " .. tostring(expectedCount) .. " generals")
+        end
+        local seen = {}
+        for _, name in ipairs(offered) do
+          local general = type(Fk) == "table" and type(Fk.generals) == "table" and
+            type(name) == "string" and Fk.generals[name] or nil
+          local invalidDefinition = type(Fk) == "table" and type(Fk.generals) == "table" and
+            (not general or not table.contains(rosterKingdoms, general.kingdom))
+          if type(name) ~= "string" or seen[name] or invalidDefinition then
+            fail(label .. " roster set " .. tostring(rosterName) ..
+              " has an invalid or duplicate general at source seat " .. tostring(sourceSeat))
+          end
+          seen[name] = true
+        end
+      end
+    end
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -1117,6 +1649,12 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenTianxiangScenario(scenario)
   elseif scenario.trigger == "hidden-duanchang" then
     validateHiddenDuanchangScenario(scenario)
+  elseif scenario.trigger == "ai-trace" then
+    validateAiTraceScenario(scenario)
+  elseif scenario.trigger == "chooser-trace" then
+    validateChooserTraceScenario(scenario)
+  elseif scenario.trigger == "general-pair-trace" or scenario.trigger == "general-pair-match" then
+    validateGeneralPairTraceScenario(scenario)
   end
   scenarioById[scenario.id] = scenario
 end
@@ -1174,10 +1712,27 @@ local function parseRequest(room)
     fail("unknown scenario: " .. id)
   end
   local seed = parseSeed(seedText)
-  if not seed or seed ~= scenario.seed then
+  local resolved = seed and resolveGeneralPairScenario(scenario, seed) or nil
+  if not resolved then
     fail("seed does not match catalog for scenario " .. id)
   end
-  return scenario, seed
+  return resolved, seed
+end
+
+-- General-pair selection happens inside HegLogic:chooseGenerals, before
+-- fk.GamePrepared and therefore before the ordinary scenario state exists.
+-- Resolve only this validated QA room from its room name so the
+-- package-level hooks below cannot affect public or non-QA rooms.
+local function generalPairTraceScenarioForRoom(room)
+  local roomName = room:getSettings("roomName") or ""
+  if roomName:sub(1, #roomPrefix) ~= roomPrefix then return nil end
+  local id, seedText = roomName:sub(#roomPrefix + 1):match("^([%w%-]+)/(0[xX][0-9a-fA-F]+)$")
+  local scenario = id and scenarioById[id] or nil
+  if not scenario or (scenario.trigger ~= "general-pair-trace" and scenario.trigger ~= "general-pair-match") then
+    return nil
+  end
+  local seed = parseSeed(seedText)
+  return seed and resolveGeneralPairScenario(scenario, seed) or nil
 end
 
 local function isAllowedUser(name)
@@ -1299,6 +1854,12 @@ local function attachGeneralPair(room, player, roster)
   room:setPlayerMark(player, "__heg_wild", 0)
   room:setPlayerMark(player, "__heg_kingdom", roster.kingdom)
   room:setPlayerMark(player, "__heg_init_kingdom", roster.kingdom)
+  -- GamePrepared runs after the ordinary general draft but before the first
+  -- draw. Replace the public pair as well as the private marks; leaving the
+  -- draft pair in player.general/deputyGeneral makes the browser show a
+  -- random roster and lets later ChangeProperty handling index a stale slot.
+  room:setPlayerProperty(player, "general", roster.general)
+  room:setPlayerProperty(player, "deputyGeneral", roster.deputy)
   room:setPlayerProperty(player, "kingdom", roster.kingdom)
   player.role = roster.kingdom
 
@@ -1375,6 +1936,95 @@ local function shuffleTail(room, seed)
   room:syncDrawPile()
 end
 
+-- Prompt 4 native replay uses a private, metadata-only card fixture.  The
+-- cards are selected by semantic shape from the pinned draw pile and moved to
+-- Void until GameStart, so ordinary initial draws cannot consume them.  Card
+-- ids never leave this function or enter the trace; the later fingerprints
+-- retain only trueName/color/suit/type shapes.
+local function reservePrompt4Card(room, reserved, label, predicate)
+  for _, id in ipairs(room.draw_pile or {}) do
+    if not reserved[id] then
+      local ok, card = pcall(Fk.getCardById, Fk, id)
+      if ok and card and predicate(card) then
+        reserved[id] = true
+        room:moveCardTo(id, Card.Void, nil, fk.ReasonJustMove, "tqs_qa", nil, false)
+        return id
+      end
+    end
+  end
+  fail("ai-trace Prompt 4 fixture card is unavailable: " .. tostring(label))
+end
+
+local function prompt4CardSuit(card)
+  if not card or type(card.getSuitString) ~= "function" then return "" end
+  local ok, suit = pcall(card.getSuitString, card)
+  return ok and suit or ""
+end
+
+local function reservePrompt4Fixture(room, reserved)
+  local cards = {}
+  cards.high = reservePrompt4Card(room, reserved, "high", function(card)
+    return card.trueName == "savage_assault" and prompt4CardSuit(card) == "spade"
+  end)
+  cards.weapon = reservePrompt4Card(room, reserved, "weapon", function(card)
+    return card.sub_type == Card.SubtypeWeapon and
+      (card.trueName == "kylin_bow" or card.name == "kylin_bow")
+  end)
+  cards.red_heart_a = reservePrompt4Card(room, reserved, "red_pair_a", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "heart"
+  end)
+  cards.red_heart_b = reservePrompt4Card(room, reserved, "red_pair_b", function(card)
+    return card.trueName == "peach" and prompt4CardSuit(card) == "heart"
+  end)
+  cards.black_spade = reservePrompt4Card(room, reserved, "black_pair_a", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "spade"
+  end)
+  cards.black_club = reservePrompt4Card(room, reserved, "black_pair_b", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "club"
+  end)
+  cards.jink = reservePrompt4Card(room, reserved, "jink", function(card)
+    return card.trueName == "jink" and prompt4CardSuit(card) == "diamond"
+  end)
+  local target_extra = reservePrompt4Card(room, reserved, "target_extra", function(card)
+    return card.trueName == "jink" and prompt4CardSuit(card) == "diamond"
+  end)
+  local native_bot_jink = reservePrompt4Card(room, reserved, "native_bot_jink", function(card)
+    return card.trueName == "jink" and prompt4CardSuit(card) == "diamond"
+  end)
+  local native_bot_longdan_jink = reservePrompt4Card(room, reserved, "native_bot_longdan_jink", function(card)
+    return card.trueName == "jink" and prompt4CardSuit(card) == "diamond"
+  end)
+  local native_bot_huoji_red_a = reservePrompt4Card(room, reserved, "native_bot_huoji_red_a", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "heart"
+  end)
+  local native_bot_huoji_red_b = reservePrompt4Card(room, reserved, "native_bot_huoji_red_b", function(card)
+    return card.trueName == "peach" and prompt4CardSuit(card) == "heart"
+  end)
+  local native_bot_luanji_black_a = reservePrompt4Card(room, reserved, "native_bot_luanji_black_a", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "spade"
+  end)
+  local native_bot_luanji_black_b = reservePrompt4Card(room, reserved, "native_bot_luanji_black_b", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "club"
+  end)
+  local native_bot_tianyi_high = reservePrompt4Card(room, reserved, "native_bot_tianyi_high", function(card)
+    return type(card.number) == "number" and card.number >= 10
+  end)
+  local native_bot_tianyi_low = reservePrompt4Card(room, reserved, "native_bot_tianyi_low", function(card)
+    return type(card.number) == "number" and card.number <= 3
+  end)
+  local native_bot_tiaoxin_slash = reservePrompt4Card(room, reserved, "native_bot_tiaoxin_slash", function(card)
+    return card.trueName == "slash"
+  end)
+  cards.shangyi_black = reservePrompt4Card(room, reserved, "shangyi_black", function(card)
+    return card.trueName == "slash" and prompt4CardSuit(card) == "spade"
+  end)
+  return cards, {
+    target_extra, native_bot_jink, native_bot_tianyi_high, native_bot_tianyi_low,
+    native_bot_tiaoxin_slash, native_bot_longdan_jink, native_bot_huoji_red_a,
+    native_bot_huoji_red_b, native_bot_luanji_black_a, native_bot_luanji_black_b,
+  }
+end
+
 local function setupCards(room, state, scenario)
   local reserved = {}
   state.fixedHands = {}
@@ -1410,6 +2060,19 @@ local function setupCards(room, state, scenario)
       fail("unsupported catalog card area: " .. tostring(spec.area))
     end
   end
+  if scenario.trigger == "ai-trace" or scenario.trigger == "chooser-trace" then
+    -- Initial draws happen before the scenario seed is applied to the tail.
+    -- Give every fixed seat one deterministic semantic card so the real
+    -- SmartAI probe receives the same hand shape in baseline and candidate.
+    -- These IDs stay in the private fixture state and never enter metadata
+    -- logs; only the hashed card shape is retained by aiTraceInputFingerprint.
+    for seat, player in ipairs(room.players or {}) do
+      state.fixedHands[player.id] = { takeCard(room, scenario.fixedHands[seat], reserved) }
+    end
+  end
+  if scenario.trigger == "ai-trace" and type(scenario.prompt4Skills) == "table" then
+    state.prompt4Cards, state.prompt4TargetCards = reservePrompt4Fixture(room, reserved)
+  end
   if scenario.trigger == "hidden-fuyin" then
     -- 父荫 only nullifies the first Slash when the user's hand is no larger
     -- than the Slash user. The catalogued source Slash is the only card that
@@ -1425,16 +2088,178 @@ local function setupCards(room, state, scenario)
   end
 end
 
+local function preparePrompt4Fixture(room, state)
+  if type(state.prompt4Cards) ~= "table" or state.prompt4FixturePrepared then return end
+  local ordered = {
+    "high", "weapon", "red_heart_a", "red_heart_b", "black_spade", "black_club", "jink",
+  }
+  for _, key in ipairs(ordered) do
+    local id = state.prompt4Cards[key]
+    if not id then fail("ai-trace Prompt 4 fixture is missing " .. key) end
+    room:moveCardTo(id, Card.PlayerHand, state.actor, fk.ReasonJustMove,
+      "tqs_qa", nil, false, state.actor)
+  end
+  local extra = state.prompt4TargetCards and state.prompt4TargetCards[1]
+  if not extra then fail("ai-trace Prompt 4 target fixture is missing") end
+  room:moveCardTo(extra, Card.PlayerHand, room.players[2], fk.ReasonJustMove,
+    "tqs_qa", nil, false, room.players[2])
+  local nativeBot = table.find(room.players, function(player)
+    return player.id < 0 and player:isAlive()
+  end)
+  local nativeBotTarget = table.find(room.players, function(player)
+    return player.id < 0 and player ~= nativeBot and player:isAlive()
+  end)
+  local nativeBotJink = state.prompt4TargetCards and state.prompt4TargetCards[2]
+  if not nativeBot or not nativeBotTarget or not nativeBotJink then
+    fail("ai-trace Prompt 4 native BOT response fixture is missing")
+  end
+  -- Keep the exact native seats selected while the fixture is installed. A
+  -- later replay must not rediscover them by seat/id ordering: the browser
+  -- actor and native BOT ids are assigned by the live server and can differ
+  -- between room constructions.
+  state.prompt4NativeActor = nativeBot
+  state.prompt4NativeTarget = nativeBotTarget
+  -- The fourth seat is the actor's fixed Wu ally.  Keep it wounded so the
+  -- native Jijiu strategy has a legal recovery opportunity without exposing
+  -- any private card or general state in the trace.
+  local ally = room.players[4]
+  room:setPlayerProperty(ally, "hp", math.max(1, (ally.maxHp or 2) - 1))
+
+  -- Aocai's real ViewAsSkill reads the first two draw-pile cards.  Put two
+  -- semantic Basic cards on top after the normal deterministic tail shuffle;
+  -- the selected identities remain outside all logs.
+  local top = {}
+  for _, id in ipairs(room.draw_pile or {}) do
+    local ok, card = pcall(Fk.getCardById, Fk, id)
+    if ok and card and card.type == Card.TypeBasic then
+      table.insert(top, id)
+      if #top == 2 then break end
+    end
+  end
+  if #top ~= 2 then fail("ai-trace Prompt 4 fixture needs two Basic draw-pile cards") end
+  for index, id in ipairs(top) do
+    local position
+    for candidate, current in ipairs(room.draw_pile) do
+      if current == id then position = candidate; break end
+    end
+    if not position then fail("ai-trace Prompt 4 draw-pile fixture drift") end
+    room.draw_pile[position], room.draw_pile[index] = room.draw_pile[index], room.draw_pile[position]
+  end
+  for _, id in ipairs(room.draw_pile) do room:setCardArea(id, Card.DrawPile, nil) end
+  room:syncDrawPile()
+  state.prompt4AocaiTop = { room.draw_pile[1], room.draw_pile[2] }
+  state.prompt4FixturePrepared = true
+end
+
+-- Profile-specific native BOT resources are installed only after the full
+-- eighteen-request legality/privacy matrix has been captured.  Adding them
+-- before that point changes public hand counts and can make an unrelated
+-- request (notably Dimeng) lose its deterministic opportunity.  The replay
+-- itself still uses the same real native participants and cards.
+local function preparePrompt4ReplayResources(room, state)
+  if not prompt4EffectReplaySkill then return end
+  local nativeBot = state.prompt4NativeActor
+  local nativeBotTarget = state.prompt4NativeTarget
+  if not nativeBot or not nativeBotTarget then
+    fail("ai-trace Prompt 4 replay resources require two native BOTs")
+  end
+  local nativeBotJink = state.prompt4TargetCards and state.prompt4TargetCards[2]
+  if not nativeBotJink then fail("ai-trace Prompt 4 native BOT Jink fixture is missing") end
+  if prompt4EffectReplaySkill == "hs__wusheng" or
+      prompt4EffectReplaySkill == "hs__luanji" then
+    room:moveCardTo(nativeBotJink, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+  end
+  local nativeBotLongdanJink = state.prompt4TargetCards and state.prompt4TargetCards[6]
+  if prompt4EffectReplaySkill == "hs__wusheng" then
+    if not nativeBotLongdanJink then fail("ai-trace Prompt 4 Wusheng Jink fixture is missing") end
+    room:moveCardTo(nativeBotLongdanJink, Card.PlayerHand, nativeBotTarget,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBotTarget)
+  elseif prompt4EffectReplaySkill == "hs__longdan" then
+    if not nativeBotLongdanJink then fail("ai-trace Prompt 4 Longdan Jink fixture is missing") end
+    room:moveCardTo(nativeBotLongdanJink, Card.PlayerHand, nativeBot,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBot)
+    local targetFillerCards = nativeBotTarget:getCardIds(Player.Hand) or {}
+    for _, id in ipairs(targetFillerCards) do
+      room:moveCardTo(id, Card.Void, nil, fk.ReasonJustMove, "tqs_qa", nil, false)
+    end
+  end
+  if prompt4EffectReplaySkill == "hs__luanji" then
+    if not nativeBotLongdanJink then fail("ai-trace Prompt 4 Luanji Jink fixture is missing") end
+    local targetFillerCards = nativeBotTarget:getCardIds(Player.Hand) or {}
+    for _, id in ipairs(targetFillerCards) do
+      room:moveCardTo(id, Card.Void, nil, fk.ReasonJustMove, "tqs_qa", nil, false)
+    end
+    room:moveCardTo(nativeBotLongdanJink, Card.PlayerHand, nativeBotTarget,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBotTarget)
+  end
+  local nativeBotTianyiHigh = state.prompt4TargetCards and state.prompt4TargetCards[3]
+  local nativeBotTianyiLow = state.prompt4TargetCards and state.prompt4TargetCards[4]
+  if not nativeBotTianyiHigh or not nativeBotTianyiLow then
+    fail("ai-trace Prompt 4 Tianyi pindian fixture is missing")
+  end
+  if prompt4EffectReplaySkill == "tianyi" then
+    room:moveCardTo(nativeBotTianyiHigh, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+    room:moveCardTo(nativeBotTianyiLow, Card.PlayerHand, nativeBotTarget,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBotTarget)
+  end
+  local nativeBotTiaoxinSlash = state.prompt4TargetCards and state.prompt4TargetCards[5]
+  if not nativeBotTiaoxinSlash then
+    fail("ai-trace Prompt 4 Tiaoxin Slash fixture is missing")
+  end
+  if prompt4EffectReplaySkill == "tiaoxin" then
+    room:moveCardTo(nativeBotTiaoxinSlash, Card.PlayerHand, nativeBotTarget,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBotTarget)
+  end
+  local shangyiBlack = state.prompt4Cards.shangyi_black
+  if not shangyiBlack then fail("ai-trace Prompt 4 Shangyi card fixture is missing") end
+  if prompt4EffectReplaySkill == "shangyi" or prompt4EffectReplaySkill == "choufa" then
+    room:moveCardTo(shangyiBlack, Card.PlayerHand, nativeBotTarget,
+      fk.ReasonJustMove, "tqs_qa", nil, false, nativeBotTarget)
+  end
+  local nativeBotHuojiRedA = state.prompt4TargetCards and state.prompt4TargetCards[7]
+  local nativeBotHuojiRedB = state.prompt4TargetCards and state.prompt4TargetCards[8]
+  if prompt4EffectReplaySkill == "huoji" then
+    if not nativeBotHuojiRedA or not nativeBotHuojiRedB then
+      fail("ai-trace Prompt 4 Huoji same-suit fixture is missing")
+    end
+    room:moveCardTo(nativeBotHuojiRedA, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+    room:moveCardTo(nativeBotHuojiRedB, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+  end
+  local nativeBotLuanjiBlackA = state.prompt4TargetCards and state.prompt4TargetCards[9]
+  local nativeBotLuanjiBlackB = state.prompt4TargetCards and state.prompt4TargetCards[10]
+  if prompt4EffectReplaySkill == "hs__luanji" then
+    if not nativeBotLuanjiBlackA or not nativeBotLuanjiBlackB then
+      fail("ai-trace Prompt 4 Luanji distinct-suit fixture is missing")
+    end
+    room:moveCardTo(nativeBotLuanjiBlackA, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+    room:moveCardTo(nativeBotLuanjiBlackB, Card.PlayerHand, nativeBot, fk.ReasonJustMove,
+      "tqs_qa", nil, false, nativeBot)
+  end
+end
+
+local installAiTrace
+
 local function setupState(room, scenario, seed)
   assertRoomAllowed(room, scenario)
   local actor = table.find(room.players, function(player)
     return player.id > 0 and player._splayer:getScreenName() == allowedUsers[1]
   end) or table.find(room.players, function(player) return player.id > 0 end) or room.players[1]
   local target = table.find(room.players, function(player) return player.id ~= actor.id end) or room.players[2]
+  if scenario.seatRosters then
+    actor = room.players[1]
+    target = room.players[2]
+  end
   local state = {
     scenario = scenario.id,
     seed = seed,
     revision = manifest.sourceRevision,
+    matrixRosterSet = scenario.matrixRosterSet or "fixed",
+    matrixSeatPermutation = scenario.matrixSeatPermutation or "fixed",
     startedAt = now(),
     actor = actor,
     target = target,
@@ -1461,8 +2286,25 @@ local function setupState(room, scenario, seed)
     hiddenZhimanDamageCaused = false,
     hiddenJilixTargetConfirmed = false,
     hiddenJilixDamageInflicted = 0,
+    prompt4EffectReplay = nil,
   }
-  if scenario.players then
+  if scenario.trigger == "ai-trace" then
+    -- Keep the seed-resolved fixture with the room state. The public scenario
+    -- id remains stable for the existing parser, while all native pair and
+    -- semantic-hand checks use the exact catalog variant selected by seed.
+    state.aiTraceScenario = scenario
+  end
+  if scenario.trigger == "general-pair-trace" or scenario.trigger == "general-pair-match" then
+    state.generalPairTrace = room:getTag("__tqs_general_pair_trace")
+    if type(state.generalPairTrace) ~= "table" then
+      fail(scenario.id .. " did not capture an initial CustomDialog decision")
+    end
+  end
+  if scenario.seatRosters then
+    for seat, roster in ipairs(scenario.seatRosters) do
+      attachGeneralPair(room, room.players[seat], roster)
+    end
+  elseif scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
     attachGeneralPair(room, state.target, scenario.players.target)
   elseif scenario.general then
@@ -1478,6 +2320,7 @@ local function setupState(room, scenario, seed)
   totalRuns = totalRuns + 1
   activeRooms[tostring(room)] = state
   room:setTag("tqs_qa", state)
+  installAiTrace(room, state)
   fk.qInfo(string.format("[tqs_qa] scenario=%s seed=%u revision=%s players=%d",
     state.scenario, state.seed, state.revision, #room.players))
   return state
@@ -1486,6 +2329,930 @@ end
 local function stateFor(room)
   return room:getTag("tqs_qa")
 end
+
+-- The ai-trace scenario is deliberately QA-only.  It records only bounded
+-- fingerprints and reply shapes so baseline/candidate runs can be compared
+-- without putting prompts, card ids, target ids, or private payloads in the
+-- native log.  The production AI metrics remain the source of truth for the
+-- fallback category; this wrapper only correlates each request with the
+-- deterministic input snapshot that reached it.
+local function aiTraceHash(value)
+  local hash = 2166136261
+  local text = tostring(value or "")
+  for index = 1, #text do
+    hash = ((hash ~ string.byte(text, index)) * 16777619) & 0xffffffff
+  end
+  return string.format("%08x", hash)
+end
+
+local function aiTraceStable(value, depth, seen)
+  depth = depth or 0
+  seen = seen or {}
+  local kind = type(value)
+  if kind == "nil" then return "nil" end
+  if kind == "string" then return "s:" .. aiTraceHash(value) end
+  if kind == "number" then return "n:" .. string.format("%.17g", value) end
+  if kind == "boolean" then return value and "b:1" or "b:0" end
+  if kind ~= "table" then return kind end
+  if depth >= 4 then return "table:depth" end
+  if seen[value] then return "table:cycle" end
+  seen[value] = true
+  local parts = {}
+  for key, item in pairs(value) do
+    local keyText = type(key) == "string" and ("s:" .. aiTraceHash(key)) or tostring(key)
+    table.insert(parts, keyText .. "=" .. aiTraceStable(item, depth + 1, seen))
+  end
+  table.sort(parts)
+  seen[value] = nil
+  return "table{" .. table.concat(parts, ",") .. "}"
+end
+
+local function aiTraceCardShape(ids)
+  local shapes = {}
+  for _, id in ipairs(ids or {}) do
+    local ok, card = pcall(Fk.getCardById, Fk, id)
+    if ok and card then
+      local colorOk, color = pcall(card.getColorString, card)
+      local suitOk, suit = pcall(card.getSuitString, card)
+      table.insert(shapes, table.concat({
+        tostring(card.trueName or ""),
+        colorOk and tostring(color or "") or "",
+        suitOk and tostring(suit or "") or "",
+        tostring(card.type or ""),
+      }, ":"))
+    end
+  end
+  table.sort(shapes)
+  return aiTraceHash(table.concat(shapes, "|"))
+end
+
+local function aiTraceSeat(room, player)
+  for seat, candidate in ipairs(room.players or {}) do
+    if candidate == player then return seat end
+  end
+  return 0
+end
+
+local function aiTraceInputFingerprint(ai, normalizedData)
+  local room = ai.room
+  local player = ai.player
+  local parts = {
+    "command=" .. tostring(ai.command or ""),
+    "data=" .. aiTraceHash(aiTraceStable(normalizedData or ai.data)),
+  }
+  for seat, candidate in ipairs(room and room.players or {}) do
+    local hand = candidate:getCardIds(Player.Hand) or {}
+    local equip = candidate:getCardIds(Player.Equip) or {}
+    local generalOk, general = pcall(candidate.getMark, candidate, "__heg_general")
+    local deputyOk, deputy = pcall(candidate.getMark, candidate, "__heg_deputy")
+    local kingdomOk, kingdom = pcall(candidate.getMark, candidate, "__heg_kingdom")
+    local privateHand = candidate == player and aiTraceCardShape(hand) or tostring(#hand)
+    local slotShape = aiTraceHash(table.concat({
+      generalOk and tostring(general or "") or "",
+      deputyOk and tostring(deputy or "") or "",
+      kingdomOk and tostring(kingdom or "") or "",
+    }, ":"))
+    table.insert(parts, table.concat({
+      tostring(seat), tostring(candidate.hp or 0), tostring(candidate.maxHp or 0),
+      tostring(candidate.dead and 1 or 0), tostring(candidate.role or ""),
+      privateHand, tostring(#equip), aiTraceCardShape(equip), slotShape,
+    }, ":"))
+  end
+  local events = room and room.logic and room.logic.all_game_events
+  table.insert(parts, "events=" .. tostring(type(events) == "table" and #events or 0))
+  return aiTraceHash(table.concat(parts, "|"))
+end
+
+local function aiTraceReplyShape(reply)
+  if reply == nil then return "nil" end
+  if type(reply) == "string" then
+    if reply == "" or reply == "__cancel" then return "cancel" end
+    return "string"
+  end
+  if type(reply) ~= "table" then return type(reply) end
+  local card = reply.card
+  local cardShape = type(card)
+  if type(card) == "table" then
+    cardShape = type(card.skill) == "string" and "skill" or "table"
+  end
+  return string.format("table/card=%s/targets=%d/special=%s/interaction=%s",
+    cardShape, type(reply.targets) == "table" and #reply.targets or 0,
+    reply.special_skill ~= nil and "1" or "0",
+    reply.interaction_data ~= nil and "1" or "0")
+end
+
+-- Keep the next layer of native request evidence semantic-only.  Target IDs
+-- and card IDs are runtime-private and differ between paired processes, so
+-- expose only the bounded role class and resource shape of the reply.  These
+-- fields are request-shape metadata, not a tactical quality score.
+local function aiTraceReplyTargetProfile(room, actor, reply)
+  if type(reply) ~= "table" or type(reply.targets) ~= "table" or #reply.targets == 0 then
+    return "none"
+  end
+  local selfTarget, allyTarget, enemyTarget = false, false, false
+  local ally = room and room.players and room.players[4]
+  for _, value in ipairs(reply.targets) do
+    local target
+    if type(value) == "table" then
+      for _, candidate in ipairs(room.players or {}) do
+        if candidate == value then target = candidate break end
+      end
+    elseif type(value) == "number" then
+      for _, candidate in ipairs(room.players or {}) do
+        if candidate.id == value then target = candidate break end
+      end
+    end
+    if not target then return "unknown" end
+    if target == actor then
+      selfTarget = true
+    elseif target == ally then
+      allyTarget = true
+    else
+      enemyTarget = true
+    end
+  end
+  local classes = 0
+  if selfTarget then classes = classes + 1 end
+  if allyTarget then classes = classes + 1 end
+  if enemyTarget then classes = classes + 1 end
+  if classes > 1 then return "mixed" end
+  if selfTarget then return "self" end
+  if allyTarget then return "ally" end
+  if enemyTarget then return "enemy" end
+  return "unknown"
+end
+
+local function aiTraceReplyCardProfile(reply)
+  local card = type(reply) == "table" and reply.card or nil
+  if card == nil then return "none" end
+  if type(card) == "number" then return "physical" end
+  if type(card) ~= "table" then return "unknown" end
+  if type(card.skill) == "string" then return "skill" end
+  return "table"
+end
+
+local function aiTraceReplyResourceShape(reply)
+  local card = type(reply) == "table" and reply.card or nil
+  if card == nil then return "none" end
+  local count
+  if type(card) == "number" then
+    count = 1
+  elseif type(card) == "table" and type(card.subcards) == "table" then
+    count = #card.subcards
+  else
+    return "unknown"
+  end
+  if count == 0 then return "none" end
+  if count == 1 then return "one_card" end
+  if count == 2 then return "two_cards" end
+  return "many_cards"
+end
+
+-- Expose only a coarse AI keep-value bucket for the resources actually chosen
+-- by the reply.  This is a valuation snapshot, not a tactical score or a
+-- downstream effect assertion; exact card ids and numeric values stay private.
+local function aiTraceReplyResourceValue(actor, reply)
+  local card = type(reply) == "table" and reply.card or nil
+  local ids = {}
+  if type(card) == "number" then
+    table.insert(ids, card)
+  elseif type(card) == "table" and type(card.subcards) == "table" then
+    for _, id in ipairs(card.subcards) do
+      if type(id) ~= "number" then return "unknown" end
+      table.insert(ids, id)
+    end
+  elseif card ~= nil then
+    return "unknown"
+  end
+  if #ids == 0 then return "none" end
+
+  local total = 0
+  for _, id in ipairs(ids) do
+    local ok, value = pcall(actor.ai.getCardValue, actor.ai, id, "keep_value")
+    if not ok or type(value) ~= "number" or value ~= value or
+        value == math.huge or value == -math.huge then
+      return "unknown"
+    end
+    total = total + value
+  end
+  -- The existing skill policies use 45 as their keep-value cutoff. Reuse
+  -- that bounded semantic scale without serializing the underlying score.
+  if total <= 30 then return "low" end
+  if total <= 45 then return "medium" end
+  return "high"
+end
+
+local function aiTraceReplyCardCount(reply)
+  local card = type(reply) == "table" and reply.card or nil
+  if type(card) == "number" then return 1 end
+  if type(card) == "table" and type(card.subcards) == "table" then
+    return #card.subcards
+  end
+  return 0
+end
+
+local function aiTraceReplyTargetCount(reply)
+  return type(reply) == "table" and type(reply.targets) == "table" and #reply.targets or 0
+end
+
+-- The expected target role is part of the bounded QA fixture, not a claim
+-- about every legal native state.  It lets the parser distinguish a strategy
+-- that acted on the intended role from a merely legal reply, while keeping
+-- target IDs and private player state out of the log.
+local function aiTraceTargetQuality(targetProfile, expectedProfile, acted)
+  if expectedProfile == nil then return "not_applicable" end
+  if not acted then return "no_action" end
+  return targetProfile == expectedProfile and "expected" or "unexpected"
+end
+
+local function aiTraceToken(value)
+  local token = tostring(value or "unknown"):gsub("[^%w_%-]", "_")
+  return token == "" and "unknown" or token:sub(1, 64)
+end
+
+local function recordAiTrace(state, ai, input, reply, reason, detail, skill)
+  local trace = state.aiTrace
+  if not trace or trace.capture == false or trace.overflow then return end
+  trace.total = trace.total + 1
+  local safeReason = aiTraceToken(reason or "accepted")
+  local entry = {
+    seq = trace.total,
+    seat = aiTraceSeat(ai.room, ai.player),
+    command = aiTraceToken(ai.command),
+    skill = aiTraceToken(skill or "unknown"),
+    input = input,
+    output = aiTraceReplyShape(reply),
+    reason = safeReason,
+    detail = aiTraceToken(detail or "none"),
+  }
+  if #trace.decisions >= trace.maxDecisions then
+    trace.overflow = true
+    return
+  end
+  table.insert(trace.decisions, entry)
+  trace.reasons[safeReason] = (trace.reasons[safeReason] or 0) + 1
+  if safeReason ~= "accepted" then trace.fallback = trace.fallback + 1 end
+end
+
+local function aiTraceFallbackCount(ai, command)
+  local room = ai.room
+  local metrics = room and room:getTag("__ai_response_metrics")
+  local commandMetrics = metrics and metrics.by_command and metrics.by_command[command]
+  return commandMetrics and tonumber(commandMetrics.fallback or 0) or 0
+end
+
+-- The native request counter joins skill/reason only in QA. Emit the joined
+-- categories and recovered strategy-shape failures before room cleanup, with
+-- no raw hands, prompts, card/target IDs or unallowlisted skill names.
+local function emitPrompt4Provenance(room, state)
+  if state.prompt4ProvenanceEmitted then return end
+  state.prompt4ProvenanceEmitted = true
+  local requestReasons = room:getTag("__tqs_prompt4_request_reasons") or {}
+  local strategyIssues = room:getTag("__tqs_prompt4_strategy_issues") or {}
+  local entries = {}
+  for skill, bucket in pairs(requestReasons) do
+    for reason, count in pairs(bucket) do
+      entries[#entries + 1] = string.format("request skill=%s category=%s count=%d",
+        skill, reason, count)
+    end
+  end
+  for skill, bucket in pairs(strategyIssues) do
+    entries[#entries + 1] = string.format("strategy skill=%s total=%d recovered=%d unrecovered=%d",
+      skill, bucket.total, bucket.recovered, bucket.unrecovered)
+  end
+  table.sort(entries)
+  local limit = math.min(#entries, 256)
+  fk.qInfo(string.format("[tqs_prompt4_provenance] summary scenario=%s seed=%u entries=%d overflow=%d",
+    state.scenario, state.seed, limit, #entries > limit and 1 or 0))
+  for index = 1, limit do
+    fk.qInfo(string.format("[tqs_prompt4_provenance] %s", entries[index]))
+  end
+end
+
+installAiTrace = function(room, state)
+  local scenario = scenarioById[state.scenario]
+  if not scenario or scenario.trigger ~= "ai-trace" then return end
+  state.aiTrace = {
+    decisions = {},
+    maxDecisions = 4096,
+    total = 0,
+    fallback = 0,
+    probeErrors = 0,
+    overflow = false,
+    emitted = false,
+    reasons = {},
+  }
+  for _, player in ipairs(room.players or {}) do
+    local ai = player.ai
+    if ai and type(ai.makeReply) == "function" and not ai.__tqs_qa_ai_trace then
+      local originalMakeReply = ai.makeReply
+      ai.__tqs_qa_ai_trace = true
+      ai.makeReply = function(self)
+        local input = "unavailable"
+        local beforeFallback = 0
+        pcall(function()
+          input = aiTraceInputFingerprint(self)
+          beforeFallback = aiTraceFallbackCount(self, aiTraceToken(self.command))
+        end)
+        local ok, value = xpcall(function()
+          return originalMakeReply(self)
+        end, function(err)
+          return err
+        end)
+        if not ok then
+          pcall(recordAiTrace, state, self, input, nil, "ai_exception", "none", "unknown")
+          error(value, 0)
+        end
+        local reason = "accepted"
+        local detail = "none"
+        local skill = "unknown"
+        pcall(function()
+          local command = aiTraceToken(self.command)
+          local metrics = self.room:getTag("__ai_response_metrics")
+          local commandMetrics = metrics and metrics.by_command and metrics.by_command[command]
+          if aiTraceFallbackCount(self, command) > beforeFallback then
+            reason = self._ai_last_metric_reason or
+              (commandMetrics and commandMetrics.last_reason) or self._ai_fallback_reason or "fallback"
+            detail = self._ai_last_metric_detail or self._ai_validation_detail or "none"
+          end
+          skill = self._ai_last_metric_skill or self._ai_metric_skill or "unknown"
+        end)
+        pcall(recordAiTrace, state, self, input, value, reason, detail, skill)
+        return value
+      end
+    end
+  end
+end
+
+local function emitAiTrace(state)
+  local trace = state.aiTrace
+  if not trace or trace.emitted then return end
+  trace.emitted = true
+  local reasons = {}
+  for reason, count in pairs(trace.reasons) do
+    table.insert(reasons, reason .. ":" .. tostring(count))
+  end
+  table.sort(reasons)
+  fk.qInfo(string.format("[tqs_ai_trace] summary scenario=%s seed=%u revision=%s decisions=%d fallback=%d probe_errors=%d overflow=%s reasons=%s pair=%s hands=%s fixture=semantic_v3",
+    state.scenario, state.seed, state.revision, trace.total, trace.fallback,
+    trace.probeErrors or 0, tostring(trace.overflow), table.concat(reasons, ","),
+    trace.pairVerified and "verified" or "unverified",
+    trace.fixedHandsVerified and "verified" or "unverified"))
+  for _, entry in ipairs(trace.decisions) do
+    fk.qInfo(string.format("[tqs_ai_trace] decision scenario=%s seed=%u revision=%s seq=%d seat=%d command=%s skill=%s input=%s output=%s reason=%s detail=%s",
+      state.scenario, state.seed, state.revision, entry.seq, entry.seat, entry.command,
+      entry.skill, entry.input, entry.output, entry.reason, entry.detail))
+  end
+end
+
+-- Six independent QA requests. The server's actual AI request handler does
+-- the feasibility/legality check inside player.ai:makeReply(); the count of
+-- enabled cards/targets below is an additional observed opportunity measure.
+-- No raw request, hand, general, card ID or target ID enters the trace.
+local function runChooserTraceProbe(room, state)
+  local scenario = state.aiTraceScenario or scenarioById[state.scenario]
+  if not scenario or #room.players ~= 4 or #scenario.cases ~= 6 then
+    fail("chooser-trace fixture count drift")
+  end
+  local seen = {}
+  for seat, player in ipairs(room.players) do
+    local expected = scenario.seatRosters[seat]
+    if player.general ~= expected.general or player.deputyGeneral ~= expected.deputy or
+        player:getMark("__heg_general") ~= expected.general or
+        player:getMark("__heg_deputy") ~= expected.deputy or
+        player:getMark("__heg_kingdom") ~= expected.kingdom then
+      fail("chooser-trace native seat pair drift")
+    end
+    local fixed = state.fixedHands and state.fixedHands[player.id]
+    local actual = player:getCardIds(Player.Hand) or {}
+    if type(fixed) ~= "table" or #fixed ~= 1 or #actual ~= 1 or
+        fixed[1] ~= actual[1] or seen[actual[1]] then
+      fail("chooser-trace fixed native hand drift")
+    end
+    seen[actual[1]] = true
+    local card = Fk:getCardById(actual[1])
+    if not card or not cardMatches(card, scenario.fixedHands[seat]) then
+      fail("chooser-trace fixed native hand semantic drift")
+    end
+  end
+  local actor = room.players[1]
+  local ai = actor.ai
+  if not ai or type(ai.makeReply) ~= "function" then
+    fail("chooser-trace native actor AI missing")
+  end
+  local targets = {}
+  for seat = 2, 4 do table.insert(targets, room.players[seat].id) end
+  local originalCommand, originalData = ai.command, ai.data
+  local decisions, missed, accepted, invalid, fallback, errors = {}, 0, 0, 0, 0, 0
+  for index, spec in ipairs(scenario.cases) do
+    local skill = Fk.skills[spec.skill]
+    if not skill then fail("chooser-trace pinned skill missing") end
+    local mandatory = spec.variant == "mandatory"
+    local min = mandatory and 1 or 0
+    local extra = { skillName = spec.skill, pattern = spec.skill == "choose_players_skill" and "" or "." }
+    if spec.skill == "choose_players_skill" then
+      extra.targets, extra.num, extra.min_num = targets, 1, min
+    elseif spec.skill == "choose_cards_skill" then
+      extra.num, extra.min_num, extra.include_equip = 1, min, false
+    else
+      extra.targets, extra.max_t_num, extra.min_t_num = targets, 1, min
+      extra.max_c_num, extra.min_c_num = 1, min
+      extra.equal, extra.will_throw = true, false
+    end
+    local data = { spec.skill, "TQS QA generic chooser", not mandatory, extra }
+    ai.command, ai.data = "AskForUseActiveSkill", data
+    -- Native player IDs are assigned independently per runtime. They are
+    -- request targets, but must be represented as fixed room seats in the
+    -- cross-runtime fingerprint; otherwise equal offers falsely mismatch.
+    -- Keep all other active skill flags/limits and the actual room snapshot.
+    local comparableExtra = {}
+    for key, value in pairs(extra) do comparableExtra[key] = value end
+    if extra.targets then
+      comparableExtra.targets = {}
+      for _, targetId in ipairs(extra.targets) do
+        local targetSeat
+        for seat, player in ipairs(room.players) do
+          if player.id == targetId then targetSeat = seat; break end
+        end
+        if not targetSeat then fail("chooser-trace unknown native target seat") end
+        table.insert(comparableExtra.targets, targetSeat)
+      end
+    end
+    local input = aiTraceInputFingerprint(ai,
+      { spec.skill, "TQS QA generic chooser", not mandatory, comparableExtra })
+    local opportunityHash = aiTraceHash(table.concat({
+      spec.skill, spec.variant, tostring(#targets),
+      aiTraceCardShape(actor:getCardIds(Player.Hand)),
+      aiTraceHash(aiTraceStable(scenario.seatRosters)),
+    }, "|"))
+    -- Same generic-skill dynamic _extra_data used by the native AI wrapper.
+    -- Probe the real skill filters with empty selections before makeReply.
+    local previousExtra = skill._extra_data
+    skill._extra_data = extra
+    local legalOk, cardOffers, targetOffers = pcall(function()
+      local c, t = 0, 0
+      if spec.skill ~= "choose_players_skill" then
+        for _, cid in ipairs(actor:getCardIds(Player.Hand) or {}) do
+          if skill:cardFilter(actor, cid, {}, {}) then c = c + 1 end
+        end
+      end
+      if spec.skill ~= "choose_cards_skill" then
+        for seat = 2, 4 do
+          if skill:targetFilter(actor, room.players[seat], {}, {}) then t = t + 1 end
+        end
+      end
+      return c, t
+    end)
+    skill._extra_data = previousExtra or Util.DummyTable
+    if not legalOk then fail("chooser-trace native offer filter error") end
+    local opportunity = (spec.skill == "choose_players_skill" and targetOffers > 0)
+      or (spec.skill == "choose_cards_skill" and cardOffers > 0)
+      or (cardOffers > 0 and targetOffers > 0)
+    if not opportunity then fail("chooser-trace has no actionable legal offers") end
+
+    local metrics = room:getTag("__ai_response_metrics")
+    local bucket = metrics and metrics.by_command and metrics.by_command.AskForUseActiveSkill
+    local beforeTotal = bucket and bucket.total or 0
+    local beforeFallback = bucket and bucket.fallback or 0
+    local beforeInvalid = bucket and bucket.invalid or 0
+    local ok, reply = xpcall(function() return ai:makeReply() end, function() return true end)
+    metrics = room:getTag("__ai_response_metrics")
+    bucket = metrics and metrics.by_command and metrics.by_command.AskForUseActiveSkill
+    local totalDelta = (bucket and bucket.total or 0) - beforeTotal
+    local fallbackDelta = (bucket and bucket.fallback or 0) - beforeFallback
+    local invalidDelta = (bucket and bucket.invalid or 0) - beforeInvalid
+    if not ok or totalDelta ~= 1 or fallbackDelta < 0 or fallbackDelta > 1 or
+        invalidDelta < 0 or invalidDelta > 1 then
+      errors = errors + 1
+      ai.command, ai.data = originalCommand, originalData
+      fail("chooser-trace native makeReply/metrics integrity failure")
+    end
+    local isAccepted = fallbackDelta == 0 and type(reply) == "table"
+    if fallbackDelta == 0 and not isAccepted then
+      errors = errors + 1
+      fail("chooser-trace missing accepted native reply")
+    end
+    local chosenCards = isAccepted and type(reply.card) == "table" and
+      type(reply.card.subcards) == "table" and #reply.card.subcards or 0
+    local chosenTargets = isAccepted and type(reply.targets) == "table" and #reply.targets or 0
+    -- Native feasibility can accept an optional empty selection.  Count that
+    -- as accepted but an unexercised opportunity, never as a request fallback.
+    local acted = isAccepted and ((spec.skill == "choose_players_skill" and chosenTargets > 0)
+      or (spec.skill == "choose_cards_skill" and chosenCards > 0)
+      or (chosenCards > 0 and chosenTargets > 0)) or false
+    local reason = fallbackDelta == 1 and
+      aiTraceToken(bucket.last_reason or ai._ai_fallback_reason or "fallback") or "accepted"
+    local detail = fallbackDelta == 1 and aiTraceToken(ai._ai_validation_detail or "none") or "none"
+    if invalidDelta > 0 then invalid = invalid + 1 end
+    if fallbackDelta > 0 then fallback = fallback + 1 end
+    if isAccepted then accepted = accepted + 1 end
+    if not acted then missed = missed + 1 end
+    decisions[#decisions + 1] = {
+      skill = spec.skill, variant = spec.variant, input = input, offer = opportunityHash,
+      cards = cardOffers, targets = targetOffers, chosenCards = chosenCards,
+      chosenTargets = chosenTargets, accepted = isAccepted, acted = acted, reason = reason,
+      detail = detail, invalid = invalidDelta,
+    }
+  end
+  ai.command, ai.data = originalCommand, originalData
+  fk.qInfo(string.format("[tqs_chooser_trace] summary scenario=%s seed=%u revision=%s decisions=6 opportunities=6 accepted=%d missed=%d fallback=%d invalid=%d errors=%d pair=verified hands=verified fixture=semantic_v1",
+    state.scenario, state.seed, state.revision, accepted, missed, fallback, invalid, errors))
+  for index, entry in ipairs(decisions) do
+    fk.qInfo(string.format("[tqs_chooser_trace] decision scenario=%s seed=%u revision=%s seq=%d skill=%s variant=%s input=%s offer=%s opportunity=1 offered_cards=%d offered_targets=%d accepted=%d acted=%d chosen_cards=%d chosen_targets=%d invalid=%d reason=%s detail=%s",
+      state.scenario, state.seed, state.revision, index, entry.skill, entry.variant,
+      entry.input, entry.offer, entry.cards, entry.targets, entry.accepted and 1 or 0,
+      entry.acted and 1 or 0, entry.chosenCards, entry.chosenTargets, entry.invalid, entry.reason, entry.detail))
+  end
+end
+
+-- Initial general selection happens before GamePrepared, so the ordinary
+-- per-room ai-trace wrapper cannot observe it. Keep a second, package-level
+-- wrapper narrowly gated by the validated general-pair QA room name.
+local function generalPairTraceReplyShape(reply)
+  if reply == nil then return "nil" end
+  if reply == "__cancel" then return "cancel" end
+  if type(reply) == "table" and #reply == 2 then return "pair" end
+  return type(reply)
+end
+
+local function generalPairTraceFallbackCount(room)
+  local metrics = room and room:getTag("__ai_response_metrics")
+  local commandMetrics = metrics and metrics.by_command and metrics.by_command.CustomDialog
+  return commandMetrics and tonumber(commandMetrics.fallback or 0) or 0
+end
+
+local function recordGeneralPairTrace(room, ai, data, reply, reason, detail, elapsedMs, valid)
+  local trace = room:getTag("__tqs_general_pair_trace")
+  if type(trace) ~= "table" then
+    trace = {
+      decisions = {},
+      total = 0,
+      accepted = 0,
+      fallback = 0,
+      invalid = 0,
+      overflow = false,
+      emitted = false,
+      reasons = {},
+      outputs = {},
+      maxDecisions = 64,
+    }
+    room:setTag("__tqs_general_pair_trace", trace)
+  end
+  trace.total = trace.total + 1
+  local safeReason = aiTraceToken(reason or "accepted")
+  local outputShape = generalPairTraceReplyShape(reply)
+  local outputHash = aiTraceHash(aiTraceStable(reply))
+  local entry = {
+    seq = trace.total,
+    seat = aiTraceSeat(room, ai.player),
+    input = aiTraceHash(aiTraceStable(data)),
+    output = outputShape,
+    outputHash = outputHash,
+    valid = valid == true,
+    reason = safeReason,
+    detail = aiTraceToken(detail or "none"),
+    elapsedMs = math.max(0, tonumber(elapsedMs) or 0),
+  }
+  if trace.total > trace.maxDecisions then
+    trace.overflow = true
+    return
+  end
+  table.insert(trace.decisions, entry)
+  if entry.valid then trace.accepted = trace.accepted + 1 end
+  if safeReason ~= "accepted" then trace.fallback = trace.fallback + 1 end
+  if not entry.valid then trace.invalid = trace.invalid + 1 end
+  trace.reasons[safeReason] = (trace.reasons[safeReason] or 0) + 1
+  trace.outputs[outputHash] = (trace.outputs[outputHash] or 0) + 1
+end
+
+local function installGeneralPairTraceHooks()
+  -- freekill.lua loads this server-only package before the native scheduler
+  -- executes ltk/server/ai/init.lua. Load that same pinned module now so the
+  -- SmartAI class is available before the first Hegemony CustomDialog.
+  if not SmartAI and type(dofile) == "function" then
+    pcall(dofile, "ltk/server/ai/init.lua")
+  end
+  local RoomClass = Room
+  if not RoomClass then
+    local roomOk, loadedRoom = pcall(require, "ltk.server.room")
+    if roomOk then RoomClass = loadedRoom end
+  end
+  -- The catalog contract test loads this file with a deliberately minimal
+  -- Lua harness and no engine modules. Native startup has Room/SmartAI
+  -- already loaded; the standalone harness must remain loadable as well.
+  if not RoomClass or type(RoomClass.askToChooseIniticalGeneral) ~= "function" then
+    return
+  end
+
+  -- Room:run builds the general pile before the ordinary QA state exists.
+  -- Keep a bounded, metadata-only diagnostic at this boundary so a native
+  -- scheduler timeout can be distinguished from a bad offer/AI reply.  This
+  -- hook is installed only by the isolated QA package and never changes the
+  -- public Room or the general-pile predicate.
+  if not RoomClass.__tqs_qa_general_pile_diagnostic_hook and
+      type(RoomClass.makeGeneralPile) == "function" then
+    local originalMakeGeneralPile = RoomClass.makeGeneralPile
+    RoomClass.__tqs_qa_general_pile_diagnostic_hook = true
+    local function countEntries(value)
+      if type(value) ~= "table" then return 0 end
+      local count = 0
+      for _ in pairs(value) do count = count + 1 end
+      return count
+    end
+    RoomClass.makeGeneralPile = function(self, ...)
+      local scenario = generalPairTraceScenarioForRoom(self)
+      if scenario then
+        local started = os.getms and os.getms() or 0
+        fk.qInfo(string.format(
+          "[tqs_general_pile] start scenario=%s generals=%d disabled_packs=%d disabled_generals=%d players=%d game_started=%s same_name=%s",
+          scenario.id, countEntries(Fk and Fk.generals), countEntries(self.disabled_packs),
+          countEntries(self.disabled_generals), countEntries(self.players),
+          tostring(self.game_started == true), tostring(self:getSettings("disableSameConvert"))))
+        local result = originalMakeGeneralPile(self, ...)
+        local elapsedMs = ((os.getms and os.getms() or started) - started) / 1000
+        fk.qInfo(string.format(
+          "[tqs_general_pile] done scenario=%s elapsed_ms=%.3f result=%s pile=%d",
+          scenario.id, elapsedMs, tostring(result), countEntries(self.general_pile)))
+        return result
+      end
+      return originalMakeGeneralPile(self, ...)
+    end
+  end
+
+  if not RoomClass.__tqs_qa_general_pair_trace_hook then
+    local originalChoose = RoomClass.askToChooseIniticalGeneral
+    RoomClass.__tqs_qa_general_pair_trace_hook = true
+    RoomClass.askToChooseIniticalGeneral = function(self, player, params)
+      local scenario = generalPairTraceScenarioForRoom(self)
+      if scenario and type(params) == "table" and params.isHeg then
+        local targets = params.targets
+        local targetCount = type(targets) == "table" and targets.id and 1 or #targets
+        if targetCount ~= scenario.playerCount then
+          fail("general-pair-trace received an unexpected target count")
+        end
+        local offered = {}
+        for seat = 1, targetCount do
+          for _, name in ipairs(scenario.offeredGroups[seat]) do
+            table.insert(offered, name)
+          end
+        end
+        params.generals = offered
+        params.enabledKingdoms = table.simpleClone(scenario.enabledKingdoms)
+        local offerCount = #scenario.offeredGroups[1]
+        local seatTokens = {}
+        for seat = 1, targetCount do table.insert(seatTokens, tostring(seat)) end
+        self:sendLog{
+          type = "[TQS QA] PairOfferSummary scenario=%arg roster_set=%arg2 seat_swap=%arg3 offer_count=%arg4 seat_count=%arg5 seats=%arg6",
+          arg = scenario.id,
+          arg2 = aiTraceToken(scenario.matrixRosterSet or "fixed"),
+          arg3 = aiTraceToken(scenario.matrixSeatPermutation or "fixed"),
+          arg4 = tostring(offerCount),
+          arg5 = tostring(targetCount),
+          arg6 = table.concat(seatTokens, ","),
+        }
+      end
+      return originalChoose(self, player, params)
+    end
+  end
+
+  local SmartAIClass = SmartAI
+  if not SmartAIClass then
+    local aiOk, loadedAi = pcall(require, "ltk.server.ai.smart_ai")
+    if aiOk then SmartAIClass = loadedAi end
+  end
+  if not SmartAIClass or type(SmartAIClass.makeReply) ~= "function" then
+    fail("native SmartAI class is unavailable for general-pair QA")
+  end
+  local GeneralPair = dofile "qa_packages/tqs_qa/ltk/server/ai/general_pair.lua"
+  -- The release runtime may carry an older public SmartAI without the
+  -- initial Hegemony CustomDialog handler. Install only this QA handler on
+  -- that already-loaded class; reloading the complete SmartAI class would
+  -- duplicate its strategy registrations and can fail during startup.
+  SmartAIClass.handleCustomDialog = function(self, data)
+    local reply = GeneralPair.choose(data)
+    if not reply then
+      if self.markFallback then self:markFallback("no_decision") end
+      return nil
+    end
+    return reply
+  end
+  if not SmartAIClass.__tqs_qa_general_pair_trace_hook then
+    local originalMakeReply = SmartAIClass.makeReply
+    -- The A/B general-pair implementation is part of the isolated QA tree,
+    -- not the public flist. Loading it by its QA-relative path keeps the
+    -- runtime-only module out of the client MD5 while still letting baseline
+    -- and candidate use different implementations.
+    SmartAIClass.__tqs_qa_general_pair_trace_hook = true
+    SmartAIClass.makeReply = function(self)
+      local scenario = self.room and generalPairTraceScenarioForRoom(self.room)
+      if not scenario or self.command ~= "CustomDialog" then
+        return originalMakeReply(self)
+      end
+
+      local room = self.room
+      local data = self.data
+      local beforeFallback = generalPairTraceFallbackCount(room)
+      local started = os.getms()
+      local ok, reply = xpcall(function()
+        -- Older pinned public Base.AI builds validate unknown commands as a
+        -- string and therefore reject the legal two-item table used by the
+        -- initial Hegemony CustomDialog. The QA handler validates against the
+        -- same native offer first, then returns it directly; every other
+        -- command continues through the pinned public makeReply path.
+        if self.command == "CustomDialog" then
+          local directReply = self:handleCustomDialog(data)
+          local directValid = false
+          pcall(function()
+            directValid = GeneralPair.validate(data, directReply) == true
+          end)
+          if directValid then return directReply end
+        end
+        return originalMakeReply(self)
+      end, function(err)
+        return err
+      end)
+      local elapsedMs = (os.getms() - started) / 1000
+      if not ok then
+        recordGeneralPairTrace(room, self, data, nil, "ai_exception", "none", elapsedMs, false)
+        error(reply, 0)
+      end
+
+      local reason = self._ai_fallback_reason
+      local detail = self._ai_validation_detail
+      local metrics = room:getTag("__ai_response_metrics")
+      local commandMetrics = metrics and metrics.by_command and metrics.by_command.CustomDialog
+      if generalPairTraceFallbackCount(room) > beforeFallback then
+        reason = (commandMetrics and commandMetrics.last_reason) or reason or "fallback"
+        detail = detail or "none"
+      end
+      reason = reason or "accepted"
+      local valid = false
+      pcall(function()
+        valid = GeneralPair.validate(data, reply) == true
+      end)
+      recordGeneralPairTrace(room, self, data, reply, reason, detail, elapsedMs, valid)
+      return reply
+    end
+  end
+end
+
+local function emitGeneralPairTrace(state)
+  local trace = state.generalPairTrace
+  if not trace or trace.emitted then return end
+  trace.emitted = true
+  local reasons = {}
+  for reason, count in pairs(trace.reasons or {}) do
+    table.insert(reasons, reason .. ":" .. tostring(count))
+  end
+  table.sort(reasons)
+  local latency = {}
+  local latencySum = 0
+  for _, entry in ipairs(trace.decisions or {}) do
+    local value = math.max(0, tonumber(entry.elapsedMs) or 0)
+    table.insert(latency, value)
+    latencySum = latencySum + value
+  end
+  table.sort(latency)
+  local function percentile(p)
+    if #latency == 0 then return 0 end
+    local index = math.max(1, math.min(#latency, math.ceil(#latency * p)))
+    return latency[index]
+  end
+  local traceParts = {}
+  for _, entry in ipairs(trace.decisions or {}) do
+    table.insert(traceParts, table.concat({
+      tostring(entry.seq), tostring(entry.seat), tostring(entry.input),
+      tostring(entry.outputHash), tostring(entry.valid), tostring(entry.reason),
+      tostring(entry.detail), string.format("%.6f", tonumber(entry.elapsedMs) or 0),
+    }, ":"))
+  end
+  local traceHash = aiTraceHash(table.concat(traceParts, "|"))
+  fk.qInfo(string.format(
+    "[tqs_general_pair_trace] summary scenario=%s seed=%u revision=%s decisions=%d accepted=%d fallback=%d invalid=%d overflow=%s reasons=%s",
+    state.scenario, state.seed, state.revision, trace.total or 0, trace.accepted or 0,
+    trace.fallback or 0, trace.invalid or 0, tostring(trace.overflow), table.concat(reasons, ",")))
+  -- This is deliberately a public, metadata-only QA log. It contains no
+  -- prompt, card id, general name, account name or private hand data, so the
+  -- browser can persist the same bounded telemetry that is otherwise only in
+  -- the native process log. The batch analyzer uses it to pair baseline and
+  -- candidate runs without scraping raw server output.
+  local matrixRosterSet = state.matrixRosterSet or "fixed"
+  local matrixSeatPermutation = state.matrixSeatPermutation or "fixed"
+  state.actor.room:sendLog{
+    type = "[TQS QA] PairDecisionSummary scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 decisions=%arg5 accepted=%arg6 fallback=%arg7 invalid=%arg8 overflow=%arg9",
+    arg = state.scenario,
+    arg2 = tostring(state.seed),
+    arg3 = aiTraceToken(matrixRosterSet),
+    arg4 = aiTraceToken(matrixSeatPermutation),
+    arg5 = tostring(trace.total or 0),
+    arg6 = tostring(trace.accepted or 0),
+    arg7 = tostring(trace.fallback or 0),
+    arg8 = tostring(trace.invalid or 0),
+    arg9 = tostring(trace.overflow),
+  }
+  state.actor.room:sendLog{
+    type = "[TQS QA] PairDecisionStats scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 latency_n=%arg5 latency_sum_ms=%arg6 latency_min_ms=%arg7 latency_p50_ms=%arg8 latency_p95_ms=%arg9",
+    arg = state.scenario,
+    arg2 = tostring(state.seed),
+    arg3 = aiTraceToken(matrixRosterSet),
+    arg4 = aiTraceToken(matrixSeatPermutation),
+    arg5 = tostring(#latency),
+    arg6 = string.format("%.6f", latencySum),
+    arg7 = string.format("%.6f", #latency > 0 and latency[1] or 0),
+    arg8 = string.format("%.6f", percentile(0.50)),
+    arg9 = string.format("%.6f", percentile(0.95)),
+  }
+  state.actor.room:sendLog{
+    type = "[TQS QA] PairDecisionTrace scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 latency_max_ms=%arg5 trace_hash=%arg6 reasons=%arg7",
+    arg = state.scenario,
+    arg2 = tostring(state.seed),
+    arg3 = aiTraceToken(matrixRosterSet),
+    arg4 = aiTraceToken(matrixSeatPermutation),
+    arg5 = string.format("%.6f", #latency > 0 and latency[#latency] or 0),
+    arg6 = traceHash,
+    arg7 = table.concat(reasons, ","),
+  }
+  for _, entry in ipairs(trace.decisions or {}) do
+    fk.qInfo(string.format(
+      "[tqs_general_pair_trace] decision scenario=%s seed=%u revision=%s seq=%d seat=%d input=%s output=%s output_hash=%s valid=%s reason=%s detail=%s elapsed_ms=%.3f",
+      state.scenario, state.seed, state.revision, entry.seq, entry.seat, entry.input,
+      entry.output, entry.outputHash, tostring(entry.valid), entry.reason, entry.detail,
+      entry.elapsedMs))
+    state.actor.room:sendLog{
+      type = "[TQS QA] PairDecision scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 seq=%arg5 seat=%arg6 input=%arg7 output_hash=%arg8 valid=%arg9",
+      arg = state.scenario,
+      arg2 = tostring(state.seed),
+      arg3 = aiTraceToken(matrixRosterSet),
+      arg4 = aiTraceToken(matrixSeatPermutation),
+      arg5 = tostring(entry.seq),
+      arg6 = tostring(entry.seat),
+      arg7 = aiTraceToken(entry.input),
+      arg8 = aiTraceToken(entry.outputHash),
+      arg9 = tostring(entry.valid),
+    }
+    state.actor.room:sendLog{
+      type = "[TQS QA] PairDecisionMeta scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 seq=%arg5 reason=%arg6 detail=%arg7 elapsed_ms=%arg8",
+      arg = state.scenario,
+      arg2 = tostring(state.seed),
+      arg3 = aiTraceToken(matrixRosterSet),
+      arg4 = aiTraceToken(matrixSeatPermutation),
+      arg5 = tostring(entry.seq),
+      arg6 = aiTraceToken(entry.reason),
+      arg7 = aiTraceToken(entry.detail),
+      arg8 = string.format("%.6f", tonumber(entry.elapsedMs) or 0),
+    }
+  end
+end
+
+-- Full-match runs need a result that can be joined to the fixed seat roster,
+-- but must not publish names, roles, generals or any other private payload.
+-- GameFinished receives the native winner player objects before the room is
+-- torn down, so convert them to one-based seat numbers only.
+local function emitGeneralPairMatchResult(state, data)
+  if not state or not state.scenario:match("^general%-pair%-match%-") or
+      state.generalPairMatchResultEmitted then
+    return
+  end
+  local room = state.actor and state.actor.room
+  if not room then return end
+  local winners = type(data) == "table" and data.players or nil
+  local winnerIds = {}
+  if type(winners) == "table" then
+    for _, winner in ipairs(winners) do
+      if winner and winner.id then winnerIds[winner.id] = true end
+    end
+  end
+  local winnerSeats = {}
+  for seat, player in ipairs(room.players) do
+    if winnerIds[player.id] then table.insert(winnerSeats, seat) end
+  end
+  table.sort(winnerSeats)
+  local winnerKingdoms = {}
+  for _, seat in ipairs(winnerSeats) do
+    local winner = room.players[seat]
+    local kingdom = winner and (winner.role or winner.kingdom) or "unknown"
+    table.insert(winnerKingdoms, tostring(seat) .. ":" .. aiTraceToken(kingdom))
+  end
+  state.generalPairMatchResultEmitted = true
+  room:sendLog{
+    type = "[TQS QA] PairMatchResult scenario=%arg seed=%arg2 roster_set=%arg3 seat_swap=%arg4 winner_seats=%arg5 winner_kingdoms=%arg6 winner_count=%arg7 outcome=%arg8",
+    arg = state.scenario,
+    arg2 = tostring(state.seed),
+    arg3 = aiTraceToken(state.matrixRosterSet or "fixed"),
+    arg4 = aiTraceToken(state.matrixSeatPermutation or "fixed"),
+    arg5 = #winnerSeats > 0 and table.concat(winnerSeats, ",") or "draw",
+    arg6 = #winnerKingdoms > 0 and table.concat(winnerKingdoms, ",") or "draw",
+    arg7 = tostring(#winnerSeats),
+    arg8 = #winnerSeats > 0 and "win" or "draw",
+  }
+  fk.qInfo(string.format(
+    "[tqs_general_pair_match] result scenario=%s seed=%u revision=%s winner_seats=%s winner_count=%d outcome=%s",
+    state.scenario, state.seed, state.revision,
+    #winnerSeats > 0 and table.concat(winnerSeats, ",") or "draw",
+    #winnerSeats, #winnerSeats > 0 and "win" or "draw"))
+end
+
+installGeneralPairTraceHooks()
 
 local function triggerRescue(room, state)
   local scenario = scenarioById[state.scenario]
@@ -3005,6 +4772,1775 @@ local function triggerHiddenReveal(room, state)
     revealIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
+end
+
+-- Run a metadata-only native probe before the hidden-active gameplay proof.
+-- The same synthetic replies and public-event fixture run on baseline and
+-- candidate QA runtimes.  It deliberately does not inspect private cards,
+-- hidden generals, prompts, targets, or raw validator errors.
+-- Intentionally malformed *non-nil* native replies are exercised against the
+-- real SmartAI -> Base.AI shape validator -> dashboard feasibility pipeline.
+-- Metrics live in a detached room: negative cases must never contaminate the
+-- real game's zero-invalid denominator or the matched Prompt 4 trace.
+local aiTraceReplyMetricSnapshot, aiTraceReplyMetricDelta, aiTraceEngineState
+local function runAiMalformedReplyProbe(room, state)
+  if not (SmartAI and type(SmartAI.new) == "function" and Fk.skills.hs__zhiheng) then
+    fail("malformed reply native probe prerequisites are unavailable")
+  end
+  local tags, rejectFeasibility = {}, false
+  local isolated = { request_handlers = {} }
+  function isolated:getTag(key) return tags[key] end
+  function isolated:setTag(key, value) tags[key] = value end
+  function isolated:getPlayerById(id) return room:getPlayerById(id) end
+  -- General-pair QA hooks inspect room settings during SmartAI validation.
+  -- A detached probe room has no configured scenario or visible roster.
+  function isolated:getSettings() return nil end
+  local fakeHandler = {}
+  function fakeHandler:new()
+    return {
+      setup = function() end,
+      feasible = function() return not rejectFeasibility end,
+    }
+  end
+  local dashboardCommands = {
+    "AskForUseActiveSkill", "AskForUseCard", "AskForResponseCard", "PlayCard",
+  }
+  for _, command in ipairs(dashboardCommands) do
+    isolated.request_handlers[command] = fakeHandler
+  end
+
+  local probe = SmartAI:new(room.players[1])
+  probe.room = isolated
+  local reply, fallbackReason
+  local function injectedReply(self)
+    if fallbackReason then self:markFallback(fallbackReason) end
+    return reply
+  end
+  -- Test each public entry point through the native makeReply() dispatcher;
+  -- override only the strategy's candidate result, never the validators.
+  for _, command in ipairs(dashboardCommands) do
+    probe["handle" .. command] = injectedReply
+  end
+  probe.handleCustomDialog = injectedReply
+  local valid = function()
+    return { card = { skill = "hs__zhiheng", subcards = {} }, targets = {} }
+  end
+  local observed, observedByCommand = {}, {}
+  local failed = 0
+  local function check(command, label, expectedReply, expectedReason, expectedDetail)
+    probe.command = command
+    if command == "PlayCard" then
+      probe.data = nil -- native PlayCard has no request payload
+    elseif command == "CustomDialog" then
+      probe.data = { component = { name = "TqsQaUnknownDialog" } }
+    else
+      probe.data = { "hs__zhiheng", "QA", true, {} }
+    end
+    local beforeState = aiTraceEngineState(room)
+    local beforeMetric = aiTraceReplyMetricSnapshot(probe, command)
+    local value = probe:makeReply()
+    local actualReply = value == "__cancel" and "cancel" or type(value)
+    local reason, detail = aiTraceReplyMetricDelta(probe, command, beforeMetric)
+    local unchanged = aiTraceEngineState(room) == beforeState
+    local classificationOk = actualReply == expectedReply and reason == expectedReason and
+      detail == (expectedDetail or "none")
+    if not classificationOk or not unchanged then
+      fk.qInfo(string.format(
+        "[tqs_qa_malformed_diagnostic] command=%s case=%s actual=%s reason=%s detail=%s state_unchanged=%d",
+        aiTraceToken(command), aiTraceToken(label), aiTraceToken(actualReply),
+        aiTraceToken(reason), aiTraceToken(detail), unchanged and 1 or 0))
+      failed = failed + 1
+    end
+    fk.qInfo(string.format(
+      "[tqs_qa_malformed_case] schema=3 snapshot=synthetic command=%s error=%s expected_reply=%s observed_reply=%s expected_reason=%s observed_reason=%s expected_detail=%s observed_detail=%s classification=%s state_unchanged=%d",
+      aiTraceToken(command), aiTraceToken(label), aiTraceToken(expectedReply),
+      aiTraceToken(actualReply), aiTraceToken(expectedReason),
+      aiTraceToken(reason), aiTraceToken(expectedDetail or "none"),
+      aiTraceToken(detail), classificationOk and "pass" or "fail", unchanged and 1 or 0))
+    observed[#observed + 1] = command .. "/" .. label
+    observedByCommand[command] = (observedByCommand[command] or 0) + 1
+  end
+
+  for _, command in ipairs(dashboardCommands) do
+    reply = valid()
+    check(command, "valid", "table", "accepted")
+    reply = { card = "forged", targets = {} }
+    check(command, "card_type", "cancel", "invalid_reply")
+    reply = { card = { skill = "hs__zhiheng", subcards = "forged" }, targets = {} }
+    check(command, "subcards_type", "cancel", "invalid_reply")
+    reply = { card = { skill = "hs__zhiheng", subcards = {} }, targets = "forged" }
+    check(command, "targets_type", "cancel", "invalid_reply")
+    reply = valid()
+    reply.targets = { 999999 }
+    check(command, "target_missing", "cancel", "invalid_reply")
+    reply = valid()
+    reply.targets = { 0.5 }
+    check(command, "target_non_integer", "cancel", "invalid_reply")
+    reply = valid()
+    rejectFeasibility = true
+    check(command, "feasibility", "cancel", "illegal_reply", "feasibility_rejected")
+    rejectFeasibility = false
+    reply = valid()
+    reply.special_skill = "tqs_qa_missing_skill"
+    check(command, "special_skill", "cancel", "illegal_reply", "special_skill_missing")
+    reply, fallbackReason = nil, "no_strategy"
+    check(command, "no_strategy", "cancel", "no_strategy")
+    fallbackReason = nil
+    check(command, "no_decision", "cancel", "no_decision")
+  end
+
+  -- An unsupported CustomDialog must reject arbitrary non-nil payloads,
+  -- while a nil strategy result remains a separate no_decision fallback.
+  reply = { "forged" }
+  check("CustomDialog", "unknown_table", "cancel", "invalid_reply")
+  reply = "forged"
+  check("CustomDialog", "unknown_string", "cancel", "invalid_reply")
+  reply = nil
+  check("CustomDialog", "no_decision", "cancel", "no_decision")
+  check("TqsQaUnsupported", "unsupported", "cancel", "unsupported_command")
+
+  if failed > 0 then fail("native malformed reply classification mismatches: " .. tostring(failed)) end
+  local metrics = probe:getResponseMetrics()
+  local reasons = metrics.fallback_reasons or {}
+  local details = metrics.invalid_details or {}
+  if #observed ~= 44 or metrics.total ~= 44 or metrics.fallback ~= 40 or
+      metrics.invalid ~= 30 or metrics.no_decision ~= 9 or metrics.unsupported ~= 1 or
+      reasons.invalid_reply ~= 22 or reasons.illegal_reply ~= 8 or
+      reasons.no_strategy ~= 4 or reasons.no_decision ~= 5 or
+      reasons.unsupported_command ~= 1 or
+      details.feasibility_rejected ~= 4 or details.special_skill_missing ~= 4 then
+    fail("native malformed reply probe counter reconciliation failed")
+  end
+  for _, command in ipairs(dashboardCommands) do
+    local bucket = metrics.by_command and metrics.by_command[command] or {}
+    if observedByCommand[command] ~= 10 or bucket.total ~= 10 or
+        bucket.fallback ~= 9 or bucket.invalid ~= 7 or
+        bucket.no_decision ~= 2 or bucket.unsupported ~= 0 then
+      fail("native malformed reply probe dashboard counter drift: " .. command)
+    end
+  end
+  local dialog = metrics.by_command and metrics.by_command.CustomDialog or {}
+  local unsupported = metrics.by_command and metrics.by_command.TqsQaUnsupported or {}
+  if observedByCommand.CustomDialog ~= 3 or dialog.total ~= 3 or
+      dialog.invalid ~= 2 or dialog.no_decision ~= 1 or
+      unsupported.total ~= 1 or unsupported.unsupported ~= 1 then
+    fail("native malformed reply probe non-dashboard counter drift")
+  end
+  -- All labels and counts are fixed, non-sensitive QA metadata.
+  fk.qInfo(string.format(
+    "[tqs_qa_malformed_reply] schema=2 scenario=%s seed=%u cases=%d accepted=4 fallback=%d invalid=%d no_decision=%d unsupported=%d invalid_reply=%d illegal_reply=%d no_strategy=%d no_decision_reason=%d unsupported_command=%d feasibility_rejected=%d special_skill_missing=%d",
+    state.scenario, state.seed, #observed, metrics.fallback, metrics.invalid,
+    metrics.no_decision, metrics.unsupported, reasons.invalid_reply, reasons.illegal_reply,
+    reasons.no_strategy, reasons.no_decision, reasons.unsupported_command,
+    details.feasibility_rejected, details.special_skill_missing))
+  for _, command in ipairs(dashboardCommands) do
+    fk.qInfo(string.format(
+      "[tqs_qa_malformed_reply] command=%s total=10 accepted=1 fallback=9 invalid=7 no_decision=2 unsupported=0",
+      command))
+  end
+  fk.qInfo("[tqs_qa_malformed_reply] command=CustomDialog total=3 accepted=0 fallback=3 invalid=2 no_decision=1 unsupported=0")
+  fk.qInfo("[tqs_qa_malformed_reply] command=TqsQaUnsupported total=1 accepted=0 fallback=1 invalid=0 no_decision=0 unsupported=1")
+end
+
+-- The synthetic 44-case test above proves the dispatcher classification but
+-- controls feasible() itself. Exercise the four actual request-handler classes
+-- here with the native room, real scene setup and real skill feasibility.
+-- Keep the negative metrics detached from gameplay and restore the ambient
+-- handler after each case. Never log payloads, card ids or player ids.
+aiTraceEngineState = function(room)
+  local parts = {
+    aiTraceStable(room.draw_pile), aiTraceStable(room.discard_pile),
+    aiTraceStable(room.processing_area), aiTraceStable(room.owner_map),
+    aiTraceStable(room.card_place),
+    tostring(room.current and aiTraceSeat(room, room.current) or 0),
+    tostring(room.logic and room.logic.all_game_events and #room.logic.all_game_events or 0),
+  }
+  for _, player in ipairs(room.players) do
+    parts[#parts + 1] = aiTraceStable({
+      hp = player.hp, maxHp = player.maxHp, dead = player.dead,
+      phase = player.phase, role = player.role,
+      general = player.general, deputy = player.deputyGeneral,
+      marks = player.mark, cards = player.player_cards,
+      special = player.special_cards,
+      skillHistory = player.skillUsedHistory,
+      cardHistory = player.cardUsedHistory,
+    })
+  end
+  return table.concat(parts, "|")
+end
+
+-- Read the native dispatcher's per-command counters before and after a single
+-- reply. Older pinned Base.AI revisions do not expose _ai_last_metric_reason,
+-- so those optional instance fields cannot be the sole classification proof.
+-- A missing legality-detail counter remains unverified; never infer its value
+-- from the test label or from a rejected response alone.
+aiTraceReplyMetricSnapshot = function(probe, command)
+  local metrics = probe:getResponseMetrics()
+  local bucket = metrics.by_command and metrics.by_command[command] or {}
+  local function counts(source)
+    local result = {}
+    for key, value in pairs(source or {}) do
+      if type(key) == "string" and type(value) == "number" then
+        result[key] = value
+      end
+    end
+    return result
+  end
+  return {
+    total = bucket.total or 0,
+    fallback = bucket.fallback or 0,
+    reasons = counts(bucket.fallback_reasons),
+    details = counts(bucket.invalid_details),
+  }
+end
+
+aiTraceReplyMetricDelta = function(probe, command, before)
+  local after = aiTraceReplyMetricSnapshot(probe, command)
+  if after.total ~= before.total + 1 then return "metric_drift", "none" end
+  -- Check both maps in both directions. Missing or reset counters, multiple
+  -- increments and stale detail attribution must never produce a false PASS.
+  local function soleIncrement(earlier, later)
+    local added
+    for key, count in pairs(earlier) do
+      if (later[key] or 0) < count then return nil, false end
+    end
+    for key, count in pairs(later) do
+      local delta = count - (earlier[key] or 0)
+      if delta ~= 0 then
+        if delta ~= 1 or added then return nil, false end
+        added = key
+      end
+    end
+    return added, true
+  end
+  local reason, reasonOk = soleIncrement(before.reasons, after.reasons)
+  local detail, detailOk = soleIncrement(before.details, after.details)
+  if not reasonOk or not detailOk then return "metric_drift", "none" end
+  if after.fallback == before.fallback then
+    if reason or detail then return "metric_drift", "none" end
+    return "accepted", "none"
+  end
+  if after.fallback ~= before.fallback + 1 or not reason then
+    return "metric_drift", "none"
+  end
+  if reason ~= "illegal_reply" and detail then return "metric_drift", "none" end
+  return reason, detail or "none"
+end
+
+local function runAiRealHandlerReplyProbe(room, state)
+  local requestSnapshots = state.prompt4RequestSnapshots or {}
+  local commands = {
+    { name = "AskForUseActiveSkill", snapshot = "tianyi" },
+    { name = "AskForUseCard", snapshot = "kanpo" },
+    { name = "AskForResponseCard", snapshot = "aocai" },
+    { name = "PlayCard", snapshot = "play_card" },
+  }
+  -- This equality compares internal engine state, never logs its contents.
+  -- In particular card ownership, private hand ids, marks and event history
+  -- must survive a rejected reply without a transition or an emitted event.
+  local tags = {}
+  local isolated = { request_handlers = {} }
+  function isolated:getTag(key) return tags[key] end
+  function isolated:setTag(key, value) tags[key] = value end
+  function isolated:getPlayerById(id) return room:getPlayerById(id) end
+  function isolated:getSettings() return room:getSettings() end
+  local probe = SmartAI:new(state.actor)
+  probe.room = isolated
+  local reply, fallbackReason
+  local lastHandler
+  local function injectedReply(self)
+    lastHandler = self.handler
+    if fallbackReason then self:markFallback(fallbackReason) end
+    return reply
+  end
+  local originalCurrentHandler = room.current_request_handler
+  local observed = 0
+  local rejected = 0
+  local failed = 0
+  local ok, probeError = xpcall(function()
+    for _, spec in ipairs(commands) do
+      local command = spec.name
+      local snapshot = requestSnapshots[spec.snapshot]
+      if command ~= "PlayCard" and (not snapshot or snapshot.command ~= command or
+          type(snapshot.data) ~= "table") then
+        fail("real handler request snapshot missing: " .. spec.snapshot)
+      end
+      local handlerClass = room.request_handlers and room.request_handlers[command]
+      if not (handlerClass and type(handlerClass.new) == "function" and
+          type(handlerClass.feasible) == "function") then
+        fail("real handler missing for " .. command)
+      end
+      isolated.request_handlers[command] = handlerClass
+      probe["handle" .. command] = injectedReply
+      local function check(label, value, reason, detail)
+        probe.command, probe.data = command, snapshot and snapshot.data or nil
+        reply, fallbackReason = value, label == "no_strategy" and "no_strategy" or nil
+        lastHandler = nil
+        local previousPattern = Fk.currentResponsePattern
+        local previousCurrent = room.current
+        if snapshot and snapshot.outOfTurn and room.current == state.actor then
+          room:setCurrent(room.players[2])
+        end
+        Fk.currentResponsePattern = snapshot and snapshot.pattern or nil
+        local before = aiTraceEngineState(room)
+        local beforeMetric = aiTraceReplyMetricSnapshot(probe, command)
+        local makeOk, actual = pcall(probe.makeReply, probe)
+        local after = aiTraceEngineState(room)
+        local actualReason, actualDetail = aiTraceReplyMetricDelta(probe, command, beforeMetric)
+        Fk.currentResponsePattern = previousPattern
+        if room.current ~= previousCurrent then room:setCurrent(previousCurrent) end
+        room.current_request_handler = originalCurrentHandler
+        if not makeOk then fail("real handler makeReply raised an exception: " .. command) end
+        if not lastHandler or type(lastHandler.feasible) ~= "function" then
+          fail("real handler was not initialized for " .. command)
+        end
+        local result = actual == "__cancel" and "cancel" or type(actual)
+        local classificationOk = result == "cancel" and actualReason == reason and
+          actualDetail == (detail or "none")
+        local unchanged = before == after
+        if not classificationOk then
+          fk.qInfo(string.format(
+            "[tqs_qa_real_handler_diagnostic] snapshot=%s command=%s error=%s actual=%s reason=%s detail=%s",
+            aiTraceToken(spec.snapshot), aiTraceToken(command), aiTraceToken(label),
+            aiTraceToken(result), aiTraceToken(actualReason), aiTraceToken(actualDetail)))
+          failed = failed + 1
+        end
+        if not unchanged then
+          fail("real handler changed engine state " .. command .. "/" .. label)
+        end
+        rejected = rejected + 1
+        fk.qInfo(string.format(
+          "[tqs_qa_real_handler_case] schema=3 scenario=%s seed=%u snapshot=%s command=%s error=%s expected_reply=cancel observed_reply=%s expected_reason=%s observed_reason=%s expected_detail=%s observed_detail=%s classification=%s rejected=1 state_unchanged=1",
+          state.scenario, state.seed, spec.snapshot, command, label, aiTraceToken(result), reason,
+          aiTraceToken(actualReason), detail or "none", aiTraceToken(actualDetail),
+          classificationOk and "pass" or "fail"))
+        observed = observed + 1
+      end
+      check("malformed_non_nil", { card = "forged", targets = {} }, "invalid_reply")
+      -- This card lacks the required selected subcard. Each concrete handler
+      -- must reject the otherwise structurally well-formed non-nil reply.
+      check("infeasible_non_nil", {
+        card = { skill = "hs__kurou", subcards = {} }, targets = {},
+      }, "illegal_reply", "feasibility_rejected")
+      check("no_strategy", nil, "no_strategy")
+      check("no_decision", nil, "no_decision")
+    end
+    -- Unsupported handlers are classified by the same native dispatcher;
+    -- they cannot initialize a request handler or mutate the game state.
+    local before = aiTraceEngineState(room)
+    local beforeMetric = aiTraceReplyMetricSnapshot(probe, "TqsQaUnsupported")
+    probe.command, probe.data = "TqsQaUnsupported", {}
+    local unsupported = probe:makeReply()
+    local reason, detail = aiTraceReplyMetricDelta(probe, "TqsQaUnsupported", beforeMetric)
+    if aiTraceEngineState(room) ~= before then
+      fail("real handler unsupported command classification/state drift")
+    end
+    local unsupportedOk = unsupported == "__cancel" and reason == "unsupported_command" and detail == "none"
+    if not unsupportedOk then
+      failed = failed + 1
+    end
+    observed = observed + 1
+    rejected = rejected + 1
+    fk.qInfo(string.format(
+      "[tqs_qa_real_handler_case] schema=3 scenario=%s seed=%u snapshot=unsupported command=TqsQaUnsupported error=unsupported expected_reply=cancel observed_reply=%s expected_reason=unsupported_command observed_reason=%s expected_detail=none observed_detail=%s classification=%s rejected=1 state_unchanged=1",
+      state.scenario, state.seed, unsupported == "__cancel" and "cancel" or type(unsupported),
+      aiTraceToken(reason), aiTraceToken(detail), unsupportedOk and "pass" or "fail"))
+  end, function() return "real_handler_probe_failed" end)
+  room.current_request_handler = originalCurrentHandler
+  if not ok then fail("real handler native probe failed: " .. tostring(probeError)) end
+  local metrics = probe:getResponseMetrics()
+  local reasons = metrics.fallback_reasons or {}
+  local details = metrics.invalid_details or {}
+  if failed > 0 then fail("real native handler classification mismatches: " .. tostring(failed)) end
+  if observed ~= 17 or rejected ~= observed or metrics.total ~= 17 or metrics.fallback ~= 17 or
+      metrics.invalid ~= 8 or metrics.no_decision ~= 8 or
+      metrics.unsupported ~= 1 or reasons.unsupported_command ~= 1 or
+      reasons.invalid_reply ~= 4 or reasons.illegal_reply ~= 4 or
+      reasons.no_strategy ~= 4 or reasons.no_decision ~= 4 or
+      details.feasibility_rejected ~= 4 then
+    fail("real native handler counters drift")
+  end
+  for _, spec in ipairs(commands) do
+    local bucket = metrics.by_command and metrics.by_command[spec.name] or {}
+    if bucket.total ~= 4 or bucket.invalid ~= 2 or bucket.no_decision ~= 2 then
+      fail("real handler per-command counters drift: " .. spec.name)
+    end
+  end
+  fk.qInfo(string.format(
+    "[tqs_qa_real_handler_reply] schema=2 scenario=%s seed=%u native_handlers=4 snapshots=5 cases=%d accepted=0 fallback=17 invalid=8 invalid_reply=4 illegal_reply=4 feasibility_rejected=4 no_strategy=4 no_decision=4 unsupported_command=1 rejected=%d state_unchanged=1",
+    state.scenario, state.seed, observed, rejected))
+end
+
+-- Exercise the supported initial Hegemony CustomDialog, including the real
+-- SmartAI choice for an offered pair and deliberate non-nil malformed replies.
+-- This has independent detached-room counters so the established 44-case
+-- cross-command probe and the live game denominator retain their identities.
+local function runAiSupportedGeneralPairProbe(room, state)
+  local Pair = require "ltk.server.ai.general_pair"
+  local scenario = state.aiTraceScenario or scenarioById[state.scenario]
+  local roster = scenario and scenario.seatRosters and scenario.seatRosters[1]
+  if not (SmartAI and roster and Fk.generals[roster.general] and
+      Fk.generals[roster.deputy]) then
+    fail("supported-dialog native probe prerequisites are unavailable")
+  end
+
+  local offer = { component = {
+    name = "ChooseInitialGeneralBox",
+    model = { name = "ChooseInitialGeneralModel", prop = {
+      hegemony = true, choiceNum = 2,
+      generals = { roster.general, roster.deputy },
+      enabledKingdoms = { "wei", "shu", "wu", "qun" },
+    } },
+  } }
+  local legal = Pair.choose(offer)
+  if not legal or Pair.validate(offer, legal) ~= true then
+    fail("supported-dialog native probe has no lawful offered general pair")
+  end
+
+  local tags = {}
+  local isolated = { request_handlers = {} }
+  function isolated:getTag(key) return tags[key] end
+  function isolated:setTag(key, value) tags[key] = value end
+  function isolated:getPlayerById(id) return room:getPlayerById(id) end
+  function isolated:getSettings() return nil end
+
+  local probe = SmartAI:new(room.players[1])
+  probe.room = isolated
+  probe.command = "CustomDialog"
+  probe.data = offer
+  local cases = 0
+  local function check(label, expectedReply, expectedReason)
+    local value = probe:makeReply()
+    local actualReply = value == "__cancel" and "cancel" or type(value)
+    if actualReply ~= expectedReply or
+        probe._ai_last_metric_reason ~= expectedReason or
+        probe._ai_last_metric_detail ~= "none" then
+      fail("supported-dialog native probe classification drift: " .. label)
+    end
+    if expectedReply == "table" and Pair.validate(probe.data, value) ~= true then
+      fail("supported-dialog native probe accepted an illegal general pair")
+    end
+    cases = cases + 1
+  end
+
+  -- Resolve the actual SmartAI CustomDialog strategy on two separate calls.
+  check("strategy_legal", "table", "accepted")
+  check("strategy_repeat", "table", "accepted")
+
+  local injected, fallbackReason
+  probe.handleCustomDialog = function(self)
+    if fallbackReason then self:markFallback(fallbackReason) end
+    return injected
+  end
+  local main = legal[1]:match("^([^,]+),")
+  injected = { main .. "," .. main, legal[2] }
+  check("duplicate_general", "cancel", "invalid_reply")
+  injected = { main .. ",tqs_qa_unoffered", legal[2] }
+  check("unoffered_general", "cancel", "invalid_reply")
+  injected = { legal[1], "kingdom,tqs_qa_disabled" }
+  check("disabled_kingdom", "cancel", "invalid_reply")
+  injected = "forged"
+  check("wrong_reply_type", "cancel", "invalid_reply")
+  injected = { legal[1] }
+  check("missing_kingdom", "cancel", "invalid_reply")
+  injected = legal
+  probe.data = { component = { name = "ChooseInitialGeneralBox",
+    model = { name = "ChooseInitialGeneralModel", prop = {
+      hegemony = true, choiceNum = 2,
+      generals = { "tqs_qa_unoffered", roster.deputy },
+      enabledKingdoms = { "wei", "shu", "wu", "qun" },
+    } } } }
+  check("invalid_offer", "cancel", "invalid_reply")
+  probe.data = offer
+  injected, fallbackReason = nil, "no_strategy"
+  check("nil_no_strategy", "cancel", "no_strategy")
+  fallbackReason = nil
+  check("nil_no_decision", "cancel", "no_decision")
+
+  local metrics = probe:getResponseMetrics()
+  local bucket = metrics.by_command and metrics.by_command.CustomDialog or {}
+  local reasons = metrics.fallback_reasons or {}
+  if cases ~= 10 or metrics.total ~= 10 or metrics.total - metrics.fallback ~= 2 or
+      metrics.fallback ~= 8 or metrics.invalid ~= 6 or
+      metrics.no_decision ~= 2 or metrics.unsupported ~= 0 or
+      bucket.total ~= 10 or bucket.invalid ~= 6 or
+      reasons.invalid_reply ~= 6 or reasons.no_strategy ~= 1 or
+      reasons.no_decision ~= 1 then
+    fail("supported-dialog native probe counter reconciliation failed")
+  end
+  fk.qInfo(string.format(
+    "[tqs_qa_supported_dialog] schema=1 scenario=%s seed=%u cases=%d accepted=2 fallback=8 invalid=6 no_decision=2 unsupported=0 invalid_reply=6 no_strategy=1 no_decision_reason=1 strategy_legal=2",
+    state.scenario, state.seed, cases))
+end
+
+local function runAiDecisionProbe(room, state)
+  if type(SmartAI) ~= "table" or type(SmartAI.new) ~= "function" then
+    fail("AI decision probe requires the native SmartAI class")
+  end
+  if type(AI) ~= "table" then
+    fail("AI decision probe requires the native Base.AI class")
+  end
+
+  local request_handlers = room.request_handlers
+  if type(request_handlers) ~= "table" then
+    fail("AI decision probe requires room request handlers")
+  end
+  local saved_handler = request_handlers.AskForUseActiveSkill
+  local saved_get_card_by_id = Fk.getCardById
+  local skill_name = next(Fk.skills)
+  if type(skill_name) ~= "string" then
+    fail("AI decision probe could not find a registered skill")
+  end
+
+  local behavior = "accept"
+  local dynamic_lookup = false
+  local lookup_count = 0
+  local handler_class = {}
+  function handler_class:new()
+    return {
+      setup = function() end,
+      feasible = function()
+        if behavior == "reject" then return false end
+        if behavior == "throw" then error("private validator fixture text") end
+        return true
+      end,
+    }
+  end
+
+  local probe = SmartAI:new(state.actor)
+  probe.room = room
+  local response = { card = { skill = skill_name, subcards = {} }, targets = {} }
+  function probe:handleAskForUseActiveSkill()
+    return response
+  end
+
+  local function ask()
+    probe.command = "AskForUseActiveSkill"
+    probe.data = { "diagnostic_skill", "redacted", true, {} }
+    return probe:makeReply()
+  end
+
+  local ok, probe_error = xpcall(function()
+    Fk.getCardById = function(_, id)
+      if id == 765432 then
+        lookup_count = lookup_count + 1
+        return (not dynamic_lookup or lookup_count == 1) and { id = id } or nil
+      end
+      return saved_get_card_by_id(Fk, id)
+    end
+
+    request_handlers.AskForUseActiveSkill = handler_class
+    local replies = {}
+    replies[1] = type(ask())
+    behavior = "reject"
+    replies[2] = ask()
+    behavior = "throw"
+    replies[3] = ask()
+    behavior = "accept"
+    response = { card = { skill = skill_name, subcards = {} }, targets = {},
+      special_skill = "definitely_missing_skill" }
+    replies[4] = ask()
+    request_handlers.AskForUseActiveSkill = nil
+    response = { card = { skill = skill_name, subcards = {} }, targets = {} }
+    replies[5] = ask()
+    request_handlers.AskForUseActiveSkill = handler_class
+    dynamic_lookup, lookup_count = true, 0
+    response = { card = 765432, targets = {} }
+    replies[6] = ask()
+    dynamic_lookup = false
+    response = { card = { skill = skill_name, subcards = {} }, targets = {} }
+    local saved_validator = probe.validateReply
+    probe.validateReply = function() return false, "illegal_reply" end
+    replies[7] = ask()
+    probe.validateReply = saved_validator
+
+    local metrics = probe:getResponseMetrics()
+    local active = metrics.by_command and metrics.by_command.AskForUseActiveSkill
+    if type(active) ~= "table" then
+      fail("AI decision probe did not record active-skill metrics")
+    end
+    local details = active.invalid_details or {}
+    if active.total ~= 7 or active.fallback ~= 6 or
+        details.feasibility_rejected ~= 1 or details.feasibility_exception ~= 1 or
+        details.special_skill_missing ~= 1 or details.missing_handler ~= 1 or
+        details.card_lookup_failed ~= 1 or details.unclassified ~= 1 then
+      fail("AI decision probe received an unexpected validator classification")
+    end
+    if replies[1] ~= "table" or replies[2] ~= "__cancel" or
+        replies[3] ~= "__cancel" or replies[4] ~= "__cancel" or
+        replies[5] ~= "__cancel" or replies[6] ~= "__cancel" or
+        replies[7] ~= "__cancel" then
+      fail("AI decision probe changed the canonical reply contract")
+    end
+
+    local model = "legacy"
+    local initial_attitude, attack_attitude, attack_confidence = 0, -1, 1
+    local attack_state, attack_benefit = "legacy", 200
+    local support_attitude, support_wei, support_protection = 0, 0, false
+    if type(probe.getFactionRelation) == "function" then
+      model = "candidate"
+      local inference_room = { players = {}, logic = { event_recorder = {} } }
+      function inference_room:getSettings(key)
+        return key == "gameMode" and "new_heg_mode"
+      end
+      function inference_room:getBanner(key)
+        if key == "all_kingdoms" then return { "wei", "shu", "wu", "qun" } end
+      end
+      function inference_room:getPlayerById(id)
+        for _, player in ipairs(self.players) do
+          if player.id == id then return player end
+        end
+      end
+      local self_seat = { id = 1, kingdom = "unknown" }
+      function self_seat:getMark(key)
+        if key == "__heg_kingdom" then return "wei" end
+      end
+      function self_seat:isFriend(target)
+        return target == self_seat or target.kingdom == "wei"
+      end
+      local revealed_ally = { id = 2, kingdom = "wei", hp = 3 }
+      local hidden_enemy = { id = 3, kingdom = "unknown", hp = 3 }
+      local hidden_helper = { id = 4, kingdom = "unknown" }
+      inference_room.players = { self_seat, revealed_ally, hidden_enemy, hidden_helper }
+      local faction_ai = SmartAI:new(self_seat)
+      faction_ai.room = inference_room
+      local initial = faction_ai:getFactionRelation(hidden_enemy)
+      initial_attitude = initial.attitude
+
+      if not GameEvent or not GameEvent.UseCard then
+        fail("AI decision probe requires GameEvent.UseCard")
+      end
+      local events = {}
+      inference_room.logic.event_recorder[GameEvent.UseCard] = events
+      local function observe(actor, target, true_name)
+        table.insert(events, { status = "dead", data = {
+          from = actor, tos = { target }, card = { trueName = true_name },
+        } })
+      end
+      for _ = 1, 3 do observe(hidden_enemy, revealed_ally, "slash") end
+      local attack = faction_ai:getFactionRelation(hidden_enemy)
+      attack_state, attack_attitude, attack_confidence = attack.state, attack.attitude, attack.confidence
+      local Logic = require("ltk.server.ai.logic")
+      local calculation = Logic:new(faction_ai)
+      calculation:setPlayerProperty(hidden_enemy, "hp", 2)
+      attack_benefit = calculation.benefit
+
+      for _ = 1, 4 do observe(hidden_helper, revealed_ally, "peach") end
+      local support = faction_ai:getFactionRelation(hidden_helper)
+      support_attitude = support.attitude
+      support_wei = support.probabilities.wei or 0
+      support_protection = faction_ai:shouldProtect(hidden_helper)
+    end
+
+    fk.qInfo(string.format(
+      "[tqs_qa_ai_probe] scenario=%s active_total=%d active_fallback=%d " ..
+      "illegal_details=feasibility_rejected:%d,feasibility_exception:%d," ..
+      "special_skill_missing:%d,missing_handler:%d,card_lookup_failed:%d," ..
+      "unclassified:%d model=%s initial_attitude=%.3f attack_state=%s " ..
+      "attack_attitude=%.3f attack_confidence=%.3f attack_benefit=%.3f " ..
+      "legacy_damage=200 support_attitude=%.3f support_wei=%.3f protect=%s",
+      state.scenario, 7, 6, details.feasibility_rejected or 0,
+      details.feasibility_exception or 0, details.special_skill_missing or 0,
+      details.missing_handler or 0, details.card_lookup_failed or 0,
+      details.unclassified or 0, model, initial_attitude, attack_state,
+      attack_attitude, attack_confidence, attack_benefit, support_attitude,
+      support_wei, tostring(support_protection)))
+  end, function(message)
+    return tostring(message)
+  end)
+
+  request_handlers.AskForUseActiveSkill = saved_handler
+  Fk.getCardById = saved_get_card_by_id
+  if not ok then fail("AI decision probe failed: " .. tostring(probe_error)) end
+end
+
+-- Exercise the actual SmartAI instances that belong to the four native
+-- ServerPlayers.  This is intentionally a direct, bounded makeReply probe:
+-- the normal PlayCard Request would enter the full turn loop and make the
+-- result depend on unrelated card/phase effects.  The command/data pair is
+-- still the same pair assigned by Request before it calls player.ai:makeReply
+-- (PlayCard has nil data; the active-skill request has the native four-field
+-- payload).  The trace wrapper around each player.ai therefore sees the real
+-- faction-aware decision path and the real validator/fallback metrics without
+-- exposing private prompt/card/target payloads or starting a random match.
+local function runAiTraceProbe(room, state)
+  local trace = state.aiTrace
+  if not trace then fail("ai-trace was not installed before the native probe") end
+
+  -- Reject a stale or partially installed QA roster before recording any
+  -- matched-replay evidence. Never emit the selected generals or card ids.
+  local scenario = state.aiTraceScenario or scenarioById[state.scenario]
+  if not scenario or type(scenario.seatRosters) ~= "table" then
+    fail("ai-trace has no pinned seat roster")
+  end
+  if #room.players ~= 4 or #scenario.seatRosters ~= 4 or
+      type(scenario.fixedHands) ~= "table" or #scenario.fixedHands ~= 4 then
+    fail("ai-trace fixture seat count mismatch")
+  end
+  local seenFixedIds = {}
+  for seat, player in ipairs(room.players or {}) do
+    local expected = scenario.seatRosters[seat]
+    if not expected or player.general ~= expected.general or
+        player.deputyGeneral ~= expected.deputy or
+        player:getMark("__heg_general") ~= expected.general or
+        player:getMark("__heg_deputy") ~= expected.deputy or
+        player:getMark("__heg_kingdom") ~= expected.kingdom then
+      fail("ai-trace actual seat pair does not match catalog")
+    end
+    local fixed = state.fixedHands and state.fixedHands[player.id]
+    local actual = player:getCardIds(Player.Hand) or {}
+    if type(fixed) ~= "table" or #fixed ~= 1 or #actual ~= 1 or
+        fixed[1] ~= actual[1] or seenFixedIds[actual[1]] then
+      fail("ai-trace fixed hand did not reach the native seat")
+    end
+    seenFixedIds[actual[1]] = true
+    local ok, card = pcall(Fk.getCardById, Fk, actual[1])
+    if not ok or not card or not cardMatches(card, scenario.fixedHands[seat]) then
+      fail("ai-trace native fixed hand does not match catalog semantics")
+    end
+  end
+  trace.pairVerified = true
+  trace.fixedHandsVerified = true
+
+  local function invoke(player, command, data)
+    local ai = player.ai
+    if not ai or type(ai.makeReply) ~= "function" then
+      trace.probeErrors = (trace.probeErrors or 0) + 1
+      fk.qWarning(string.format("[tqs_ai_trace] probe_error scenario=%s seat=%d command=%s kind=missing_ai",
+        state.scenario, aiTraceSeat(room, player), aiTraceToken(command)))
+      return
+    end
+    local oldCommand, oldData = ai.command, ai.data
+    ai.command, ai.data = command, data
+    local ok = xpcall(function()
+      return ai:makeReply()
+    end, function()
+      return true
+    end)
+    ai.command, ai.data = oldCommand, oldData
+    if not ok then
+      trace.probeErrors = (trace.probeErrors or 0) + 1
+      fk.qWarning(string.format("[tqs_ai_trace] probe_error scenario=%s seat=%d command=%s kind=make_reply_exception",
+        state.scenario, aiTraceSeat(room, player), aiTraceToken(command)))
+    end
+  end
+
+  for _, player in ipairs(room.players or {}) do
+    invoke(player, "PlayCard", nil)
+  end
+
+  -- Lục Tốn + Tôn Quyền is fixed at seat 1 by the catalog.  The request is
+  -- intentionally cancelable and has no card payload; it exercises the same
+  -- active-skill validator path used by the 42.7% live active-request sample.
+  -- A missing strategy or an unavailable card is a recorded, bounded
+  -- fallback, not a reason to run an uncontrolled full match.
+  local activeSkill = "hs__zhiheng"
+  if not Fk.skills[activeSkill] then
+    fail("ai-trace active probe skill is not installed: " .. activeSkill)
+  end
+  invoke(room.players[1], "AskForUseActiveSkill", {
+    activeSkill,
+    "TQS QA active decision trace",
+    true,
+    {},
+  })
+
+  local commandCounts = {}
+  for _, decision in ipairs(trace.decisions) do
+    commandCounts[decision.command] = (commandCounts[decision.command] or 0) + 1
+  end
+  if trace.total ~= #room.players + 1 or #trace.decisions ~= trace.total or
+      (commandCounts.PlayCard or 0) ~= #room.players or
+      (commandCounts.AskForUseActiveSkill or 0) ~= 1 then
+    fail("ai-trace did not capture every fixed-seat PlayCard and active-skill decision")
+  end
+  for seat = 1, #room.players do
+    local decision = trace.decisions[seat]
+    if decision.seat ~= seat or decision.command ~= "PlayCard" or
+        not string.match(decision.input, "^[0-9a-f]+$") then
+      fail("ai-trace PlayCard seat order or input fingerprint mismatch")
+    end
+  end
+  if trace.decisions[5].seat ~= 1 or trace.decisions[5].command ~= "AskForUseActiveSkill" or
+      not string.match(trace.decisions[5].input, "^[0-9a-f]+$") then
+    fail("ai-trace active-skill seat or input fingerprint mismatch")
+  end
+  fk.qInfo(string.format("[tqs_ai_trace] probe_complete scenario=%s seed=%u revision=%s decisions=%d probe_errors=%d",
+    state.scenario, state.seed, state.revision, trace.total, trace.probeErrors or 0))
+end
+
+-- Run the selected Prompt 4 skills through the native request handlers after
+-- the legacy five-decision ai-trace has completed.  This is intentionally a
+-- separate trace: the old parser remains a strict five-request contract,
+-- while this probe records one deterministic request per selected skill.
+-- Every request below reaches the real player.ai:makeReply(), real LTK
+-- strategy lookup and real handler feasibility validation.  Only hashes,
+-- reply shapes, allowlisted skill names and bounded counters are emitted.
+local function runPrompt4NativeProbe(room, state)
+  local scenario = state.aiTraceScenario or scenarioById[state.scenario]
+  if not scenario or type(scenario.prompt4Skills) ~= "table" or #scenario.prompt4Skills ~= 18 then
+    fail("ai-trace Prompt 4 skill fixture drift")
+  end
+  if not state.aiTrace then fail("ai-trace Prompt 4 probe has no base trace") end
+  if prompt4EffectReplaySkill then
+    if not prompt4EffectReplayProfile then
+      fail("ai-trace Prompt 4 effect replay skill is not allowlisted")
+    end
+    if not table.contains(scenario.prompt4Skills, prompt4EffectReplaySkill) then
+      fail("ai-trace Prompt 4 effect replay skill is not in the catalog")
+    end
+  end
+  preparePrompt4Fixture(room, state)
+  state.aiTrace.capture = false
+
+  local trace = {
+    decisions = {}, total = 0, opportunities = 0, accepted = 0, acted = 0,
+    misses = 0, fallback = 0, invalid = 0, errors = 0,
+    pairVerified = true, stateVerified = true, fixtureVerified = true,
+    emitted = false,
+    effectReplay = {
+      requestedSkill = prompt4EffectReplaySkill or "disabled",
+      attempted = false,
+      accepted = false,
+      handled = false,
+      skillEffects = 0,
+      observedSkillEffects = 0,
+      observedSkillNames = {},
+      fake = false,
+      errors = 0,
+      beforeHp = 0,
+      afterHp = 0,
+      hpDelta = 0,
+      beforeHand = 0,
+      afterHand = 0,
+      handDelta = 0,
+      beforeTargetHp = 0,
+      afterTargetHp = 0,
+      targetHpDelta = 0,
+      beforeTargetHand = 0,
+      afterTargetHand = 0,
+      targetHandDelta = 0,
+      beforeTargetHandTotal = 0,
+      afterTargetHandTotal = 0,
+      targetHandTotalDelta = 0,
+      targetSkill = false,
+      targetCount = 0,
+      targetPolicy = prompt4EffectReplayProfile and
+        prompt4EffectReplayProfile.targetPolicy or "reply",
+      actorPolicy = prompt4EffectReplayProfile and
+        prompt4EffectReplayProfile.actorPolicy or "reply",
+      targetRetargeted = false,
+      resourceRetargeted = false,
+      resourceRetargetError = false,
+      replyCardCount = 0,
+      nestedRequests = 0,
+      nestedFallback = 0,
+      nestedInvalid = 0,
+      nestedMetricErrors = 0,
+      nestedMetricSummary = "",
+      profileReason = prompt4EffectReplayProfile and prompt4EffectReplayProfile.reason or "disabled",
+    },
+  }
+  state.prompt4Trace = trace
+  state.prompt4EffectReplay = trace.effectReplay
+  state.prompt4RequestSnapshots = {
+    play_card = { command = "PlayCard" },
+  }
+
+  local actor = state.actor
+  local enemy = room.players[2]
+  local ally = room.players[4]
+  local activePrompt = "TQS QA Prompt4 native skill trace"
+
+  -- Response/nullification requests expose skill buttons from the actor's
+  -- actual skill set. The fixed roster intentionally covers the common
+  -- active-skill path and does not own these two response skills, so attach
+  -- only the missing skills as QA-only fake skills before constructing the
+  -- real native handlers. This room ends immediately after the bounded
+  -- probe; production gameplay and the public package are unaffected.
+  for _, skillName in ipairs({ "kanpo", "aocai" }) do
+    if not actor:hasSkill(skillName, true) then
+      room:addFakeSkill(actor, skillName)
+    end
+  end
+
+  local function activeData(skill, extra)
+    return { skill, activePrompt, true, extra or {} }
+  end
+
+  local function responseData(pattern, extra)
+    return { nil, pattern, activePrompt, true, extra or {} }
+  end
+
+  local cases = {
+    { skill = "tianyi", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("tianyi") },
+    { skill = "shangyi", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("shangyi") },
+    { skill = "tiaoxin", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("tiaoxin") },
+    { skill = "hs__zhiheng", command = "AskForUseActiveSkill", expectedTargetProfile = "none", data = activeData("hs__zhiheng") },
+    { skill = "hs__kurou", command = "AskForUseActiveSkill", expectedTargetProfile = "none", data = activeData("hs__kurou") },
+    { skill = "hs__qiangxi", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("hs__qiangxi") },
+    { skill = "hs__longdan", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", responsePattern = "slash", data = activeData("hs__longdan") },
+    { skill = "hs__luanji", command = "AskForUseActiveSkill", expectedTargetProfile = "mixed", data = activeData("hs__luanji") },
+    { skill = "hs__wusheng", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("hs__wusheng") },
+    { skill = "huoji", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("huoji") },
+    { skill = "jijiu", command = "AskForUseActiveSkill", expectedTargetProfile = "none", data = activeData("jijiu", { must_targets = { ally.id } }) },
+    { skill = "kanpo", command = "AskForUseCard", expectedTargetProfile = "none", responsePattern = "nullification", data = responseData("nullification", {
+      effectFrom = enemy.id, effectTo = ally.id, effectCardId = state.prompt4Cards.high,
+    }) },
+    { skill = "aocai", command = "AskForResponseCard", expectedTargetProfile = "none", responsePattern = ".|.|.|.|.|basic", requiresOutOfTurn = true, data = responseData(".|.|.|.|.|basic") },
+    { skill = "beizhu", command = "AskForUseActiveSkill", expectedTargetProfile = "enemy", data = activeData("beizhu") },
+    { skill = "dimeng", command = "AskForUseActiveSkill", expectedTargetProfile = "mixed", data = activeData("dimeng") },
+    { skill = "choufa", command = "AskForUseActiveSkill", expectedTargetProfile = "ally", data = activeData("choufa") },
+    { skill = "cunsi", command = "AskForUseActiveSkill", expectedTargetProfile = "ally", data = activeData("cunsi") },
+    { skill = "duanfa", command = "AskForUseActiveSkill", expectedTargetProfile = "none", data = activeData("duanfa") },
+  }
+  for index, item in ipairs(cases) do
+    if item.skill ~= scenario.prompt4Skills[index] then
+      fail("ai-trace Prompt 4 case order drift at " .. tostring(index))
+    end
+  end
+
+  local function enabledOffers(handler)
+    local cards, targets = 0, 0
+    local exactOffers = {}
+    if handler and handler.scene and type(handler.scene.getAllItems) == "function" then
+      for _, item in pairs(handler.scene:getAllItems("CardItem") or {}) do
+        if item.enabled then cards = cards + 1 end
+      end
+      for _, item in pairs(handler.scene:getAllItems("Photo") or {}) do
+        if item.enabled then targets = targets + 1 end
+      end
+      for _, kind in ipairs({ "CardItem", "Photo", "SkillButton" }) do
+        for key, item in pairs(handler.scene:getAllItems(kind) or {}) do
+          if item.enabled then exactOffers[#exactOffers + 1] = kind .. ":" .. tostring(key) end
+        end
+      end
+    end
+    table.sort(exactOffers)
+    return cards, targets, table.concat(exactOffers, "|")
+  end
+
+  local function requestOffers(command, data, skillName)
+    local handlerClass = room.request_handlers and room.request_handlers[command]
+    if not handlerClass then return 0, 0, false, nil end
+    local ok, handler = xpcall(function()
+      local value = handlerClass:new(actor, data)
+      value:setup()
+      if (command == "AskForUseCard" or command == "AskForResponseCard") and skillName then
+        value:update("SkillButton", skillName, "click", { selected = true })
+      end
+      return value
+    end, function() return nil end)
+    if not ok or not handler then return 0, 0, false, nil end
+    local cards, targets, exactOffers = enabledOffers(handler)
+    pcall(function() handler:finish() end)
+    return cards, targets, true, exactOffers
+  end
+
+  local function traceRequestData(item)
+    local normalized = { skill = item.skill, active = true }
+    if item.skill == "jijiu" then
+      normalized.target = "ally"
+    elseif item.skill == "kanpo" then
+      normalized.from = "enemy"
+      normalized.to = "ally"
+      normalized.effect = "high-card"
+    end
+    return normalized
+  end
+
+  local function metricBucket(command)
+    local metrics = room:getTag("__ai_response_metrics")
+    return metrics and metrics.by_command and metrics.by_command[command] or nil
+  end
+
+  local function metricCount(bucket, key)
+    return bucket and tonumber(bucket[key] or 0) or 0
+  end
+
+  local function actedReply(reply)
+    if type(reply) ~= "table" then return false end
+    if type(reply.targets) == "table" and #reply.targets > 0 then return true end
+    if type(reply.card) == "number" then return true end
+    if type(reply.card) == "table" and type(reply.card.subcards) == "table" and #reply.card.subcards > 0 then
+      return true
+    end
+    return reply.interaction_data ~= nil
+  end
+
+  local effectReplayItem
+  local effectReplayReply
+  local nativeLegalityChecked = 0
+
+  -- A native handler may return a reply via doOKButton with an identity-based
+  -- fast path. Rebuild its handler and independently revalidate a fresh reply
+  -- object, including the real selected targets and material-card ownership.
+  local function verifyNativeLegality(item, reply, reportCoverage)
+    local handlerClass = room.request_handlers and room.request_handlers[item.command]
+    if not handlerClass then fail("tactical native handler unavailable") end
+    local before = aiTraceEngineState(room)
+    local oldHandler, oldReply = actor.ai.handler, actor.ai._last_ai_reply
+    local oldValidationDetail = actor.ai._ai_validation_detail
+    local copy = {}
+    for key, value in pairs(reply) do copy[key] = value end
+    local handler
+    local ok, valid = pcall(function()
+      handler = handlerClass:new(actor, item.data)
+      handler:setup()
+      actor.ai.handler, actor.ai._last_ai_reply = handler, nil
+      return actor.ai:validateReply(item.command, item.data, copy)
+    end)
+    actor.ai.handler, actor.ai._last_ai_reply = oldHandler, oldReply
+    actor.ai._ai_validation_detail = oldValidationDetail
+    if handler then pcall(function() handler:finish() end) end
+    if aiTraceEngineState(room) ~= before then
+      fail("tactical legality revalidation mutated native engine state: " .. item.skill)
+    end
+    if not ok or valid ~= true then fail("tactical native feasibility rejected accepted reply: " .. item.skill) end
+    local card = reply.card
+    local selected = type(card) == "number" and { card } or
+      type(card) == "table" and card.subcards or {}
+    local seen = {}
+    for _, id in ipairs(selected) do
+      if type(id) ~= "number" or seen[id] then
+        fail("tactical reply selected duplicate/invalid resource: " .. item.skill)
+      end
+      seen[id] = true
+      local owner, area = room:getCardOwner(id), room:getCardArea(id)
+      local actorOwns = owner == actor and
+        (area == Card.PlayerHand or area == Card.PlayerEquip)
+      -- Ao Cai's native view-as exposes only the two top draw-pile cards;
+      -- its selected resource is not owned by the responding player.  Check
+      -- the exact source-law offer, not an assumed card_area bookkeeping enum.
+      local aocaiPile = false
+      if item.skill == "aocai" then
+        local top = room.draw_pile or {}
+        local resource = Fk:getCardById(id)
+        aocaiPile = (top[1] == id or top[2] == id) and
+          resource ~= nil and resource.type == Card.TypeBasic
+      end
+      if not actorOwns and not aocaiPile then
+        if item.skill == "aocai" then
+          local inPile = table.contains(room.draw_pile or {}, id)
+          local physical = Fk:getCardById(id)
+          fk.qInfo(string.format("[tqs_prompt4_legality_diagnostic] skill=aocai top_two=%s in_draw_pile=%s basic=%s area_draw=%s area_processing=%s area_void=%s area_discard=%s area_hand=%s area_equip=%s original_top=%s owner_actor=%s owner_other=%s actor_owns=%s",
+            tostring((room.draw_pile or {})[1] == id or (room.draw_pile or {})[2] == id),
+            tostring(inPile), tostring(physical ~= nil and physical.type == Card.TypeBasic),
+            tostring(area == Card.DrawPile), tostring(area == Card.Processing),
+            tostring(area == Card.Void), tostring(area == Card.DiscardPile),
+            tostring(area == Card.PlayerHand), tostring(area == Card.PlayerEquip),
+            tostring(table.contains(state.prompt4AocaiTop or {}, id)),
+            tostring(owner == actor), tostring(owner ~= nil and owner ~= actor), tostring(actorOwns)))
+        end
+        fail("tactical reply selected a resource outside legal native zones: " .. item.skill)
+      end
+    end
+    for _, id in ipairs(reply.targets or {}) do
+      local target = room:getPlayerById(id)
+      if not target or not target:isAlive() then
+        fail("tactical reply selected invalid/dead native target: " .. item.skill)
+      end
+    end
+    local targetProfile = aiTraceReplyTargetProfile(room, actor, reply)
+    if targetProfile ~= item.expectedTargetProfile then
+      fail("tactical native reply targeted a different faction profile: " .. item.skill)
+    end
+    if reportCoverage ~= false then
+      nativeLegalityChecked = nativeLegalityChecked + 1
+      fk.qInfo(string.format(
+        "[tqs_prompt4_legality] schema=1 scenario=%s seed=%u skill=%s command=%s handler_feasible=1 resources_legal=1 targets_legal=1 target_faction_expected=1 state_unchanged=1 target_profile=%s selected_cards=%d selected_targets=%d",
+        state.scenario, state.seed, aiTraceToken(item.skill),
+        aiTraceToken(item.command), targetProfile,
+        #selected, #(reply.targets or {})))
+    end
+  end
+
+  local function invoke(item, index)
+    local oldCommand, oldData = actor.ai.command, actor.ai.data
+    local previousPattern = Fk.currentResponsePattern
+    local previousCurrent
+    if item.requiresOutOfTurn and room.current == actor then
+      -- Ao Cai is legally a response-only skill: the real source law rejects
+      -- it while its owner is the current player.  The bounded synthetic
+      -- request must therefore model the out-of-turn context that exists
+      -- when an opponent's card asks this player to respond.
+      previousCurrent = room.current
+      room:setCurrent(enemy)
+    end
+    actor.ai.command, actor.ai.data = item.command, item.data
+    Fk.currentResponsePattern = item.responsePattern
+    local cards, targets, offerOk = requestOffers(item.command, item.data, item.skill)
+    if item.skill == "tianyi" or item.skill == "kanpo" or item.skill == "aocai" then
+      state.prompt4RequestSnapshots[item.skill] = {
+        command = item.command, data = item.data, pattern = item.responsePattern,
+        outOfTurn = item.requiresOutOfTurn == true,
+      }
+    end
+    local input = aiTraceInputFingerprint(actor.ai, traceRequestData(item))
+    local opportunity = cards > 0 or targets > 0
+    if opportunity then trace.opportunities = trace.opportunities + 1 end
+    if not offerOk then trace.errors = trace.errors + 1 end
+
+    local beforeMetric = aiTraceReplyMetricSnapshot(actor.ai, item.command)
+    local before = metricBucket(item.command)
+    local beforeTotal = metricCount(before, "total")
+    local beforeFallback = metricCount(before, "fallback")
+    local beforeInvalid = metricCount(before, "invalid")
+    local ok, reply = xpcall(function() return actor.ai:makeReply() end, function() return nil end)
+    local measuredReason, measuredDetail = aiTraceReplyMetricDelta(actor.ai, item.command, beforeMetric)
+    Fk.currentResponsePattern = previousPattern
+    local after = metricBucket(item.command)
+    local totalDelta = metricCount(after, "total") - beforeTotal
+    local fallbackDelta = metricCount(after, "fallback") - beforeFallback
+    local invalidDelta = metricCount(after, "invalid") - beforeInvalid
+    if not ok or totalDelta ~= 1 or measuredReason == "metric_drift" or
+        fallbackDelta < 0 or fallbackDelta > 1 or
+        invalidDelta < 0 or invalidDelta > 1 then
+      trace.errors = trace.errors + 1
+    end
+    local accepted = ok and measuredReason == "accepted" and type(reply) == "table"
+    if accepted then verifyNativeLegality(item, reply) end
+    local acted = accepted and actedReply(reply) or false
+    local reason = aiTraceToken(measuredReason)
+    local detail = aiTraceToken(measuredDetail)
+    if accepted then trace.accepted = trace.accepted + 1 end
+    if acted then trace.acted = trace.acted + 1 end
+    if opportunity and not acted then trace.misses = trace.misses + 1 end
+    if fallbackDelta > 0 then trace.fallback = trace.fallback + 1 end
+    if invalidDelta > 0 then trace.invalid = trace.invalid + 1 end
+    trace.total = trace.total + 1
+    local targetProfile = aiTraceReplyTargetProfile(room, actor, reply)
+    trace.decisions[#trace.decisions + 1] = {
+      seq = index, skill = item.skill, command = aiTraceToken(item.command), input = input,
+      offer = aiTraceHash(table.concat({ item.skill, tostring(cards), tostring(targets), aiTraceCardShape(actor:getCardIds(Player.Hand)) }, "|")),
+      opportunity = opportunity, offeredCards = cards, offeredTargets = targets,
+      accepted = accepted, acted = acted, invalid = invalidDelta > 0,
+      output = aiTraceReplyShape(reply), reason = reason, detail = detail,
+      targetProfile = targetProfile,
+      cardProfile = aiTraceReplyCardProfile(reply),
+      resourceShape = aiTraceReplyResourceShape(reply),
+      resourceValue = aiTraceReplyResourceValue(actor, reply),
+      selectedCards = aiTraceReplyCardCount(reply),
+      selectedTargets = aiTraceReplyTargetCount(reply),
+      targetQuality = aiTraceTargetQuality(targetProfile, item.expectedTargetProfile, acted),
+    }
+    if item.skill == prompt4EffectReplaySkill then
+      effectReplayItem = item
+      effectReplayReply = reply
+      trace.effectReplay.accepted = accepted
+    end
+    actor.ai.command, actor.ai.data = oldCommand, oldData
+    if previousCurrent then room:setCurrent(previousCurrent) end
+  end
+
+  for index, item in ipairs(cases) do invoke(item, index) end
+  if trace.total ~= #scenario.prompt4Skills or #trace.decisions ~= trace.total then
+    fail("ai-trace Prompt 4 did not capture all eighteen native requests")
+  end
+  for _, decision in ipairs(trace.decisions) do
+    fk.qInfo(string.format(
+      "[tqs_prompt4_legality_coverage] schema=1 scenario=%s seed=%u skill=%s command=%s accepted=%d acted=%d reason=%s detail=%s offered_cards=%d offered_targets=%d",
+      state.scenario, state.seed, aiTraceToken(decision.skill),
+      aiTraceToken(decision.command), decision.accepted and 1 or 0,
+      decision.acted and 1 or 0, aiTraceToken(decision.reason),
+      aiTraceToken(decision.detail), decision.offeredCards, decision.offeredTargets))
+  end
+  -- Both request-safety probes require the fully prepared Prompt4 fixture and
+  -- its real request snapshots. Run them before the independent P2 gate.
+  runAiRealHandlerReplyProbe(room, state)
+  runAiMalformedReplyProbe(room, state)
+  if nativeLegalityChecked ~= 18 then fail("native tactical legality coverage drift") end
+  fk.qInfo(string.format(
+    "[tqs_prompt4_legality] summary schema=1 scenario=%s seed=%u decisions=18 handler_feasible=18 resources_legal=18 targets_legal=18 target_faction_expected=18 state_unchanged=18",
+    state.scenario, state.seed))
+
+  -- Run each live Prompt4 request again against matched private-hand variants.
+  -- Both opponents retain the exact same hand count and every public object,
+  -- request payload and selectable native CardItem/Photo/SkillButton. The
+  -- internal ownership map changes with the two concealed cards and is then
+  -- restored exactly. Never serialize the cards, identities or raw replies.
+  local function nativePrivacyDifferential()
+    local left, right = room.players[2], room.players[3]
+    local leftHand, rightHand = left and left.player_cards[Player.Hand],
+      right and right.player_cards[Player.Hand]
+    if not leftHand or not rightHand or #leftHand == 0 or #rightHand == 0 then
+      fail("privacy differential needs two distinct opponent private hands")
+    end
+    local leftIndex, rightIndex
+    for i, leftId in ipairs(leftHand) do
+      for j, rightId in ipairs(rightHand) do
+        if aiTraceCardShape({ leftId }) ~= aiTraceCardShape({ rightId }) then
+          leftIndex, rightIndex = i, j
+          break
+        end
+      end
+      if leftIndex then break end
+    end
+    if not leftIndex then fail("privacy differential has no semantically distinct hidden cards") end
+    local leftCard, rightCard = leftHand[leftIndex], rightHand[rightIndex]
+    local originalMetrics = room:getTag("__ai_response_metrics")
+    local originalReasons = room:getTag("__tqs_prompt4_request_reasons")
+    local originalCommand, originalData = actor.ai.command, actor.ai.data
+    local originalPattern, originalCurrent = Fk.currentResponsePattern, room.current
+    local swapped = false
+
+    local function swapHands()
+      leftHand[leftIndex], rightHand[rightIndex] = rightHand[rightIndex], leftHand[leftIndex]
+      if swapped then
+        room:setCardArea(leftCard, Card.PlayerHand, left.id)
+        room:setCardArea(rightCard, Card.PlayerHand, right.id)
+      else
+        room:setCardArea(leftCard, Card.PlayerHand, right.id)
+        room:setCardArea(rightCard, Card.PlayerHand, left.id)
+      end
+      swapped = not swapped
+    end
+    local function publicState(item)
+      -- Construct the *observable* projection. The generic AI input
+      -- fingerprint intentionally contains __heg_general/__heg_deputy private
+      -- marks and therefore must not stand in for a public-state fingerprint.
+      local public = {
+        aiTraceHash(aiTraceStable({ command = item.command, data = item.data,
+          responsePattern = item.responsePattern })),
+        tostring(aiTraceSeat(room, room.current)),
+      }
+      for _, candidate in ipairs(room.players) do
+        local shownMarks, specialCounts = {}, {}
+        for mark, value in pairs(candidate.mark or {}) do
+          -- Visible '@' counters are included; private __heg_* identities
+          -- and internal marks never enter this projection.
+          if type(mark) == "string" and mark:sub(1, 1) == "@" then
+            shownMarks[mark] = value
+          end
+        end
+        for pile, ids in pairs(candidate.special_cards or {}) do
+          if type(ids) == "table" then specialCounts[pile] = #ids end
+        end
+        public[#public + 1] = aiTraceStable({
+          hp = candidate.hp, maxHp = candidate.maxHp, dead = candidate.dead,
+          phase = candidate.phase,
+          role = candidate.role_shown and candidate.role or "hidden",
+          general = candidate.general, deputy = candidate.deputyGeneral,
+          marks = shownMarks,
+          handCount = #(candidate:getCardIds(Player.Hand) or {}),
+          equip = candidate.player_cards[Player.Equip],
+          judge = candidate.player_cards[Player.Judge],
+          specialCounts = specialCounts,
+        })
+      end
+      return table.concat(public, "|")
+    end
+    local privacyFail
+    local function trial(item)
+      local previousCurrent = room.current
+      actor.ai.command, actor.ai.data = item.command, item.data
+      Fk.currentResponsePattern = item.responsePattern
+      if item.requiresOutOfTurn and room.current == actor then room:setCurrent(enemy) end
+      -- Allocate detached metrics, then restore the original live accumulator.
+      -- Do not let 90 negative-control decisions inflate the 25 live requests.
+      room:setTag("__ai_response_metrics", nil)
+      room:setTag("__tqs_prompt4_request_reasons", nil)
+      local before = aiTraceEngineState(room)
+      local _, _, offerOk, exactOffers = requestOffers(item.command, item.data, item.skill)
+      if not offerOk then
+        privacyFail(item, "offer_unavailable", "privacy differential real handler offer unavailable")
+      end
+      if aiTraceEngineState(room) ~= before then
+        privacyFail(item, "offer_mutated_state", "privacy differential handler offer construction mutated engine state")
+      end
+      local beforeMetric = aiTraceReplyMetricSnapshot(actor.ai, item.command)
+      local reply = actor.ai:makeReply()
+      local reason = aiTraceReplyMetricDelta(actor.ai, item.command, beforeMetric)
+      if reason ~= "accepted" or type(reply) ~= "table" then
+        privacyFail(item, "decision_rejected", "privacy differential native decision was rejected")
+      end
+      -- A privacy-invariant but illegal action would still be a P2 failure.
+      -- Revalidate every A1/A2/B1/B2/A3 candidate on its own native state.
+      verifyNativeLegality(item, reply, false)
+      if aiTraceEngineState(room) ~= before then
+        privacyFail(item, "decision_mutated_state", "privacy differential decision mutated engine state")
+      end
+      local result = { public = publicState(item), offers = exactOffers,
+        reply = aiTraceStable(reply) }
+      if previousCurrent and room.current ~= previousCurrent then room:setCurrent(previousCurrent) end
+      room:setTag("__ai_response_metrics", originalMetrics)
+      room:setTag("__tqs_prompt4_request_reasons", originalReasons)
+      return result
+    end
+    local function privacyDiagnostic(item, stage)
+      fk.qInfo(string.format(
+        "[tqs_prompt4_privacy_diagnostic] schema=1 scenario=%s seed=%u skill=%s command=%s stage=%s",
+        state.scenario, state.seed, aiTraceToken(item.skill), aiTraceToken(item.command), aiTraceToken(stage)))
+    end
+    privacyFail = function(item, stage, message)
+      privacyDiagnostic(item, stage)
+      fail(message)
+    end
+    local casesChecked = 0
+    local ok = xpcall(function()
+      for _, item in ipairs(cases) do
+        local baselineState = aiTraceEngineState(room)
+        local a1, a2 = trial(item), trial(item)
+        if a1.reply ~= a2.reply or a1.offers ~= a2.offers or
+            a1.public ~= a2.public then
+          privacyFail(item, "baseline_nondeterministic", "privacy differential baseline is nondeterministic: " .. item.skill)
+        end
+        swapHands()
+        local changedState = aiTraceEngineState(room)
+        if changedState == baselineState then
+          privacyFail(item, "hidden_state_unchanged", "privacy differential hidden state was not changed")
+        end
+        local b1, b2 = trial(item), trial(item)
+        swapHands()
+        local a3 = trial(item)
+        if aiTraceEngineState(room) ~= baselineState then
+          privacyFail(item, "restore_state_mismatch", "privacy differential failed to restore engine state")
+        end
+        if a1.public ~= b1.public or a1.public ~= b2.public or
+            a1.public ~= a3.public or a1.offers ~= b1.offers or
+            a1.offers ~= b2.offers or a1.offers ~= a3.offers then
+          privacyFail(item, "public_or_offers_mismatch", "privacy differential public state/legal offers mismatch: " .. item.skill)
+        end
+        if a1.reply ~= a3.reply then
+          privacyFail(item, "restored_baseline_drift", "privacy differential restored baseline drift: " .. item.skill)
+        end
+        if b1.reply ~= b2.reply or a1.reply ~= b1.reply then
+          privacyFail(item, "hidden_data_changed_decision", "privacy differential hidden data affected decision: " .. item.skill)
+        end
+        for _, trialName in ipairs({ "A1", "A2", "B1", "B2", "A3" }) do
+          fk.qInfo(string.format(
+            "[tqs_prompt4_privacy_trial] schema=2 scenario=%s seed=%u skill=%s command=%s snapshot=%s public_equal=1 offers_equal=1 decision_equal=1 native_legal=1 state_unchanged=1",
+            state.scenario, state.seed, aiTraceToken(item.skill),
+            aiTraceToken(item.command), trialName))
+        end
+        casesChecked = casesChecked + 1
+        fk.qInfo(string.format(
+          "[tqs_prompt4_privacy] schema=1 scenario=%s seed=%u skill=%s command=%s private_variants=2 trials=5 public_equal=1 offers_equal=1 decisions_equal=1 state_restored=1",
+          state.scenario, state.seed, aiTraceToken(item.skill), aiTraceToken(item.command)))
+      end
+    end, function() return "privacy_differential_failed" end)
+    -- These restores run even when a strategy throws or a differential fails.
+    if swapped then swapHands() end
+    room:setTag("__ai_response_metrics", originalMetrics)
+    room:setTag("__tqs_prompt4_request_reasons", originalReasons)
+    actor.ai.command, actor.ai.data = originalCommand, originalData
+    Fk.currentResponsePattern = originalPattern
+    if room.current ~= originalCurrent then room:setCurrent(originalCurrent) end
+    if not ok then fail("native private-hand differential failed") end
+    if casesChecked ~= 18 then fail("native private-hand differential coverage drift") end
+    fk.qInfo(string.format(
+      "[tqs_prompt4_privacy] summary schema=1 scenario=%s seed=%u decisions=%d variants=2 trials=%d public_equal=1 offers_equal=1 decisions_equal=1 state_restored=1",
+      state.scenario, state.seed, casesChecked, casesChecked * 5))
+  end
+  nativePrivacyDifferential()
+  preparePrompt4ReplayResources(room, state)
+
+  -- Apply one explicitly selected, already-accepted AI reply through the
+  -- native Room -> useSkill -> SkillEffect path only after all eighteen
+  -- request fingerprints have been captured.  This keeps the matched request
+  -- matrix unchanged while adding a real downstream assertion for the safe
+  -- QA skill selected by the temporary config.
+  if prompt4EffectReplaySkill then
+    local replay = trace.effectReplay
+    replay.attempted = true
+    if not effectReplayItem or type(effectReplayReply) ~= "table" or not replay.accepted then
+      replay.errors = replay.errors + 1
+      fail("ai-trace Prompt 4 effect replay did not receive an accepted reply")
+    end
+    replay.replyCardCount = aiTraceReplyCardCount(effectReplayReply)
+    local function handCount(player)
+      if not player or type(player.getCardIds) ~= "function" then return 0 end
+      local ids = player:getCardIds(Player.Hand) or {}
+      return type(ids) == "table" and #ids or 0
+    end
+    local replayTargetIds = effectReplayReply.targets or {}
+    local effectReplayData = effectReplayItem.data
+    local cardRequest = effectReplayItem.command ~= "AskForUseActiveSkill"
+    local responseRequest = effectReplayItem.command == "AskForResponseCard"
+    local effectReplayExtra = type(effectReplayData[4]) == "table" and effectReplayData[4] or {}
+    if cardRequest then
+      effectReplayExtra = type(effectReplayData[5]) == "table" and effectReplayData[5] or {}
+    end
+    if #replayTargetIds == 0 and prompt4EffectReplayProfile.targetFromExtraData then
+      replayTargetIds = effectReplayExtra.must_targets or {}
+    end
+    local replayTargets = {}
+    for _, targetId in ipairs(replayTargetIds) do
+      local target = type(targetId) == "number" and room:getPlayerById(targetId) or nil
+      if target then table.insert(replayTargets, target) end
+    end
+    if prompt4EffectReplayProfile.targetPolicy == "native_bot" then
+      -- The accepted Wusheng reply normally targets the second browser
+      -- client. Executing the returned Slash would therefore open a nested
+      -- Jink Request that needs a browser driver. Retarget only this
+      -- QA-only replay to the first native BOT, so the nested Request still
+      -- travels through the real Request -> SmartAI -> feasibility path.
+      -- Keep the original accepted target requirement above; this is a
+      -- deterministic nested-request policy, not a fabricated reply.
+      if #replayTargetIds == 0 then
+        fail("ai-trace nested replay received an accepted reply without a target")
+      end
+      local nativeBotTarget = state.prompt4NativeTarget or table.find(room.players, function(player)
+        return player ~= actor and player.id < 0 and player:isAlive()
+      end)
+      if not nativeBotTarget then
+        fail("ai-trace nested replay requires an alive native BOT target")
+      end
+      replayTargets = { nativeBotTarget }
+      replay.targetRetargeted = true
+    elseif prompt4EffectReplayProfile.targetPolicy == "native_bot_other" then
+      -- Nested active profiles keep both participants native and choose the
+      -- second BOT explicitly, so actor/target hand deltas cannot alias one
+      -- another.  Shangyi uses this for choice/card selection; Tianyi uses it
+      -- for the two sides of a Pindian request.
+      if #replayTargetIds == 0 then
+        fail("ai-trace Shangyi replay received an accepted reply without a target")
+      end
+      local firstNativeBot = state.prompt4NativeActor or table.find(room.players, function(player)
+        return player.id < 0 and player:isAlive()
+      end)
+      local nativeBotTarget = state.prompt4NativeTarget or table.find(room.players, function(player)
+        return player.id < 0 and player ~= firstNativeBot and player:isAlive()
+      end)
+      if not firstNativeBot or not nativeBotTarget then
+        fail("ai-trace Shangyi replay requires two alive native BOTs")
+      end
+      replayTargets = { nativeBotTarget }
+      replay.targetRetargeted = true
+    elseif prompt4EffectReplayProfile.targetPolicy == "native_bot_tiaoxin" then
+      -- Tiaoxin's source target filter requires the provoked player to be in
+      -- attack range of the replay actor.  Select a distinct native BOT only
+      -- when the native server proves that both the source target filter and
+      -- the physical Slash can legally reach the actor; never bypass distance
+      -- merely to make this downstream proof pass.
+      if #replayTargetIds == 0 then
+        fail("ai-trace Tiaoxin replay received an accepted reply without a target")
+      end
+      local firstNativeBot = state.prompt4NativeActor or table.find(room.players, function(player)
+        return player.id < 0 and player:isAlive()
+      end)
+      if not firstNativeBot then
+        fail("ai-trace Tiaoxin replay requires an alive native BOT actor")
+      end
+      local slash = Fk:cloneCard("slash")
+      local nativeBotTarget = table.find(room.players, function(player)
+        return player.id < 0 and player ~= firstNativeBot and player:isAlive() and
+          player:inMyAttackRange(firstNativeBot) and
+          player:canUseTo(slash, firstNativeBot, { bypass_times = true })
+      end)
+      if not nativeBotTarget then
+        fail("ai-trace Tiaoxin replay requires a distinct native BOT in Slash range")
+      end
+      replayTargets = { nativeBotTarget }
+      replay.targetRetargeted = true
+    end
+    local replayActor = actor
+    if prompt4EffectReplayProfile.actorPolicy == "native_bot" then
+      replayActor = state.prompt4NativeActor or table.find(room.players, function(player)
+        return player ~= actor and player.id < 0 and player:isAlive()
+      end)
+      if not replayActor then
+        fail("ai-trace downstream replay requires an alive native BOT actor")
+      end
+    end
+    local targetHandTotal = 0
+    for _, target in ipairs(replayTargets) do
+      targetHandTotal = targetHandTotal + handCount(target)
+    end
+    if prompt4EffectReplayProfile.promoteFakeSkill then
+      -- The ai-trace roster exposes selected general skills as fake skills so
+      -- the request matrix can probe them while the browser pair remains
+      -- hidden. Promote only the selected replay skill into a real skill for
+      -- this QA-only downstream assertion; hidden-general reveal semantics
+      -- are covered by the dedicated hidden-active scenarios.
+      local replaySkill = Fk.skills[prompt4EffectReplaySkill]
+      if replaySkill and replayActor:isFakeSkill(replaySkill) then
+        replayActor:loseFakeSkill(replaySkill)
+        room:handleAddLoseSkills(replayActor, prompt4EffectReplaySkill, nil, false, true)
+      end
+    end
+    replay.beforeHp = replayActor.hp
+    replay.beforeHand = handCount(replayActor)
+    replay.targetCount = #replayTargets
+    replay.beforeTargetHandTotal = targetHandTotal
+    local replayTarget = replayTargets[1]
+    if replayTarget then
+      replay.beforeTargetHp = replayTarget.hp
+      replay.beforeTargetHand = handCount(replayTarget)
+    end
+    local nestedMetricBefore = {}
+    for _, spec in ipairs(prompt4EffectReplayProfile.nestedMetrics or {}) do
+      local bucket = metricBucket(spec.command)
+      nestedMetricBefore[spec.command] = {
+        total = metricCount(bucket, "total"),
+        fallback = metricCount(bucket, "fallback"),
+        invalid = metricCount(bucket, "invalid"),
+      }
+    end
+    replay.active = true
+    local data = effectReplayData
+    local effectReplayReplyForExecution = effectReplayReply
+    if prompt4EffectReplayProfile.targetPolicy == "native_bot_other" or
+        prompt4EffectReplayProfile.targetPolicy == "native_bot_tiaoxin" or
+        prompt4EffectReplayProfile.actorPolicy == "native_bot" then
+      -- ActiveSkill replies consume `data.targets` directly in
+      -- handleUseCardReply; unlike ViewAsSkill there is no later useResult
+      -- object whose `tos` can be replaced. Keep the accepted trace intact
+      -- and clone only the QA execution payload for the explicit target
+      -- policy above.
+      effectReplayReplyForExecution = {}
+      for key, value in pairs(effectReplayReply) do
+        effectReplayReplyForExecution[key] = value
+      end
+      effectReplayReplyForExecution.targets = table.map(replayTargets, function(target)
+        return target.id
+      end)
+    end
+    if prompt4EffectReplayProfile.actorPolicy == "native_bot" and
+        type(effectReplayReplyForExecution.card) == "table" and
+        type(effectReplayReplyForExecution.card.subcards) == "table" and
+        #effectReplayReplyForExecution.card.subcards > 0 then
+      -- The accepted browser-seat reply carries card ids owned by that
+      -- browser seat.  A nested native-BOT replay needs semantically equal
+      -- resources owned by its native actor; remap only the QA execution
+      -- copy and retain the accepted request trace unchanged.  Matching
+      -- trueName/suit/color keeps the ViewAs skill law intact and never
+      -- exposes a private card id in evidence.
+      local sourceCard = effectReplayReplyForExecution.card
+      local executionCard = {}
+      for key, value in pairs(sourceCard) do executionCard[key] = value end
+      local available = replayActor:getCardIds("he") or {}
+      local used = {}
+      local usedSuits = {}
+      local mapped = {}
+      local function sameResourceShape(left, right)
+        if not left or not right or left.trueName ~= right.trueName then return false end
+        if prompt4CardSuit(left) ~= prompt4CardSuit(right) then return false end
+        local leftColor = pcall(left.getColorString, left) and left:getColorString() or ""
+        local rightColor = pcall(right.getColorString, right) and right:getColorString() or ""
+        return leftColor == rightColor
+      end
+      for _, sourceId in ipairs(sourceCard.subcards) do
+        local candidate = sourceId
+        local owner = room:getCardOwner(sourceId)
+        if owner ~= replayActor then
+          if prompt4EffectReplayProfile.resourceMatchMode == "distinct_suits" then
+            candidate = table.find(available, function(id)
+              local card = Fk:getCardById(id)
+              local suit = prompt4CardSuit(card)
+              return not used[id] and suit ~= "" and not usedSuits[suit]
+            end)
+          elseif prompt4EffectReplayProfile.resourceMatchMode == "huoji_red" then
+            candidate = table.find(available, function(id)
+              local card = Fk:getCardById(id)
+              return not used[id] and card and card.type ~= Card.TypeEquip and
+                card:getColorString() == "red"
+            end)
+          else
+            local source = Fk:getCardById(sourceId)
+            candidate = table.find(available, function(id)
+              return not used[id] and sameResourceShape(source, Fk:getCardById(id))
+            end)
+          end
+          if candidate then replay.resourceRetargeted = true end
+        end
+        if candidate then
+          used[candidate] = true
+          if prompt4EffectReplayProfile.resourceMatchMode == "distinct_suits" then
+            usedSuits[prompt4CardSuit(Fk:getCardById(candidate))] = true
+          end
+          table.insert(mapped, candidate)
+        else
+          replay.resourceRetargetError = true
+          table.insert(mapped, sourceId)
+        end
+      end
+      executionCard.subcards = mapped
+      effectReplayReplyForExecution.card = executionCard
+    end
+    local handled, useResult = xpcall(function()
+      return room:handleUseCardReply(replayActor, effectReplayReplyForExecution, {
+        skill_name = effectReplayItem.skill,
+        prompt = activePrompt,
+        pattern = cardRequest and effectReplayData[2] or nil,
+        cancelable = cardRequest and effectReplayData[4] or effectReplayData[3],
+        extra_data = cardRequest and effectReplayData[5] or effectReplayData[4],
+        is_response = responseRequest,
+      })
+    end, function()
+      -- Do not expose native exception text or private state in QA output.
+      return nil
+    end)
+    replay.executedUseResult = false
+    if handled and (prompt4EffectReplayProfile.executeUseResult or
+        prompt4EffectReplayProfile.executeResponseResult) then
+      local executed = xpcall(function()
+        if type(useResult) ~= "table" then return false end
+        if prompt4EffectReplayProfile.targetFromExtraData and
+            type(useResult.tos) == "table" and #useResult.tos == 0 then
+          -- Response-style ViewAs replies intentionally omit the rescue
+          -- target; the native request already supplied it as must_targets.
+          -- Reattach only that server-provided target before executing the
+          -- returned useResult. No target identity is emitted.
+          useResult.tos = replayTargets
+        end
+        if prompt4EffectReplayProfile.targetPolicy == "native_bot" then
+          -- Replace only the useResult target list after the real skill
+          -- onUse/useSkill path has built it. The subsequent room:useCard
+          -- call, including any nested response request, remains native.
+          useResult.tos = replayTargets
+        end
+        if prompt4EffectReplayProfile.executeResponseResult then
+          -- Response-style ViewAs skills return a card-use-shaped result from
+          -- handleUseCardReply, but the native event must be RespondCard so
+          -- CardResponding/CardRespondFinished and afterResponse run on the
+          -- real engine path.
+          room:responseCard(useResult)
+        else
+          room:useCard(useResult)
+        end
+        return true
+      end, function()
+        -- Do not expose native exception text or private state in QA output.
+        return false
+      end)
+      replay.executedUseResult = executed
+      if not executed then replay.errors = replay.errors + 1 end
+    end
+    local nestedMetricDetails = {}
+    for _, spec in ipairs(prompt4EffectReplayProfile.nestedMetrics or {}) do
+      local before = nestedMetricBefore[spec.command] or {}
+      local after = metricBucket(spec.command)
+      local totalDelta = metricCount(after, "total") - (before.total or 0)
+      local fallbackDelta = metricCount(after, "fallback") - (before.fallback or 0)
+      local invalidDelta = metricCount(after, "invalid") - (before.invalid or 0)
+      table.insert(nestedMetricDetails, string.format("%s:%d/%d/%d", aiTraceToken(spec.command),
+        totalDelta, fallbackDelta, invalidDelta))
+      replay.nestedRequests = replay.nestedRequests + totalDelta
+      replay.nestedFallback = replay.nestedFallback + fallbackDelta
+      replay.nestedInvalid = replay.nestedInvalid + invalidDelta
+      if (spec.total ~= nil and totalDelta ~= spec.total) or
+          (spec.fallback ~= nil and fallbackDelta ~= spec.fallback) or
+          (spec.invalid ~= nil and invalidDelta ~= spec.invalid) then
+        replay.nestedMetricErrors = replay.nestedMetricErrors + 1
+      end
+    end
+    replay.nestedMetricSummary = table.concat(nestedMetricDetails, ",")
+    if replay.nestedMetricErrors > 0 then
+      replay.errors = replay.errors + 1
+    end
+    replay.active = false
+    replay.handled = handled
+    replay.afterHp = replayActor.hp
+    replay.hpDelta = replay.afterHp - replay.beforeHp
+    replay.afterHand = handCount(replayActor)
+    replay.handDelta = replay.afterHand - replay.beforeHand
+    targetHandTotal = 0
+    for _, target in ipairs(replayTargets) do
+      targetHandTotal = targetHandTotal + handCount(target)
+    end
+    replay.afterTargetHandTotal = targetHandTotal
+    replay.targetHandTotalDelta = replay.afterTargetHandTotal - replay.beforeTargetHandTotal
+    if replayTarget then
+      replay.afterTargetHp = replayTarget.hp
+      replay.targetHpDelta = replay.afterTargetHp - replay.beforeTargetHp
+      replay.afterTargetHand = handCount(replayTarget)
+      replay.targetHandDelta = replay.afterTargetHand - replay.beforeTargetHand
+      replay.targetSkill = prompt4EffectReplayProfile.expectedTargetSkill ~= nil and
+        replayTarget:hasSkill(prompt4EffectReplayProfile.expectedTargetSkill) or false
+    end
+    if not handled or ((prompt4EffectReplayProfile.executeUseResult or
+        prompt4EffectReplayProfile.executeResponseResult) and not replay.executedUseResult) then
+      replay.errors = replay.errors + 1
+    end
+    -- The global QA director is visited once per room player by the native
+    -- trigger dispatcher, so one real SkillEffect can produce several
+    -- bounded observations. Require at least one observation, not an
+    -- implementation-specific fan-out count.
+    local expectedHp = prompt4EffectReplayProfile.expectedHpDelta
+    local hpMatches = expectedHp == nil or replay.hpDelta == expectedHp or
+      (prompt4EffectReplayProfile.expectedHpDeltas and
+        prompt4EffectReplayProfile.expectedHpDeltas[replay.hpDelta] == true)
+    local handMatches = prompt4EffectReplayProfile.expectedHandDelta == nil or
+      replay.handDelta == prompt4EffectReplayProfile.expectedHandDelta
+    local targetHpMatches = prompt4EffectReplayProfile.expectedTargetHpDelta == nil or
+      replay.targetHpDelta == prompt4EffectReplayProfile.expectedTargetHpDelta or
+      (prompt4EffectReplayProfile.expectedTargetHpDeltas and
+        prompt4EffectReplayProfile.expectedTargetHpDeltas[replay.targetHpDelta] == true)
+    local targetHandMatches = prompt4EffectReplayProfile.expectedTargetHandDelta == nil or
+      replay.targetHandDelta == prompt4EffectReplayProfile.expectedTargetHandDelta
+    local targetHandTotalMatches = prompt4EffectReplayProfile.expectedTargetHandTotalDelta == nil or
+      replay.targetHandTotalDelta == prompt4EffectReplayProfile.expectedTargetHandTotalDelta
+    local targetCountMatches = prompt4EffectReplayProfile.expectedTargetCount == nil or
+      replay.targetCount == prompt4EffectReplayProfile.expectedTargetCount
+    local targetSkillMatches = prompt4EffectReplayProfile.expectedTargetSkill == nil or replay.targetSkill
+    local markMatches = true
+    local minimumMark = prompt4EffectReplayProfile.minimumMark
+    if minimumMark then
+      markMatches = replayActor:getMark(minimumMark.name) >= minimumMark.value
+    end
+    local markAny = prompt4EffectReplayProfile.markAny
+    if markAny then
+      markMatches = false
+      for _, markName in ipairs(markAny) do
+        if replayActor:getMark(markName) >= 1 then
+          markMatches = true
+          break
+        end
+      end
+    end
+    local replayCardMatches = prompt4EffectReplayProfile.expectedReplayCardCount == nil or
+      replay.replyCardCount == prompt4EffectReplayProfile.expectedReplayCardCount
+    if not handled or replay.skillEffects < 1 or replay.fake or replay.resourceRetargetError or not hpMatches or
+        not handMatches or not targetHpMatches or not targetHandMatches or
+        not targetHandTotalMatches or not targetCountMatches or
+        not targetSkillMatches or not markMatches or not replayCardMatches or
+        replay.nestedMetricErrors > 0 then
+      fail(string.format(
+        "ai-trace Prompt 4 effect replay failed skill=%s handled=%d executed=%d skill_effects=%d observed_skill_effects=%d observed_skill_names=%s fake=%d reply_cards=%d hp_delta=%d hand_delta=%d target_hp_delta=%d target_hand_delta=%d target_hand_total_delta=%d target_count=%d target_skill=%d mark_ok=%d resource_retargeted=%d resource_retarget_error=%d nested_requests=%d nested_fallback=%d nested_invalid=%d nested_metric_errors=%d nested_metrics=%s errors=%d",
+        aiTraceToken(prompt4EffectReplaySkill), handled and 1 or 0,
+        replay.executedUseResult and 1 or 0, replay.skillEffects, replay.observedSkillEffects,
+        aiTraceToken(table.concat(replay.observedSkillNames, ",")),
+        replay.fake and 1 or 0, replay.replyCardCount, replay.hpDelta, replay.handDelta, replay.targetHpDelta,
+        replay.targetHandDelta, replay.targetHandTotalDelta, replay.targetCount,
+        replay.targetSkill and 1 or 0, markMatches and 1 or 0, replay.resourceRetargeted and 1 or 0,
+        replay.resourceRetargetError and 1 or 0, replay.nestedRequests,
+        replay.nestedFallback, replay.nestedInvalid, replay.nestedMetricErrors,
+        replay.nestedMetricSummary, replay.errors))
+    end
+  end
+end
+
+local function emitPrompt4NativeTrace(state)
+  local trace = state.prompt4Trace
+  if not trace or trace.emitted then return end
+  trace.emitted = true
+  fk.qInfo(string.format("[tqs_prompt4_trace] summary scenario=%s seed=%u revision=%s decisions=%d opportunities=%d accepted=%d acted=%d misses=%d fallback=%d invalid=%d errors=%d pair=%s state=%s fixture=semantic_v1 skills=%d metadata=shape_v1",
+    state.scenario, state.seed, state.revision, trace.total, trace.opportunities, trace.accepted,
+    trace.acted, trace.misses, trace.fallback, trace.invalid, trace.errors,
+    trace.pairVerified and "verified" or "unverified", trace.stateVerified and "verified" or "unverified",
+    #trace.decisions))
+  for _, entry in ipairs(trace.decisions) do
+  fk.qInfo(string.format("[tqs_prompt4_trace] decision scenario=%s seed=%u revision=%s seq=%d skill=%s command=%s input=%s offer=%s opportunity=%d offered_cards=%d offered_targets=%d accepted=%d acted=%d invalid=%d output=%s reason=%s detail=%s target_profile=%s card_profile=%s resource_shape=%s selected_cards=%d selected_targets=%d target_quality=%s resource_value=%s",
+      state.scenario, state.seed, state.revision, entry.seq, entry.skill, entry.command, entry.input,
+      entry.offer, entry.opportunity and 1 or 0, entry.offeredCards, entry.offeredTargets,
+      entry.accepted and 1 or 0, entry.acted and 1 or 0, entry.invalid and 1 or 0,
+      entry.output, entry.reason, entry.detail, entry.targetProfile, entry.cardProfile,
+      entry.resourceShape, entry.selectedCards, entry.selectedTargets, entry.targetQuality, entry.resourceValue))
+  end
+  local replay = trace.effectReplay
+  if replay and replay.requestedSkill ~= "disabled" then
+      fk.qInfo(string.format("[tqs_prompt4_effect] summary scenario=%s seed=%u revision=%s skill=%s attempted=%d accepted=%d handled=%d skill_effects=%d fake=%d hp_delta=%d hand_delta=%d target_hp_delta=%d target_hand_delta=%d target_hand_total_delta=%d target_count=%d target_skill=%d target_policy=%s actor_policy=%s target_retargeted=%d resource_retargeted=%d resource_retarget_error=%d nested_requests=%d nested_fallback=%d nested_invalid=%d nested_metric_errors=%d nested_metrics=%s errors=%d",
+      state.scenario, state.seed, state.revision, aiTraceToken(replay.requestedSkill),
+      replay.attempted and 1 or 0, replay.accepted and 1 or 0, replay.handled and 1 or 0,
+      replay.skillEffects, replay.fake and 1 or 0, replay.hpDelta, replay.handDelta,
+      replay.targetHpDelta, replay.targetHandDelta, replay.targetHandTotalDelta,
+      replay.targetCount, replay.targetSkill and 1 or 0, aiTraceToken(replay.targetPolicy),
+      aiTraceToken(replay.actorPolicy),
+      replay.targetRetargeted and 1 or 0, replay.resourceRetargeted and 1 or 0,
+      replay.resourceRetargetError and 1 or 0, replay.nestedRequests, replay.nestedFallback,
+      replay.nestedInvalid, replay.nestedMetricErrors, replay.nestedMetricSummary, replay.errors))
+  end
 end
 
 local function triggerHiddenActive(room, state)
@@ -4758,6 +8294,36 @@ director:addEffect(fk.SkillEffect, {
   end,
 })
 
+director:addEffect(fk.SkillEffect, {
+  global = true,
+  priority = -999,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    local replay = state and state.prompt4EffectReplay
+    return replay and replay.active == true and data and data.skill
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    local replay = state and state.prompt4EffectReplay
+    if replay then
+      replay.observedSkillEffects = replay.observedSkillEffects + 1
+      local skillName = actualSkillName(data.skill)
+      if not table.contains(replay.observedSkillNames, skillName) then
+        table.insert(replay.observedSkillNames, skillName)
+      end
+      if skillName == replay.requestedSkill then
+        replay.skillEffects = replay.skillEffects + 1
+        -- SkillEffect is global and the trigger dispatcher visits every
+        -- room player.  The skill owner lives on SkillEffectData; checking
+        -- the dispatcher participant would incorrectly inherit a hidden
+        -- browser seat's fake skill state into this native replay result.
+        local owner = data.who or target or player
+        replay.fake = replay.fake or owner:isFakeSkill(data.skill)
+      end
+    end
+  end,
+})
+
 director:addEffect(fk.PreDamage, {
   global = true,
   -- DamageEvent:breakCheck() stops lower-priority PreDamage observers after
@@ -5085,7 +8651,35 @@ director:addEffect(fk.GameStart, {
     elseif scenario.trigger == "hidden-reveal" then
       triggerHiddenReveal(room, state)
     elseif scenario.trigger == "hidden-active" then
+      runAiDecisionProbe(room, state)
       triggerHiddenActive(room, state)
+    elseif scenario.trigger == "ai-trace" then
+      runAiTraceProbe(room, state)
+      runPrompt4NativeProbe(room, state)
+      emitPrompt4NativeTrace(state)
+      emitPrompt4Provenance(room, state)
+      runAiSupportedGeneralPairProbe(room, state)
+      state.gameOverRequested = true
+      room:gameOver("")
+    elseif scenario.trigger == "chooser-trace" then
+      -- Persist bounded native metadata before the GameOver event; some
+      -- builds do not dispatch a second room-targeted GameFinished callback.
+      runChooserTraceProbe(room, state)
+      emitPrompt4Provenance(room, state)
+      state.gameOverRequested = true
+      room:gameOver("")
+    elseif scenario.trigger == "general-pair-trace" then
+      local trace = state.generalPairTrace
+      if not trace or (trace.total or 0) < 1 then
+        fail("general-pair-trace did not observe a native AI CustomDialog decision")
+      end
+      -- The bounded probe ends from GameStart, where some native builds do
+      -- not dispatch a second room-targeted GameFinished callback before the
+      -- worker returns. Emit while the state is unquestionably attached so
+      -- the sanitized decision evidence is durable in either event model.
+      emitGeneralPairTrace(state)
+      state.gameOverRequested = true
+      room:gameOver("")
     elseif scenario.trigger == "hidden-fanjian" then
       triggerHiddenFanjian(room, state)
     elseif scenario.trigger == "hidden-view-as" then
@@ -5199,10 +8793,19 @@ director:addEffect(fk.GameFinished, {
   global = true,
   priority = 1000,
   can_trigger = function(self, event, target, player, data)
-    return stateFor(player.room) ~= nil and player == player.room.players[1]
+    -- GameFinished is a nil-target event. TriggerEvent:exec supplies the
+    -- room's current player, which is not guaranteed to be seat 1 when the
+    -- room ends. The old seat-1 guard silently skipped cleanup and the
+    -- bounded ai-trace emission for ordinary GameOver paths.
+    return player ~= nil and stateFor(player.room) ~= nil
   end,
   on_trigger = function(self, event, target, player, data)
     local room = player.room
+    local state = stateFor(room)
+    emitPrompt4Provenance(room, state)
+    emitAiTrace(state)
+    emitGeneralPairTrace(state)
+    emitGeneralPairMatchResult(state, data)
     activeRooms[tostring(room)] = nil
     room:removeTag("tqs_qa")
   end,

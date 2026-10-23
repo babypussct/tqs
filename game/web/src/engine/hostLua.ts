@@ -580,15 +580,20 @@ function FClient:notifyUI(command, data)
     -- never enter ClientInstance.processing_area. Project the visible Card
     -- fields and parsed footnote, omitting the raw Card object and its IDs.
     local projected = {}
-    if type(data) == 'table' and type(data[1]) == 'table' then
-      for i, card in ipairs(data[1]) do
-        if i > 200 then break end
-        local face = project_public_card(card, nil)
-        if face then projected[#projected + 1] = face end
-      end
+    if type(data) ~= 'table' or type(data[1]) ~= 'table' then
+      -- A malformed or oversized private payload must not become an empty
+      -- gameplay reveal in the web reducer.
+      J.ui(command, '{}')
+      return
     end
+    for i, card in ipairs(data[1]) do
+      if i > 200 then break end
+      local face = project_public_card(card, nil)
+      if face then projected[#projected + 1] = face end
+    end
+    if #projected == 0 then J.ui(command, '{}'); return end
     local note = type(data) == 'table' and data[3] or nil
-    if type(note) ~= 'string' or #note > WEB_TABLE_NOTE_MAX_BYTES then note = nil end
+    if type(note) ~= 'string' or #note > WEB_TABLE_NOTE_MAX_BYTES or note == '' then note = nil end
     J.ui(command, to_json({cards = projected, footnote = note}))
     return
   end
@@ -621,6 +626,11 @@ function FClient:notifyUI(command, data)
   if command == 'PropertyUpdate' then
     data = project_property(data)
     if not data then return end
+  elseif command == 'AskForUseActiveSkill' and type(data) == 'table' then
+    -- The native request handler already holds extra_data, including CBOR
+    -- decoded Player objects (e.g. Dũng Tiến's froms/tos). QML only reads
+    -- skill/prompt/cancelable; never serialize Player graphs into the web UI.
+    data = {data[1], data[2], data[3]}
   elseif command == 'SetPlayerMark' then
     data = project_public_mark(data, false)
     if not data then return end
@@ -967,6 +977,68 @@ function __web_general_labels(generals)
   local labels = {}
   for i, name in ipairs(generals) do labels[i] = Fk:translate(name) end
   return labels
+end
+
+-- Read-only metadata from the same pinned registry that renders the general
+-- selection screen. Called only for a general identity already visible to
+-- the local user; it must never query a hidden opponent's real identity.
+function __web_general_skill_names(name)
+  if type(name) ~= 'string' or #name > 256 then return {} end
+  local general = Fk.generals[name]
+  if not general or general.total_hidden then return {} end
+  local ok, skills = pcall(general.getSkillNameList, general)
+  if not ok or type(skills) ~= 'table' then return {} end
+  local result, seen = {}, {}
+  for _, skill in ipairs(skills) do
+    if type(skill) == 'string' and #skill <= 256 and not seen[skill] then
+      result[#result + 1] = skill
+      seen[skill] = true
+    end
+    if #result >= 48 then break end
+  end
+  return result
+end
+
+-- Return only bounded, public registry fields for identities already included
+-- in this player's initial-general offer. Do not expose the companion list:
+-- callers only need the predicate against this same offer, and returning
+-- arbitrary related identities would reveal registry data outside the offer.
+function __web_general_metadata(generals)
+  if type(generals) ~= 'table' or #generals < 2 or #generals > 1024 then return {} end
+  local seen = {}
+  local entries = {}
+  for _, name in ipairs(generals) do
+    if type(name) ~= 'string' or #name == 0 or #name > 256 or name:find(',', 1, true) or seen[name] then return {} end
+    local general = Fk.generals[name]
+    if not general or general.hidden or general.total_hidden then return {} end
+    seen[name] = true
+    table.insert(entries, general)
+  end
+  local result = {}
+  for _, general in ipairs(entries) do
+    local companion = false
+    for _, other in ipairs(entries) do
+      if other ~= general then
+        local ok, matched = pcall(general.isCompanionWith, general, other)
+        if ok and matched then companion = true; break end
+      end
+    end
+    table.insert(result, {
+      name = general.name,
+      label = Fk:translate(general.name),
+      trueName = general.trueName,
+      prefix = general.prefix and Fk:translate(general.prefix) or '',
+      kingdom = general.kingdom,
+      subkingdom = general.subkingdom or '',
+      hp = general.hp,
+      maxHp = general.maxHp,
+      mainMaxHp = general.mainMaxHpAdjustedValue,
+      deputyMaxHp = general.deputyMaxHpAdjustedValue,
+      shield = general.shield,
+      companionWithOffer = companion,
+    })
+  end
+  return result
 end
 
 function __web_init_display_translations(extra)

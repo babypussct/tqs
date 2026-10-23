@@ -86,6 +86,70 @@ try {
   assert.equal(bootError, null, `Real Lua WASM boot failed: ${bootError}`);
 
   const tests: [string, (page: Page) => Promise<void>][] = [
+    ['Transformation Kỳ Sách real Lua card-name interaction', async (p) => {
+      const { id } = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('qice'));
+      const skill = p.locator('button.sg-skill-button').filter({ hasText: /Kỳ Sách|奇策|qice/i }).first();
+      await skill.waitFor();
+      await skill.click();
+      const scene = await p.evaluate(() => window.__tqsRealLuaE2e.gameplay());
+      const picker = Object.values(scene.items.Interaction).find(i =>
+        (i.spec as { type?: string } | undefined)?.type === 'cardname');
+      const pickerSpec = picker?.spec as { choices?: string[]; default?: string } | undefined;
+      assert.ok(picker?.enabled, 'Kỳ Sách must offer actual trick card names');
+      assert.ok(pickerSpec?.choices && pickerSpec.choices.length > 1);
+      const selector = p.getByLabel('Chọn tên lá bài');
+      assert.equal(await selector.inputValue(), pickerSpec.default);
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.transformationChoice() === 'dismantlement');
+      const chosen = pickerSpec.choices.includes('ex_nihilo') ? 'ex_nihilo' : pickerSpec.choices[1];
+      await selector.selectOption(chosen);
+      const confirmed = await p.evaluate(() => window.__tqsRealLuaE2e.gameplay());
+      assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.transformationChoice()), chosen);
+      assert.equal(confirmed.items.Button.OK?.enabled, true, 'Kỳ Sách should accept selected no-target trick');
+      await p.getByRole('region', { name: 'Điều khiển lượt chơi' })
+        .getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const result = await reply(p);
+      assert.equal(result.requestId, null);
+      assert.equal(result.replies.at(-1)?.requestId, id);
+      assert.deepEqual(result.luaErrors, []);
+    }],
+    ['Transformation Kỳ Sách target-required trick selection', async (p) => {
+      const { id } = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('qice'));
+      await p.locator('button.sg-skill-button').filter({ hasText: /Kỳ Sách|奇策|qice/i }).first().click();
+      await p.getByLabel('Chọn tên lá bài').selectOption('duel');
+      await p.locator('[data-target-id="-1"]:enabled').click();
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.gameplay())).items.Button.OK?.enabled, true);
+      await p.getByRole('region', { name: 'Điều khiển lượt chơi' })
+        .getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const result = await reply(p);
+      assert.equal(result.replies.at(-1)?.requestId, id);
+      assert.deepEqual(result.luaErrors, []);
+    }],
+    ['Transformation Dũng Tiến real Lua active and target requests', async (p) => {
+      const { id } = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('yongjin'));
+      const skill = p.locator('button.sg-skill-button').filter({ hasText: /Dũng Tiến|勇进|yongjin/i }).first();
+      await skill.waitFor();
+      await skill.click();
+      const scene = await p.evaluate(() => window.__tqsRealLuaE2e.gameplay());
+      assert.equal(scene.items.Button.OK?.enabled, true);
+      await p.getByRole('region', { name: 'Điều khiển lượt chơi' }).getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const activeReply = await reply(p);
+      assert.equal(activeReply.requestId, null);
+      assert.equal(activeReply.replies.at(-1)?.requestId, id);
+      const target = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('yongjin-targets'));
+      const targetScene = await p.evaluate(() => window.__tqsRealLuaE2e.gameplay());
+      assert.ok(Object.values(targetScene.items.Photo).some(x => x.enabled), 'Dũng Tiến must offer a source');
+      await p.locator('[data-target-id="-1"]:enabled').click();
+      await p.locator('[data-target-id="17"]:enabled').click();
+      assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.gameplay())).items.Button.OK?.enabled, true);
+      await p.getByRole('region', { name: 'Điều khiển lượt chơi' }).getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const targetReply = await reply(p);
+      assert.equal(targetReply.replies.at(-1)?.requestId, target.id);
+      const board = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('yongjin-board'));
+      await p.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' }).locator('button.gameplay-choice:enabled').first().click();
+      const boardReply = await reply(p);
+      assert.equal(boardReply.replies.at(-1)?.requestId, board.id);
+      assert.deepEqual(boardReply.luaErrors, []);
+    }],
     ['Native Lua MoveCards keeps draw/discard counts, concealed processing faces and concurrent reveals in the center', async (p) => {
       const pileEvidenceDir = process.env.TQS_EVIDENCE_DIR ? path.resolve(process.env.TQS_EVIDENCE_DIR) : null;
       if (pileEvidenceDir) mkdirSync(pileEvidenceDir, { recursive: true });
@@ -369,8 +433,6 @@ try {
           const controlsStyles = controlsElement ? getComputedStyle(controlsElement) : null;
           const toolbarElement = document.querySelector<HTMLElement>('.board-toolbar');
           const toolbarBox = toolbarElement?.getBoundingClientRect();
-          const tickerElement = document.querySelector<HTMLElement>('.board-ticker');
-          const tickerBox = tickerElement?.getBoundingClientRect();
           const skillRail = document.querySelector<HTMLElement>('.board-local-skill-rail');
           const skillBox = skillRail?.getBoundingClientRect();
           const skillStyles = skillRail ? getComputedStyle(skillRail) : null;
@@ -421,10 +483,6 @@ try {
             toolbar: toolbarBox ? {
               left: toolbarBox.left, right: toolbarBox.right, top: toolbarBox.top,
               bottom: toolbarBox.bottom, width: toolbarBox.width, height: toolbarBox.height,
-            } : null,
-            ticker: tickerBox ? {
-              left: tickerBox.left, right: tickerBox.right, top: tickerBox.top,
-              bottom: tickerBox.bottom, width: tickerBox.width, height: tickerBox.height,
             } : null,
             promptShell: promptShellStyles ? {
               position: promptShellStyles.position,
@@ -502,8 +560,8 @@ try {
           `${label}: gameplay controls must not own a second vertical scrollbar (${JSON.stringify(layout.controls)})`);
         assert.ok(layout.toolbar && layout.toolbar.height <= 48,
           `${label}: toolbar is still consuming a desktop-sized row (${JSON.stringify(layout.toolbar)})`);
-        assert.ok(layout.ticker && layout.ticker.height <= 32,
-          `${label}: latest-event ticker is too tall (${JSON.stringify(layout.ticker)})`);
+        assert.equal(await p.locator('.board-ticker').count(), 0,
+          `${label}: redundant event ticker must be absent`);
         assert.equal(layout.promptShell?.position, 'static',
           `${label}: portrait prompt shell must stay in normal flow (${JSON.stringify(layout.promptShell)})`);
         assert.equal(layout.promptShell?.marginTop, '0px',
@@ -789,7 +847,7 @@ try {
       const reveal = p.locator('button.sg-skill-button').filter({ hasText: /Mở tướng|reveal_skill&/ }).first();
       const revealCount = await reveal.count();
       assert.equal(revealCount, 1, `reveal button missing: ${JSON.stringify({
-        scene: (await snapshot(p)).scene,
+        scene: await p.evaluate(() => window.__tqsRealLuaE2e.gameplay()),
         buttons: await p.locator('button.sg-skill-button').allTextContents(),
       })}`);
       await reveal.waitFor();
@@ -936,7 +994,7 @@ try {
       assert.ok(chain.every((transform) => transform?.includes('translate(')));
       const rendering = await p.locator('.fk-indicator-line-beam').first().evaluate((group) => {
         const rects = Array.from(group.querySelectorAll('rect'));
-        const outer = group.ownerSVGElement?.querySelector('linearGradient[id$="-outer"] stop:last-child');
+        const outer = group.closest('svg')?.querySelector('linearGradient[id$="-outer"] stop:last-child');
         const grow = group.querySelector('.fk-indicator-grow');
         const computed = grow ? getComputedStyle(grow) : null;
         return { widths: rects.map((rect) => rect.getAttribute('width')),
@@ -953,6 +1011,7 @@ try {
         "{type='Damage', to=-1, damageType='fire_damage', damageNum=2}"));
       const native = await p.evaluate(() => window.__tqsRealLuaE2e.store.getState().nativeVfxEvents);
       assert.deepEqual(native.map((event) => event.kind), ['indicate', 'indicate', 'damage']);
+      assert.ok(native[2].kind === 'damage');
       assert.equal(native[2].targetPlayerId, -1);
       assert.equal(native[2].damageNum, 2);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
@@ -1082,7 +1141,7 @@ try {
       await own.getByText('Tiên phong: 2', { exact: true }).waitFor();
       await own.getByText('Song Hùng: Đỏ', { exact: true }).waitFor();
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
-      const openLog = p.locator('.board-ticker .sg-ticker-log-toggle[aria-expanded="false"]');
+      const openLog = p.locator('.board-toolbar .sg-toolbar-log-toggle[aria-expanded="false"]');
       if (await openLog.count()) await openLog.click();
       await logs.getByText('Song Hùng: bạn có thể dùng 1 lá trên tay màu Đỏ như Quyết Đấu.', { exact: true }).waitFor();
       await logs.getByText('Một Dã tâm gia đã chọn quốc hiệu Tần.', { exact: true }).waitFor();
@@ -1141,8 +1200,93 @@ try {
         assert.equal(await peach.isDisabled(), mode !== 'ignore');
         const reason = (await p.evaluate(() => window.__tqsRealLuaE2e.gameplay())).items.CardItem[peachId].disabledReason;
         assert.equal(reason, mode === 'ignore' ? '' : `#web-peach-battle-${mode}`);
-        if (mode !== 'ignore') await p.getByText(mode === 'new' ? 'Quyết chiến mới: Đào thường' : 'Quyết chiến cũ: Đào thường', { exact: false }).waitFor();
-        else assert.equal(await p.getByText('Đào thường không thể', { exact: false }).count(), 0);
+        if (mode !== 'ignore') {
+          const reasonNotice = p.locator('.sg-disabled-reason');
+          const summary = reasonNotice.locator('summary');
+          await summary.getByText(`Quyết chiến ${mode === 'new' ? 'mới' : 'cũ'}: Đào không thể hồi máu`).waitFor();
+          assert.equal(await reasonNotice.getAttribute('open'), null, 'Native rule starts collapsed');
+          await summary.click();
+          await reasonNotice.locator('.sg-disabled-reason-detail').getByText(
+            mode === 'new' ? 'Có thể chuyển thành Rượu' : 'Có thể chuyển thành Sát hoặc Thiểm',
+            { exact: false },
+          ).waitFor();
+          await summary.click();
+          assert.equal(await reasonNotice.getAttribute('open'), null, 'Rule can be closed without gameplay input');
+        } else assert.equal(await p.locator('.sg-disabled-reason').count(), 0);
+        assert.equal((await snapshot(p)).replies.length, 0, 'Rule inspection is purely informational');
+        if (mode === 'new') {
+          assert.match(await p.locator('.board-banners').innerText(), /Quyết chiến mới/);
+          // UI translation tests can leave the optional log drawer expanded;
+          // measure the active hand with the drawer closed, as in normal play.
+          const expandedLog = p.locator('.board-toolbar .sg-toolbar-log-toggle[aria-expanded="true"]');
+          if (await expandedLog.count()) await expandedLog.click();
+          for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+            { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+            await p.setViewportSize(viewport);
+            const bounds = await p.evaluate((id) => {
+              const card = document.querySelector<HTMLElement>(`button[data-card-id="${id}"]`)!;
+              const hand = document.querySelector<HTMLElement>('.sg-hand-fan')!;
+              const notice = document.querySelector<HTMLElement>('.sg-disabled-reason')!;
+              const action = document.querySelector<HTMLElement>('.sg-btn-cancel')!;
+              const info = document.querySelector<HTMLElement>('.board-banners')!;
+              const c = card.getBoundingClientRect();
+              const h = hand.getBoundingClientRect();
+              const n = notice.getBoundingClientRect();
+              const a = action.getBoundingClientRect();
+              const i = info.getBoundingClientRect();
+              const cardAtPoint = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+              const actionAtPoint = document.elementFromPoint(a.left + a.width / 2, a.top + a.height / 2);
+              return {
+                card: { top: c.top, bottom: c.bottom, left: c.left, right: c.right,
+                  hit: card === cardAtPoint || card.contains(cardAtPoint) },
+                hand: { top: h.top, bottom: h.bottom, left: h.left, right: h.right,
+                  scrollLeft: hand.scrollLeft, scrollWidth: hand.scrollWidth, width: h.width,
+                  pageScrollX: window.scrollX },
+                notice: { top: n.top, bottom: n.bottom, height: n.height },
+                cancel: { top: a.top, bottom: a.bottom,
+                  hit: action === actionAtPoint || action.contains(actionAtPoint) },
+                banner: { top: i.top, bottom: i.bottom },
+              };
+            }, peachId);
+            assert.ok(bounds.card.top >= -1 && bounds.card.bottom <= viewport.height + 1,
+              `hand card must remain visible at ${viewport.width}x${viewport.height}: ${JSON.stringify(bounds)}`);
+            assert.ok(bounds.card.left >= -1 && bounds.card.right <= viewport.width + 1,
+              `hand card horizontal bounds at ${viewport.width}x${viewport.height}: ${JSON.stringify(bounds)}`);
+            assert.ok(bounds.card.hit, `native-disabled Peach must still receive hit tests (${viewport.width}x${viewport.height})`);
+            assert.ok(bounds.cancel.hit, `Cancel button must remain clickable (${viewport.width}x${viewport.height})`);
+            assert.ok(bounds.notice.height <= 26, 'Collapsed card-use rule must be one compact line');
+            assert.ok(bounds.notice.bottom <= bounds.hand.top || bounds.notice.top >= bounds.hand.bottom,
+              'Rule must never cover the hand');
+            assert.ok(bounds.banner.bottom <= bounds.hand.top || bounds.banner.top >= bounds.hand.bottom,
+              'Table banner must never cover the hand');
+            if (process.env.TQS_EVIDENCE_DIR) {
+              mkdirSync(process.env.TQS_EVIDENCE_DIR, { recursive: true });
+              await p.screenshot({ path: path.join(process.env.TQS_EVIDENCE_DIR,
+                `battle-royal-compact-${viewport.width}x${viewport.height}.png`) });
+            }
+            const before = await p.locator('.sg-hand-fan').boundingBox();
+            await p.locator('.sg-disabled-reason summary').click();
+            const after = await p.locator('.sg-hand-fan').boundingBox();
+            assert.ok(before && after && Math.abs(before.y - after.y) < 1,
+              `Opening the full rule must not push hand at ${viewport.width}x${viewport.height}`);
+            const unobstructed = await p.evaluate((id) => {
+              const card = document.querySelector<HTMLElement>(`button[data-card-id="${id}"]`)!;
+              const cancel = document.querySelector<HTMLElement>('.sg-btn-cancel')!;
+              const c = card.getBoundingClientRect();
+              const a = cancel.getBoundingClientRect();
+              const cHit = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+              const aHit = document.elementFromPoint(a.left + a.width / 2, a.top + a.height / 2);
+              return { card: cHit === card || card.contains(cHit),
+                cancel: aHit === cancel || cancel.contains(aHit) };
+            }, peachId);
+            assert.ok(unobstructed.card && unobstructed.cancel,
+              `Expanded rule must leave the hand and actions accessible: ${JSON.stringify(unobstructed)}`);
+            await p.locator('.sg-disabled-reason summary').click();
+            await p.getByRole('button', { name: 'Hủy', exact: true }).click({ trial: true });
+            assert.equal((await snapshot(p)).replies.length, 0);
+          }
+          await p.setViewportSize({ width: 390, height: 844 });
+        }
         if (mode === 'new' && process.env.TQS_EVIDENCE_DIR) await p.screenshot({
           path: path.join(process.env.TQS_EVIDENCE_DIR, 'battle-royal-peach-lua-fixture-2026-10-11.png'), fullPage: true,
         });
@@ -1243,6 +1387,144 @@ try {
       assert.equal((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).player[-1].visibleKingdom, null);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
     }],
+    ['Initial Hegemony general inspector reads Lua skills without choosing or replying', async (p) => {
+      const id = await p.evaluate(() => window.__tqsRealLuaE2e.beginInitialGeneralChoice());
+      const panel = p.getByRole('region', { name: 'Chọn chủ tướng và phó tướng' });
+      await panel.waitFor();
+      const first = panel.locator('.sg-general-choice-entry').first();
+      const before = await snapshot(p);
+      assert.equal(before.requestId, id);
+      const skills = await p.evaluate(() => window.__tqsRealLuaE2e.generalSkills('ld__bianfuren'));
+      assert.ok(skills.length > 0, 'the inspector must read real Lua general metadata');
+      const metadata = await p.evaluate(() => window.__tqsRealLuaE2e.generalMetadata([
+        'ld__bianfuren', 'm_heg__dianwei', 'm_heg__ganning',
+      ]));
+      assert.equal(metadata.length, 3, 'metadata bridge must stay bounded to the offered identities');
+      assert.equal((metadata[0] as { name?: string }).name, 'ld__bianfuren');
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+        { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        const requestDialog = p.getByRole('dialog', { name: 'Chọn chủ tướng và phó tướng' });
+        const requestBox = await requestDialog.boundingBox();
+        assert.ok(requestBox && requestBox.x >= -1 && requestBox.y >= -1 &&
+          requestBox.x + requestBox.width <= viewport.width + 1 && requestBox.y + requestBox.height <= viewport.height + 1,
+          `initial-general dialog must fit ${viewport.width}x${viewport.height}: ${JSON.stringify(requestBox)}`);
+        assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true,
+          `initial-general dialog must not create horizontal page scroll at ${viewport.width}x${viewport.height}`);
+        await first.locator('.sg-general-info-trigger').click();
+        const dialog = p.getByRole('dialog', { name: 'Thông tin kỹ năng' });
+        await dialog.waitFor();
+        await dialog.getByRole('heading', { name: 'Biện Phu Nhân' }).waitFor();
+        assert.equal(await dialog.locator('.sg-skill-info-description').count(), skills.length);
+        const sheet = await dialog.boundingBox();
+        assert.ok(sheet && sheet.x >= -1 && sheet.y >= -1 &&
+          sheet.x + sheet.width <= viewport.width + 1 && sheet.y + sheet.height <= viewport.height + 1,
+          `inspector must fit ${viewport.width}x${viewport.height}: ${JSON.stringify(sheet)}`);
+        assert.equal((await snapshot(p)).replies.length, before.replies.length);
+        assert.deepEqual((await snapshot(p)).sent, before.sent);
+        assert.equal(await first.locator('.general-choice').getAttribute('aria-pressed'), 'false');
+        await p.keyboard.press('Escape');
+        await dialog.waitFor({ state: 'hidden' });
+        assert.equal(await first.locator('.sg-general-info-trigger').evaluate((el) => document.activeElement === el), true);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+      await first.locator('.general-choice').click();
+      assert.match(await panel.locator('.chosen-generals').innerText(), /Biện Phu Nhân/);
+      assert.equal((await snapshot(p)).replies.length, 0);
+      await panel.locator('.sg-general-choice-entry').nth(1).locator('.general-choice').click();
+      assert.match(await panel.locator('.chosen-generals').innerText(), /Điển Vi/);
+      assert.equal((await snapshot(p)).replies.length, 0);
+      assert.equal(await panel.locator('.sg-general-choice-entry').nth(2).locator('.general-choice').isDisabled(), true,
+        'a third card is locked until the player removes one selected position');
+      await first.locator('.general-choice').click();
+      assert.match(await panel.locator('[data-slot-role="Chủ tướng"]').innerText(), /Điển Vi/,
+        'removing the main promotes the deputy');
+      assert.match(await panel.locator('[data-slot-role="Phó tướng"]').innerText(), /Chưa chọn/);
+      assert.equal((await snapshot(p)).replies.length, 0);
+      await panel.getByRole('button', { name: 'Chọn lại' }).click();
+      await first.locator('.general-choice').click();
+      await panel.locator('.sg-general-choice-entry').nth(1).locator('.general-choice').click();
+      await panel.getByRole('button', { name: 'Xác nhận tướng' }).click();
+      const result = await reply(p);
+      assert.equal(result.replies[0].requestId, id);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()),
+        ['ld__bianfuren,m_heg__dianwei', 'kingdom,wei']);
+      assert.deepEqual(result.luaErrors, []);
+    }],
+    ['Initial Hegemony offer grid stays usable across viewport and offer matrices', async (p) => {
+      const offer = [
+        'm_heg__xiahoudun', 'm_heg__xiahouyuan', 'm_heg__dianwei', 'm_heg__ganfuren',
+        'm_heg__ganning', 'm_heg__luxun', 'm_heg__dingfeng', 'm_heg__panfeng',
+        'm_heg__caohong', 'm_heg__jiangwei', 'm_heg__jiangwanfeiyi', 'm_heg__jiangqin',
+        'm_heg__zhangren', 'm_heg__duyu', 'm_heg__dongcheng', 'm_heg__xiahoushang',
+        'm_heg__liaohua', 'm_heg__liwei', 'm_heg__gongsunzan', 'm_heg__huaxiong',
+        'm_heg__zhoufang', 'hs__caiwenji', 'hs__caocao', 'hs__caopi', 'hs__caoren',
+        'hs__daqiao', 'hs__dianwei', 'hs__diaochan', 'hs__dingfeng', 'hs__ganning',
+        'hs__guanyu', 'hs__guojia', 'hs__huanggai', 'hs__huangyueying', 'hs__huangzhong',
+        'hs__huatuo', 'hs__jiaxu', 'hs__jiling', 'hs__kongrong', 'hs__liubei',
+        'hs__liushan', 'hs__lusu', 'hs__luxun', 'hs__lvbu', 'hs__lvmeng', 'hs__machao',
+        'hs__mateng', 'hs__menghuo', 'hs__panfeng', 'hs__pangde',
+      ];
+      const panel = p.getByRole('region', { name: 'Chọn chủ tướng và phó tướng' });
+      const cases = [
+        [5, 320, 568], [7, 360, 667], [10, 390, 844], [16, 412, 915], [16, 430, 932],
+        [5, 667, 375], [10, 844, 390], [16, 932, 430], [5, 1280, 800], [16, 1440, 900],
+        [50, 1280, 800],
+      ] as const;
+      for (const [count, width, height] of cases) {
+        const id = await p.evaluate((names) => window.__tqsRealLuaE2e.beginInitialGeneralChoice(names), offer.slice(0, count));
+        await p.waitForFunction((requestId) => window.__tqsRealLuaE2e.snapshot().requestId === requestId, id);
+        await p.waitForFunction((expected) => document.querySelectorAll('.sg-general-choice-entry').length === expected, count);
+        const viewport = { width, height };
+        await p.setViewportSize(viewport);
+        const dialog = p.getByRole('dialog', { name: 'Chọn chủ tướng và phó tướng' });
+        const box = await dialog.boundingBox();
+        assert.ok(box && box.x >= -1 && box.y >= -1 &&
+          box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1,
+        `offer grid must fit ${count} generals at ${viewport.width}x${viewport.height}: ${JSON.stringify(box)}`);
+        assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true,
+          `offer grid must not create horizontal page scroll for ${count} generals`);
+        assert.equal(await panel.locator('.sg-general-choice-entry').count(), count);
+        assert.equal(await dialog.getByRole('timer').count(), 1);
+        assert.equal(await dialog.getByRole('progressbar', { name: 'Tiến trình thời gian' }).count(), 1);
+        const firstChoice = panel.locator('.sg-general-choice-entry').first().locator('.general-choice');
+        const secondChoice = panel.locator('.sg-general-choice-entry').nth(1).locator('.general-choice');
+        if (count === 50) {
+          const beforeProgress = Number(await dialog.getByRole('progressbar', { name: 'Tiến trình thời gian' }).getAttribute('value'));
+          await p.waitForTimeout(650);
+          const afterProgress = Number(await dialog.getByRole('progressbar', { name: 'Tiến trình thời gian' }).getAttribute('value'));
+          assert.ok(afterProgress > beforeProgress, 'the deadline timer must continue while 50 cards are mounted');
+          assert.equal(await panel.locator('.sg-general-choice-entry').last().locator('.general-choice').isVisible(), true);
+          continue;
+        }
+        await firstChoice.focus();
+        await p.keyboard.press('Enter');
+        await p.waitForFunction(() => {
+          const button = document.querySelectorAll<HTMLButtonElement>('.sg-general-choice-entry .general-choice')[1];
+          return Boolean(button && !button.disabled);
+        });
+        await secondChoice.focus();
+        await p.keyboard.press('Space');
+        assert.equal((await snapshot(p)).requestId, id);
+        assert.equal(await firstChoice.getAttribute('aria-pressed'), 'true');
+        assert.equal(await secondChoice.getAttribute('aria-pressed'), 'true');
+        assert.equal(await panel.locator('.sg-general-choice-entry').nth(2).locator('.general-choice').isDisabled(), true);
+        assert.match(await panel.locator('.sg-general-choice-entry').nth(2).locator('.general-choice').getAttribute('aria-label') ?? '', /Đã đủ cặp/);
+        const confirm = panel.getByRole('button', { name: 'Xác nhận tướng' });
+        assert.equal(await confirm.isVisible(), true);
+        const confirmBox = await confirm.boundingBox();
+        assert.ok(confirmBox && confirmBox.x >= -1 && confirmBox.y >= -1 &&
+          confirmBox.x + confirmBox.width <= viewport.width + 1 &&
+          confirmBox.y + confirmBox.height <= viewport.height + 1,
+        `confirm CTA must remain visible for ${count} generals`);
+        assert.equal(await p.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null), true,
+          `focus must remain trapped for ${count} generals`);
+        await dialog.locator('button:not(:disabled)').first().focus();
+        await p.keyboard.press('Shift+Tab');
+        assert.equal(await p.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null), true,
+          `Shift+Tab must stay in the dialog for ${count} generals`);
+      }
+    }],
     ['Self hidden pair and board states follow Lua without exposing opponent marks', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       const notify = (command: string, source: string) => p.evaluate(({ command, source }) =>
@@ -1257,6 +1539,23 @@ try {
       await self.getByText('Điển Vi · Chưa lật', { exact: true }).waitFor();
       await bot.getByText('Chủ tướng ẩn', { exact: true }).waitFor();
       await bot.getByText('Phó tướng ẩn', { exact: true }).waitFor();
+      const selfInfo = self.getByRole('button', { name: 'Xem kỹ năng tướng của browser-test' });
+      const botInfo = bot.getByRole('button', { name: 'Xem kỹ năng tướng của Bot fixture' });
+      assert.equal(await botInfo.count(), 0, 'opponent with two hidden generals has no inspector');
+      const beforeInspect = await snapshot(p);
+      await selfInfo.click();
+      const infoSheet = p.getByRole('dialog', { name: 'Thông tin kỹ năng' });
+      await infoSheet.waitFor();
+      await infoSheet.getByRole('heading', { name: 'Chủ tướng: Biện Phu Nhân' }).waitFor();
+      await infoSheet.getByRole('heading', { name: 'Phó tướng: Điển Vi' }).waitFor();
+      const expectedSkillCount = await p.evaluate(() =>
+        window.__tqsRealLuaE2e.generalSkills('ld__bianfuren').length +
+        window.__tqsRealLuaE2e.generalSkills('m_heg__dianwei').length);
+      assert.equal(await infoSheet.locator('.sg-skill-info-description').count(), expectedSkillCount);
+      assert.deepEqual((await snapshot(p)).sent, beforeInspect.sent,
+        'inspecting owned hidden generals must not send gameplay packets');
+      await p.keyboard.press('Escape');
+      await infoSheet.waitFor({ state: 'hidden' });
       let board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
       assert.equal(board.player[-1].selfGeneral, null);
       assert.equal(board.player[-1].selfDeputyGeneral, null);
@@ -1265,6 +1564,14 @@ try {
       await notify('PropertyUpdate', "{-1, 'general', 'ld__bianfuren'}");
       await bot.getByText('Biện Phu Nhân', { exact: true }).waitFor();
       await bot.getByText('Phó tướng ẩn', { exact: true }).waitFor();
+      await botInfo.click();
+      await infoSheet.waitFor();
+      await infoSheet.getByRole('heading', { name: 'Chủ tướng: Biện Phu Nhân' }).waitFor();
+      assert.equal(await infoSheet.locator('.sg-skill-info-group').count(), 1,
+        'the unrevealed opponent deputy must never enter the DOM');
+      assert.ok(!(await infoSheet.innerText()).includes('Lưu Bị'));
+      await p.getByRole('button', { name: 'Đóng thông tin kỹ năng' }).click();
+      await infoSheet.waitFor({ state: 'hidden' });
       const assertSplitPortrait = async (seat: typeof self, hidden: 'main' | 'deputy') => {
         const sizes = await seat.locator('.sg-portrait-frame').evaluate((frame) => {
           const left = frame.querySelector<HTMLElement>('.sg-portrait-main')!;
@@ -1293,6 +1600,8 @@ try {
       await notify('PropertyUpdate', "{17, 'deputyGeneral', 'm_heg__dianwei'}");
       await assertSplitPortrait(self, 'main');
       await self.getByText('Biện Phu Nhân · Chưa lật', { exact: true }).waitFor();
+      await notify('PropertyUpdate', "{-1, 'general', 'anjiang'}");
+      assert.equal(await botInfo.count(), 0, 'the inspector disappears if opponent main is hidden again');
       for (const label of ['Hấp hối', 'Đang bị xích', 'Úp mặt'])
         assert.equal(await self.getByText(label, { exact: true }).count(), 0);
       board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
@@ -1583,25 +1892,24 @@ try {
       const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
       const openLog = p.getByRole('button', { name: 'Lịch sử', exact: true });
       assert.equal(await openLog.getAttribute('aria-expanded'), 'false');
-      assert.match(await openLog.innerText(), /☷\s*\d+/, 'collapsed ticker control must stay compact');
+      assert.match(await openLog.innerText(), /☷/, 'log shortcut must remain visible in the toolbar');
+      assert.doesNotMatch(await openLog.innerText(), /\d/, 'log shortcut must not show an event counter');
       await openLog.click();
       await logs.getByRole('list', { name: 'Các diễn biến trận đấu' }).waitFor();
-      const moments = p.locator('.board-ticker');
+      assert.equal(await p.locator('.board-ticker').count(), 0);
       await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'hp', 2}"));
-      await moments.getByText('Bot fixture mất 2 HP (4 → 2)', { exact: true }).waitFor();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.boardState().moments.at(-1)?.kind === 'hp');
       await p.evaluate(() => {
         window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'chained', false}");
         window.__tqsRealLuaE2e.boardNotify('PropertyUpdate', "{-1, 'chained', true}");
       });
-      await moments.getByText('Bot fixture bị xích', { exact: true }).waitFor();
+      await p.waitForFunction(() => window.__tqsRealLuaE2e.boardState().moments.at(-1)?.kind === 'chain');
       await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('GameLog', "{type='Sử dụng %arg', arg='slash'}"));
-      // The ticker intentionally presents one latest event; the full history
-      // remains in the drawer, while the reducer still retains all moments.
-      await p.waitForFunction(() => document.querySelector('.board-ticker')?.textContent?.includes('Sử dụng'));
-      assert.match(await moments.innerText(), /Sử dụng/);
+      // The full public history stays available in the drawer while the
+      // reducer retains all moments without rendering the ticker.
+      await logs.getByText(/Sử dụng/).first().waitFor();
       assert.match(await logs.innerText(), /Sử dụng/);
-      assert.equal((await moments.locator('.board-moment').count()), 1);
-      assert.equal(await moments.locator('font, b, script').count(), 0, 'server HTML is rendered only as text');
+      assert.equal(await logs.locator('font, b, script').count(), 0, 'server HTML is rendered only as text');
       const board = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
       assert.deepEqual(board.moments.slice(-3).map((event) => event.kind), ['hp', 'chain', 'log']);
       assert.equal((await snapshot(p)).replies.length, 0);
@@ -1691,12 +1999,8 @@ try {
         'End resumes automatic following');
       await addLogs(52, 54);
       assert.equal(await nearBottom(), true, 'follow remains active after keyboard navigation');
-      await p.waitForFunction(() =>
-        document.querySelector('.board-ticker')?.textContent?.includes('lá Sát nhắm vào Bot fixture') ?? false,
-        undefined,
-        { timeout: 3000 });
-      assert.match(await p.locator('.board-ticker').innerText(), /lá Sát nhắm vào Bot fixture/,
-        'the latest public card and target details appear in the single ticker');
+      assert.match(await logRegion.innerText(), /lá Sát nhắm vào Bot fixture/,
+        'public card and target details remain available in the log drawer');
       await p.setViewportSize({ width: 390, height: 844 });
       await p.getByRole('button', { name: 'Thu gọn' }).click();
       assert.equal(await logList.count(), 0);
@@ -2465,8 +2769,13 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--qa-scenarios')
+  const testsToRun = process.argv.includes('--transformation-skills')
+    ? tests.filter(([name]) => name.startsWith('Transformation '))
+    : process.argv.includes('--qa-scenarios')
     ? tests.filter(([name]) => name.startsWith('QA Scenario Mode'))
+    : process.argv.includes('--battle-royal')
+    ? tests.filter(([name]) => name.startsWith('Native battle royal') || name.startsWith('Blocked native rescue')
+      || name.startsWith('New battle royal converts') || name.startsWith('Companion virtual Peach'))
     : process.argv.includes('--table-piles')
     ? tests.filter(([name]) => name.startsWith('Native Lua MoveCards keeps draw/discard'))
     : process.argv.includes('--room-pools')

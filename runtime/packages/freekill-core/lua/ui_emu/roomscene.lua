@@ -19,8 +19,14 @@ function RoomScene:initialize(parent)
   for _, cid in ipairs(player:getCardIds("h")) do
     self:addItem(CardItem:new(self, cid))
   end
-  for _, skill in ipairs(player:getAllSkills()) do
-    if skill:isInstanceOf(ActiveSkill) or skill:isInstanceOf(ViewAsSkill) then
+  -- Hegemony and other modes expose selected-general skills as fake skills.
+  -- They still participate in native response/nullification requests, so the
+  -- request scene must expose their buttons alongside ordinary skills.
+  local seenSkills = {}
+  for _, skill in ipairs(table.connect(player:getAllSkills(), rawget(player, "_fake_skills") or Util.DummyTable)) do
+    if not seenSkills[skill.name] and
+        (skill:isInstanceOf(ActiveSkill) or skill:isInstanceOf(ViewAsSkill)) then
+      seenSkills[skill.name] = true
       self:addItem(SkillButton:new(self, skill.name))
     end
   end

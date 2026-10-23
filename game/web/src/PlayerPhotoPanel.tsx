@@ -9,6 +9,7 @@ import type { RoomPlayer } from './store/gameStore';
 import { EquipIcon, TargetCrosshairIcon } from './EquipIcons';
 import type { AvatarReactionType } from './store/cardVfxState';
 import NativeVfxAnim from './NativeVfxAnim';
+import { GeneralInfoTrigger, type SkillGroup } from './SkillInfo';
 
 export type Faction = 'wei' | 'shu' | 'wu' | 'qun' | 'neutral';
 
@@ -36,6 +37,7 @@ export interface PlayerPhotoPanelProps {
   isShaking?: boolean;
   avatarReaction?: AvatarReactionType | null;
   equipmentPortalTarget?: HTMLElement | null;
+  getGeneralSkills?: (name: string) => string[];
 }
 
 type EquipmentSlotKey = 'treasure' | 'weapon' | 'armor' | 'defensive_ride' | 'offensive_ride';
@@ -54,8 +56,7 @@ function cardSlot(card: BoardEquipment): EquipmentSlotKey | null {
 function suitInfo(card: BoardEquipment) {
   const suit = getSuitInfo(card.suit);
   const rank = formatRank(card.number);
-  const isRed = suit.symbol === '♥' || suit.symbol === '♦';
-  return { text: `${suit.symbol}${rank}`, isRed };
+  return { text: `${suit.symbol}${rank}`, colorClass: suit.colorClass };
 }
 
 function PortraitImage({
@@ -93,13 +94,22 @@ function PortraitImage({
   </div>;
 }
 
+/** FreeKill LunarLtk/Components/Photo/HpBar.qml: 0/1 red, 2 yellow,
+ * 3+ or full HP green. These are absolute HP levels, not HP percentages. */
+export function getMagatamaState(hp: number | null | undefined, maxHp: number | null | undefined): 0 | 1 | 2 | 3 {
+  if (hp == null || maxHp == null || !Number.isFinite(hp) || !Number.isFinite(maxHp) || maxHp <= 0 || hp <= 0) return 0;
+  if (hp >= 3 || hp >= maxHp) return 3;
+  return hp >= 2 ? 2 : 1;
+}
+
 function HealthColumn({ game }: { game: BoardPlayer | undefined }) {
   const hp = game?.hp;
   const maxHp = game?.maxHp;
-  const slots = maxHp != null && Number.isFinite(maxHp) ? Math.max(1, Math.min(12, Math.ceil(maxHp))) : 0;
+  const slots = maxHp != null && Number.isFinite(maxHp) && maxHp > 0 ? Math.min(12, Math.ceil(maxHp)) : 0;
   const filled = slots > 0 && hp != null && Number.isFinite(hp) ? Math.max(0, Math.min(slots, Math.ceil(hp))) : 0;
-  const ratio = maxHp && hp != null ? hp / maxHp : 0;
-  const magatama = ratio > 0.66 ? '3-heg' : ratio > 0.33 ? '2-heg' : ratio > 0 ? '1-heg' : '0-heg';
+  const hpState = getMagatamaState(hp, maxHp);
+  const showFraction = maxHp == null || maxHp > 4 ||
+    (hp != null && hp > maxHp) || ((game?.shield ?? 0) > 0 && maxHp > 3);
   const label = `Sinh lực: ${hp ?? '?'} trên ${maxHp ?? '?'}`;
 
   return <div className="sg-hp-vertical-column native-hp-vertical-column" aria-label={label} title={label}>
@@ -107,17 +117,20 @@ function HealthColumn({ game }: { game: BoardPlayer | undefined }) {
       <img src="/photo-assets/magatama/shield.png" alt="" aria-hidden="true" />
       <span>{game.shield}</span>
     </div>}
-    {maxHp != null && maxHp <= 4 ? (
+    {!showFraction ? (
       <div className="sg-magatama-column" aria-hidden="true">
-        {Array.from({ length: slots }, (_, index) => <img key={index}
-          className={`native-heg-hp-disc-v ${index < filled ? 'sg-magatama-filled' : 'sg-magatama-empty'}`}
-          src={`/photo-assets/magatama/${index < filled ? magatama : '0-heg'}.png`} alt="" />)}
+        {Array.from({ length: slots }, (_, index) => {
+          const active = index >= slots - filled;
+          return <img key={index}
+            className={`native-heg-hp-disc-v ${active ? 'sg-magatama-filled' : 'sg-magatama-empty'}`}
+            src={`/photo-assets/magatama/${active ? hpState : 0}-heg.png`} alt="" />;
+        })}
       </div>
     ) : (
       <>
         <img className="native-heg-hp-disc-v sg-magatama-filled"
-          src={`/photo-assets/magatama/${magatama}.png`} alt="" aria-hidden="true" />
-        <div className={`sg-hp-vertical-fraction native-hp-vertical-fraction ${ratio <= 0.33 ? 'hp-danger' : ratio <= 0.66 ? 'hp-warning' : ''}`}>
+          src={`/photo-assets/magatama/${hpState}-heg.png`} alt="" aria-hidden="true" />
+        <div className={`sg-hp-vertical-fraction native-hp-vertical-fraction ${hpState <= 1 ? 'hp-danger' : hpState === 2 ? 'hp-warning' : ''}`}>
           <span>{hp ?? '?'}</span>
           <span className="hp-slash">/</span>
           <span>{maxHp ?? '?'}</span>
@@ -215,7 +228,7 @@ function EquipRow({
   return <div className={`native-equip-row ${card ? 'equipped' : 'empty'}`} title={detail} aria-label={detail}>
     <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot={slot} card={card} /></span>
     <span className={`native-eq-name ${nameClass}`}>{card ? name : typeLabel}</span>
-    {card && <span className={`native-eq-suit ${info?.isRed ? 'suit-red' : 'suit-black'}`}>{suitText}</span>}
+    {card && <span className={`native-eq-suit card-suit-ink ${info?.colorClass}`}>{suitText}</span>}
   </div>;
 }
 
@@ -239,12 +252,12 @@ function EquipRidesSplit({
     <div className={`native-equip-half ${defCard ? 'equipped' : 'empty'}`} title={defDetail} aria-label={defDetail}>
       <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="defensive_ride" card={defCard} /></span>
       <span className={`native-eq-name ${defNameClass}`}>{defCard ? defName : '+1'}</span>
-      {defCard && <span className={`native-eq-suit ${defInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{defInfo?.text}</span>}
+      {defCard && <span className={`native-eq-suit card-suit-ink ${defInfo?.colorClass}`}>{defInfo?.text}</span>}
     </div>
     <div className={`native-equip-half ${offCard ? 'equipped' : 'empty'}`} title={offDetail} aria-label={offDetail}>
       <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="offensive_ride" card={offCard} /></span>
       <span className={`native-eq-name ${offNameClass}`}>{offCard ? offName : '-1'}</span>
-      {offCard && <span className={`native-eq-suit ${offInfo?.isRed ? 'suit-red' : 'suit-black'}`}>{offInfo?.text}</span>}
+      {offCard && <span className={`native-eq-suit card-suit-ink ${offInfo?.colorClass}`}>{offInfo?.text}</span>}
     </div>
   </div>;
 }
@@ -331,7 +344,7 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, equipmentPortalTarget,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, equipmentPortalTarget, getGeneralSkills,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
@@ -369,6 +382,22 @@ export default function PlayerPhotoPanel({
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
   const bothUnrevealed = mainUnrevealed && deputyUnrevealed;
   const reactionClass = avatarReaction || (isShaking ? 'hit-shake' : '');
+  // The private names are available only in our own board projection. Opponent
+  // lookup must use the already-revealed public identity, never the card back.
+  const inspectMain = isMainRevealed ? game?.general : self ? main : null;
+  const inspectDeputy = isDeputyRevealed ? game?.deputyGeneral : self ? deputy : null;
+  const getVisibleSkillGroups = (): SkillGroup[] => {
+    if (!getGeneralSkills) return [];
+    const groups: SkillGroup[] = [];
+    const add = (role: string, general: string | null | undefined) => {
+      if (!general || general === 'anjiang') return;
+      try { groups.push({ role, general, skills: getGeneralSkills(general) }); }
+      catch { groups.push({ role, general, skills: [] }); }
+    };
+    add('Chủ tướng', inspectMain);
+    add('Phó tướng', inspectDeputy);
+    return groups;
+  };
 
   return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''} ${reactionClass}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
@@ -413,6 +442,9 @@ export default function PlayerPhotoPanel({
         <TargetCrosshairIcon className="sg-target-crosshair-icon" />
         <span className="sg-visually-hidden">{target.selected ? 'Đã chọn mục tiêu' : 'Chọn mục tiêu'}</span>
       </button>}
+      {getGeneralSkills && (inspectMain || inspectDeputy) &&
+        <GeneralInfoTrigger className="sg-portrait-info-trigger" label={`Xem kỹ năng tướng của ${playerName}`}
+          getGroups={getVisibleSkillGroups} />}
     </div>
 
     {/* 3. VERTICAL MAGATAMA HP COLUMN */}

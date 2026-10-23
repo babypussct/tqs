@@ -58,4 +58,40 @@ wusheng:addEffect("targetmod", {
   end
 })
 
+-- Use a red card as Slash only when the resulting target exchange is worth
+-- the resource.  During a response request the server has already supplied
+-- the Slash pattern, so the strategy only chooses the least valuable legal
+-- red card and never invents a target.
+wusheng:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local skill = Fk.skills[self.skill_name]
+    local is_response = ai.command == "AskForResponseCard"
+    local requested = type(ai.data) == "table" and ai.data[2] or ""
+    local best, best_value = nil, -100000
+
+    for _, id in ipairs(ai:getEnabledCards()) do
+      local card = skill:viewAs(ai.player, { id })
+      if card and (not is_response or Exppattern:Parse(requested):match(card)) then
+        if is_response then
+          local value = 1 - (ai:getCardValue(id, "keep_value") or 0) * 0.01
+          if value > best_value then best, best_value = { { id }, {} }, value end
+        else
+          ai:selectSkill(self.skill_name, true)
+          ai:selectCard(id, true)
+          for targets in self:searchTargetSelections(ai) do
+            local value = ai:getBenefitOfEvents(function(logic)
+              logic:useCard{ from = ai.player, tos = targets, card = card }
+            end)
+            value = value - (ai:getCardValue(id, "keep_value") or 0) * 12
+            if value > best_value then best, best_value = { { id }, targets }, value end
+          end
+          ai:unSelectAll()
+        end
+      end
+    end
+
+    if best and (is_response or best_value > 0) then return best, best_value end
+  end,
+})
+
 return wusheng

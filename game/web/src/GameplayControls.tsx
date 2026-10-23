@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDisplayText } from './engine/displayText';
 import { choices, objectValue } from './engine/gameplayInteraction';
 import type { RequestInfo } from './engine/connection';
@@ -15,6 +15,7 @@ import {
   type CardData,
 } from './HandCardItem';
 import { TimerClockIcon } from './EquipIcons';
+import { SkillInfoEntry } from './SkillInfo';
 
 export type GameplayDispatch = (type: GameplayItemType, id: string | number,
   action: 'click' | 'update' | 'finish', data: unknown) => void;
@@ -77,8 +78,7 @@ export function GameplaySkillDock({ scene, request, regularSkills = [], busy, di
       </div>
       <div className="gameplay-options native-skill-options">
         {skills.map((item) => (
-          <ItemButton
-            key={item.id}
+          <SkillInfoEntry key={item.id} name={String(item.id)}><ItemButton
             item={item}
             className="sg-skill-button"
             label={text(String(item.id))}
@@ -87,7 +87,7 @@ export function GameplaySkillDock({ scene, request, regularSkills = [], busy, di
               selected: !item.selected,
               autoTarget: false,
             })}
-          />
+          /></SkillInfoEntry>
         ))}
       </div>
     </div>
@@ -110,6 +110,18 @@ function InteractionPicker({ item, dispatch, direct, busy }: {
   const [number, setNumber] = useState<number>(() =>
     typeof spec?.default === 'number' ? spec.default : typeof spec?.from === 'number' ? spec.from : 0);
   const send = (action: 'update' | 'finish', data: unknown) => dispatch('Interaction', item.id, action, data);
+  const initialDefaultSent = useRef(false);
+  useEffect(() => {
+    // FreeKill's QML SkillCardName/SkillCombo sends the initial answer on
+    // creation. Without this update, the web select displays a choice that
+    // Lua has never received and Kỳ Sách cannot select its targets.
+    if (!initialDefaultSent.current && !busy && item.enabled &&
+      (spec?.type === 'cardname' || spec?.type === 'combo') &&
+      typeof spec.default === 'string' && spec.default) {
+      initialDefaultSent.current = true;
+      dispatch('Interaction', item.id, 'update', spec.default);
+    }
+  }, [busy, dispatch, item.enabled, item.id, spec?.default, spec?.type]);
   if (!spec) return <p className="muted">Thiếu mô tả tương tác từ Lua.</p>;
   const disabled = busy || !item.enabled;
   if (spec.type === 'combo' || spec.type === 'cardname') {
@@ -371,7 +383,26 @@ export function GameplayControls({ scene, request, busy, dispatch, direct, toggl
           ) : null}
         </div>
 
-        {disabledReasons.map((reason) => <p key={reason} className="notice" role="status">{text(reason)}</p>)}
+        {!!disabledReasons.length && (
+          <div className="sg-disabled-reasons" aria-label="Lý do không thể sử dụng bài">
+            <details className="sg-disabled-reason">
+              <summary title={disabledReasons.map((reason) => text(reason)).join('\n')}>
+                <span className="sg-disabled-reason-label">
+                  {disabledReasons[0] === '#web-peach-battle-new'
+                    ? 'Quyết chiến mới: Đào không thể hồi máu'
+                    : disabledReasons[0] === '#web-peach-battle-old'
+                      ? 'Quyết chiến cũ: Đào không thể hồi máu'
+                      : text(disabledReasons[0])}
+                  {disabledReasons.length > 1 ? ` (+${disabledReasons.length - 1})` : ''}
+                </span>
+                <span className="sg-disabled-reason-more">Chi tiết</span>
+              </summary>
+              <div className="sg-disabled-reason-detail">
+                {disabledReasons.map((reason) => <p key={reason}>{text(reason)}</p>)}
+              </div>
+            </details>
+          </div>
+        )}
 
         {selectedCard && (
           <SelectedCardSummary
@@ -497,7 +528,8 @@ export function GameplayControls({ scene, request, busy, dispatch, direct, toggl
             {interactions.map((item) => (
               <div key={item.id} className="sg-inline-choice-group">
                 <h3>Tương tác kỹ năng{item.skill_name ? `: ${text(item.skill_name)}` : ''}</h3>
-                <InteractionPicker item={item} dispatch={dispatch} direct={direct} busy={waiting} />
+                <InteractionPicker key={`${request.requestId}:${item.skill_name ?? ''}:${item.id}`}
+                  item={item} dispatch={dispatch} direct={direct} busy={waiting} />
               </div>
             ))}
           </div>

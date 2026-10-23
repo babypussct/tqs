@@ -1,5 +1,7 @@
 # CP33 candidate: Cloudflare Pages + Oracle Quick Tunnel
 
+> **2026-10-23:** Named Tunnel `tqsvn-gateway` has been created, and Oracle gateway monitoring is now enabled. The production route still uses Quick Tunnel pending a controllable DNS zone and cutover tests. See [CLOUDFLARE_NAMED_TUNNEL.md](CLOUDFLARE_NAMED_TUNNEL.md) for current status and the cutover/rollback runbook. The historical snapshot below describes the earlier CP33 state.
+
 ## Update 2026-10-17 — same-origin gateway LIVE; hostname registration STAGED
 
 The original direct-URL procedure below describes the **previous deployment**. Production Pages deployment `da0f8a62` now serves the **CP33 commit** `69780705606cdde08047895d3b77a0119a57bd56` with `VITE_GATEWAY_URL=/gateway`. Built from isolated Git archive plus Pages Functions; concurrent uncommitted CP34 UI changes were excluded. No purchased domain is needed for `https://tqsvn.pages.dev`.

@@ -71,8 +71,28 @@ _skill:addAI(Fk.Ltk.AI.newActiveStrategy {
     end
 
     local cards, benefit = strategy:chooseCards(ai)
-    if cards then
-      return { cards, {} }, benefit or 0
+    if type(cards) ~= "table" then return end
+
+    -- Discard requests are serialized directly by SmartAI's active-skill
+    -- path, so replay the selection through the live dashboard before
+    -- returning it.  The available-card list can differ from the strategy's
+    -- snapshot after another effect, and the request's card_filter,
+    -- prohibit skills, pattern, and min/max bounds are authoritative here.
+    local enabled_cards, seen = {}, {}
+    for _, id in ipairs(ai:getEnabledCards()) do enabled_cards[id] = true end
+    for _, id in ipairs(cards) do
+      if seen[id] or not enabled_cards[id] then
+        ai:unSelectAll()
+        return
+      end
+      seen[id] = true
+      ai:selectCard(id, true)
+    end
+
+    local feasible = ai:okButtonEnabled()
+    ai:unSelectAll()
+    if feasible then
+      return { cards, {} }, type(benefit) == "number" and benefit or 0
     end
   end,
 })

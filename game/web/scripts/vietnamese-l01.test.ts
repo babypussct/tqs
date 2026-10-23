@@ -189,9 +189,8 @@ test('C01 pinned Lua Fk:translate, React public DOM logs and options; no hidden 
       // Same production React ChoicePanel; only the request fixture is injected.
       // No click is made because the actual server request here is PlayCard.
       await page.evaluate(async () => {
-        const { useGameStore } = await import('/src/store/gameStore.ts');
-        const store = useGameStore.getState();
-        store.update({ players: [{ id: 17, name: 'Sĩ Nhiếp' }],
+        const store = window.__tqsRealLuaE2e.store.getState();
+        store.update({ players: [{ id: 17, name: 'Sĩ Nhiếp', avatar: '', ready: false, owner: true }],
           pendingRequest: { ...store.pendingRequest!, command: 'AskForChoices', requestId: 9001,
             choicePrompt: { choices: ['ld__lixia_drawcards:17', 'ld__lixia_loseHp:17'],
               allChoices: ['ld__lixia_drawcards:17', 'ld__lixia_loseHp:17'],

@@ -34,7 +34,7 @@ test('choice replies cannot send after reentrant cleanup disconnects or replaces
       onUi: () => {}, onRequest: (request) => {
         if (request || !mutate) return;
         mutate = false;
-        if (replacement === 'disconnect') conn.disconnect();
+        if (replacement === 'disconnect') conn.abortTransport('test cleanup');
         else receive();
       },
     });

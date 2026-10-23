@@ -4,6 +4,7 @@ import type { NativeDialogPrompt } from './engine/nativeDialogs';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
+import { CardSuitMark, formatRank, getSuitInfo } from './HandCardItem';
 
 export default function NativeDialogPanel({ request, prompt, busy, view, move, chooseGeneral, respond }: {
   request: RequestInfo; prompt: NativeDialogPrompt; busy: boolean;
@@ -26,7 +27,13 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
   const cardLabel = (token: string) => {
     const card = prompt.cards.find(c => c.token === token);
     if (!card) return 'Lá bài';
-    return `${text(card.name || 'Lá bài')}${card.number !== undefined ? ` ${({ 1: '♠', 2: '♣', 3: '♥', 4: '♦' } as Record<string, string>)[String(card.suit)] || ''}${card.number}` : ''}`;
+    const name = text(card.name || 'Lá bài');
+    return <>{name} <CardSuitMark suit={card.suit} number={card.number} /></>;
+  };
+  const cardLabelText = (token: string) => {
+    const card = prompt.cards.find(c => c.token === token);
+    if (!card) return 'Lá bài';
+    return `${text(card.name || 'Lá bài')}${card.number !== undefined ? ` ${getSuitInfo(card.suit).name} ${formatRank(card.number)}` : ''}`;
   };
   const chooseName = (token: string) => {
     chooseGeneral(token);
@@ -52,7 +59,7 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
       <div className="gameplay-options">
         {row.map((token, index) => <div key={token}>
           {prompt.kind === 'arrange' && selected && <button type="button" className="button small-button" disabled={disabled}
-            onClick={() => performMove(area, index)} aria-label={`Đặt trước ${cardLabel(token)}`}>Đặt trước</button>}
+            onClick={() => performMove(area, index)} aria-label={`Đặt trước ${cardLabelText(token)}`}>Đặt trước</button>}
           <button type="button" className="gameplay-choice" disabled={disabled || (['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) && !selectedTokens?.includes(token) && !selectableTokens?.includes(token))} aria-pressed={['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? selectedTokens?.includes(token) : selected === token}
             onClick={() => prompt.kind === 'ag' || prompt.kind === 'boardMove' ? respond(token) : ['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? chooseName(token) : select(selected === token ? null : token)}>{cardLabel(token)}</button>
         </div>)}

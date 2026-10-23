@@ -21,7 +21,18 @@ function ReqResponseCard:initialize(player, data)
   ReqActiveSkill.initialize(self, player)
 
   if data then
-    -- self.skill_name = data[1] (skill_name是给选中的视为技用的)
+    -- data[1] identifies a ViewAsSkill that may be preselected.  A number of
+    -- card-use APIs also pass the parent ActiveSkill/CardSkill there as the
+    -- request reason (for example tiaoxin asking its target to use Slash).
+    -- Treating that reason as the selected skill disables the physical-card
+    -- path and makes an otherwise legal response look like an empty active
+    -- skill request.  Only a real ViewAsSkill belongs in self.skill_name;
+    -- the request's focus text still carries the original reason server-side.
+    self.skill_name = data[1]
+    local initial_skill = self.skill_name and Fk.skills[self.skill_name]
+    if not initial_skill or not initial_skill:isInstanceOf(ViewAsSkill) then
+      self.skill_name = nil
+    end
     self.pattern    = data[2]
     self.prompt     = data[3]
     self.cancelable = data[4]
@@ -63,8 +74,8 @@ function ReqResponseCard:skillButtonValidity(name)
   if self.sub_selection_flag then return false end -- 处于二级选择时不允许切换技能
   local player = self.player
   local skill = Fk.skills[name] ---@cast skill ViewAsSkill
+  if not skill:isInstanceOf(ViewAsSkill) then return false end
   return
-    skill:isInstanceOf(ViewAsSkill) and
     skill:enabledAtResponse(player, true) and
     skill.pattern and
     Exppattern:Parse(self.pattern):matchExp(skill.pattern) and

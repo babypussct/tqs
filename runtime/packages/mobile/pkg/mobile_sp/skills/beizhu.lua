@@ -109,4 +109,68 @@ beizhu:addEffect(fk.Damaged, {
   end,
 })
 
+-- Beizhu has to inspect the target's hand before the server resolves the
+-- branch, so target selection must use public information only.  Prefer the
+-- smallest hostile hand: it limits the expected number of forced Slashes,
+-- while still giving the discard branch a useful chance to remove a card.
+beizhu:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    if player.hp and player.hp <= 1 then return end
+
+    local best, best_value
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local can_target = type(target.isKongcheng) ~= "function" or not target:isKongcheng()
+      if can_target and relation and relation.state == "enemy" then
+        local hand_num = type(target.getHandcardNum) == "function" and target:getHandcardNum() or 0
+        local value = 80 - hand_num * 12
+        if target.hp and target.hp <= 1 then value = value + 8 end
+        if not best or value > best_value or (value == best_value and target.id < best.id) then
+          best, best_value = target, value
+        end
+      end
+    end
+    if best and best_value > 0 then
+      return { {}, { best } }, best_value
+    end
+  end,
+})
+
+-- In the no-Slash branch the acting player sees the target's offered card
+-- list.  Discard the highest-value visible card; never inspect any other
+-- hidden hand state.
+beizhu:addAI(Fk.Ltk.AI.newChooseCardStrategy {
+  think = function(self, ai)
+    local data = ai.data
+    if type(data) ~= "table" then return end
+    local flag = data[2]
+    local ids, seen = {}, {}
+    local function add(ids_to_add)
+      for _, id in ipairs(ids_to_add or Util.DummyTable) do
+        if type(id) == "number" and not seen[id] then
+          seen[id] = true
+          table.insert(ids, id)
+        end
+      end
+    end
+    if type(flag) == "table" then
+      for _, group in ipairs(flag.card_data or Util.DummyTable) do
+        add(group[2])
+      end
+    elseif data[1] and type(data[1].getCardIds) == "function" then
+      add(data[1]:getCardIds(flag or "he"))
+    end
+
+    local best, best_value
+    for _, id in ipairs(ids) do
+      local value = ai:getCardValue(id, "keep_value") or 0
+      if not best or value > best_value or (value == best_value and id < best) then
+        best, best_value = id, value
+      end
+    end
+    if best then return best, best_value end
+  end,
+})
+
 return beizhu

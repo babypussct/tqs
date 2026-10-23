@@ -71,8 +71,14 @@ if [[ ! -d "$SOURCE_DIR/.git" ]]; then
 fi
 
 managed_patch_applied() {
-  grep -Fq 'Temporary IP bans are an anti-abandon safeguard' \
+  grep -Fq 'class AccountTempBanStore' \
+    "$SOURCE_DIR/src/server/account_tempban.h" &&
+  grep -Fq 'Temporary account bans are an anti-abandon safeguard' \
     "$SOURCE_DIR/src/server/user/auth.cpp" &&
+    grep -Fq 'isAccountTempBanned(int accountId)' \
+      "$SOURCE_DIR/src/server/server.h" &&
+    grep -Fq 'account_temp_bans' \
+      "$SOURCE_DIR/src/server/server.cpp" &&
     grep -Fq 'Capacity is enforced after authentication' \
       "$SOURCE_DIR/src/server/user/auth.cpp" &&
     ! grep -Fq 'server.isTempBanned(addr)' \

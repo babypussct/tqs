@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
-import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
+import { verifyCandidateIdentity, verifyQaPackageManifest, verifyQaSourceIdentity } from './identity';
 
 function sha256(value: string) {
   return createHash('sha256').update(value).digest('hex');
@@ -99,6 +99,29 @@ test('native QA identity requires a verified package revision', () => {
     const identity = verifyQaPackageManifest({ manifestPath: qaManifestPath, expectedRevision: 'a'.repeat(40) });
     assert.equal(identity.sourceRevision, 'a'.repeat(40));
     assert.throws(() => verifyQaPackageManifest({ manifestPath: qaManifestPath, expectedRevision: 'd'.repeat(40) }), /does not match/);
+  } finally {
+    rmSync(value.root, { recursive: true, force: true });
+  }
+});
+
+test('native QA source identity pins the P1 SmartAI, room, and QA overlay files', () => {
+  const value = fixture();
+  try {
+    mkdirSync(path.join(value.runtime, 'packages', 'freekill-core', 'ltk', 'server', 'ai'), { recursive: true });
+    mkdirSync(path.join(value.runtime, 'packages', 'freekill-core', 'ltk', 'server'), { recursive: true });
+    mkdirSync(path.join(value.runtime, 'qa_packages', 'tqs_qa', 'ltk', 'server', 'ai'), { recursive: true });
+    const smartAi = 'p1 smart ai\n';
+    const room = 'p1 room\n';
+    const overlay = 'p1 overlay\n';
+    writeFileSync(path.join(value.runtime, 'packages/freekill-core/ltk/server/ai/smart_ai.lua'), smartAi);
+    writeFileSync(path.join(value.runtime, 'packages/freekill-core/ltk/server/room.lua'), room);
+    writeFileSync(path.join(value.runtime, 'qa_packages/tqs_qa/ltk/server/ai/smart_ai.lua'), overlay);
+    const identity = verifyQaSourceIdentity({ runtime: value.runtime, expectedRuntimeMD5: md5(value.flist),
+      expectedSmartAiSha256: sha256(smartAi), expectedRoomLuaSha256: sha256(room), expectedQaSmartAiOverlaySha256: sha256(overlay) });
+    assert.equal(identity.runtimeMD5, md5(value.flist));
+    writeFileSync(path.join(value.runtime, 'packages/freekill-core/ltk/server/room.lua'), 'mismatch\n');
+    assert.throws(() => verifyQaSourceIdentity({ runtime: value.runtime, expectedRuntimeMD5: md5(value.flist),
+      expectedSmartAiSha256: sha256(smartAi), expectedRoomLuaSha256: sha256(room), expectedQaSmartAiOverlaySha256: sha256(overlay) }), /room\.lua/);
   } finally {
     rmSync(value.root, { recursive: true, force: true });
   }

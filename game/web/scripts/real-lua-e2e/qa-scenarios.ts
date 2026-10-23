@@ -37,6 +37,17 @@ export type QaScenarioId =
   | 'hidden-reveal-deputy'
   | 'hidden-active'
   | 'hidden-active-main'
+  | 'ai-trace'
+  | 'chooser-trace'
+  | 'general-pair-trace'
+  | 'general-pair-match-a'
+  | 'general-pair-match-b'
+  | 'general-pair-match-c'
+  | 'general-pair-match-d'
+  | 'general-pair-match-mixed-a'
+  | 'general-pair-match-mixed-b'
+  | 'general-pair-match-mixed-c'
+  | 'general-pair-match-mixed-d'
   | 'hidden-fanjian'
   | 'hidden-fanjian-deputy'
   | 'hidden-view-as'
@@ -128,6 +139,10 @@ export type QaScenarioTrigger =
   | 'hidden-fankui'
   | 'hidden-reveal'
   | 'hidden-active'
+  | 'ai-trace'
+  | 'chooser-trace'
+  | 'general-pair-trace'
+  | 'general-pair-match'
   | 'hidden-fanjian'
   | 'hidden-view-as'
   | 'hidden-dual'
@@ -437,6 +452,116 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     slots: [slot('zhiheng-card', trueName('slash'), 'self', 'hand', true, 0)],
     trigger: 'hidden-active',
     expectedCommand: 'PlayCard',
+  },
+  'ai-trace': {
+    version: 1,
+    id: 'ai-trace',
+    title: 'Bốn ghế cố định để đối chiếu quyết định SmartAI và fallback',
+    seed: 0x6a1f0e22,
+    drawSequence: [],
+    slots: [],
+    trigger: 'ai-trace',
+    expectedCommand: 'PlayCard',
+  },
+  'chooser-trace': {
+    version: 1,
+    id: 'chooser-trace',
+    title: 'Đối chiếu native ba generic chooser với hand và request-state cố định',
+    seed: 0x6a1f0e24,
+    drawSequence: [],
+    slots: [],
+    trigger: 'chooser-trace',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'general-pair-trace': {
+    version: 1,
+    id: 'general-pair-trace',
+    title: 'Bốn ghế cố định để đối chiếu lựa chọn cặp chủ/phó và fallback',
+    seed: 0x6a1f0e23,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-trace',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-a': {
+    version: 1,
+    id: 'general-pair-match-a',
+    title: 'Bốn ghế BOT chơi trọn ván với hoán vị roster A',
+    seed: 0x6a1f0e24,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-b': {
+    version: 1,
+    id: 'general-pair-match-b',
+    title: 'Bốn ghế BOT chơi trọn ván với hoán vị roster B',
+    seed: 0x6a1f0e25,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-c': {
+    version: 1,
+    id: 'general-pair-match-c',
+    title: 'Bốn ghế BOT chơi trọn ván với hoán vị roster C',
+    seed: 0x6a1f0e26,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-d': {
+    version: 1,
+    id: 'general-pair-match-d',
+    title: 'Bốn ghế BOT chơi trọn ván với hoán vị roster D',
+    seed: 0x6a1f0e27,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-mixed-a': {
+    version: 1,
+    id: 'general-pair-match-mixed-a',
+    title: 'Bốn ghế BOT chơi trọn ván đa phe với hoán vị roster A',
+    seed: 0x6a1f0e28,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-mixed-b': {
+    version: 1,
+    id: 'general-pair-match-mixed-b',
+    title: 'Bốn ghế BOT chơi trọn ván đa phe với hoán vị roster B',
+    seed: 0x6a1f0e29,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-mixed-c': {
+    version: 1,
+    id: 'general-pair-match-mixed-c',
+    title: 'Bốn ghế BOT chơi trọn ván đa phe với hoán vị roster C',
+    seed: 0x6a1f0e2a,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-match-mixed-d': {
+    version: 1,
+    id: 'general-pair-match-mixed-d',
+    title: 'Bốn ghế BOT chơi trọn ván đa phe với hoán vị roster D',
+    seed: 0x6a1f0e2b,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
+    expectedCommand: 'CustomDialog',
   },
   'hidden-fanjian': {
     version: 1,
@@ -1033,7 +1158,9 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'draw-sequence', 'card-chosen', 'poxi', 'cards-and-choice',
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
-  'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main',
+  'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main', 'ai-trace', 'chooser-trace', 'general-pair-trace',
+  'general-pair-match-a', 'general-pair-match-b', 'general-pair-match-c', 'general-pair-match-d',
+  'general-pair-match-mixed-a', 'general-pair-match-mixed-b', 'general-pair-match-mixed-c', 'general-pair-match-mixed-d',
   'hidden-fanjian', 'hidden-fanjian-deputy',
   'hidden-rehide-yiji', 'hidden-rehide-yiji-deputy',
   'hidden-fankui', 'hidden-fankui-deputy',
@@ -1139,7 +1266,7 @@ function validatePlan(plan: QaScenarioPlan): void {
       if (!keys.has(key)) throw new QaScenarioError(`${plan.id} must reserve ${key} for the four attacks`);
     }
   }
-  if (plan.trigger === 'hidden-active' || plan.trigger === 'hidden-active-main') {
+  if (plan.trigger === 'hidden-active') {
     if (plan.slots.length !== 1 || plan.slots[0].key !== 'zhiheng-card' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for Chế Hành`);

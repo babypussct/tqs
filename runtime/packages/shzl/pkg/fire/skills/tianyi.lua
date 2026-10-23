@@ -60,6 +60,53 @@ tianyi:addEffect("prohibit", {
   end,
 })
 
+-- 天义 is a risk decision, not a blind target-first action. Estimate the
+-- opponent's pindian range from public hand size and use the BOT's highest
+-- private card only as its own legal evidence. The actual pindian remains
+-- entirely server-controlled.
+tianyi:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    local own_high = 0
+    for _, id in ipairs(player:getCardIds("h")) do
+      local card = Fk:getCardById(id)
+      if card and type(card.number) == "number" then
+        own_high = math.max(own_high, card.number)
+      end
+    end
+    if own_high < 7 then return end
+
+    local has_slash = table.find(player:getCardIds("h"), function(id)
+      local card = Fk:getCardById(id)
+      return card and card.trueName == "slash"
+    end) ~= nil
+    local win_reward = has_slash and 140 or 70
+    local loss_cost = has_slash and 150 or 25
+    local best_target, best_benefit = nil, -100000
+
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local targetable = relation.state == "enemy" or
+        (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude < -0.25)
+      local hand_num = type(target.getHandcardNum) == "function" and target:getHandcardNum() or 0
+      if targetable and hand_num > 0 then
+        local expected_target = 6 + math.min(3, math.max(0, hand_num - 2) * 0.5)
+        local win_probability = math.max(0.10, math.min(0.90,
+          0.50 + (own_high - expected_target) * 0.07))
+        local low_hand_bonus = math.max(0, 4 - hand_num) * 8
+        local benefit = win_probability * win_reward - (1 - win_probability) * loss_cost + low_hand_bonus
+        if benefit > best_benefit then
+          best_target, best_benefit = target, benefit
+        end
+      end
+    end
+
+    if best_target and best_benefit > 0 then
+      return { {}, { best_target } }, best_benefit
+    end
+  end,
+})
+
 tianyi:addTest(function(room, me)
   local comp2, comp3, comp4 = room.players[2], room.players[3], room.players[4]
   local slashK = room:printCard("slash", Card.Diamond, 13)

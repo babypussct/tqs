@@ -69,6 +69,33 @@ test('mobile release packaging strips server-only entries from the public flist 
   }
 });
 
+test('mobile release packaging strips nested QA package trees and flist entries', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tqs-release-nested-qa-'));
+  try {
+    const runtime = path.join(temp, 'runtime');
+    for (const name of REQUIRED_PACKAGES) {
+      fs.mkdirSync(path.join(runtime, 'packages', name), { recursive: true });
+      fs.writeFileSync(path.join(runtime, 'packages', name, 'init.lua'), `return '${name}'\n`);
+    }
+    fs.mkdirSync(path.join(runtime, 'packages', 'freekill-core', 'qa_packages', 'tqs_qa'), { recursive: true });
+    fs.writeFileSync(path.join(runtime, 'packages', 'freekill-core', 'qa_packages', 'tqs_qa', 'init.lua'), 'return "qa"\n');
+    fs.writeFileSync(path.join(runtime, 'flist.txt'),
+      'packages/freekill-core/qa_packages/tqs_qa/init.lua=qa;packages/hegemony/init.lua=stable;');
+    const release = path.join(temp, 'release');
+    const result = packageRelease(runtime, release, { createdAt: '2026-01-01T00:00:00.000Z' });
+    assert.equal(fs.existsSync(path.join(release, 'runtime/packages/freekill-core/qa_packages')), false);
+    assert.equal(fs.readFileSync(path.join(release, 'runtime/flist.txt'), 'utf8'),
+      'packages/hegemony/init.lua=stable;');
+    assert.deepEqual(verifyRelease(release).manifest, result.manifest);
+
+    fs.mkdirSync(path.join(release, 'runtime/packages/freekill-core/qa_packages/tqs_qa'), { recursive: true });
+    fs.writeFileSync(path.join(release, 'runtime/packages/freekill-core/qa_packages/tqs_qa', 'tampered.lua'), 'return "qa"\n');
+    assert.throws(() => verifyRelease(release), /server-only QA path/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 assert.ok(fs.existsSync(path.join(repo, 'game/web/dist/index.html')), 'release test must run after web build');
 
 test('release checkpoint holds dirty source and never implies official release', () => {

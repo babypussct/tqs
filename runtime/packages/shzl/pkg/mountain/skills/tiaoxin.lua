@@ -53,4 +53,33 @@ tiaoxin:addEffect("active", {
   end,
 })
 
+-- 挑衅 trades the risk of an incoming Slash for a forced discard. Enemy
+-- hand size is public in Hegemony; card identities remain private and are not
+-- inspected here. The relation model is used to avoid provoking an ally.
+tiaoxin:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local best_target, best_benefit = nil, -100000
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local targetable = relation.state == "enemy" or
+        (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude < -0.25)
+      local hand_num = type(target.getHandcardNum) == "function" and target:getHandcardNum() or 0
+      if targetable and hand_num > 0 then
+        -- More cards increase the chance that a discard is available, while
+        -- also increasing the chance that the target can answer with Slash.
+        local discard_value = 35 + math.min(hand_num, 5) * 12
+        local slash_risk = (30 + hand_num * 12) * math.min(0.65, 0.35 + hand_num * 0.05)
+        local benefit = discard_value - slash_risk
+        if benefit > best_benefit then
+          best_target, best_benefit = target, benefit
+        end
+      end
+    end
+
+    if best_target and best_benefit > 0 then
+      return { {}, { best_target } }, best_benefit
+    end
+  end,
+})
+
 return tiaoxin

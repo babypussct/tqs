@@ -10,6 +10,7 @@ const REQUIRED_PACKAGES = [
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
 const SERVER_ONLY_PACKAGES = new Set(['tqs_qa']);
+const SERVER_ONLY_PATH_SEGMENTS = new Set(['qa_packages', 'tqs_qa']);
 const REQUIRED_FILES = [
   'dist/index.html', 'runtime/flist.txt', 'gateway/package.json',
   'gateway/package-lock.json', 'gateway/src/server.mjs',
@@ -21,6 +22,10 @@ function isSensitive(name) {
   const lower = name.toLowerCase();
   return lower === '.env' || lower.startsWith('.env.') || lower.endsWith('.pem') ||
     lower.endsWith('.key') || SENSITIVE_NAMES.has(lower);
+}
+
+function isServerOnlyPath(name) {
+  return String(name).split('/').filter(Boolean).some((part) => SERVER_ONLY_PATH_SEGMENTS.has(part));
 }
 
 function safeRelativePath(name) {
@@ -39,6 +44,7 @@ function actualInventory(root) {
       else if (entry.isFile()) {
         if (isSensitive(entry.name)) throw new Error(`Release contains a sensitive file: ${path.relative(root, absolute)}`);
         const relative = path.relative(root, absolute).split(path.sep).join('/');
+        if (isServerOnlyPath(relative)) throw new Error(`Release contains a server-only QA path: ${relative}`);
         if (relative !== 'RELEASE.json') files.push(relative);
       } else throw new Error(`Unsupported release entry: ${absolute}`);
     }
@@ -91,8 +97,7 @@ export function verifyRelease(rootArg) {
       throw new Error(`Runtime package count mismatch: ${name}`);
   }
   const flistContents = fs.readFileSync(path.join(root, 'runtime/flist.txt'), 'utf8');
-  if (flistContents.split(';').some((entry) => [...SERVER_ONLY_PACKAGES].some((name) =>
-    entry.startsWith(`packages/${name}/`))))
+  if (flistContents.split(';').some((entry) => isServerOnlyPath(entry.split('=', 1)[0])))
     throw new Error('Server-only package found in public runtime flist');
   const flistHash = crypto.createHash('md5').update(flistContents).digest('hex');
   if (!/^[a-f0-9]{32}$/i.test(String(manifest.runtimeMD5)) || flistHash !== manifest.runtimeMD5.toLowerCase())

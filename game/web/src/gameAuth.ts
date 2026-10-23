@@ -61,8 +61,18 @@ export interface GameSession {
   displayName: string;
   nativeName: string;
   ticket: string;
+  /** Optional signed gateway quota assertion, carried as a WS subprotocol. */
+  gatewayAdmission?: string;
   expiresAt: number;
   poolPolicy: GamePoolPolicyPayload;
+}
+
+interface QaPreauthSession extends GameSession {}
+
+declare global {
+  interface Window {
+    __tqsE2eGameSession?: unknown;
+  }
 }
 
 export class GameAccessError extends Error {
@@ -77,8 +87,35 @@ async function ensurePersistence(): Promise<void> {
   await persistenceReady;
 }
 
+function localQaPreauthSession(): QaPreauthSession | null {
+  // This is deliberately unreachable from a hosted game. The multiplayer
+  // runner serves a frozen build on loopback and opts in with the query
+  // marker; no production hostname, Firebase account, or API route can use
+  // this branch.
+  if (!['127.0.0.1', 'localhost'].includes(window.location.hostname) ||
+      new URLSearchParams(window.location.search).get('tqs-e2e-preauth') !== '1') return null;
+  const value = window.__tqsE2eGameSession;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const candidate = value as Partial<QaPreauthSession>;
+  const policy = candidate.poolPolicy;
+  const expiresAt = candidate.expiresAt;
+  if (typeof candidate.uid !== 'string' || !candidate.uid || candidate.uid.length > 128 ||
+      typeof candidate.displayName !== 'string' || candidate.displayName.length > 128 ||
+      typeof candidate.nativeName !== 'string' || !candidate.nativeName || candidate.nativeName.length > 96 ||
+      typeof candidate.ticket !== 'string' || !candidate.ticket || candidate.ticket.length > 213 ||
+      (candidate.gatewayAdmission !== undefined &&
+        (typeof candidate.gatewayAdmission !== 'string' || !/^[A-Za-z0-9_-]{1,768}$/.test(candidate.gatewayAdmission))) ||
+      typeof expiresAt !== 'number' || !Number.isInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000) ||
+      !policy || policy.schemaVersion !== 1 || policy.mode !== 'new_heg_mode' ||
+      !Number.isInteger(policy.revision) || !Number.isInteger(policy.generalNum) ||
+      !Array.isArray(policy.disabledPacks?.generals) || !Array.isArray(policy.disabledPacks?.cards) ||
+      policy.appliesTo !== 'new_rooms') return null;
+  return candidate as QaPreauthSession;
+}
+
 /** Prepare Firebase storage before the user presses the Google button. */
 export async function prepareGameAuth(): Promise<void> {
+  if (localQaPreauthSession()) return;
   await ensurePersistence();
   await gameAuth.authStateReady();
 }
@@ -86,6 +123,7 @@ export async function prepareGameAuth(): Promise<void> {
 /** Called once after returning from Google. Auth state can be restored even
  * when getRedirectResult is empty; never exchange a missing user for a ticket. */
 export async function completeGameGoogleRedirect(): Promise<void> {
+  if (localQaPreauthSession()) return;
   if (gameGoogleLoginMode !== 'same-origin-redirect') return;
   let pending = false;
   try {
@@ -137,6 +175,7 @@ async function requestGameSession(user: User): Promise<GameSession> {
     displayName: typeof payload.displayName === 'string' ? payload.displayName : user.displayName || payload.nativeName,
     nativeName: payload.nativeName,
     ticket: payload.ticket,
+    gatewayAdmission: typeof payload.gatewayAdmission === 'string' ? payload.gatewayAdmission : undefined,
     expiresAt: Number(payload.expiresAt),
     poolPolicy: {
       schemaVersion: 1,
@@ -176,6 +215,8 @@ function googleLoginError(error: unknown): Error {
 
 /** Returns null when a full-page Google redirect has started. */
 export async function signInAndCreateGameSession(): Promise<GameSession | null> {
+  const qaSession = localQaPreauthSession();
+  if (qaSession) return qaSession;
   if (gameGoogleLoginMode === 'open-in-browser') {
     throw new GameAccessError('GOOGLE_OPEN_IN_BROWSER',
       'Đăng nhập Google từ ứng dụng đã cài trên iPhone chưa được hỗ trợ. Hãy mở tqsvn.pages.dev trong Safari.');
@@ -208,12 +249,18 @@ export async function signInAndCreateGameSession(): Promise<GameSession | null> 
 }
 
 export async function createGameSessionForCurrentUser(): Promise<GameSession> {
+  const qaSession = localQaPreauthSession();
+  if (qaSession) return qaSession;
   await ensurePersistence();
   if (!gameAuth.currentUser) throw new GameAccessError('LOGIN_REQUIRED', 'Hãy đăng nhập Google để vào game.');
   return requestGameSession(gameAuth.currentUser);
 }
 
 export function watchGameUser(callback: (user: User | null) => void): () => void {
+  if (localQaPreauthSession()) {
+    callback(null);
+    return () => undefined;
+  }
   return onAuthStateChanged(gameAuth, callback);
 }
 

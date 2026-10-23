@@ -71,4 +71,41 @@ shangyi:addEffect("active", {
   end,
 })
 
+-- The follow-up card view is safe for the BOT only when the target actually
+-- has a hand. Prefer a confirmed enemy with the largest public hand count;
+-- the relation model prevents revealing information from turning into an
+-- indiscriminate ally-targeting action.
+shangyi:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local best_target, best_benefit = nil, -100000
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local targetable = relation.state == "enemy" or
+        (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude < -0.25)
+      local hand_num = type(target.getHandcardNum) == "function" and target:getHandcardNum() or 0
+      if targetable and hand_num > 0 then
+        local benefit = 35 + math.min(hand_num, 5) * 14
+        if benefit > best_benefit then
+          best_target, best_benefit = target, benefit
+        end
+      end
+    end
+
+    if best_target and best_benefit > 0 then
+      return { {}, { best_target } }, best_benefit
+    end
+  end,
+})
+
+-- Avoid the unsupported hidden-general CustomDialog branch for the first
+-- bounded rollout. The card branch has an ordinary, testable request path.
+shangyi:addAI(Fk.Ltk.AI.newChoiceStrategy {
+  think = function(_, ai)
+    local choices = type(ai.data) == "table" and ai.data[1] or Util.DummyTable
+    if table.contains(choices, "shangyi_card") then
+      return "shangyi_card", 1
+    end
+  end,
+})
+
 return shangyi

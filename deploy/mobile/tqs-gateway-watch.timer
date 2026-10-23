@@ -1,0 +1,11 @@
+[Unit]
+Description=Check TQS gateway every minute, including after service restarts
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=10s
+Persistent=true
+Unit=tqs-gateway-watch.service
+
+[Install]
+WantedBy=timers.target

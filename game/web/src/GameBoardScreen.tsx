@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
-import type { BoardEquipment, BoardMoment } from './store/boardState';
-import { useGameStore, type RoomPlayer } from './store/gameStore';
+import type { BoardEquipment } from './store/boardState';
+import { useGameStore } from './store/gameStore';
 import { GameplayControls, GameplaySkillDock, type GameplayDispatch, type GameplayDirect } from './GameplayControls';
 import { GAMEPLAY_REQUESTS } from './store/gameplayState';
 import PlayerPhotoPanel from './PlayerPhotoPanel';
@@ -17,6 +17,7 @@ import {
 } from './store/seatLayout';
 import TargetingOverlay from './TargetingOverlay';
 import CardVfxOverlay from './CardVfxOverlay';
+import BattleMusicControl from './BattleMusicControl';
 import { useCardVfx, type CardAssetHint } from './store/cardVfxState';
 
 function useMediaQuery(query: string): boolean {
@@ -39,19 +40,10 @@ function useMediaQuery(query: string): boolean {
 
 export { getDeterministicSeatPosition, getOpponentPosition };
 
-function momentText(moment: BoardMoment, players: Map<number, RoomPlayer>): string {
-  if (moment.kind === 'log') return localizedGameLog(moment.text);
-  const player = players.get(moment.playerId);
-  const name = player?.name || (moment.playerId < 0 ? 'Máy' : `Người chơi ${moment.playerId}`);
-  if (moment.kind === 'chain') return `${name} ${moment.chained ? 'bị xích' : 'đã tháo xích'}`;
-  const difference = moment.after - moment.before;
-  return `${name} ${difference > 0 ? `hồi ${difference}` : `mất ${-difference}`} HP (${moment.before} → ${moment.after})`;
-}
-
-export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleTrust, prelightSkill, regularSkills = [] }: {
+export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleTrust, prelightSkill, regularSkills = [], getGeneralSkills }: {
   leave: () => void; busy: boolean; dispatch: GameplayDispatch; direct: GameplayDirect;
   toggleTrust?: () => void; prelightSkill: (skillName: string, prelight: boolean) => void;
-  regularSkills?: RegularSkill[];
+  regularSkills?: RegularSkill[]; getGeneralSkills?: (name: string) => string[];
 }) {
   const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills, nativeVfxEvents } = useGameStore((s) => s);
   const text = useDisplayText();
@@ -149,12 +141,10 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   }, [board.virtualSequence, board.virtualReveals, board.discardSequence, board.discardReveals]);
   const logList = useRef<HTMLOListElement>(null);
   const userScrollUntil = useRef(0);
-  const lastMomentId = board.moments.at(-1)?.id;
-  const latestMoment = board.moments.at(-1);
   const seatProfile = Math.min(10, Math.max(2, board.seats.length || 2));
   useLayoutEffect(() => {
     if (showLogs && followLogs && logList.current) logList.current.scrollTop = logList.current.scrollHeight;
-  }, [showLogs, followLogs, lastMomentId]);
+  }, [showLogs, followLogs, board.logs.length]);
   useLayoutEffect(() => {
     if (!showLogs || !followLogs || !logList.current) return;
     const element = logList.current;
@@ -223,10 +213,18 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     <section className="game-board sg-game-board" aria-labelledby="board-title">
       <header className="board-toolbar">
         <div className="board-toolbar-title">
-          <span className="section-label">04 / Bàn chơi Quốc Chiến</span>
           <h2 id="board-title">{roomName || 'Trận đấu'}</h2>
         </div>
         <div className="inline-controls">
+          <BattleMusicControl />
+          <button type="button" className="button secondary sg-toolbar-action sg-toolbar-log-toggle"
+            aria-controls="board-log-panel" aria-expanded={showLogs}
+            aria-label={showLogs ? 'Ẩn lịch sử' : 'Lịch sử'}
+            title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
+            onClick={() => setShowLogs((open) => !open)}>
+            <span className="sg-toolbar-action-icon" aria-hidden="true">☷</span>
+            <span className="sg-toolbar-action-label">Nhật ký</span>
+          </button>
           {toggleTrust && <button className="button secondary sg-toolbar-action" type="button" disabled={busy} onClick={toggleTrust}
             aria-label={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'} title={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}
             aria-pressed={trusting}>
@@ -241,28 +239,6 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         </div>
       </header>
       {trusting && <p className="notice" role="status">Máy chủ đã bật BOT chơi hộ. Giữ trang mở để duy trì kết nối; bấm Tự chơi lại khi quay lại.</p>}
-      <div className="board-moments board-ticker" aria-label="Diễn biến mới nhất" aria-live="polite">
-        <strong>Diễn biến mới nhất</strong>
-        {latestMoment ? (
-          <p className={`board-moment moment-${latestMoment.kind}`} title={momentText(latestMoment, byId)}>
-            {momentText(latestMoment, byId)}
-          </p>
-        ) : (
-          <p className="board-moment">Đang chờ diễn biến từ máy chủ.</p>
-        )}
-        <button
-          type="button"
-          className="sg-ticker-log-toggle"
-          aria-controls="board-log-panel"
-          aria-expanded={showLogs}
-          aria-label={showLogs ? 'Ẩn lịch sử' : 'Lịch sử'}
-          title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
-          onClick={() => setShowLogs((open) => !open)}
-        >
-          <span aria-hidden="true">{showLogs ? '⌃' : '☷'}</span>
-          <span className="sg-ticker-log-count">{board.logs.length}</span>
-        </button>
-      </div>
       <div className={`board-layout ${showLogs ? 'has-logs-open' : 'logs-collapsed'}`}>
         <section id="board-log-panel" className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
           <div className="board-log-heading">
@@ -341,6 +317,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             const player = byId.get(seat.playerId);
             return player && <PlayerPhotoPanel key={seat.playerId} player={player} game={board.player[seat.playerId]}
               seat={seat.serverSeatNumber} self={false} active={seat.isActive} target={targetFor(seat.playerId)}
+              getGeneralSkills={getGeneralSkills}
               busy={busy || requestExpired} onTarget={() => chooseTarget(seat.playerId)}
               avatarReaction={avatarReactions[seat.playerId]}
               isShaking={avatarReactions[seat.playerId] === 'hit-shake'}
@@ -394,6 +371,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
       <div className="board-local-dashboard" aria-label="Bảng điều khiển người chơi">
         <div className="board-local-utility-row" aria-label="Thông tin và kỹ năng của bạn">
           {self && <div className="board-local-seat"><PlayerPhotoPanel player={self} game={board.player[self.id]} self
+            getGeneralSkills={getGeneralSkills}
             seat={selfSeat?.serverSeatNumber ?? 0} active={selfSeat?.isActive ?? false} target={targetFor(self.id)}
             busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact
             equipmentPortalTarget={isDesktopEquipment ? desktopEquipmentHost : null}

@@ -49,4 +49,82 @@ dimeng:addEffect("active", {
   end,
 })
 
+-- Swap a high-hand enemy with a lower-hand ally.  The expected hand-count
+-- swing is public; the exact card identities are intentionally not used.
+-- Pay the mandatory difference with the least valuable legal cards.
+dimeng:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    local best, best_value
+
+    local function relation(target)
+      return ai:getFactionRelation(target)
+    end
+
+    local function selectCheapest(cards, count)
+      if #cards < count then return end
+      table.sort(cards, function(a, b)
+        local av = ai:getCardValue(a, "keep_value") or 0
+        local bv = ai:getCardValue(b, "keep_value") or 0
+        return av == bv and a < b or av < bv
+      end)
+      local selected = {}
+      for i = 1, count do table.insert(selected, cards[i]) end
+      return selected
+    end
+
+    local first_targets = ai:getEnabledTargets()
+    ai:selectSkill(self.skill_name, true)
+    for _, first in ipairs(first_targets) do
+      ai:selectTarget(first, true)
+      local second_targets = ai:getEnabledTargets()
+      for _, second in ipairs(second_targets) do
+        if second ~= player and second ~= first then
+          ai:selectTarget(second, true)
+          local first_hand = type(first.getHandcardNum) == "function" and first:getHandcardNum() or 0
+          local second_hand = type(second.getHandcardNum) == "function" and second:getHandcardNum() or 0
+          local difference = math.abs(first_hand - second_hand)
+          local first_relation, second_relation = relation(first), relation(second)
+          local friend, enemy
+          if first_relation and first_relation.state == "friend" and
+              second_relation and second_relation.state == "enemy" then
+            friend, enemy = first, second
+          elseif first_relation and first_relation.state == "enemy" and
+              second_relation and second_relation.state == "friend" then
+            friend, enemy = second, first
+          end
+
+          if friend and enemy and difference > 0 then
+            local friend_hand = friend:getHandcardNum()
+            local enemy_hand = enemy:getHandcardNum()
+            local swing = enemy_hand - friend_hand
+            if swing > 0 then
+              local cards = selectCheapest(ai:getEnabledCards(), difference)
+              if cards then
+                local discard_cost = 0
+                for _, id in ipairs(cards) do
+                  discard_cost = discard_cost + (ai:getCardValue(id, "keep_value") or 0)
+                end
+                local value = swing * 30 - discard_cost
+                if not best or value > best_value or
+                    (value == best_value and (first.id .. ":" .. second.id) <
+                      (best[2][1].id .. ":" .. best[2][2].id)) then
+                  best, best_value = { cards, { first, second } }, value
+                end
+              end
+            end
+          end
+          ai:unSelectAllCards()
+          ai:selectTarget(second, false)
+        end
+      end
+      ai:unSelectAll()
+      ai:selectSkill(self.skill_name, true)
+    end
+    ai:unSelectAll()
+
+    if best and best_value > 0 then return best, best_value end
+  end,
+})
+
 return dimeng

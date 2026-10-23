@@ -7,6 +7,8 @@ import { emptyGameplay, type GameplayItemType } from '../store/gameplayState';
 import { connectionProgress, connectionError, userFacingError } from './connectionMessages';
 import type { GameSession } from '../gameAuth';
 import { normalizeInitialGeneralCount } from '../../../../src/game/gamePoolPacks';
+import { localNameOverrideForTicket, localPlayerDisplayEvent } from './localPlayerName';
+import type { InitialGeneralMetadata } from './generalSelection';
 
 export interface GameModeInfo {
   name: string;
@@ -73,6 +75,10 @@ export class GameAdapter {
     // The native server accepts it only after its HMAC and expiry checks; the
     // old arbitrary username/password auto-registration path is disabled when
     // tqsAuthRequired is enabled in the native deployment.
+    // Freeze the fallback for this connection. Refreshing login credentials on
+    // reconnect must not rename an existing in-game ServerPlayer: native keeps
+    // that player and its public name until the match ends.
+    const localNameOverride = localNameOverrideForTicket(session.ticket, session.displayName);
     let hadOnline = false;
     let serverRejected = false;
     let recovery: SessionRecovery;
@@ -91,11 +97,13 @@ export class GameAdapter {
         const url = new URL(`${this.gateway}/ws`, location.href);
         url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
         return url.href;
-      })()),
+      })(), () => this.gameSession?.gatewayAdmission),
       onUi: (command, data) => {
         if (generation !== this.generation) return;
         if (command === 'ErrorDlg' || command === 'ErrorMsg') { serverRejected = true; recovery.stop(); }
-        useGameStore.getState().dispatch(command, data);
+        const ownId = useGameStore.getState().ownId;
+        useGameStore.getState().dispatch(command,
+          localPlayerDisplayEvent(command, data, ownId, localNameOverride));
       },
       onStatus: (status) => {
         if (generation !== this.generation) return;
@@ -201,6 +209,12 @@ export class GameAdapter {
   }
 
   getGameDisplayName(): string {
+    const { phase, ownId, players, observers } = useGameStore.getState();
+    if ((phase === 'room' || phase === 'playing') && ownId !== null) {
+      const roomName = players.find((player) => player.id === ownId)?.name ??
+        observers.find((observer) => observer.id === ownId)?.name;
+      if (roomName) return roomName;
+    }
     return this.gameSession?.displayName || 'Chúa Công';
   }
 
@@ -333,8 +347,17 @@ export class GameAdapter {
     return this.requireConnection().getInitialGeneralKingdoms(requestId, main, deputy);
   }
 
+  getInitialGeneralMetadata(requestId: number, generals: readonly string[]): InitialGeneralMetadata[] {
+    return this.requireConnection().getInitialGeneralMetadata(requestId, generals);
+  }
+
   getGeneralLabels(generals: string[]): string[] {
     return this.requireConnection().lua.call<string[]>('__web_general_labels', generals);
+  }
+
+  /** Display-only registry lookup. Never sends a gameplay action to the server. */
+  getGeneralSkills(general: string): string[] {
+    return this.requireConnection().lua.call<string[]>('__web_general_skill_names', general);
   }
 
   chooseInitialGenerals(requestId: number, main: string, deputy: string, kingdom: string) {

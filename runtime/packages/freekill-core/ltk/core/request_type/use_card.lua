@@ -20,9 +20,12 @@ function ReqUseCard:skillButtonValidity(name)
   if self.sub_selection_flag then return false end -- 处于二级选择时不允许切换技能
   local player = self.player
   local skill = Fk.skills[name]---@cast skill ViewAsSkill
+  if not skill:isInstanceOf(ViewAsSkill) then return false end
+  local enabled = self.pattern == "nullification" and
+    skill:enabledAtNullification(player, self.extra_data) or
+    skill:enabledAtResponse(player, false)
   return
-    skill:isInstanceOf(ViewAsSkill) and
-    skill:enabledAtResponse(player, false) and
+    enabled and
     skill.pattern and
     Exppattern:Parse(self.pattern):matchExp(skill.pattern) and
     not table.contains(self.disabledSkillNames or {}, name)

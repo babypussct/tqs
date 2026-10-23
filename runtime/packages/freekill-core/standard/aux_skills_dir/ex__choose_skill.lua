@@ -63,7 +63,8 @@ exChooseSkill:addEffect('active', {
 
 exChooseSkill:addAI(Fk.Ltk.AI.newActiveStrategy {
   think = function(self, ai)
-    local data = ai.data[4]
+    local data = type(ai.data) == "table" and ai.data[4] or {}
+    if type(data) ~= "table" then data = {} end
     local orig = Fk.skills[data.skillName] or exChooseSkill
     local strategy = ai:findStrategyOfSkill(Fk.Ltk.AI.ChooseCardsAndPlayersStrategy, orig.name)
     if not strategy then
@@ -71,10 +72,54 @@ exChooseSkill:addAI(Fk.Ltk.AI.newActiveStrategy {
       ---@cast strategy -nil
     end
 
+    if not strategy then return end
     local cards, card_benefit = strategy:chooseCards(ai)
+    if not cards then return end
+    local enabled_cards, card_seen = {}, {}
+    for _, id in ipairs(ai:getEnabledCards()) do enabled_cards[id] = true end
+    for _, id in ipairs(cards) do
+      if card_seen[id] or not enabled_cards[id] then
+        ai:unSelectAll()
+        return
+      end
+      card_seen[id] = true
+      ai:selectCard(id, true)
+    end
+
+    -- Target legality may depend on the selected cards.  Rebuild the same
+    -- dashboard state before asking for players, then reject any selection
+    -- that the request handler would not accept.
     local players, player_benefit = strategy:choosePlayers(ai)
-    if cards then
-      return { cards, players }, (card_benefit * player_benefit) or 0
+    if not players then
+      ai:unSelectAll()
+      return
+    end
+    local min_cards = tonumber(data.min_c_num) or 0
+    local max_cards = tonumber(data.max_c_num) or min_cards
+    local min_targets = tonumber(data.min_t_num) or 0
+    local max_targets = tonumber(data.max_t_num) or min_targets
+    if #cards < min_cards or #cards > max_cards or
+        #players < min_targets or #players > max_targets then
+      ai:unSelectAll()
+      return
+    end
+
+    local target_seen = {}
+    for _, target in ipairs(players) do
+      if not target or target_seen[target.id] then
+        ai:unSelectAll()
+        return
+      end
+      target_seen[target.id] = true
+      ai:selectTarget(target, true)
+    end
+
+    local feasible = ai:okButtonEnabled()
+    ai:unSelectAll()
+    if feasible then
+      card_benefit = type(card_benefit) == "number" and card_benefit or 0
+      player_benefit = type(player_benefit) == "number" and player_benefit or 0
+      return { cards, players }, card_benefit * player_benefit
     end
   end,
 })

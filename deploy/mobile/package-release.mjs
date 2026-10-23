@@ -13,12 +13,17 @@ export const REQUIRED_PACKAGES = [
   'mobile', 'sp', 'tenyear', 'overseas', 'ol',
 ];
 export const SERVER_ONLY_PACKAGES = ['tqs_qa'];
+const SERVER_ONLY_PATH_SEGMENTS = new Set(['qa_packages', 'tqs_qa']);
 const SENSITIVE_NAMES = new Set(['credentials.json', 'secrets.json']);
 
 function isSensitive(name) {
   const lower = name.toLowerCase();
   return lower === '.env' || lower.startsWith('.env.') || lower.endsWith('.pem') ||
     lower.endsWith('.key') || SENSITIVE_NAMES.has(lower);
+}
+
+function isServerOnlyPath(name) {
+  return String(name).split('/').filter(Boolean).some((part) => SERVER_ONLY_PATH_SEGMENTS.has(part));
 }
 
 /**
@@ -29,8 +34,7 @@ function isSensitive(name) {
  */
 export function publicFlist(contents) {
   const entries = String(contents).split(';');
-  const filtered = entries.filter((entry) => !SERVER_ONLY_PACKAGES.some((name) =>
-    entry.startsWith(`packages/${name}/`)));
+  const filtered = entries.filter((entry) => !isServerOnlyPath(entry.split('=', 1)[0]));
   return filtered.length === entries.length ? String(contents) : filtered.join(';');
 }
 
@@ -90,7 +94,9 @@ export function packageRelease(runtimeArg, outputArg, options = {}) {
   if (!fs.existsSync(path.join(dist, 'index.html'))) throw new Error('Build web first');
   fs.mkdirSync(output, { recursive: true });
   copyTree(dist, path.join(output, 'dist'), () => true);
-  copyTree(packagesPath, path.join(output, 'runtime/packages'), (name) => name !== '.git' && name !== 'node_modules');
+  copyTree(packagesPath, path.join(output, 'runtime/packages'), (name, isDirectory) =>
+    name !== '.git' && name !== 'node_modules' &&
+    !(isDirectory && isServerOnlyPath(name)));
   fs.mkdirSync(path.join(output, 'runtime'), { recursive: true });
   fs.copyFileSync(flistPath, path.join(output, 'runtime/flist.txt'));
 

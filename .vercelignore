@@ -6,6 +6,8 @@ node_modules
 /.wrangler/
 /scratch/
 /game/
+/dist/
+/dist-shop/
 /runtime/
 /deploy/
 /docs/

@@ -1,7 +1,7 @@
 /** Two distinct private test accounts, one frozen candidate, real C++ server.
  * Only command/request metadata is persisted; credentials and game payloads stay in memory. */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, readFileSync, writeFileSync, statSync, mkdirSync, cpSync, mkdtempSync, rmSync, readdirSync } from 'node:fs';
 import { randomBytes, createHash } from 'node:crypto';
@@ -13,14 +13,15 @@ import { fileURLToPath } from 'node:url';
 import { preview } from 'vite';
 import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
-import { verifyCandidateIdentity, verifyQaPackageManifest } from './identity';
+import { P1_QA_SOURCE_BASELINE, verifyCandidateIdentity, verifyQaPackageManifest, verifyQaSourceIdentity } from './identity';
+import { assertTqs1Ticket, createTqs1Ticket } from './qa-ticket';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-rehide-yiji' | 'hidden-rehide-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'hidden-fanjian' | 'hidden-fanjian-deputy' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-tiandu' | 'hidden-tiandu-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-gongqing' | 'hidden-gongqing-deputy' | 'hidden-enyuan' | 'hidden-enyuan-deputy' | 'hidden-fuyin' | 'hidden-fuyin-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy' | 'hidden-xiaoji' | 'hidden-xiaoji-deputy' | 'hidden-guanxing' | 'hidden-guanxing-deputy' | 'hidden-yingzi' | 'hidden-yingzi-deputy' | 'hidden-tianxiang' | 'hidden-tianxiang-deputy' | 'hidden-duanchang' | 'hidden-duanchang-deputy' | 'hidden-liegong' | 'hidden-liegong-deputy' | 'hidden-kuanggu' | 'hidden-kuanggu-deputy' | 'hidden-jueqing' | 'hidden-jueqing-deputy' | 'hidden-ejue' | 'hidden-ejue-deputy' | 'hidden-dufu' | 'hidden-dufu-deputy' | 'hidden-jianzhi' | 'hidden-jianzhi-deputy' | 'hidden-zhiman' | 'hidden-zhiman-deputy' | 'hidden-jilix' | 'hidden-jilix-deputy';
+type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-rehide-yiji' | 'hidden-rehide-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'ai-trace' | 'chooser-trace' | 'general-pair-trace' | 'general-pair-match-a' | 'general-pair-match-b' | 'general-pair-match-c' | 'general-pair-match-d' | 'general-pair-match-mixed-a' | 'general-pair-match-mixed-b' | 'general-pair-match-mixed-c' | 'general-pair-match-mixed-d' | 'hidden-fanjian' | 'hidden-fanjian-deputy' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-tiandu' | 'hidden-tiandu-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-gongqing' | 'hidden-gongqing-deputy' | 'hidden-enyuan' | 'hidden-enyuan-deputy' | 'hidden-fuyin' | 'hidden-fuyin-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy' | 'hidden-xiaoji' | 'hidden-xiaoji-deputy' | 'hidden-guanxing' | 'hidden-guanxing-deputy' | 'hidden-yingzi' | 'hidden-yingzi-deputy' | 'hidden-tianxiang' | 'hidden-tianxiang-deputy' | 'hidden-duanchang' | 'hidden-duanchang-deputy' | 'hidden-liegong' | 'hidden-liegong-deputy' | 'hidden-kuanggu' | 'hidden-kuanggu-deputy' | 'hidden-jueqing' | 'hidden-jueqing-deputy' | 'hidden-ejue' | 'hidden-ejue-deputy' | 'hidden-dufu' | 'hidden-dufu-deputy' | 'hidden-jianzhi' | 'hidden-jianzhi-deputy' | 'hidden-zhiman' | 'hidden-zhiman-deputy' | 'hidden-jilix' | 'hidden-jilix-deputy';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
   testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy' || testScenario === 'hidden-rehide-yiji' || testScenario === 'hidden-rehide-yiji-deputy' || testScenario === 'hidden-reveal' ||
-  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
+  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'ai-trace' || testScenario === 'chooser-trace' || testScenario === 'general-pair-trace' || testScenario === 'general-pair-match-a' || testScenario === 'general-pair-match-b' || testScenario === 'general-pair-match-c' || testScenario === 'general-pair-match-d' || testScenario === 'general-pair-match-mixed-a' || testScenario === 'general-pair-match-mixed-b' || testScenario === 'general-pair-match-mixed-c' || testScenario === 'general-pair-match-mixed-d' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
   testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main' || testScenario === 'hidden-dual' ||
   testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy' ||
   testScenario === 'hidden-tiandu' || testScenario === 'hidden-tiandu-deputy' ||
@@ -45,7 +46,7 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-ejue' || testScenario === 'hidden-ejue-deputy' ||
   testScenario === 'hidden-dufu' || testScenario === 'hidden-dufu-deputy' ||
   testScenario === 'hidden-jianzhi' || testScenario === 'hidden-jianzhi-deputy' || testScenario === 'hidden-zhiman' || testScenario === 'hidden-zhiman-deputy' || testScenario === 'hidden-jilix' || testScenario === 'hidden-jilix-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, ai-trace, chooser-trace, general-pair-trace, general-pair-match-a, general-pair-match-b, general-pair-match-c, general-pair-match-d, general-pair-match-mixed-a, general-pair-match-mixed-b, general-pair-match-mixed-c, general-pair-match-mixed-d, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
 // These scenarios deliberately require an explicit opt-in. An interrupted
 // active room exercises reconnect/cleanup and therefore must run only against
 // the isolated QA runtime, whose installer sets tempBanTime=0. Local fixtures
@@ -132,10 +133,37 @@ const repo = path.resolve(web,'../..');
 const config = process.env.TQS_LIVE_CONFIG ?? path.join(os.homedir(),'.codex/secrets/tqs-live-test.env');
 assert.equal(statSync(config).mode & 0o077,0,'Private test configuration required');
 loadEnvFile(config);
+const nativeQaTicketSecret = process.env.TQS_LIVE_TICKET_SECRET ?? '';
+const nativeQaTicketHelper = process.env.TQS_LIVE_TICKET_HELPER ?? '';
+assert.ok(!nativeQa || nativeQaTicketSecret.length >= 32 || nativeQaTicketHelper,
+  'TQS_LIVE_NATIVE_QA=1 requires TQS_LIVE_TICKET_SECRET or TQS_LIVE_TICKET_HELPER');
+const nativeQaTicketHelperPath = nativeQaTicketHelper ? path.resolve(nativeQaTicketHelper) : null;
+if (nativeQaTicketHelperPath) {
+  assert.ok(existsSync(nativeQaTicketHelperPath), `QA ticket helper is missing: ${nativeQaTicketHelperPath}`);
+}
+function nativeQaTicket(nativeName: string): string {
+  if (!nativeQa) return '';
+  const expiresAt = Math.floor(Date.now() / 1000) + 600;
+  if (nativeQaTicketSecret.length >= 32) return createTqs1Ticket(nativeName, expiresAt, nativeQaTicketSecret);
+  assert.ok(nativeQaTicketHelperPath, 'QA ticket helper is not configured');
+  let ticket: string;
+  try {
+    ticket = execFileSync(process.execPath, [nativeQaTicketHelperPath, nativeName, String(expiresAt)], {
+      encoding: 'utf8',
+      timeout: 20_000,
+      maxBuffer: 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  } catch {
+    throw new Error('QA ticket helper could not mint a ticket');
+  }
+  assertTqs1Ticket(ticket, expiresAt);
+  return ticket;
+}
 const host=process.env.TQS_LIVE_HOST; assert.ok(host && /^[a-zA-Z0-9.:-]+$/.test(host),'TQS_LIVE_HOST required');
 const runtime=process.env.TQS_LIVE_ROOT; assert.ok(runtime && existsSync(path.join(runtime,'flist.txt')));
 const first={username:process.env.FK_TEST_USERNAME!,password:process.env.FK_TEST_PASSWORD!};assert.ok(first.username && first.password);
-const secondFile=path.join(os.homedir(),'.codex/secrets/tqs-multiplayer-second.json');
+const secondFile=process.env.TQS_LIVE_SECOND_ACCOUNT_FILE ?? path.join(os.homedir(),'.codex/secrets/tqs-multiplayer-second.json');
 if(!existsSync(secondFile)) writeFileSync(secondFile,JSON.stringify({username:`tqsqa${randomBytes(6).toString('hex')}`,
   password:randomBytes(24).toString('hex')}),{mode:0o600,flag:'wx'});
 assert.equal(statSync(secondFile).mode & 0o077,0);
@@ -148,6 +176,23 @@ const chrome=process.env.TQS_CHROME_PATH ?? '/Applications/Google Chrome.app/Con
 async function freePort(){const s=net.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=(s.address() as net.AddressInfo).port;await new Promise<void>(r=>s.close(()=>r()));return p;}
 const [gatewayPort,peerGatewayPort,webPort]=await Promise.all([freePort(),freePort(),freePort()]);
 const deploymentUrl = process.env.TQS_LIVE_URL;
+// An isolated native QA port may be reachable only through an SSH tunnel.
+// In that mode point the browser proxy at a gateway already running beside
+// the matching remote runtime instead of silently bundling a different local
+// flist and receiving a native md5-mismatch disconnect.
+const gatewayTarget = process.env.TQS_LIVE_GATEWAY_TARGET?.replace(/\/$/,'') ?? null;
+// A local QA runtime must enforce the same signed-ticket contract used by the
+// test-only browser session. A legacy native binary accepts its configuration
+// but ignores tqsAuthRequired, then rejects the TQS1 ticket as a password.
+// Fail before starting a gateway/browser or recording misleading game evidence.
+if (nativeQa && !deploymentUrl && !gatewayTarget) {
+  const nativeBinaryPath = path.join(runtime, 'freekill-asio');
+  assert.ok(existsSync(nativeBinaryPath), 'Native QA runtime has no freekill-asio executable');
+  const nativeBinary = readFileSync(nativeBinaryPath);
+  assert.ok(['tqsAuthRequired', 'TQS1', 'game account is not approved'].every((marker) =>
+    nativeBinary.includes(Buffer.from(marker))),
+  'Native QA binary lacks the signed-ticket patch; rebuild freekill-asio with tqs-game-access.patch before TQS1 replay');
+}
 const testGatewayRestart = process.argv.includes('--restart-gateway');
 assert.ok(!testGatewayRestart || !deploymentUrl,'Gateway restart test requires an isolated local gateway; never restart shared hosting');
 if (deploymentUrl) assert.equal(new URL(deploymentUrl).protocol,'https:');
@@ -157,11 +202,21 @@ const qaPackageIdentity = nativeQa ? verifyQaPackageManifest({
   expectedRevision: process.env.TQS_QA_EXPECTED_REVISION,
 }) : null;
 if (qaPackageIdentity) {
+  const qaSourceRoot = process.env.TQS_QA_SOURCE_ROOT ?? path.join(repo, 'deploy/freekill-native/qa/tqs_qa');
+  const qaCatalogPath = path.join(qaSourceRoot, 'catalog.json');
+  assert.ok(existsSync(qaCatalogPath), `QA catalog source is missing: ${qaCatalogPath}`);
   const catalogHash = createHash('sha256')
-    .update(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'))).digest('hex');
+    .update(readFileSync(qaCatalogPath)).digest('hex');
   assert.equal(qaPackageIdentity.catalogSha256, catalogHash,
     'Installed native QA catalog is stale; install and verify this source before running the scenario');
 }
+const qaSourceIdentity = nativeQa ? verifyQaSourceIdentity({
+  runtime,
+  expectedRuntimeMD5: process.env.TQS_QA_EXPECTED_RUNTIME_MD5 ?? '',
+  expectedSmartAiSha256: process.env.TQS_QA_EXPECTED_SMART_AI_SHA256 ?? P1_QA_SOURCE_BASELINE.smartAiSha256,
+  expectedRoomLuaSha256: process.env.TQS_QA_EXPECTED_ROOM_LUA_SHA256 ?? P1_QA_SOURCE_BASELINE.roomLuaSha256,
+  expectedQaSmartAiOverlaySha256: process.env.TQS_QA_EXPECTED_QA_SMART_AI_OVERLAY_SHA256 ?? P1_QA_SOURCE_BASELINE.qaSmartAiOverlaySha256,
+}) : null;
 const candidateIdentity = await verifyCandidateIdentity({
   runtime,
   dist: path.join(web, 'dist'),
@@ -172,10 +227,12 @@ const candidateIdentity = await verifyCandidateIdentity({
 console.log(`PASS candidate identity: runtimeMD5=${candidateIdentity.runtimeMD5}, packages=${candidateIdentity.localPackages.length}, ` +
   `dist=${candidateIdentity.distIndexSha256}${deploymentUrl ? ', hosted gateway/index matched' : ', local runtime pinned'}`);
 if (qaPackageIdentity) console.log(`PASS native QA package identity: revision=${qaPackageIdentity.sourceRevision}, packageSha256=${qaPackageIdentity.packageSha256}`);
+if (qaSourceIdentity) console.log(`PASS native QA source provenance: runtimeMD5=${qaSourceIdentity.runtimeMD5}, ` +
+  `smartAI=${qaSourceIdentity.smartAiSha256}, room=${qaSourceIdentity.roomLuaSha256}, overlay=${qaSourceIdentity.qaSmartAiOverlaySha256}`);
 const startGateway=(port=gatewayPort)=>spawn(process.execPath,[path.join(repo,'game/gateway/src/server.mjs')],{
   env:{...process.env,FK_TEST_USERNAME:undefined,FK_TEST_PASSWORD:undefined,FK_ROOT:runtime,FK_HOST:host,
     FK_PORT:process.env.TQS_LIVE_PORT ?? '9527',PORT:String(port),BIND_HOST:'127.0.0.1',ALLOW_ORIGIN:base,TRUSTED_PROXIES:''},stdio:'ignore'});
-let gateway=deploymentUrl ? null : startGateway();
+let gateway=deploymentUrl || gatewayTarget ? null : startGateway();
 const peerGateway=testGatewayRestart ? startGateway(peerGatewayPort) : null;
 let server:Awaited<ReturnType<typeof preview>>|undefined;
 let browser:Awaited<ReturnType<typeof chromium.launch>>|undefined;
@@ -184,12 +241,24 @@ const errors:string[]=[];let gameStarted=false;let finished=false;
 const testRecovery = process.argv.includes('--reconnect') || testGatewayRestart;
 const testManual = process.argv.includes('--manual');
 const testBotAudit = process.argv.includes('--audit-bots');
+const aiTraceScenario = testScenario === 'ai-trace';
+const chooserTraceScenario = testScenario === 'chooser-trace';
+const generalPairTraceScenario = testScenario === 'general-pair-trace';
+const generalPairMatchScenario = testScenario.startsWith('general-pair-match-');
+const boundedAiTraceScenario = aiTraceScenario || chooserTraceScenario || generalPairTraceScenario;
+assert.ok(!(boundedAiTraceScenario || generalPairMatchScenario) || (nativeQa && testBotAudit),
+  'ai-trace/chooser-trace/general-pair-trace/general-pair-match require the isolated native QA package and --audit-bots');
 let manualCardReply = false;
 const manualDeadlineMs = Number(process.env.TQS_LIVE_DEADLINE_MS ?? '180000');
 assert.ok(Number.isSafeInteger(manualDeadlineMs) && manualDeadlineMs >= 30000 && manualDeadlineMs <= 900000,
   'TQS_LIVE_DEADLINE_MS must be a bounded integer between 30000 and 900000');
 const candidateId = process.env.TQS_CANDIDATE_ID ?? 'cp08';
 assert.match(candidateId,/^cp[0-9]{2}$/);
+const winrateBranch = process.env.TQS_WINRATE_BRANCH ?? candidateId;
+assert.match(winrateBranch, /^[A-Za-z0-9_-]{1,40}$/,
+  'TQS_WINRATE_BRANCH may contain only short metadata-safe characters');
+const winrateRunId = process.env.TQS_WINRATE_RUN_ID ?? null;
+if (winrateRunId) assert.match(winrateRunId, /^[A-Za-z0-9_.-]{1,100}$/, 'TQS_WINRATE_RUN_ID is not metadata-safe');
 const errorContexts: unknown[] = [];
 let recovered = false;
 const pages:Page[]=[];
@@ -251,6 +320,26 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // The server must reveal Tôn Quyền before running the active Chế Hành effect.
   'hidden-active': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
   'hidden-active-main': { general: /Tôn Quyền|孙权|Sun\s*Quan/i, generalId: 'hs__sunquan', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  // ai-trace is a native-only four-seat run.  Its fixed seat roster lives in
+  // the server QA catalog; this entry only keeps the browser/native command
+  // contract in lockstep and prevents accidental use without the QA package.
+  'chooser-trace': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', capacity: 4, requiresGeneral: false },
+  'ai-trace': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', capacity: 4, requiresGeneral: false },
+  // general-pair-trace fixes the offered groups in the server-only catalog;
+  // the browser still completes the real CustomDialog for its two accounts,
+  // while native bots exercise the candidate/base SmartAI implementation.
+  'general-pair-trace': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  // These four full-match scenarios use the same fixed Wei roster with a
+  // different seat permutation, so baseline/candidate runs can be paired by
+  // seed while reducing seat-order confounding across the matrix.
+  'general-pair-match-a': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-b': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-c': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-d': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-mixed-a': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-mixed-b': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-mixed-c': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-match-mixed-d': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
   // Fanjian is an active skill on Zhou Yu.  The native server must reveal
   // only the owning slot, then run the source-defined gift and target choice.
   'hidden-fanjian': { general: /周瑜|Chu\s*Du|Zhou\s*Yu|反间|Phản Gián|fanjian/i, generalId: 'hs__zhouyu', skill: /反间|Phản Gián|fanjian|ex__fanjian/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
@@ -442,8 +531,23 @@ const qaCleanupTimeoutMs = Number(process.env.TQS_LIVE_QA_CLEANUP_TIMEOUT_MS ?? 
 assert.ok(Number.isSafeInteger(qaCleanupTimeoutMs) && qaCleanupTimeoutMs >= 5000 && qaCleanupTimeoutMs <= 120000,
   'TQS_LIVE_QA_CLEANUP_TIMEOUT_MS must be a bounded integer between 5000 and 120000');
 const nativeQaCatalog = nativeQa
-  ? JSON.parse(readFileSync(path.join(repo, 'deploy/freekill-native/qa/tqs_qa/catalog.json'), 'utf8')) as {
-      scenarios: { id: string; seed: number; expectedCommand: string }[];
+  ? JSON.parse(readFileSync(path.join(process.env.TQS_QA_SOURCE_ROOT ?? path.join(repo, 'deploy/freekill-native/qa/tqs_qa'), 'catalog.json'), 'utf8')) as {
+      generalPairMatrix?: {
+        initialGeneralCount?: number;
+        rosterSets?: Record<string, { enabledKingdoms?: string[]; offeredGroups?: string[][] }>;
+        seatPermutations?: Record<string, number[]>;
+      };
+      scenarios: {
+        id: string;
+        seed: number;
+        expectedCommand: string;
+        enabledKingdoms?: string[];
+        offeredGroups?: string[][];
+        seedRange?: { min: number; max: number };
+        matrixFamily?: string;
+        matrixRosterSets?: string[];
+        matrixSeatPermutation?: string;
+      }[];
     }
   : null;
 const nativeQaPlan = nativeQaCatalog?.scenarios.find((scenario) => scenario.id === testScenario);
@@ -452,8 +556,73 @@ if (nativeQa) {
   assert.equal(nativeQaPlan?.expectedCommand, selectedScenario?.requiredCommand,
     `Native/browser expected command drift for ${testScenario}`);
 }
+
+function parseQaSeed(value: string | undefined): number | null {
+  if (value === undefined || value === '') return null;
+  const parsed = /^0x[0-9a-f]+$/iu.test(value) ? Number.parseInt(value.slice(2), 16) : Number(value);
+  assert.ok(Number.isSafeInteger(parsed) && parsed >= 0 && parsed <= 0xffffffff,
+    'TQS_LIVE_SEED must be a safe unsigned decimal or 0x-prefixed hexadecimal integer');
+  return parsed;
+}
+
+function resolveMatrixInput(plan: NonNullable<typeof nativeQaPlan>, seed: number) {
+  let enabledKingdoms = [...(plan.enabledKingdoms ?? [])];
+  let offeredGroups = plan.offeredGroups?.map((group) => [...group]) ?? [];
+  let rosterSet = 'fixed';
+  const seatSwap = plan.matrixSeatPermutation ?? 'fixed';
+  const range = plan.seedRange;
+  if (plan.matrixFamily && range && seed >= range.min && seed <= range.max) {
+    const rosterNames = plan.matrixRosterSets ?? [];
+    const matrix = nativeQaCatalog?.generalPairMatrix;
+    const permutation = matrix?.seatPermutations?.[seatSwap];
+    assert.ok(rosterNames.length > 0 && permutation?.length === 4,
+      `Invalid win-rate matrix metadata for ${plan.id}`);
+    const rosterIndex = (seed - range.min) % rosterNames.length;
+    rosterSet = rosterNames[rosterIndex];
+    const selected = matrix?.rosterSets?.[rosterSet];
+    assert.ok(selected?.offeredGroups?.length === 4 && selected.enabledKingdoms?.length === 4,
+      `Missing win-rate roster set ${rosterSet}`);
+    enabledKingdoms = [...selected.enabledKingdoms];
+    offeredGroups = permutation.map((sourceSeat) => {
+      const group = selected.offeredGroups?.[sourceSeat - 1];
+      assert.ok(group?.length === (matrix?.initialGeneralCount ?? 5),
+        `Invalid ${rosterSet} source seat ${sourceSeat}`);
+      return [...group];
+    });
+  }
+  return { enabledKingdoms, offeredGroups, rosterSet, seatSwap };
+}
+
+const requestedQaSeed = nativeQa ? parseQaSeed(process.env.TQS_LIVE_SEED) : null;
+const nativeQaSeed = nativeQaPlan ? (requestedQaSeed ?? nativeQaPlan.seed) : null;
+if (nativeQa && requestedQaSeed !== null) {
+  const range = nativeQaPlan?.seedRange;
+  assert.ok(range && requestedQaSeed >= range.min && requestedQaSeed <= range.max,
+    `TQS_LIVE_SEED is outside the declared matrix range for ${testScenario}`);
+}
+const matrixInput = nativeQa && nativeQaPlan && nativeQaSeed !== null
+  ? resolveMatrixInput(nativeQaPlan, nativeQaSeed)
+  : null;
+const initialGeneralCount = matrixInput?.offeredGroups[0]?.length ?? 5;
+assert.ok(Number.isSafeInteger(initialGeneralCount) && initialGeneralCount >= 5 && initialGeneralCount <= 10,
+  'QA initial general count must be an integer from five through ten');
+if (matrixInput?.offeredGroups.length) {
+  assert.ok(matrixInput.offeredGroups.length === 4 &&
+    matrixInput.offeredGroups.every((group) => group.length === initialGeneralCount),
+  'All QA seats must receive the same initial general count');
+}
+const matrixInputHash = matrixInput
+  ? createHash('sha256').update(JSON.stringify({
+      scenario: testScenario,
+      seed: nativeQaSeed,
+      enabledKingdoms: matrixInput.enabledKingdoms,
+      offeredGroups: matrixInput.offeredGroups,
+      rosterSet: matrixInput.rosterSet,
+      seatSwap: matrixInput.seatSwap,
+    })).digest('hex')
+  : null;
 const nativeQaRoomName = nativeQa && nativeQaPlan
-  ? `TQSQA/${testScenario}/0x${nativeQaPlan.seed.toString(16).padStart(8, '0')}`
+  ? `TQSQA/${testScenario}/0x${nativeQaSeed!.toString(16).padStart(8, '0')}`
   : null;
 const pageUrl = selectedScenario && !nativeQa ? (() => {
   const url = new URL(base);
@@ -572,6 +741,22 @@ type PublicBotAudit = {
   boardPlayers: string[];
 };
 
+type GeneralPairTelemetry = {
+  matchResult: {
+    scenario: string;
+    seed: number;
+    rosterSet: string;
+    seatSwap: string;
+    winnerSeats: number[];
+    winnerKingdoms: string[];
+    winnerCount: number;
+    outcome: 'win' | 'draw';
+  } | null;
+  decisionSummary: Record<string, string> | null;
+  decisions: Record<string, string>[];
+  offerSummary: Record<string, string> | null;
+};
+
 const publicSkillLog = /(?:phát động kỹ năng|đã phát động|sử dụng kỹ năng|used skill|发动了|发动技能|发动了技能|발동)/iu;
 
 async function installPublicBotAudit(page: Page) {
@@ -603,6 +788,70 @@ function sanitizePublicAudit(audit: PublicBotAudit, accountNames: string[]) {
   const botNames = boardPlayers.filter((name) => /bot|robot|máy|人机|机器人/iu.test(name));
   const skillLogs = logs.filter((log) => publicSkillLog.test(log));
   return { logs, boardPlayers, botNames, skillLogs, botSkillLogs: [] as string[] };
+}
+
+function metadataOnlyPublicAudit() {
+  return { logs: [], boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [] as string[] };
+}
+
+function parseGeneralPairTelemetry(audits: { logs: string[] }[]): GeneralPairTelemetry {
+  const logs = [...new Set(audits.flatMap((audit) => audit.logs))]
+    .filter((log) => log.startsWith('[TQS QA] Pair'));
+  const resultLog = logs.find((log) => log.startsWith('[TQS QA] PairMatchResult '));
+  const resultMatch = resultLog?.match(/^\[TQS QA\] PairMatchResult scenario=([^ ]+) seed=(\d+) roster_set=([^ ]+) seat_swap=([^ ]+) winner_seats=([^ ]+) winner_kingdoms=([^ ]+) winner_count=(\d+) outcome=(win|draw)$/u);
+  const parseSeatList = (value: string) => value === 'draw' ? [] : value.split(',').map((part) => Number(part));
+  const parseKingdomList = (value: string) => value === 'draw' ? [] : value.split(',');
+  const matchResult = resultMatch ? {
+    scenario: resultMatch[1],
+    seed: Number(resultMatch[2]),
+    rosterSet: resultMatch[3],
+    seatSwap: resultMatch[4],
+    winnerSeats: parseSeatList(resultMatch[5]),
+    winnerKingdoms: parseKingdomList(resultMatch[6]),
+    winnerCount: Number(resultMatch[7]),
+    outcome: resultMatch[8] as 'win' | 'draw',
+  } : null;
+  const summaryLog = logs.find((log) => log.startsWith('[TQS QA] PairDecisionSummary '));
+  const summaryMatch = summaryLog?.match(/^\[TQS QA\] PairDecisionSummary (.+)$/u);
+  const statsLog = logs.find((log) => log.startsWith('[TQS QA] PairDecisionStats '));
+  const statsMatch = statsLog?.match(/^\[TQS QA\] PairDecisionStats (.+)$/u);
+  const traceLog = logs.find((log) => log.startsWith('[TQS QA] PairDecisionTrace '));
+  const traceMatch = traceLog?.match(/^\[TQS QA\] PairDecisionTrace (.+)$/u);
+  const parseFields = (value: string) => Object.fromEntries(
+    value.split(' ').map((field) => {
+      const separator = field.indexOf('=');
+      return separator > 0 ? [field.slice(0, separator), field.slice(separator + 1)] : [field, ''];
+    }),
+  );
+  const decisionSummary = summaryMatch ? {
+    ...parseFields(summaryMatch[1]),
+    ...(statsMatch ? parseFields(statsMatch[1]) : {}),
+    ...(traceMatch ? parseFields(traceMatch[1]) : {}),
+  } : null;
+  const decisions = logs
+    .filter((log) => log.startsWith('[TQS QA] PairDecision '))
+    .map((log) => {
+      const match = log.match(/^\[TQS QA\] PairDecision (.+)$/u);
+      return match ? parseFields(match[1]) : {};
+    })
+    .filter((entry) => Object.keys(entry).length > 0)
+    .sort((left, right) => Number(left.seq ?? 0) - Number(right.seq ?? 0));
+  const decisionMeta = logs
+    .filter((log) => log.startsWith('[TQS QA] PairDecisionMeta '))
+    .map((log) => {
+      const match = log.match(/^\[TQS QA\] PairDecisionMeta (.+)$/u);
+      return match ? parseFields(match[1]) : {};
+    })
+    .filter((entry) => Object.keys(entry).length > 0);
+  const metaBySeq = new Map(decisionMeta.map((entry) => [String(entry.seq ?? ''), entry]));
+  for (const decision of decisions) {
+    const meta = metaBySeq.get(String(decision.seq ?? ''));
+    if (meta) Object.assign(decision, meta);
+  }
+  const offerLog = logs.find((log) => log.startsWith('[TQS QA] PairOfferSummary '));
+  const offerMatch = offerLog?.match(/^\[TQS QA\] PairOfferSummary (.+)$/u);
+  const offerSummary = offerMatch ? parseFields(offerMatch[1]) : null;
+  return { matchResult, decisionSummary, decisions, offerSummary };
 }
 
 function skillActor(log: string) {
@@ -900,9 +1149,16 @@ async function completeNativeDialog(page: Page, client: number, requestId: numbe
   if (replied) scenarioObservations.push({ command: 'native-dialog', requestId, reply: true, detail: heading });
   return replied;
 }
-async function selectPair(page:Page, preferredLabel?:RegExp){
+async function selectPair(page:Page, preferredLabel?:RegExp): Promise<number>{
   const group=page.getByRole('group',{name:'Danh sách võ tướng'});await group.waitFor({timeout:60000});
-  const buttons=group.getByRole('button');const n=await buttons.count();
+  // Each choice now has a separate “view skills” button.  Restrict the
+  // deterministic pair search to actual choice buttons so an info sheet
+  // cannot intercept the next selection click.
+  const buttons=group.locator('button.general-choice');const n=await buttons.count();
+  if (nativeQa && generalPairMatchScenario) {
+    assert.equal(n, initialGeneralCount,
+      `Native ${testScenario} UI must render exactly ${initialGeneralCount} general choices; observed ${n}`);
+  }
   const order:number[]=[];
   let preferredCount=0;
   for(let i=0;i<n;i++) {
@@ -913,15 +1169,19 @@ async function selectPair(page:Page, preferredLabel?:RegExp){
     throw new Error('Scenario caller general was not offered by the real server');
   }
   for(const a of order){
-    const reset=page.getByRole('button',{name:'Chọn lại'});
-    if(await reset.isEnabled())await reset.click();
-    await buttons.nth(a).click();
     for(const b of order){
       if(a===b)continue;
+      const reset=page.getByRole('button',{name:'Chọn lại'});
+      // A rejected pair leaves the first selection active.  Reset before
+      // every candidate pair; otherwise the next b click toggles/overflows
+      // the previous selection and the exhaustive search can falsely report
+      // that no legal pair exists.
+      if(await reset.isEnabled())await reset.click();
+      await buttons.nth(a).click();
       await buttons.nth(b).click();
       if(await page.getByRole('button',{name:'Xác nhận tướng'}).isEnabled()){
         console.log(`Native pair candidate: ${await buttons.nth(a).innerText()} + ${await buttons.nth(b).innerText()}`);
-        await page.getByRole('button',{name:'Xác nhận tướng'}).click();return;
+        await page.getByRole('button',{name:'Xác nhận tướng'}).click();return n;
       }
     }
   }
@@ -959,7 +1219,9 @@ try{
   while (Date.now() < healthDeadline) {
     if (gateway) assert.equal(gateway.exitCode,null,'Candidate gateway exited');
     try {
-      const ready = await fetch(deploymentUrl ? `${base}/gateway/healthz` : `http://127.0.0.1:${gatewayPort}/healthz`,
+      const gatewayHealth = deploymentUrl ? `${base}/gateway/healthz` :
+        `${gatewayTarget ?? `http://127.0.0.1:${gatewayPort}`}/healthz`;
+      const ready = await fetch(gatewayHealth,
         { signal: AbortSignal.timeout(Math.min(5000, Math.max(1,healthDeadline-Date.now()))) });
       if (ready.ok && await ready.text()==='ok') { healthReady = true; break; }
     } catch {}
@@ -967,7 +1229,7 @@ try{
   }
   assert.ok(healthReady,'Candidate health endpoint did not become ready within its bounded startup window');
   if (!deploymentUrl) server=await preview({configFile:false,root:web,build:{outDir:frozenDist},preview:{host:'127.0.0.1',port:webPort,strictPort:true,
-    proxy:{'/gateway':{target:`http://127.0.0.1:${gatewayPort}`,ws:true,rewrite:p=>p.replace(/^\/gateway/,'')}}}});
+    proxy:{'/gateway':{target:gatewayTarget ?? `http://127.0.0.1:${gatewayPort}`,ws:true,rewrite:p=>p.replace(/^\/gateway/,'')}}}});
   browser=await chromium.launch({executablePath:chrome,headless:true});
   for(let i=0;i<2;i++){
     const context=await browser.newContext({viewport:{width:390,height:844}});const p=await context.newPage();pages.push(p);
@@ -1008,9 +1270,35 @@ try{
       ws.on('framereceived',({payload})=>record('incoming',payload));
       ws.on('framesent',({payload})=>record('outgoing',payload));
     });
-    await p.goto(pageUrl);await p.getByLabel('Tên tài khoản',{exact:true}).waitFor({timeout:90000});
-    const account=i===0?first:second;await p.getByLabel('Tên tài khoản',{exact:true}).fill(account.username);
-    await p.getByLabel('Mật khẩu',{exact:true}).fill(account.password);await p.getByRole('button',{name:'Vào sảnh',exact:true}).click();
+    const account=i===0?first:second;
+    await p.addInitScript((session) => {
+      (window as Window & { __tqsE2eGameSession?: unknown }).__tqsE2eGameSession = session;
+    }, {
+      uid: `qa-${account.username}`,
+      displayName: account.username,
+      nativeName: account.username,
+      // The isolated native QA runtime still enforces the production HMAC
+      // ticket contract. Keep the short-lived TQS1 ticket in memory; the
+      // secret is supplied only by the caller's isolated QA environment.
+      ticket: nativeQa ? nativeQaTicket(account.username) : account.password,
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 0, generalNum: initialGeneralCount,
+        disabledPacks: { generals: [], cards: [] }, appliesTo: 'new_rooms' },
+    });
+    const loginUrl = new URL(pageUrl);
+    loginUrl.searchParams.set('tqs-e2e-preauth', '1');
+    await p.goto(loginUrl.toString());
+    const legacyUsername = p.getByLabel('Tên tài khoản',{exact:true});
+    if (await legacyUsername.count()) {
+      await legacyUsername.waitFor({timeout:90000});
+      await legacyUsername.fill(account.username);
+      await p.getByLabel('Mật khẩu',{exact:true}).fill(account.password);
+      await p.getByRole('button',{name:'Vào sảnh',exact:true}).click();
+    } else {
+      const preauthButton = p.getByRole('button',{name:/^(Tiếp tục với Google|Vào Chiến Trường)$/});
+      await preauthButton.waitFor({timeout:90000});
+      await preauthButton.click();
+    }
     await p.getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor({timeout:60000});
     console.log(`PASS client ${i+1}: distinct account authenticated in real lobby`);
   }
@@ -1041,7 +1329,7 @@ try{
       console.log(`Scenario ${testScenario}: no caller general is required; actor remains client 1`);
     }
   }
-  await Promise.all(pages.map((page, index) => selectPair(page,
+  const generalChoiceCounts = await Promise.all(pages.map((page, index) => selectPair(page,
     !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
   for (const p of pages) {
     await p.locator('.game-board').waitFor({ timeout: 90000 });
@@ -1556,7 +1844,8 @@ try{
       'hidden-dual must retain the native fake dual skill in the private dock before reveal');
     console.log('PASS hidden-dual pre-request: dual trigger/ViewAs skill is projected while both actor generals remain hidden');
   }
-  if (testBotAudit || damageExchangeScenario || hiddenScenario) await Promise.all(pages.map(installPublicBotAudit));
+  if ((testBotAudit || damageExchangeScenario || hiddenScenario) && !boundedAiTraceScenario)
+    await Promise.all(pages.map(installPublicBotAudit));
   if (selectedScenario && !hiddenScenario) {
     const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
     console.log(`Scenario ${testScenario}: ${nativeQa ? 'native QA package injected the server-side precondition; ' : ''}selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
@@ -3254,14 +3543,19 @@ try{
       assert.ok(scenarioFoundingReply, 'founding scenario must receive and answer the native kingdom choice');
       console.log('PASS founding scenario: real wild general reached the native Vietnamese kingdom choice');
     }
-    if (!damageExchangeScenario && !hiddenScenario) {
+    if (boundedAiTraceScenario) {
+      // The bounded native probe already requested GameOver; there is no live
+      // turn/Trust control to delegate and no result-screen cleanup to drive.
+    } else if (!damageExchangeScenario && !hiddenScenario) {
       const cleanupPages = rescueScenario ? pages : [actor];
       for (const page of cleanupPages) {
         const trust = page.getByRole('button', { name: 'BOT chơi hộ', exact: true });
         if (await trust.isVisible()) await trust.click();
       }
     }
-  } else await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
+  } else if (!boundedAiTraceScenario) {
+    await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
+  }
   if (testRecovery) {
     const recovering = [a];
     if (testGatewayRestart) {
@@ -3292,18 +3586,50 @@ try{
   // Waiting for a result screen here would leave the QA runner playing an
   // unrelated full game after the rule under test has already passed.
   let publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
-    ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
+    ? boundedAiTraceScenario
+      ? pages.map(() => metadataOnlyPublicAudit())
+      : (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
     : [];
+  let generalPairTelemetry: GeneralPairTelemetry | null = null;
   if (testScenario === 'founding') {
+    finished = true;
+  } else if (boundedAiTraceScenario) {
+    // These are bounded native AI probes, not full matches. The QA director
+    // calls GameOver after the fixed-seat makeReply calls, so the runner must
+    // not wait for the ordinary result/lobby DOM.
+    const gameOverDeadline = Date.now() + qaCleanupTimeoutMs;
+    while (!traces.every((trace) => trace.some((packet) =>
+      packet.direction === 'incoming' && packet.command === 'GameOver')) &&
+      Date.now() < gameOverDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    assert.ok(traces.every((trace) => trace.some((packet) =>
+      packet.direction === 'incoming' && packet.command === 'GameOver')),
+      'bounded AI trace must observe native GameOver on every live client');
     finished = true;
   } else {
     await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));
     finished = true;
-    publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
-      ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
-      : [];
+    if (generalPairMatchScenario) {
+      // GameFinished sends the metadata-only QA markers immediately around
+      // the native GameOver/result transition. Keep the browser alive for a
+      // bounded grace window so a slow UI packet does not turn a completed
+      // native match into an unusable win-rate sample.
+      const telemetryDeadline = Date.now() + qaCleanupTimeoutMs;
+      do {
+        publicBotAudit = (await Promise.all(pages.map(readPublicBotAudit)))
+          .map((audit) => sanitizePublicAudit(audit, [first.username, second.username]));
+        generalPairTelemetry = parseGeneralPairTelemetry(publicBotAudit);
+        if (generalPairTelemetry.matchResult && generalPairTelemetry.decisionSummary) break;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      } while (Date.now() < telemetryDeadline);
+    } else {
+      publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
+        ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
+        : [];
+    }
   }
-  if (testBotAudit) {
+  if (testBotAudit && !boundedAiTraceScenario) {
     // A skill log rendered with “(bạn)” is the local real client. Merge that
     // actor identity across both client views; the same public log is rendered
     // without the marker for the other client. Remaining skill actors are
@@ -3315,6 +3641,17 @@ try{
       humanSkillActors: [...humanSkillActors],
       botSkillLogs: audit.skillLogs.filter((log) => !humanSkillActors.has(skillActor(log))),
     }));
+  }
+  if (generalPairMatchScenario && !generalPairTelemetry) {
+    generalPairTelemetry = parseGeneralPairTelemetry(publicBotAudit);
+  }
+  if (generalPairMatchScenario) {
+    assert.ok(generalPairTelemetry?.matchResult,
+      'general-pair-match must expose the metadata-only PairMatchResult marker');
+    assert.ok(generalPairTelemetry?.decisionSummary,
+      'general-pair-match must expose the metadata-only PairDecisionSummary marker');
+    assert.equal(generalPairTelemetry?.matchResult?.scenario, testScenario);
+    assert.equal(generalPairTelemetry?.matchResult?.seed, nativeQaSeed);
   }
   const botAuditTrace = traces.map((trace) => {
     const incoming = trace.filter((packet) => packet.direction === 'incoming');
@@ -3332,7 +3669,7 @@ try{
       askForChoices: incoming.filter((packet) => packet.command === 'AskForChoices').length,
     };
   });
-  if (testBotAudit) {
+  if (testBotAudit && !boundedAiTraceScenario) {
     assert.equal(playerCapacity, 4, 'Bot audit must be a four-seat room');
     assert.ok(publicBotAudit.every((audit) => audit.logs.length > 0), 'Bot audit must observe public GameLog text');
     assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1), 'Every live client must observe exactly one GameOver');
@@ -3341,6 +3678,29 @@ try{
     console.log(`PASS four-seat bot audit: ${pages.length} real clients + ${playerCapacity - pages.length} native bots; ` +
       `${publicBotAudit[0]?.skillLogs.length ?? 0} public skill log(s), ` +
       `${publicBotAudit[0]?.botSkillLogs.length ?? 0} attributed to bot name(s)`);
+  }
+  if (aiTraceScenario || chooserTraceScenario) {
+    assert.equal(playerCapacity, 4, 'ai-trace must run with four fixed seats');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'ai-trace must observe exactly one GameOver per live client');
+    console.log(`PASS ${testScenario} live room: fixed four-seat native roster reached GameOver; server metadata is collected from QA logs`);
+  }
+  if (generalPairTraceScenario) {
+    assert.equal(playerCapacity, 4, 'general-pair-trace must run with four fixed seats');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'general-pair-trace must observe exactly one GameOver per live client');
+    console.log('PASS general-pair-trace live room: fixed four-seat initial CustomDialog reached GameOver; server trace is collected from QA logs');
+  }
+  if (generalPairMatchScenario) {
+    assert.equal(playerCapacity, 4, `${testScenario} must run with four fixed seats`);
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      `${testScenario} must observe exactly one GameOver per live client`);
+    const resultTitles = await Promise.all(pages.map((page) =>
+      page.locator('#result-title').innerText().catch(() => '')));
+    assert.ok(resultTitles.every((title) => title.length > 0),
+      `${testScenario} must render a result title for both real clients`);
+    console.log(`PASS ${testScenario} full match: fixed four-seat initial CustomDialog reached native GameOver/result; ` +
+      'winner seats are collected from sanitized native QA logs');
   }
   if (damageExchangeScenario) {
     const publicLogs = publicBotAudit.flatMap((audit) => audit.logs);
@@ -3866,7 +4226,7 @@ try{
     }
     const replies=traces[i].filter(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY);
     assert.equal(new Set(replies.map(t=>t.requestId)).size,replies.length,'one reply per request');
-    if (testScenario !== 'founding') {
+    if (testScenario !== 'founding' && !boundedAiTraceScenario) {
       await pages[i].getByRole('button',{name:'Về sảnh',exact:true}).click();
       await pages[i].getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor();
       await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
@@ -3876,7 +4236,48 @@ try{
   writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenTianduGateReply,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenGongqingGateReply,hiddenEnyuanGateReply,hiddenEnyuanCardReply,hiddenFuyinGateReply,hiddenFuyinCardReply,hiddenQianxunGateReply,hiddenQianxunCardReply,hiddenKongchengGateReply,hiddenKongchengCardReply,hiddenWeimuGateReply,hiddenWeimuCardReply,hiddenXiaojiGateReply,hiddenXiaojiCardReply,hiddenGuanxingGateReply,hiddenGuanxingInvoked,hiddenGuanxingArrangeReply,hiddenTianxiangGateReply,hiddenTianxiangCardReply,hiddenTianxiangInvoked,hiddenTianxiangChoiceReply,hiddenDuanchangGateReply,hiddenDuanchangChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenFanjianGateReply,hiddenFanjianReply,hiddenFanjianChoiceReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,hiddenJianzhiGateReply,hiddenJianzhiDamageReply,hiddenJianzhiInvoked,hiddenZhimanGateReply,hiddenZhimanDamageReply,hiddenZhimanInvoked,hiddenZhimanCardReply,hiddenJilixGateReply,hiddenJilixCardReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTiandu:hiddenTianduScenario ? {deputy:hiddenTianduDeputyScenario,gate:hiddenTianduGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGongqing:hiddenGongqingScenario ? {deputy:hiddenGongqingDeputyScenario,gate:hiddenGongqingGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenEnyuan:hiddenEnyuanScenario ? {deputy:hiddenEnyuanDeputyScenario,gate:hiddenEnyuanGateReply,card:hiddenEnyuanCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFuyin:hiddenFuyinScenario ? {deputy:hiddenFuyinDeputyScenario,gate:hiddenFuyinGateReply,card:hiddenFuyinCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJilix:hiddenJilixScenario ? {deputy:hiddenJilixDeputyScenario,gate:hiddenJilixGateReply,card:hiddenJilixCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenQianxun:hiddenQianxunScenario ? {indulgence:hiddenQianxunIndulgenceScenario,deputy:hiddenQianxunDeputyScenario,gate:hiddenQianxunGateReply,card:hiddenQianxunCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenKongcheng:hiddenKongchengScenario ? {deputy:hiddenKongchengDeputyScenario,gate:hiddenKongchengGateReply,card:hiddenKongchengCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenWeimu:hiddenWeimuScenario ? {deputy:hiddenWeimuDeputyScenario,gate:hiddenWeimuGateReply,card:hiddenWeimuCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenXiaoji:hiddenXiaojiScenario ? {deputy:hiddenXiaojiDeputyScenario,gate:hiddenXiaojiGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGuanxing:hiddenGuanxingScenario ? {deputy:hiddenGuanxingDeputyScenario,gate:hiddenGuanxingGateReply,invoked:hiddenGuanxingInvoked,arrange:hiddenGuanxingArrangeReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTianxiang:hiddenTianxiangScenario ? {deputy:hiddenTianxiangDeputyScenario,gate:hiddenTianxiangGateReply,card:hiddenTianxiangCardReply,invoked:hiddenTianxiangInvoked,choice:hiddenTianxiangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDuanchang:hiddenDuanchangScenario ? {deputy:hiddenDuanchangDeputyScenario,gate:hiddenDuanchangGateReply,choice:hiddenDuanchangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFanjian:hiddenFanjianScenario ? {deputy:hiddenFanjianDeputyScenario,gate:hiddenFanjianGateReply,reply:hiddenFanjianReply,choice:hiddenFanjianChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenFanjianScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fanjian ${hiddenFanjianDeputyScenario ? 'deputy' : 'main'} active reveal, Peach gift and target lose-HP choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenTianduScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tiandu ${hiddenTianduDeputyScenario ? 'deputy' : 'main'} prelight, FinishJudge and judged-card obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenGongqingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-gongqing ${hiddenGongqingDeputyScenario ? 'deputy' : 'main'} prelight, low/high attack-range damage branches and Pan Jun reveal / no physical device` : hiddenEnyuanScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ${hiddenEnyuanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenFuyinScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fuyin TargetConfirmed Slash nullification and Zhuge Zhan reveal ${hiddenFuyinDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenJilixScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jilix TargetConfirmed repeat, second DamageInflicted prevention and correct-slot removal ${hiddenJilixDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenQianxunScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-qianxun ${hiddenQianxunIndulgenceScenario ? 'BeforeCardsMove Indulgence discard mirror' : 'TargetConfirming Snatch cancellation'} ${hiddenQianxunDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenWeimuScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenXiaojiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenGuanxingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-guanxing EventPhaseStart reveal and AskForArrangeCards ${hiddenGuanxingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenTianxiangScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenDuanchangScenario ? `two real accounts + two native bots / four-seat C++ / hidden-duanchang fk.Death, killer main-general choice and slot skill loss ${hiddenDuanchangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
-    distIndexSha256,candidateIdentity,qaPackageIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
+    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
+  if (generalPairMatchScenario) {
+    const evidenceFiles = readdirSync(out)
+      // Full-match evidence can be written as multiplayer, reconnect, or
+      // gateway-restart.  All three variants carry the same public audit
+      // payload initially; keep the privacy scrub applied to every variant.
+      .filter((name) => name.startsWith(`${candidateId}-${testScenario}-`) &&
+        (name.includes('-multiplayer-live-') || name.includes('-reconnect-live-') ||
+          name.includes('-gateway-restart-live-')))
+      .sort();
+    const evidencePath = evidenceFiles.at(-1);
+    assert.ok(evidencePath, 'general-pair-match evidence file must exist before enrichment');
+    const evidence = JSON.parse(readFileSync(path.join(out, evidencePath), 'utf8')) as Record<string, unknown>;
+    evidence.generalChoiceCounts = generalChoiceCounts;
+    evidence.winrateBranch = winrateBranch;
+    evidence.winrateRunId = winrateRunId;
+    evidence.nativeQaSeed = nativeQaSeed;
+    evidence.initialGeneralCount = initialGeneralCount;
+    evidence.matrixInputHash = matrixInputHash;
+    evidence.matrixInput = matrixInput ? {
+      rosterSet: matrixInput.rosterSet,
+      seatSwap: matrixInput.seatSwap,
+      enabledKingdoms: matrixInput.enabledKingdoms,
+    } : null;
+    evidence.generalPairTelemetry = generalPairTelemetry;
+    // The full public audit is useful while debugging a manual match, but a
+    // win-rate corpus must stay metadata-only. Keep only the QA markers used
+    // by the analyzer; do not persist public GameLog/card/general text from
+    // either real client in the paired evidence artifact.
+    const botAudit = evidence.botAudit;
+    if (botAudit && typeof botAudit === 'object' &&
+        Array.isArray((botAudit as { public?: unknown }).public)) {
+      (botAudit as { public: unknown[] }).public = (botAudit as { public: unknown[] }).public.map((item) => {
+        const audit = item && typeof item === 'object' ? item as { logs?: unknown } : {};
+        const logs = Array.isArray(audit.logs)
+          ? audit.logs.filter((log): log is string => typeof log === 'string' && log.startsWith('[TQS QA] Pair'))
+          : [];
+        return { logs, boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [], humanSkillActors: [] };
+      });
+    }
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+  }
   if (hiddenEnyuanScenario) {
     const evidenceFiles = readdirSync(out)
       .filter((name) => name.startsWith(candidateId + '-' + testScenario + '-multiplayer-live-'))
@@ -4181,6 +4582,12 @@ try{
   assert.deepEqual(errors,[]);
   console.log(testScenario === 'founding'
     ? 'PASS both clients: founding choice evidence saved; browser sessions closed after the source choice (no GameOver required by this scenario)'
+    : boundedAiTraceScenario
+      ? (generalPairTraceScenario
+        ? 'PASS general-pair-trace: native fixed-seat initial CustomDialog reached GameOver; sanitized browser trace saved; server metadata trace is required for the A/B comparison'
+        : `PASS ${testScenario}: native fixed-seat decisions reached GameOver; sanitized browser trace saved; server metadata trace is required for the A/B comparison`)
+    : generalPairMatchScenario
+      ? `PASS ${testScenario}: full native match reached GameOver/result; sanitized browser trace saved; winner seats are collected from native QA logs`
     : 'PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
 }catch(e){
   console.error('FAIL two-client candidate verification:', (e as Error).message.split(first.username).join('[account]').split(second.username).join('[account]').split(first.password).join('[redacted]').split(second.password).join('[redacted]'));
@@ -4193,7 +4600,7 @@ try{
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
     memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));

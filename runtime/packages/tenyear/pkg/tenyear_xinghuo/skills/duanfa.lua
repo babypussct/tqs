@@ -37,4 +37,39 @@ duanfa:addEffect("active", {
   end
 })
 
+-- Haircut is a bounded hand-quality conversion, not a reason to dump every
+-- black card.  Evaluate low-keep-value prefixes and retain the best positive
+-- exchange under the phase's public remaining-cap mark.
+duanfa:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    local cards = ai:getEnabledCards()
+    local used = type(player.getMark) == "function" and player:getMark("duanfa-phase") or 0
+    local limit = math.max(0, (player.maxHp or #cards) - (used or 0))
+    if limit == 0 or #cards == 0 then return end
+
+    table.sort(cards, function(a, b)
+      local av = ai:getCardValue(a, "keep_value") or 0
+      local bv = ai:getCardValue(b, "keep_value") or 0
+      return av == bv and a < b or av < bv
+    end)
+
+    local best, best_value
+    local chosen = {}
+    for i = 1, math.min(limit, #cards) do
+      table.insert(chosen, cards[i])
+      local value = ai:getBenefitOfEvents(function(logic)
+        logic:throwCard(chosen, self.skill_name, player, player)
+        logic:drawCards(player, #chosen, self.skill_name)
+      end)
+      if not best_value or value > best_value then
+        best, best_value = table.simpleClone(chosen), value
+      end
+    end
+    if best and best_value > 0 then
+      return { best }, best_value
+    end
+  end,
+})
+
 return duanfa

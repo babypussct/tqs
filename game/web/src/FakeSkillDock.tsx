@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDisplayText } from './engine/displayText';
 import type { FakeSkill } from './store/gameStore';
+import { SkillInfoEntry } from './SkillInfo';
 
 interface FakeSkillDockProps {
   skills: FakeSkill[];
@@ -77,8 +78,7 @@ export default function FakeSkillDock({ skills, busy, onToggle, floating = false
           const waiting = pending[skill.name] !== undefined;
           const active = skill.prelighted;
           return (
-            <button
-              key={skill.name}
+            <SkillInfoEntry key={skill.name} name={skill.name}><button
               type="button"
               className={`sg-skill-button fake-skill-button${active ? ' selected' : ''}`}
               disabled={busy || !skill.enabled || waiting}
@@ -90,7 +90,7 @@ export default function FakeSkillDock({ skills, busy, onToggle, floating = false
               <small className="fake-skill-state">
                 {waiting ? 'Đang cập nhật…' : active ? 'Đang sáng' : 'Chưa sáng'}
               </small>
-            </button>
+            </button></SkillInfoEntry>
           );
         })}
       </div>

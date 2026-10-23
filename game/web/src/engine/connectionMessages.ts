@@ -16,12 +16,12 @@ const messages: Record<string, string> = {
   'others logged in again with this name':
     'Tài khoản đã đăng nhập ở nơi khác. Một thiết bị hoặc cửa sổ khác vừa đăng nhập bằng tài khoản này, nên phiên chơi tại đây đã kết thúc. Để tiếp tục trên thiết bị này, hãy đóng phiên còn lại và đăng nhập lại.',
   'you have been temporarily banned!':
-    'Máy chủ đang tạm chặn IP kết nối. Rời ván khi còn sống hoặc bị ngắt phiên sau khi hết giờ có thể dẫn đến hình phạt này. Hãy đợi máy chủ hết chặn rồi đăng nhập lại; máy chủ không gửi thời điểm hết hạn. Khi cần tạm nghỉ trong ván, hãy bật BOT chơi hộ và giữ trang mở.',
+    'Tài khoản của bạn đang bị tạm khóa. Rời ván khi còn sống hoặc bị ngắt phiên sau khi hết giờ có thể dẫn đến hình phạt này. Hãy đợi thời hạn kết thúc rồi đăng nhập lại; máy chủ không gửi thời điểm hết hạn. Khi cần tạm nghỉ trong ván, hãy bật BOT chơi hộ và giữ trang mở.',
   'server is full!': 'Máy chủ hiện đã đủ số người chơi. Vui lòng thử đăng nhập lại sau ít phút.',
   'game account is not approved': 'Tài khoản chưa được cấp quyền tham gia. Vui lòng chờ phê duyệt hoặc liên hệ ban điều hành.',
   'cannot register more new users on this device': 'Thiết bị này đã đạt giới hạn đăng ký tài khoản mới. Vui lòng sử dụng tài khoản đã có hoặc liên hệ ban điều hành.',
   'username or password error': 'Thông tin xác thực không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại bằng Google.',
-  'backend closed': 'Máy chủ đã ngắt kết nối. Hãy kiểm tra mạng và đăng nhập lại. Nếu đang trong ván, việc mất phiên có thể dẫn đến tạm chặn IP.',
+  'backend closed': 'Máy chủ đã ngắt kết nối. Hãy kiểm tra mạng và đăng nhập lại. Nếu đang trong ván, việc mất phiên có thể dẫn đến tạm khóa tài khoản.',
   'backend error': 'Không thể liên lạc với máy chủ trò chơi. Hãy kiểm tra mạng và thử lại sau ít phút.',
   'connect timeout': 'Kết nối tới máy chủ quá thời gian chờ. Hãy kiểm tra mạng và thử đăng nhập lại.',
   'recovery timeout': 'Không thể khôi phục kết nối trong thời gian cho phép. Hãy kiểm tra mạng và đăng nhập lại.',

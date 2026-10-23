@@ -28,6 +28,9 @@ import { PACKAGES } from './snapshot';
 const roomPools = process.argv.includes('--room-pools');
 const uiTranslations = process.argv.includes('--ui-translations');
 const login = process.argv.includes('--login') || roomPools || uiTranslations;
+const expectedInitialGeneralCount = Number(process.env.TQS_EXPECTED_INITIAL_GENERAL_COUNT ?? 5);
+assert.ok(Number.isSafeInteger(expectedInitialGeneralCount) && expectedInitialGeneralCount >= 5 && expectedInitialGeneralCount <= 10,
+  'TQS_EXPECTED_INITIAL_GENERAL_COUNT must be an integer from five through ten');
 const webRoot = fileURLToPath(new URL('../../', import.meta.url));
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 
@@ -105,7 +108,9 @@ if (login) {
   const currentRuntime = path.join(repoRoot, 'runtime');
   const configuredReady = hasCompleteSnapshot(snapshotRoot);
   const runtimeReady = hasCompleteSnapshot(currentRuntime);
-  if ((!configuredReady || (runtimeReady && snapshotMd5(snapshotRoot!) !== snapshotMd5(currentRuntime))) && runtimeReady) {
+  const honorConfiguredRoot = process.env.TQS_LIVE_HONOR_ROOT === '1';
+  if (!honorConfiguredRoot &&
+      (!configuredReady || (runtimeReady && snapshotMd5(snapshotRoot!) !== snapshotMd5(currentRuntime))) && runtimeReady) {
     console.warn(`WARN TQS_LIVE_ROOT is stale/incomplete; using current runtime snapshot ${currentRuntime}`);
     snapshotRoot = currentRuntime;
   }
@@ -247,7 +252,8 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     const offered = initialPayload.component?.model?.prop?.generals;
     assert.ok(Array.isArray(offered) && offered.every((name): name is string => typeof name === 'string'),
       'C++ initial-general payload must contain a string generals list');
-    assert.ok(offered.length >= 5, 'Server should offer at least five generals');
+    assert.equal(offered.length, expectedInitialGeneralCount,
+      `Server should offer exactly ${expectedInitialGeneralCount} initial generals`);
     const offeredLua = `{${offered.map((id) => JSON.stringify(id)).join(',')}}`;
     const offeredPacks = lua.eval<string[]>(`local packs = {}; for _, name in ipairs(${offeredLua}) do
       local general = Fk.generals[name]
@@ -260,7 +266,9 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     const choices = page.getByRole('group', { name: 'Danh sách võ tướng' }).getByRole('button');
     let pairChosen = false;
     const generalCount = await choices.count();
-    // Five random live generals need not match the first offered main.
+    assert.equal(generalCount, expectedInitialGeneralCount,
+      'UI must render every initial general from the native CustomDialog');
+    // Random live generals need not match the first offered main.
     // Invalid deputies are ignored by React; restart with a different main.
     for (let main = 0; main < generalCount && !pairChosen; main++) {
       await page.getByRole('button', { name: 'Chọn lại' }).click().catch(() => {});
@@ -302,7 +310,7 @@ async function verifyRoomPools(page: Page, snapshot: string) {
     const evidence = {
       date: evidenceDate, observedAt: new Date().toISOString(), server: `${host}:${tcpPort}`, mode: entered[2].gameMode,
       disabledPacks: disabled, disabledGenerals: entered[2].disabledGenerals,
-      preview: { original, filtered }, actual: {
+      preview: { original, filtered }, expectedInitialGeneralCount, actual: {
         serverEnterRoom: true, serverEnterRoomDisabledPacks: entered[2].disabledPack,
         offeredGeneralCount: offered.length, excludedGeneralCount: offeredPacks.filter((p) => p === generalPack).length,
         drawPileCount: cards.length, uniqueDrawCardIds: new Set(cards).size,
@@ -388,8 +396,7 @@ async function verifyUiTranslations(page: Page) {
     mask: [page.locator('.board-player-name'),
       page.locator('.player-item strong').filter({ hasText: username! }),
       page.locator('[aria-labelledby="result-title"] p').filter({ hasText: username! }),
-      page.locator('.board-logs li').filter({ hasText: username! }),
-      page.locator('.board-moments .board-moment').filter({ hasText: username! })],
+      page.locator('.board-logs li').filter({ hasText: username! })],
     maskColor: '#273c30',
   });
   try {
@@ -439,7 +446,7 @@ async function verifyUiTranslations(page: Page) {
     // into nested functions of serialized callbacks, but page lacks that helper.
     await page.evaluate(String.raw`(() => {
       const observed = new Set();
-      const layout = { maxLogEntries: 0, maxMoments: 0, logVisible: false, horizontalOverflow: false };
+      const layout = { maxLogEntries: 0, logVisible: false, horizontalOverflow: false };
       const vfx = { indicatorAppearances: 0, maxSimultaneousBeams: 0, damageReactions: 0 };
       let lastBeams = 0, lastHits = 0;
       const record = () => {
@@ -449,14 +456,13 @@ async function verifyUiTranslations(page: Page) {
         vfx.damageReactions += Math.max(0, hits - lastHits);
         vfx.maxSimultaneousBeams = Math.max(vfx.maxSimultaneousBeams, beams);
         lastBeams = beams; lastHits = hits;
-        document.querySelectorAll('.board-logs li, .board-moments .board-moment, .board-player .board-mark, .board-banners .board-mark, .board-generals span')
+        document.querySelectorAll('.board-logs li, .board-player .board-mark, .board-banners .board-mark, .board-generals span')
           .forEach((node) => {
             const value = node.textContent?.trim();
             if (value && value.length <= 400 && observed.size < 500) observed.add(value);
           });
         const log = document.querySelector('.board-logs');
         layout.maxLogEntries = Math.max(layout.maxLogEntries, document.querySelectorAll('.board-logs li').length);
-        layout.maxMoments = Math.max(layout.maxMoments, document.querySelectorAll('.board-moments .board-moment').length);
         layout.logVisible ||= !!log && log.getClientRects().length > 0;
         layout.horizontalOverflow ||= document.documentElement.scrollWidth > window.innerWidth;
       };
@@ -488,10 +494,10 @@ async function verifyUiTranslations(page: Page) {
     if (visualVfx.damageReactions) assert.ok(nativeVfxCommands.LogEvent, 'Damage reaction appeared without native LogEvent');
     const visible = await page.evaluate(() => (window as unknown as { __tqsDisplayAudit: () => string[] }).__tqsDisplayAudit());
     const presentation = await page.evaluate(() => (window as unknown as { __tqsLayoutAudit: () => {
-      maxLogEntries: number; maxMoments: number; logVisible: boolean; horizontalOverflow: boolean;
+      maxLogEntries: number; logVisible: boolean; horizontalOverflow: boolean;
     } }).__tqsLayoutAudit());
-    assert.ok(presentation.logVisible && presentation.maxLogEntries > 0 && presentation.maxMoments > 0,
-      'Live public logs and board moments must render during the game');
+    assert.ok(presentation.logVisible && presentation.maxLogEntries > 0,
+      'Live public game logs must render during the game');
     assert.equal(presentation.horizontalOverflow, false, 'Live 390px viewport must not overflow horizontally');
     const censor = (value: string) => value.replaceAll(username!, '[test-account]');
     const samples = visible.map(censor);
@@ -516,7 +522,7 @@ async function verifyUiTranslations(page: Page) {
     console.log(`Native VFX capture: Animate ${nativeVfxCommands.Animate}, LogEvent ${nativeVfxCommands.LogEvent}, beams ${visualVfx.indicatorAppearances}, damage reactions ${visualVfx.damageReactions}`);
   } finally {
     if (gameStarted && !gameOver && !page.isClosed()) {
-      // Do not intentionally drop an active FreeKill game: it can temp-ban IPs.
+      // Do not intentionally drop an active FreeKill game: it can temp-ban the account.
       console.error('UI-01 live test did not finish; trying native BOT Trust / GameOver before exit');
       const bot = page.getByRole('button', { name: 'BOT chơi hộ' });
       if (await bot.isVisible().catch(() => false)) await bot.click().catch(() => {});

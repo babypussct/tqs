@@ -52,4 +52,26 @@ aocai:addEffect("viewas", {
   end,
 })
 
+-- The server already exposes only the two top cards that match the current
+-- response pattern.  Prefer the lower-keep-value legal card so Ao Cai does
+-- not spend a stronger basic card when either revealed card works.
+aocai:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local best, best_value
+    for _, id in ipairs(ai:getEnabledCards()) do
+      local card = Fk:getCardById(id)
+      if card and card.type == Card.TypeBasic then
+        local keep_value = ai:getCardValue(id, "keep_value") or 0
+        local value = 50 - keep_value
+        if not best or value > best_value or (value == best_value and id < best) then
+          best, best_value = id, value
+        end
+      end
+    end
+    if best then
+      return { { best }, {} }, best_value
+    end
+  end,
+})
+
 return aocai

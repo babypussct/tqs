@@ -121,6 +121,8 @@ with open(path, "r", encoding="utf-8") as handle:
     config = json.load(handle)
 if not isinstance(config, dict):
     raise SystemExit("native server config must be a JSON object")
+if config.get("tqsAuthRequired") is not True:
+    raise SystemExit("QA runtime must keep tqsAuthRequired=true for TQS ticket authentication")
 
 # The upstream native server applies its temporary IP ban when a player leaves
 # an active room. QA failures are expected to exercise reconnect/cleanup paths,

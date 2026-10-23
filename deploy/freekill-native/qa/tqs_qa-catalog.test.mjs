@@ -25,6 +25,7 @@ const fuyinSkillPath = path.resolve(here, '../../../runtime/packages/shzl/pkg/th
 const qianxunSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/qianxun.lua');
 const weimuSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/weimu.lua');
 const xiaojiSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/xiaoji.lua');
+const sijianSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/sijian.lua');
 const guanxingSkillPath = path.resolve(here, '../../../runtime/packages/hegemony/pkg/standard/skills/guanxing.lua');
 const yingziSkillPath = path.resolve(here, '../../../runtime/packages/standard_ex/pkg/general/skills/yingzi.lua');
 const fanjianSkillPath = path.resolve(here, '../../../runtime/packages/standard_ex/pkg/general/skills/fanjian.lua');
@@ -62,6 +63,115 @@ test('native tqs_qa catalog keeps the browser scenario ids, seeds and commands i
     assert.equal(Number(seed), scenario.seed, `${scenario.id} seed drift`);
     assert.equal(expectedCommand, scenario.expectedCommand, `${scenario.id} expected command drift`);
   }
+});
+
+test('ai-trace exposes an explicit multi-seed semantic roster matrix', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'ai-trace');
+  assert.ok(scenario, 'ai-trace catalog entry is required');
+  assert.deepEqual(scenario.seedRange, { min: 1780420130, max: 1780420132 });
+  assert.equal(scenario.seedVariants.length, 3);
+  assert.deepEqual(scenario.seedVariants.map(({ seed }) => seed), [1780420130, 1780420131, 1780420132]);
+  for (const variant of scenario.seedVariants) {
+    assert.equal(variant.seatRosters.length, 4, `${variant.seed} must pin four seat rosters`);
+    assert.equal(variant.fixedHands.length, 4, `${variant.seed} must pin four semantic hands`);
+    assert.deepEqual(variant.seatRosters.map(({ general, deputy, kingdom }) => ({ general, deputy, kingdom })),
+      variant.seatRosters, `${variant.seed} roster entries must stay semantic-only`);
+    assert.deepEqual(variant.fixedHands.map(({ trueName, suit, color }) => ({ trueName, suit, color })),
+      variant.fixedHands, `${variant.seed} hand entries must stay semantic-only`);
+  }
+  assert.notDeepEqual(scenario.seedVariants[0].fixedHands, scenario.seedVariants[1].fixedHands,
+    'the matrix must exercise more than one semantic hand state');
+  assert.notDeepEqual(scenario.seedVariants[0].seatRosters, scenario.seedVariants[1].seatRosters,
+    'the matrix must exercise more than one seat roster');
+});
+
+test('ai-trace exercises actual native request handlers and separates fallback reasons', () => {
+  const source = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(source, /local function runAiRealHandlerReplyProbe\(room, state\)/u);
+  assert.match(source, /room\.request_handlers\s+and\s+room\.request_handlers\[command\]/u);
+  assert.match(source, /probe:makeReply\(\)/u);
+  assert.match(source, /"malformed_non_nil"[\s\S]*?"infeasible_non_nil"[\s\S]*?"no_strategy"[\s\S]*?"no_decision"/u);
+  assert.match(source, /runAiMalformedReplyProbe\(room, state\)[\s\S]*?runAiRealHandlerReplyProbe\(room, state\)[\s\S]*?runAiSupportedGeneralPairProbe\(room, state\)/u);
+  assert.match(source, /\[tqs_qa_real_handler_reply\].*native_handlers=4 snapshots=5 cases=%d/u);
+  assert.match(source, /\[tqs_qa_real_handler_case\].*snapshot=%s command=%s error=%s expected_reply=cancel observed_reply=%s expected_reason=%s observed_reason=%s expected_detail=%s observed_detail=%s classification=%s rejected=1 state_unchanged=1/u);
+  assert.match(source, /\[tqs_qa_malformed_case\].*snapshot=synthetic command=%s error=%s expected_reply=%s observed_reply=%s.*classification=%s state_unchanged=%d/u);
+  assert.match(source, /aiTraceReplyMetricDelta\(probe, command, beforeMetric\)/u);
+  assert.match(source, /local function soleIncrement\(earlier, later\)[\s\S]*?for key, count in pairs\(earlier\)[\s\S]*?for key, count in pairs\(later\)/u,
+    'metric attribution must reject disappearing counters and multiple increments');
+  assert.match(source, /if reason or detail then return "metric_drift", "none" end/u,
+    'an accepted reply must not increase fallback reason or invalid detail');
+  assert.match(source, /local unchanged = aiTraceEngineState\(room\) == beforeState/u);
+  assert.match(source, /local unsupportedOk = unsupported == "__cancel" and reason == "unsupported_command" and detail == "none"/u);
+  assert.match(source, /if failed > 0 then fail\("real native handler classification mismatches:/u);
+  assert.match(source, /requestSnapshots\[spec\.snapshot\]/u);
+  assert.match(source, /local unchanged = before == after[\s\S]*?if not unchanged then[\s\S]*?real handler changed engine state/u);
+  assert.match(source, /metrics\.total ~= 17[\s\S]*?details\.feasibility_rejected ~= 4/u);
+});
+
+test('native per-request metric delta fails closed on stale, missing and ambiguous counters', () => {
+  const source = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const implementation = source.match(/aiTraceReplyMetricDelta = function\(probe, command, before\)[\s\S]*?\nend\n\nlocal function runAiRealHandlerReplyProbe/u)?.[0];
+  assert.ok(implementation, 'use the actual native metric-delta implementation');
+  const fixture = `
+    aiTraceReplyMetricSnapshot = function(probe) return probe.after end
+    ${implementation.replace(/\nlocal function runAiRealHandlerReplyProbe$/u, '')}
+    local function snapshot(total, fallback, reasons, details)
+      return { total = total, fallback = fallback, reasons = reasons or {}, details = details or {} }
+    end
+    local function expect(expectedReason, expectedDetail, before, after)
+      local reason, detail = aiTraceReplyMetricDelta({ after = after }, "PlayCard", before)
+      assert(reason == expectedReason, "reason drift: " .. tostring(reason))
+      assert(detail == expectedDetail, "detail drift: " .. tostring(detail))
+    end
+    local zero = snapshot(0, 0)
+    expect("accepted", "none", zero, snapshot(1, 0))
+    expect("invalid_reply", "none", zero, snapshot(1, 1, { invalid_reply = 1 }))
+    expect("illegal_reply", "feasibility_rejected", zero,
+      snapshot(1, 1, { illegal_reply = 1 }, { feasibility_rejected = 1 }))
+    expect("unsupported_command", "none", zero,
+      snapshot(1, 1, { unsupported_command = 1 }))
+    expect("metric_drift", "none", zero, snapshot(1, 1))
+    expect("metric_drift", "none", zero, snapshot(1, 0, { invalid_reply = 1 }))
+    expect("metric_drift", "none", zero, snapshot(1, 0, {}, { feasibility_rejected = 1 }))
+    expect("metric_drift", "none", zero, snapshot(1, 1, { invalid_reply = 1, illegal_reply = 1 }))
+    expect("metric_drift", "none", zero,
+      snapshot(1, 1, { invalid_reply = 1 }, { feasibility_rejected = 1 }))
+    expect("metric_drift", "none", snapshot(2, 1, { invalid_reply = 1 }),
+      snapshot(3, 2, {}))
+    expect("metric_drift", "none", zero, snapshot(2, 1, { invalid_reply = 1 }))
+    print("metric-delta PASS")
+  `;
+  assert.match(execFileSync('lua', ['-'], { input: fixture, encoding: 'utf8' }), /metric-delta PASS/u);
+});
+
+test('Prompt4 native private-hand differential preserves exact offers and checks independent tactical feasibility', () => {
+  const source = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(source, /local function nativePrivacyDifferential\(\)/u);
+  assert.match(source, /room:setCardArea\(leftCard, Card\.PlayerHand, right\.id\)/u);
+  assert.match(source, /room:setCardArea\(rightCard, Card\.PlayerHand, left\.id\)/u);
+  assert.match(source, /if swapped then swapHands\(\) end/u);
+  assert.match(source, /local function publicState\(item\)[\s\S]*?role = candidate\.role_shown and candidate\.role or "hidden"/u);
+  assert.match(source, /mark:sub\(1, 1\) == "@"/u);
+  assert.doesNotMatch(source.match(/local function publicState\(item\)([\s\S]*?)local function trial\(item\)/u)?.[1] || '',
+    /aiTraceInputFingerprint|__heg_general\)|marks = candidate\.mark/u,
+    'native differential must compare a public-only projection');
+  assert.match(source, /a1\.public ~= b1\.public[\s\S]*?a1\.offers ~= b1\.offers/u);
+  assert.match(source, /b1\.reply ~= b2\.reply or a1\.reply ~= b1\.reply/u);
+  assert.match(source, /local reason = aiTraceReplyMetricDelta\(actor\.ai, item\.command, beforeMetric\)[\s\S]*?if reason ~= "accepted" or type\(reply\) ~= "table" then/u);
+  assert.match(source, /verifyNativeLegality\(item, reply, false\)/u,
+    'all five privacy variants must pass the actual native legality checker');
+  assert.match(source, /privacy differential handler offer construction mutated engine state/u);
+  assert.match(source, /\[tqs_prompt4_privacy_trial\] schema=2.*snapshot=%s public_equal=1 offers_equal=1 decision_equal=1 native_legal=1 state_unchanged=1/u);
+  assert.doesNotMatch(source, /actor\.ai\._ai_last_metric_reason == nil/u,
+    'missing optional telemetry must never be interpreted as an accepted native decision');
+  assert.match(source, /\[tqs_prompt4_privacy\] summary schema=1.*decisions=%d variants=2 trials=%d/u);
+  assert.match(source, /local function verifyNativeLegality\(item, reply, reportCoverage\)/u);
+  assert.match(source, /actor\.ai\._last_ai_reply = handler, nil/u);
+  assert.match(source, /pcall\(function\(\)[\s\S]*?return actor\.ai:validateReply\(item\.command, item\.data, copy\)/u);
+  assert.match(source, /tactical legality revalidation mutated native engine state/u);
+  assert.match(source, /target_faction_expected=18 state_unchanged=18/u);
+  assert.match(source, /room:getCardOwner\(id\), room:getCardArea\(id\)/u);
+  assert.match(source, /\[tqs_prompt4_legality\] summary schema=1.*decisions=18 handler_feasible=18/u);
 });
 
 test('rescue and founding fixtures stay aligned with native source law', () => {
@@ -661,6 +771,65 @@ test('hidden-xiaoji locks equipment-loss AfterCardsMove draw for both slots', ()
   assert.match(qaInit, /after_cards_move=equipment/u);
 });
 
+test('Tử Gián only triggers after the owner loses hand cards and becomes empty-handed', () => {
+  const fixture = `
+    Fk = { Ltk = { AI = { reuse = function() return nil end } } }
+    function Fk:loadTranslationTable() end
+    fk = { AfterCardsMove = 'AfterCardsMove' }
+    Card = { PlayerHand = 1, PlayerEquip = 2 }
+    function table.find(items, predicate)
+      for _, item in ipairs(items) do if predicate(item) then return item end end
+    end
+    function fk.CreateSkill(spec)
+      spec.effects = {}
+      function spec:addEffect(event, effect) self.effects[#self.effects + 1] = effect end
+      function spec:addAI() end
+      return spec
+    end
+
+    local skill = dofile(arg[1])
+    assert(skill.name == 'sijian', 'unexpected skill loaded')
+    local effect = skill.effects[1]
+    assert(effect and type(effect.can_trigger) == 'function', 'missing AfterCardsMove predicate')
+
+    local other = { nude = false }
+    function other:isNude() return self.nude end
+    local player = { hand = 0, room = {} }
+    function player:hasSkill() return true end
+    function player:isKongcheng() return self.hand == 0 end
+    function player.room:getOtherPlayers() return { other } end
+
+    local function handMove(from, area)
+      return {{ from = from, moveInfo = {{ fromArea = area }} }}
+    end
+    local function can_trigger(data)
+      return effect.can_trigger(effect, nil, nil, player, data)
+    end
+
+    assert(can_trigger(handMove(player, Card.PlayerHand)) == true,
+      'losing the last hand card must satisfy Tử Gián')
+    player.hand = 1
+    assert(not can_trigger(handMove(player, Card.PlayerHand)),
+      'Tử Gián must not trigger while the owner still has hand cards')
+    player.hand = 0
+    assert(not can_trigger(handMove(other, Card.PlayerHand)),
+      'another player losing a hand card must not trigger Tử Gián')
+    assert(not can_trigger(handMove(player, Card.PlayerEquip)),
+      'losing equipment must not trigger Tử Gián')
+    other.nude = true
+    assert(not can_trigger(handMove(player, Card.PlayerHand)),
+      'Tử Gián must not trigger when no other player has a discardable card')
+    print('sijian predicate fixture PASS')
+  `;
+  assert.match(execFileSync('lua', ['-', sijianSkillPath], { input: fixture, encoding: 'utf8' }),
+    /sijian predicate fixture PASS/u);
+
+  const sijian = fs.readFileSync(sijianSkillPath, 'utf8');
+  assert.match(sijian, /player:hasSkill\(sijian\.name\) and player:isKongcheng\(\)/u);
+  assert.doesNotMatch(sijian, /player:hasSkill\(sijian\.name\) and not player:isKongcheng\(\)/u);
+  assert.match(sijian, /move\.from == player[\s\S]*?info\.fromArea == Card\.PlayerHand/u);
+});
+
 test('hidden-guanxing locks EventPhaseStart reveal and native arrange for both slots', () => {
   const expected = {
     'hidden-guanxing': {
@@ -836,6 +1005,165 @@ test('hidden-active locks native PlayCard reveal-before-SkillEffect contract', (
   assert.deepEqual(scenario.cards, [
     { key: 'zhiheng-card', match: { trueName: 'slash' }, owner: 'actor', area: 'hand' },
   ]);
+});
+
+test('ai-trace locks the deterministic four-seat native SmartAI snapshot contract', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'ai-trace');
+  assert.ok(scenario, 'ai-trace catalog entry is required');
+  assert.equal(scenario.seed, 0x6a1f0e22);
+  assert.equal(scenario.trigger, 'ai-trace');
+  assert.equal(scenario.expectedCommand, 'PlayCard');
+  assert.equal(scenario.playerCount, 4);
+  assert.deepEqual(scenario.seatRosters, [
+    { general: 'hs__luxun', deputy: 'hs__sunquan', kingdom: 'wu' },
+    { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
+    { general: 'hs__caocao', deputy: 'hs__simayi', kingdom: 'wei' },
+    { general: 'hs__zhouyu', deputy: 'hs__daqiao', kingdom: 'wu' },
+  ]);
+  assert.deepEqual(scenario.cards, []);
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /scenario\.trigger == "ai-trace"[\s\S]*runAiTraceProbe\(room, state\)/u);
+  assert.deepEqual(scenario.fixedHands, [
+    { trueName: 'slash', suit: 'heart', color: 'red' },
+    { trueName: 'jink', suit: 'heart', color: 'red' },
+    { trueName: 'peach', suit: 'heart', color: 'red' },
+    { trueName: 'duel', suit: 'spade', color: 'black' },
+  ]);
+  assert.deepEqual(scenario.prompt4Skills, [
+    'tianyi', 'shangyi', 'tiaoxin', 'hs__zhiheng', 'hs__kurou', 'hs__qiangxi',
+    'hs__longdan', 'hs__luanji', 'hs__wusheng', 'huoji', 'jijiu', 'kanpo',
+    'aocai', 'beizhu', 'dimeng', 'choufa', 'cunsi', 'duanfa',
+  ]);
+  assert.match(qaInit, /takeCard\(room, scenario\.fixedHands\[seat\], reserved\)/u);
+  assert.match(qaInit, /#actual ~= 1[\s\S]*fixed\[1\] ~= actual\[1\]/u);
+  assert.match(qaInit, /cardMatches\(card, scenario\.fixedHands\[seat\]\)/u);
+  assert.match(qaInit, /fixture=semantic_v3/u);
+  assert.match(qaInit, /command=%s skill=%s input=%s/u);
+  assert.match(qaInit, /aiTraceInputFingerprint[\s\S]*privateHand/u);
+  assert.match(qaInit, /trace\.probeErrors or 0/gu);
+  assert.match(qaInit, /runPrompt4NativeProbe\(room, state\)/u);
+  assert.match(qaInit, /\[tqs_prompt4_trace\] summary/u);
+  assert.match(qaInit, /\[tqs_prompt4_trace\] decision/u);
+  assert.match(qaInit, /fixture=semantic_v1/u);
+  assert.match(qaInit, /metadata=shape_v1/u);
+  assert.match(qaInit, /target_profile=%s card_profile=%s resource_shape=%s/u);
+  assert.match(qaInit, /selected_cards=%d selected_targets=%d target_quality=%s/u);
+  assert.match(qaInit, /expectedTargetProfile/u);
+  assert.match(qaInit, /hs__wusheng\s*=\s*\{[\s\S]*?targetPolicy\s*=\s*"native_bot"/u);
+  assert.match(qaInit, /native_bot_jink/u);
+  assert.match(qaInit, /tianyi\s*=\s*\{[\s\S]*?actorPolicy\s*=\s*"native_bot"[\s\S]*?targetPolicy\s*=\s*"native_bot_other"/u);
+  assert.match(qaInit, /native_bot_tianyi_high/u);
+  assert.match(qaInit, /native_bot_tianyi_low/u);
+  assert.match(qaInit, /markAny\s*=\s*\{\s*"tianyi_win-turn",\s*"tianyi_lose-turn"\s*\}/u);
+  assert.match(qaInit, /tiaoxin\s*=\s*\{[\s\S]*?actorPolicy\s*=\s*"native_bot"[\s\S]*?targetPolicy\s*=\s*"native_bot_tiaoxin"/u);
+  assert.match(qaInit, /tiaoxin\s*=\s*\{[\s\S]*?nestedMetrics\s*=\s*\{[\s\S]*?AskForUseCard[\s\S]*?AskForResponseCard/u);
+  assert.match(qaInit, /native_bot_tiaoxin_slash/u);
+  assert.match(qaInit, /choufa\s*=\s*\{[\s\S]*?actorPolicy\s*=\s*"native_bot"[\s\S]*?targetPolicy\s*=\s*"native_bot_other"[\s\S]*?AskForCardChosen/u);
+  assert.match(qaInit, /aocai\s*=\s*\{[\s\S]*?executeResponseResult\s*=\s*true/u);
+  assert.match(qaInit, /skill\s*=\s*"aocai"[\s\S]*?requiresOutOfTurn\s*=\s*true/u);
+  assert.match(qaInit, /cardRequest\s*=\s*effectReplayItem\.command ~= "AskForUseActiveSkill"/u);
+  assert.match(qaInit, /is_response\s*=\s*responseRequest/u);
+  assert.match(qaInit, /shangyi\s*=\s*\{[\s\S]*?actorPolicy\s*=\s*"native_bot"[\s\S]*?targetPolicy\s*=\s*"native_bot_other"/u);
+  assert.match(qaInit, /shangyi_black/u);
+  assert.match(qaInit, /targetRetargeted\s*=\s*false/u);
+  assert.match(qaInit, /target_policy=%s actor_policy=%s target_retargeted=%d/u);
+  assert.match(qaInit, /nested_requests=%d nested_fallback=%d nested_invalid=%d nested_metric_errors=%d/u);
+  assert.match(qaInit, /nested_metrics=%s/u);
+  assert.match(qaInit, /local function runAiMalformedReplyProbe\(room, state\)/u);
+  assert.match(qaInit, /runAiMalformedReplyProbe\(room, state\)/u);
+  assert.match(qaInit, /local isolated = \{ request_handlers = \{\} \}/u);
+  assert.match(qaInit, /function isolated:getSettings\(\) return nil end/u);
+  assert.match(qaInit, /function isolated:getPlayerById\(id\) return room:getPlayerById\(id\) end/u);
+  assert.match(qaInit, /local probe = SmartAI:new\(room\.players\[1\]\)/u);
+  assert.match(qaInit, /local value = probe:makeReply\(\)/u);
+  assert.match(qaInit, /"AskForUseActiveSkill", "AskForUseCard", "AskForResponseCard", "PlayCard"/u);
+  assert.match(qaInit, /probe\["handle" \.\. command\] = injectedReply/u);
+  assert.match(qaInit, /probe\.handleCustomDialog = injectedReply/u);
+  assert.match(qaInit, /probe\.data = nil -- native PlayCard has no request payload/u);
+  assert.match(qaInit, /check\(command, "card_type", "cancel", "invalid_reply"\)/u);
+  assert.match(qaInit, /check\(command, "target_non_integer", "cancel", "invalid_reply"\)/u);
+  assert.match(qaInit, /check\(command, "feasibility", "cancel", "illegal_reply", "feasibility_rejected"\)/u);
+  assert.match(qaInit, /check\(command, "special_skill", "cancel", "illegal_reply", "special_skill_missing"\)/u);
+  assert.match(qaInit, /check\(command, "no_strategy", "cancel", "no_strategy"\)/u);
+  assert.match(qaInit, /check\(command, "no_decision", "cancel", "no_decision"\)/u);
+  assert.match(qaInit, /check\("CustomDialog", "unknown_table", "cancel", "invalid_reply"\)/u);
+  assert.match(qaInit, /check\("CustomDialog", "unknown_string", "cancel", "invalid_reply"\)/u);
+  assert.match(qaInit, /check\("TqsQaUnsupported", "unsupported", "cancel", "unsupported_command"\)/u);
+  assert.match(qaInit, /metrics\.total ~= 44 or metrics\.fallback ~= 40 or[\s\S]*metrics\.invalid ~= 30/u);
+  assert.match(qaInit, /bucket\.total ~= 10 or[\s\S]*bucket\.invalid ~= 7/u);
+  assert.match(qaInit, /\[tqs_qa_malformed_reply\] schema=2[\s\S]*no_decision_reason=%d unsupported_command=%d/u);
+  assert.match(qaInit, /local function runAiSupportedGeneralPairProbe\(room, state\)/u);
+  assert.match(qaInit, /runAiSupportedGeneralPairProbe\(room, state\)/u);
+  assert.match(qaInit, /local Pair = require "ltk\.server\.ai\.general_pair"/u);
+  assert.match(qaInit, /local legal = Pair\.choose\(offer\)/u);
+  assert.match(qaInit, /probe:makeReply\(\)/u);
+  assert.match(qaInit, /check\("strategy_legal", "table", "accepted"\)/u);
+  assert.match(qaInit, /check\("strategy_repeat", "table", "accepted"\)/u);
+  for (const label of ["duplicate_general", "unoffered_general", "disabled_kingdom", "wrong_reply_type", "missing_kingdom", "invalid_offer"]) {
+    assert.match(qaInit, new RegExp(`check\\("${label}", "cancel", "invalid_reply"\\)`, 'u'));
+  }
+  assert.match(qaInit, /check\("nil_no_strategy", "cancel", "no_strategy"\)/u);
+  assert.match(qaInit, /check\("nil_no_decision", "cancel", "no_decision"\)/u);
+  assert.match(qaInit, /\[tqs_qa_supported_dialog\] schema=1[\s\S]*cases=%d accepted=2 fallback=8 invalid=6/u);
+});
+
+test('chooser-trace preserves ai-trace and pins six native generic request opportunities', () => {
+  const reference = nativeCatalog.scenarios.find(({ id }) => id === 'ai-trace');
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'chooser-trace');
+  assert.ok(scenario && reference, 'both independent native QA traces are required');
+  assert.equal(scenario.seed, 0x6a1f0e24);
+  assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill');
+  assert.equal(scenario.trigger, 'chooser-trace');
+  assert.equal(scenario.playerCount, 4);
+  assert.deepEqual(scenario.seatRosters, reference.seatRosters);
+  assert.deepEqual(scenario.fixedHands, reference.fixedHands);
+  assert.deepEqual(scenario.cards, []);
+  assert.deepEqual(scenario.cases, [
+    { skill: 'choose_players_skill', variant: 'mandatory' },
+    { skill: 'choose_cards_skill', variant: 'mandatory' },
+    { skill: 'ex__choose_skill', variant: 'mandatory' },
+    { skill: 'choose_players_skill', variant: 'optional' },
+    { skill: 'choose_cards_skill', variant: 'optional' },
+    { skill: 'ex__choose_skill', variant: 'optional' },
+  ]);
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /function validateChooserTraceScenario\(scenario\)/u);
+  assert.match(qaInit, /scenario\.trigger == "chooser-trace"[\s\S]*runChooserTraceProbe\(room, state\)/u);
+  assert.match(qaInit, /player\.ai|actor\.ai/u);
+  assert.match(qaInit, /ai:makeReply\(\)/u);
+  assert.match(qaInit, /\[tqs_chooser_trace\] summary/u);
+  assert.match(qaInit, /\[tqs_chooser_trace\] decision/u);
+  assert.match(qaInit, /fixture=semantic_v1/u);
+});
+
+test('general-pair win-rate matrix locks paired seeds, four faction rosters, seat swaps and public telemetry', () => {
+  const matrix = nativeCatalog.generalPairMatrix;
+  assert.ok(matrix, 'generalPairMatrix is required');
+  assert.equal(matrix.initialGeneralCount, 10);
+  assert.deepEqual(matrix.seedRange, { min: 1780421000, max: 1780421031 });
+  assert.deepEqual(Object.keys(matrix.seatPermutations).sort(), ['A', 'B', 'C', 'D']);
+  for (const permutation of Object.values(matrix.seatPermutations)) {
+    assert.deepEqual([...permutation].sort((a, b) => a - b), [1, 2, 3, 4]);
+  }
+  assert.deepEqual(Object.keys(matrix.rosterSets).sort(), ['r1', 'r2', 'r3', 'r4']);
+  for (const roster of Object.values(matrix.rosterSets)) {
+    assert.deepEqual(roster.enabledKingdoms, ['wei', 'shu', 'wu', 'qun']);
+    assert.equal(roster.offeredGroups.length, 4);
+    assert.ok(roster.offeredGroups.every((group) => group.length === matrix.initialGeneralCount));
+  }
+  const scenarios = nativeCatalog.scenarios.filter(({ matrixFamily }) => matrixFamily === 'general-pair-winrate-v1');
+  assert.equal(scenarios.length, 4);
+  assert.deepEqual(scenarios.map(({ matrixSeatPermutation }) => matrixSeatPermutation), ['A', 'B', 'C', 'D']);
+  assert.ok(scenarios.every(({ seedRange, matrixRosterSets }) =>
+    seedRange.min === matrix.seedRange.min && seedRange.max === matrix.seedRange.max &&
+    matrixRosterSets.join(',') === 'r1,r2,r3,r4'));
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /resolveGeneralPairScenario\(scenario, seed\)/u);
+  assert.match(qaInit, /matrixRosterSet = scenario\.matrixRosterSet or "fixed"/u);
+  assert.match(qaInit, /\[TQS QA\] PairDecisionSummary/u);
+  assert.match(qaInit, /\[TQS QA\] PairMatchResult/u);
 });
 
 test('hidden-fanjian locks active PlayCard reveal, gift and target-choice contract for both slots', () => {
@@ -1565,11 +1893,13 @@ test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () 
   assert.match(verifier, /lua54_prepare "\$RUNTIME_DIR"/u);
 });
 
-test('native launcher preserves the native MD5 and loads QA outside public packages', () => {
+test('native launcher preserves the native MD5 and makes QA overlay optional', () => {
   const launcher = fs.readFileSync(nativeRunServerPath, 'utf8');
   const freekill = fs.readFileSync(nativeFreekillPath, 'utf8');
   assert.doesNotMatch(launcher, /publicize_flist|wait_for_public_flist/u);
   assert.match(launcher, /exec "\$RUNTIME_DIR\/freekill-asio" --port "\$FREEKILL_PORT"/u);
+  assert.match(launcher, /if \[\[ -f "\$RUNTIME_DIR\/qa_packages\/tqs_qa\/init\.lua" \]\]; then/u);
+  assert.match(launcher, /unexpected QA path in production runtime/u);
   assert.match(freekill, /dofile "qa_packages\/tqs_qa\/init\.lua"/u);
   assert.doesNotMatch(freekill, /dofile "packages\/tqs_qa\/init\.lua"/u);
 });

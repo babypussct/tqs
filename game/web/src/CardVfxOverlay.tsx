@@ -200,7 +200,7 @@ export default function CardVfxOverlay({
             <div className="vfx-card-inner">
               <div className="vfx-card-header">
                 {suitInfo && (
-                  <span className={`vfx-card-suit ${suitInfo.colorClass}`}>
+                  <span className={`vfx-card-suit card-suit-ink ${suitInfo.colorClass}`}>
                     {suitInfo.symbol} {rankStr}
                   </span>
                 )}

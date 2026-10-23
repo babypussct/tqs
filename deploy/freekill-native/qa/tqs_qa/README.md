@@ -25,6 +25,12 @@ general's real skills, and starts the rescue/founding flows through the normal
 FreeKill request APIs. It does not add a client cheat command and it never
 changes production room behavior when disabled.
 
+The general-pair SmartAI module used by the paired win-rate scenarios is
+stored under this server-only package and exposed to the native `require` path
+through a QA-only symlink. It is deliberately not copied as a regular file
+into `packages/freekill-core`, because that public tree is hashed into the
+browser/native flist identity.
+
 ## Install a QA runtime
 
 Run the installer from a clean, checked-out repository revision:
@@ -55,9 +61,9 @@ production runtime must not be modified by this workflow.
 
 - The default server config has QA disabled.
 - The QA installer sets the isolated runtime's top-level `tempBanTime` to `0`.
-  Upstream still performs its in-memory disconnect bookkeeping, but the timer
-  expires without an effective lockout; this keeps failed/reconnect QA runs
-  from blocking the shared test IP. The production template remains `5`.
+  The source-managed native account-ban patch therefore does not retain an
+  effective account lock; this keeps failed/reconnect QA runs from blocking
+  the shared test users. The production template remains `5`.
 - The multiplayer runner attempts a bounded soft cleanup (`BOT chơi hộ` and
   `GameOver`) before closing a failed QA session; `TQS_LIVE_QA_CLEANUP_TIMEOUT_MS`
   controls that bound from 5–120 seconds and defaults to 30 seconds.

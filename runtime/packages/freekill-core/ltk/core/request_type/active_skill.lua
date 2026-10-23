@@ -117,6 +117,12 @@ function ReqActiveSkill:setup(ignoreInteraction, data)
   self:updateUnselectedTargets()
 
   self:visualizePile()
+  -- visualizePile may add expand_pile/visible-pile cards after the initial
+  -- hand pass.  Re-run the same server-side legality filter so native AI and
+  -- the client receive enabled states for those cards as well.  Without this
+  -- second pass, response-only ViewAs skills such as Ao Cai expose the cards
+  -- but leave every expanded CardItem disabled.
+  self:updateUnselectedCards()
 
   if ignoreInteraction and #(self.visible_pile or {}) == 0 then -- 修改Interaction时重新筛选一次原选择牌
     for _, cid in ipairs(old_pendings) do

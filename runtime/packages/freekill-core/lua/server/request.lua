@@ -192,7 +192,37 @@ function Request:_checkReply(player, use_ai)
       player.ai.command = self.command
       -- FIXME: 后面进行SmartAI的时候准备爆破此处
       player.ai.data = self.data[player.id]
-      reply = Pcall(player.ai.makeReply, player.ai)
+      -- Do not use the generic Pcall here.  It deliberately converts an
+      -- exception into nil, which used to make a broken AI look like a normal
+      -- cancellation and made it difficult to distinguish a bad request from
+      -- a deliberate pass.  The AI owns a sanitized fallback/metric path; this
+      -- outer guard only covers failures before Base.AI:makeReply is entered.
+      local ok, ai_reply = xpcall(function()
+        return player.ai:makeReply()
+      end, function()
+        return nil
+      end)
+      if not ok then
+        if player.ai.recordExternalFallback then
+          player.ai:recordExternalFallback(self.command, "ai_exception")
+        end
+        reply = "__cancel"
+      elseif ai_reply == nil then
+        if player.ai.recordExternalFallback then
+          player.ai:recordExternalFallback(self.command, "ai_no_reply")
+        end
+        reply = "__cancel"
+      elseif ai_reply == "__notready" then
+        -- An AI is never allowed to hand the request loop its own wait
+        -- sentinel.  In the all-AI path that value would otherwise end the
+        -- loop without a real decision and could strand the turn.
+        if player.ai.recordExternalFallback then
+          player.ai:recordExternalFallback(self.command, "unexpected_notready")
+        end
+        reply = "__cancel"
+      else
+        reply = ai_reply
+      end
     else
       -- 还没轮到AI呢，所以需要标记为未答复
       reply = "__notready"

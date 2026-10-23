@@ -42,4 +42,50 @@ Fk:loadTranslationTable{
   ["$hs__qiangxi2"] = "看我三步之内取你小命！",
 }
 
+-- Prefer a confirmed enemy and compare the two legal costs: one HP or one
+-- weapon. Unknown seats are not attacked merely because they are selectable;
+-- faction inference must provide enough evidence first.
+qiangxi:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    local weapons = table.filter(ai:getEnabledCards(), function(id)
+      local card = Fk:getCardById(id)
+      return card and card.sub_type == Card.SubtypeWeapon and
+        not player:prohibitDiscard(card)
+    end)
+    local best_ret, best_benefit = nil, -100000
+
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local targetable = relation.state == "enemy" or
+        (relation.state == "unknown" and relation.confidence >= 0.65 and relation.attitude < -0.25)
+      if targetable then
+        if player.hp > 1 then
+          local benefit = ai:getBenefitOfEvents(function(logic)
+            logic:loseHp(player, 1, self.skill_name)
+            logic:damage({ from = player, to = target, damage = 1, skillName = self.skill_name })
+          end)
+          if benefit > best_benefit then
+            best_ret, best_benefit = { {}, { target } }, benefit
+          end
+        end
+
+        for _, id in ipairs(weapons) do
+          local benefit = ai:getBenefitOfEvents(function(logic)
+            logic:throwCard({ id }, self.skill_name, player, player)
+            logic:damage({ from = player, to = target, damage = 1, skillName = self.skill_name })
+          end)
+          if benefit > best_benefit then
+            best_ret, best_benefit = { { id }, { target } }, benefit
+          end
+        end
+      end
+    end
+
+    if best_ret and best_benefit > 0 then
+      return best_ret, best_benefit
+    end
+  end,
+})
+
 return qiangxi

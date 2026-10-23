@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createHmac } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '../_lib/firebaseAdmin.js';
 import { authenticateActor } from '../_lib/auth.js';
 import type { GamePoolPolicy } from '../../src/types.js';
 import { normalizeInitialGeneralCount, sanitizeDisabledGamePacks } from '../../src/game/gamePoolPacks.js';
+import { nativeNameFor, signGameTicket, signGatewayAdmission, signedGameDisplayName } from '../_lib/gameTicket.js';
 
 const GAME_MODE = 'new_heg_mode' as const;
 const TICKET_TTL_SECONDS = 5 * 60;
@@ -44,11 +44,6 @@ function safeText(value: unknown, maxLength: number): string | undefined {
   return text || undefined;
 }
 
-function nativeNameFor(uid: string): string {
-  const suffix = uid.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
-  return `tqs_${suffix || 'player'}`.slice(0, 80);
-}
-
 function normalizePolicy(value: FirebaseFirestore.DocumentData | undefined): NormalizedPoolPolicy {
   const rawRevision = value?.revision;
   const revision = typeof rawRevision === 'number' && Number.isInteger(rawRevision) && rawRevision >= 0
@@ -62,12 +57,6 @@ function normalizePolicy(value: FirebaseFirestore.DocumentData | undefined): Nor
     disabledPacks: sanitizeDisabledGamePacks(value?.disabledPacks).disabledPacks,
     appliesTo: 'new_rooms',
   };
-}
-
-function signTicket(nativeName: string, expiresAt: number, secret: string): string {
-  const payload = `TQS1|${nativeName}|${expiresAt}`;
-  const signature = createHmac('sha256', secret).update(payload).digest('hex');
-  return `TQS1|${expiresAt}|${signature}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -141,8 +130,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Firebase identity gets a fresh deterministic native namespace, so an
   // admin cannot retain or migrate an old native account by editing Firestore.
   const nativeName = expectedNativeName;
-  const gameName = safeText(existing.gameName, 80) || safeText(actor.displayName, 80) || nativeName;
+  const gameName = signedGameDisplayName(
+    safeText(existing.gameName, 80) || safeText(actor.displayName, 80) || 'Chúa Công');
   const expiresAt = Math.floor(Date.now() / 1000) + TICKET_TTL_SECONDS;
+  const gatewayAdmissionSecret = (process.env.TQS_GATEWAY_ADMISSION_SECRET || '').trim();
   const policySnapshot = await db.collection('gamePoolPolicies').doc(GAME_MODE).get();
   const policy = normalizePolicy(policySnapshot.data());
 
@@ -155,14 +146,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }, { merge: true });
   }
 
-  return res.status(200).json({
+  const response = {
     success: true,
     status: 'approved',
     uid: actor.uid,
     displayName: gameName,
     nativeName,
-    ticket: signTicket(nativeName, expiresAt, secret),
+    ticket: signGameTicket(nativeName, expiresAt, secret, gameName,
+      process.env.TQS_GAME_TICKET_V2 === 'true'),
     expiresAt,
     poolPolicy: policy,
-  });
+    ...(gatewayAdmissionSecret.length >= 32
+      ? { gatewayAdmission: signGatewayAdmission(nativeName, expiresAt, gatewayAdmissionSecret) }
+      : {}),
+  };
+  return res.status(200).json(response);
 }

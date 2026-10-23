@@ -2,6 +2,10 @@ import { parseTunnelHostname, TARGET_KEY, noStore } from '../../_gateway-target.
 
 export async function onRequest({ request, env }) {
   if (request.method !== 'POST') return noStore(new Response('Method not allowed', { status: 405 }));
+  // Once the named route is configured, the legacy registrar is permanently
+  // inert for that deployment, even with a valid legacy bearer token.
+  if (env.TQS_NAMED_TUNNEL_HOSTNAME !== undefined)
+    return noStore(new Response('Named Tunnel routing is configured', { status: 410 }));
   const expected = env.TQS_TUNNEL_REGISTRATION_TOKEN;
   const supplied = request.headers.get('Authorization');
   if (typeof expected !== 'string' || expected.length < 32 || supplied !== `Bearer ${expected}`)

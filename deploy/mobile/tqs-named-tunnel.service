@@ -1,0 +1,24 @@
+[Unit]
+Description=TQS Cloudflare Named Tunnel (stable gateway route)
+Wants=network-online.target tqs-gateway.service
+After=network-online.target tqs-gateway.service
+# A controlled gateway restart must not stop the public Named Tunnel connector.
+# Keep it running while the origin returns and let gateway health checks alert.
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu
+Environment=HOME=/home/ubuntu
+# Root-managed token is never embedded in ExecStart, process arguments or Git.
+LoadCredential=tunnel-token:/etc/tqs-named-tunnel.token
+ExecStart=/home/ubuntu/.local/bin/cloudflared tunnel --no-autoupdate --loglevel info run --token-file %d/tunnel-token
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

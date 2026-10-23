@@ -39,4 +39,41 @@ zhiheng:addEffect("active", {
   end
 })
 
+-- Prompt 4: spend the lowest-value legal cards first, then compare the
+-- resource trade-off for every legal hand size. The server rule remains the
+-- source of truth for the card limit and discard legality.
+zhiheng:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    local cards = table.filter(ai:getEnabledCards(), function(id)
+      local card = Fk:getCardById(id)
+      return card and not player:prohibitDiscard(card)
+    end)
+    if #cards == 0 then return end
+
+    table.sort(cards, function(a, b)
+      local av, bv = ai:getCardValue(a, "keep_value"), ai:getCardValue(b, "keep_value")
+      return av == bv and a < b or av < bv
+    end)
+
+    local best_cards, best_benefit = nil, -100000
+    local max_num = math.min(#cards, player.maxHp)
+    for count = 1, max_num do
+      local selected = {}
+      for i = 1, count do selected[i] = cards[i] end
+      local benefit = ai:getBenefitOfEvents(function(logic)
+        logic:throwCard(selected, self.skill_name, player, player)
+        logic:drawCards(player, count, self.skill_name)
+      end)
+      if benefit > best_benefit then
+        best_cards, best_benefit = selected, benefit
+      end
+    end
+
+    if best_cards and best_benefit > 0 then
+      return { best_cards }, best_benefit
+    end
+  end,
+})
+
 return zhiheng

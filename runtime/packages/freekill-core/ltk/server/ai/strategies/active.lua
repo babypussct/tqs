@@ -57,7 +57,7 @@ function ActiveStrategy:convertThinkResult(val)
       subcards = val[1],
     },
     targets = table.map(val[2] or Util.DummyTable, Util.IdMapper),
-    interaction = val[3],
+    interaction_data = val[3],
   }
 end
 

@@ -392,6 +392,118 @@ function ServerRoomBase:victoryResult(winner, pid)
   return ret
 end
 
+local function metricToken(value)
+  if type(value) ~= "string" then return "unknown" end
+  local ret = value:gsub("[^%w_%-]", "_")
+  if #ret > 64 then ret = ret:sub(1, 64) end
+  return ret == "" and "unknown" or ret
+end
+
+local function metricNumber(value)
+  return type(value) == "number" and value >= 0 and math.floor(value) or 0
+end
+
+local function formatMetricBuckets(buckets, fields)
+  if type(buckets) ~= "table" then return "-" end
+  local names = {}
+  for name, bucket in pairs(buckets) do
+    if type(name) == "string" and type(bucket) == "table" then table.insert(names, name) end
+  end
+  table.sort(names)
+  local values = {}
+  for _, name in ipairs(names) do
+    local bucket = buckets[name]
+    local counts = {}
+    for _, field in ipairs(fields) do table.insert(counts, tostring(metricNumber(bucket[field]))) end
+    table.insert(values, metricToken(name) .. ":" .. table.concat(counts, ":"))
+  end
+  return #values > 0 and table.concat(values, ",") or "-"
+end
+
+-- Explicitly enumerate permitted diagnostic names. A validator can return a
+-- custom reason; serializing it verbatim would risk leaking request contents.
+-- Unknown values are aggregated as `other` instead of becoming public labels.
+local SAFE_AI_FALLBACK_REASONS = {
+  ai_exception = true, ai_no_reply = true, handler_error = true,
+  invalid_reply = true, invalid_strategy_reply = true, illegal_reply = true,
+  malformed_data = true, malformed_prompt = true, missing_command = true,
+  no_decision = true, no_strategy = true, unsupported_command = true,
+  unexpected_notready = true, validator_error = true,
+}
+
+local SAFE_AI_INVALID_DETAILS = {
+  missing_handler = true, card_lookup_failed = true,
+  skill_missing = true, special_skill_missing = true,
+  feasibility_exception = true, feasibility_rejected = true,
+  unclassified = true,
+}
+
+local function formatSafeReasonCounts(buckets, allowed)
+  if type(buckets) ~= "table" then return "-" end
+  local counts = {}
+  for reason, count in pairs(buckets) do
+    if type(count) == "number" and count > 0 then
+      local name = type(reason) == "string" and allowed[reason] and reason or "other"
+      counts[name] = (counts[name] or 0) + metricNumber(count)
+    end
+  end
+  local ordered = {}
+  for name in pairs(counts) do table.insert(ordered, name) end
+  table.sort(ordered)
+  local parts = {}
+  for _, name in ipairs(ordered) do
+    table.insert(parts, name .. ":" .. tostring(counts[name]))
+  end
+  return #parts > 0 and table.concat(parts, ",") or "-"
+end
+
+local function emitAiMatchMetrics(room_base)
+  -- The embedded Lua runtime intentionally exposes no process environment.
+  -- Keep this opt-in behind a server-only config key so production configs do
+  -- not emit match telemetry unless an isolated QA runtime explicitly enables
+  -- it.
+  if type(ServerConfig) ~= "table" or ServerConfig.tqsAiMatchTelemetry ~= true then return end
+  if room_base._ai_match_metrics_emitted then return end
+  room_base._ai_match_metrics_emitted = true
+  local metrics = room_base:getTag("__ai_response_metrics")
+  if type(metrics) ~= "table" then return end
+  local total = metricNumber(metrics.total)
+  local fallback = metricNumber(metrics.fallback)
+  local accepted = math.max(0, total - fallback)
+  local mode = metricToken(room_base:getSettings("gameMode"))
+  local skills = formatMetricBuckets(metrics.by_skill, { "requests", "accepted", "fallback", "invalid", "no_decision" })
+  local commands = formatMetricBuckets(metrics.by_command, { "total", "fallback", "invalid", "no_decision" })
+  fk.qInfo(string.format(
+    "[AI_MATCH_METRICS] schema=1 room=%d mode=%s total=%d fallback=%d invalid=%d no_decision=%d accepted=%d skills=%s commands=%s",
+    metricNumber(room_base.id), mode, total, fallback, metricNumber(metrics.invalid),
+    metricNumber(metrics.no_decision), accepted, skills, commands))
+  -- QA-only detail, emitted once at GameOver. The schema=1 aggregate remains
+  -- unchanged for existing parsers and every diagnostic label is allowlisted.
+  fk.qInfo(string.format(
+    "[AI_MATCH_METRICS_DETAIL] schema=1 room=%d mode=%s fallback=%d invalid=%d reasons=%s invalid_details=%s",
+    metricNumber(room_base.id), mode, fallback, metricNumber(metrics.invalid),
+    formatSafeReasonCounts(metrics.fallback_reasons, SAFE_AI_FALLBACK_REASONS),
+    formatSafeReasonCounts(metrics.invalid_details, SAFE_AI_INVALID_DETAILS)))
+  if type(metrics.by_command) == "table" then
+    local commandNames = {}
+    for command, bucket in pairs(metrics.by_command) do
+      if type(command) == "string" and type(bucket) == "table" then
+        table.insert(commandNames, command)
+      end
+    end
+    table.sort(commandNames)
+    for _, command in ipairs(commandNames) do
+      local bucket = metrics.by_command[command]
+      fk.qInfo(string.format(
+        "[AI_MATCH_METRICS_COMMAND] schema=1 room=%d mode=%s command=%s total=%d fallback=%d invalid=%d reasons=%s invalid_details=%s",
+        metricNumber(room_base.id), mode, metricToken(command), metricNumber(bucket.total),
+        metricNumber(bucket.fallback), metricNumber(bucket.invalid),
+        formatSafeReasonCounts(bucket.fallback_reasons, SAFE_AI_FALLBACK_REASONS),
+        formatSafeReasonCounts(bucket.invalid_details, SAFE_AI_INVALID_DETAILS)))
+    end
+  end
+end
+
 ---@param winners string @ 获胜玩家的id字符串
 function ServerRoomBase:gameOver(winners)
   if not self.game_started then return end
@@ -430,6 +542,7 @@ function ServerRoomBase:gameOver(winners)
   fk.qInfo(string.format("[GameOver] %d, %s, %s, in %ds", self.id, self:getSettings('gameMode'),
     table.concat(winRoles, "+"),
     os.time() - self.start_time))
+  emitAiMatchMetrics(self)
 
   self.room:gameOver()
 

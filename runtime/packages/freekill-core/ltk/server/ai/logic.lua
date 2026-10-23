@@ -85,8 +85,14 @@ function AIGameLogic:setPlayerProperty(player, key, value)
       benefit = -330
     end
   end
-  if self.ai:isEnemy(player) then benefit = -benefit end
-  self.benefit = self.benefit + benefit
+  local relation = self.ai:getFactionRelation(player)
+  self.benefit = self.benefit + benefit * relation.attitude
+  -- Unknown allegiance is genuinely uncertain. Avoid selecting an unseen
+  -- seat as an arbitrary zero-score target when there is no public evidence.
+  -- The penalty fades as observations accumulate and never changes legality.
+  if key == "hp" and value < orig and relation.state == "unknown" then
+    self.benefit = self.benefit - 25 * (orig - value) * (1 - relation.confidence)
+  end
 end
 
 --- 牌差收益论：根据moveInfo判断收益
@@ -98,7 +104,13 @@ function AIGameLogic:applyMoveInfo(data, info)
 
   if data.from then
     if info.fromArea == Player.Hand then
-      card_value = 25 * self.ai:getCardValue(info.cardId)
+      if self.ai:isHegemonyAI() and data.from ~= self.ai.player then
+        -- A hidden hand's card ID is unavailable to this seat. Estimate its
+        -- value from a fixed public prior without resolving the private ID.
+        card_value = 25
+      else
+        card_value = 25 * self.ai:getCardValue(info.cardId)
+      end
       benefit = -(card_value - 10)
     elseif info.fromArea == Player.Equip then
       card_value = 25 * self.ai:getCardValue(info.cardId)
@@ -108,7 +120,7 @@ function AIGameLogic:applyMoveInfo(data, info)
     end
 
     local from = data.from
-    if from and self.ai:isEnemy(from) then benefit = -benefit end
+    if from then benefit = benefit * self.ai:getFactionAttitude(from) end
     if data.moveReason == fk.ReasonUse then
       -- benefit = benefit / 10
       -- 当没写卡牌生效的ai时，随机出牌
@@ -130,7 +142,7 @@ function AIGameLogic:applyMoveInfo(data, info)
     end
 
     local to = data.to
-    if to and self.ai:isEnemy(to) then benefit = -benefit end
+    if to then benefit = benefit * self.ai:getFactionAttitude(to) end
     self.benefit = self.benefit + benefit
   end
 end
@@ -662,7 +674,17 @@ function Judge:exec()
 
   data.isJudgeEvent = true
   logic:trigger(fk.StartJudge, who, data)
-  data.card = data.card or Fk:getCardById(self.ai.room.draw_pile[1] or 1)
+  if self.ai:isHegemonyAI() then
+    -- A supplied future judge card may likewise be a private deck card.
+    -- Only trust a supplied card when it is already in public processing.
+    local cid = data.card and data.card:getEffectiveId()
+    if not cid or type(self.ai.room.getCardArea) ~= "function" or
+      self.ai.room:getCardArea(cid) ~= Card.Processing then
+      data.card = Fk:getCardById(1) -- stable, deck-independent prior
+    end
+  else
+    data.card = data.card or Fk:getCardById(self.ai.room.draw_pile[1] or 1)
+  end
 
   logic:moveCardTo(data.card, Card.Processing, nil, fk.ReasonJudge)
 
@@ -691,6 +713,20 @@ function Pindian:exec()
   local results = data.results
   for _, to in pairs(data.tos) do
     results[to] = results[to] or {}
+  end
+
+  -- Before a pindian, the opponent's card is not publicly known. A neutral
+  -- forecast is preferable to secretly sampling the server's hand IDs.
+  if self.ai:isHegemonyAI() then
+    local function isPublicCard(card)
+      if not card or type(room.getCardArea) ~= "function" then return false end
+      local id = card:getEffectiveId()
+      return id and room:getCardArea(id) == Card.Processing
+    end
+    if from ~= self.ai.player and not isPublicCard(data.fromCard) then return end
+    for _, to in ipairs(data.tos) do
+      if to ~= self.ai.player and not isPublicCard(results[to].toCard) then return end
+    end
   end
 
   logic:trigger(fk.StartPindian, from, data)

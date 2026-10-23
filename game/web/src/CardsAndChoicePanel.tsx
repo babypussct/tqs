@@ -4,6 +4,7 @@ import type { CardsAndChoicePrompt } from './engine/cardsAndChoice';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
+import { CardSuitMark } from './HandCardItem';
 
 export default function CardsAndChoicePanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardsAndChoicePrompt; busy: boolean;
@@ -29,7 +30,7 @@ export default function CardsAndChoicePanel({ request, prompt, busy, view, respo
   const disabled = busy || expired;
   const label = (card: CardsAndChoicePrompt['cards'][number]) => <>
     {text(card.name || 'Lá bài')}
-    {card.number !== undefined && <small> {({ 1: '♠', 2: '♣', 3: '♥', 4: '♦' } as Record<string, string>)[String(card.suit)] || ''}{card.number}</small>}
+    <CardSuitMark suit={card.suit} number={card.number} />
   </>;
   const cancelChoice = prompt.cancelChoices[0];
   return <RequestDialog className="panel request-panel" label="Xem bài và chọn phương án"

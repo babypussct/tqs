@@ -15,7 +15,7 @@ Fk:loadTranslationTable{
 sijian:addEffect(fk.AfterCardsMove, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(sijian.name) and not player:isKongcheng() and
+    if player:hasSkill(sijian.name) and player:isKongcheng() and
       table.find(player.room:getOtherPlayers(player, false), function(p)
         return not p:isNude()
       end) then

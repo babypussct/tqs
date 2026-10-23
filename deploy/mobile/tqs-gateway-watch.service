@@ -1,0 +1,16 @@
+[Unit]
+Description=Check TQS gateway origin, Pages reachability and tunnel health
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/home/ubuntu/.local/opt/node22/bin/node /usr/local/libexec/tqs-gateway-watch.mjs
+StateDirectory=tqs-gateway-watch
+EnvironmentFile=-/etc/tqs-gateway-watch.env
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true

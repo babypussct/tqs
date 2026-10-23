@@ -10,4 +10,5 @@ game/web/dist/
 /dist/
 .DS_Store
 firestore-debug.log
+/freekill.log
 .vercel

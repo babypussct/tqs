@@ -3,7 +3,11 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
+  CardSuitMark,
+  SelectedCardSummary,
   getSuitInfo,
   formatRank,
   getCardCategory,
@@ -39,6 +43,48 @@ test('getSuitInfo maps suits 1..5 to symbol, name, and color classes correctly',
   // NoSuit / undefined / invalid
   assert.deepEqual(getSuitInfo(5), { symbol: '◇', name: 'Không chất', colorClass: 'suit-nosuit' });
   assert.deepEqual(getSuitInfo(undefined), { symbol: '◇', name: 'Không chất', colorClass: 'suit-nosuit' });
+  assert.deepEqual(getSuitInfo('Heart'), getSuitInfo(3));
+  assert.deepEqual(getSuitInfo('diamond'), getSuitInfo(4));
+  assert.deepEqual(getSuitInfo('CLUB'), getSuitInfo(2));
+  assert.deepEqual(getSuitInfo('spade'), getSuitInfo(1));
+  assert.deepEqual(getSuitInfo('4'), getSuitInfo(4));
+});
+
+test('public suit/rank marks color both the symbol and formatted rank as a unit', () => {
+  for (const [suit, number, symbol, rank, color] of [
+    [1, 1, '♠', 'A', 'suit-black'],
+    [2, 11, '♣', 'J', 'suit-black'],
+    [3, 12, '♥', 'Q', 'suit-red'],
+    [4, 13, '♦', 'K', 'suit-red'],
+  ] as const) {
+    const markup = renderToStaticMarkup(createElement(CardSuitMark, { suit, number }));
+    assert.match(markup, new RegExp(`card-suit-inline card-suit-ink ${color}`));
+    assert.ok(markup.includes(`${symbol}${rank}`), markup);
+    assert.match(markup, new RegExp(`aria-label="${getSuitInfo(suit).name} ${rank}"`));
+  }
+  assert.equal(renderToStaticMarkup(createElement(CardSuitMark, { suit: 3 })), '',
+    'unrevealed ranks must not acquire invented face metadata');
+});
+
+test('selected-card summary retains colored suit and rank for all four suits', () => {
+  for (const [suit, number, color, mark] of [
+    [1, 1, 'suit-black', '♠A'],
+    [2, 10, 'suit-black', '♣10'],
+    [3, 12, 'suit-red', '♥Q'],
+    [4, 13, 'suit-red', '♦K'],
+  ] as const) {
+    const html = renderToStaticMarkup(createElement(SelectedCardSummary, {
+      item: { id: 7, enabled: true, selected: true, card: { name: 'slash', suit, number } },
+      onInspect: () => {},
+    }));
+    assert.match(html, new RegExp(`card-suit-inline card-suit-ink ${color}`));
+    assert.ok(html.includes(mark), `wrong or missing colored rank in ${html}`);
+  }
+  const unknown = renderToStaticMarkup(createElement(SelectedCardSummary, {
+    item: { id: 8, enabled: true, selected: true, card: { name: 'slash', suit: 3 } },
+    onInspect: () => {},
+  }));
+  assert.doesNotMatch(unknown, /card-suit-inline|♥/);
 });
 
 test('getCardCategory correctly identifies all 6 required card varieties and unknown fallback', () => {
@@ -254,7 +300,7 @@ test('Vite emits the native card whitelist into production output as well as ser
   assert.match(source, /\.mp3/);
 });
 
-test('styles.css contains log scrollbar, single-line ticker, and skill font styles', () => {
+test('styles.css retains log scrolling and skill font styles without an event ticker', () => {
   const cssPath = path.join(rootDir, 'src/styles.css');
   const css = readFileSync(cssPath, 'utf8');
 
@@ -263,9 +309,13 @@ test('styles.css contains log scrollbar, single-line ticker, and skill font styl
   assert.match(css, /\.board-logs::-webkit-scrollbar/);
   assert.match(css, /\.board-log-panel\s*\.board-logs\s*\{[\s\S]*max-height:\s*calc/);
 
-  // The latest public event is a single compact ticker above the table.
-  assert.match(css, /\.board-moments\.board-ticker\s*\{[\s\S]*min-height:\s*30px/);
-  assert.match(css, /\.board-ticker\s+\.board-moment\s*\{[\s\S]*white-space:\s*nowrap/);
+  // Game progress remains in the log drawer; the former event strip takes no space.
+  const board = readFileSync(path.join(rootDir, 'src/GameBoardScreen.tsx'), 'utf8');
+  assert.doesNotMatch(board, /board-ticker|Diễn biến mới nhất|04 \/ Bàn chơi Quốc Chiến/);
+  assert.match(board, /board-toolbar[\s\S]*sg-toolbar-log-toggle/);
+  assert.match(board, /aria-controls="board-log-panel" aria-expanded=\{showLogs\}/);
+  assert.doesNotMatch(css, /\.board-ticker/);
+  assert.doesNotMatch(css, /\.board-moments|\.board-moment\b/);
   assert.match(css, /\.board-local-idle-area \.sg-hand-idle\s*\{/);
   assert.match(css, /\.board-local-idle-area \.sg-hand-idle \.sg-card-button\s*\{/);
 
@@ -306,7 +356,7 @@ test('IdleHandCard maintains identical 4-layer structure to active cards', () =>
   const itemSource = readFileSync(path.join(rootDir, 'src/HandCardItem.tsx'), 'utf8');
   const idleFn = itemSource.slice(itemSource.indexOf('export function IdleHandCard'));
   assert.ok(idleFn.length > 0);
-  assert.match(idleFn, /className="sg-card-top-left"/);
+  assert.match(idleFn, /className=\{`sg-card-top-left card-suit-ink \$\{suitInfo\.colorClass\}`\}/);
   assert.match(idleFn, /className="sg-card-rank"/);
   assert.match(idleFn, /className=\{`sg-card-suit \$\{suitInfo\.colorClass\}`\}/);
   assert.match(idleFn, /className="sg-card-type-badge"/);

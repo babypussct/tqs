@@ -109,7 +109,7 @@ export default function App() {
         <div className="notice error-notice" role="alert">{snapshot.error}</div>}
       {exitAction && snapshot.phase === 'playing' && <section className="panel" role="alertdialog" aria-labelledby="exit-title" aria-describedby="exit-warning">
         <h2 id="exit-title">Ván vẫn đang chạy</h2>
-        <p id="exit-warning">Rời trận hoặc ngắt kết nối khi còn sống có thể khiến máy chủ tạm chặn IP. Nếu cần tạm nghỉ, hãy bật BOT chơi hộ và giữ trang mở.</p>
+        <p id="exit-warning">Rời trận hoặc ngắt kết nối khi còn sống có thể khiến tài khoản bị tạm khóa. Nếu cần tạm nghỉ, hãy bật BOT chơi hộ và giữ trang mở.</p>
         <div className="inline-controls">
           <button className="button primary" disabled={busy} onClick={() => setExitAction(null)}>Tiếp tục ván</button>
           {!trusting && <button className="button secondary" disabled={busy} onClick={() => { setExitAction(null); run(() => adapter.toggleTrust()); }}>BOT chơi hộ</button>}
@@ -127,6 +127,7 @@ export default function App() {
         leave={() => run(() => adapter.leaveRoom())} />}
       {snapshot.phase === 'room' && <WaitingRoomScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'playing' && <GameBoardScreen key={snapshot.roundId} busy={busy} leave={() => setExitAction('leave')}
+        getGeneralSkills={(name) => adapter.getGeneralSkills(name)}
         toggleTrust={() => run(() => adapter.toggleTrust())}
         regularSkills={snapshot.regularSkills}
         prelightSkill={(skillName, prelight) => run(() => adapter.prelightSkill(skillName, prelight))}

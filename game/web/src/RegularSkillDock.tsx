@@ -1,5 +1,6 @@
 import { useDisplayText } from './engine/displayText';
 import type { RegularSkill } from './store/gameStore';
+import { SkillInfoEntry } from './SkillInfo';
 
 /**
  * Mirrors native SkillArea while no request scene is active.  The buttons are
@@ -20,9 +21,8 @@ export default function RegularSkillDock({ skills }: {
         <span className="native-skill-hint">Chờ Lua cho phép</span>
       </div>
       <div className="gameplay-options native-skill-options">
-        {skills.map((skill) => (
+        {skills.map((skill) => <SkillInfoEntry key={skill.name} name={skill.name}>
           <button
-            key={skill.name}
             type="button"
             className="sg-skill-button regular-skill-button"
             disabled
@@ -31,7 +31,7 @@ export default function RegularSkillDock({ skills }: {
           >
             {text(skill.name)}
           </button>
-        ))}
+        </SkillInfoEntry>)}
       </div>
     </aside>
   );

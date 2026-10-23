@@ -9,15 +9,24 @@
 ---@field public handler ReqActiveSkill
 local AI = Fk.Base.AI:subclass("AI")
 
+local DASHBOARD_COMMANDS = {
+  AskForUseActiveSkill = true,
+  AskForResponseCard = true,
+  AskForUseCard = true,
+  PlayCard = true,
+}
+
 function AI:initialize(player)
   Fk.Base.AI.initialize(self, player)
 end
 
 -- activeSkill, responseCard, useCard, playCard 四巨头专属
 function AI:isInDashboard()
-  if not (self.handler and self.handler:isInstanceOf(self.room.request_handlers["AskForUseActiveSkill"])) then
+  local command = type(self.command) == "string" and self.command or nil
+  local handler_class = command and DASHBOARD_COMMANDS[command] and
+    self.room and self.room.request_handlers and self.room.request_handlers[command]
+  if not (self.handler and handler_class and self.handler:isInstanceOf(handler_class)) then
     fk.qWarning("请检查是否在AI中调用了专属于dashboard操作的一系列函数")
-    fk.qWarning(debug.traceback())
     return false
   end
   return true
@@ -98,7 +107,7 @@ end
 
 ---@return Card?
 function AI:getSelectedCard()
-  if not self:isInDashboard() then return Util.DummyTable end
+  if not self:isInDashboard() then return nil end
   local handler = self.handler
   if handler.selected_card then return handler.selected_card end
   if not handler.skill_name then return end
@@ -124,7 +133,7 @@ function AI:selectCard(cid, selected)
   if not self:isInDashboard() then return end
   self.handler:update("CardItem", cid, "click", { selected = selected })
   if self._debug then
-    verbose(0, "[UI] 已%s选择卡牌%d(%s)", selected and "" or "取消", cid, tostring(Fk:getCardById(cid)))
+    verbose(0, "[UI] card selection changed selected=%s", tostring(selected))
   end
 end
 
@@ -134,7 +143,7 @@ function AI:selectTarget(player, selected)
   self.handler:update("Photo", player.id, "click", { selected = selected })
 
   if self._debug then
-    verbose(0, "[UI] 已%s选择角色%s", selected and "" or "取消", tostring(player))
+    verbose(0, "[UI] target selection changed selected=%s", tostring(selected))
   end
 end
 
@@ -186,9 +195,107 @@ function AI:isDeadend()
 end
 
 function AI:doOKButton()
-  if not self:isInDashboard() then return end
+  if not self:isInDashboard() then return "" end
   if not self:okButtonEnabled() then return "" end
-  return self.handler:doOKButton()
+  local reply = self.handler:doOKButton()
+  if reply ~= nil then
+    -- Base.AI uses identity for replies produced by the legality-checked
+    -- dashboard.  Strategies that construct a reply themselves are still
+    -- checked by validateReply below.
+    self._last_ai_reply = reply
+  end
+  return reply or ""
+end
+
+--- Validate a dashboard reply before Request stores it as the result.
+--- The handler's own feasibility rules remain the source of truth; this
+--- method only replays the candidate without sending a second UI reply.
+function AI:validateReply(command, _, reply)
+  if not DASHBOARD_COMMANDS[command] then return true end
+  if type(reply) ~= "table" then return false, "invalid_reply" end
+  if self._last_ai_reply == reply then return true end
+
+  local function reject(detail)
+    self._ai_validation_detail = detail
+    return false, "illegal_reply"
+  end
+
+  local handler = self.handler
+  if not handler or type(handler.feasible) ~= "function" then
+    return reject("missing_handler")
+  end
+
+  local card = reply.card
+  local card_object
+  if type(card) == "number" then
+    local ok, value = pcall(Fk.getCardById, Fk, card)
+    if not ok or not value then return reject("card_lookup_failed") end
+    card_object = value
+  elseif type(card) == "table" then
+    local raw_choose_cards = handler.skill_name == "choose_cards_skill" and card.skill == nil
+    if (not raw_choose_cards and type(card.skill) ~= "string") or type(card.subcards) ~= "table" then
+      return false, "invalid_reply"
+    end
+    if not raw_choose_cards and not Fk.skills[card.skill] then return reject("skill_missing") end
+  else
+    return false, "invalid_reply"
+  end
+
+  if reply.special_skill ~= nil and not Fk.skills[reply.special_skill] then
+    return reject("special_skill_missing")
+  end
+
+  local snapshot = {
+    skill_name = handler.skill_name,
+    pendings = handler.pendings,
+    selected_targets = handler.selected_targets,
+    selected_card = handler.selected_card,
+    sub_selection_flag = handler.sub_selection_flag,
+    selected_buffer = handler.selected_buffer,
+    sub_cards = handler.sub_cards,
+    sub_pendings = handler.sub_pendings,
+  }
+
+  local interaction_skill
+  local interaction_data
+  local ok, feasible = pcall(function()
+    handler.sub_selection_flag = false
+    handler.selected_buffer = nil
+    handler.selected_targets = table.simpleClone(reply.targets)
+    if type(card) == "table" then
+      handler.skill_name = raw_choose_cards and snapshot.skill_name or card.skill
+      handler.pendings = table.simpleClone(card.subcards)
+      handler.selected_card = nil
+    else
+      handler.skill_name = reply.special_skill
+      handler.pendings = reply.special_skill and { card } or {}
+      handler.selected_card = card_object
+    end
+
+    local skill = handler.skill_name and Fk.skills[handler.skill_name]
+    if skill and skill.interaction and reply.interaction_data ~= nil then
+      interaction_skill = skill
+      interaction_data = skill.interaction.data
+      skill.interaction.data = reply.interaction_data
+    end
+    return handler:feasible()
+  end)
+
+  if interaction_skill then
+    interaction_skill.interaction.data = interaction_data
+  end
+  handler.skill_name = snapshot.skill_name
+  handler.pendings = snapshot.pendings
+  handler.selected_targets = snapshot.selected_targets
+  handler.selected_card = snapshot.selected_card
+  handler.sub_selection_flag = snapshot.sub_selection_flag
+  handler.selected_buffer = snapshot.selected_buffer
+  handler.sub_cards = snapshot.sub_cards
+  handler.sub_pendings = snapshot.sub_pendings
+
+  if not ok then return reject("feasibility_exception") end
+  if not feasible then return reject("feasibility_rejected") end
+  return true
 end
 
 ---@return Skill?
@@ -203,16 +310,20 @@ end
 
 function AI:makeReply()
   local is_active = self.command == "AskForUseActiveSkill"
-  if is_active then
-    local skill = Fk.skills[self.data[1]]
-    skill._extra_data = self.data[4]
+  local skill
+  local previous_extra_data
+  if is_active and type(self.data) == "table" then
+    skill = Fk.skills[self.data[1]]
+    if skill then
+      previous_extra_data = skill._extra_data
+      skill._extra_data = self.data[4]
+    end
   end
 
   local ret = Fk.Base.AI.makeReply(self)
 
-  if is_active then
-    local skill = Fk.skills[self.data[1]]
-    skill._extra_data = Util.DummyTable
+  if skill then
+    skill._extra_data = previous_extra_data or Util.DummyTable
   end
 
   return ret

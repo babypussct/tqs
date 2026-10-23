@@ -41,6 +41,19 @@ export type QaPackageIdentity = {
   packageSha256: string;
 };
 
+export type QaSourceIdentity = {
+  runtimeMD5: string;
+  smartAiSha256: string;
+  roomLuaSha256: string;
+  qaSmartAiOverlaySha256: string;
+};
+
+export const P1_QA_SOURCE_BASELINE = {
+  smartAiSha256: 'b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9',
+  roomLuaSha256: 'f71e71a7fd12a35f609942657d221a71b4e80cef9d6fa001a022f006e223036c',
+  qaSmartAiOverlaySha256: '867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e',
+} as const;
+
 const SERVER_ONLY_PACKAGES = new Set(['tqs_qa']);
 
 function sha256(bytes: Uint8Array) {
@@ -128,6 +141,38 @@ export function verifyQaPackageManifest(options: {
     catalogSha256,
     packageSha256,
   };
+}
+
+export function verifyQaSourceIdentity(options: {
+  runtime: string;
+  expectedRuntimeMD5: string;
+  expectedSmartAiSha256?: string;
+  expectedRoomLuaSha256?: string;
+  expectedQaSmartAiOverlaySha256?: string;
+}): QaSourceIdentity {
+  const runtime = path.resolve(options.runtime);
+  const flistPath = path.join(runtime, 'flist.txt');
+  const smartAiPath = path.join(runtime, 'packages/freekill-core/ltk/server/ai/smart_ai.lua');
+  const roomLuaPath = path.join(runtime, 'packages/freekill-core/ltk/server/room.lua');
+  const qaOverlayPath = path.join(runtime, 'qa_packages/tqs_qa/ltk/server/ai/smart_ai.lua');
+  for (const filePath of [flistPath, smartAiPath, roomLuaPath, qaOverlayPath]) {
+    if (!existsSync(filePath) || !statSync(filePath).isFile()) throw new Error(`QA provenance file is missing: ${filePath}`);
+  }
+  const identity: QaSourceIdentity = {
+    runtimeMD5: md5(readFileSync(flistPath)),
+    smartAiSha256: sha256(readFileSync(smartAiPath)),
+    roomLuaSha256: sha256(readFileSync(roomLuaPath)),
+    qaSmartAiOverlaySha256: sha256(readFileSync(qaOverlayPath)),
+  };
+  if (!/^[a-f0-9]{32}$/i.test(options.expectedRuntimeMD5) || identity.runtimeMD5 !== options.expectedRuntimeMD5.toLowerCase())
+    throw new Error(`QA runtime flist MD5 does not match TQS_QA_EXPECTED_RUNTIME_MD5: ${identity.runtimeMD5}`);
+  if (identity.smartAiSha256 !== (options.expectedSmartAiSha256 ?? P1_QA_SOURCE_BASELINE.smartAiSha256))
+    throw new Error('QA SmartAI source does not match the P1 provenance baseline');
+  if (identity.roomLuaSha256 !== (options.expectedRoomLuaSha256 ?? P1_QA_SOURCE_BASELINE.roomLuaSha256))
+    throw new Error('QA room.lua source does not match the P1 provenance baseline');
+  if (identity.qaSmartAiOverlaySha256 !== (options.expectedQaSmartAiOverlaySha256 ?? P1_QA_SOURCE_BASELINE.qaSmartAiOverlaySha256))
+    throw new Error('QA SmartAI overlay does not match the P1 provenance baseline');
+  return identity;
 }
 
 async function fetchBytes(url: string, fetchImpl: typeof fetch) {

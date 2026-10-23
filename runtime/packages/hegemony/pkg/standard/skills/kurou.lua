@@ -32,4 +32,42 @@ kurou:addEffect("active", {
   end
 })
 
+-- Losing HP is a real cost. Only use 苦肉 when the player survives the cost,
+-- and prefer the legal card whose discard value is lowest. The bounded bonus
+-- for an existing Slash reflects the extra Slash window without changing the
+-- server-side mark or use-limit rules.
+kurou:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local player = ai.player
+    if player.hp <= 1 then return end
+
+    local discardable = table.filter(ai:getEnabledCards(), function(id)
+      local card = Fk:getCardById(id)
+      return card and not player:prohibitDiscard(card)
+    end)
+    if #discardable == 0 then return end
+
+    local has_slash = table.find(player:getCardIds("h"), function(id)
+      local card = Fk:getCardById(id)
+      return card and card.trueName == "slash"
+    end) ~= nil
+    local attack_bonus = has_slash and 35 or 0
+    local best_card, best_benefit = nil, -100000
+    for _, id in ipairs(discardable) do
+      local benefit = ai:getBenefitOfEvents(function(logic)
+        logic:throwCard({ id }, self.skill_name, player, player)
+        logic:loseHp(player, 1, self.skill_name)
+        logic:drawCards(player, 3, self.skill_name)
+      end) + attack_bonus
+      if benefit > best_benefit then
+        best_card, best_benefit = id, benefit
+      end
+    end
+
+    if best_card and best_benefit > 0 then
+      return { { best_card } }, best_benefit
+    end
+  end,
+})
+
 return kurou

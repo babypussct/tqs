@@ -10,7 +10,7 @@ import { parseCardsAndChoice, cardsAndChoiceIds, type CardsAndChoicePrompt, type
 import { parseCardSelection, selectionIds, type CardSelection, type CardSelectionPrompt, type PoxiView } from './cardSelection';
 import forge from 'node-forge';
 import { LuaRuntime } from './luaRuntime';
-import { parseInitialGeneralPrompt, type InitialGeneralPrompt } from './generalSelection';
+import { parseInitialGeneralMetadata, parseInitialGeneralPrompt, type InitialGeneralMetadata, type InitialGeneralPrompt } from './generalSelection';
 import { emptyGameplay, getGameplayItem, reduceGameplay, GAMEPLAY_REQUESTS,
   type GameplayItemType, type GameplayScene } from '../store/gameplayState';
 import { validInteractionAction } from './gameplayInteraction';
@@ -97,6 +97,8 @@ export class GameConnection {
   private gameplaySceneRevision = 0;
   private receivingRequestCommand: string | null = null;
   private initialGeneralPrompt: InitialGeneralPrompt | null = null;
+  private initialGeneralKingdomCache = new Map<string, string[]>();
+  private initialGeneralMetadataCache: { key: string; data: InitialGeneralMetadata[] } | null = null;
   private choicePrompt: ChoicePrompt | null = null;
   private cardSelection: CardSelection | null = null;
   private nativeDialog: NativeDialog | null = null;
@@ -171,6 +173,8 @@ export class GameConnection {
     this.authorizedRequest = null;
     this.capturedReply = null;
     this.initialGeneralPrompt = null;
+    this.initialGeneralKingdomCache.clear();
+    this.initialGeneralMetadataCache = null;
     this.choicePrompt = null;
     this.cardSelection = null;
     this.cardsAndChoice = null;
@@ -353,9 +357,29 @@ export class GameConnection {
         pending.command !== 'CustomDialog' || pending.requestId !== requestId ||
         (pending.expiresAt !== null && Date.now() >= pending.expiresAt) ||
         !prompt.generals.includes(main) || !prompt.generals.includes(deputy) || main === deputy) return [];
+    const cacheKey = JSON.stringify([requestId, main, deputy]);
+    const cached = this.initialGeneralKingdomCache.get(cacheKey);
+    if (cached) return [...cached];
     const result = this.lua.call<unknown>('__web_general_kingdoms', main, deputy, prompt.enabledKingdoms);
-    return Array.isArray(result) && result.every((k) => typeof k === 'string' && prompt.enabledKingdoms.includes(k))
-      ? result as string[] : [];
+    const valid = Array.isArray(result) && result.every((k) => typeof k === 'string' && prompt.enabledKingdoms.includes(k)) &&
+      new Set(result).size === result.length;
+    const kingdoms = valid ? [...result as string[]] : [];
+    this.initialGeneralKingdomCache.set(cacheKey, kingdoms);
+    return [...kingdoms];
+  }
+
+  /** Read-only bounded metadata for exactly the active request's offer. */
+  getInitialGeneralMetadata(requestId: number, generals: readonly string[]): InitialGeneralMetadata[] {
+    const pending = this.pendingRequest;
+    const prompt = this.initialGeneralPrompt;
+    if (this.status.kind !== 'online' || !pending || !prompt || pending.command !== 'CustomDialog' ||
+        pending.requestId !== requestId || (pending.expiresAt !== null && Date.now() >= pending.expiresAt) ||
+        generals.length !== prompt.generals.length || generals.some((name, index) => name !== prompt.generals[index])) return [];
+    const key = JSON.stringify([requestId, generals]);
+    if (this.initialGeneralMetadataCache?.key === key) return this.initialGeneralMetadataCache.data.map((item) => ({ ...item }));
+    const parsed = parseInitialGeneralMetadata(this.lua.call<unknown>('__web_general_metadata', [...generals]), prompt.generals);
+    this.initialGeneralMetadataCache = { key, data: parsed };
+    return parsed.map((item) => ({ ...item }));
   }
 
   /** A user-confirmed initial-general selection is the sole path to CLIENT_REPLY. */
@@ -1013,9 +1037,15 @@ function payloadShape(value: unknown) {
 }
 
 /** Browser WebSocket transport. */
-export function webSocketOpener(url: string) {
+export function webSocketOpener(url: string, admissionToken?: () => string | undefined) {
   return (h: SocketHandlers): SocketLike => {
-    const ws = new WebSocket(url);
+    const token = admissionToken?.();
+    const protocol = token && /^[A-Za-z0-9_-]{1,768}$/.test(token)
+      ? `tqs-admission-v1.${token}` : undefined;
+    // The assertion is a short-lived, HMAC-signed quota hint. It is sent as a
+    // subprotocol rather than a URL query parameter so it does not enter
+    // browser/proxy URL logs. Native still verifies the encrypted Setup ticket.
+    const ws = protocol ? new WebSocket(url, protocol) : new WebSocket(url);
     ws.binaryType = 'arraybuffer';
     const pending: Uint8Array[] = [];
     ws.onopen = () => {

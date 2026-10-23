@@ -55,7 +55,12 @@ export interface CardCategoryInfo {
 }
 
 /** 1: Spade ♠, 2: Club ♣, 3: Heart ♥, 4: Diamond ♦, 5/other: NoSuit ◇ */
-export function getSuitInfo(suit: number | undefined): CardSuitInfo {
+export function getSuitInfo(suit: number | string | undefined): CardSuitInfo {
+  // Native dialogs can carry the FreeKill suit name instead of its numeric ID.
+  if (typeof suit === 'string') {
+    suit = ({ spade: 1, club: 2, heart: 3, diamond: 4,
+      '1': 1, '2': 2, '3': 3, '4': 4 } as Record<string, number>)[suit.trim().toLowerCase()];
+  }
   if (suit === 1) return { symbol: '♠', name: 'Bích', colorClass: 'suit-black' };
   if (suit === 2) return { symbol: '♣', name: 'Chuồn', colorClass: 'suit-black' };
   if (suit === 3) return { symbol: '♥', name: 'Cơ', colorClass: 'suit-red' };
@@ -71,6 +76,16 @@ export function formatRank(number: number | undefined): string {
   if (number === 13) return 'K';
   if (number === 0) return 'X';
   return String(number);
+}
+
+/** One visible mark for every public suit/rank pair, including native choice dialogs. */
+export function CardSuitMark({ suit, number }: { suit?: number | string; number?: number }) {
+  if (number === undefined) return null;
+  const info = getSuitInfo(suit);
+  const rank = formatRank(number);
+  if (!rank) return null;
+  return <span className={`card-suit-inline card-suit-ink ${info.colorClass}`}
+    aria-label={`${info.name} ${rank}`}>{info.symbol}{rank}</span>;
 }
 
 /** Static whitelist of standard card classifications */
@@ -626,7 +641,7 @@ export function CardDetailSheet({
       >
         <div className="sg-sheet-header">
           <div className="sg-sheet-badge-group">
-            <span className={`sg-sheet-suit ${suitInfo.colorClass}`}>
+            <span className={`sg-sheet-suit card-suit-ink ${suitInfo.colorClass}`}>
               {suitInfo.symbol} {rank}
             </span>
             {category.label && (
@@ -686,7 +701,6 @@ export function SelectedCardSummary({
   const text = useDisplayText();
   const rawCard = objectValue(item.card) as CardData | null;
   const card: CardData | undefined = rawCard ? rawCard : undefined;
-  const suitInfo = getSuitInfo(card?.suit);
   const rank = formatRank(card?.number);
   const { displayName, description } = resolveCardText(card, text);
 
@@ -695,7 +709,7 @@ export function SelectedCardSummary({
       <div className="sg-summary-text">
         <strong>
           Đang chọn: 【{displayName}】
-          {rank ? ` (${suitInfo.symbol} ${rank})` : ''}
+          {rank ? <> (<CardSuitMark suit={card?.suit} number={card?.number} />)</> : null}
         </strong>
         <p className="sg-summary-desc">{description}</p>
       </div>
@@ -828,7 +842,7 @@ export function HandCardItem({
         {cardMetadata ? `${cardMetadata}. ` : ''}{description}
       </span>
       {/* Layer 1: Top-Left Suit & Rank */}
-      <div className="sg-card-top-left" aria-hidden="true">
+      <div className={`sg-card-top-left card-suit-ink ${suitInfo.colorClass}`} aria-hidden="true">
         <span className="sg-card-rank">{rank || ' '}</span>
         <span className={`sg-card-suit ${suitInfo.colorClass}`}>
           {suitInfo.symbol}
@@ -882,7 +896,7 @@ export function ResolvingCardView({ card, activity = 'processing' }: { card: { n
       onClick={() => setInspectOpen(true)}>
       <div className="native-resolving-topline">
         <div className="card-head">
-          <span className={suitInfo.colorClass}>
+          <span className={`card-suit-ink ${suitInfo.colorClass}`}>
             <span className="native-resolving-rank">{rank}</span>
             <span className="native-resolving-suit">{suitInfo.symbol}</span>
           </span>
@@ -934,7 +948,7 @@ export function PublicPileCardPreview({
     <button type="button" className="native-pile-card-preview" aria-label={`Xem chi tiết ${cardLabel}`} title={cardLabel}
       onClick={() => setInspectOpen(true)}>
       <CardArt card={card} />
-      <span className={`native-pile-card-rank ${suitInfo.colorClass}`} aria-hidden="true">
+      <span className={`native-pile-card-rank card-suit-ink ${suitInfo.colorClass}`} aria-hidden="true">
         {suitInfo.symbol} {rank}
       </span>
       <span className="native-pile-card-name" aria-hidden="true">{displayName}</span>
@@ -1025,7 +1039,7 @@ export function IdleHandCard({
           {cardMetadata ? `${cardMetadata}. ` : ''}{description}
         </span>
         {/* Layer 1: Top-Left Suit & Rank */}
-        <div className="sg-card-top-left" aria-hidden="true">
+        <div className={`sg-card-top-left card-suit-ink ${suitInfo.colorClass}`} aria-hidden="true">
           <span className="sg-card-rank">{rank || ' '}</span>
           <span className={`sg-card-suit ${suitInfo.colorClass}`}>
             {suitInfo.symbol}
@@ -1055,7 +1069,7 @@ export function IdleHandCard({
               style={cardTooltipStyle(rect)}
             >
               <strong className="sg-tip-title">
-                {displayName} {rank ? `(${suitInfo.symbol} ${rank})` : ''}
+                {displayName}{rank ? <> (<CardSuitMark suit={card.suit} number={card.number} />)</> : null}
               </strong>
               {category.label && (
                 <span className="sg-tip-category">[{category.label}]</span>

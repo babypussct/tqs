@@ -1524,7 +1524,12 @@ function Room:askToChooseCard(player, params)
   if not prompt and type(flag) == "string" and target then
     prompt = "#AskForChooseCard:" .. target.id .. "::" .. skill_name
   end
-  local data = {target, flag, prompt}
+  -- Keep the skill name alongside the display prompt.  Custom prompts are
+  -- valid UI localization keys but do not necessarily encode the strategy
+  -- name in the canonical #AskForChooseCard:<target>::<skill> form.  The
+  -- extra field is consumed by the server AI; the client already reads only
+  -- the first three fields when rendering this request.
+  local data = {target, flag, prompt, skill_name}
   local req = Request:new(player, command)
   req:setData(player, data)
   local result = req:getResult(player)

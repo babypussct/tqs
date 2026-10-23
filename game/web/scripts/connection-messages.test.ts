@@ -22,7 +22,7 @@ test('native protocol variants and known admission errors are localized', () => 
   ]) {
     assert.match(connectionError(native), /đã đăng nhập ở nơi khác/);
   }
-  assert.match(connectionError('you have been temporarily banned!'), /tạm chặn IP/);
+  assert.match(connectionError('you have been temporarily banned!'), /tạm khóa/);
   assert.match(connectionError('server is full!'), /đủ số người chơi/);
   assert.match(connectionError('game account is not approved'), /chưa được cấp quyền/);
   assert.match(connectionError('username or password error'), /đăng nhập lại bằng Google/);

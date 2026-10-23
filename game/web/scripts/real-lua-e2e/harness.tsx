@@ -8,6 +8,7 @@ import ChoicePanel from '../../src/ChoicePanel';
 import CardSelectionPanel from '../../src/CardSelectionPanel';
 import CardsAndChoicePanel from '../../src/CardsAndChoicePanel';
 import GameBoardScreen from '../../src/GameBoardScreen';
+import InitialGeneralPanel from '../../src/InitialGeneralPanel';
 import GameResultPanel from '../../src/GameResultPanel';
 import NativeDialogPanel from '../../src/NativeDialogPanel';
 import { LobbyScreen, WaitingRoomScreen } from '../../src/App';
@@ -163,6 +164,25 @@ const api = {
   boardState: () => useGameStore.getState().board,
   store: useGameStore,
   getConn: () => conn,
+  generalSkills: (name: string) => conn.lua.call<string[]>('__web_general_skill_names', name),
+  generalMetadata: (names: string[]) => conn.lua.call<unknown[]>('__web_general_metadata', names),
+  beginInitialGeneralChoice: (generals = [
+    'ld__bianfuren', 'm_heg__dianwei', 'm_heg__ganning',
+  ]) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const id = ++nextId;
+    const encodedGenerals = generals.map((name) => `'${name}'`).join(', ');
+    fixtureRequest(id, 'CustomDialog', serverCbor(`{component = {
+      name = 'ChooseInitialGeneralBox', model = {
+        name = 'ChooseInitialGeneralModel', prop = {
+          hegemony = true, choiceNum = 2,
+          generals = {${encodedGenerals}},
+          enabledKingdoms = {'wei', 'shu', 'wu', 'qun', 'jin'}
+        }
+      }
+    }}`));
+    return id;
+  },
   boardNotify: (command: string, source: string) => serverNotify(command, serverCbor(source)),
   beginTablePile: (count = 3) => {
     api.beginPlay(false, { initialCards: [], playCardRequest: false });
@@ -238,6 +258,25 @@ const api = {
       moveInfo={{cardId=${id}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
     return id;
   },
+  beginTransformationSkill: (kind: 'qice' | 'yongjin' | 'yongjin-targets' | 'yongjin-board') => {
+    api.beginPlay(false, { playCardRequest: false });
+    const skill = kind === 'qice' ? 'ld__qice' : 'yongjin';
+    serverNotify('PropertyUpdate', serverCbor(`{17, 'general', '${kind === 'qice' ? 'ld__xunyou' : 'ld__lingtong'}'}`));
+    serverNotify('AddSkill', serverCbor(`{17, '${skill}'}`));
+    const equipment = kind !== 'qice' ? api.equipBot() : null;
+    const id = ++nextId;
+    if (kind === 'yongjin-board') {
+      fixtureRequest(id, 'AskForMoveCardInBoard', serverCbor(`{cards={${equipment}}, cardsPosition={1}, playerIds={17,-1}}`));
+    } else {
+      fixtureRequest(id, kind === 'yongjin-targets' ? 'AskForUseActiveSkill' : 'PlayCard',
+        serverCbor(kind === 'yongjin-targets'
+          ? "{'choose_players_to_move_card_in_board', '#yongjin-choose', true, {flag='e', skillName='yongjin', excludeIds={}, froms={ClientInstance:getPlayerById(17), ClientInstance:getPlayerById(-1)}, tos={ClientInstance:getPlayerById(17), ClientInstance:getPlayerById(-1)}}}"
+          : '{}'));
+    }
+    return { id, skill };
+  },
+  transformationChoice: () => conn.lua.eval<string | null>(
+    'return Fk.skills.ld__qice.interaction.data'),
   begin,
   netState: (state: 'trust' | 'online') => {
     serverNotify('NetStateChanged', serverCbor(`{17, '${state}'}`));
@@ -594,7 +633,6 @@ const api = {
              extraUse=true, bypass_distances=true, exclusive_targets={-1}, must_targets={-1}}}`);
         break;
       case 'hidden-yiji':
-      case 'hidden-yiji-deputy':
         // The native QA package uses the same request as a bounded pause while
         // the real client may send PushRequest("prelight,..."). The local
         // fixture does not execute native damage, but it keeps this scenario
@@ -603,8 +641,7 @@ const api = {
         requestId = sendRequest('AskForSkillInvoke',
           "{'tqs_qa_hidden_yiji_gate', 'TQS QA: prelight Di Kế nếu muốn, rồi bấm Kích hoạt để tiếp tục.'}");
         break;
-      case 'hidden-rehide-yiji':
-      case 'hidden-rehide-yiji-deputy': {
+      case 'hidden-rehide-yiji': {
         // The local fixture mirrors the native readiness gate. The explicit
         // re-hide transition is applied only after the gate reply so the
         // final fake+prelight projection can be asserted separately.
@@ -620,8 +657,7 @@ const api = {
           "{'tqs_qa_hidden_rehide_yiji_gate', 'TQS QA: prelight Di Kế, kích hoạt rồi kiểm tra úp lại.'}");
         break;
       }
-      case 'hidden-jianxiong':
-      case 'hidden-jianxiong-deputy': {
+      case 'hidden-jianxiong': {
         // Mirror the native prelight gate and the later AskForChoices request;
         // the local fixture checks the React/Lua request chain, while native
         // C++ remains the authority for the real damage/card movement effect.
@@ -636,8 +672,7 @@ const api = {
           "{'tqs_qa_hidden_jianxiong_gate', 'TQS QA: prelight Gian Hùng, rồi xác nhận để đối thủ dùng Sát.'}");
         break;
       }
-      case 'hidden-fankui':
-      case 'hidden-fankui-deputy': {
+      case 'hidden-fankui': {
         // Fankui is a compulsory fk.Damaged trigger in the native source. The
         // fixture only mirrors the hidden fake-skill/prelight gate; native C++
         // remains authoritative for the later AskForCardChosen obtain path.
@@ -652,8 +687,7 @@ const api = {
           "{'tqs_qa_hidden_fankui_gate', 'TQS QA: prelight Phản Quỹ, rồi xác nhận để tiếp tục.'}");
         break;
       }
-      case 'hidden-luoshen':
-      case 'hidden-luoshen-deputy': {
+      case 'hidden-luoshen': {
         // Luoshen is an EventPhaseStart trigger. The local fixture mirrors the
         // hidden fake-skill/prelight gate and phase-start invoke; native C++
         // remains authoritative for judge, reveal and card obtain.
@@ -668,8 +702,7 @@ const api = {
           "{'tqs_qa_hidden_luoshen_gate', 'TQS QA: prelight 洛神, rồi xác nhận để bắt đầu pha chuẩn bị.'}");
         break;
       }
-      case 'hidden-tiandu':
-      case 'hidden-tiandu-deputy': {
+      case 'hidden-tiandu': {
         // Tiandu is compulsory on FinishJudge. The local fixture mirrors the
         // hidden fake-skill/prelight gate; native C++ remains authoritative
         // for the real judge, reveal-before-SkillEffect and obtain path.
@@ -684,8 +717,7 @@ const api = {
           "{'tqs_qa_hidden_tiandu_gate', 'TQS QA: prelight Thiên Đố, rồi xác nhận để bắt đầu phán xét.'}");
         break;
       }
-      case 'hidden-jizhi':
-      case 'hidden-jizhi-deputy': {
+      case 'hidden-jizhi': {
         // Jizhi is a hidden optional CardUsing trigger.  The local browser
         // fixture only mirrors the private fake-skill/prelight readiness
         // gate; native QA owns the real Duel -> CardUsing -> draw path.
@@ -700,8 +732,7 @@ const api = {
           "{'tqs_qa_hidden_jizhi_gate', 'TQS QA: prelight Tập Trí, rồi xác nhận để dùng Lạc Hồn.'}");
         break;
       }
-      case 'hidden-mingshi':
-      case 'hidden-mingshi-deputy': {
+      case 'hidden-mingshi': {
         // Mingshi is compulsory on DamageInflicted.  Keep the browser fixture
         // limited to the fake-skill/prelight gate; native QA verifies the
         // hidden source predicate and zero-damage effect on a real Slash.
@@ -716,8 +747,7 @@ const api = {
           "{'tqs_qa_hidden_mingshi_gate', 'TQS QA: prelight Danh Sĩ, rồi xác nhận để nguồn úp dùng Sát.'}");
         break;
       }
-      case 'hidden-fuyin':
-      case 'hidden-fuyin-deputy': {
+      case 'hidden-fuyin': {
         // Fuyin is compulsory on TargetConfirmed. Keep the pair face-down and
         // expose only the fake/prelight gate here; native QA owns the real
         // source Slash, TargetConfirmed cancellation and slot reveal.
@@ -733,8 +763,7 @@ const api = {
           "{'tqs_qa_hidden_fuyin_gate', 'TQS QA: prelight Phụ Âm, rồi xác nhận để nguồn úp dùng Sát.'}");
         break;
       }
-      case 'hidden-gongqing':
-      case 'hidden-gongqing-deputy': {
+      case 'hidden-gongqing': {
         // Gongqing has two native damage-range branches. The local fixture
         // mirrors only the hidden fake-skill/prelight gate; native C++ owns
         // the low-range reduction, high-range increase and slot reveal.
@@ -750,10 +779,7 @@ const api = {
           "{'tqs_qa_hidden_gongqing_gate', 'TQS QA: prelight Công Thanh, rồi xác nhận để kiểm tra hai nhánh tầm đánh.'}");
         break;
       }
-      case 'hidden-qianxun':
-      case 'hidden-qianxun-deputy':
-      case 'hidden-qianxun-indulgence':
-      case 'hidden-qianxun-indulgence-deputy': {
+      case 'hidden-qianxun': {
         // Qianxun is compulsory on both TargetConfirming and BeforeCardsMove.
         // The local fixture mirrors only the private fake-skill/prelight gate;
         // native QA owns the real Snatch/Indulgence outcome and card-area
@@ -770,8 +796,7 @@ const api = {
           `{\'tqs_qa_hidden_qianxun_gate\', \'TQS QA: prelight Khiêm Tốn, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục' : 'Thuận Thủ'}.\'}`);
         break;
       }
-      case 'hidden-kongcheng':
-      case 'hidden-kongcheng-deputy': {
+      case 'hidden-kongcheng': {
         // Kongcheng is compulsory on TargetConfirming only after the actor's
         // hand is empty. The local fixture mirrors the hidden pair and its
         // prelight gate; native QA owns the real empty-hand Duel outcome.
@@ -787,10 +812,7 @@ const api = {
           "{'tqs_qa_hidden_kongcheng_gate', 'TQS QA: prelight Không Thành, rồi xác nhận để đối thủ dùng Quyết Đấu.'}");
         break;
       }
-      case 'hidden-weimu':
-      case 'hidden-weimu-deputy':
-      case 'hidden-weimu-indulgence':
-      case 'hidden-weimu-indulgence-deputy': {
+      case 'hidden-weimu': {
         // Weimu is a compulsory TargetConfirming branch for black Trick
         // cards. The local fixture mirrors only the hidden fake-skill/prelight
         // gate; native QA owns the real black Duel/Indulgence branch and reveal.
@@ -806,8 +828,7 @@ const api = {
           `{\'tqs_qa_hidden_weimu_gate\', \'TQS QA: prelight 帷幕, rồi xác nhận để đối thủ dùng ${scenarioId.includes('indulgence') ? 'Lạc Bất Tư Thục đen' : 'Quyết Đấu đen'}.\'}`);
         break;
       }
-      case 'hidden-xiaoji':
-      case 'hidden-xiaoji-deputy': {
+      case 'hidden-xiaoji': {
         // Xiaoji is an AfterCardsMove trigger. The local fixture only mirrors
         // the hidden fake-skill/prelight readiness gate; native QA owns the
         // real equipment-loss, reveal and draw outcome.
@@ -823,8 +844,7 @@ const api = {
           "{'tqs_qa_hidden_xiaoji_gate', 'TQS QA: prelight 枭姬, rồi xác nhận để mất trang bị thật.'}");
         break;
       }
-      case 'hidden-yingzi':
-      case 'hidden-yingzi-deputy': {
+      case 'hidden-yingzi': {
         // Yingzi is compulsory on fk.DrawNCards. The local fixture mirrors
         // only the hidden fake-skill/prelight gate; native C++ owns the real
         // DrawNCards mutation, draw count and slot reveal.
@@ -840,8 +860,7 @@ const api = {
           "{'tqs_qa_hidden_yingzi_gate', 'TQS QA: prelight 英姿, rồi xác nhận để bắt đầu pha rút bài.'}");
         break;
       }
-      case 'hidden-tianxiang':
-      case 'hidden-tianxiang-deputy': {
+      case 'hidden-tianxiang': {
         // Tianxiang owns a real DetermineDamageInflicted interaction. The
         // fixture mirrors only the hidden fake-skill/prelight gate; native C++
         // owns the heart-card/target selection, choice branch and redirect.
@@ -857,8 +876,7 @@ const api = {
           "{'tqs_qa_hidden_tianxiang_gate', 'TQS QA: prelight Thiên Hương, rồi xác nhận để nhận sát thương.'}");
         break;
       }
-      case 'hidden-duanchang':
-      case 'hidden-duanchang-deputy': {
+      case 'hidden-duanchang': {
         // Duanchang is a compulsory fk.Death trigger.  The fixture mirrors
         // only the hidden fake-skill/prelight readiness gate; native C++ owns
         // the real death event, killer choice and slot-skill loss.
@@ -875,7 +893,6 @@ const api = {
         break;
       }
       case 'hidden-reveal':
-      case 'hidden-reveal-deputy':
         // The active helper must remain a regular skill while the compulsory
         // Qianxun trigger stays in the fake/prelight dock.
         serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'hs__luxun'}"));
@@ -888,7 +905,6 @@ const api = {
           "{'reveal_skill&', 'TQS QA: mở Lục Tốn bằng kỹ năng Tỏa định.', true, {skillName='reveal_skill&'}}");
         break;
       case 'hidden-active':
-      case 'hidden-active-main':
         // The native server sends fake active skills with the fake marker, but
         // upstream client.lua projects an ActiveSkill as a regular SkillButton
         // so PlayCard can validate it. Keep both generals hidden here and
@@ -901,8 +917,7 @@ const api = {
         serverNotify('AddSkill', serverCbor("{17, 'hs__zhiheng', true}"));
         requestId = sendRequest('PlayCard', '{}');
         break;
-      case 'hidden-fanjian':
-      case 'hidden-fanjian-deputy': {
+      case 'hidden-fanjian': {
         // Phản Gián is an ordinary native ActiveSkill.  The hidden pair stays
         // face-down while the projected fake skill is selected in PlayCard;
         // the native server-side scenario separately proves revealBySkillName
@@ -918,8 +933,7 @@ const api = {
         requestId = sendRequest('PlayCard', '{}');
         break;
       }
-      case 'hidden-view-as':
-      case 'hidden-view-as-main': {
+      case 'hidden-view-as': {
         // A hidden ViewAsSkill is projected as a regular PlayCard skill on
         // the owner client.  Keep both general slots hidden and reserve one
         // Jink so the real Lua card-selection path can prove Longdan's
@@ -934,6 +948,23 @@ const api = {
         requestId = sendRequest('PlayCard', '{}');
         break;
       }
+      // These catalog triggers require native QA and have no local socket director.
+      case 'hidden-dual':
+      case 'hidden-guanxing':
+      case 'hidden-liegong':
+      case 'hidden-jueqing':
+      case 'hidden-ejue':
+      case 'hidden-dufu':
+      case 'hidden-jianzhi':
+      case 'hidden-zhiman':
+      case 'hidden-jilix':
+      case 'hidden-kuanggu':
+      case 'hidden-enyuan':
+      case 'ai-trace':
+      case 'chooser-trace':
+      case 'general-pair-trace':
+      case 'general-pair-match':
+        throw new Error(`Unsupported QA trigger: ${plan.trigger}`);
       default: {
         const unreachable: never = plan.trigger;
         throw new Error(`Unsupported QA trigger: ${unreachable}`);
@@ -1282,6 +1313,7 @@ function Fixture() {
   const request = useGameStore((s) => s.pendingRequest);
   const prompt = useGameStore((s) => s.skillInvoke);
   const regularSkills = useGameStore((s) => s.regularSkills);
+  const initialGeneral = useGameStore((s) => s.initialGeneral);
   const error = useGameStore((s) => s.error);
   const result = useGameStore((s) => s.result);
   const visualEvidence = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('visual');
@@ -1328,11 +1360,11 @@ function Fixture() {
       <p>Lua FreeKill thật chạy trong Wasmoon, còn máy chủ là socket fixture cục bộ để bạn thử trọn luồng chọn bài.</p>
       <div className="inline-controls">
         <button className="button primary" disabled={busy || !ready}
-          onClick={() => roomRun(() => api.beginPlay())}>
+          onClick={() => roomRun(() => { api.beginPlay(); })}>
           Bắt đầu ván test
         </button>
         <button className="button secondary" disabled={busy || !ready}
-          onClick={() => roomRun(() => api.beginVisualHand(10))}>
+          onClick={() => roomRun(() => { api.beginVisualHand(10); })}>
           Bắt đầu với 10 lá
         </button>
       </div>
@@ -1359,9 +1391,13 @@ function Fixture() {
       key={`${request.requestId}-${request.receivedAt}`} request={request} prompt={request.cardsAndChoicePrompt}
       busy={busy} view={(selected) => conn.getCardsAndChoiceView(request.requestId, selected)}
       respond={(selected, choice, cancel) => gameAction(() => conn.respondToCardsAndChoice(request.requestId, selected, choice, cancel))} />}
+    {request?.command === 'CustomDialog' && initialGeneral &&
+      <InitialGeneralPanel key={`${request.requestId}-${request.receivedAt}`} adapter={roomAdapter}
+        run={roomRun} busy={busy} request={request} prompt={initialGeneral} />}
     {/* The native dashboard keeps fake-skill/prelight controls visible while
         AskForSkillInvoke is pending; the request panel is a separate layer. */}
     {phase === 'playing' && <GameBoardScreen busy={busy} leave={() => {}}
+      getGeneralSkills={(name) => conn.lua.call<string[]>('__web_general_skill_names', name)}
       toggleTrust={() => gameAction(() => conn.toggleTrust())}
       regularSkills={regularSkills}
       prelightSkill={(skillName, prelight) => prelightAction(() => conn.prelightSkill(skillName, prelight))}

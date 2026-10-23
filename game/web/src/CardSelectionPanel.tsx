@@ -4,6 +4,7 @@ import type { CardSelectionPrompt, PoxiView } from './engine/cardSelection';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
+import { CardSuitMark } from './HandCardItem';
 
 export default function CardSelectionPanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardSelectionPrompt; busy: boolean;
@@ -45,7 +46,7 @@ export default function CardSelectionPanel({ request, prompt, busy, view, respon
             else setSelected(checked ? selected.filter((t) => t !== card.token) : [...selected, card.token]);
           }}>
           {card.hidden ? 'Bài úp' : text(card.name || 'Lá bài công khai')}
-          {!card.hidden && card.number !== undefined && <small> {({ 1: '♠', 2: '♣', 3: '♥', 4: '♦' } as Record<string, string>)[String(card.suit)] || ''}{card.number}</small>}
+          {!card.hidden && <CardSuitMark suit={card.suit} number={card.number} />}
         </button>;
       })}</div>
     </div>)}

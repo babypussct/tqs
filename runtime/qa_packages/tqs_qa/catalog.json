@@ -1,0 +1,2782 @@
+{
+  "schemaVersion": 1,
+  "package": "tqs_qa",
+  "generalPairMatrix": {
+    "schemaVersion": 1,
+    "initialGeneralCount": 10,
+    "seedRange": { "min": 1780421000, "max": 1780421031 },
+    "seatPermutations": {
+      "A": [1, 2, 3, 4],
+      "B": [4, 1, 2, 3],
+      "C": [3, 4, 1, 2],
+      "D": [2, 3, 4, 1]
+    },
+    "rosterSets": {
+      "r1": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu", "hs__xiahoudun", "hs__xuhuang", "hs__xunyu", "hs__xiahouyuan", "hs__caopi"],
+          ["hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao", "hs__zhugeliang", "hs__huangyueying", "hs__huangzhong", "hs__weiyan", "hs__pangtong"],
+          ["hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__luxun", "hs__daqiao", "hs__dingfeng", "hs__huanggai", "hs__lusu", "hs__sunjian"],
+          ["hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao", "hs__huatuo", "hs__jiaxu", "hs__pangde", "hs__caiwenji", "hs__jiling"]
+        ]
+      },
+      "r2": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__xiahoudun", "hs__zhanghe", "hs__xuhuang", "hs__caoren", "hs__xunyu", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__zhugeliang", "hs__huangyueying", "hs__huangzhong", "hs__weiyan", "hs__pangtong", "hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao"],
+          ["hs__huanggai", "hs__daqiao", "hs__sunshangxiang", "hs__sunjian", "hs__xiaoqiao", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__luxun"],
+          ["hs__huatuo", "hs__jiaxu", "hs__pangde", "hs__zhangjiao", "hs__caiwenji", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__jiling"]
+        ]
+      },
+      "r3": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__xiahouyuan", "hs__zhanghe", "hs__xuhuang", "hs__caopi", "hs__yuejin", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__liushan", "hs__menghuo", "hs__zhurong", "hs__pangtong", "hs__wolong", "hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao"],
+          ["hs__lusu", "hs__zhangzhaozhanghong", "hs__dingfeng", "hs__taishici", "hs__zhoutai", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__huanggai"],
+          ["hs__mateng", "hs__kongrong", "hs__jiling", "hs__tianfeng", "hs__panfeng", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao"]
+        ]
+      },
+      "r4": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__zhenji", "hs__xunyu", "hs__dianwei", "hs__caoren", "hs__xiahoudun", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__zhugeliang", "hs__huangzhong", "hs__zhaoyun", "hs__machao", "hs__liushan", "hs__menghuo", "hs__zhurong"],
+          ["hs__daqiao", "hs__zhouyu", "hs__luxun", "hs__sunjian", "hs__zhoutai", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__huanggai", "hs__taishici"],
+          ["hs__jiaxu", "hs__pangde", "hs__zoushi", "hs__huatuo", "hs__caiwenji", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao"]
+        ]
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "draw-sequence",
+      "title": "Deterministic draw/play-card path",
+      "seed": 1369957073,
+      "expectedCommand": "PlayCard",
+      "trigger": "manual",
+      "cards": [
+        { "key": "slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "nullification", "match": { "name": "heg__nullification" }, "owner": "actor", "area": "hand" }
+      ]
+    },
+    {
+      "id": "card-chosen",
+      "title": "Pang De Jianchu card chosen",
+      "seed": 748636695,
+      "expectedCommand": "AskForCardChosen",
+      "trigger": "manual",
+      "general": "hs__pangde",
+      "skill": "jianchu",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
+        { "key": "target-equip", "match": { "type": "equip" }, "owner": "target", "area": "equip" }
+      ]
+    },
+    {
+      "id": "cards-and-choice",
+      "title": "Jiang Qin Shangyi cards and choice",
+      "seed": 514834654,
+      "expectedCommand": "AskForCardsAndChoice",
+      "trigger": "manual",
+      "general": "ld__jiangqin",
+      "skill": "shangyi",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-equip", "match": { "type": "equip" }, "owner": "actor", "area": "hand" },
+        { "key": "target-card", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "poxi",
+      "title": "Deng Zhi Weimeng poxi",
+      "seed": 2066864612,
+      "expectedCommand": "AskForPoxi",
+      "trigger": "manual",
+      "general": "ty_heg__dengzhi",
+      "skill": "ty_heg__weimeng",
+      "cards": [
+        { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "actor-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
+        { "key": "target-equip", "match": { "type": "equip" }, "owner": "target", "area": "equip" }
+      ]
+    },
+    {
+      "id": "rescue-normal",
+      "title": "Normal rescue / AskForPeaches",
+      "seed": 1119542545,
+      "expectedCommand": "AskForUseCard",
+      "trigger": "rescue",
+      "cards": [
+        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" }
+      ]
+    },
+    {
+      "id": "rescue-battle",
+      "title": "Battle-royal rescue / AskForPeaches",
+      "seed": 2579562478,
+      "expectedCommand": "AskForUseCard",
+      "trigger": "rescue-battle",
+      "cards": [
+        { "key": "rescuer-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "founding",
+      "title": "Wild general founding choice",
+      "seed": 252366849,
+      "expectedCommand": "AskForChoices",
+      "trigger": "founding",
+      "general": "heg__jiananfeng",
+      "cards": []
+    },
+    {
+      "id": "fazheng-enyuan",
+      "title": "Longdan dodge, two Enyuan branches, optional Yiji and Fankui",
+      "seed": 1855594534,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "damage-exchange",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "actor-slash-1",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-slash-2",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-slash-3",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "actor-gift",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "target-dodge",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "target-counter",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "target-loot",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ],
+      "attackSteps": [
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 0,
+          "mandatorySkills": [],
+          "optionalSkills": [],
+          "expectedEffect": "longdan-slash-as-jink-dodge"
+        },
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 1,
+          "mandatorySkills": [
+            "ld__enyuan"
+          ],
+          "optionalSkills": [],
+          "expectedEffect": "source-gives-one-hand-card"
+        },
+        {
+          "from": "actor",
+          "to": "target",
+          "amount": 1,
+          "mandatorySkills": [
+            "ld__enyuan"
+          ],
+          "optionalSkills": [],
+          "expectedEffect": "empty-source-loses-one-hp"
+        },
+        {
+          "from": "target",
+          "to": "actor",
+          "amount": 1,
+          "mandatorySkills": [],
+          "optionalSkills": [
+            "hs__yiji",
+            "fankui"
+          ],
+          "expectedInvokedSkills": [
+            "hs__yiji",
+            "fankui"
+          ],
+          "expectedEffect": "longdan-jink-as-slash; yiji-two-to-self; fankui-one-from-source"
+        }
+      ]
+    },
+    {
+      "id": "hidden-yiji",
+      "title": "Hidden Quách Gia Yiji prelight, invoke and skip",
+      "seed": 1959903454,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-yiji-deputy",
+      "title": "Hidden deputy Quách Gia Yiji reveals the deputy before invoke",
+      "seed": 1959903455,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-rehide-yiji",
+      "title": "Hidden Quách Gia Yiji reattaches as prelighted fake after re-hide",
+      "seed": 1567522736,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-rehide-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-rehide-yiji-deputy",
+      "title": "Hidden deputy Quách Gia Yiji reattaches as prelighted fake after re-hide",
+      "seed": 1567522737,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-rehide-yiji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-jianxiong",
+      "title": "Hidden Cao Cao Jianxiong prelight, invoke and obtain the damage card",
+      "seed": 1567522695,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-jianxiong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianxiong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jianxiong-deputy",
+      "title": "Hidden deputy Cao Cao Jianxiong reveals the deputy before choice",
+      "seed": 1567522696,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-jianxiong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__caocao",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianxiong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+  {
+    "id": "hidden-fankui",
+    "title": "Hidden Tư Mã Ý Fankui prelight, damage and obtain a source card",
+    "seed": 1567522710,
+    "expectedCommand": "AskForCardChosen",
+    "trigger": "hidden-fankui",
+    "playerCount": 2,
+    "players": {
+      "actor": {
+        "general": "hs__simayi",
+        "deputy": "hs__guojia",
+        "kingdom": "wei"
+      },
+      "target": {
+        "general": "hs__zhaoyun",
+        "deputy": "ld__fazheng",
+        "kingdom": "shu"
+      }
+    },
+    "cards": [
+      {
+        "key": "fankui-damage",
+        "match": {
+          "trueName": "slash"
+        },
+        "owner": "target",
+        "area": "hand"
+      },
+      {
+        "key": "fankui-loot",
+        "match": {
+          "trueName": "peach"
+        },
+        "owner": "target",
+        "area": "hand"
+      }
+    ]
+  },
+  {
+    "id": "hidden-fankui-deputy",
+    "title": "Hidden deputy Tư Mã Ý Fankui reveals the deputy before obtain",
+    "seed": 1567522711,
+    "expectedCommand": "AskForCardChosen",
+    "trigger": "hidden-fankui",
+    "playerCount": 2,
+    "players": {
+      "actor": {
+        "general": "hs__guojia",
+        "deputy": "hs__simayi",
+        "kingdom": "wei"
+      },
+      "target": {
+        "general": "hs__zhaoyun",
+        "deputy": "ld__fazheng",
+        "kingdom": "shu"
+      }
+    },
+    "cards": [
+      {
+        "key": "fankui-damage",
+        "match": {
+          "trueName": "slash"
+        },
+        "owner": "target",
+        "area": "hand"
+      },
+      {
+        "key": "fankui-loot",
+        "match": {
+          "trueName": "peach"
+        },
+        "owner": "target",
+        "area": "hand"
+      }
+    ]
+  },
+    {
+      "id": "hidden-reveal",
+      "title": "Hidden compulsory skill active reveal helper",
+      "seed": 1567522689,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-reveal",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-reveal-deputy",
+      "title": "Hidden deputy compulsory skill active reveal helper",
+      "seed": 1567522691,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-reveal",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-active",
+      "title": "Hidden Tôn Quyền Chế Hành reveals before PlayCard",
+      "seed": 1567522690,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-active",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiheng-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-active-main",
+      "title": "Hidden main Tôn Quyền Chế Hành reveals before PlayCard",
+      "seed": 1567522692,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-active",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiheng-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fanjian",
+      "title": "Hidden Chu Du Fanjian reveals before PlayCard and resolves target choice",
+      "seed": 1567522740,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fanjian",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fanjian-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "fanjian-target-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fanjian-deputy",
+      "title": "Hidden deputy Chu Du Fanjian reveals before PlayCard and resolves target choice",
+      "seed": 1567522741,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fanjian",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__daqiao",
+          "deputy": "hs__zhouyu",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fanjian-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "fanjian-target-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-view-as",
+      "title": "Hidden deputy Triệu Vân Longdan converts Jink to Slash",
+      "seed": 1567522693,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-view-as",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guanyu",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "longdan-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-view-as-main",
+      "title": "Hidden main Triệu Vân Longdan converts Jink to Slash",
+      "seed": 1567522694,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-view-as",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__guanyu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "longdan-card",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-dual",
+      "title": "Hidden 颜良文丑 双雄 trigger and color-opposite Duel",
+      "seed": 1567522709,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dual",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__yanliangwenchou",
+          "deputy": "hs__yuanshao",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "shuangxiong-card",
+          "match": {
+            "trueName": "slash",
+            "color": "black"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "shuangxiong-discard",
+          "match": {
+            "trueName": "jink",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-luoshen",
+      "title": "Hidden 甄姬 洛神 prelight and phase-start judgment",
+      "seed": 1567522712,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-luoshen",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhenji",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-luoshen-deputy",
+      "title": "Hidden deputy 甄姬 洛神 reveals the deputy before judgment",
+      "seed": 1567522713,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-luoshen",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__zhenji",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-tiandu",
+      "title": "Hidden Quách Gia Thiên Đố reveals before FinishJudge obtain",
+      "seed": 1567522742,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tiandu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__guojia",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-tiandu-deputy",
+      "title": "Hidden deputy Quách Gia Thiên Đố reveals before FinishJudge obtain",
+      "seed": 1567522743,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tiandu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "hs__guojia",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-jizhi",
+      "title": "Hidden 黄月英 集智 reveals before CardUsing and draws",
+      "seed": 1567522714,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jizhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangyueying",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jizhi-card",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jizhi-deputy",
+      "title": "Hidden deputy 黄月英 集智 reveals before CardUsing and draws",
+      "seed": 1567522715,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jizhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__huangyueying",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jizhi-card",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-mingshi",
+      "title": "Hidden 孔融 名士 reduces damage from a hidden source",
+      "seed": 1567522716,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-mingshi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__kongrong",
+          "deputy": "hs__jiling",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "mingshi-damage",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-mingshi-deputy",
+      "title": "Hidden deputy 孔融 名士 reduces damage from a hidden source",
+      "seed": 1567522717,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-mingshi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiling",
+          "deputy": "hs__kongrong",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "mingshi-damage",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-qianxun",
+      "title": "Hidden 陆逊 谦逊 cancels a valid Snatch target",
+      "seed": 1567522718,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-snatch",
+          "match": {
+            "trueName": "snatch"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "qianxun-victim",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-qianxun-deputy",
+      "title": "Hidden deputy 陆逊 谦逊 cancels a valid Snatch target",
+      "seed": 1567522719,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-snatch",
+          "match": {
+            "trueName": "snatch"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "qianxun-victim",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-qianxun-indulgence",
+      "title": "Hidden 陆逊 谦逊 cancels a valid Indulgence judge move",
+      "seed": 1567522720,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-indulgence",
+          "match": {
+            "trueName": "indulgence"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-qianxun-indulgence-deputy",
+      "title": "Hidden deputy 陆逊 谦逊 cancels a valid Indulgence judge move",
+      "seed": 1567522721,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-qianxun",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__luxun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "qianxun-indulgence",
+          "match": {
+            "trueName": "indulgence"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-kongcheng",
+      "title": "Hidden 诸葛亮 空城 cancels a valid Duel target while empty-handed",
+      "seed": 1567522722,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-kongcheng",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhugeliang",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kongcheng-duel",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-kongcheng-deputy",
+      "title": "Hidden deputy 诸葛亮 空城 cancels a valid Duel target while empty-handed",
+      "seed": 1567522723,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-kongcheng",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhugeliang",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kongcheng-duel",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu",
+      "title": "Hidden 贾诩 帷幕 cancels a black Duel target",
+      "seed": 1567522724,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiaxu",
+          "deputy": "hs__pangde",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-duel",
+          "match": {
+            "trueName": "duel",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu-deputy",
+      "title": "Hidden deputy 贾诩 帷幕 cancels a black Duel target",
+      "seed": 1567522725,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__pangde",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-duel",
+          "match": {
+            "trueName": "duel",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu-indulgence",
+      "title": "Hidden 贾诩 帷幕 cancels a black Indulgence judge move",
+      "seed": 1567522726,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__jiaxu",
+          "deputy": "hs__pangde",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-indulgence",
+          "match": {
+            "trueName": "indulgence",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-weimu-indulgence-deputy",
+      "title": "Hidden deputy 贾诩 帷幕 cancels a black Indulgence judge move",
+      "seed": 1567522727,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "hidden-weimu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__pangde",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "weimu-indulgence",
+          "match": {
+            "trueName": "indulgence",
+            "color": "black"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-xiaoji",
+      "title": "Hidden 孙尚香 枭姬 draws after losing an equipment",
+      "seed": 1567522728,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-xiaoji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunshangxiang",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "xiaoji-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "actor",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "hidden-xiaoji-deputy",
+      "title": "Hidden deputy 孙尚香 枭姬 draws after losing an equipment",
+      "seed": 1567522729,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-xiaoji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__sunshangxiang",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "xiaoji-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "actor",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "hidden-guanxing",
+      "title": "Hidden 诸葛亮 观星 reveals before native arrange",
+      "seed": 1567522730,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-guanxing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhugeliang",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-guanxing-deputy",
+      "title": "Hidden deputy 诸葛亮 观星 reveals before native arrange",
+      "seed": 1567522731,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-guanxing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhugeliang",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-tianxiang",
+      "title": "Hidden 小乔 天香 redirects damage after choosing a heart card",
+      "seed": 1567522732,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tianxiang",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__xiaoqiao",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "tianxiang-heart",
+          "match": {
+            "suit": "heart"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-tianxiang-deputy",
+      "title": "Hidden deputy 小乔 天香 redirects damage after choosing a heart card",
+      "seed": 1567522733,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-tianxiang",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "hs__xiaoqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "tianxiang-heart",
+          "match": {
+            "suit": "heart"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-duanchang",
+      "title": "Hidden 蔡文姬 断肠 removes killer's chosen main-general skills",
+      "seed": 1567522734,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-duanchang",
+      "playerCount": 4,
+      "players": {
+        "actor": {
+          "general": "hs__caiwenji",
+          "deputy": "hs__yuanshao",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-duanchang-deputy",
+      "title": "Hidden deputy 蔡文姬 断肠 removes killer's chosen main-general skills",
+      "seed": 1567522735,
+      "expectedCommand": "AskForChoices",
+      "trigger": "hidden-duanchang",
+      "playerCount": 4,
+      "players": {
+        "actor": {
+          "general": "hs__yuanshao",
+          "deputy": "hs__caiwenji",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-yingzi",
+      "title": "Hidden 周瑜 英姿 modifies the native DrawNCards count",
+      "seed": 1567522738,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yingzi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-yingzi-deputy",
+      "title": "Hidden deputy 周瑜 英姿 modifies the native DrawNCards count",
+      "seed": 1567522739,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-yingzi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__daqiao",
+          "deputy": "hs__zhouyu",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": []
+    },
+    {
+      "id": "hidden-liegong",
+      "title": "Hidden 黄忠 烈弓 reveals before the native damage-plus-one choice",
+      "seed": 1567522740,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-liegong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangzhong",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "liegong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "liegong-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-liegong-deputy",
+      "title": "Hidden deputy 黄忠 烈弓 reveals before the native damage-plus-one choice",
+      "seed": 1567522741,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-liegong",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__huangzhong",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "liegong-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "liegong-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-kuanggu",
+      "title": "Hidden 魏延 狂骨 reveals before the native Damage choice",
+      "seed": 1567522744,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-kuanggu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__weiyan",
+          "deputy": "hs__huangzhong",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kuanggu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "kuanggu-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-kuanggu-deputy",
+      "title": "Hidden deputy 魏延 狂骨 reveals before the native Damage choice",
+      "seed": 1567522745,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-kuanggu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__huangzhong",
+          "deputy": "hs__weiyan",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "kuanggu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "kuanggu-target-card",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jueqing",
+      "title": "Hidden 张春华 绝情 converts PreDamage into HP loss",
+      "seed": 1567522750,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jueqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "zhangchunhua",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jueqing-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jueqing-deputy",
+      "title": "Hidden deputy 张春华 绝情 converts PreDamage into HP loss",
+      "seed": 1567522751,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jueqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__simayi",
+          "deputy": "zhangchunhua",
+          "kingdom": "wei"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jueqing-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-gongqing",
+      "title": "Hidden 潘濬 公清 proves both attack-range damage branches",
+      "seed": 1567522746,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-gongqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "panjun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "gongqing-bow",
+          "match": {
+            "name": "kylin_bow"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-gongqing-deputy",
+      "title": "Hidden deputy 潘濬 公清 proves both attack-range damage branches",
+      "seed": 1567522747,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-gongqing",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__sunquan",
+          "deputy": "panjun",
+          "kingdom": "wu"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "gongqing-bow",
+          "match": {
+            "name": "kylin_bow"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-enyuan",
+      "title": "Hidden 法正 恩怨 reveals before TargetConfirmed Peach draw",
+      "seed": 1567522752,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-enyuan",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__fazheng",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "enyuan-peach",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-enyuan-deputy",
+      "title": "Hidden deputy 法正 恩怨 reveals before TargetConfirmed Peach draw",
+      "seed": 1567522753,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-enyuan",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "enyuan-peach",
+          "match": {
+            "trueName": "peach"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fuyin",
+      "title": "Hidden 诸葛瞻 Phụ Âm reveals before TargetConfirmed Slash nullification",
+      "seed": 1567522754,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fuyin",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "zhugezhan",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fuyin-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-fuyin-deputy",
+      "title": "Hidden deputy 诸葛瞻 Phụ Âm reveals before TargetConfirmed Slash nullification",
+      "seed": 1567522755,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-fuyin",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "zhugezhan",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "fuyin-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-ejue",
+      "title": "Hidden main 张春华 Ách Tuyệt adds damage against unknown kingdom",
+      "seed": 1567522752,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-ejue",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__zhangchunhua",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "ejue-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-ejue-deputy",
+      "title": "Hidden deputy 张春华 Ách Tuyệt adds damage against unknown kingdom",
+      "seed": 1567522753,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-ejue",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__zhangchunhua",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "ejue-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-dufu",
+      "title": "Hidden main 司马冏 Độc Phu adds damage against a different kingdom",
+      "seed": 1567522756,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dufu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simajiong",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "dufu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-dufu-deputy",
+      "title": "Hidden deputy 司马冏 Độc Phu adds damage against a different kingdom",
+      "seed": 1567522757,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-dufu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__simajiong",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "dufu-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jianzhi",
+      "title": "Hidden main 贾充 Gian Chí discards hand on lethal damage",
+      "seed": 1567522758,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jianzhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__jiachong",
+          "deputy": "heg__simayi",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianzhi-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "jianzhi-filler",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jianzhi-deputy",
+      "title": "Hidden deputy 贾充 Gian Chí discards hand on lethal damage",
+      "seed": 1567522759,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-jianzhi",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "heg__simayi",
+          "deputy": "heg__jiachong",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhaoyun",
+          "deputy": "hs__zhangfei",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianzhi-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "jianzhi-filler",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-zhiman",
+      "title": "Hidden main 马谡 Chế Man ngăn sát thương và lấy trang bị",
+      "seed": 1567522760,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-zhiman",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__masu",
+          "deputy": "hs__zhaoyun",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiman-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "zhiman-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "target",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jilix",
+      "title": "Hidden main 严白虎 寄篱 repeats red Slash then prevents the second damage",
+      "seed": 1567522762,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-jilix",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__yanbaihu",
+          "deputy": "ld__huangzu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jilix-slash",
+          "match": {
+            "trueName": "slash",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-jilix-deputy",
+      "title": "Hidden deputy 严白虎 寄篱 repeats red Slash then prevents the second damage",
+      "seed": 1567522763,
+      "expectedCommand": "PlayCard",
+      "trigger": "hidden-jilix",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__huangzu",
+          "deputy": "ld__yanbaihu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jilix-slash",
+          "match": {
+            "trueName": "slash",
+            "color": "red"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "hidden-zhiman-deputy",
+      "title": "Hidden deputy 马谡 Chế Man ngăn sát thương và lấy trang bị",
+      "seed": 1567522761,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "hidden-zhiman",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__masu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhiman-card",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "zhiman-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "target",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "ai-trace",
+      "title": "Fixed four-seat SmartAI decision/fallback trace",
+      "seed": 1780420130,
+      "expectedCommand": "PlayCard",
+      "trigger": "ai-trace",
+      "playerCount": 4,
+      "seatRosters": [
+        {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        },
+        {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        }
+      ],
+      "fixedHands": [
+        { "trueName": "slash", "suit": "heart", "color": "red" },
+        { "trueName": "jink", "suit": "heart", "color": "red" },
+        { "trueName": "peach", "suit": "heart", "color": "red" },
+        { "trueName": "duel", "suit": "spade", "color": "black" }
+      ],
+      "seedRange": { "min": 1780420130, "max": 1780420132 },
+      "seedVariants": [
+        {
+          "seed": 1780420130,
+          "seatRosters": [
+            { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "heart", "color": "red" },
+            { "trueName": "jink", "suit": "heart", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "spade", "color": "black" }
+          ]
+        },
+        {
+          "seed": 1780420131,
+          "seatRosters": [
+            { "general": "hs__sunquan", "deputy": "hs__luxun", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "diamond", "color": "red" },
+            { "trueName": "jink", "suit": "diamond", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "club", "color": "black" }
+          ]
+        },
+        {
+          "seed": 1780420132,
+          "seatRosters": [
+            { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "heart", "color": "red" },
+            { "trueName": "jink", "suit": "heart", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "spade", "color": "black" }
+          ]
+        }
+      ],
+      "prompt4Skills": [
+        "tianyi", "shangyi", "tiaoxin", "hs__zhiheng", "hs__kurou", "hs__qiangxi",
+        "hs__longdan", "hs__luanji", "hs__wusheng", "huoji", "jijiu", "kanpo",
+        "aocai", "beizhu", "dimeng", "choufa", "cunsi", "duanfa"
+      ],
+      "cards": []
+    },
+    {
+      "id": "chooser-trace",
+      "title": "Bounded native generic chooser decision and opportunity trace",
+      "seed": 1780420132,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "chooser-trace",
+      "playerCount": 4,
+      "seatRosters": [
+        { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+        { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+        { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+        { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+      ],
+      "fixedHands": [
+        { "trueName": "slash", "suit": "heart", "color": "red" },
+        { "trueName": "jink", "suit": "heart", "color": "red" },
+        { "trueName": "peach", "suit": "heart", "color": "red" },
+        { "trueName": "duel", "suit": "spade", "color": "black" }
+      ],
+      "cases": [
+        { "skill": "choose_players_skill", "variant": "mandatory" },
+        { "skill": "choose_cards_skill", "variant": "mandatory" },
+        { "skill": "ex__choose_skill", "variant": "mandatory" },
+        { "skill": "choose_players_skill", "variant": "optional" },
+        { "skill": "choose_cards_skill", "variant": "optional" },
+        { "skill": "ex__choose_skill", "variant": "optional" }
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-trace",
+      "title": "Fixed four-seat initial Hegemony general-pair decision/fallback trace",
+      "seed": 1780420131,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-trace",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-a",
+      "title": "Full Hegemony match with fixed pair offers, seat order A",
+      "seed": 1780420132,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-b",
+      "title": "Full Hegemony match with fixed pair offers, seat order B",
+      "seed": 1780420133,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-c",
+      "title": "Full Hegemony match with fixed pair offers, seat order C",
+      "seed": 1780420134,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-d",
+      "title": "Full Hegemony match with fixed pair offers, seat order D",
+      "seed": 1780420135,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-a",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order A",
+      "seed": 1780420136,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "A",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-b",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order B",
+      "seed": 1780420137,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "B",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-c",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order C",
+      "seed": 1780420138,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "C",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-d",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order D",
+      "seed": 1780420139,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "D",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ]
+      ],
+      "cards": []
+    }
+  ]
+}

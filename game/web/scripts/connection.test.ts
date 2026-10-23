@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GameConnection, type SocketHandlers, type RequestInfo } from '../src/engine/connection';
+import { GameConnection, webSocketOpener, type SocketHandlers, type RequestInfo } from '../src/engine/connection';
 import { CLIENT_NOTIFY, CLIENT_REPLY, PacketStream, PacketType, encodePacket, type Packet } from '../src/engine/packet';
 
 const SERVER_NOTIFY = PacketType.NOTIFICATION | PacketType.SRC_SERVER | PacketType.DEST_CLIENT;
@@ -33,6 +33,41 @@ function harness() {
   });
   return { conn, sockets, statuses, requests, received, packet };
 }
+
+test('WebSocket opener carries only a bounded admission token as a subprotocol', () => {
+  const original = globalThis.WebSocket;
+  const created: { url: string; protocols?: string | string[] }[] = [];
+  class FakeWebSocket {
+    static readonly CONNECTING = 0;
+    static readonly OPEN = 1;
+    static readonly CLOSING = 2;
+    static readonly CLOSED = 3;
+    readyState = FakeWebSocket.CONNECTING;
+    binaryType = '';
+    onopen: (() => void) | null = null;
+    onmessage: ((event: { data: ArrayBuffer }) => void) | null = null;
+    onclose: ((event: { reason: string; code: number }) => void) | null = null;
+    onerror: (() => void) | null = null;
+    constructor(public readonly url: string, public readonly protocols?: string | string[]) {
+      created.push({ url, protocols });
+    }
+    send() {}
+    close() {}
+  }
+  const webSocketGlobal = globalThis as typeof globalThis & { WebSocket: typeof WebSocket };
+  webSocketGlobal.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+  try {
+    const handlers: SocketHandlers = { onData: () => {}, onClose: () => {} };
+    webSocketOpener('wss://game.example/ws', () => 'signed_token')(handlers);
+    webSocketOpener('wss://game.example/ws', () => 'contains.dot')(handlers);
+    assert.deepEqual(created, [
+      { url: 'wss://game.example/ws', protocols: 'tqs-admission-v1.signed_token' },
+      { url: 'wss://game.example/ws', protocols: undefined },
+    ]);
+  } finally {
+    webSocketGlobal.WebSocket = original;
+  }
+});
 
 test('EnterLobby is online only after Lua accepts the packet', () => {
   const h = harness();
@@ -497,6 +532,44 @@ test('user-confirmed Hegemony selection sends exactly one authorized CBOR reply'
   assert.equal(Buffer.from(reply.data).toString('hex'), GENERAL_REPLY_HEX);
   assert.equal(h.requests.at(-1), null);
   assert.throws(() => h.conn.respondToInitialGeneral(601, 'caocao', 'xiahoudun', 'wei'), /không còn hiệu lực/);
+});
+
+test('initial-general Lua validation and metadata are cached only within the active request', () => {
+  const h = harness();
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  prepareGeneralRequest(h, 609);
+  let kingdomCalls = 0;
+  let metadataCalls = 0;
+  h.conn.lua.call = <T>(name: string): T => {
+    if (name === '__web_general_kingdoms') {
+      kingdomCalls++;
+      return ['wei'] as T;
+    }
+    if (name === '__web_general_metadata') {
+      metadataCalls++;
+      return [
+        { name: 'caocao', label: 'Tào Tháo', trueName: 'caocao', prefix: '', kingdom: 'wei', subkingdom: '', hp: 4, maxHp: 4, mainMaxHp: 0, deputyMaxHp: 0, shield: 0, companionWithOffer: false },
+        { name: 'xiahoudun', label: 'Hạ Hầu Đôn', trueName: 'xiahoudun', prefix: '', kingdom: 'wei', subkingdom: '', hp: 4, maxHp: 4, mainMaxHp: 0, deputyMaxHp: 0, shield: 0, companionWithOffer: false },
+        { name: 'liubei', label: 'Lưu Bị', trueName: 'liubei', prefix: '', kingdom: 'shu', subkingdom: '', hp: 4, maxHp: 4, mainMaxHp: 0, deputyMaxHp: 0, shield: 0, companionWithOffer: false },
+      ] as T;
+    }
+    return [] as T;
+  };
+  assert.deepEqual(h.conn.getInitialGeneralKingdoms(609, 'caocao', 'xiahoudun'), ['wei']);
+  assert.deepEqual(h.conn.getInitialGeneralKingdoms(609, 'caocao', 'xiahoudun'), ['wei']);
+  assert.equal(kingdomCalls, 1);
+  const metadata = h.conn.getInitialGeneralMetadata(609, ['caocao', 'xiahoudun', 'liubei']);
+  assert.equal(metadata.length, 3);
+  assert.equal(metadata[0].label, 'Tào Tháo');
+  h.conn.getInitialGeneralMetadata(609, ['caocao', 'xiahoudun', 'liubei']);
+  assert.equal(metadataCalls, 1);
+  assert.deepEqual(h.conn.getInitialGeneralMetadata(609, ['liubei', 'caocao', 'xiahoudun']), [],
+    'metadata order must be the exact server offer order');
+  assert.equal(metadataCalls, 1);
+  prepareGeneralRequest(h, 610);
+  h.conn.getInitialGeneralKingdoms(610, 'caocao', 'xiahoudun');
+  assert.equal(kingdomCalls, 2, 'a replacement request gets a fresh Lua cache');
 });
 
 test('invalid, replaced, expired, canceled, and disconnected general requests never reply', () => {

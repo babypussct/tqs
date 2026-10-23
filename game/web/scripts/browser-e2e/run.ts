@@ -46,13 +46,14 @@ async function assertCrowdedSkillRail(page: Page, selector: string, viewport: { 
   const check = await page.evaluate((source) => {
     const rail = document.querySelector<HTMLElement>('.board-local-skill-rail')!;
     const sourceButton = rail.querySelector<HTMLElement>(source)!;
-    const dock = sourceButton.parentElement!;
+    const entry = sourceButton.closest<HTMLElement>('.sg-skill-info-entry')!;
+    const dock = entry.parentElement!;
     // Only clone existing DOM for the crowding check. Never mutate Lua skill
     // permissions, game state, or the native protocol.
     const clones: HTMLElement[] = [];
     for (let i = 0; i < 12; i++) {
-      const clone = sourceButton.cloneNode(true) as HTMLElement;
-      clone.textContent = `Kỹ năng ${i + 1}`;
+      const clone = entry.cloneNode(true) as HTMLElement;
+      clone.querySelector<HTMLElement>('.sg-skill-button')!.textContent = `Kỹ năng ${i + 1}`;
       dock.appendChild(clone);
       clones.push(clone);
     }
@@ -89,6 +90,156 @@ async function assertCrowdedSkillRail(page: Page, selector: string, viewport: { 
 
 async function runSuite(page: Page) {
   const tests: [string, (page: Page) => Promise<void>][] = [
+    ['Upstream HP colors progress from green to yellow and red in the actual portrait', async (p) => {
+      for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        for (const [hp, maxHp, shield, expected, fractionColor] of [
+          [4, 4, 0, ['3-heg', '3-heg', '3-heg', '3-heg'], ''],
+          [3, 4, 0, ['0-heg', '3-heg', '3-heg', '3-heg'], ''],
+          [2, 4, 0, ['0-heg', '0-heg', '2-heg', '2-heg'], ''],
+          [1, 4, 0, ['0-heg', '0-heg', '0-heg', '1-heg'], ''],
+          [0, 4, 0, ['0-heg', '0-heg', '0-heg', '0-heg'], ''],
+          [1, 2, 0, ['0-heg', '1-heg'], ''],
+          [2, 2, 0, ['3-heg', '3-heg'], ''],
+          [1, 8, 0, ['1-heg'], 'rgb(244, 24, 14)'],
+          [2, 8, 0, ['2-heg'], 'rgb(227, 176, 6)'],
+          [3, 8, 0, ['3-heg'], 'rgb(37, 236, 39)'],
+          [2, 4, 1, ['2-heg'], 'rgb(227, 176, 6)'],
+        ] as const) {
+          await p.evaluate(([value, maximum, protection]) =>
+            window.__tqsE2e.setHealth(value, maximum, protection), [hp, maxHp, shield] as const);
+          const hpPanel = p.locator('.board-local-seat .sg-hp-vertical-column');
+          await hpPanel.locator('.native-heg-hp-disc-v').first().waitFor();
+          const result = await hpPanel.evaluate((el) => {
+            const images = [...el.querySelectorAll<HTMLImageElement>('.native-heg-hp-disc-v')];
+            const rects = images.map((img) => img.getBoundingClientRect());
+            const fraction = el.querySelector<HTMLElement>('.sg-hp-vertical-fraction');
+            return {
+              assets: images.map((img) => img.src.split('/').at(-1)?.replace('.png', '')),
+              emptyOpacity: [...el.querySelectorAll<HTMLElement>('.sg-magatama-empty')].map((img) => getComputedStyle(img).opacity),
+              vertical: rects.every((rect, index) => index === 0 || rect.top >= rects[index - 1].bottom - 1),
+              fractionColor: fraction ? getComputedStyle(fraction).color : '',
+            };
+          });
+          assert.deepEqual(result.assets, expected, `${hp}/${maxHp} at ${viewport.width}x${viewport.height}`);
+          assert.ok(result.vertical, `magatama must stack vertically: ${JSON.stringify(result)}`);
+          assert.ok(result.emptyOpacity.every((opacity) => opacity === '0'), `empty HP slots visible: ${JSON.stringify(result)}`);
+          assert.equal(result.fractionColor, fractionColor, `${hp}/${maxHp} at ${viewport.width}x${viewport.height}`);
+        }
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
+    ['Upstream battlefield and music settings work across viewports', async (p) => {
+      // Audio playback is simulated here so autoplay policy and hardware sound
+      // cannot make Chrome UI regression tests environment-dependent.
+      const browser = p.context().browser();
+      assert.ok(browser);
+      const context = await browser.newContext({ viewport: { width: 320, height: 568 } });
+      try {
+        const preview = await context.newPage();
+        preview.setDefaultTimeout(8_000);
+        await preview.addInitScript({ content: `(() => {
+          const probe = { starts: 0, pauses: 0, src: '', loop: false, volume: 1 };
+          class MockAudio extends EventTarget {
+            constructor(src) {
+              super(); this.paused = true; this.loop = false;
+              this.preload = ''; this.error = null; this.currentVolume = 1;
+              probe.src = src;
+            }
+            get volume() { return this.currentVolume; }
+            set volume(value) { this.currentVolume = value; probe.volume = value; }
+            play() {
+              probe.starts++;
+              probe.loop = this.loop;
+              if (probe.starts === 1) return Promise.reject(new DOMException('Gesture required', 'NotAllowedError'));
+              this.paused = false;
+              return Promise.resolve();
+            }
+            pause() { probe.pauses++; this.paused = true; }
+          }
+          Object.defineProperty(window, 'Audio', { value: MockAudio, configurable: true });
+          Object.defineProperty(window, '__bgmProbe', { value: probe, configurable: true });
+        })();` });
+        await preview.goto(new URL('/e2e.html', p.url()).href);
+        await start(preview, 'choices');
+        const settings = preview.getByRole('button', { name: 'Cài đặt nhạc nền' });
+        await preview.waitForFunction(() =>
+          document.querySelector('.battle-music-settings button')?.getAttribute('data-playback') === 'blocked');
+        const initial = await preview.evaluate(() =>
+          (window as unknown as { __bgmProbe: { src: string; volume: number; loop: boolean; starts: number } }).__bgmProbe);
+        assert.ok(initial.src.endsWith('/audio/system/bgm.mp3'));
+        assert.equal(initial.volume, 0.5);
+        assert.equal(initial.starts, 1);
+
+        for (const viewport of [
+          { width: 320, height: 568 }, { width: 390, height: 844 },
+          { width: 844, height: 390 }, { width: 1280, height: 800 },
+        ]) {
+          await preview.setViewportSize(viewport);
+          const stage = await preview.locator('.sg-board-table').evaluate((node) => ({
+            image: getComputedStyle(node).backgroundImage,
+            sizing: getComputedStyle(node).backgroundSize,
+          }));
+          assert.ok(stage.image.includes('gamebg-upstream.jpg'), `upstream scenery missing at ${viewport.width}x${viewport.height}`);
+          assert.ok(stage.sizing.includes('cover'), `scenery must crop like FreeKill at ${viewport.width}x${viewport.height}`);
+          await settings.click();
+          const popover = preview.getByRole('group', { name: 'Điều khiển nhạc nền trận đấu' });
+          await popover.waitFor({ state: 'visible' });
+          const rect = await popover.boundingBox();
+          assert.ok(rect && rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= viewport.width + 1 &&
+            rect.y + rect.height <= viewport.height + 1,
+          `popover escapes the viewport ${viewport.width}x${viewport.height}: ${JSON.stringify(rect)}`);
+          const blockedActions = await preview.evaluate(() => {
+            const popup = document.querySelector('.battle-music-popover')!.getBoundingClientRect();
+            return [...document.querySelectorAll<HTMLElement>('.sg-btn-ok, .sg-btn-cancel')]
+              .filter((button) => {
+                const action = button.getBoundingClientRect();
+                return action.width > 0 && action.height > 0 &&
+                  Math.min(popup.right, action.right) - Math.max(popup.left, action.left) > 1 &&
+                  Math.min(popup.bottom, action.bottom) - Math.max(popup.top, action.top) > 1;
+              }).map((button) => button.textContent);
+          });
+          assert.deepEqual(blockedActions, [], `music settings block gameplay at ${viewport.width}x${viewport.height}`);
+          if (process.env.TQS_EVIDENCE_DIR) {
+            const evidenceDir = path.resolve(process.env.TQS_EVIDENCE_DIR);
+            mkdirSync(evidenceDir, { recursive: true });
+            await preview.screenshot({ path: path.join(evidenceDir,
+              `upstream-battlefield-music-${viewport.width}x${viewport.height}.png`) });
+          }
+          await preview.keyboard.press('Escape');
+          assert.equal(await popover.count(), 0);
+        }
+
+        await preview.setViewportSize({ width: 390, height: 844 });
+        await settings.click();
+        await preview.getByRole('button', { name: 'Phát nhạc nền' }).click();
+        await preview.waitForFunction(() =>
+          document.querySelector('.battle-music-settings button')?.getAttribute('data-playback') === 'playing');
+        const state = await preview.evaluate(() =>
+          (window as unknown as { __bgmProbe: { starts: number; loop: boolean } }).__bgmProbe);
+        assert.equal(state.starts, 2);
+        assert.equal(state.loop, true);
+        const slider = preview.getByRole('slider', { name: /Âm lượng nhạc nền/ });
+        await slider.focus();
+        await slider.press('Home');
+        for (let i = 0; i < 6; i++) await slider.press('ArrowRight');
+        await preview.getByText('Âm lượng nhạc nền: 30%').waitFor();
+        assert.equal(await preview.evaluate(() =>
+          (window as unknown as { __bgmProbe: { volume: number } }).__bgmProbe.volume), 0.3);
+        await preview.getByRole('button', { name: 'Tắt nhạc nền' }).click();
+        assert.equal(await settings.getAttribute('data-enabled'), 'false');
+        const stored = await preview.evaluate(() => JSON.parse(localStorage.getItem('tqs.battleMusic.v1') ?? '{}'));
+        assert.deepEqual(stored, { enabled: false, volume: 30 });
+        await preview.reload();
+        await start(preview, 'choices');
+        assert.equal(await preview.getByRole('button', { name: 'Cài đặt nhạc nền' }).getAttribute('data-enabled'), 'false');
+        await preview.getByRole('button', { name: 'Cài đặt nhạc nền' }).click();
+        await preview.getByText('Âm lượng nhạc nền: 30%').waitFor();
+      } finally {
+        await context.close();
+      }
+    }],
     ['Main app renders in actual Chrome', async (p) => {
       // Startup is intentionally offline. Exercise the visible error state
       // without forwarding a request to a missing or external Gateway.
@@ -132,7 +283,7 @@ async function runSuite(page: Page) {
         `Special usage choices must clear the skill rail: ${JSON.stringify(choiceGeometry)}`);
       assert.ok(choiceGeometry.choice.bottom <= choiceGeometry.hand.top,
         `Special usage choices must clear card selection: ${JSON.stringify(choiceGeometry)}`);
-      await p.getByRole('button', { name: 'longdan' }).click();
+      await p.getByRole('button', { name: 'longdan', exact: true }).click();
       await p.getByRole('button', { name: 'convert' }).click();
       await waitActions(p, 4);
       const s = await snapshot(p);
@@ -145,6 +296,98 @@ async function runSuite(page: Page) {
       assert.equal(await p.getByRole('button', { name: 'Sát', exact: true }).getAttribute('aria-pressed'), 'true');
       assert.equal(await p.getByRole('button', { name: 'Đã chọn mục tiêu' }).getAttribute('aria-pressed'), 'true');
     }],
+    ['Public suit and rank use matching red or black ink with a thin outline', async (p) => {
+      await start(p, 'choices');
+      await p.evaluate(() => window.__tqsE2e.seedHorseEquipment(true));
+      const styles = await p.evaluate(() => {
+        // Test the full four-suit palette in the live stylesheet, even when the
+        // current game fixture deals fewer than four suits.
+        const swatches: HTMLElement[] = [];
+        for (const suit of [1, 2, 3, 4]) {
+          const mark = document.createElement('span');
+          mark.className = `card-suit-ink ${suit <= 2 ? 'suit-black' : 'suit-red'}`;
+          mark.textContent = ['♠A', '♣10', '♥Q', '♦K'][suit - 1];
+          document.body.appendChild(mark);
+          swatches.push(mark);
+        }
+        const marks = [...document.querySelectorAll<HTMLElement>('.sg-card-top-left, .native-eq-suit'), ...swatches];
+        const result = marks.map((mark) => {
+          const rank = mark.querySelector('.sg-card-rank');
+          const suit = mark.querySelector('.sg-card-suit');
+          return {
+            className: mark.className,
+            color: getComputedStyle(mark).color,
+            background: getComputedStyle(mark).backgroundColor,
+            border: getComputedStyle(mark).borderStyle,
+            outlineWidth: getComputedStyle(mark).webkitTextStrokeWidth,
+            outlineColor: getComputedStyle(mark).webkitTextStrokeColor,
+            paintOrder: getComputedStyle(mark).paintOrder,
+            expected: mark.classList.contains('suit-red') ? 'rgb(173, 24, 38)'
+              : mark.classList.contains('suit-black') ? 'rgb(23, 23, 23)' : 'rgb(85, 81, 77)',
+            rankColor: rank ? getComputedStyle(rank).color : null,
+            suitColor: suit ? getComputedStyle(suit).color : null,
+            rankOutline: rank ? getComputedStyle(rank).webkitTextStrokeWidth : null,
+            suitOutline: suit ? getComputedStyle(suit).webkitTextStrokeWidth : null,
+          };
+        });
+        swatches.forEach((mark) => mark.remove());
+        return result;
+      });
+      assert.ok(styles.some((mark) => String(mark.className).includes('sg-card-top-left')),
+        'hand cards must expose suit and rank');
+      assert.ok(styles.some((mark) => String(mark.className).includes('native-eq-suit')),
+        'equipped cards must expose suit and rank');
+      for (const mark of styles) {
+        if (mark.rankColor) assert.equal(mark.rankColor, mark.color, `rank ink differs from suit ink: ${JSON.stringify(mark)}`);
+        if (mark.suitColor) assert.equal(mark.suitColor, mark.color, `suit ink differs from rank ink: ${JSON.stringify(mark)}`);
+        assert.equal(mark.color, mark.expected, `wrong suit color: ${JSON.stringify(mark)}`);
+        assert.equal(mark.background, 'rgba(0, 0, 0, 0)', `unexpected badge backing: ${JSON.stringify(mark)}`);
+        assert.equal(mark.border, 'none', `unexpected badge border: ${JSON.stringify(mark)}`);
+        assert.equal(mark.outlineWidth, '0.8px', `missing thin outline: ${JSON.stringify(mark)}`);
+        assert.equal(mark.outlineColor, 'rgba(255, 245, 229, 0.96)', `wrong outline: ${JSON.stringify(mark)}`);
+        assert.equal(mark.paintOrder, 'stroke', `outline must sit behind ink: ${JSON.stringify(mark)}`);
+        if (mark.rankOutline) assert.equal(mark.rankOutline, mark.outlineWidth);
+        if (mark.suitOutline) assert.equal(mark.suitOutline, mark.outlineWidth);
+      }
+    }],
+    ['Idle-hand tooltips preserve each suit color on both symbol and rank', async (p) => {
+      // The mobile layout deliberately hides hover tooltips; verify the real
+      // desktop popover in an isolated tab, leaving other game scenes intact.
+      const browser = p.context().browser();
+      assert.ok(browser);
+      const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      try {
+        const preview = await context.newPage();
+        preview.setDefaultTimeout(8_000);
+        await preview.goto(new URL('/e2e.html?idle-suit-preview=1', p.url()).href);
+        const cards = preview.locator('.sg-idle-suit-preview .sg-card-idle');
+        assert.equal(await cards.count(), 4);
+        for (const [index, symbol, rank, expectedColor] of [
+          [0, '♠', 'A', 'rgb(23, 23, 23)'],
+          [1, '♣', '10', 'rgb(23, 23, 23)'],
+          [2, '♥', 'Q', 'rgb(173, 24, 38)'],
+          [3, '♦', 'K', 'rgb(173, 24, 38)'],
+        ] as const) {
+          await cards.nth(index).hover();
+          const mark = preview.locator('.sg-card-popover-portal .card-suit-inline');
+          await mark.waitFor();
+          assert.equal(await mark.textContent(), `${symbol}${rank}`);
+          assert.equal(await mark.evaluate((node) => getComputedStyle(node).color), expectedColor);
+          assert.equal(await mark.evaluate((node) => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
+          assert.equal(await mark.evaluate((node) => getComputedStyle(node).borderStyle), 'none');
+          assert.equal(await mark.evaluate((node) => getComputedStyle(node).webkitTextStrokeWidth), '0.8px');
+          if (index === 2 && process.env.TQS_EVIDENCE_DIR) {
+            const evidenceDir = path.resolve(process.env.TQS_EVIDENCE_DIR);
+            mkdirSync(evidenceDir, { recursive: true });
+            await preview.screenshot({ path: path.join(evidenceDir, 'ui-idle-tooltip-1280x800-20261019.png') });
+          }
+          await preview.mouse.move(0, 0);
+          await mark.waitFor({ state: 'detached' });
+        }
+      } finally {
+        await context.close();
+      }
+    }],
     ['Long press opens card details without changing the Lua selection', async (p) => {
       const id = await start(p, 'choices');
       const card = p.getByRole('button', { name: 'Sát', exact: true });
@@ -156,6 +399,9 @@ async function runSuite(page: Page) {
       assert.equal((await snapshot(p)).actions.length, 0);
       assert.equal((await snapshot(p)).requestId, id);
       assert.match(await dialog.innerText(), /Trong giai đoạn ra bài/);
+      const detailSuit = dialog.locator('.sg-sheet-suit');
+      assert.equal(await detailSuit.evaluate((node) => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
+      assert.equal(await detailSuit.evaluate((node) => getComputedStyle(node).webkitTextStrokeWidth), '0.8px');
       await p.keyboard.press('Escape');
       await p.waitForTimeout(20);
       assert.equal(await p.getByRole('dialog', { name: 'Sát' }).count(), 0);
@@ -183,6 +429,35 @@ async function runSuite(page: Page) {
       assert.equal(await skill.isDisabled(), true);
       assert.match(await p.evaluate((n) => window.__tqsE2e.attemptSkill(n), id) ?? '', /không được Lua cho phép|không hợp lệ|không còn hiệu lực/);
       assert.deepEqual((await snapshot(p)).regularSkills, [{ name: 'hs__active' }]);
+    }],
+    ['Skill information is inspectable without dispatching gameplay or prelight', async (p) => {
+      await p.setViewportSize({ width: 390, height: 844 });
+      await start(p, 'choices');
+      await p.evaluate(() => window.__tqsE2e.addFakeSkill());
+      await p.evaluate(() => window.__tqsE2e.addRegularSkill());
+      const previous = await snapshot(p);
+      const info = p.locator('.board-local-skill-rail .fake-skill-dock .sg-skill-info-trigger');
+      await info.click();
+      const dialog = p.getByRole('dialog', { name: 'Thông tin kỹ năng' });
+      await dialog.waitFor();
+      assert.match(await dialog.innerText(), /Di Kế|hs__yiji|Mô tả kỹ năng chưa được nạp/);
+      assert.deepEqual((await snapshot(p)).actions, previous.actions);
+      assert.deepEqual((await snapshot(p)).sent, previous.sent);
+      assert.deepEqual((await snapshot(p)).fakeSkills, previous.fakeSkills);
+      await p.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      assert.equal(await info.evaluate((button) => document.activeElement === button), true,
+        'inspector must restore focus to its trigger');
+
+      await p.evaluate(() => window.__tqsE2e.cancel());
+      const regular = p.locator('.board-local-skill-rail .regular-skill-dock .sg-skill-info-trigger');
+      await regular.click();
+      await dialog.waitFor();
+      assert.match(await dialog.innerText(), /hs__active|Mô tả kỹ năng chưa được nạp/);
+      assert.deepEqual((await snapshot(p)).actions, previous.actions);
+      assert.deepEqual((await snapshot(p)).sent, previous.sent);
+      await p.getByRole('button', { name: 'Đóng thông tin kỹ năng' }).click();
+      await dialog.waitFor({ state: 'hidden' });
     }],
     ['Skills from fake, regular and Lua docks remain horizontal and scroll when crowded', async (p) => {
       for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
@@ -410,7 +685,7 @@ async function runSuite(page: Page) {
           }
         }
       }
-      assert.equal(await p.locator('.board-local-skill-rail').getByRole('button', { name: 'hs__active' }).count(), 1,
+      assert.equal(await p.locator('.board-local-skill-rail .regular-skill-button').count(), 1,
         'regular skills must remain in the same rail while the server is updating');
       await p.setViewportSize({ width: 390, height: 844 });
     }],
@@ -714,7 +989,9 @@ async function runSuite(page: Page) {
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
       await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.seedRoundData());
-      await p.getByText('Thông báo ván trước', { exact: true }).waitFor();
+      await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
+      await p.getByRole('region', { name: 'Nhật ký trận đấu' })
+        .getByText('Thông báo ván trước', { exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.finishGame());
       await p.getByRole('heading', { name: 'Bạn đã thắng!', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.startNextGame());

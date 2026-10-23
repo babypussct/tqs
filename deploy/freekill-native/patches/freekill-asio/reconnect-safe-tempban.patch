@@ -1,26 +1,85 @@
+diff --git a/src/server/account_tempban.h b/src/server/account_tempban.h
+new file mode 100644
+--- /dev/null
++++ b/src/server/account_tempban.h
+@@ -0,0 +1,44 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++
++#pragma once
++
++#include <chrono>
++#include <optional>
++#include <unordered_map>
++
++class AccountTempBanStore {
++public:
++  using clock = std::chrono::steady_clock;
++  using time_point = clock::time_point;
++
++  std::optional<time_point> apply(int accountId, std::chrono::minutes duration,
++                                  time_point now = clock::now()) {
++    if (accountId <= 0 || duration <= std::chrono::minutes::zero())
++      return std::nullopt;
++
++    const auto until = now + duration;
++    auto it = bans.find(accountId);
++    if (it == bans.end() || it->second < until)
++      bans[accountId] = until;
++    return bans.at(accountId);
++  }
++
++  bool contains(int accountId, time_point now = clock::now()) {
++    auto it = bans.find(accountId);
++    if (it == bans.end()) return false;
++    if (it->second <= now) {
++      bans.erase(it);
++      return false;
++    }
++    return true;
++  }
++
++  void removeIfExpired(int accountId, time_point now = clock::now()) {
++    auto it = bans.find(accountId);
++    if (it != bans.end() && it->second <= now)
++      bans.erase(it);
++  }
++
++private:
++  std::unordered_map<int, time_point> bans;
++};
+
 diff --git a/src/server/user/auth.cpp b/src/server/user/auth.cpp
 index b553c2d..e077fc3 100644
 --- a/src/server/user/auth.cpp
 +++ b/src/server/user/auth.cpp
-@@ -465,5 +465,12 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+@@ -462,19 +462,46 @@
+     goto FAIL;
+   }
+-
 -  if (auto player = um.findPlayer(atoi(obj["id"].c_str())).lock(); player) {
 -    // 只要在线就踢 无脑顶号
 -    if (player->isOnline()) {
 -      player->doNotify("ErrorDlg", "others logged in again with this name");
 -      player->emitKicked();
 +  {
-+    auto player = um.findPlayer(atoi(obj["id"].c_str())).lock();
-+    // Temporary IP bans are an anti-abandon safeguard, not a reason to
-+    // reject an authenticated player who is still inside an active room.
-+    // Check the account after the password so a same-IP reconnect can
-+    // recover within the room's lifetime, while a new/non-room login keeps
-+    // the normal temporary-ban protection.
-+    if (server.isTempBanned(client->peerAddress()) &&
-+        (!player || !player->insideGame())) {
++    // Temporary account bans are an anti-abandon safeguard keyed by authenticated ID.
++    const int accountId = atoi(obj["id"].c_str());
++    auto player = um.findPlayer(accountId, true).lock();
++    // Only an offline player still inside an active room is a reconnect
++    // candidate. A player in state Run was explicitly removed and must not
++    // use a fresh ticket to bypass the abandonment penalty.
++    const bool wasOnline = player && player->isOnline();
++    const bool canResumeOfflineGame = player && player->insideGame() &&
++      player->getState() == ServerPlayer::Offline;
++    // Check the userinfo ID after password/ticket verification so a different
++    // account behind the same gateway remains independent.
++    if (server.isAccountTempBanned(accountId) &&
++        !canResumeOfflineGame) {
 +      passed = false;
 +      error_msg = "you have been temporarily banned!";
 +      goto FAIL;
-@@ -472,7 +479,23 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
+     }
+-
 -    if (player->insideGame()) {
 -      updateUserLoginData(player->getId());
 -      spdlog::info("{}[/{}] reconnected (uid={},connid={})",
@@ -30,20 +89,21 @@ index b553c2d..e077fc3 100644
 -      return {};
 +    if (player) {
 +      // 只要在线就踢 无脑顶号
-+      if (player->isOnline()) {
++      if (wasOnline) {
 +        player->doNotify("ErrorDlg", "others logged in again with this name");
 +        player->emitKicked();
 +      }
 +
-+      if (player->insideGame()) {
++      if (player->insideGame() &&
++          (player->getState() == ServerPlayer::Offline || wasOnline)) {
 +        updateUserLoginData(player->getId());
 +        spdlog::info("{}[/{}] reconnected (uid={},connid={})",
-+                     player->getScreenName(), client->peerAddress(), player->getId(), player->getConnId());
++                     player->getScreenName(), client->peerAddress(), accountId, player->getConnId());
 +        player->reconnect(client);
 +        passed = true;
 +        return {};
 +      }
-+    }
+     }
 +
 +    // Capacity is enforced after authentication so an existing in-game
 +    // player can reclaim the slot held by its offline ServerPlayer.
@@ -51,14 +111,161 @@ index b553c2d..e077fc3 100644
 +      passed = false;
 +      error_msg = "server is full!";
 +      goto FAIL;
++    }
+   }
+diff --git a/src/server/user/user_manager.h b/src/server/user/user_manager.h
+--- a/src/server/user/user_manager.h
++++ b/src/server/user/user_manager.h
+@@ -13,4 +13,3 @@
+  UserManager(UserManager &&) = delete;
+-
+-  std::weak_ptr<ServerPlayer> findPlayer(int id) const;
++  std::weak_ptr<ServerPlayer> findPlayer(int id, bool preferInGame = false) const;
+   std::weak_ptr<ServerPlayer> findPlayerByConnId(int connId) const;
 diff --git a/src/server/user/user_manager.cpp b/src/server/user/user_manager.cpp
 index 4f19ec9..016031e 100644
 --- a/src/server/user/user_manager.cpp
 +++ b/src/server/user/user_manager.cpp
-@@ -106,6 +105,0 @@ void UserManager::processNewConnection(std::shared_ptr<ClientSocket> client) {
+@@ -22,8 +22,24 @@
+-std::weak_ptr<ServerPlayer> UserManager::findPlayer(int id) const {
++std::weak_ptr<ServerPlayer> UserManager::findPlayer(int id, bool preferInGame) const {
+   if (id < 0) return findRobot(id);
++  if (preferInGame) {
++    std::shared_ptr<ServerPlayer> offlinePlayer;
++    for (const auto &entry : players_map) {
++      const auto &player = entry.second;
++      if (!player || player->getId() != id || !player->insideGame()) continue;
++      // A stale Run player must win over an Offline duplicate so an old
++      // abandonment record cannot be bypassed by reconnecting another
++      // in-game object for the same authenticated account.
++      if (player->getState() != ServerPlayer::Offline)
++        return player;
++      if (!offlinePlayer)
++        offlinePlayer = player;
++    }
++    if (offlinePlayer)
++      return offlinePlayer;
++  }
+   try {
+     return online_players_map.at(id);
+   } catch (const std::out_of_range &) {
+     return {};
+   }
+ }
+@@ -103,10 +110,4 @@
+   if (!result.empty()) {
+     errmsg = "you have been banned!";
+     reject_reason = "IP is banned";
 -  } else if (server.isTempBanned(addr)) {
 -    errmsg = "you have been temporarily banned!";
 -    reject_reason = "IP is temp banned";
 -  } else if (online_players_map.size() >= (size_t)server.config().capacity) {
 -    errmsg = "server is full!";
 -    reject_reason = "server is full";
+   }
+diff --git a/src/server/server.h b/src/server/server.h
+index 37cb5f9..a5b7c10 100644
+--- a/src/server/server.h
++++ b/src/server/server.h
+@@ -1,6 +1,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later
+-
++
+ #pragma once
++
++#include "server/account_tempban.h"
+-
++
+ class ServerSocket;
+ class ClientSocket;
+@@ -74,7 +77,7 @@ public:
+   bool checkBanWord(const std::string_view &str);
+-
++
+-  void temporarilyBan(int playerId);
++  void temporarilyBan(int accountId);
+-  bool isTempBanned(const std::string_view &addr) const;
++  bool isAccountTempBanned(int accountId);
+   int isMuted(int playerId) const;
+-
++
+   void beginTransaction();
+@@ -108,6 +110,6 @@ private:
+-
++
+   io_context *main_io_ctx = nullptr;
+-
++
+-  std::vector<std::string> temp_banlist;
++  AccountTempBanStore account_temp_bans;
+-
++
+   std::string md5;
+
+diff --git a/src/server/server.cpp b/src/server/server.cpp
+index 7aab825..e4a9c31 100644
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -293,40 +293,26 @@ bool Server::checkBanWord(const std::string_view &str) {
+-void Server::temporarilyBan(int playerId) {
++void Server::temporarilyBan(int accountId) {
+-  auto player = m_user_manager->findPlayer(playerId).lock();
++  auto player = m_user_manager->findPlayer(accountId).lock();
+   if (!player) return;
+-
++
+-  auto socket = player->getRouter().getSocket();
+-  std::string addr;
+-  if (!socket) {
+-    static constexpr const char *sql_find =
+-      "SELECT lastLoginIp FROM userinfo WHERE id={};";
+-    auto result = db->select(fmt::format(sql_find, playerId));
+-    if (result.empty())
+-      return;
+-
+-    auto obj = result[0];
+-    addr = obj["lastLoginIp"];
+-  } else {
+-    addr = socket->peerAddress();
+-  }
+-  temp_banlist.push_back(addr);
+-
+-  auto time = m_config->tempBanTime;
+-  using namespace std::chrono;
+-  auto timer = std::make_shared<asio::steady_timer>(*main_io_ctx, seconds(time * 60));
+-  // Server不会析构，先不weak
+-  timer->async_wait([this, addr, timer](const std::error_code& ec){
+-    if (!ec) {
+-      auto it = std::ranges::find(temp_banlist, addr);
+-      if (it != temp_banlist.end())
+-        temp_banlist.erase(it);
+-    } else {
+-      spdlog::error("error in tempBan timer: {}", ec.message());
+-    }
+-  });
++  const auto time = m_config->tempBanTime;
++  const auto ban_until = account_temp_bans.apply(accountId, std::chrono::minutes(time));
++  if (ban_until) {
++
++    // Server不会析构，先不weak. A stale timer must not erase a renewed ban.
++    auto timer = std::make_shared<asio::steady_timer>(*main_io_ctx);
++    timer->expires_at(*ban_until);
++    timer->async_wait([this, accountId, timer](const std::error_code& ec){
++      if (!ec) {
++        account_temp_bans.removeIfExpired(accountId);
++      } else if (ec.value() != asio::error::operation_aborted) {
++        spdlog::error("error in tempBan timer: {}", ec.message());
++      }
++    });
++  }
+   player->emitKicked();
+-  spdlog::info("Temp banned {} for {} minute(s).", player->getScreenName(), time);
++  spdlog::info("Temp banned {} for {} minute(s).", player->getScreenName(), time);
+ }
+-
++
+-bool Server::isTempBanned(const std::string_view &addr) const {
+-  return (std::ranges::find(temp_banlist, addr) != temp_banlist.end());
++bool Server::isAccountTempBanned(int accountId) {
++  return account_temp_bans.contains(accountId);
+ }

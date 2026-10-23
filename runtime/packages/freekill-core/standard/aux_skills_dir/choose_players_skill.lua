@@ -33,7 +33,8 @@ choosePlayersSkill:addEffect('active', {
 
 choosePlayersSkill:addAI(Fk.Ltk.AI.newActiveStrategy {
   think = function(self, ai)
-    local data = ai.data[4]
+    local data = type(ai.data) == "table" and ai.data[4] or {}
+    if type(data) ~= "table" then data = {} end
     local orig = Fk.skills[data.skillName] or choosePlayersSkill
     local strategy = ai:findStrategyOfSkill(Fk.Ltk.AI.ChoosePlayersStrategy, orig.name)
     if not strategy then
@@ -41,17 +42,64 @@ choosePlayersSkill:addAI(Fk.Ltk.AI.newActiveStrategy {
       ---@cast strategy -nil
     end
 
+    if not strategy then return end
     local cards, card_benefit = strategy:chooseCards(ai)
+
+    -- A target filter can depend on the selected card.  Replay the card
+    -- subset before asking the strategy for targets so getEnabledTargets()
+    -- reflects the same state that the request handler will validate.
+    cards = cards or {}
+    local enabled_cards, card_seen = {}, {}
+    for _, id in ipairs(ai:getEnabledCards()) do enabled_cards[id] = true end
+    for _, id in ipairs(cards) do
+      if card_seen[id] or not enabled_cards[id] then
+        ai:unSelectAll()
+        return
+      end
+      card_seen[id] = true
+      ai:selectCard(id, true)
+    end
+
+    local min_cards = data.pattern and data.pattern ~= "" and 1 or 0
+    if #cards < min_cards then
+      ai:unSelectAll()
+      return
+    end
+
     local players, player_benefit = strategy:choosePlayers(ai)
-    if cards == nil then
-      cards, card_benefit = {}, 0
-    end
-    card_benefit = card_benefit or 0
     if players == nil then
-      players, player_benefit = {}, 0
+      ai:unSelectAll()
+      return
     end
-    player_benefit = player_benefit or 0
-    return { cards, players }, ((card_benefit == 0 and 1 or card_benefit) * player_benefit) or 0
+    players = players or {}
+
+    local min_num = tonumber(data.min_num) or 0
+    local max_num = tonumber(data.num) or min_num
+    if #players < min_num or #players > max_num then
+      ai:unSelectAll()
+      return
+    end
+
+    local target_seen = {}
+    for _, target in ipairs(players) do
+      if not target or target_seen[target.id] then
+        ai:unSelectAll()
+        return
+      end
+      target_seen[target.id] = true
+      ai:selectTarget(target, true)
+    end
+
+    -- Do not hand a structurally valid but infeasible reply to Request.  A
+    -- nil result lets Room apply its existing cancel/non-cancel fallback.
+    local feasible = ai:okButtonEnabled()
+    ai:unSelectAll()
+    if not feasible then return end
+
+    card_benefit = type(card_benefit) == "number" and card_benefit or 0
+    player_benefit = type(player_benefit) == "number" and player_benefit or 0
+    local card_factor = card_benefit == 0 and 1 or card_benefit
+    return { cards, players }, card_factor * player_benefit
   end,
 })
 

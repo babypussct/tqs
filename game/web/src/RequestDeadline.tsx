@@ -13,6 +13,6 @@ export default function RequestDeadline({ request }: { request: RequestInfo | nu
   return <div className="notice" role="status">
     <span className={`countdown ${seconds === 0 ? 'expired' : ''}`} role="timer">Còn {seconds} giây để trả lời</span>
     <p>{seconds === 0 ? 'Yêu cầu đã hết thời gian. Hãy bật BOT chơi hộ nếu cần tạm nghỉ.' :
-      'Hết giờ nhiều lần có thể khiến máy chủ ngắt phiên và tạm chặn IP. Bật BOT chơi hộ nếu không thể tiếp tục thao tác.'}</p>
+      'Hết giờ nhiều lần có thể khiến máy chủ ngắt phiên và tạm khóa tài khoản. Bật BOT chơi hộ nếu không thể tiếp tục thao tác.'}</p>
   </div>;
 }

@@ -66,4 +66,73 @@ choufa:addEffect("filter", {
   end,
 })
 
+-- Choufa is a support conversion: choose a friendly non-empty hand with
+-- enough public cards to make the temporary Slash pool meaningful.  The
+-- category choice itself is deferred to the subsequent visible-card prompt.
+choufa:addAI(Fk.Ltk.AI.newActiveStrategy {
+  think = function(self, ai)
+    local best, best_value
+    for _, target in ipairs(ai:getEnabledTargets()) do
+      local relation = ai:getFactionRelation(target)
+      local hand_num = type(target.getHandcardNum) == "function" and target:getHandcardNum() or 0
+      local is_empty = type(target.isKongcheng) == "function" and target:isKongcheng()
+      if relation and relation.state == "friend" and not is_empty and hand_num > 0 then
+        local value = hand_num * 30
+        if target.hp and target.hp < target.maxHp then value = value + 12 end
+        if not best or value > best_value or (value == best_value and target.id < best.id) then
+          best, best_value = target, value
+        end
+      end
+    end
+    if best then return { {}, { best } }, best_value end
+  end,
+})
+
+-- The follow-up card is visible to the acting player.  Preserve the largest
+-- possible number of cards as Slash by revealing a card from the smallest
+-- category in that target hand.
+choufa:addAI(Fk.Ltk.AI.newChooseCardStrategy {
+  think = function(self, ai)
+    local data = ai.data
+    if type(data) ~= "table" then return end
+    local target, flag = data[1], data[2]
+    local ids, seen = {}, {}
+    local function add(list)
+      for _, id in ipairs(list or Util.DummyTable) do
+        if type(id) == "number" and not seen[id] then
+          seen[id] = true
+          table.insert(ids, id)
+        end
+      end
+    end
+    if type(flag) == "table" then
+      for _, group in ipairs(flag.card_data or Util.DummyTable) do add(group[2]) end
+    elseif target and type(target.getCardIds) == "function" then
+      add(target:getCardIds(flag or "h"))
+    end
+    if #ids == 0 then return end
+
+    local counts = {}
+    for _, id in ipairs(ids) do
+      local card = Fk:getCardById(id)
+      if card then
+        local key = tostring(card.type)
+        counts[key] = (counts[key] or 0) + 1
+      end
+    end
+    local best, best_converted
+    for _, id in ipairs(ids) do
+      local card = Fk:getCardById(id)
+      if card then
+        local converted = #ids - (counts[tostring(card.type)] or #ids)
+        if not best or converted > best_converted or
+            (converted == best_converted and id < best) then
+          best, best_converted = id, converted
+        end
+      end
+    end
+    if best then return best, best_converted * 30 end
+  end,
+})
+
 return choufa

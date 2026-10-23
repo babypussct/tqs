@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "ignoreCommand": "node build/vercel-ignore.mjs",
   "outputDirectory": "dist-shop",
   "rewrites": [
     {

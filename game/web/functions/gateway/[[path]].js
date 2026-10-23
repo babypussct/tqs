@@ -1,4 +1,4 @@
-import { TARGET_KEY, parseTunnelHostname, noStore } from '../_gateway-target.js';
+import { TARGET_KEY, parseNamedTunnelHostname, parseTunnelHostname, noStore } from '../_gateway-target.js';
 
 // Only the gateway's public GET endpoints and WebSocket upgrade may cross this proxy.
 function allowedPath(path) {
@@ -18,7 +18,11 @@ export async function onRequest({ request, env }) {
 
   let hostname;
   try {
-    hostname = parseTunnelHostname(await env.TQS_GATEWAY_CONFIG?.get(TARGET_KEY));
+    // Named mode takes precedence and does not read KV. A malformed configured
+    // value must never silently fall back to the rotating Quick Tunnel.
+    hostname = env.TQS_NAMED_TUNNEL_HOSTNAME !== undefined
+      ? parseNamedTunnelHostname(env.TQS_NAMED_TUNNEL_HOSTNAME)
+      : parseTunnelHostname(await env.TQS_GATEWAY_CONFIG?.get(TARGET_KEY));
   } catch {
     return noStore(new Response('Gateway configuration unavailable', { status: 503 }));
   }
@@ -29,6 +33,13 @@ export async function onRequest({ request, env }) {
   const headers = new Headers(request.headers);
   for (const key of ['Host', 'CF-Connecting-IP', 'X-Forwarded-For', 'X-Forwarded-Host',
     'X-Forwarded-Proto', 'Forwarded', 'Cookie', 'Authorization']) headers.delete(key);
+  // Keep the signed account-admission subprotocol on WebSocket upgrades. It
+  // is the only identity hint the origin gateway may use for quota; native
+  // still authenticates the encrypted Setup ticket independently.
+  if (upgrade) {
+    const admissionProtocol = request.headers.get('Sec-WebSocket-Protocol');
+    if (admissionProtocol) headers.set('Sec-WebSocket-Protocol', admissionProtocol);
+  }
 
   try {
     // A 101 Response has a live WebSocket and must be returned as-is: never buffer frames.

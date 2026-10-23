@@ -1,6 +1,55 @@
 {
   "schemaVersion": 1,
   "package": "tqs_qa",
+  "generalPairMatrix": {
+    "schemaVersion": 1,
+    "initialGeneralCount": 10,
+    "seedRange": { "min": 1780421000, "max": 1780421031 },
+    "seatPermutations": {
+      "A": [1, 2, 3, 4],
+      "B": [4, 1, 2, 3],
+      "C": [3, 4, 1, 2],
+      "D": [2, 3, 4, 1]
+    },
+    "rosterSets": {
+      "r1": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu", "hs__xiahoudun", "hs__xuhuang", "hs__xunyu", "hs__xiahouyuan", "hs__caopi"],
+          ["hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao", "hs__zhugeliang", "hs__huangyueying", "hs__huangzhong", "hs__weiyan", "hs__pangtong"],
+          ["hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__luxun", "hs__daqiao", "hs__dingfeng", "hs__huanggai", "hs__lusu", "hs__sunjian"],
+          ["hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao", "hs__huatuo", "hs__jiaxu", "hs__pangde", "hs__caiwenji", "hs__jiling"]
+        ]
+      },
+      "r2": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__xiahoudun", "hs__zhanghe", "hs__xuhuang", "hs__caoren", "hs__xunyu", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__zhugeliang", "hs__huangyueying", "hs__huangzhong", "hs__weiyan", "hs__pangtong", "hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao"],
+          ["hs__huanggai", "hs__daqiao", "hs__sunshangxiang", "hs__sunjian", "hs__xiaoqiao", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__luxun"],
+          ["hs__huatuo", "hs__jiaxu", "hs__pangde", "hs__zhangjiao", "hs__caiwenji", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__jiling"]
+        ]
+      },
+      "r3": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__xiahouyuan", "hs__zhanghe", "hs__xuhuang", "hs__caopi", "hs__yuejin", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__liushan", "hs__menghuo", "hs__zhurong", "hs__pangtong", "hs__wolong", "hs__zhaoyun", "hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__machao"],
+          ["hs__lusu", "hs__zhangzhaozhanghong", "hs__dingfeng", "hs__taishici", "hs__zhoutai", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__zhouyu", "hs__huanggai"],
+          ["hs__mateng", "hs__kongrong", "hs__jiling", "hs__tianfeng", "hs__panfeng", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao"]
+        ]
+      },
+      "r4": {
+        "enabledKingdoms": ["wei", "shu", "wu", "qun"],
+        "offeredGroups": [
+          ["hs__zhenji", "hs__xunyu", "hs__dianwei", "hs__caoren", "hs__xiahoudun", "hs__caocao", "hs__simayi", "hs__guojia", "hs__zhangliao", "hs__xuchu"],
+          ["hs__liubei", "hs__guanyu", "hs__zhangfei", "hs__zhugeliang", "hs__huangzhong", "hs__zhaoyun", "hs__machao", "hs__liushan", "hs__menghuo", "hs__zhurong"],
+          ["hs__daqiao", "hs__zhouyu", "hs__luxun", "hs__sunjian", "hs__zhoutai", "hs__sunquan", "hs__ganning", "hs__lvmeng", "hs__huanggai", "hs__taishici"],
+          ["hs__jiaxu", "hs__pangde", "hs__zoushi", "hs__huatuo", "hs__caiwenji", "hs__lvbu", "hs__diaochan", "hs__yuanshao", "hs__yanliangwenchou", "hs__zhangjiao"]
+        ]
+      }
+    }
+  },
   "scenarios": [
     {
       "id": "draw-sequence",
@@ -2203,6 +2252,531 @@
           "area": "equip"
         }
       ]
+    },
+    {
+      "id": "ai-trace",
+      "title": "Fixed four-seat SmartAI decision/fallback trace",
+      "seed": 1780420130,
+      "expectedCommand": "PlayCard",
+      "trigger": "ai-trace",
+      "playerCount": 4,
+      "seatRosters": [
+        {
+          "general": "hs__luxun",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        },
+        {
+          "general": "hs__zhaoyun",
+          "deputy": "ld__fazheng",
+          "kingdom": "shu"
+        },
+        {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        },
+        {
+          "general": "hs__zhouyu",
+          "deputy": "hs__daqiao",
+          "kingdom": "wu"
+        }
+      ],
+      "fixedHands": [
+        { "trueName": "slash", "suit": "heart", "color": "red" },
+        { "trueName": "jink", "suit": "heart", "color": "red" },
+        { "trueName": "peach", "suit": "heart", "color": "red" },
+        { "trueName": "duel", "suit": "spade", "color": "black" }
+      ],
+      "seedRange": { "min": 1780420130, "max": 1780420132 },
+      "seedVariants": [
+        {
+          "seed": 1780420130,
+          "seatRosters": [
+            { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "heart", "color": "red" },
+            { "trueName": "jink", "suit": "heart", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "spade", "color": "black" }
+          ]
+        },
+        {
+          "seed": 1780420131,
+          "seatRosters": [
+            { "general": "hs__sunquan", "deputy": "hs__luxun", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "diamond", "color": "red" },
+            { "trueName": "jink", "suit": "diamond", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "club", "color": "black" }
+          ]
+        },
+        {
+          "seed": 1780420132,
+          "seatRosters": [
+            { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+            { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+            { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+            { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+          ],
+          "fixedHands": [
+            { "trueName": "slash", "suit": "heart", "color": "red" },
+            { "trueName": "jink", "suit": "heart", "color": "red" },
+            { "trueName": "peach", "suit": "heart", "color": "red" },
+            { "trueName": "duel", "suit": "spade", "color": "black" }
+          ]
+        }
+      ],
+      "prompt4Skills": [
+        "tianyi", "shangyi", "tiaoxin", "hs__zhiheng", "hs__kurou", "hs__qiangxi",
+        "hs__longdan", "hs__luanji", "hs__wusheng", "huoji", "jijiu", "kanpo",
+        "aocai", "beizhu", "dimeng", "choufa", "cunsi", "duanfa"
+      ],
+      "cards": []
+    },
+    {
+      "id": "chooser-trace",
+      "title": "Bounded native generic chooser decision and opportunity trace",
+      "seed": 1780420132,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "chooser-trace",
+      "playerCount": 4,
+      "seatRosters": [
+        { "general": "hs__luxun", "deputy": "hs__sunquan", "kingdom": "wu" },
+        { "general": "hs__zhaoyun", "deputy": "ld__fazheng", "kingdom": "shu" },
+        { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" },
+        { "general": "hs__zhouyu", "deputy": "hs__daqiao", "kingdom": "wu" }
+      ],
+      "fixedHands": [
+        { "trueName": "slash", "suit": "heart", "color": "red" },
+        { "trueName": "jink", "suit": "heart", "color": "red" },
+        { "trueName": "peach", "suit": "heart", "color": "red" },
+        { "trueName": "duel", "suit": "spade", "color": "black" }
+      ],
+      "cases": [
+        { "skill": "choose_players_skill", "variant": "mandatory" },
+        { "skill": "choose_cards_skill", "variant": "mandatory" },
+        { "skill": "ex__choose_skill", "variant": "mandatory" },
+        { "skill": "choose_players_skill", "variant": "optional" },
+        { "skill": "choose_cards_skill", "variant": "optional" },
+        { "skill": "ex__choose_skill", "variant": "optional" }
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-trace",
+      "title": "Fixed four-seat initial Hegemony general-pair decision/fallback trace",
+      "seed": 1780420131,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-trace",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-a",
+      "title": "Full Hegemony match with fixed pair offers, seat order A",
+      "seed": 1780420132,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-b",
+      "title": "Full Hegemony match with fixed pair offers, seat order B",
+      "seed": 1780420133,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-c",
+      "title": "Full Hegemony match with fixed pair offers, seat order C",
+      "seed": 1780420134,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-d",
+      "title": "Full Hegemony match with fixed pair offers, seat order D",
+      "seed": 1780420135,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei"
+      ],
+      "offeredGroups": [
+        [
+          "hs__simayi",
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__guojia",
+          "hs__caocao",
+          "hs__xuchu",
+          "hs__simayi",
+          "hs__zhangliao"
+        ],
+        [
+          "hs__zhangliao",
+          "hs__xuchu",
+          "hs__caocao",
+          "hs__guojia",
+          "hs__simayi"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-a",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order A",
+      "seed": 1780420136,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "A",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-b",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order B",
+      "seed": 1780420137,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "B",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-c",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order C",
+      "seed": 1780420138,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "C",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ],
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-match-mixed-d",
+      "title": "Full Hegemony mixed-kingdom match with fixed pair offers, seat order D",
+      "seed": 1780420139,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "enabledKingdoms": [
+        "wei",
+        "shu",
+        "wu",
+        "qun"
+      ],
+      "matrixFamily": "general-pair-winrate-v1",
+      "matrixRosterSets": ["r1", "r2", "r3", "r4"],
+      "matrixSeatPermutation": "D",
+      "seedRange": { "min": 1780421000, "max": 1780421031 },
+      "offeredGroups": [
+        [
+          "hs__zhaoyun",
+          "hs__liubei",
+          "hs__guanyu",
+          "hs__zhangfei",
+          "hs__machao"
+        ],
+        [
+          "hs__sunquan",
+          "hs__ganning",
+          "hs__lvmeng",
+          "hs__zhouyu",
+          "hs__luxun"
+        ],
+        [
+          "hs__lvbu",
+          "hs__diaochan",
+          "hs__yuanshao",
+          "hs__yanliangwenchou",
+          "hs__zhangjiao"
+        ],
+        [
+          "hs__caocao",
+          "hs__simayi",
+          "hs__guojia",
+          "hs__zhangliao",
+          "hs__xuchu"
+        ]
+      ],
+      "cards": []
     }
   ]
 }

@@ -8,9 +8,9 @@ import { displayText, localizedGameLog, plainText } from '../src/engine/displayT
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
 import { deriveRoomReadiness, roomPoolDisabledReason, roomStartDisabledReason } from '../src/store/roomReadiness';
 
-test('temporary IP ban remains actionable and transport closed is not displayed as progress', () => {
+test('temporary account ban remains actionable and transport closed is not displayed as progress', () => {
   const state = reduceUiEvent(initialSnapshot, 'ErrorDlg', 'you have been temporarily banned!');
-  assert.match(state.error!, /tạm chặn IP/);
+  assert.match(state.error!, /tạm khóa/);
   assert.match(state.error!, /không gửi thời điểm hết hạn/);
   assert.match(state.error!, /BOT chơi hộ/);
   assert.equal(connectionProgress({ kind: 'closed', reason: 'backend closed' }), '');
@@ -281,6 +281,7 @@ test('a second game in the same session cannot replay the previous game visual e
   const nextEvent = reduceUiEvent(nextGame, 'LogEvent', { type: 'Damage', to: 17 });
   assert.equal(nextEvent.nativeVfxEvents.length, 1);
   assert.equal(nextEvent.nativeVfxEvents[0].sequence, 2, 'the new game gets a fresh event sequence');
+  assert.ok(nextEvent.nativeVfxEvents[0].kind === 'damage');
   assert.equal(nextEvent.nativeVfxEvents[0].targetPlayerId, 17);
 
   assert.deepEqual(reduceUiEvent(nextEvent, 'EnterRoom', [2, 30, { gameMode: 'new_heg_mode' }]).nativeVfxEvents, []);

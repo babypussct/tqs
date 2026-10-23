@@ -22,6 +22,10 @@
 //   FK_PORT      default 9527
 //   PORT         HTTP/WebSocket listen port, default 8080
 //   ALLOW_ORIGIN CORS origin for HTTP endpoints, default *
+//   TQS_GATEWAY_ADMISSION_SECRET optional HMAC secret shared with the session API;
+//                         valid signed WS assertions use account quota
+//   MAX_WS_PER_ACCOUNT per-account WebSocket cap when an assertion is valid
+//   REQUIRE_WS_ADMISSION=1 fail closed when a valid assertion is absent
 
 import { serveStatic } from './static.mjs';
 import http from 'node:http';
@@ -31,7 +35,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { zipSync } from 'fflate';
-import { positiveInteger, normalizedIp, clientIp, originAllowed, consume } from './security.mjs';
+import { positiveInteger, normalizedIp, clientIp, originAllowed, consume, parseWsAdmission } from './security.mjs';
 
 const WEB_DIST = process.env.WEB_DIST ? path.resolve(process.env.WEB_DIST) : null;
 const FK_ROOT = path.resolve(process.env.FK_ROOT ?? '/opt/freekill-hegemony/server-root');
@@ -41,11 +45,16 @@ const PORT = positiveInteger('PORT', 8080, 65535);
 const BIND_HOST = process.env.BIND_HOST ?? '127.0.0.1';
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN ?? '*';
 const MAX_WS_PER_IP = positiveInteger('MAX_WS_PER_IP', 6, 1024);
+const MAX_WS_PER_ACCOUNT = positiveInteger('MAX_WS_PER_ACCOUNT', MAX_WS_PER_IP, 1024);
 const MAX_CONNECTIONS = positiveInteger('MAX_CONNECTIONS', 128, 10000);
 const MAX_QUEUE_BYTES = positiveInteger('MAX_QUEUE_BYTES', 1 << 20, 16 << 20);
 const CONNECT_TIMEOUT_MS = positiveInteger('CONNECT_TIMEOUT_MS', 10000, 60000);
 const allowedOrigins = new Set(ALLOW_ORIGIN.split(',').map(x => x.trim()));
 const trustedProxies = new Set((process.env.TRUSTED_PROXIES ?? '').split(',').filter(Boolean).map(normalizedIp));
+const wsAdmissionSecret = (process.env.TQS_GATEWAY_ADMISSION_SECRET ?? '').trim();
+const requireWsAdmission = process.env.REQUIRE_WS_ADMISSION === '1';
+if (requireWsAdmission && wsAdmissionSecret.length < 32)
+  throw new Error('REQUIRE_WS_ADMISSION requires TQS_GATEWAY_ADMISSION_SECRET');
 
 const PACKAGES_DIR = path.join(FK_ROOT, 'packages');
 // QA orchestration is native-server-only. Even when a QA runtime is mounted
@@ -229,6 +238,7 @@ const server = http.createServer((req, res) => {
 // ------------------------------------------------------------- websocket --
 
 const perIp = new Map();
+const perAccount = new Map();
 const wss = new WebSocketServer({ noServer: true, maxPayload: 1 << 20, perMessageDeflate: false });
 server.on('upgrade', (req, socket, head) => {
   if (WEB_DIST && req.url === '/gateway/ws') req.url = '/ws';
@@ -238,17 +248,28 @@ server.on('upgrade', (req, socket, head) => {
   if (wss.clients.size >= MAX_CONNECTIONS) {
     socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return;
   }
+  const admission = parseWsAdmission(req.headers['sec-websocket-protocol'], wsAdmissionSecret);
+  if (requireWsAdmission && !admission) {
+    socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); return;
+  }
+  // Keep the verified assertion on the request object only; never log or
+  // forward the bearer-like protocol value to the native TCP server.
+  req.tqsWsAdmission = admission;
   wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
 });
 
 wss.on('connection', (ws, req) => {
   const ip = clientIp(req, trustedProxies);
-  const n = (perIp.get(ip) ?? 0) + 1;
-  if (n > MAX_WS_PER_IP) {
+  const admission = req.tqsWsAdmission ?? null;
+  const quota = admission ? perAccount : perIp;
+  const quotaKey = admission?.identity ?? ip;
+  const quotaLimit = admission ? MAX_WS_PER_ACCOUNT : MAX_WS_PER_IP;
+  const n = (quota.get(quotaKey) ?? 0) + 1;
+  if (n > quotaLimit) {
     ws.close(1008, 'too many connections');
     return;
   }
-  perIp.set(ip, n);
+  quota.set(quotaKey, n);
 
   const tcp = net.createConnection({ host: FK_HOST, port: FK_PORT });
   tcp.setNoDelay(true);
@@ -299,9 +320,9 @@ wss.on('connection', (ws, req) => {
     clearTimeout(connectTimer);
     pending.length = 0; pendingBytes = 0;
     tcp.destroy();
-    const left = (perIp.get(ip) ?? 1) - 1;
-    if (left <= 0) perIp.delete(ip);
-    else perIp.set(ip, left);
+    const left = (quota.get(quotaKey) ?? 1) - 1;
+    if (left <= 0) quota.delete(quotaKey);
+    else quota.set(quotaKey, left);
   });
   ws.on('error', () => tcp.destroy());
 });

@@ -2,11 +2,12 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
+import {shopOutputGuard, SHOP_OUTPUT} from './build/output-policy.mjs';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [shopOutputGuard(), react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -19,7 +20,7 @@ export default defineConfig(({mode}) => {
     },
     build: {
       // Keep storefront output separate from the legacy, Git-tracked game assets in /dist.
-      outDir: 'dist-shop',
+      outDir: SHOP_OUTPUT,
       rollupOptions: {
         output: {
           manualChunks: {

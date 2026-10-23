@@ -58,40 +58,74 @@ index 37cb5f9..a397194 100644
    void loadConf(const char *json);
  
 diff --git a/src/server/user/auth.cpp b/src/server/user/auth.cpp
-index b553c2d..73746f8 100644
 --- a/src/server/user/auth.cpp
 +++ b/src/server/user/auth.cpp
-@@ -14,10 +14,62 @@
- #include <openssl/pem.h>
- #include <openssl/sha.h>
- #include <openssl/md5.h>
+@@ -16,0 +17,8 @@
 +#include <openssl/hmac.h>
 +#include <openssl/crypto.h>
++#include <openssl/evp.h>
 +#include <algorithm>
 +#include <cctype>
 +#include <chrono>
 +#include <cstdint>
 +#include <string_view>
- 
- #include <nlohmann/json.hpp>
- using json = nlohmann::json;
- 
+@@ -19,0 +28,104 @@
++
 +namespace {
 +
-+bool verifyTqsTicket(std::string_view name, std::string_view ticket, const std::string &secret) {
-+  if (secret.size() < 32 || ticket.size() > 180) return false;
++// Reject malformed UTF-8, overlong forms, surrogates, non-Unicode codepoints
++// and ASCII controls before exposing an API-supplied name to game clients.
++bool validTqsScreenName(std::string_view name) {
++  if (name.empty() || name.size() > 96) return false;
++  for (size_t i = 0; i < name.size();) {
++    const auto lead = static_cast<unsigned char>(name[i]);
++    if (lead < 0x20 || lead == 0x7f) return false;
++    if (lead < 0x80) { ++i; continue; }
++    size_t length = 0;
++    if (lead >= 0xc2 && lead <= 0xdf) length = 2;
++    else if (lead >= 0xe0 && lead <= 0xef) length = 3;
++    else if (lead >= 0xf0 && lead <= 0xf4) length = 4;
++    else return false;
++    if (length > name.size() - i) return false;
++    for (size_t j = 1; j < length; ++j) {
++      const auto part = static_cast<unsigned char>(name[i + j]);
++      if (part < 0x80 || part > 0xbf) return false;
++    }
++    const auto second = static_cast<unsigned char>(name[i + 1]);
++    if ((lead == 0xe0 && second < 0xa0) || (lead == 0xed && second >= 0xa0) ||
++        (lead == 0xf0 && second < 0x90) || (lead == 0xf4 && second >= 0x90)) return false;
++    i += length;
++  }
++  return true;
++}
++
++// The native RSA setup supports at most 213 UTF-8 ticket bytes after its
++// 32-byte prefix. TQS2 adds an HMAC-bound public name; TQS1 stays valid while
++// clients and the API are rolled out independently.
++bool verifyTqsTicket(std::string_view name, std::string_view ticket,
++                     const std::string &secret, std::string &screenName) {
++  screenName.clear();
++  if (secret.size() < 32 || ticket.size() > 213) return false;
 +
 +  const std::string token(ticket);
 +  const auto first = token.find('|');
 +  const auto second = first == std::string::npos ? std::string::npos : token.find('|', first + 1);
-+  if (first != 4 || second == std::string::npos || token.find('|', second + 1) != std::string::npos ||
-+      token.substr(0, first) != "TQS1") return false;
++  const auto third = second == std::string::npos ? std::string::npos : token.find('|', second + 1);
++  const bool named = token.substr(0, first) == "TQS2";
++  if (first != 4 || second == std::string::npos ||
++      (named ? third == std::string::npos || token.find('|', third + 1) != std::string::npos
++             : third != std::string::npos || token.substr(0, first) != "TQS1")) return false;
 +
 +  const auto expiresText = token.substr(first + 1, second - first - 1);
-+  const auto signature = token.substr(second + 1);
++  const auto alias = named ? token.substr(second + 1, third - second - 1) : std::string();
++  const auto signature = token.substr(named ? third + 1 : second + 1);
 +  if (expiresText.empty() || signature.size() != SHA256_DIGEST_LENGTH * 2 ||
 +      !std::all_of(expiresText.begin(), expiresText.end(), [](unsigned char c) { return std::isdigit(c); }) ||
 +      !std::all_of(signature.begin(), signature.end(), [](unsigned char c) { return std::isxdigit(c); })) return false;
++  if (named && (alias.empty() || alias.size() > 128 ||
++      !std::all_of(alias.begin(), alias.end(), [](unsigned char c) {
++        return std::isalnum(c) || c == '-' || c == '_';
++      }))) return false;
 +
 +  int64_t expiresAt = 0;
 +  try {
@@ -103,7 +137,8 @@ index b553c2d..73746f8 100644
 +    std::chrono::system_clock::now().time_since_epoch()).count();
 +  if (expiresAt <= now || expiresAt > now + 15 * 60) return false;
 +
-+  const auto payload = std::string("TQS1|") + std::string(name) + "|" + expiresText;
++  const auto payload = std::string(named ? "TQS2|" : "TQS1|") + std::string(name) + "|" +
++    expiresText + (named ? "|" + alias : "");
 +  unsigned char digest[EVP_MAX_MD_SIZE] = {0};
 +  unsigned int digestLength = 0;
 +  HMAC(EVP_sha256(), secret.data(), static_cast<int>(secret.size()),
@@ -115,45 +150,53 @@ index b553c2d..73746f8 100644
 +    expected.push_back(hex[digest[i] >> 4]);
 +    expected.push_back(hex[digest[i] & 0x0f]);
 +  }
-+  return expected.size() == signature.size() &&
-+    CRYPTO_memcmp(expected.data(), signature.data(), expected.size()) == 0;
++  if (expected.size() != signature.size() ||
++      CRYPTO_memcmp(expected.data(), signature.data(), expected.size()) != 0) return false;
++
++  if (named) {
++    // Unpadded Base64URL cannot have 1 remainder byte; 2 or 3 are valid.
++    const size_t remainder = alias.size() % 4;
++    if (remainder == 1) return false;
++    const size_t padding = (4 - remainder) % 4;
++    std::string padded = alias;
++    std::replace(padded.begin(), padded.end(), '-', '+');
++    std::replace(padded.begin(), padded.end(), '_', '/');
++    padded.append(padding, '=');
++    std::string decoded(padded.size() / 4 * 3, '\0');
++    const int count = EVP_DecodeBlock(reinterpret_cast<unsigned char *>(decoded.data()),
++      reinterpret_cast<const unsigned char *>(padded.data()), static_cast<int>(padded.size()));
++    if (count < 0 || static_cast<size_t>(count) < padding) return false;
++    decoded.resize(static_cast<size_t>(count) - padding);
++    if (!validTqsScreenName(decoded)) return false;
++    screenName = std::move(decoded);
++  }
++  return true;
 +}
 +
 +} // namespace
-+
- #include "3rdparty/semver.hpp"
- 
- struct AuthManagerPrivate {
-@@ -371,6 +371,7 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
-   auto &server = Server::instance();
-   auto &um = server.user_manager();
-   bool passed = false;
+@@ -36,0 +149 @@
++    tqsScreenName.clear();
+@@ -74,0 +188 @@
++  std::string tqsScreenName;
+@@ -151 +265,2 @@
+-  user_manager.createNewPlayer(conn, p_ptr->name, obj["avatar"], id, p_ptr->uuid);
++  user_manager.createNewPlayer(conn, p_ptr->tqsScreenName.empty() ? std::string(p_ptr->name) : p_ptr->tqsScreenName,
++                               obj["avatar"], id, p_ptr->uuid);
+@@ -374,0 +490 @@
 +  bool tqs_ticket_valid = false;
-   std::string error_msg = "";
- 
-   // p_ptr的数据
-@@ -423,6 +465,17 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
-     goto FAIL;
-   }
- 
+@@ -422,0 +539,11 @@
++    goto FAIL;
++  }
++
 +  // When TQS SSO mode is enabled, an arbitrary native username/password is
 +  // never enough to enter. The API signs a short-lived ticket with the same
 +  // secret configured here; only a ticket issued for this exact native name
 +  // can reach queryUserInfo (and therefore the deterministic account creation branch).
 +  tqs_ticket_valid = !server.config().tqsAuthRequired ||
-+    verifyTqsTicket(name, decrypted_pw, server.config().tqsAuthSecret);
++    verifyTqsTicket(name, decrypted_pw, server.config().tqsAuthSecret, p_ptr->tqsScreenName);
 +  if (!tqs_ticket_valid) {
 +    error_msg = "game account is not approved";
-+    goto FAIL;
-+  }
-+
-   obj = queryUserInfo(decrypted_pw);
-   if (obj.empty()) {
-     error_msg = "cannot register more new users on this device";
-@@ -445,18 +497,25 @@ std::map<std::string, std::string> AuthManager::checkPassword() {
-     }
-   }
- 
+@@ -448,12 +575,19 @@
 -  // check if password is the same
 -  decrypted_pw += obj["salt"];
 -  unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -164,6 +207,8 @@ index b553c2d..73746f8 100644
 -    char buf[3];
 -    snprintf(buf, sizeof(buf), "%02x", hash[i]);
 -    passwordHash += buf;
+-  }
+-  passed = (passwordHash == obj["password"]);
 +  if (server.config().tqsAuthRequired) {
 +    // The HMAC ticket above is the password proof in SSO mode. Do not compare
 +    // it with a stored password hash, because every ticket is intentionally
@@ -182,8 +227,4 @@ index b553c2d..73746f8 100644
 +      passwordHash += buf;
 +    }
 +    passed = (passwordHash == obj["password"]);
-   }
--  passed = (passwordHash == obj["password"]);
-   if (!passed) {
-     error_msg = "username or password error";
-     goto FAIL;
++  }
