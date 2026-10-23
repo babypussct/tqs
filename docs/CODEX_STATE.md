@@ -1100,90 +1100,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-23T21:05:59.613Z (UTC).
-- Nhánh: `main` · HEAD: `b8527d28a580`.
-- File thay đổi hiển thị: 247 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-23T21:08:38.535Z (UTC).
+- Nhánh: `main` · HEAD: `403c3f39b491`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M .gitignore
- M .vercelignore
- M AGENTS.md
- M README.md
- M api/game/session.ts
- M deploy/freekill-native/README.md
- M deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch
- M deploy/freekill-native/patches/freekill-asio/tqs-game-access.patch
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
- M deploy/freekill-native/qa/tqs_qa/README.md
- M deploy/freekill-native/qa/tqs_qa/catalog.json
- M deploy/freekill-native/qa/tqs_qa/init.lua
- M deploy/freekill-native/scripts/bootstrap-source.sh
- M deploy/freekill-native/scripts/qa-package-common.sh
- M deploy/freekill-native/scripts/run-server.sh
- M deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md
- M deploy/mobile/compose.yaml
- M deploy/mobile/env.example
- M deploy/mobile/package-release.mjs
- M deploy/mobile/release.test.mjs
- M deploy/mobile/verify-release.mjs
- M docs/CODEX_PLAN.md
- M docs/GAME_ACCESS_CONTROL.md
- M docs/web-client/LIVE_TESTING.md
- M docs/web-client/MOBILE_PLAYABLE_MASTER_PLAN.md
- M docs/web-client/QUOC_CHIEN_RULE_AUDIT.md
- M docs/web-client/UPSTREAM_RELEASE_2026-10-17_PLAN.md
- M game/gateway/scripts/gateway.test.mjs
- M game/gateway/scripts/security.test.mjs
- M game/gateway/src/security.mjs
- M game/gateway/src/server.mjs
- M game/web/functions/_gateway-target.js
- M game/web/functions/api/tunnel/register.js
- M game/web/functions/gateway/[[path]].js
- M game/web/package.json
- M game/web/scripts/browser-e2e/harness.tsx
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/card-display.test.ts
- M game/web/scripts/choices.test.ts
- M game/web/scripts/connection-messages.test.ts
- M game/web/scripts/connection.test.ts
- M game/web/scripts/live-gateway-e2e/run.ts
- M game/web/scripts/multiplayer-e2e/identity.test.ts
- M game/web/scripts/multiplayer-e2e/identity.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/pages-gateway.test.mjs
- M game/web/scripts/portrait-reveal.test.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/qa-scenarios.ts
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/store.test.ts
- M game/web/scripts/vietnamese-l01.test.ts
- M game/web/src/App.tsx
- M game/web/src/CardSelectionPanel.tsx
- M game/web/src/CardVfxOverlay.tsx
- M game/web/src/CardsAndChoicePanel.tsx
- M game/web/src/FakeSkillDock.tsx
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/GameplayControls.tsx
- M game/web/src/HandCardItem.tsx
- M game/web/src/InitialGeneralPanel.tsx
- M game/web/src/NativeDialogPanel.tsx
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/RegularSkillDock.tsx
- M game/web/src/RequestDeadline.tsx
- M game/web/src/engine/connection.ts
- M game/web/src/engine/connectionMessages.ts
- M game/web/src/engine/gameAdapter.ts
- M game/web/src/engine/generalSelection.ts
-... và 177 mục nữa; xem git status trực tiếp.
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
-b8527d28 docs: record safeguarded build separation and Git recovery
-4a7b1e8a fix(game): record deployed PWA, gameplay UI and Lua regression changes
-934cb2a3 fix(shop): isolate build output and track deployed auth and pool rules
+403c3f39 docs(tqsvn): record verified local commits and translation work queue
+712906f3 docs(tqsvn): capture recovery state, QA evidence and Vietnamese translation backlog
+1a0497c7 feat(tqsvn): consolidate account-based bans, gameplay fixes and guarded builds
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
