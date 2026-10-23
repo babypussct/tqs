@@ -2,6 +2,7 @@
 
 ## SOURCE-LOCAL-RECONCILIATION-20261024 — source snapshot và Việt hóa Quốc Chiến
 
+- [x] Snapshot local main thành hai commit `1a0497c7` (source/QA/build) và `712906f3` (docs/evidence/danh mục). Đã kiểm tra staged diff không lỗi whitespace; log vận hành `freekill.log` được ignore và giữ nguyên trên máy. Không push/deploy.
 - [x] Build-safety **7/7**, CI pipeline **14/14**, Shop `build -> clean -> build`, game production build, typecheck all và diff guard `dist` đều **PASS** (local 24/10). Có thể đối chiếu bằng `npm run test:build-safety`, `npm run test:pipelines`, `npm run check:build`.
 - [x] Sinh danh sách Việt hóa bảo thủ từ runtime và UI React: `docs/translations/VIETNAMESE_GAP_INVENTORY.{md,json}` toàn bộ package; `HEGEMONY_VIETNAMESE_WORK_PLAN.md` và `HEGEMONY_VIETNAMESE_WORK_QUEUE.csv` phân công theo P0 (**1.820** mô tả bài/kỹ năng, prompt, tên phát sinh, log), P1 (**629** nhãn/dialog/mark), P2 (**2.394** tướng/voice). Gồm mã gốc Trung và nguồn; **4.843** mục cần review trong tập Quốc Chiến/core/dependency bảo thủ. Chưa xác nhận mọi item hiển thị trong new_heg_mode.
 - [ ] Duyệt key có hiển thị thật trong từng tình huống `new_heg_mode`, bổ sung log/skill key ghép động, dịch và rà ngữ nghĩa theo Moegirl trước khi gắn cờ bản dịch hoàn tất. Các literal như `#0598BC` chỉ cần loại khỏi bản dịch.
