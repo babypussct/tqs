@@ -91,41 +91,55 @@ export function CardSuitMark({ suit, number }: { suit?: number | string; number?
 /** Static whitelist of standard card classifications */
 const BASIC_CARDS = new Set([
   'slash', 'fire_slash', 'fire__slash', 'thunder_slash', 'thunder__slash',
-  'jink', 'peach', 'analeptic',
+  'jink', 'rob__jink', 'peach', 'analeptic',
+  'ice__slash', 'stab__slash',
 ]);
 
 const DELAYED_TRICKS = new Set([
-  'indulgence', 'supply_shortage', 'lightning',
+  'indulgence', 'supply_shortage', 'lightning', 'yanxiao_trick',
 ]);
 
 const NORMAL_TRICKS = new Set([
   'duel', 'dismantlement', 'snatch', 'ex_nihilo', 'nullification',
   'god_salvation', 'amazing_grace', 'savage_assault', 'archery_attack', 'threaten_emperor',
   'iron_chain', 'collateral', 'fire_attack',
+  // Hegemony and expansion tricks
+  'befriend_attacking', 'known_both', 'await_exhausted', 'burning_camps', 'lure_tiger',
+  'fight_together', 'alliance_feast', 'imperial_order', 'heg__nullification',
+  'sa__drowning', 'drowning', 'reveal_intention', 'overbearing', 'part_ways',
+  'tricky_heist', 'unworthy_continuation', 'command_world', 'restore_heartland',
+  'strengthen_state', 'luanwu_chaos', 'crafty_escape', 'honey_trap',
 ]);
 
 const WEAPONS = new Set([
   'qinggang_sword', 'double_swords', 'blade', 'spear', 'axe', 'halberd',
   'kylin_bow', 'crossbow', 'ice_sword', 'guding_blade', 'fan', 'scaly_wings',
   'triblade', 'dragon_phoenix', 'yangsui_spear', 'serpent_slayer_sword',
+  'sa__blade', 'sa__halberd', 'xbow', 'xuanjian_sword', 'seven_stars_sword',
+  'yitian_sword', 'thunder_blade', 'quenched_blade', 'real__crossbow',
+  'red_spear', 'water_sword', 'poisonous_dagger', 'moon_spear',
 ]);
 
 const ARMORS = new Set([
   'eight_diagram', 'nioh_shield', 'silver_lion', 'vine', 'breastplate',
-  'iron_armor', 'amiantus_robe', 'peace_spell',
+  'iron_armor', 'amiantus_robe', 'peace_spell', 'grand_ensign',
+  'ex_eight_diagram', 'ex_nioh_shield', 'ex_silver_lion', 'ex_vine',
+  'dark_armor', 'glittery_armor', 'js__peace_spell',
 ]);
 
 const DEFENSIVE_RIDES = new Set([
   'jueying', 'dilu', 'zhuahuangfeidian', 'white_kylin', 'liulongcanjia',
+  'hualiu', 'm_liuyi__liulongcanjia',
 ]);
 
 const OFFENSIVE_RIDES = new Set([
-  'chitu', 'dayuan', 'zixing', 'jingfan', 'tianlu',
+  'chitu', 'dayuan', 'zixing', 'jingfan', 'tianlu', 'mobile__liulongcanjia',
 ]);
 
 const TREASURES = new Set([
   'wooden_ox', 'role__wooden_ox', 'jade_seal', 'luminous_pearl', 'dunjia_book',
-  'nine_tripod_cauldrons', 'turban_shell_cup',
+  'nine_tripod_cauldrons', 'turban_shell_cup', 'celestial_calabash',
+  'talisman', 'taigong_tactics', 'brocade_box', 'bronze_sparrow',
 ]);
 
 export function getCardCategory(rawName: string | undefined): CardCategoryInfo {

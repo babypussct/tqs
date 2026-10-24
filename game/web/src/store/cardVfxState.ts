@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { NativeVfxEvent } from './nativeVfxEvents';
+import { soundManager } from '../engine/webAudioSfx';
 
 /**
  * Card VFX and Animation State Management.
@@ -28,6 +29,7 @@ export interface FlyingCardEvent {
   trueName?: string;
   extension?: string;
   picName?: string;
+  gender?: 'male' | 'female';
   suit?: number;
   number?: number;
   createdAt: number;
@@ -38,6 +40,7 @@ export interface CardAssetHint {
   trueName?: string;
   extension?: string;
   picName?: string;
+  gender?: 'male' | 'female';
 }
 
 export interface ImpactVfxEvent {
@@ -343,6 +346,29 @@ export function parseVfxFromGameLog(rawLog: string): ParsedVfxFromLog | null {
     }
   }
 
+  if (tag === '#UseCardToCard') {
+    const fromId = Number(p1);
+    const toId = Number(p2);
+    const rawCard = parts.slice(3).join(':');
+    const parsedCard = parseCardToken(rawCard);
+    if (Number.isInteger(fromId) && parsedCard.name) {
+      const flyingCard: {
+        fromPlayerId: number;
+        toPlayerIds: number[];
+        cardName: string;
+        suit?: number;
+        number?: number;
+      } = {
+        fromPlayerId: fromId,
+        toPlayerIds: Number.isInteger(toId) ? [toId] : [],
+        cardName: parsedCard.name,
+      };
+      if (parsedCard.suit !== undefined) flyingCard.suit = parsedCard.suit;
+      if (parsedCard.number !== undefined) flyingCard.number = parsedCard.number;
+      return { flyingCard };
+    }
+  }
+
   if (tag === '#UseCard') {
     const fromId = Number(p1);
     const rawCard = parts.slice(2).join(':');
@@ -528,7 +554,7 @@ export function useCardVfx() {
         let changed = false;
         const next = current.map((card) => {
           const hint = cardAssetHints[card.cardName];
-          if (!hint || (card.extension === hint.extension && card.picName === hint.picName && card.trueName === hint.trueName)) {
+          if (!hint || (card.extension === hint.extension && card.picName === hint.picName && card.trueName === hint.trueName && card.gender === hint.gender)) {
             return card;
           }
           changed = true;
@@ -566,6 +592,7 @@ export function useCardVfx() {
           trueName: hint?.trueName,
           extension: hint?.extension,
           picName: hint?.picName,
+          gender: hint?.gender,
           suit: parsed.flyingCard.suit,
           number: parsed.flyingCard.number,
           createdAt: Date.now(),
@@ -618,6 +645,18 @@ export function useCardVfx() {
           damageAmount: event.damageNum });
         triggerAvatarReaction(event.targetPlayerId, 'hit-shake');
         triggerDamagePop(event.targetPlayerId, event.damageNum, event.sequence);
+      } else if (event.kind === 'sound') {
+        soundManager.playNativeSoundPath(event.path);
+      } else if (event.kind === 'losehp') {
+        soundManager.playLoseHpSound();
+        if (event.targetPlayerId) {
+          triggerAvatarReaction(event.targetPlayerId, 'hit-shake');
+        }
+      } else if (event.kind === 'losemaxhp') {
+        soundManager.playLoseMaxHpSound();
+        if (event.targetPlayerId) {
+          triggerAvatarReaction(event.targetPlayerId, 'hit-shake');
+        }
       } else if (event.kind === 'invoke_skill') {
         triggerSkillCallout(event.playerId, event.skill, event.isUlt);
       }

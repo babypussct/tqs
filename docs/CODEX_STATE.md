@@ -1,6 +1,25 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-## GAME-UI-UX-AUDIT-PASS2-20261024 — Rà soát lần 2 đối chiếu QML gốc & kế hoạch UI/UX toàn diện (Phase P0–P4)
+## CARD-AUDIO-COMPLETE-PARITY-20261024 — Bổ sung và đồng bộ đầy đủ âm thanh lá bài so với FreeKill/Hegemony gốc
+
+- **Mục tiêu:** Bổ sung đầy đủ 100% âm thanh liên quan đến lá bài (giọng đọc nam/nữ, hiệu ứng kích hoạt trang bị, âm thanh hệ thống recast/chain/losehp/losemaxhp) theo đúng nguồn sự thật C++/Lua/QML của FreeKill và Quốc Chiến, khắc phục lỗi rơi toàn bộ âm thanh lá bài trong trận đấu thật trên web.
+- **Những gì đã làm:**
+  - **Trích xuất 40 file `.mp3` gốc:** Trích xuất 24 file giọng đọc nam/nữ lá bài Quốc Chiến (`packages/hegemony/audio/card/{male,female}/*.mp3`) từ `scratch/upstream/hegemony`, 11 file kích hoạt trang bị chuẩn (`packages/standard_cards/audio/card/*.mp3`) và 5 file trang bị Quân Tranh (`packages/maneuvering/audio/card/*.mp3`) từ `scratch/upstream/freekill-github`. Đặt vào đúng cấu trúc `game/web/public/packages/`, `runtime/packages/`, và `game/web/public/audio/card/`. Không làm dirty các checkout upstream, không đổi `runtime/flist.txt`.
+  - **Mở rộng `LogEvent` Server-Authoritative (`nativeVfxEvents.ts`, `cardVfxState.ts`):** Nhận diện và chuyển tiếp các sự kiện `PlaySound`, `LoseHP`, `ChangeMaxHp` (`num < 0`), và `Damage` (gồm cả `ice_damage`) từ server Lua sang Web UI, chấm dứt việc lọc bỏ âm thanh native.
+  - **Chuẩn hóa `webAudioSfx.ts`:** Mở rộng `SOURCE_AUDIO_PACKAGES` với `hegemony`, `standard_cards`, `maneuvering`. Thêm `nativeSoundPathCandidates` và `equipSkillAudioUrlCandidates` mô phỏng theo `SkinBank.qml`. Bổ sung fallback `trueName` (tách sau `__`). Đăng ký `recast`, `losemaxhp`, `ice_damage`. Bỏ gán nhầm `fly1.mp3` làm tiếng bay lá bài, `draw.mp3` (nhạc kết thúc hòa) làm tiếng rút bài, và `wine1.mp3` làm tiếng Tửu. Thêm cơ chế deduplicate âm thanh 250-300ms chống phát lặp.
+  - **Khử phát trùng & sửa giới tính (`CardVfxOverlay.tsx`, `cardVfxState.ts`):** Không hô `"Đào!"` khi hồi máu bằng kỹ năng (`#HpRecover`), chỉ phát hiệu ứng hồi máu và chuông phong linh; không lặp giọng đọc khi đánh `jink` hay `nullification`; hỗ trợ `#UseCardToCard` trong `parseVfxFromGameLog`; truyền đúng `gender` vào `FlyingCardEvent` thay vì hardcode `'male'`.
+  - **Hoàn thiện danh mục thẻ bài (`HandCardItem.tsx`):** Thêm `hualiu` vào `DEFENSIVE_RIDES` (trả về `'horse'`), `grand_ensign` và `peace_spell` vào `ARMORS` (trả về `'armor'`), bổ sung đầy đủ cẩm nang Quốc Chiến vào `NORMAL_TRICKS`.
+- **Kiểm thử quan sát trực tiếp 24/10:**
+  - `npm --prefix game/web run test:card-effects`: **14/14 PASS** (kiểm tra tồn tại đĩa của toàn bộ 40 file âm thanh mới, `nativeSoundPathCandidates`, `equipSkillAudioUrlCandidates`, `projectNativeVfx`, `#UseCardToCard`, `getCardEquipAudioType`).
+  - `npm --prefix game/web run test:store`: **50/50 PASS**.
+  - `npm --prefix game/web run test:card-display`: **21/21 PASS**.
+  - `npm --prefix game/web run test:e2e`: **37/37 PASS** (Browser E2E).
+  - `npm --prefix game/web run test:e2e:lua`: **72/72 PASS** (Real Lua E2E).
+  - `npm run typecheck:all`: **PASS** (Shop, Game Web, Game Tools).
+  - `npm run test:build-safety`: **7/7 PASS**.
+  - `npm run check:build`: **PASS**.
+  - `npm --prefix game/web run build`: **PASS** (524 file service worker, toàn bộ audio file được đóng gói vào `dist/`).
+- **Giới hạn / Bước tiếp theo:** Toàn bộ thay đổi mã nguồn và asset đang nằm trong working tree local, chưa commit, push hay deploy. Sẵn sàng để commit hoặc nghiệm thu khi có chỉ thị.
 
 - **Phạm vi:** Rà soát đối chiếu từng hạng mục giữa mã nguồn QML/Lua gốc (`runtime/packages/freekill-core/LunarLtk/`, `runtime/packages/freekill-core/ltk/`) và kế hoạch UI/UX 5 giai đoạn (`UI-P0-01` đến `UI-P4-01`), bổ sung các chi tiết tinh tế còn thiếu mà không đụng tới luật Lua/C++ hoặc TQSShop.
 - **Đã bổ sung trong lượt rà soát lần 2:**
@@ -1191,31 +1210,90 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T10:32:20.122Z (UTC).
-- Nhánh: `main` · HEAD: `9a250248e7f4`.
-- File thay đổi hiển thị: 12 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T11:58:44.279Z (UTC).
+- Nhánh: `main` · HEAD: `0a74ab506166`.
+- File thay đổi hiển thị: 111 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/card-display.test.ts
- M game/web/scripts/store.test.ts
- M game/web/src/GameResultPanel.tsx
- M game/web/src/GameplayControls.tsx
+ M game/web/scripts/card-effects.test.ts
+ M game/web/src/CardVfxOverlay.tsx
  M game/web/src/HandCardItem.tsx
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/SkillInfo.tsx
- M game/web/src/store/boardState.ts
- M game/web/src/store/gameplayState.ts
- M game/web/src/styles.css
+ M game/web/src/engine/webAudioSfx.ts
+ M game/web/src/store/cardVfxState.ts
+ M game/web/src/store/nativeVfxEvents.ts
+?? game/web/public/audio/card/female/alliance_feast.mp3
+?? game/web/public/audio/card/female/await_exhausted.mp3
+?? game/web/public/audio/card/female/befriend_attacking.mp3
+?? game/web/public/audio/card/female/burning_camps.mp3
+?? game/web/public/audio/card/female/fight_together.mp3
+?? game/web/public/audio/card/female/heg__nullification.mp3
+?? game/web/public/audio/card/female/imperial_order.mp3
+?? game/web/public/audio/card/female/known_both.mp3
+?? game/web/public/audio/card/female/lure_tiger.mp3
+?? game/web/public/audio/card/female/rob__jink.mp3
+?? game/web/public/audio/card/female/sa__drowning.mp3
+?? game/web/public/audio/card/female/threaten_emperor.mp3
+?? game/web/public/audio/card/male/alliance_feast.mp3
+?? game/web/public/audio/card/male/await_exhausted.mp3
+?? game/web/public/audio/card/male/befriend_attacking.mp3
+?? game/web/public/audio/card/male/burning_camps.mp3
+?? game/web/public/audio/card/male/fight_together.mp3
+?? game/web/public/audio/card/male/heg__nullification.mp3
+?? game/web/public/audio/card/male/imperial_order.mp3
+?? game/web/public/audio/card/male/known_both.mp3
+?? game/web/public/audio/card/male/lure_tiger.mp3
+?? game/web/public/audio/card/male/rob__jink.mp3
+?? game/web/public/audio/card/male/sa__drowning.mp3
+?? game/web/public/audio/card/male/threaten_emperor.mp3
+?? game/web/public/packages/hegemony/audio/card/female/alliance_feast.mp3
+?? game/web/public/packages/hegemony/audio/card/female/await_exhausted.mp3
+?? game/web/public/packages/hegemony/audio/card/female/befriend_attacking.mp3
+?? game/web/public/packages/hegemony/audio/card/female/burning_camps.mp3
+?? game/web/public/packages/hegemony/audio/card/female/fight_together.mp3
+?? game/web/public/packages/hegemony/audio/card/female/heg__nullification.mp3
+?? game/web/public/packages/hegemony/audio/card/female/imperial_order.mp3
+?? game/web/public/packages/hegemony/audio/card/female/known_both.mp3
+?? game/web/public/packages/hegemony/audio/card/female/lure_tiger.mp3
+?? game/web/public/packages/hegemony/audio/card/female/rob__jink.mp3
+?? game/web/public/packages/hegemony/audio/card/female/sa__drowning.mp3
+?? game/web/public/packages/hegemony/audio/card/female/threaten_emperor.mp3
+?? game/web/public/packages/hegemony/audio/card/male/alliance_feast.mp3
+?? game/web/public/packages/hegemony/audio/card/male/await_exhausted.mp3
+?? game/web/public/packages/hegemony/audio/card/male/befriend_attacking.mp3
+?? game/web/public/packages/hegemony/audio/card/male/burning_camps.mp3
+?? game/web/public/packages/hegemony/audio/card/male/fight_together.mp3
+?? game/web/public/packages/hegemony/audio/card/male/heg__nullification.mp3
+?? game/web/public/packages/hegemony/audio/card/male/imperial_order.mp3
+?? game/web/public/packages/hegemony/audio/card/male/known_both.mp3
+?? game/web/public/packages/hegemony/audio/card/male/lure_tiger.mp3
+?? game/web/public/packages/hegemony/audio/card/male/rob__jink.mp3
+?? game/web/public/packages/hegemony/audio/card/male/sa__drowning.mp3
+?? game/web/public/packages/hegemony/audio/card/male/threaten_emperor.mp3
+?? game/web/public/packages/maneuvering/audio/card/fan.mp3
+?? game/web/public/packages/maneuvering/audio/card/guding_blade.mp3
+?? game/web/public/packages/maneuvering/audio/card/silver_lion.mp3
+?? game/web/public/packages/maneuvering/audio/card/vine.mp3
+?? game/web/public/packages/maneuvering/audio/card/vineburn.mp3
+?? game/web/public/packages/standard_cards/audio/card/axe.mp3
+?? game/web/public/packages/standard_cards/audio/card/blade.mp3
+?? game/web/public/packages/standard_cards/audio/card/crossbow.mp3
+?? game/web/public/packages/standard_cards/audio/card/double_swords.mp3
+?? game/web/public/packages/standard_cards/audio/card/eight_diagram.mp3
+?? game/web/public/packages/standard_cards/audio/card/halberd.mp3
+?? game/web/public/packages/standard_cards/audio/card/ice_sword.mp3
+?? game/web/public/packages/standard_cards/audio/card/kylin_bow.mp3
+?? game/web/public/packages/standard_cards/audio/card/nioh_shield.mp3
+?? game/web/public/packages/standard_cards/audio/card/qinggang_sword.mp3
+... và 41 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+0a74ab50 feat(game): complete Hegemony UI native parity refinements
 9a250248 docs: record Hegemony Pages UI release
 1684bcaa feat(game): refine Hegemony board UI and combat feedback
-8500d67f docs: refresh Codex checkpoint after Pages release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

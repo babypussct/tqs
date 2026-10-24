@@ -1,6 +1,37 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-## GAME-UI-UX-PAGES-RELEASE-20261024 — phát hành giao diện Quốc Chiến production
+## CARD-AUDIO-COMPLETE-PARITY-20261024 — Hoàn tất bổ sung và đồng bộ đầy đủ âm thanh lá bài so với FreeKill gốc
+
+- [x] **Trích xuất & bổ sung 40 file âm thanh `.mp3` gốc:**
+  - 24 file giọng đọc nam/nữ của 12 lá bài Quốc Chiến (`packages/hegemony/audio/card/{male,female}/*.mp3`) từ `scratch/upstream/hegemony`.
+  - 11 file hiệu ứng kỹ năng trang bị chuẩn (`packages/standard_cards/audio/card/*.mp3`) từ `scratch/upstream/freekill-github`.
+  - 5 file hiệu ứng kỹ năng trang bị Quân Tranh (`packages/maneuvering/audio/card/*.mp3`) từ `scratch/upstream/freekill-github`.
+  - Không sửa `runtime/flist.txt`, không làm dirty các checkout upstream.
+- [x] **Kết nối & chuyển tiếp `LogEvent` từ Lua Server sang Web:**
+  - Mở rộng `projectNativeLogEvent` trong `nativeVfxEvents.ts`: nhận diện `PlaySound` (đường dẫn `./audio/...` và `./packages/...`), `LoseHP`, `ChangeMaxHp` (`num < 0`), và `Damage` (gồm cả `ice_damage`).
+  - Xử lý các sự kiện `sound`, `losehp`, `losemaxhp` trong `cardVfxState.ts` và kích hoạt âm thanh / rung avatar tương ứng.
+- [x] **Chuẩn hóa `SoundManager` & danh mục thẻ bài (`webAudioSfx.ts`, `HandCardItem.tsx`):**
+  - Mở rộng `SOURCE_AUDIO_PACKAGES` gồm `hegemony`, `standard_cards`, `maneuvering`, `gamemode`, `mobile`.
+  - Bổ sung `nativeSoundPathCandidates` và `equipSkillAudioUrlCandidates` mô phỏng theo `SkinBank.qml`.
+  - Hỗ trợ fallback `trueName` (tách sau `__`) cho các biến thể thẻ bài có tiền tố mở rộng.
+  - Bổ sung đầy đủ thẻ bài Quốc Chiến, trang bị và tọa kỵ (`hualiu`, `grand_ensign`, `peace_spell`, cẩm nang Quốc Chiến) vào `HandCardItem.tsx`.
+  - Bỏ gán sai `fly1.mp3` làm tiếng bay lá bài, bỏ gán `draw.mp3` (nhạc kết thúc hòa) làm tiếng rút bài, bỏ `wine1.mp3` khỏi `analeptic`.
+- [x] **Khử phát trùng âm thanh & sửa giới tính giọng đọc:**
+  - `#HpRecover`: chỉ phát hiệu ứng hồi máu `heal-glow` và chuông phong linh, không hô `"Đào!"` (`peach.mp3`). Tiếng hô `"Đào!"` chỉ phát khi sử dụng lá bài Đào.
+  - `#ResponsePlayCard` và `#UseCardNullified`: không phát lặp giọng đọc giữa lá bay và hiệu ứng va chạm.
+  - Hỗ trợ `#UseCardToCard` trong `parseVfxFromGameLog`.
+  - Cơ chế deduplicate 250-300ms trong `SoundManager` chống lặp âm thanh giữa thao tác tay local và phản hồi server.
+  - Truyền đúng giới tính `gender` vào `FlyingCardEvent` thay vì hardcode `'male'`.
+- [x] **Kiểm thử & xác minh toàn diện:**
+  - `npm --prefix game/web run test:card-effects`: **14/14 PASS**.
+  - `npm --prefix game/web run test:store`: **50/50 PASS**.
+  - `npm --prefix game/web run test:card-display`: **21/21 PASS**.
+  - `npm --prefix game/web run test:e2e`: **37/37 PASS**.
+  - `npm --prefix game/web run test:e2e:lua`: **72/72 PASS**.
+  - `npm run typecheck:all`: **PASS**.
+  - `npm run test:build-safety`: **7/7 PASS**.
+  - `npm run check:build`: **PASS**.
+  - `npm --prefix game/web run build`: **PASS** (524 file service worker).
 
 - [x] Git `main` đã push commit nguồn `1684bcaa` cho UI/UX P0–P4; Pages Direct Upload phát hành riêng với OAuth same-origin và gateway `/gateway`.
 - [x] Build game production **PASS**, root `test:build-safety` **7/7 PASS**, `check:build` và `typecheck:all` **PASS**; service worker kiểm **524** file.

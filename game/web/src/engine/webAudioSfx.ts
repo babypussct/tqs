@@ -19,7 +19,10 @@ export type SfxName =
   | 'damage'
   | 'fire_damage'
   | 'thunder_damage'
+  | 'ice_damage'
   | 'losehp'
+  | 'losemaxhp'
+  | 'recast'
   | 'draw'
   | 'fly'
   | 'chain'
@@ -41,7 +44,7 @@ export interface CardAudioOptions {
 }
 
 const SAFE_AUDIO_PART = /^[A-Za-z0-9_-]+$/;
-const SOURCE_AUDIO_PACKAGES = ['gamemode', 'mobile'] as const;
+const SOURCE_AUDIO_PACKAGES = ['hegemony', 'standard_cards', 'maneuvering', 'gamemode', 'mobile'] as const;
 
 function safeAudioPart(value: string | undefined): string | null {
   const normalized = value?.trim().toLowerCase();
@@ -51,11 +54,12 @@ function safeAudioPart(value: string | undefined): string | null {
 /**
  * Resolve audio in the same order as FreeKill's usecard.lua:
  * package-local voice first, then the browser's standard voice catalogue and
- * the shipped package media.  Mobile package voices are root-level assets,
- * while gamemode voices use the male/female subdirectories.
+ * the shipped package media. If a card has an expansion prefix (e.g. heg__nullification,
+ * sa__drowning, rob__jink), the base trueName is also attempted as fallback.
  */
 export function cardAudioUrlCandidates(cardName: string, options: CardAudioOptions = {}): string[] {
-  const names = [...new Set([cardName, options.trueName]
+  const baseName = cardName.includes('__') ? cardName.split('__').slice(-1)[0] : undefined;
+  const names = [...new Set([cardName, options.trueName, baseName]
     .map(safeAudioPart)
     .filter((name): name is string => !!name))];
   const extension = safeAudioPart(options.extension);
@@ -79,11 +83,103 @@ export function cardAudioUrlCandidates(cardName: string, options: CardAudioOptio
       }
     }
     // Some upstream package effects use a non-gendered card sound (notably
-    // mobile derived equipment skills).
+    // standard_cards and maneuvering equipment skills).
     for (const packageName of packages) {
       add(`/packages/${packageName}/audio/card/${name}.mp3`);
     }
   }
+  return candidates;
+}
+
+/**
+ * Resolve audio URLs for equipment skill trigger sounds
+ * (packages/standard_cards/audio/card/<equip>.mp3 or packages/maneuvering/audio/card/<equip>.mp3).
+ */
+export function equipSkillAudioUrlCandidates(equipName: string): string[] {
+  const name = safeAudioPart(equipName);
+  if (!name) return [];
+  const baseName = name.includes('__') ? name.split('__').slice(-1)[0] : undefined;
+  const names = [...new Set([name, baseName].filter((n): n is string => !!n))];
+  const candidates: string[] = [];
+  for (const n of names) {
+    for (const pkg of ['standard_cards', 'maneuvering', 'hegemony', 'mobile', 'gamemode'] as const) {
+      candidates.push(`/packages/${pkg}/audio/card/${n}.mp3`);
+    }
+    candidates.push(`/audio/card/${n}.mp3`);
+  }
+  return [...new Set(candidates)];
+}
+
+/**
+ * Resolve sound paths emitted by server LogEvent (e.g. ./audio/system/recast,
+ * ./audio/card/common/weapon, ./packages/hegemony/audio/card/male/known_both,
+ * ./packages/standard_cards/audio/card/axe).
+ * Models FreeKill SkinBank.getAudioByPath and usecard.lua.
+ */
+export function nativeSoundPathCandidates(rawPath: string): string[] {
+  if (!rawPath || typeof rawPath !== 'string') return [];
+  const trimmed = rawPath.trim();
+  if (!trimmed || trimmed.includes('..')) return [];
+  const normalized = trimmed.replace(/^\.?\//, '').replace(/\.mp3$/i, '');
+  if (!/^[A-Za-z0-9_/-]+$/.test(normalized)) return [];
+
+  const candidates: string[] = [];
+  const add = (p: string) => {
+    const url = p.startsWith('/') ? p : `/${p}`;
+    const full = url.endsWith('.mp3') ? url : `${url}.mp3`;
+    if (!candidates.includes(full)) candidates.push(full);
+  };
+
+  // 1. Direct path
+  add(normalized);
+
+  // 2. If path is packages/<pkg>/audio/card/<gender>/<cardName>
+  const cardMatch = normalized.match(/^packages\/([A-Za-z0-9_-]+)\/audio\/card\/(male|female)\/([A-Za-z0-9_-]+)$/);
+  if (cardMatch) {
+    const [, pkg, gender, cardName] = cardMatch;
+    add(`audio/card/${gender}/${cardName}`);
+    for (const p of SOURCE_AUDIO_PACKAGES) {
+      if (p !== pkg) add(`packages/${p}/audio/card/${gender}/${cardName}`);
+    }
+    if (cardName.includes('__')) {
+      const baseName = cardName.split('__').slice(-1)[0];
+      add(`packages/${pkg}/audio/card/${gender}/${baseName}`);
+      add(`audio/card/${gender}/${baseName}`);
+      for (const p of SOURCE_AUDIO_PACKAGES) {
+        add(`packages/${p}/audio/card/${gender}/${baseName}`);
+      }
+    }
+  }
+
+  // 3. If path is packages/<pkg>/audio/card/<equipName>
+  const equipMatch = normalized.match(/^packages\/([A-Za-z0-9_-]+)\/audio\/card\/([A-Za-z0-9_-]+)$/);
+  if (equipMatch) {
+    const [, pkg, equipName] = equipMatch;
+    for (const p of SOURCE_AUDIO_PACKAGES) {
+      if (p !== pkg) add(`packages/${p}/audio/card/${equipName}`);
+    }
+    add(`audio/card/${equipName}`);
+    if (equipName.includes('__')) {
+      const baseName = equipName.split('__').slice(-1)[0];
+      add(`packages/${pkg}/audio/card/${baseName}`);
+      for (const p of SOURCE_AUDIO_PACKAGES) {
+        add(`packages/${p}/audio/card/${baseName}`);
+      }
+    }
+  }
+
+  // 4. If path is audio/system/<name>
+  const systemMatch = normalized.match(/^audio\/system\/([A-Za-z0-9_-]+)$/);
+  if (systemMatch) {
+    const [, sysName] = systemMatch;
+    if (sysName.startsWith('ice_damage')) {
+      add('audio/system/normal_damage' + (sysName.endsWith('2') ? '2' : ''));
+    }
+    if (sysName === 'losemaxhp') {
+      add('audio/system/losehp');
+    }
+  }
+
   return candidates;
 }
 
@@ -92,18 +188,29 @@ export class SoundManager {
   private enabled = true;
   private useNativeAudio = true;
   private customAudioMap: Partial<Record<SfxName, string>> = {};
+  private recentSoundTimes = new Map<string, number>();
 
   constructor() {
     this.registerDefaultNativeAudio();
+  }
+
+  private shouldSuppressDuplicate(key: string, windowMs = 250): boolean {
+    const now = Date.now();
+    const last = this.recentSoundTimes.get(key) ?? 0;
+    if (now - last < windowMs) return true;
+    this.recentSoundTimes.set(key, now);
+    if (this.recentSoundTimes.size > 100) {
+      for (const [k, t] of this.recentSoundTimes) {
+        if (now - t > 5000) this.recentSoundTimes.delete(k);
+      }
+    }
+    return false;
   }
 
   /**
    * Automatically maps authentic FreeKill upstream audio assets from public directory.
    */
   private registerDefaultNativeAudio() {
-    this.registerCustomAudio('card_play', '/audio/system/fly1.mp3');
-    this.registerCustomAudio('fly', '/audio/system/fly1.mp3');
-    this.registerCustomAudio('draw', '/audio/system/draw.mp3');
     this.registerCustomAudio('chain', '/audio/system/chain.mp3');
     this.registerCustomAudio('slash', '/audio/system/normal_damage.mp3');
     this.registerCustomAudio('fire_slash', '/audio/system/fire_damage.mp3');
@@ -111,8 +218,10 @@ export class SoundManager {
     this.registerCustomAudio('damage', '/audio/system/normal_damage.mp3');
     this.registerCustomAudio('fire_damage', '/audio/system/fire_damage.mp3');
     this.registerCustomAudio('thunder_damage', '/audio/system/thunder_damage.mp3');
+    this.registerCustomAudio('ice_damage', '/audio/system/ice_damage.mp3');
     this.registerCustomAudio('losehp', '/audio/system/losehp.mp3');
-    this.registerCustomAudio('analeptic', '/audio/system/wine1.mp3');
+    this.registerCustomAudio('losemaxhp', '/audio/system/losemaxhp.mp3');
+    this.registerCustomAudio('recast', '/audio/system/recast.mp3');
     this.registerCustomAudio('weapon', '/audio/card/common/weapon.mp3');
     this.registerCustomAudio('armor', '/audio/card/common/armor.mp3');
     this.registerCustomAudio('horse', '/audio/card/common/horse.mp3');
@@ -253,6 +362,10 @@ export class SoundManager {
 
   /** Play the source card-use sound: common equip subtype or package voice. */
   public playCardUseSound(cardName: string, options: CardAudioOptions = {}): boolean {
+    // The server's PlaySound arrives separately from the card log. Share a key
+    // across both paths so either arrival order produces one audible effect.
+    const key = options.equipType ? `equip:${options.equipType}` : `card:${cardName}`;
+    if (this.shouldSuppressDuplicate(key, 300)) return true;
     const fallback = options.onMissing ?? (() => this.playCardPlaySound());
     if (options.equipType) {
       return this.playAudioCandidates(
@@ -268,6 +381,41 @@ export class SoundManager {
   }
 
   /**
+   * Plays a native sound by server path (e.g. ./audio/system/recast,
+   * ./audio/card/common/weapon, ./packages/hegemony/audio/card/male/known_both,
+   * ./packages/standard_cards/audio/card/axe).
+   */
+  public playNativeSoundPath(rawPath: string, onMissing?: () => void): boolean {
+    const trimmed = (rawPath || '').trim().replace(/^\.?\//, '').replace(/\.mp3$/i, '');
+    const cardMatch = trimmed.match(/audio\/card\/(male|female)\/([A-Za-z0-9_-]+)$/);
+    if (cardMatch) {
+      if (this.shouldSuppressDuplicate(`card:${cardMatch[2]}`, 300)) return true;
+    }
+    const equipMatch = trimmed.match(/audio\/card\/common\/(weapon|armor|horse)$/);
+    if (equipMatch) {
+      if (this.shouldSuppressDuplicate(`equip:${equipMatch[1]}`, 300)) return true;
+    }
+    const candidates = nativeSoundPathCandidates(rawPath);
+    return this.playAudioCandidates(candidates, onMissing);
+  }
+
+  /**
+   * Plays equipment skill trigger sound (e.g. eight_diagram, vine, silver_lion, blade, crossbow).
+   */
+  public playEquipSkillSound(equipName: string, onMissing?: () => void): boolean {
+    const candidates = equipSkillAudioUrlCandidates(equipName);
+    return this.playAudioCandidates(candidates, onMissing);
+  }
+
+  /**
+   * Plays recast sound (iron_chain, known_both, fight_together, part_ways).
+   */
+  public playRecastSound(): boolean {
+    if (this.tryPlayCustomAudio('recast')) return true;
+    return this.playNativeSoundPath('/audio/system/recast.mp3', () => this.playCardPlaySound());
+  }
+
+  /**
    * Plays damage impact sound effect matching FreeKill's playDamageEffect in RoomBase.qml.
    */
   public playDamageSound(damageType = 'normal_damage', damageNum = 1) {
@@ -276,19 +424,21 @@ export class SoundManager {
       ? 'thunder_damage'
       : damageType.includes('fire')
       ? 'fire_damage'
+      : damageType.includes('ice')
+      ? 'ice_damage'
       : 'damage';
 
     if (this.useNativeAudio && typeof Audio !== 'undefined') {
-      try {
-        const suffix = damageNum > 1 ? '2' : '';
-        const audio = new Audio(`/audio/system/${damageType}${suffix}.mp3`);
-        audio.play().catch(() => {
-          this.playSlashSound(damageType.includes('thunder') ? 'thunder' : damageType.includes('fire') ? 'fire' : 'normal');
-        });
-        return;
-      } catch {
-        // Fallback below
-      }
+      const suffix = damageNum > 1 ? '2' : '';
+      const candidates = [
+        `/audio/system/${damageType}${suffix}.mp3`,
+        ...(damageType.includes('ice') ? [`/audio/system/normal_damage${suffix}.mp3`] : []),
+      ];
+      this.playAudioCandidates(candidates, () => {
+        if (this.tryPlayCustomAudio(sfxKey)) return;
+        this.playSlashSound(damageType.includes('thunder') ? 'thunder' : damageType.includes('fire') ? 'fire' : 'normal');
+      });
+      return;
     }
 
     if (this.tryPlayCustomAudio(sfxKey)) return;
@@ -337,17 +487,23 @@ export class SoundManager {
 
   public playChainSound() {
     if (this.tryPlayCustomAudio('chain')) return;
-    this.playSlashSound('normal');
+    this.playNativeSoundPath('/audio/system/chain.mp3', () => this.playSlashSound('normal'));
   }
 
   public playEquipSound(subType: 'weapon' | 'armor' | 'horse') {
+    if (this.shouldSuppressDuplicate(`equip:${subType}`, 300)) return;
     if (this.tryPlayCustomAudio(subType)) return;
-    this.playCardPlaySound();
+    this.playAudioCandidates([`/audio/card/common/${subType}.mp3`], () => this.playCardPlaySound());
   }
 
   public playLoseHpSound() {
     if (this.tryPlayCustomAudio('losehp')) return;
-    this.playSlashSound('normal');
+    this.playNativeSoundPath('/audio/system/losehp.mp3', () => this.playSlashSound('normal'));
+  }
+
+  public playLoseMaxHpSound() {
+    if (this.tryPlayCustomAudio('losemaxhp')) return;
+    this.playNativeSoundPath('/audio/system/losemaxhp.mp3', () => this.playLoseHpSound());
   }
 
   /** Tiếng vung đao / chém trúng kim loại (Slash attack impact) */

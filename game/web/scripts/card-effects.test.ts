@@ -10,7 +10,14 @@ import {
 } from '../src/store/cardVfxState';
 import { calculateBezierCurve, TargetingArrowOverlay } from '../src/TargetingOverlay';
 import { CardFlyOverlay } from '../src/CardVfxOverlay';
-import { cardAudioUrlCandidates, soundManager, SoundManager } from '../src/engine/webAudioSfx';
+import {
+  cardAudioUrlCandidates,
+  equipSkillAudioUrlCandidates,
+  nativeSoundPathCandidates,
+  soundManager,
+  SoundManager,
+} from '../src/engine/webAudioSfx';
+import { getCardEquipAudioType } from '../src/HandCardItem';
 import { CATALOG_CARD_ART_NAMES } from '../src/catalogCardArt';
 import { projectNativeVfx } from '../src/store/nativeVfxEvents';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
@@ -137,6 +144,18 @@ test('parseVfxFromGameLog correctly parses single and multi-target card usages a
   assert.ok(nullifiedLog);
   assert.equal(nullifiedLog.impact?.targetPlayerId, 1);
   assert.equal(nullifiedLog.impact?.kind, 'nullification');
+
+  // #UseCardToCard:from:to:card
+  const cardToCardLog = parseVfxFromGameLog('#UseCardToCard:1:2:nullification[spade:11]');
+  assert.deepEqual(cardToCardLog, {
+    flyingCard: {
+      fromPlayerId: 1,
+      toPlayerIds: [2],
+      cardName: 'nullification',
+      suit: 1,
+      number: 11,
+    },
+  });
 
   // Log không liên quan hoặc rỗng
   assert.equal(parseVfxFromGameLog(''), null);
@@ -273,6 +292,9 @@ test('authentic upstream FreeKill audio and animation assets exist on disk in we
     'normal_damage.mp3',
     'fire_damage.mp3',
     'thunder_damage.mp3',
+    'ice_damage.mp3',
+    'recast.mp3',
+    'losemaxhp.mp3',
     'wine1.mp3',
     'fly1.mp3',
     'draw.mp3',
@@ -291,6 +313,32 @@ test('authentic upstream FreeKill audio and animation assets exist on disk in we
     assert.ok(fs.existsSync(path.join(publicDir, 'audio/card/female', v)), `Missing female voice: ${v}`);
   }
 
+  // Kiểm tra 24 file voice Quốc Chiến
+  const hegemonyCards = [
+    'alliance_feast.mp3', 'await_exhausted.mp3', 'befriend_attacking.mp3', 'burning_camps.mp3',
+    'fight_together.mp3', 'heg__nullification.mp3', 'imperial_order.mp3', 'known_both.mp3',
+    'lure_tiger.mp3', 'rob__jink.mp3', 'sa__drowning.mp3', 'threaten_emperor.mp3',
+  ];
+  for (const c of hegemonyCards) {
+    assert.ok(fs.existsSync(path.join(publicDir, 'packages/hegemony/audio/card/female', c)), `Missing female hegemony card: ${c}`);
+    assert.ok(fs.existsSync(path.join(publicDir, 'packages/hegemony/audio/card/male', c)), `Missing male hegemony card: ${c}`);
+  }
+
+  // Kiểm tra 11 file hiệu ứng trang bị chuẩn
+  const standardEquips = [
+    'axe.mp3', 'blade.mp3', 'crossbow.mp3', 'double_swords.mp3', 'eight_diagram.mp3',
+    'halberd.mp3', 'ice_sword.mp3', 'kylin_bow.mp3', 'nioh_shield.mp3', 'qinggang_sword.mp3', 'spear.mp3',
+  ];
+  for (const e of standardEquips) {
+    assert.ok(fs.existsSync(path.join(publicDir, 'packages/standard_cards/audio/card', e)), `Missing standard equip sound: ${e}`);
+  }
+
+  // Kiểm tra 5 file hiệu ứng trang bị Quân Tranh
+  const maneuveringEquips = ['fan.mp3', 'guding_blade.mp3', 'silver_lion.mp3', 'vine.mp3', 'vineburn.mp3'];
+  for (const e of maneuveringEquips) {
+    assert.ok(fs.existsSync(path.join(publicDir, 'packages/maneuvering/audio/card', e)), `Missing maneuvering equip sound: ${e}`);
+  }
+
   // Kiểm tra animation frame folders
   const animFolders = ['slash', 'fire__slash', 'thunder__slash', 'jink', 'peach', 'analeptic', 'damage'];
   for (const folder of animFolders) {
@@ -305,6 +353,9 @@ test('authentic upstream FreeKill audio and animation assets exist on disk in we
   assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/gamemode/image/card/drowning.png')));
   assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/gamemode/audio/card/male/drowning.mp3')));
   assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/mobile/audio/card/ex_crossbow.mp3')));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/hegemony/audio/card/male/known_both.mp3')));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/standard_cards/audio/card/eight_diagram.mp3')));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'packages/maneuvering/audio/card/vine.mp3')));
 });
 
 test('soundManager handles native damage sounds, card voices, equip sounds, and toggle modes', () => {
@@ -312,9 +363,12 @@ test('soundManager handles native damage sounds, card voices, equip sounds, and 
     soundManager.playDamageSound('normal_damage', 1);
     soundManager.playDamageSound('fire_damage', 2);
     soundManager.playDamageSound('thunder_damage', 1);
-    soundManager.playDamageSound('losehp', 1);
+    soundManager.playDamageSound('ice_damage', 1);
     soundManager.playCardVoice('slash', 'male');
     soundManager.playCardVoice('slash', 'female');
+    soundManager.playCardVoice('alliance_feast', 'female');
+    soundManager.playEquipSkillSound('eight_diagram');
+    soundManager.playEquipSkillSound('vine');
     soundManager.playEquipSound('weapon');
     soundManager.playEquipSound('armor');
     soundManager.playEquipSound('horse');
@@ -322,6 +376,8 @@ test('soundManager handles native damage sounds, card voices, equip sounds, and 
     soundManager.playDrawSound();
     soundManager.playChainSound();
     soundManager.playLoseHpSound();
+    soundManager.playLoseMaxHpSound();
+    soundManager.playRecastSound();
   });
 
   soundManager.setUseNativeAudio(false);
@@ -335,7 +391,7 @@ test('card audio candidates follow package and gender fallback order', () => {
   assert.deepEqual(gamemodeFemale.slice(0, 3), [
     '/packages/gamemode/audio/card/female/drowning.mp3',
     '/audio/card/female/drowning.mp3',
-    '/packages/mobile/audio/card/female/drowning.mp3',
+    '/packages/hegemony/audio/card/female/drowning.mp3',
   ]);
   const mobileEquipSkill = cardAudioUrlCandidates('ex_crossbow', { extension: 'mobile', gender: 'male' });
   assert.equal(mobileEquipSkill[0], '/packages/mobile/audio/card/male/ex_crossbow.mp3');
@@ -343,8 +399,57 @@ test('card audio candidates follow package and gender fallback order', () => {
   const femaleFallback = cardAudioUrlCandidates('slash', { gender: 'female' });
   assert.deepEqual(femaleFallback.slice(0, 2), [
     '/audio/card/female/slash.mp3',
-    '/packages/gamemode/audio/card/female/slash.mp3',
+    '/packages/hegemony/audio/card/female/slash.mp3',
   ]);
+  const prefixedCandidate = cardAudioUrlCandidates('heg__nullification', { gender: 'female' });
+  assert.ok(prefixedCandidate.includes('/audio/card/female/heg__nullification.mp3'));
+  assert.ok(prefixedCandidate.includes('/audio/card/female/nullification.mp3'));
+});
+
+test('native sound path candidates and equip skill candidates resolve authentic FreeKill paths', () => {
+  assert.deepEqual(nativeSoundPathCandidates('./audio/system/recast'), ['/audio/system/recast.mp3']);
+  assert.deepEqual(nativeSoundPathCandidates('./audio/card/common/weapon'), ['/audio/card/common/weapon.mp3']);
+  assert.ok(nativeSoundPathCandidates('./packages/standard_cards/audio/card/axe').includes('/packages/standard_cards/audio/card/axe.mp3'));
+  assert.ok(nativeSoundPathCandidates('./packages/hegemony/audio/card/male/known_both').includes('/packages/hegemony/audio/card/male/known_both.mp3'));
+  assert.ok(nativeSoundPathCandidates('./packages/hegemony/audio/card/female/heg__nullification').includes('/packages/hegemony/audio/card/female/nullification.mp3'));
+  assert.ok(equipSkillAudioUrlCandidates('eight_diagram').includes('/packages/standard_cards/audio/card/eight_diagram.mp3'));
+  assert.ok(equipSkillAudioUrlCandidates('vine').includes('/packages/maneuvering/audio/card/vine.mp3'));
+
+  assert.equal(getCardEquipAudioType('hualiu'), 'horse');
+  assert.equal(getCardEquipAudioType('grand_ensign'), 'armor');
+  assert.equal(getCardEquipAudioType('peace_spell'), 'armor');
+  assert.equal(getCardEquipAudioType('blade'), 'weapon');
+});
+
+test('card and equipment use audio plays once in either server/log arrival order', () => {
+  const played: string[] = [];
+  const previousAudio = globalThis.Audio;
+  class FakeAudio {
+    constructor(url: string) { played.push(url); }
+    play() { return Promise.resolve(); }
+  }
+  globalThis.Audio = FakeAudio as unknown as typeof Audio;
+  try {
+    const serverFirst = new SoundManager();
+    serverFirst.playNativeSoundPath('./packages/hegemony/audio/card/female/known_both');
+    serverFirst.playCardUseSound('known_both', { gender: 'male' });
+    assert.equal(played.length, 1);
+    assert.equal(played[0], '/packages/hegemony/audio/card/female/known_both.mp3');
+
+    played.length = 0;
+    const logFirst = new SoundManager();
+    logFirst.playCardUseSound('known_both', { gender: 'female' });
+    logFirst.playNativeSoundPath('./packages/hegemony/audio/card/female/known_both');
+    assert.equal(played.length, 1);
+
+    played.length = 0;
+    const equipment = new SoundManager();
+    equipment.playCardUseSound('blade', { equipType: 'weapon' });
+    equipment.playNativeSoundPath('./audio/card/common/weapon');
+    assert.deepEqual(played, ['/audio/card/common/weapon.mp3']);
+  } finally {
+    globalThis.Audio = previousAudio;
+  }
 });
 
 test('native Indicate fan-out and sequential target chains are handled exactly', () => {
@@ -363,12 +468,20 @@ test('native Indicate fan-out and sequential target chains are handled exactly',
   assert.deepEqual(next.nativeVfxEvents.map((event) => event.sequence), [1, 2, 3]);
 });
 
-test('LogEvent Damage is the only native damage visual trigger', () => {
+test('LogEvent projects Damage, PlaySound, LoseHP, and ChangeMaxHp', () => {
   assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: -2, damageType: 'fire_damage', damageNum: 2 }),
     [{ kind: 'damage', targetPlayerId: -2, damageType: 'fire_damage', damageNum: 2 }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: 4, damageType: 'ice_damage' }),
+    [{ kind: 'damage', targetPlayerId: 4, damageType: 'ice_damage', damageNum: 1 }]);
   assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: 4 }),
     [{ kind: 'damage', targetPlayerId: 4, damageType: 'normal_damage', damageNum: 1 }]);
-  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'LoseHP', to: -2 }), []);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'PlaySound', name: './audio/system/recast' }),
+    [{ kind: 'sound', path: './audio/system/recast' }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'LoseHP', to: -2 }),
+    [{ kind: 'losehp', targetPlayerId: -2 }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'ChangeMaxHp', to: 3, num: -1 }),
+    [{ kind: 'losemaxhp', targetPlayerId: 3 }]);
+  assert.deepEqual(projectNativeVfx('LogEvent', { type: 'ChangeMaxHp', to: 3, num: 1 }), []);
   assert.deepEqual(projectNativeVfx('LogEvent', { type: 'Damage', to: '2' }), []);
   assert.equal(parseVfxFromGameLog('#Damage:1:2:1:fire:fire_attack'), null);
   const next = reduceUiEvent(initialSnapshot, 'LogEvent', { type: 'Damage', to: -2, damageType: 'fire_damage', damageNum: 2 });

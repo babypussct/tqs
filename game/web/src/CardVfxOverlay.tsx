@@ -122,9 +122,8 @@ export default function CardVfxOverlay({
     for (const card of flyingCards) {
       if (playedCardIds.current.has(card.id)) continue;
       playedCardIds.current.add(card.id);
-      soundManager.playFlySound();
       soundManager.playCardUseSound(card.cardName, {
-        gender: 'male',
+        gender: card.gender ?? 'male',
         extension: card.extension,
         trueName: card.trueName,
         equipType: getCardEquipAudioType(card.cardName),
@@ -140,10 +139,10 @@ export default function CardVfxOverlay({
       if (imp.kind === 'slash') soundManager.playDamageSound('normal_damage', imp.damageAmount || 1);
       else if (imp.kind === 'fire_slash') soundManager.playDamageSound('fire_damage', imp.damageAmount || 1);
       else if (imp.kind === 'thunder_slash' || imp.kind === 'lightning') soundManager.playDamageSound('thunder_damage', imp.damageAmount || 1);
-      else if (imp.kind === 'jink') soundManager.playJinkSound('male');
-      else if (imp.kind === 'peach') soundManager.playPeachSound('male');
-      else if (imp.kind === 'analeptic') soundManager.playAnalepticSound('male');
-      else if (imp.kind === 'nullification') soundManager.playNullifySound('male');
+      else if (imp.kind === 'jink') soundManager.playJinkSound();
+      else if (imp.kind === 'peach') soundManager.playPeachSound();
+      else if (imp.kind === 'analeptic') soundManager.playAnalepticSound();
+      else if (imp.kind === 'nullification') soundManager.playNullifySound();
     }
   }, [impacts]);
 
