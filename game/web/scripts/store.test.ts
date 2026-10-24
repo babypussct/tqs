@@ -3,7 +3,24 @@ import { test } from 'node:test';
 import { connectionProgress } from '../src/engine/connectionMessages';
 import { parseInitialGeneralPrompt } from '../src/engine/generalSelection';
 import { initialSnapshot, reduceUiEvent, useGameStore, type GameSnapshot } from '../src/store/gameStore';
-import { MAX_BOARD_LOGS, relativeSeatOrder, serverSeatNumbers } from '../src/store/boardState';
+import { MAX_BOARD_LOGS, isBoardFocusActive, relativeSeatOrder, serverSeatNumbers } from '../src/store/boardState';
+
+test('MoveFocus deadline and replacement control which seat is highlighted', () => {
+  let state = reduceUiEvent(initialSnapshot, 'StartGame', null);
+  state = reduceUiEvent(state, 'MoveFocus', [[-1, 17], 'AskForCard', 450]);
+  const first = state.board.focusState;
+  assert.ok(first);
+  assert.equal(isBoardFocusActive(first, -1, first.receivedAt), true);
+  assert.equal(isBoardFocusActive(first, 17, first.receivedAt + 449), true);
+  assert.equal(isBoardFocusActive(first, -1, first.receivedAt + 450), false);
+  assert.equal(isBoardFocusActive(first, 20, first.receivedAt), false);
+  state = reduceUiEvent(state, 'MoveFocus', [[17], 'AskForChoice', 500]);
+  assert.equal(isBoardFocusActive(state.board.focusState, -1, Date.now()), false);
+  assert.equal(isBoardFocusActive(state.board.focusState, 17, Date.now()), true);
+  state = reduceUiEvent(state, 'MoveFocus', [[], '', 0]);
+  assert.equal(state.board.focusState, null);
+  assert.equal(isBoardFocusActive(null, 17, Date.now()), false);
+});
 import { displayText, localizedGameLog, plainText } from '../src/engine/displayText';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
 import { deriveRoomReadiness, roomPoolDisabledReason, roomStartDisabledReason } from '../src/store/roomReadiness';

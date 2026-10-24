@@ -60,6 +60,19 @@ export interface BoardPlayer {
   marks: Record<string, string | number | boolean>;
 }
 
+export interface BoardFocusState {
+  playerIds: number[];
+  command: string;
+  timeoutMs: number;
+  receivedAt: number;
+}
+
+/** A native MoveFocus indicator ends when its advertised deadline expires. */
+export function isBoardFocusActive(focus: BoardFocusState | null | undefined, playerId: number, now: number): boolean {
+  return !!focus && focus.playerIds.includes(playerId) &&
+    focus.timeoutMs > 0 && now >= focus.receivedAt && now - focus.receivedAt < focus.timeoutMs;
+}
+
 export interface BoardState {
   seats: number[];
   player: Record<number, BoardPlayer>;
@@ -79,6 +92,7 @@ export interface BoardState {
   discardSequence: number;
   discardReveals: { sequence: number; cards: BoardEquipment[] }[];
   selfHandCards: (BoardEquipment & { id: number })[];
+  focusState: BoardFocusState | null;
 }
 
 /**
@@ -117,6 +131,7 @@ export function emptyBoard(): BoardState {
     discardSequence: 0,
     discardReveals: [],
     selfHandCards: [],
+    focusState: null,
   };
 }
 
@@ -201,6 +216,24 @@ function optionalExtension(value: unknown): string | null {
 /** Ignore unknown fields: server state can contain private Lua properties. */
 export function updateBoard(board: BoardState, command: string, data: unknown, knownIds: number[], ownId: number | null = null,
   hiddenKingdomMode = false): BoardState {
+  if (command === 'MoveFocus') {
+    if (!Array.isArray(data) || data.length < 2) return board;
+    const rawIds = Array.isArray(data[0]) ? data[0] : [data[0]];
+    const playerIds = rawIds.filter(validId);
+    if (!playerIds.length) return { ...board, focusState: null };
+    const commandName = typeof data[1] === 'string' ? data[1].slice(0, 100) : '';
+    const timeoutMs = typeof data[2] === 'number' && Number.isFinite(data[2]) && data[2] > 0
+      ? Math.min(120_000, Math.trunc(data[2])) : 15_000;
+    return {
+      ...board,
+      focusState: {
+        playerIds,
+        command: commandName,
+        timeoutMs,
+        receivedAt: Date.now(),
+      },
+    };
+  }
   if (command === 'TableCardsFlash') {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return board;
     const payload = data as Record<string, unknown>;

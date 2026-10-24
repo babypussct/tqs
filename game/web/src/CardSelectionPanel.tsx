@@ -4,7 +4,7 @@ import type { CardSelectionPrompt, PoxiView } from './engine/cardSelection';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
-import { CardSuitMark } from './HandCardItem';
+import { DialogCardItem } from './HandCardItem';
 
 export default function CardSelectionPanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardSelectionPrompt; busy: boolean;
@@ -29,25 +29,29 @@ export default function CardSelectionPanel({ request, prompt, busy, view, respon
   const disabled = busy || expired || !!error;
   return <RequestDialog className="panel request-panel" label="Chọn bài đối thủ"
     focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !disabled}
+    request={request}
     onCancel={() => respond([], true)}>
     <span className="section-label">Chọn bài</span>
     <h2>{prompt.mode === 'single' ? 'Chọn một lá bài' : 'Chọn các lá bài'}</h2>
     <p>{text(rules.prompt) || 'Chọn bài theo yêu cầu của kỹ năng.'}</p>
     <p className="muted">Bài úp được giữ kín. Chỉ bài công khai mới hiện tên.</p>
-    {prompt.groups.map((group, i) => <div key={i} role="group" aria-label={text(group.name)}>
+    {prompt.groups.map((group, i) => <div key={i} role="group" aria-label={text(group.name)} className="sg-card-selection-group">
       <h3>{text(group.name)}</h3>
       <div className="gameplay-options">{group.cards.map((card) => {
         const checked = selected.includes(card.token);
-        return <button key={card.token} type="button" aria-pressed={checked}
-          className={`gameplay-choice ${checked ? 'selected' : ''}`}
+        return <DialogCardItem
+          key={card.token}
+          name={card.name}
+          suit={card.suit}
+          number={card.number}
+          hidden={card.hidden}
+          selected={checked}
           disabled={disabled || (!checked && !rules.selectable.includes(card.token))}
           onClick={() => {
             if (prompt.mode === 'single') respond([card.token]);
             else setSelected(checked ? selected.filter((t) => t !== card.token) : [...selected, card.token]);
-          }}>
-          {card.hidden ? 'Bài úp' : text(card.name || 'Lá bài công khai')}
-          {!card.hidden && <CardSuitMark suit={card.suit} number={card.number} />}
-        </button>;
+          }}
+        />;
       })}</div>
     </div>)}
     <div className="request-actions">

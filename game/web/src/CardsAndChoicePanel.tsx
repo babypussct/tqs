@@ -4,7 +4,7 @@ import type { CardsAndChoicePrompt } from './engine/cardsAndChoice';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
-import { CardSuitMark } from './HandCardItem';
+import { DialogCardItem } from './HandCardItem';
 
 export default function CardsAndChoicePanel({ request, prompt, busy, view, respond }: {
   request: RequestInfo; prompt: CardsAndChoicePrompt; busy: boolean;
@@ -28,26 +28,29 @@ export default function CardsAndChoicePanel({ request, prompt, busy, view, respo
     catch (e) { error = userFacingError(e, 'gameplay'); }
   }
   const disabled = busy || expired;
-  const label = (card: CardsAndChoicePrompt['cards'][number]) => <>
-    {text(card.name || 'Lá bài')}
-    <CardSuitMark suit={card.suit} number={card.number} />
-  </>;
   const cancelChoice = prompt.cancelChoices[0];
   return <RequestDialog className="panel request-panel" label="Xem bài và chọn phương án"
     focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={Boolean(cancelChoice && !disabled)}
+    request={request}
     onCancel={() => cancelChoice && respond([], cancelChoice, true)}>
     <span className="section-label">{viewing ? 'Xem bài' : 'Chọn bài và phương án'}</span>
     <h2>{viewing ? 'Xem các lá bài' : 'Chọn bài theo yêu cầu'}</h2>
     <p>{text(prompt.title) || (viewing ? 'Xem bài, sau đó xác nhận để tiếp tục.' : `Chọn từ ${prompt.min} đến ${prompt.max} lá bài.`)}</p>
     <div className="gameplay-options" role="group" aria-label="Các lá bài được phép xem">
-      {prompt.cards.map((card) => viewing
-        ? <div className="gameplay-choice" key={card.token}>{label(card)}</div>
-        : <button type="button" key={card.token} aria-pressed={selected.includes(card.token)}
-          className={`gameplay-choice ${selected.includes(card.token) ? 'selected' : ''}`}
+      {prompt.cards.map((card) => (
+        <DialogCardItem
+          key={card.token}
+          asDiv={viewing}
+          name={card.name}
+          suit={card.suit}
+          number={card.number}
+          selected={selected.includes(card.token)}
           disabled={disabled || !!error || (!selected.includes(card.token) &&
             (!rules.selectable.includes(card.token) || selected.length >= prompt.max))}
-          onClick={() => setSelected(selected.includes(card.token)
-            ? selected.filter((token) => token !== card.token) : [...selected, card.token])}>{label(card)}</button>)}
+          onClick={viewing ? undefined : () => setSelected(selected.includes(card.token)
+            ? selected.filter((token) => token !== card.token) : [...selected, card.token])}
+        />
+      ))}
     </div>
     {!prompt.cards.length && <p>Không có lá bài để xem.</p>}
     <div className="request-actions">

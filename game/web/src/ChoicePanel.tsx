@@ -21,6 +21,7 @@ export default function ChoicePanel({ request, prompt, busy, respond }: {
   const disabled = busy || expired;
   return <RequestDialog className="panel request-panel" label="Lựa chọn trong trận"
     focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !disabled}
+    request={request}
     onCancel={() => respond([])}>
     <span className="section-label">Yêu cầu trong trận</span>
     <h2>{prompt.skill ? text(prompt.skill) : 'Chọn phương án'}</h2>

@@ -1,5 +1,6 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import type { RequestInfo } from './engine/connection';
 
 const FOCUSABLE = [
   'button:not(:disabled)',
@@ -18,20 +19,32 @@ export interface RequestDialogProps {
   labelledBy?: string;
   canCancel?: boolean;
   onCancel?: () => void;
+  request?: RequestInfo | null;
 }
 
 /**
  * Shared shell for server-owned request dialogs.
  *
  * Requests are modal from the player's point of view: the board underneath
- * must not keep receiving keyboard focus while Lua waits for one reply.  The
+ * must not keep receiving keyboard focus while Lua waits for one reply. The
  * shell only manages focus and cancellation affordances; validation and reply
  * bytes remain in the existing adapter/connection layer.
  */
 export default function RequestDialog({
-  children, label, focusKey, className = '', labelledBy, canCancel = false, onCancel,
+  children, label, focusKey, className = '', labelledBy, canCancel = false, onCancel, request,
 }: RequestDialogProps) {
   const ref = useRef<HTMLElement>(null);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (request?.expiresAt == null) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [request?.expiresAt]);
+
+  const totalDuration = (request?.timeout ? request.timeout * 1000 : null) ?? (request?.expiresAt && request?.receivedAt ? Math.max(1000, request.expiresAt - request.receivedAt) : 15000);
+  const remainingMs = request?.expiresAt != null ? Math.max(0, request.expiresAt - Math.max(now, Date.now())) : null;
+  const seconds = remainingMs !== null ? Math.ceil(remainingMs / 1000) : null;
+  const progressRatio = remainingMs !== null && totalDuration > 0 ? Math.min(1, Math.max(0, remainingMs / totalDuration)) : null;
 
   useEffect(() => {
     const panel = ref.current;
@@ -81,6 +94,19 @@ export default function RequestDialog({
       onKeyDown={handleKeyDown}
     >
       <div role="region" aria-label={label}>
+        {remainingMs !== null && (
+          <div className="sg-request-dialog-timer" role="timer" aria-label={`Còn ${seconds} giây`}>
+            <div className="sg-request-dialog-progress-track">
+              <div
+                className={`sg-request-dialog-progress-bar${seconds !== null && seconds <= 3 ? ' is-urgent' : ''}`}
+                style={{ width: `${Math.round((progressRatio ?? 1) * 100)}%` }}
+              />
+            </div>
+            <span className={`sg-request-dialog-countdown${seconds === 0 ? ' expired' : ''}`}>
+              {seconds !== null && seconds > 0 ? `Còn ${seconds}s` : 'Hết giờ'}
+            </span>
+          </div>
+        )}
         {children}
       </div>
     </section>

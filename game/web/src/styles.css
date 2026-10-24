@@ -3485,7 +3485,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     flex-direction: column !important;
     gap: 0 !important;
     min-width: 0 !important;
-    border-right: 2px solid #5a4022 !important;
+    border-right: none !important;
   }
   .sg-board-table {
     border: none !important;
@@ -8690,4 +8690,614 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
 @media (prefers-reduced-motion: reduce) {
   .sg-initial-general-dialog *, .sg-initial-general-dialog *::before, .sg-initial-general-dialog *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* In-match focus mode: utilities float over the felt instead of occupying a
+   header row. The optional history drawer overlays the table, so even a
+   collapsed log never reserves a desktop column or pushes the hand aside. */
+.sg-game-board { position: relative; }
+.sg-game-shell .sg-game-board > .board-toolbar,
+.sg-game-board > .board-toolbar {
+  position: absolute;
+  z-index: 110;
+  top: 7px;
+  right: 9px;
+  width: auto;
+  height: auto !important;
+  min-height: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0 !important;
+  margin: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+.sg-game-board > .board-toolbar .board-tools-toggle,
+.sg-game-board > .board-toolbar .sg-toolbar-log-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(214, 174, 95, .55);
+  border-radius: 8px;
+  background: rgba(21, 18, 13, .72);
+  color: #f8e5bd;
+  opacity: .88;
+  backdrop-filter: blur(6px);
+  font-size: 1.06rem;
+  line-height: 1;
+}
+.sg-game-board > .board-toolbar .board-tools-toggle:hover,
+.sg-game-board > .board-toolbar .sg-toolbar-log-toggle:hover,
+.sg-game-board > .board-toolbar [aria-expanded="true"] {
+  background: rgba(69, 49, 24, .96);
+  opacity: 1;
+}
+.sg-game-board > .board-toolbar .sg-toolbar-log-toggle .sg-toolbar-action-icon { display: inline-flex !important; }
+.sg-game-board > .board-toolbar .sg-toolbar-log-toggle .sg-toolbar-action-label { display: none !important; }
+.sg-game-board > .board-toolbar .board-tools-panel[hidden] { display: none !important; }
+.sg-game-board > .board-toolbar .board-tools-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(250px, calc(100vw - 20px));
+  max-height: min(320px, 68dvh);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(214, 174, 95, .8);
+  border-radius: 10px;
+  background: rgba(22, 17, 12, .97);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .72);
+}
+.sg-game-board .board-tools-room-name {
+  min-width: 0;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid rgba(214, 174, 95, .28);
+  color: #ffe1a1;
+  font-size: .85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.sg-game-board .board-tools-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.sg-game-board .board-tools-actions .battle-music-settings { width: 100%; }
+.sg-game-board .board-tools-actions .sg-toolbar-action {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 9px;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 38px !important;
+  max-height: none !important;
+  padding: 7px 10px !important;
+  font-size: .83rem !important;
+  text-align: left;
+}
+.sg-game-board .board-tools-actions .sg-toolbar-action-icon { display: inline-flex !important; }
+.sg-game-board .board-tools-actions .sg-toolbar-action-label { display: inline !important; }
+.sg-game-board > .board-trust-status {
+  position: absolute;
+  z-index: 30;
+  top: 7px;
+  left: 9px;
+  margin: 0;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(214, 174, 95, 0.65);
+  background: rgba(30, 24, 13, 0.88);
+  color: #ffe3a2;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.sg-game-board > .board-trust-status:hover,
+.sg-game-board > .board-trust-status:focus-visible {
+  background: rgba(69, 49, 24, 0.95);
+  border-color: #ffd777;
+  transform: translateY(-1px);
+}
+.sg-game-board .board-layout,
+.sg-game-board .board-layout.logs-collapsed,
+.sg-game-board .board-layout.has-logs-open {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.sg-game-board .board-layout .board-main {
+  grid-column: 1;
+  grid-row: 1;
+}
+.sg-game-board .board-layout.logs-collapsed .sg-board-log-panel {
+  display: none !important;
+}
+.sg-game-board .board-layout.has-logs-open .sg-board-log-panel {
+  position: absolute !important;
+  z-index: 95 !important;
+  top: 52px !important;
+  right: 8px !important;
+  bottom: auto !important;
+  left: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(330px, calc(100% - 16px)) !important;
+  height: min(490px, 70dvh) !important;
+  max-height: calc(100% - 60px) !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 1px solid rgba(214, 174, 95, .8) !important;
+  border-radius: 9px !important;
+  background: rgba(18, 14, 10, .96) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .75) !important;
+  overflow: hidden !important;
+}
+.sg-game-board .board-layout.has-logs-open .sg-board-log-panel .board-logs {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+@media (max-width: 600px) and (orientation: portrait) and (pointer: coarse) {
+  .sg-game-board > .board-toolbar .board-tools-toggle,
+  .sg-game-board > .board-toolbar .sg-toolbar-log-toggle {
+    flex-basis: 44px;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* ==========================================================================
+   UI-P1: Visual Dialog Cards & Unified Modal Countdown Header
+   ========================================================================== */
+
+.sg-request-dialog-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 2px 0 6px;
+}
+.sg-request-dialog-progress-track {
+  flex: 1 1 auto;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.sg-request-dialog-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #d6ae5f, #ffd777);
+  transition: width 0.25s linear;
+}
+.sg-request-dialog-progress-bar.is-urgent {
+  background: linear-gradient(90deg, #e74c3c, #ff7675);
+}
+.sg-request-dialog-countdown {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffd777;
+  min-width: 48px;
+  text-align: right;
+}
+.sg-request-dialog-countdown.expired {
+  color: #e74c3c;
+}
+
+.sg-card-selection-group {
+  margin-bottom: 12px;
+}
+.sg-card-selection-group h3 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: #ffd777;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Authentic FreeKill visual cards inside dialogs */
+.sg-dialog-card {
+  position: relative;
+  display: inline-flex !important;
+  flex-direction: column;
+  width: 72px !important;
+  height: 104px !important;
+  min-width: 72px !important;
+  min-height: 104px !important;
+  max-width: 72px !important;
+  max-height: 104px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(214, 174, 95, 0.45) !important;
+  background: #1c150c !important;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  vertical-align: top;
+}
+.sg-dialog-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #ffd777 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.65);
+}
+.sg-dialog-card.selected {
+  outline: 2px solid #ffde7a !important;
+  outline-offset: 1px;
+  box-shadow: 0 0 14px rgba(255, 215, 122, 0.65);
+  transform: translateY(-3px);
+}
+.sg-dialog-card:disabled {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+.sg-dialog-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sg-dialog-card .sg-card-top-left {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 700;
+  padding: 1px 2px;
+  border-radius: 3px;
+  background: rgba(18, 14, 10, 0.8);
+}
+.sg-dialog-card .sg-card-type-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  z-index: 3;
+  font-size: 0.58rem;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(30, 24, 16, 0.85);
+  color: #ffd777;
+  border: 1px solid rgba(214, 174, 95, 0.35);
+}
+.sg-dialog-card .sg-card-native-art,
+.sg-dialog-card .sg-card-art-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+.sg-dialog-card .sg-card-banner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 2px 3px;
+  background: linear-gradient(to top, rgba(16, 12, 8, 0.95) 0%, rgba(16, 12, 8, 0.7) 70%, transparent 100%);
+  text-align: center;
+}
+.sg-dialog-card .sg-card-name {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #fff4d6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.sg-dialog-card.is-hidden {
+  background: #2a1f14 !important;
+  border-color: #5a4022 !important;
+}
+.sg-dialog-card-back {
+  position: absolute;
+  inset: 2px;
+  border-radius: 4px;
+  border: 1px dashed rgba(214, 174, 95, 0.4);
+  background: radial-gradient(circle at center, #3d2817 0%, #1a120b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.sg-dialog-card-sigil {
+  font-size: 1.3rem;
+  opacity: 0.6;
+}
+.sg-dialog-card-label {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #d6ae5f;
+  text-align: center;
+}
+.sg-dialog-card-footnote {
+  position: absolute;
+  bottom: 18px;
+  left: 2px;
+  right: 2px;
+  z-index: 4;
+  font-size: 0.55rem;
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffd777;
+  padding: 1px 2px;
+  border-radius: 2px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sg-native-dialog-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sg-general-choice-token {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 6px 12px !important;
+}
+.sg-general-choice-token .sg-general-portrait {
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   UI-P2: Real-time Thinking Bar, Skill Callout & Damage Number Overlays
+   ========================================================================== */
+
+.native-photo-seat.is-thinking {
+  box-shadow: 0 0 16px rgba(255, 215, 122, 0.75), inset 0 0 12px rgba(255, 215, 122, 0.4) !important;
+}
+.sg-photo-thinking-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 10;
+  overflow: visible;
+}
+.sg-photo-thinking-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #d6ae5f, #ffe1a1);
+  transition: width 0.2s linear;
+}
+.sg-photo-thinking-tip {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 14, 10, 0.92);
+  color: #ffe3a2;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(214, 174, 95, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  z-index: 11;
+}
+
+/* Floating Skill Callout on Photo (InvokeSkill) */
+.sg-photo-skill-callout {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 35;
+  background: linear-gradient(135deg, rgba(45, 30, 15, 0.95), rgba(70, 48, 22, 0.95));
+  border: 1px solid #ffd777;
+  color: #fff4d6;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  box-shadow: 0 0 16px rgba(255, 215, 122, 0.8), 0 4px 12px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sg-skill-banner-pop 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sg-photo-skill-callout.is-ult {
+  background: linear-gradient(135deg, rgba(80, 20, 20, 0.95), rgba(130, 30, 30, 0.95));
+  border-color: #ff7675;
+  color: #fff;
+  font-size: 0.92rem;
+  box-shadow: 0 0 24px rgba(231, 76, 60, 0.9), 0 6px 18px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes sg-skill-banner-pop {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  30% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(0.9); }
+}
+
+/* Floating Damage Number on Photo */
+.sg-photo-damage-pop {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 36;
+  color: #e74c3c;
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(231, 76, 60, 0.8);
+  pointer-events: none;
+  animation: sg-damage-num-bounce 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sg-damage-num-bounce {
+  0% { opacity: 0; transform: translate(-50%, 0%) scale(0.5); }
+  25% { opacity: 1; transform: translate(-50%, -40%) scale(1.3); }
+  50% { transform: translate(-50%, -30%) scale(1); }
+  85% { opacity: 1; transform: translate(-50%, -45%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -65%) scale(0.8); }
+}
+
+/* ==========================================================================
+   UI-P3: Game Result Panel & Post-Match Waiting Room Upgrades
+   ========================================================================== */
+
+.sg-game-result-panel {
+  border-radius: 12px !important;
+  border: 1px solid rgba(214, 174, 95, 0.6) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  margin-bottom: 20px;
+}
+.sg-game-result-panel.is-win {
+  border-color: #ffd777 !important;
+  box-shadow: 0 0 30px rgba(255, 215, 122, 0.3), 0 16px 48px rgba(0, 0, 0, 0.85);
+}
+.sg-result-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.sg-result-outcome-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  margin: 4px 0 8px;
+  background: linear-gradient(180deg, #fff7d6 0%, #ffd777 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sg-game-result-panel.is-loss .sg-result-outcome-title {
+  background: linear-gradient(180deg, #ffc0c0 0%, #e74c3c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sg-result-winner-banner {
+  font-size: 0.95rem;
+  color: #ffd777;
+  margin: 0;
+}
+.sg-result-players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sg-result-player-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(30, 24, 15, 0.7);
+  border: 1px solid rgba(214, 174, 95, 0.35);
+}
+.sg-result-player-card.is-winner {
+  border-color: #ffd777;
+  background: rgba(55, 40, 20, 0.85);
+  box-shadow: inset 0 0 12px rgba(255, 215, 122, 0.2);
+}
+.sg-result-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sg-winner-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ffd777;
+  color: #1a120b;
+}
+.sg-result-generals-row {
+  display: flex;
+  gap: 12px;
+}
+.sg-result-general-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+.sg-result-general-slot .sg-general-portrait {
+  width: 32px;
+  height: 44px;
+  border-radius: 4px;
+}
+.sg-result-general-hidden {
+  font-size: 0.78rem;
+  color: rgba(220, 200, 170, 0.6);
+  font-style: italic;
+}
+.sg-result-player-stats {
+  display: flex;
+  gap: 14px;
+  font-size: 0.76rem;
+  color: rgba(220, 200, 170, 0.8);
+}
+.sg-result-log-section {
+  margin-top: 12px;
+  margin-bottom: 14px;
+}
+.sg-result-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sg-result-log-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.sg-result-logs {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sg-result-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
 }

@@ -54,12 +54,47 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const isMobile = isMobilePortrait || isMobileLandscape || isCompactWidth;
   const isDesktopEquipment = useMediaQuery('(min-width: 900px) and (min-height: 521px)');
   const [desktopEquipmentHost, setDesktopEquipmentHost] = useState<HTMLDivElement | null>(null);
-  const [showLogs, setShowLogs] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    if (window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches) return false;
-    return !window.matchMedia('(max-width: 899px)').matches;
-  });
+  const [showLogs, setShowLogs] = useState(false);
+  const [showTools, setShowTools] = useState(false);
+  const toolsRef = useRef<HTMLElement>(null);
+  const logPanelRef = useRef<HTMLElement>(null);
   const [followLogs, setFollowLogs] = useState(true);
+  useEffect(() => {
+    if (!showTools && !showLogs) return;
+    const dismiss = (event: PointerEvent) => {
+      // Music settings live in a body portal; interacting with them must
+      // not close the parent utility panel or hide its settings button.
+      const target = event.target as Element | null;
+      if (target?.closest?.('.battle-music-popover')) return;
+      if (showTools && !toolsRef.current?.contains(event.target as Node)) {
+        setShowTools(false);
+      }
+      if (showLogs) {
+        const clickedInsideLogs = logPanelRef.current?.contains(event.target as Node);
+        const clickedLogToggle = target?.closest?.('.sg-toolbar-log-toggle');
+        if (!clickedInsideLogs && !clickedLogToggle) {
+          setShowLogs(false);
+        }
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showTools) {
+          setShowTools(false);
+          toolsRef.current?.querySelector<HTMLButtonElement>('.board-tools-toggle')?.focus();
+        } else if (showLogs) {
+          setShowLogs(false);
+          toolsRef.current?.querySelector<HTMLButtonElement>('.sg-toolbar-log-toggle')?.focus();
+        }
+      }
+    };
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', dismiss);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [showTools, showLogs]);
   const [temporaryTableCards, setTemporaryTableCards] = useState<
     { eventKey: string; index: number; card: BoardEquipment; kind: 'virtual' | 'discard' }[]
   >([]);
@@ -183,7 +218,9 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
     flyingCards,
     impacts,
     avatarReactions,
+    damagePops,
     activeTargetIndicators,
+    skillCallouts,
     onFlyingCardDone,
     onImpactDone,
     processGameLogs,
@@ -211,36 +248,55 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
 
   return (
     <section className="game-board sg-game-board" aria-labelledby="board-title">
-      <header className="board-toolbar">
-        <div className="board-toolbar-title">
-          <h2 id="board-title">{roomName || 'Trận đấu'}</h2>
-        </div>
-        <div className="inline-controls">
-          <BattleMusicControl />
-          <button type="button" className="button secondary sg-toolbar-action sg-toolbar-log-toggle"
-            aria-controls="board-log-panel" aria-expanded={showLogs}
-            aria-label={showLogs ? 'Ẩn lịch sử' : 'Lịch sử'}
-            title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
-            onClick={() => setShowLogs((open) => !open)}>
-            <span className="sg-toolbar-action-icon" aria-hidden="true">☷</span>
-            <span className="sg-toolbar-action-label">Nhật ký</span>
-          </button>
-          {toggleTrust && <button className="button secondary sg-toolbar-action" type="button" disabled={busy} onClick={toggleTrust}
-            aria-label={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'} title={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}
-            aria-pressed={trusting}>
-            <span className="sg-toolbar-action-icon"><ToolbarBotIcon /></span>
-            <span className="sg-toolbar-action-label">{trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}</span>
-          </button>}
-          <button className="button secondary sg-toolbar-action" type="button" disabled={busy} onClick={leave}
-            aria-label="Rời trận" title="Rời trận">
-            <span className="sg-toolbar-action-icon"><ToolbarExitIcon /></span>
-            <span className="sg-toolbar-action-label">Rời trận</span>
-          </button>
+      <header className="board-toolbar" ref={toolsRef}>
+        <h2 id="board-title" className="sg-visually-hidden">{roomName || 'Trận đấu'}</h2>
+        <button type="button" className="button secondary board-tools-toggle"
+          aria-label="Tùy chọn trận đấu" aria-controls="board-tools-panel" aria-expanded={showTools}
+          title="Tùy chọn trận đấu" onClick={() => { setShowLogs(false); setShowTools((open) => !open); }}>
+          <span aria-hidden="true">☰</span>
+        </button>
+        <button type="button" className="button secondary sg-toolbar-action sg-toolbar-log-toggle"
+          aria-controls="board-log-panel" aria-expanded={showLogs}
+          aria-label={showLogs ? 'Ẩn lịch sử' : 'Lịch sử'}
+          title={showLogs ? 'Thu gọn nhật ký trận đấu' : 'Mở nhật ký trận đấu'}
+          onClick={() => { setShowTools(false); setShowLogs((open) => !open); }}>
+          <span className="sg-toolbar-action-icon" aria-hidden="true">☷</span>
+          <span className="sg-toolbar-action-label">Nhật ký</span>
+        </button>
+        <div id="board-tools-panel" className="board-tools-panel" hidden={!showTools}>
+          <div className="board-tools-room-name" title={roomName || 'Trận đấu'}>{roomName || 'Trận đấu'}</div>
+          <div className="board-tools-actions">
+            <BattleMusicControl />
+            {toggleTrust && <button className="button secondary sg-toolbar-action" type="button" disabled={busy}
+              onClick={() => { setShowTools(false); toggleTrust(); }}
+              aria-label={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'} title={trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}
+              aria-pressed={trusting}>
+              <span className="sg-toolbar-action-icon"><ToolbarBotIcon /></span>
+              <span className="sg-toolbar-action-label">{trusting ? 'Tự chơi lại' : 'BOT chơi hộ'}</span>
+            </button>}
+            <button className="button secondary sg-toolbar-action" type="button" disabled={busy}
+              onClick={() => { setShowTools(false); leave(); }}
+              aria-label="Rời trận" title="Rời trận">
+              <span className="sg-toolbar-action-icon"><ToolbarExitIcon /></span>
+              <span className="sg-toolbar-action-label">Rời trận</span>
+            </button>
+          </div>
         </div>
       </header>
-      {trusting && <p className="notice" role="status">Máy chủ đã bật BOT chơi hộ. Giữ trang mở để duy trì kết nối; bấm Tự chơi lại khi quay lại.</p>}
+      {trusting && (
+        <button
+          type="button"
+          className="board-trust-status board-trust-clickable"
+          disabled={busy}
+          onClick={toggleTrust}
+          title="Bấm để hủy BOT chơi hộ và tự chơi lại ngay lập tức."
+          aria-label="BOT đang chơi hộ. Chạm để tự chơi lại."
+        >
+          <span aria-hidden="true">🤖 </span>BOT đang chơi hộ · Chạm để tự chơi lại
+        </button>
+      )}
       <div className={`board-layout ${showLogs ? 'has-logs-open' : 'logs-collapsed'}`}>
-        <section id="board-log-panel" className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu">
+        <section id="board-log-panel" ref={logPanelRef} className="board-log-panel sg-board-log-panel" aria-label="Nhật ký trận đấu" aria-hidden={!showLogs}>
           <div className="board-log-heading">
             <strong>Nhật ký trận đấu ({board.logs.length})</strong>
             <button type="button" className="button small-button secondary" aria-expanded={showLogs}
@@ -320,7 +376,10 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
               getGeneralSkills={getGeneralSkills}
               busy={busy || requestExpired} onTarget={() => chooseTarget(seat.playerId)}
               avatarReaction={avatarReactions[seat.playerId]}
+              damagePop={damagePops[seat.playerId]}
               isShaking={avatarReactions[seat.playerId] === 'hit-shake'}
+              focusState={board.focusState}
+              skillCallout={skillCallouts.find((s) => s.playerId === seat.playerId)}
               style={seat.positionStyle} />;
           })}
         </div>
@@ -358,7 +417,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             </div>
           </div>
 
-          <p className="board-center-seat-count">{board.seats.length ? `${board.seats.length} ghế đã xếp` : 'Đang chờ xếp ghế từ máy chủ'}</p>
+          {!board.seats.length && <p className="board-center-seat-count">Đang chờ xếp ghế từ máy chủ</p>}
           <div className="board-banners">
             {Object.entries(board.banners).filter(([, v]) => v !== 0 && v !== false && v !== '').map(([key, value]) =>
               <span className="board-mark" key={key}
@@ -376,7 +435,10 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             busy={busy || requestExpired} onTarget={() => chooseTarget(self.id)} compact
             equipmentPortalTarget={isDesktopEquipment ? desktopEquipmentHost : null}
             avatarReaction={avatarReactions[self.id]}
-            isShaking={avatarReactions[self.id] === 'hit-shake'} /></div>}
+            damagePop={damagePops[self.id]}
+            isShaking={avatarReactions[self.id] === 'hit-shake'}
+            focusState={board.focusState}
+            skillCallout={skillCallouts.find((s) => s.playerId === self.id)} /></div>}
           {isDesktopEquipment && <div className="board-local-self-equipment" ref={setDesktopEquipmentHost} />}
           <div className="board-local-skill-rail" aria-label="Kỹ năng của bạn">
             {!trusting && <FakeSkillDock skills={fakeSkills} busy={busy} onToggle={prelightSkill}

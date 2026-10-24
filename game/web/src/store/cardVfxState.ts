@@ -62,11 +62,26 @@ export interface ActiveCardTargetIndicator {
   durationMs: number;
 }
 
+export interface SkillCalloutEvent {
+  id: string;
+  playerId: number;
+  skillName: string;
+  isUlt?: boolean;
+  createdAt: number;
+}
+
+export interface DamagePopEvent {
+  id: string;
+  amount: number;
+}
+
 export interface CardVfxState {
   flyingCards: FlyingCardEvent[];
   impacts: ImpactVfxEvent[];
   avatarReactions: Record<number, AvatarReactionType>;
+  damagePops: Record<number, DamagePopEvent>;
   activeTargetIndicators: ActiveCardTargetIndicator[];
+  skillCallouts: SkillCalloutEvent[];
 }
 
 export function createInitialVfxState(): CardVfxState {
@@ -74,7 +89,9 @@ export function createInitialVfxState(): CardVfxState {
     flyingCards: [],
     impacts: [],
     avatarReactions: {},
+    damagePops: {},
     activeTargetIndicators: [],
+    skillCallouts: [],
   };
 }
 
@@ -415,9 +432,19 @@ export function useCardVfx() {
   const [flyingCards, setFlyingCards] = useState<FlyingCardEvent[]>([]);
   const [impacts, setImpacts] = useState<ImpactVfxEvent[]>([]);
   const [avatarReactions, setAvatarReactions] = useState<Record<number, AvatarReactionType>>({});
+  const [damagePops, setDamagePops] = useState<Record<number, DamagePopEvent>>({});
   const [activeTargetIndicators, setActiveTargetIndicators] = useState<ActiveCardTargetIndicator[]>([]);
+  const [skillCallouts, setSkillCallouts] = useState<SkillCalloutEvent[]>([]);
   const lastProcessedLogCount = useRef<number>(0);
   const lastNativeSequence = useRef(0);
+
+  const triggerSkillCallout = useCallback((playerId: number, skillName: string, isUlt = false) => {
+    const id = `sc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setSkillCallouts((prev) => [...prev, { id, playerId, skillName, isUlt, createdAt: Date.now() }]);
+    setTimeout(() => {
+      setSkillCallouts((prev) => prev.filter((s) => s.id !== id));
+    }, 1400);
+  }, []);
 
   const triggerCardFly = useCallback((card: Omit<FlyingCardEvent, 'id' | 'createdAt' | 'phase'>) => {
     const id = `fly-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -458,6 +485,19 @@ export function useCardVfx() {
       });
     }, durationMs);
     return () => clearTimeout(timer);
+  }, []);
+
+  const triggerDamagePop = useCallback((playerId: number, amount: number, sequence: number) => {
+    const pop: DamagePopEvent = { id: `damage-${sequence}`, amount };
+    setDamagePops((prev) => ({ ...prev, [playerId]: pop }));
+    window.setTimeout(() => {
+      setDamagePops((prev) => {
+        if (prev[playerId]?.id !== pop.id) return prev;
+        const next = { ...prev };
+        delete next[playerId];
+        return next;
+      });
+    }, 900);
   }, []);
 
   const triggerActiveTargetIndicator = useCallback((indicator: Omit<ActiveCardTargetIndicator, 'id' | 'createdAt'>) => {
@@ -577,19 +617,25 @@ export function useCardVfx() {
             : event.damageType === 'thunder_damage' ? 'thunder_slash' : 'slash',
           damageAmount: event.damageNum });
         triggerAvatarReaction(event.targetPlayerId, 'hit-shake');
+        triggerDamagePop(event.targetPlayerId, event.damageNum, event.sequence);
+      } else if (event.kind === 'invoke_skill') {
+        triggerSkillCallout(event.playerId, event.skill, event.isUlt);
       }
     }
-  }, [triggerActiveTargetIndicator, triggerCombatImpact, triggerAvatarReaction]);
+  }, [triggerActiveTargetIndicator, triggerCombatImpact, triggerAvatarReaction, triggerDamagePop, triggerSkillCallout]);
 
   return {
     flyingCards,
     impacts,
     avatarReactions,
+    damagePops,
     activeTargetIndicators,
+    skillCallouts,
     triggerCardFly,
     triggerCombatImpact,
     triggerAvatarReaction,
     triggerActiveTargetIndicator,
+    triggerSkillCallout,
     onFlyingCardDone,
     onImpactDone,
     processGameLogs,

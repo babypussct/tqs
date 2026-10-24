@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom';
 import { BASELINE_NAMES, formatRank, getSuitInfo } from './HandCardItem';
 import { useDisplayText } from './engine/displayText';
 import type { GameplayItem } from './store/gameplayState';
-import type { BoardEquipment, BoardPlayer } from './store/boardState';
+import { isBoardFocusActive, type BoardEquipment, type BoardFocusState, type BoardPlayer } from './store/boardState';
 import { generalArtCandidates } from './generalArt';
 import type { RoomPlayer } from './store/gameStore';
 import { EquipIcon, TargetCrosshairIcon } from './EquipIcons';
-import type { AvatarReactionType } from './store/cardVfxState';
+import type { AvatarReactionType, DamagePopEvent, SkillCalloutEvent } from './store/cardVfxState';
 import NativeVfxAnim from './NativeVfxAnim';
 import { GeneralInfoTrigger, type SkillGroup } from './SkillInfo';
 
@@ -36,8 +36,11 @@ export interface PlayerPhotoPanelProps {
   style?: React.CSSProperties;
   isShaking?: boolean;
   avatarReaction?: AvatarReactionType | null;
+  damagePop?: DamagePopEvent | null;
   equipmentPortalTarget?: HTMLElement | null;
   getGeneralSkills?: (name: string) => string[];
+  focusState?: BoardFocusState | null;
+  skillCallout?: SkillCalloutEvent | null;
 }
 
 type EquipmentSlotKey = 'treasure' | 'weapon' | 'armor' | 'defensive_ride' | 'offensive_ride';
@@ -344,7 +347,7 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, equipmentPortalTarget, getGeneralSkills,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, damagePop, equipmentPortalTarget, getGeneralSkills, focusState, skillCallout,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
@@ -378,6 +381,23 @@ export default function PlayerPhotoPanel({
   const mainCompat = !main ? faceLabel : self && !game?.general ? `${text(main)} · Chưa lật` : null;
   const deputyCompat = !deputy ? deputyLabel : self && !game?.deputyGeneral ? `${text(deputy)} · Chưa lật` : null;
 
+  const [focusNow, setFocusNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!focusState || !focusState.playerIds.includes(player.id)) return;
+    const tick = () => {
+      const now = Date.now();
+      setFocusNow(now);
+      if (now >= focusState.receivedAt + focusState.timeoutMs) window.clearInterval(interval);
+    };
+    const interval = window.setInterval(tick, 200);
+    tick();
+    return () => window.clearInterval(interval);
+  }, [player.id, focusState]);
+  const isThinking = isBoardFocusActive(focusState, player.id, focusNow) && !game?.died;
+  const focusProgress = focusState && isThinking
+    ? Math.max(0, Math.min(1, (focusState.receivedAt + focusState.timeoutMs - focusNow) / focusState.timeoutMs))
+    : 0;
+
   const mainUnrevealed = self && !isMainRevealed && !!main;
   const deputyUnrevealed = self && !isDeputyRevealed && !!deputy;
   const bothUnrevealed = mainUnrevealed && deputyUnrevealed;
@@ -399,7 +419,7 @@ export default function PlayerPhotoPanel({
     return groups;
   };
 
-  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''} ${reactionClass}`}
+  return <article className={`board-player sg-board-player sg-photo-panel native-photo-seat faction-${faction} ${self ? 'board-self' : ''} ${compact ? 'sg-photo-panel-compact' : ''} ${active ? 'board-active active-turn' : ''} ${isThinking ? 'is-thinking' : ''} ${game?.died ? 'board-dead' : ''} ${target?.selected ? 'targeted' : ''} ${reactionClass}`}
     data-faction={faction} data-seat={seat} data-player-id={player.id}
     style={style}
     aria-label={`${playerName}${self ? ' (bạn)' : ''}`}>
@@ -478,6 +498,27 @@ export default function PlayerPhotoPanel({
     {game?.died && <span className="dead-badge sg-visually-hidden">Đã loại</span>}
     {!game?.died && game?.hp != null && game.hp <= 0 && <span className="dead-badge sg-visually-hidden">Hấp hối</span>}
     {self && <span className="you-tag sg-visually-hidden">Bạn</span>}
+
+    {/* 7. REAL-TIME FOCUS, SKILL CALLOUT & DAMAGE OVERLAYS */}
+    {isThinking && (
+      <div className="sg-photo-thinking-bar" role="progressbar" aria-label="Đang suy nghĩ" aria-valuenow={Math.round(focusProgress * 100)}>
+        <div
+          className="sg-photo-thinking-progress"
+          style={{ width: `${Math.round(focusProgress * 100)}%` }}
+        />
+        <span className="sg-photo-thinking-tip">
+          {focusState?.command ? `${text(focusState.command)}...` : 'Đang suy nghĩ...'}
+        </span>
+      </div>
+    )}
+    {skillCallout && (
+      <div className={`sg-photo-skill-callout${skillCallout.isUlt ? ' is-ult' : ''}`} aria-hidden="true">
+        <span>【{text(skillCallout.skillName)}】</span>
+      </div>
+    )}
+    {damagePop && (
+      <span key={damagePop.id} className="sg-photo-damage-pop" aria-hidden="true">-{damagePop.amount}</span>
+    )}
 
   </article>;
 }

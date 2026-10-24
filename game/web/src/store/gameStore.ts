@@ -372,6 +372,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'VisibleKingdom':
     case 'EquipmentUpdate':
     case 'SetPlayerMark':
+    case 'MoveFocus':
     case 'SetBanner':
     case 'GameLog':
     case 'PilesUpdate':

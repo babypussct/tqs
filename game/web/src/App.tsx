@@ -41,7 +41,13 @@ export default function App() {
   // dialogs still keep the global deadline notice because their shell is
   // mounted independently and may not expose a compact countdown.
   const showGlobalDeadline = snapshot.phase === 'playing' && !trusting &&
-    snapshot.pendingRequest !== null && !GAMEPLAY_REQUESTS.has(snapshot.pendingRequest.command);
+    snapshot.pendingRequest !== null && !GAMEPLAY_REQUESTS.has(snapshot.pendingRequest.command) &&
+    !snapshot.pendingRequest.cardSelectionPrompt &&
+    !snapshot.pendingRequest.cardsAndChoicePrompt &&
+    !snapshot.pendingRequest.nativeDialogPrompt &&
+    !snapshot.pendingRequest.choicePrompt &&
+    snapshot.pendingRequest.command !== 'AskForSkillInvoke' &&
+    !(snapshot.pendingRequest.command === 'CustomDialog' && snapshot.initialGeneral);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,6 +130,7 @@ export default function App() {
       {snapshot.phase === 'login' && <LoginScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'lobby' && <LobbyScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'room' && snapshot.result && <GameResultPanel result={snapshot.result} busy={busy}
+        onDismiss={() => useGameStore.getState().update({ result: null })}
         leave={() => run(() => adapter.leaveRoom())} />}
       {snapshot.phase === 'room' && <WaitingRoomScreen adapter={adapter} run={run} busy={busy} />}
       {snapshot.phase === 'playing' && <GameBoardScreen key={snapshot.roundId} busy={busy} leave={() => setExitAction('leave')}

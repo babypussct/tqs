@@ -307,8 +307,8 @@ try {
       assert.equal(await p.locator('.discard-pile .native-pile-card-hidden').count(), 1);
       assert.equal(afterMove.discardReveals.at(-1)?.cards.length, 2,
         'native TablePile retains both discarded cards until the two-phase vanish timer');
-      assert.match(afterMove.discardReveals.at(-1)?.cards[0].footnote ?? '', /bỏ lá/,
-        'FreeKill replaces the old resolving footnote with its native discard note');
+      assert.match(afterMove.discardReveals.at(-1)?.cards[0].footnote ?? '', /bỏ/,
+        'FreeKill replaces the old resolving footnote with the localized discard note');
       assert.equal(afterMove.discardReveals.at(-1)?.cards[1].known, false);
       assert.equal(await p.locator('#nativeProcessingArea .native-resolving-card').count(), 3,
         'departing cards remain visible at the center even though physical processing has one card');
@@ -572,11 +572,13 @@ try {
           `${label}: portrait prompt shell must not paint a second oversized panel (${JSON.stringify(layout.promptShell)})`);
         assert.equal(layout.promptShell?.borderBottomWidth, '0px',
           `${label}: portrait prompt shell must not retain the desktop divider (${JSON.stringify(layout.promptShell)})`);
-        const toolbarLabel = p.locator('.board-toolbar .sg-toolbar-action-label').first();
-        const toolbarIcon = p.locator('.board-toolbar .sg-toolbar-action-icon').first();
+        const toolbarLabel = p.locator('.board-toolbar .sg-toolbar-log-toggle .sg-toolbar-action-label');
+        const toolbarIcon = p.locator('.board-toolbar .sg-toolbar-log-toggle .sg-toolbar-action-icon');
+        assert.equal(await p.locator('.board-toolbar').evaluate((element) => getComputedStyle(element).position), 'absolute',
+          `${label}: in-match tools should float without occupying a header row`);
         assert.equal(await toolbarLabel.evaluate((element) => getComputedStyle(element).display), 'none',
           `${label}: portrait toolbar should hide the repeated text label`);
-        assert.equal(await toolbarIcon.evaluate((element) => getComputedStyle(element).display), 'inline-flex',
+        assert.match(await toolbarIcon.evaluate((element) => getComputedStyle(element).display), /^(inline-)?flex$/,
           `${label}: portrait toolbar should expose the compact icon`);
         if (layout.skillRail) {
           assert.equal(layout.skillRail.flexDirection, 'row', `${label}: skills should use a horizontal strip`);
@@ -954,8 +956,11 @@ try {
     }],
     ['BOT control sends native Trust and waits for server state without a gameplay reply', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
+      const tools = p.getByRole('button', { name: 'Tùy chọn trận đấu' });
+      await tools.click();
       await p.getByRole('button', { name: 'BOT chơi hộ', exact: true }).click();
       await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((packet) => packet.command === 'Trust'));
+      await tools.click();
       assert.equal(await p.getByRole('button', { name: 'BOT chơi hộ', exact: true }).getAttribute('aria-pressed'), 'false');
       assert.equal(await p.evaluate(() => window.__tqsRealLuaE2e.netState('trust')), 2);
       await p.getByRole('button', { name: 'Tự chơi lại', exact: true }).waitFor();
@@ -1009,11 +1014,25 @@ try {
       assert.equal(rendering.animationDuration, '0.2s');
       await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('LogEvent',
         "{type='Damage', to=-1, damageType='fire_damage', damageNum=2}"));
+      const botPhoto = p.getByRole('article', { name: 'Bot fixture', exact: true });
+      await botPhoto.locator('.sg-photo-damage-pop').getByText('-2', { exact: true }).waitFor();
       const native = await p.evaluate(() => window.__tqsRealLuaE2e.store.getState().nativeVfxEvents);
       assert.deepEqual(native.map((event) => event.kind), ['indicate', 'indicate', 'damage']);
       assert.ok(native[2].kind === 'damage');
       assert.equal(native[2].targetPlayerId, -1);
       assert.equal(native[2].damageNum, 2);
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('LogEvent',
+        "{type='Damage', to=-1, damageType='normal_damage', damageNum=3}"));
+      await botPhoto.locator('.sg-photo-damage-pop').getByText('-3', { exact: true }).waitFor();
+      await botPhoto.locator('.sg-photo-damage-pop').waitFor({ state: 'hidden' });
+      await p.evaluate(() => window.__tqsRealLuaE2e.boardNotify('MoveFocus',
+        "{{-1}, 'AskForCard', 450}"));
+      await botPhoto.locator('.sg-photo-thinking-bar').waitFor();
+      await botPhoto.locator('.sg-photo-thinking-bar').waitFor({ state: 'hidden' });
+      assert.equal(await botPhoto.evaluate((el) => el.classList.contains('is-thinking')), false);
+      // Recover effects must never display a negative damage number.
+      await p.evaluate(() => window.__tqsRealLuaE2e.store.getState().dispatch('GameLog', '#HpRecover:-1:1'));
+      assert.equal(await botPhoto.locator('.sg-photo-damage-pop').count(), 0);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
     }],
     ['Real Lua PlayCard seeds React hand/targets and only card plus target plus OK replies', async (p) => {
@@ -1966,18 +1985,18 @@ try {
           const log = document.querySelector('.board-log-panel')!.getBoundingClientRect();
           const main = document.querySelector('.board-main')!.getBoundingClientRect();
           return { scroll: document.documentElement.scrollWidth, width: window.innerWidth,
+            position: getComputedStyle(document.querySelector('.board-log-panel')!).position,
             logLeft: log.left, logRight: log.right, mainLeft: main.left, mainRight: main.right, mainTop: main.top, logTop: log.top };
         });
         assert.ok(metrics.scroll <= metrics.width, `UI-03 viewport ${width}px overflows: ${JSON.stringify(metrics)}`);
         assert.equal(await p.getByRole('button', { name: 'Theo dõi dòng mới' }).count(), 0,
           `viewport ${width}px must not disable automatic following`);
         assert.equal(await nearBottom(), true, `viewport ${width}px must keep latest log visible`);
-        if (width >= 940) {
-          assert.ok(metrics.mainRight <= metrics.logLeft, `desktop log must sit on the right: ${JSON.stringify(metrics)}`);
-          assert.ok(Math.abs(metrics.logTop - metrics.mainTop) <= 2, 'desktop log and board must share the top row');
-        } else {
-          assert.ok(metrics.logTop < metrics.mainTop, `mobile log must appear above board: ${JSON.stringify(metrics)}`);
-        }
+        assert.equal(metrics.position, 'absolute', `UI-03 history must be a floating drawer at ${width}px`);
+        assert.ok(metrics.logLeft >= metrics.mainLeft - 1 && metrics.logRight <= metrics.mainRight + 1,
+          `UI-03 history must remain inside the board at ${width}px: ${JSON.stringify(metrics)}`);
+        assert.ok(metrics.logTop >= metrics.mainTop && metrics.logTop <= metrics.mainTop + 80,
+          `UI-03 history must open below the corner tools at ${width}px: ${JSON.stringify(metrics)}`);
         await p.screenshot({ path: path.join(evidenceDir, `ui-03-${width}px-target-overlay-lua-fixture-2026-10-14.png`), fullPage: true });
       }
       await p.setViewportSize({ width: 390, height: 844 });
@@ -2009,11 +2028,15 @@ try {
       assert.equal(await nearBottom(), true, 'reopening logs resumes at latest when following');
       assert.deepEqual((await snapshot(p)).luaErrors, []);
       assert.equal((await snapshot(p)).replies.length, 0, 'UI-03 rendering must never reply to gameplay requests');
+      await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).click();
     }],
     ['UI-03 photo panels keep target actions clear of the table centre and recent-action surfaces', async (p) => {
       const intersects = (a: { left: number; right: number; top: number; bottom: number },
         b: { left: number; right: number; top: number; bottom: number }) =>
         a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      if (await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).count()) {
+        await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).click();
+      }
       await p.setViewportSize({ width: 1280, height: 900 });
       await p.evaluate(() => window.__tqsRealLuaE2e.beginPlay());
       await p.evaluate(() => {

@@ -516,7 +516,7 @@ export function getNativeCardArtUrl(cardOrName: CardData | string | undefined): 
 }
 
 /** Native Card Art Renderer or Neutral Frame (Strict adherence to native assets) */
-function CardArt({ card, alt = '', sheet = false }: {
+export function CardArt({ card, alt = '', sheet = false }: {
   card?: CardData;
   alt?: string;
   sheet?: boolean;
@@ -541,6 +541,129 @@ function CardArt({ card, alt = '', sheet = false }: {
     <div className="sg-card-art-frame" aria-hidden="true">
       <span className="sg-card-sigil-icon sigil-neutral">✦</span>
     </div>
+  );
+}
+
+export interface DialogCardItemProps {
+  card?: CardData;
+  name?: string;
+  suit?: number | string;
+  number?: number;
+  hidden?: boolean;
+  selected?: boolean;
+  disabled?: boolean;
+  badge?: string;
+  onClick?: () => void;
+  className?: string;
+  label?: string;
+  footnote?: string;
+  asDiv?: boolean;
+}
+
+/**
+ * Authentic visual card button for dialogs and modal choices.
+ * Preserves button roles, aria-labels, aria-pressed, and test selectors.
+ */
+export function DialogCardItem({
+  card,
+  name = card?.name,
+  suit = card?.suit,
+  number = card?.number,
+  hidden = card?.known === false,
+  selected = false,
+  disabled = false,
+  badge,
+  onClick,
+  className = '',
+  label,
+  footnote = card?.footnote,
+  asDiv = false,
+}: DialogCardItemProps) {
+  const text = useDisplayText();
+  if (hidden) {
+    const hiddenLabel = 'Bài úp';
+    const content = (
+      <div className="sg-dialog-card-inner">
+        <div className="sg-dialog-card-back" aria-hidden="true">
+          <span className="sg-dialog-card-sigil">🎴</span>
+        </div>
+        <span className="sg-dialog-card-label">{hiddenLabel}</span>
+      </div>
+    );
+    if (asDiv) {
+      return (
+        <div
+          className={`gameplay-choice sg-dialog-card is-hidden ${selected ? 'selected' : ''} ${className}`.trim()}
+          aria-label={hiddenLabel}
+        >
+          {content}
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        className={`gameplay-choice sg-dialog-card is-hidden ${selected ? 'selected' : ''} ${className}`.trim()}
+        disabled={disabled}
+        aria-pressed={selected}
+        onClick={onClick}
+        aria-label={hiddenLabel}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  const suitInfo = getSuitInfo(suit);
+  const rank = formatRank(number);
+  const category = getCardCategory(name ?? card?.trueName);
+  const displayName = label || (name ? text(name) : 'Lá bài');
+  const cardBadge = badge || category.badge;
+  const accessibleLabel = `${displayName}${rank ? ` · ${suitInfo.name} ${rank}` : ''}${footnote ? ` · ${text(footnote)}` : ''}`;
+
+  const content = (
+    <div className="sg-dialog-card-inner">
+      <div className={`sg-card-top-left card-suit-ink ${suitInfo.colorClass}`} aria-hidden="true">
+        <span className="sg-card-rank">{rank || ' '}</span>
+        <span className={`sg-card-suit ${suitInfo.colorClass}`}>{suitInfo.symbol}</span>
+      </div>
+      {cardBadge && (
+        <span className="sg-card-type-badge" aria-hidden="true">{cardBadge}</span>
+      )}
+      <CardArt card={card ?? { name, suit: typeof suit === 'number' ? suit : undefined, number }} alt={displayName} />
+      <div className="sg-card-banner">
+        <span className="sg-card-name">{displayName}</span>
+      </div>
+      {footnote && (
+        <span className="sg-dialog-card-footnote" aria-hidden="true">{text(footnote)}</span>
+      )}
+    </div>
+  );
+
+  if (asDiv) {
+    return (
+      <div
+        className={`gameplay-choice sg-dialog-card ${category.className} ${selected ? 'selected' : ''} ${className}`.trim()}
+        aria-label={accessibleLabel}
+        title={accessibleLabel}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={`gameplay-choice sg-dialog-card ${category.className} ${selected ? 'selected' : ''} ${className}`.trim()}
+      disabled={disabled}
+      aria-pressed={selected}
+      onClick={onClick}
+      aria-label={accessibleLabel}
+      title={accessibleLabel}
+    >
+      {content}
+    </button>
   );
 }
 

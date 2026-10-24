@@ -1,5 +1,38 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## GAME-UI-UX-GIT-REVIEW-20261024 — rà lỗi trước khi đồng bộ mã nguồn
+
+- **Phạm vi:** kiểm tra toàn bộ lô sửa UI/UX `new_heg_mode` ở `game/web`, giữ các thay đổi chưa commit của phiên trước; tập trung vào tương tác, trạng thái thời gian thực, trợ năng và regression. Không thay Lua/native, Shop hoặc dịch vụ đang chạy.
+- **Đã sửa trong phiên:** `PlayerPhotoPanel.tsx`, `cardVfxState.ts`, `GameBoardScreen.tsx` hiển thị chính xác `-2`, `-3` theo `LogEvent/Damage` và dọn popup theo event ID; hồi máu không tạo số sát thương. `boardState.ts` + `PlayerPhotoPanel.tsx` tính deadline thực để tắt viền/thanh `MoveFocus` đúng hạn và khi focus thay thế; bỏ role `status` trên nút BOT, vô hiệu nút khi đang busy. Bổ sung regression `scripts/store.test.ts` và assertions browser dùng Lua thật ở `scripts/real-lua-e2e/run.ts`.
+- **Kiểm thử quan sát trực tiếp 24/10 trong phiên rà lỗi:** `test:e2e` **36/36 PASS**; `test:e2e:lua` **72/72 PASS** (bao gồm số sát thương và hạn focus); `test:card-effects` **13/13 PASS**; `test:card-display` **20/20 PASS**; `test:store` **PASS**; `typecheck` và `typecheck:tools` **PASS**; `npm run typecheck:all` **PASS**; `npm run test:build-safety` **7/7 PASS**; `npm run check:build` **PASS**; `npm --prefix game/web run build` **PASS**, service worker kiểm **524 file**; `git diff --check` **PASS**. Browser tests chạy bằng Chrome local và fixture Lua, không thay thế QA production hoặc thiết bị thật.
+- **Giới hạn / bước tiếp theo:** lưu checkpoint và đưa toàn bộ thay đổi hiện có lên `origin/main` theo yêu cầu người dùng, kiểm SHA remote và working tree. Cloudflare Pages `tqsvn` Direct Upload nên Git push không đồng nghĩa deploy; không tự publish Pages/Vercel.
+
+## GAME-UI-UX-COMPREHENSIVE-20261024 — Hoàn tất triển khai kế hoạch UI/UX toàn diện (Phase P0–P4)
+
+- **Đã triển khai:**
+  - `P0`: Hoàn thiện chu kỳ sắp xếp bài trên tay 4 nấc liên tục trong `GameplayControls.tsx` (Mặc định → Loại → Chất → Điểm → Mặc định); kiểm soát đóng mở độc quyền giữa thanh công cụ nổi (☰) và ngăn kéo nhật ký (☷) với Escape và outside click trong `GameBoardScreen.tsx`; xóa nhãn đếm ghế cố định ở trung tâm bàn khi đã vào chỗ; chuyển đổi huy hiệu BOT chơi hộ thành nút hành động `toggleTrust` tức thì; xóa viền desktop thừa bên phải `.board-main`.
+  - `P1`: Bổ sung thành phần `DialogCardItem` trong `HandCardItem.tsx` hiển thị bài trực quan 4 lớp cho hộp thoại (chất, điểm, minh họa, nhãn, huy hiệu, bài úp); tích hợp thanh tiến trình thời gian và số giây đếm ngược trực tiếp trên header của `RequestDialog.tsx`; nâng cấp `CardSelectionPanel.tsx`, `CardsAndChoicePanel.tsx`, và `NativeDialogPanel.tsx` sang thẻ bài/chân dung trực quan; hiển thị ký hiệu chất/điểm cho `expandItems`; ẩn thanh đếm ngược ngoài bàn khi modal đang mở trong `App.tsx`.
+  - `P2`: Tích hợp lệnh `MoveFocus` từ server vào `boardState.ts` và `gameStore.ts`; bổ sung thanh tiến trình suy nghĩ và viền sáng `.is-thinking` trên `PlayerPhotoPanel.tsx`; thêm sự kiện hiển thị hiệu ứng kỹ năng `【Skill】` nổi qua `nativeVfxEvents.ts` và `cardVfxState.ts`; thêm hoạt ảnh số nhảy sát thương `sg-photo-damage-pop`.
+  - `P3`: Chuẩn hóa thanh kỹ năng trên mobile với cuộn ngang mượt mà, chiều cao 26-28px, nút xem mô tả kỹ năng `sg-skill-info-trigger` an toàn không gửi lệnh đánh bài; nâng cấp `GameResultPanel.tsx` với chân dung tướng chủ/phó, huy hiệu vinh danh người thắng, nhật ký trận đấu và nút "Ở lại phòng chờ" bên cạnh "Về sảnh".
+  - `P4`: Xác minh hồi quy trên toàn bộ bộ kiểm thử tự động.
+- **Kiểm tra đã quan sát 24/10:**
+  - `npm --prefix game/web run test:e2e` **36/36 PASS** (Browser E2E).
+  - `npm --prefix game/web run test:e2e:lua` **72/72 PASS** (Real Lua E2E).
+  - `npm --prefix game/web run test:card-display` **20/20 PASS** (Card Display).
+  - `npm --prefix game/web run typecheck` **PASS** (Game Web TS).
+  - `npm run test:build-safety` **7/7 PASS** (Build Safety Guard).
+  - `npm run typecheck:all` **PASS** (Toàn bộ workspace: Shop, Game Web, Game Tools).
+  - `npm --prefix game/web run build` **PASS** (Full Web Production Build + 524 file service worker).
+- **Giới hạn:** Toàn bộ thay đổi nằm trong working tree local, chưa commit, chưa push và chưa deploy Cloudflare Pages/Vercel. Các bài test chạy trên headless Chromium với các kích thước tiêu chuẩn (320×568, 390×844, 844×390, 1280×800).
+- **Bước tiếp theo:** Người dùng nghiệm thu trực quan trên màn hình thật nếu cần trước khi tiến hành commit và phát hành.
+
+## GAME-BOARD-FOCUS-20261024 — tinh gọn giao diện trong trận (local)
+
+- **Đã triển khai:** `game/web/src/GameBoardScreen.tsx` và `game/web/src/styles.css` chuyển thanh tiêu đề trận thành hai nút nổi gọn ở góc bàn (Tùy chọn trận đấu / Lịch sử); tên phòng, nhạc nền, BOT chơi hộ và Rời trận nằm trong bảng tùy chọn chỉ mở khi yêu cầu. Tiêu đề vẫn có nhãn truy cập; trạng thái BOT được nén thành huy hiệu. Nhật ký mặc định đóng, khi mở phủ lên bàn thay vì dành cột cố định hoặc đẩy vùng đánh bài; mở/đóng không thay đổi hình học bàn.
+- **Kiểm tra đã quan sát 24/10:** `npm --prefix game/web run test:e2e` **36/36 PASS**, `test:e2e:lua` **72/72 PASS**, `test:card-display` **20/20 PASS**, `npm --prefix game/web run typecheck` **PASS**, `npm --prefix game/web run build` **PASS** (audit và Vite/service worker, có cảnh báo chunk size thông thường); browser geometry kiểm 320×568, 390×844, 844×390, 1280×800: không tràn ngang, bảng không nhảy khi mở nhật ký. Đã xem ảnh fixture portrait/landscape/desktop và các trạng thái đóng, menu, lịch sử. Test runner được đồng bộ với bảng tùy chọn nổi trong `scripts/browser-e2e/run.ts` và `scripts/real-lua-e2e/run.ts`.
+- **Giới hạn:** bằng chứng là bản chạy local/fixture Chrome; chưa xác nhận UI này trên thiết bị vật lý hay production. Thay đổi còn trong working tree; chưa commit, push, build phát hành hoặc deploy, không thay luật Lua/native và phạm vi TQSShop.
+- **Bước tiếp theo:** nếu nghiệm thu trên thiết bị thật được yêu cầu, kiểm thao tác nút nổi/menu/nhật ký ở portrait, landscape và lúc xuất hiện popup kỹ năng; rà sự chồng lớp từ ảnh/feedback thực tế trước khi phát hành theo quy trình riêng.
+
 ## HEGEMONY-VI-RELEASE-20261024 — trạng thái phát hành đã quan sát
 
 - **Commit/push:** commit `2a96c067` chứa toàn bộ lô queue/overlay/test/tài liệu Việt hóa; `git push origin main` đã PASS và `origin/main` nhận đúng commit.
@@ -1127,20 +1160,39 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T03:16:00.367Z (UTC).
-- Nhánh: `main` · HEAD: `3aea5e1b7668`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T08:54:32.722Z (UTC).
+- Nhánh: `main` · HEAD: `8500d67fae41`.
+- File thay đổi hiển thị: 20 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
+ M game/web/scripts/browser-e2e/run.ts
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/scripts/store.test.ts
+ M game/web/src/App.tsx
+ M game/web/src/CardSelectionPanel.tsx
+ M game/web/src/CardsAndChoicePanel.tsx
+ M game/web/src/ChoicePanel.tsx
+ M game/web/src/GameBoardScreen.tsx
+ M game/web/src/GameResultPanel.tsx
+ M game/web/src/GameplayControls.tsx
+ M game/web/src/HandCardItem.tsx
+ M game/web/src/NativeDialogPanel.tsx
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/RequestDialog.tsx
+ M game/web/src/store/boardState.ts
+ M game/web/src/store/cardVfxState.ts
+ M game/web/src/store/gameStore.ts
+ M game/web/src/store/nativeVfxEvents.ts
+ M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+8500d67f docs: refresh Codex checkpoint after Pages release
 3aea5e1b docs: record Hegemony translation release
 2a96c067 feat(game): add Hegemony Vietnamese translation overlay
-d0517262 docs: checkpoint clean local main after TQSVN reconciliation
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

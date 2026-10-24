@@ -1,44 +1,103 @@
 import { useLayoutEffect, useRef } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
 import type { GameResult } from './store/gameStore';
+import { GeneralPortrait } from './GeneralChoiceCard';
 
-export default function GameResultPanel({ result, busy, leave }: {
+export default function GameResultPanel({ result, busy, leave, onDismiss }: {
   result: GameResult;
   busy: boolean;
   leave: () => void;
+  onDismiss?: () => void;
 }) {
   const text = useDisplayText();
   const logList = useRef<HTMLOListElement>(null);
   useLayoutEffect(() => {
     if (logList.current) logList.current.scrollTop = logList.current.scrollHeight;
   }, [result]);
+  const outcomeClass = result.outcome === 'win' ? 'is-win' : result.outcome === 'loss' ? 'is-loss' : 'is-draw';
   const title = { win: 'Bạn đã thắng!', loss: 'Bạn đã thua', draw: 'Ván đấu hòa', unknown: 'Ván đấu đã kết thúc' }[result.outcome];
-  return <section className="panel" aria-labelledby="result-title" role="status">
-    <span className="section-label">Kết quả trận đấu</span>
-    <h2 id="result-title">{title}</h2>
-    {result.winners.length > 0 && <p>Người thắng: {result.winners.map((p) => p.name).join(', ')}</p>}
-    {result.summary && <>
-      {result.summary.players.length > 0 && <div className="result-players" aria-label="Trạng thái cuối trận">
-        {result.summary.players.map((player) => <article className="board-player" key={player.id}>
-          <strong className="board-player-name">{player.name}</strong>
-          <div className="board-generals">
-            <span>{player.general ? text(player.general) : 'Chủ tướng ẩn'}</span>
-            <span>{player.deputyGeneral ? text(player.deputyGeneral) : 'Phó tướng ẩn'}</span>
-          </div>
-          <div className="board-player-stats">
-            <span>♥ {player.hp ?? '?'} / {player.maxHp ?? '?'}</span>
-            <span>{player.handcardNum ?? '?'} lá trên tay</span>
-          </div>
-        </article>)}
-      </div>}
-      {result.summary.logs.length > 0 && <div className="board-log-panel">
-        <h3>Nhật ký cuối trận</h3>
-        <ol className="board-logs" ref={logList} aria-label="Nhật ký cuối trận">
-          {result.summary.logs.map((log, index) => <li key={index}>{localizedGameLog(log)}</li>)}
-        </ol>
-      </div>}
-    </>}
-    <p className="muted">Bạn có thể chơi ván mới trong phòng này hoặc trở về sảnh.</p>
-    <button className="button secondary" disabled={busy} onClick={leave}>Về sảnh</button>
-  </section>;
+  const winnerIds = new Set(result.winners.map((w) => w.id));
+
+  return (
+    <section className={`panel sg-game-result-panel ${outcomeClass}`} aria-labelledby="result-title" role="status">
+      <div className="sg-result-header">
+        <span className="section-label">Kết quả trận đấu</span>
+        <h2 id="result-title">{title}</h2>
+        {result.winners.length > 0 && (
+          <p className="sg-result-winner-banner">
+            Người thắng: {result.winners.map((p) => p.name).join(', ')}
+          </p>
+        )}
+      </div>
+
+      {result.summary && (
+        <>
+          {result.summary.players.length > 0 && (
+            <div className="result-players sg-result-players-grid" aria-label="Trạng thái cuối trận">
+              {result.summary.players.map((player) => {
+                const isWinner = winnerIds.has(player.id);
+                return (
+                  <article className={`board-player sg-result-player-card${isWinner ? ' is-winner' : ''}`} key={player.id}>
+                    <div className="sg-result-player-header">
+                      <strong className="board-player-name">{player.name}</strong>
+                      {isWinner && <span className="sg-winner-badge" aria-hidden="true">🏆</span>}
+                    </div>
+                    <div className="board-generals sg-result-generals-row">
+                      <div className="sg-result-general-slot">
+                        {player.general ? (
+                          <>
+                            <span aria-hidden="true"><GeneralPortrait name={player.general} label="" compact /></span>
+                            <span>{text(player.general)}</span>
+                          </>
+                        ) : (
+                          <span className="sg-result-general-hidden">Chủ tướng ẩn</span>
+                        )}
+                      </div>
+                      <div className="sg-result-general-slot">
+                        {player.deputyGeneral ? (
+                          <>
+                            <span aria-hidden="true"><GeneralPortrait name={player.deputyGeneral} label="" compact /></span>
+                            <span>{text(player.deputyGeneral)}</span>
+                          </>
+                        ) : (
+                          <span className="sg-result-general-hidden">Phó tướng ẩn</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="board-player-stats sg-result-player-stats">
+                      <span>♥ {player.hp ?? '?'} / {player.maxHp ?? '?'}</span>
+                      <span>{player.handcardNum ?? '?'} lá trên tay</span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {result.summary.logs.length > 0 && (
+            <div className="board-log-panel sg-result-log-section">
+              <h3>Nhật ký cuối trận</h3>
+              <ol className="board-logs sg-result-logs" ref={logList} aria-label="Nhật ký cuối trận">
+                {result.summary.logs.map((log, index) => (
+                  <li key={index}>{localizedGameLog(log)}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </>
+      )}
+
+      <p className="muted">Bạn có thể tiếp tục sẵn sàng cho ván mới trong phòng hoặc trở về sảnh.</p>
+      <div className="sg-result-actions inline-controls">
+        {onDismiss && (
+          <button className="button primary" disabled={busy} onClick={onDismiss}>
+            Ở lại phòng chờ
+          </button>
+        )}
+        <button className="button secondary" disabled={busy} onClick={leave}>
+          Về sảnh
+        </button>
+      </div>
+    </section>
+  );
 }

@@ -4,7 +4,8 @@ import type { NativeDialogPrompt } from './engine/nativeDialogs';
 import { useDisplayText } from './engine/displayText';
 import RequestDialog from './RequestDialog';
 import { userFacingError } from './engine/connectionMessages';
-import { CardSuitMark, formatRank, getSuitInfo } from './HandCardItem';
+import { CardSuitMark, DialogCardItem, formatRank, getSuitInfo } from './HandCardItem';
+import { GeneralPortrait } from './GeneralChoiceCard';
 
 export default function NativeDialogPanel({ request, prompt, busy, view, move, chooseGeneral, respond }: {
   request: RequestInfo; prompt: NativeDialogPrompt; busy: boolean;
@@ -47,22 +48,66 @@ export default function NativeDialogPanel({ request, prompt, busy, view, move, c
   const canCancel = !disabled && (prompt.kind === 'generalsAndChoice' ? Boolean(cancelToken) : prompt.cancelable);
   return <RequestDialog className="panel request-panel" label="Lựa chọn bài và sắp xếp"
     focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={canCancel}
+    request={request}
     onCancel={() => prompt.kind === 'generalsAndChoice'
       ? cancelToken && respond(cancelToken, true)
       : respond(undefined, true)}>
     <h2>{prompt.kind === 'arrange' ? 'Sắp xếp bài' : prompt.kind === 'ag' || prompt.kind === 'boardMove' ? 'Chọn một lá bài' : ['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? (prompt.kind === 'skills' ? 'Chọn kỹ năng' : prompt.kind === 'cardNames' ? 'Chọn tên bài' : 'Chọn tướng') : 'Xem tướng'}</h2>
     <p>{text(prompt.title)}</p>
     {prompt.kind === 'generals' ? <div className="gameplay-options">
-      {prompt.cards.map(card => <div className="gameplay-choice" key={card.token}>{text(card.name!)}</div>)}
+      {prompt.cards.map(card => <div className="gameplay-choice sg-general-choice-token" key={card.token}>
+        <GeneralPortrait name={card.name!} label={text(card.name!)} compact />
+        <span>{text(card.name!)}</span>
+      </div>)}
     </div> : rows.map((row, area) => <div key={area} role="group" aria-label={text(prompt.names[area] ?? '') || `Nhóm ${area + 1}`}>
       {prompt.kind === 'arrange' && <h3>{text(prompt.names[area] ?? '') || `Nhóm ${area + 1}`}</h3>}
       <div className="gameplay-options">
-        {row.map((token, index) => <div key={token}>
-          {prompt.kind === 'arrange' && selected && <button type="button" className="button small-button" disabled={disabled}
-            onClick={() => performMove(area, index)} aria-label={`Đặt trước ${cardLabelText(token)}`}>Đặt trước</button>}
-          <button type="button" className="gameplay-choice" disabled={disabled || (['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) && !selectedTokens?.includes(token) && !selectableTokens?.includes(token))} aria-pressed={['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? selectedTokens?.includes(token) : selected === token}
-            onClick={() => prompt.kind === 'ag' || prompt.kind === 'boardMove' ? respond(token) : ['generalChoice', 'skills', 'generalsAndChoice', 'cardNames'].includes(prompt.kind) ? chooseName(token) : select(selected === token ? null : token)}>{cardLabel(token)}</button>
-        </div>)}
+        {row.map((token, index) => {
+          const card = prompt.cards.find(c => c.token === token);
+          const isCardKind = ['ag', 'boardMove', 'arrange'].includes(prompt.kind);
+          const isGeneralKind = ['generalChoice', 'generalsAndChoice'].includes(prompt.kind);
+
+          return <div key={token} className="sg-native-dialog-item">
+            {prompt.kind === 'arrange' && selected && <button type="button" className="button small-button" disabled={disabled}
+              onClick={() => performMove(area, index)} aria-label={`Đặt trước ${cardLabelText(token)}`}>Đặt trước</button>}
+            {isCardKind && card ? (
+              <DialogCardItem
+                name={card.name}
+                suit={card.suit}
+                number={card.number}
+                hidden={card.hidden}
+                selected={prompt.kind === 'arrange' ? selected === token : false}
+                disabled={disabled}
+                onClick={() => prompt.kind === 'ag' || prompt.kind === 'boardMove' ? respond(token) : select(selected === token ? null : token)}
+              />
+            ) : isGeneralKind ? (
+              (() => {
+                const generalCard = prompt.cards.find(c => c.token === token);
+                const generalName = generalCard?.name || token;
+                const generalTitle = text(generalName);
+                return (
+                  <button type="button" className={`gameplay-choice sg-general-choice-token ${selectedTokens?.includes(token) ? 'selected' : ''}`}
+                    aria-label={generalTitle}
+                    disabled={disabled || (!selectedTokens?.includes(token) && !selectableTokens?.includes(token))}
+                    aria-pressed={selectedTokens?.includes(token)}
+                    onClick={() => chooseName(token)}>
+                    <span aria-hidden="true" style={{ display: 'inline-flex' }}>
+                      <GeneralPortrait name={generalName} label={generalTitle} compact />
+                    </span>
+                    <span>{generalTitle}</span>
+                  </button>
+                );
+              })()
+            ) : (
+              <button type="button" className="gameplay-choice"
+                disabled={disabled || (['skills', 'cardNames'].includes(prompt.kind) && !selectedTokens?.includes(token) && !selectableTokens?.includes(token))}
+                aria-pressed={['skills', 'cardNames'].includes(prompt.kind) ? selectedTokens?.includes(token) : selected === token}
+                onClick={() => ['skills', 'cardNames'].includes(prompt.kind) ? chooseName(token) : select(selected === token ? null : token)}>
+                {cardLabel(token)}
+              </button>
+            )}
+          </div>;
+        })}
         {prompt.kind === 'arrange' && <button type="button" className="button secondary" disabled={disabled || !selected}
           onClick={() => performMove(area, row.length)}>Đặt cuối nhóm {area + 1}</button>}
       </div>

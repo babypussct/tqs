@@ -90,6 +90,59 @@ async function assertCrowdedSkillRail(page: Page, selector: string, viewport: { 
 
 async function runSuite(page: Page) {
   const tests: [string, (page: Page) => Promise<void>][] = [
+    ['In-match utility dock frees the board and log drawer overlays without layout shift', async (p) => {
+      for (const viewport of [
+        { width: 320, height: 568 }, { width: 390, height: 844 },
+        { width: 844, height: 390 }, { width: 1280, height: 800 },
+      ]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        const tools = p.getByRole('button', { name: 'Tùy chọn trận đấu' });
+        const history = p.getByRole('button', { name: 'Lịch sử', exact: true });
+        const geometry = () => p.evaluate(() => {
+          const toolbar = document.querySelector<HTMLElement>('.board-toolbar')!;
+          const board = document.querySelector<HTMLElement>('.sg-board-table')!;
+          const stage = document.querySelector<HTMLElement>('.board-layout')!;
+          const log = document.querySelector<HTMLElement>('.sg-board-log-panel')!;
+          const rect = board.getBoundingClientRect();
+          return {
+            toolbarPosition: getComputedStyle(toolbar).position,
+            toolbarRight: toolbar.getBoundingClientRect().right,
+            board: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+            columns: getComputedStyle(stage).gridTemplateColumns,
+            logDisplay: getComputedStyle(log).display,
+            logPosition: getComputedStyle(log).position,
+            scrollWidth: document.documentElement.scrollWidth,
+          };
+        });
+        const closed = await geometry();
+        assert.equal(closed.toolbarPosition, 'absolute');
+        assert.equal(closed.logDisplay, 'none');
+        assert.ok(closed.toolbarRight <= viewport.width + 1);
+        assert.ok(closed.scrollWidth <= viewport.width + 1);
+
+        await tools.click();
+        await p.getByRole('button', { name: 'Cài đặt nhạc nền' }).waitFor({ state: 'visible' });
+        // The minimal fixture omits BOT control; the real App passes it.
+        if (await p.getByRole('button', { name: 'BOT chơi hộ' }).count()) {
+          await p.getByRole('button', { name: 'BOT chơi hộ' }).waitFor({ state: 'visible' });
+        }
+        await p.getByRole('button', { name: 'Rời trận' }).waitFor({ state: 'visible' });
+        await p.keyboard.press('Escape');
+        assert.equal(await tools.getAttribute('aria-expanded'), 'false');
+
+        await history.click();
+        const opened = await geometry();
+        assert.equal(opened.logPosition, 'absolute');
+        assert.notEqual(opened.logDisplay, 'none');
+        assert.deepEqual(opened.board, closed.board, `log changed felt geometry at ${viewport.width}x${viewport.height}`);
+        assert.equal(opened.columns, closed.columns);
+        assert.ok(opened.scrollWidth <= viewport.width + 1);
+        await p.getByRole('button', { name: 'Ẩn lịch sử' }).click();
+        assert.equal((await geometry()).logDisplay, 'none');
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+    }],
     ['Upstream HP colors progress from green to yellow and red in the actual portrait', async (p) => {
       for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
         await p.setViewportSize(viewport);
@@ -183,6 +236,7 @@ async function runSuite(page: Page) {
           }));
           assert.ok(stage.image.includes('gamebg-upstream.jpg'), `upstream scenery missing at ${viewport.width}x${viewport.height}`);
           assert.ok(stage.sizing.includes('cover'), `scenery must crop like FreeKill at ${viewport.width}x${viewport.height}`);
+          await preview.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
           await settings.click();
           const popover = preview.getByRole('group', { name: 'Điều khiển nhạc nền trận đấu' });
           await popover.waitFor({ state: 'visible' });
@@ -212,6 +266,7 @@ async function runSuite(page: Page) {
         }
 
         await preview.setViewportSize({ width: 390, height: 844 });
+        await preview.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
         await settings.click();
         await preview.getByRole('button', { name: 'Phát nhạc nền' }).click();
         await preview.waitForFunction(() =>
@@ -233,6 +288,7 @@ async function runSuite(page: Page) {
         assert.deepEqual(stored, { enabled: false, volume: 30 });
         await preview.reload();
         await start(preview, 'choices');
+        await preview.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
         assert.equal(await preview.getByRole('button', { name: 'Cài đặt nhạc nền' }).getAttribute('data-enabled'), 'false');
         await preview.getByRole('button', { name: 'Cài đặt nhạc nền' }).click();
         await preview.getByText('Âm lượng nhạc nền: 30%').waitFor();
@@ -945,6 +1001,7 @@ async function runSuite(page: Page) {
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
       await p.getByRole('heading', { name: 'E2E cục bộ', exact: true }).waitFor();
       const baseline = await p.evaluate(() => window.__tqsE2e.appActions());
+      await p.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
       await p.getByRole('button', { name: 'Rời trận', exact: true }).click();
       await p.getByRole('alertdialog').waitFor();
       if (process.env.TQS_E2E_EVIDENCE_DIR) {
@@ -967,6 +1024,7 @@ async function runSuite(page: Page) {
         return event.defaultPrevented;
       }), true);
       await p.getByRole('timer', { name: /Còn \d+ giây/ }).waitFor();
+      await p.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
       await p.getByRole('button', { name: 'Rời trận', exact: true }).click();
       await p.getByRole('button', { name: 'Vẫn rời trận', exact: true }).click();
       await p.waitForFunction(() => window.__tqsE2e.appActions().at(-1) === 'QuitRoom');

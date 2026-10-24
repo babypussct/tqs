@@ -6,6 +6,7 @@ import type { GameplayItem, GameplayItemType, GameplayScene } from './store/game
 import type { RegularSkill } from './store/gameStore';
 import {
   CardDetailSheet,
+  CardSuitMark,
   formatRank,
   getCardCategory,
   getSuitInfo,
@@ -208,12 +209,20 @@ function InteractionPicker({ item, dispatch, direct, busy }: {
           if (!row || (typeof row.cid !== 'number' && typeof row.cid !== 'string') ||
             typeof row.name !== 'string') return null;
           const prop = objectValue(row.prop);
+          const cardName = typeof prop?.name === 'string' ? prop.name : row.name;
+          const suit = typeof prop?.suit === 'number' || typeof prop?.suit === 'string' ? prop.suit : undefined;
+          const number = typeof prop?.number === 'number' ? prop.number : undefined;
+          const footnote = typeof prop?.footnote === 'string' ? prop.footnote : typeof row.footnote === 'string' ? row.footnote : undefined;
           return <button key={`${index}-${row.cid}`} type="button"
             className={`gameplay-choice ${pendings.includes(row.cid) ? 'selected' : ''}`}
             disabled={disabled || (enabledIds !== null && !enabledIds.includes(row.cid))}
             onClick={() => send('update', {
               elemType: 'ExpandItem', cid: row.cid, name: row.name, autoTarget: false,
-            })}>{text(typeof prop?.name === 'string' ? prop.name : row.name)}</button>;
+            })}>
+            {text(cardName)}
+            {suit !== undefined && number !== undefined && <CardSuitMark suit={suit} number={number} />}
+            {footnote && <span className="sg-card-footnote"> ({text(footnote)})</span>}
+          </button>;
         })}
       </div>}
       {!option && !list(refresh?.expandItems).length && <p className="muted">Đang chờ lựa chọn do Lua cung cấp.</p>}
@@ -457,7 +466,7 @@ export function GameplayControls({ scene, request, busy, dispatch, direct, toggl
           type="button"
           className="button small-button secondary sg-tool-btn sg-sort-btn"
           onClick={() => {
-            const nextMode: SortMode = sortMode === 'default' ? 'type' : sortMode === 'type' ? 'suit' : sortMode === 'number' ? 'default' : 'type';
+            const nextMode: SortMode = sortMode === 'default' ? 'type' : sortMode === 'type' ? 'suit' : sortMode === 'suit' ? 'number' : 'default';
             setSortMode(nextMode);
           }}
           title="Đổi cách sắp xếp bài trên tay (Mặc định / Loại / Chất / Điểm)"
