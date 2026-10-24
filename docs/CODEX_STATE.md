@@ -7,6 +7,9 @@
 - **Sửa gate trước push:** phát hiện `gateway/src` legacy đã thiếu phần WS admission/account quota có sẵn trong `game/gateway/src`. Đã đồng bộ `security.mjs`, `server.mjs`, `static.mjs` từ nguồn canonical, giữ xác thực HMAC/quota và header no-store; `diff -ru gateway/src game/gateway/src` cùng diff lockfile **PASS**. Gateway canonical tests **9/9 PASS**; npm test ở legacy không có test được discover, không tính là test coverage.
 - **Kiểm thử quan sát trực tiếp:** system-updates **10/10**, connection **33/33**, bundle **4/4**, gateway **9/9**, release **5/5**, Pages gateway **8/8**, typecheck:all, build-safety **7/7**, pipelines và auth-routing/messages/room-pools/upstream-preparation **PASS**. Browser **42/42**, Lua **72/72**, card **21/21**, store **50/50** vừa quan sát trong mốc LAYOUT cùng phiên; không có thay đổi frontend sau các kết quả đó.
 - **Build production:** từ `game/web`, `VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH=true VITE_GATEWAY_URL=/gateway npm run build` **PASS**, SW kiểm 524 tệp. Build ID `e91c9e9f08f6a5f3672c509a18db5635069d4fbd739a2d2c54281e6853a4877e`, builtAt `2026-10-24T18:19:06.765Z` (01:19 ngày 25/10 giờ Việt Nam). PWA trên artifact production **PASS** (waiting worker/update/IndexedDB/offline). Shop build → clean → rebuild chạy tuần tự **PASS**, root dist SHA-256 `9ce76b80…` không đổi.
+- **Push/deploy đã thực hiện:** toàn bộ 35 tệp ở commit `2f633b92b15d4732211288487dc138b23debb2e9` đã push `origin/main`; remote SHA khớp. Pages `3bf5fdce-bb40-4e1d-86f0-693330024477` Production/main có đúng SHA nguồn và build `e91c9e9f…`; HTTP/byte/header/gateway/OAuth smoke **26/26 PASS** trên deployment URL và alias. Lượt upload đầu `af9e8048…` gắn nhầm metadata SHA đã được thay bằng deployment đúng SHA ngay sau đó, cùng artifact.
+- **Sửa từ smoke hosted:** Chrome nạp Lua/Google login UI và 524 tệp SW thành công nhưng offline reload FAIL. Cache `/index.html` có `redirected:true` vì Pages canonical redirect về `/`; trả trực tiếp Response đó cho reload navigation bị `net::ERR_FAILED`. Đã tạo Response mới từ body/status/headers cho nhánh fallback navigation trong `build-service-worker.mjs`; fixture PWA mô phỏng HTTP 301 của Pages và assert cached redirect thật. Production rebuild + PWA regression **PASS** (bao gồm offline reload); build mới `aa8c0f9935b4e04200da724134a68432faec76ec8fe15ba5b6b2ccd2890410f3`, builtAt `2026-10-24T18:26:00.041Z`. Đang commit/push/deploy bản sửa và sẽ chạy lại smoke hosted.
+- **CI:** GitHub run `40120315756` của commit nguồn đầu FAIL tại `npm --prefix game/web run prepare:upstream`; các bước test/build về sau không chạy. API đọc trạng thái công khai được; quyền tải log CI trả 403, nên chưa có bằng chứng nguyên nhân chi tiết và không khẳng định đây là lỗi network. Không đổi SHA pin, không bỏ audit/gate để lấy PASS. Các source/test local nêu trên vẫn PASS.
 - **Phát hành kế tiếp:** commit/push toàn bộ source lên `origin/main`, deploy từ `game/web` bằng Wrangler Pages Direct Upload vào project `tqsvn`, branch `main`, gắn SHA nguồn; không nối Git provider hoặc đổi KV/tunnel/native. Gateway static/Caddy là các đường đóng gói thay thế; production hiện dùng Pages `_headers`, không cần restart native để áp dụng các header đó.
 - **Evidence:** `scratch/evidence/production-release-20261025/`; deployment trước phát hành `726f59cd-7751-444b-8572-2f98e02dccc4`. Chưa ghi hosted PASS ở mốc chuẩn bị; sẽ bổ sung deployment ID, HTTP/byte/header/browser smoke và trạng thái CI sau khi thực hiện.
 
@@ -1254,53 +1257,22 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T18:20:59.610Z (UTC).
-- Nhánh: `main` · HEAD: `90db5fbadf9f`.
-- File thay đổi hiển thị: 34 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T18:27:11.212Z (UTC).
+- Nhánh: `main` · HEAD: `2f633b92b15d`.
+- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/mobile/Caddyfile
  M docs/CODEX_PLAN.md
- M game/gateway/scripts/gateway.test.mjs
- M game/gateway/src/static.mjs
- M game/web/package.json
- M game/web/scripts/browser-e2e/harness.tsx
- M game/web/scripts/browser-e2e/run.ts
  M game/web/scripts/build-service-worker.mjs
  M game/web/scripts/pwa-e2e/run.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/src/App.tsx
- M game/web/src/BootScreen.tsx
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/LobbyScreen.tsx
- M game/web/src/LoginScreen.tsx
- M game/web/src/engine/bundle.ts
- M game/web/src/engine/connection.ts
- M game/web/src/engine/gameAdapter.ts
- M game/web/src/main.tsx
- M game/web/src/styles.css
- M game/web/vite.config.ts
- M gateway/src/security.mjs
- M gateway/src/server.mjs
- M gateway/src/static.mjs
-?? game/web/public/_headers
-?? game/web/scripts/system-updates.test.ts
-?? game/web/src/ForceUpdateGuard.tsx
-?? game/web/src/StatusFooter.tsx
-?? game/web/src/SystemDialog.tsx
-?? game/web/src/system/Signal.ts
-?? game/web/src/system/buildInfo.ts
-?? game/web/src/system/clientVersion.ts
-?? game/web/src/system/updates.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+2f633b92 feat(game): ship responsive layout and safe client updates
 90db5fba docs: record Hegemony card audio Pages release
 d5efdabf feat(game): ship Hegemony card audio and native sound events
-0a74ab50 feat(game): complete Hegemony UI native parity refinements
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

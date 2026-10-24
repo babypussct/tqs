@@ -74,7 +74,9 @@ self.addEventListener('fetch',event=>{
     if(navigation){
       try{const response=await fetch(request);if(response.ok)return response;}catch{}
       const cached=await cache.match('/index.html');
-      return cached || Response.error();
+      // Pages canonicalizes /index.html to /. A redirected cached Response
+      // cannot satisfy a reload navigation whose redirect mode is manual.
+      return cached ? new Response(cached.body,{status:cached.status,statusText:cached.statusText,headers:cached.headers}) : Response.error();
     }
     return (await cache.match(url.pathname)) || fetch(request);
   })());

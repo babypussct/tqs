@@ -4,8 +4,8 @@
 
 - [x] Người dùng đã cho phép commit, push và production toàn bộ thay đổi hiện có.
 - [x] Review tất cả source, đồng bộ gateway legacy/canonical theo gate CI, test tính năng cập nhật/gateway/release/pipeline; build production OAuth same-origin + `/gateway`, PWA PASS; shop build-clean-rebuild tuần tự PASS và root dist không đổi.
-- [ ] Commit/push source và xác nhận SHA remote.
-- [ ] Deploy Pages `tqsvn` production/main, smoke build bytes/version/no-store headers/gateway/OAuth và UI trình duyệt; lưu deployment evidence và kết quả CI.
+- [x] Commit/push toàn bộ 35 tệp ở `2f633b92`, remote SHA khớp.
+- [ ] Pages `3bf5fdce…` đã deploy, HTTP/byte/header smoke 26/26; smoke hosted tìm lỗi offline canonical redirect. Bản sửa worker + fixture 301 đã local PWA PASS, đang push/deploy và xác minh lại. CI nguồn đầu FAIL ở prepare:upstream, không đánh dấu CI PASS.
 - [ ] Authenticated full-match/reconnect và iPhone/Android vật lý giữ gate riêng; HTTP/Chrome smoke không thay thế nghiệm thu đó.
 
 ## GAME-LAYOUT-MULTI-MODE-20261025 — Tối ưu hiển thị đa chế độ (Portrait · Landscape · Desktop)

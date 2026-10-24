@@ -6,7 +6,13 @@ import {fileURLToPath} from 'node:url';
 import {preview} from 'vite';
 import {chromium} from 'playwright-core';
 const web=fileURLToPath(new URL('../../',import.meta.url));
-const server=await preview({configFile:false,root:web,preview:{host:'127.0.0.1',port:5293,strictPort:true}});
+const server=await preview({configFile:false,root:web,
+ plugins:[{name:'pages-canonical-html-fixture',configurePreviewServer(server){
+  server.middlewares.use((request,response,next)=>{
+   if(request.url!=='/index.html')return next();
+   response.writeHead(301,{Location:'/'});response.end();
+  });
+ }}],preview:{host:'127.0.0.1',port:5293,strictPort:true}});
 const workerFile=path.join(web,'dist/sw.js');
 const originalWorker=fs.readFileSync(workerFile,'utf8');
 const build=JSON.parse(fs.readFileSync(path.join(web,'dist/version.json'),'utf8'));
@@ -46,6 +52,10 @@ try {
   return {keys,requests};
  });
  assert.equal(cache.keys.length,1);assert.ok(cache.requests.includes('/index.html'));
+ assert.equal(await page.evaluate(async()=>{
+   const key=(await caches.keys()).find(k=>k.startsWith('tqs-shell-'))!;
+   return (await (await caches.open(key)).match('/index.html'))?.redirected;
+ }),true,'fixture reproduces Pages /index.html canonical redirect');
  assert.ok(cache.requests.includes('/icon-192.png'));assert.ok(!cache.requests.some(p=>p.startsWith('/gateway/')));
  await page.unroute('**/gateway/private-cache-test');
  // A real waiting worker must open the update gate; reset keeps unrelated cache/Auth IndexedDB.
