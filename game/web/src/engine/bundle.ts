@@ -16,7 +16,7 @@ export interface LoadedBundle {
 const MAX_BUNDLE_BYTES = 12 * 1024 * 1024;
 const MAX_UNPACKED_BYTES = 60 * 1024 * 1024;
 
-function assertManifest(raw: unknown): asserts raw is GatewayManifest {
+export function assertManifest(raw: unknown): asserts raw is GatewayManifest {
   if (!raw || typeof raw !== 'object') throw new Error('Manifest không hợp lệ');
   const m = raw as Partial<GatewayManifest>;
   if (!/^[a-f\d]{32}$/i.test(m.md5 ?? '')) throw new Error('Gateway chưa có MD5 server hợp lệ');

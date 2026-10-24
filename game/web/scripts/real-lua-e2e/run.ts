@@ -1806,6 +1806,26 @@ try {
     ['UI-02 Lua packages toggle in Chrome mobile and reach CreateRoom / EnterRoom', async (p) => {
       const { general, card, baseline } = await p.evaluate(() => window.__tqsRealLuaE2e.beginRoomPacks());
       await p.getByRole('heading', { name: 'Tạo phòng mới' }).waitFor();
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+        { width: 740, height: 360 }, { width: 844, height: 390 }, { width: 932, height: 430 },
+        { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        const geometry = await p.evaluate(() => ({
+          create: document.querySelector('.sg-create-panel')!.getBoundingClientRect().toJSON(),
+          list: document.querySelector('.sg-list-panel')!.getBoundingClientRect().toJSON(),
+          grid: document.querySelector('.sg-lobby-grid')!.getBoundingClientRect().toJSON(),
+          scrollWidth: document.documentElement.scrollWidth,
+        }));
+        const info = `${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`;
+        if (viewport.width < 720) assert.ok(geometry.list.bottom <= geometry.create.top, info);
+        else {
+          assert.ok(geometry.create.right <= geometry.list.left, info);
+          assert.ok(Math.abs(geometry.create.top - geometry.list.top) < 1, info);
+          assert.ok(geometry.grid.width >= Math.min(viewport.width - 96, 900), info);
+        }
+        assert.ok(geometry.scrollWidth <= viewport.width, info);
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
       const packageInputs = p.locator('input[data-pack-id]');
       assert.ok(await packageInputs.count() >= 2);
       const generals = p.locator(`input[data-pack-id="${general}"]`);

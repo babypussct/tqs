@@ -29,7 +29,8 @@ import {
 } from './packet';
 
 /** Client version reported to freekill-asio (accepted range: >=0.5.22 <0.6.0). */
-export const CLIENT_VERSION = '0.5.25';
+import { CLIENT_VERSION } from '../system/clientVersion';
+export { CLIENT_VERSION } from '../system/clientVersion';
 
 export interface SocketHandlers {
   onData(b: Uint8Array): void;

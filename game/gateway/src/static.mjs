@@ -12,7 +12,7 @@ export function serveStatic(root, pathname, req, res) {
   const canonical = fs.realpathSync(file); const canonicalRoot = fs.realpathSync(root);
   if (!canonical.startsWith(canonicalRoot + path.sep) || !fs.statSync(canonical).isFile()) return false;
   res.writeHead(200, { 'Content-Type':type, 'X-Content-Type-Options':'nosniff',
-    'Cache-Control': relative.startsWith('assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' });
+    'Cache-Control': ['version.json', 'sw.js'].includes(relative) ? 'no-store' : relative.startsWith('assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' });
   if (req.method === 'HEAD') res.end();
   else { const stream=fs.createReadStream(canonical);stream.on('error',()=>res.destroy());stream.pipe(res); }
   return true;

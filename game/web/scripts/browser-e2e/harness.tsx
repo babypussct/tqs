@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import GameBoardScreen from '../../src/GameBoardScreen';
 import { IdleHandCard } from '../../src/HandCardItem';
 import App from '../../src/App';
+import { useUpdateStore } from '../../src/system/updates';
 import { GameAdapter } from '../../src/engine/gameAdapter';
 import { GameConnection, type SocketHandlers } from '../../src/engine/connection';
 import { CLIENT_REPLY, PacketStream, PacketType, encodePacket } from '../../src/engine/packet';
@@ -181,8 +182,17 @@ function sentPackets() {
 // performed through the visible React DOM by the external Chrome test runner.
 const api = {
   begin,
+  // Public, synthetic seats for layout checks; no native game state is changed.
+  layoutSeats: (count: number) => {
+    const seats = Array.from({ length: count }, (_, index) => index + 1);
+    const state = useGameStore.getState();
+    state.update({ players: seats.map((id) => ({ id, name: `Ghế ${id}`, avatar: '', ready: true, owner: id === 1 })),
+      board: { ...state.board, seats, processingCards: [{ name: 'slash', suit: 1, number: 7 }] } });
+  },
   emitUiError: (value: unknown) => emit('ErrorDlg', value),
   appActions: () => appActions.slice(),
+  systemPending: (pending: boolean) => useUpdateStore.setState({ pending, reason: 'Bản cập nhật kiểm thử', error: null }),
+  returnLobby: () => useGameStore.getState().update({ phase: 'lobby', result: null }),
   finishGame: () => emit('GameOver', '1'),
   seedRoundData: () => {
     emit('ArrangeSeats', [1, 2]);
@@ -290,6 +300,12 @@ if (appFixture) {
   GameAdapter.prototype.boot = async () => { useGameStore.getState().update({ phase: 'login' }); };
   GameAdapter.prototype.disconnect = () => { appActions.push('disconnect'); };
   GameAdapter.prototype.leaveRoom = () => { appActions.push('QuitRoom'); };
+  GameAdapter.prototype.getGameDisplayName = () => 'Local fixture';
+  GameAdapter.prototype.getRoomPacks = () => ({ generals: [], cards: [] });
+  GameAdapter.prototype.getAdminDisabledPacks = () => [];
+  GameAdapter.prototype.getRoomGenerals = () => [];
+  GameAdapter.prototype.getInitialGeneralCount = () => 7;
+  GameAdapter.prototype.getRoomPoolSummary = () => ({ generals: 100, cards: 100 });
   GameAdapter.prototype.toggleTrust = () => { appActions.push('Trust'); };
 }
 createRoot(document.getElementById('root')!).render(appFixture ? <App /> : <Fixture />);

@@ -1,5 +1,41 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## GAME-ALL-CHANGES-RELEASE-20261025 — toàn bộ thay đổi game được chuẩn bị phát hành
+
+- **Ủy quyền:** người dùng yêu cầu commit, push và đưa production toàn bộ thay đổi hiện có, bao gồm các thay đổi ngoài phần layout vừa review.
+- **Phạm vi:** layout đa màn hình + chân trang trạng thái/đo RTT + build/version/guard cập nhật + cache headers + toàn bộ fixture/tests/docs đang có. Không có thay đổi Shop/API/native/package pin trong working tree.
+- **Sửa gate trước push:** phát hiện `gateway/src` legacy đã thiếu phần WS admission/account quota có sẵn trong `game/gateway/src`. Đã đồng bộ `security.mjs`, `server.mjs`, `static.mjs` từ nguồn canonical, giữ xác thực HMAC/quota và header no-store; `diff -ru gateway/src game/gateway/src` cùng diff lockfile **PASS**. Gateway canonical tests **9/9 PASS**; npm test ở legacy không có test được discover, không tính là test coverage.
+- **Kiểm thử quan sát trực tiếp:** system-updates **10/10**, connection **33/33**, bundle **4/4**, gateway **9/9**, release **5/5**, Pages gateway **8/8**, typecheck:all, build-safety **7/7**, pipelines và auth-routing/messages/room-pools/upstream-preparation **PASS**. Browser **42/42**, Lua **72/72**, card **21/21**, store **50/50** vừa quan sát trong mốc LAYOUT cùng phiên; không có thay đổi frontend sau các kết quả đó.
+- **Build production:** từ `game/web`, `VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH=true VITE_GATEWAY_URL=/gateway npm run build` **PASS**, SW kiểm 524 tệp. Build ID `e91c9e9f08f6a5f3672c509a18db5635069d4fbd739a2d2c54281e6853a4877e`, builtAt `2026-10-24T18:19:06.765Z` (01:19 ngày 25/10 giờ Việt Nam). PWA trên artifact production **PASS** (waiting worker/update/IndexedDB/offline). Shop build → clean → rebuild chạy tuần tự **PASS**, root dist SHA-256 `9ce76b80…` không đổi.
+- **Phát hành kế tiếp:** commit/push toàn bộ source lên `origin/main`, deploy từ `game/web` bằng Wrangler Pages Direct Upload vào project `tqsvn`, branch `main`, gắn SHA nguồn; không nối Git provider hoặc đổi KV/tunnel/native. Gateway static/Caddy là các đường đóng gói thay thế; production hiện dùng Pages `_headers`, không cần restart native để áp dụng các header đó.
+- **Evidence:** `scratch/evidence/production-release-20261025/`; deployment trước phát hành `726f59cd-7751-444b-8572-2f98e02dccc4`. Chưa ghi hosted PASS ở mốc chuẩn bị; sẽ bổ sung deployment ID, HTTP/byte/header/browser smoke và trạng thái CI sau khi thực hiện.
+
+## GAME-LAYOUT-MULTI-MODE-20261025 — kiểm tra lại và hoàn thiện giao diện (LOCAL PASS)
+
+- **Yêu cầu:** kiểm tra và hoàn thiện báo cáo người dùng đính kèm về Portrait/Landscape/Desktop/Tablet. Chỉ sửa giao diện Quốc Chiến và fixture/kiểm thử liên quan; giữ các thay đổi hệ thống cập nhật đang có, không thay Shop, luật, pin, native runtime hoặc production.
+- **Đối chiếu báo cáo trước:** bộ browser cũ chạy lại **38/38 PASS**, card-display **21/21**, store **50/50** và typecheck **PASS**, nhưng chưa kiểm đủ các cam kết. Đo Chrome phát hiện nút sắp xếp bị ẩn ở 320×568; bài tablet rộng 78–81px thay vì 74px, tràn khỏi vùng cuộn; HUD/drawer tablet che nhau và thanh kỹ năng; bài desktop nhô bị clip; vùng giữa bàn vẫn đè ghế ở bàn nhiều người 320px. Không dùng kết quả 38/38 để kết luận các tình huống này đã đạt.
+- **Hoàn thiện trong phiên:**
+  - `game/web/src/styles.css`: giữ công cụ trên điện thoại ngắn; tablet khóa `min-width: 74px`, bài `74×104px`, padding vừa vùng `110px`, không nhô ra khỏi vùng cuộn; neo HUD và drawer phía trên thanh kỹ năng.
+  - Desktop giữ bài `84×114px`, hover `-12px`, selected `-20px`; tăng vùng bài/row từ **124px lên 138px** (`114 + 20 + 4`) để nguyên lá bài nằm trong scroll viewport, kiểm hit-test ở mép trên. Cột trang bị `160×156px` căn cùng mép trên/dưới khung tướng `124×156px`.
+  - Portrait nhiều ghế dùng `top: 58%`, width `min(224px, calc(100vw - 180px))`; tại `<=360px` giảm chồng rút/bỏ xuống 28px và gap 4px để lá đang xử lý không bị cắt. Giữ bố cục bàn 2 người hiện có.
+  - `game/web/scripts/browser-e2e/{harness.tsx,run.ts}`: thêm ghế/bài công khai tổng hợp và 4 scenario; ma trận 6/8/10 ghế × 320/390/600px kiểm không đè khung tướng, lá đang xử lý vừa vùng cuộn; bấm Ủy thác trong/ngoài lượt; tablet 601/768/899px; desktop 900/1280px ở rest/hover/selected; sort đủ 4 nấc trên 5 viewport; kiểm cột trang bị thẳng khung tướng.
+  - `game/web/scripts/real-lua-e2e/{harness.tsx,run.ts}`: fixture lobby/room dùng đúng shell classes của App; kiểm sảnh ưu tiên danh sách phòng ở 320/390px và 2 cột tại 740/844/932/1280px trước khi tạo phòng bằng Lua thật. Lưới gói tướng vẫn tự thích nghi theo chiều rộng khả dụng, không khẳng định luôn có 2 cột trên điện thoại hẹp.
+- **Kết quả quan sát trực tiếp 25/10, nguồn cuối:** `npm --prefix game/web run test:e2e` **42/42 PASS**; `test:e2e:lua` **72/72 PASS**; `test:card-display` **21/21 PASS**; `test:store` **50/50 PASS**; `npm run typecheck:all` **PASS**; `npm run test:build-safety` **7/7 PASS**; `npm run check:build` **PASS**; game `build` **PASS**, SW kiểm 524 tệp. Vite còn cảnh báo chunk >500kB; build thành công, không đổi dependency hoặc mở việc tối ưu bundle.
+- **PWA trên build cuối:** `npm --prefix game/web run test:e2e:pwa` **PASS**: install/hash, waiting worker → gate → activation/refresh, giữ IndexedDB/cache khác, offline reload và không cache private traffic. Artifact local `game/web/dist/version.json`: build `d3552f308c0bc1fbec6ca0d5f0ca27d589f22a96d6ed3f37a676e969303d42ef`, builtAt `2026-10-24T17:56:01.754Z` (00:56 ngày 25/10 giờ Việt Nam).
+- **Evidence:** `scratch/evidence/layout-review-20261025/` chứa log cuối `browser-final.log`, `lua-final.log`, `pwa-final.log`, `card-display.log`, `store.log`, `typecheck.log`, `build.log`, `build-safety.log`, `check-build.log`, phép đo `probe.json` và ảnh `final-*.png`. Đã xem trực tiếp ảnh 320×568 bàn 6 người, tablet 768×1024 và desktop 1280×800 chọn bài; ảnh/dữ liệu là fixture cục bộ, không chứa tài khoản thật. `git diff --check` và `git diff --exit-code -- dist` **PASS**; root dist giữ SHA-256 `9ce76b80…`.
+- **Giới hạn / bước tiếp theo:** phần hoàn thiện local đã đạt các kiểm thử nêu trên. Các thay đổi chưa commit/push/deploy; tiếp tục nghiệm thu iPhone/Android vật lý và hosted Google/full-match/reconnect khi có yêu cầu tương ứng. Chrome mô phỏng và Lua/socket fixture không thay thế gate thiết bị thật hoặc nghiệm thu production. Không còn tiến trình kiểm thử chạy ngầm cần chờ sau bàn giao.
+
+## GAME-SYSTEM-STATUS-UPDATES-20261025 — chân trang, tín hiệu và cập nhật bắt buộc (LOCAL PASS)
+
+- **Phạm vi:** triển khai thiết kế người dùng gửi trong attachment: `game/web` Boot/Login/Lobby/WaitingRoom dùng một `StatusFooter`, tín hiệu RTT thật, badge phiên bản, popup chi tiết và `ForceUpdateGuard`. Thêm header `no-store` cho metadata/SW ở Pages `_headers`, static gateway và Caddy local; không thay Shop/auth, luật Lua/C++, pin, native runtime hoặc dịch vụ production.
+- **Nguồn chính:** `game/web/src/StatusFooter.tsx`, `SystemDialog.tsx`, `ForceUpdateGuard.tsx`, `system/{updates,Signal,buildInfo,clientVersion}.ts`; tích hợp tại `App.tsx` và callback guard của `GameAdapter.login/createRoom/joinRoom/observeRoom`. Xóa footer rời rạc; số tệp/MD5 và Ngắt kết nối tại sảnh chuyển vào popup kết nối. Google popup vẫn bắt đầu trực tiếp từ click, kiểm phiên bản trước khi mở kết nối native.
+- **Hành vi:** đo `/gateway/healthz` khi visible mỗi 15 giây + online/offline; kiểm web build và gói đã nạp khi boot, load manifest, visible/online, mỗi 5 phút và trước entry. Validate metadata/manifest; lỗi mạng không suy ra bản mới, entry fail-closed. Test race bảo đảm check khởi chạy trước khi Lua nạp không được bỏ qua gói mới nạp. Đang `playing` chỉ báo nhỏ, không reload; GameOver/room mới hiện native modal bắt buộc không đóng bằng Escape. Popup chi tiết tự đóng khi trận bắt đầu.
+- **Build/cache:** build ID SHA-256 toàn bộ output với vị trí ID tự tham chiếu chuẩn hóa; timestamp được nhúng **trước** Vite hash filename để tránh URL immutable cũ chứa JS có ID mới. Postbuild xuất `/version.json`, thay token ID rồi hash 524 shell file byte cuối. SW nhận `SKIP_WAITING` + `clients.claim()`; apply xóa riêng `tqs-shell-*`, yêu cầu worker dựng lại shell có kiểm SHA-256 trước reload chống cache, không đụng IndexedDB/Auth. Header triển khai chưa được xác minh hosted.
+- **Kiểm thử trực tiếp 25/10:** `test:system-updates` **10/10 PASS**, `test:e2e` **38/38 PASS**, `test:e2e:lua` **72/72 PASS**, `test:connection` **33/33 PASS**, `test:store` **50/50 PASS**, `test:bundle` **4/4 PASS**, gateway `npm --prefix game/gateway test` **9/9 PASS**, `typecheck:all` và tools **PASS**, `test:build-safety` **7/7 PASS**, `check:build` **PASS**, `test:release` **5/5 PASS**, game `build` **PASS**, `git diff --check` **PASS**. `test:e2e:pwa` trên artifact cuối **PASS**: full-dist normalized ID/embedded timestamp, hash 524 file, waiting worker thật → modal → activation → purge/restore → reload, giữ IndexedDB sentinel/cache khác, offline reload, loại private gateway traffic. Evidence `scratch/evidence/cp13-pwa-e2e.json` và `scratch/evidence/status-updates/{login-footer,connection-dialog,force-update-after-gameover}.png`; đã xem ảnh 390×844, geometry 320/390/844/1280 không overlap footer.
+- **Cách ly build:** lần đầu shop guard **FAIL** vì game build được chạy song song và làm đổi protected snapshot; đây là lỗi điều phối kiểm thử local. Đã chạy lại shop **build → clean → rebuild tuần tự PASS**, protected root `dist/` giữ SHA-256 `9ce76b80…`, `git diff --exit-code -- dist` **PASS**. Các build game tiếp theo chạy riêng, không đồng bộ artifact legacy.
+- **Artifact của mốc SYSTEM (báo cáo trước; artifact mới nhất xem LAYOUT ở trên):** `v0.5.25 · 2510.a93b`, build `a93b74c3bb329bb3f8da8b017ebe962f961d690c085271798906bce81040fe8a`, builtAt `2026-10-24T17:15:33.656Z`. Chỉ `game/web/dist/`, không cập nhật root `dist/`.
+- **Giới hạn / bước tiếp theo:** chưa commit/push/deploy. PWA là Chrome local với dữ liệu mẫu IndexedDB, chưa chứng minh Google account thật, iPhone/Android vật lý hoặc multi-tab full-match trên hosted. Cơ chế guard có hiệu lực sau khi trình duyệt nạp client này; tab legacy đang mở chưa có code kiểm version cần tải trang lần đầu. Nếu được yêu cầu phát hành, build cấu hình Pages OAuth same-origin + `/gateway`, deploy riêng rồi smoke header/version bytes và Google/full-game/reconnect/device theo gate hiện có. Không suy ra quyền phát hành từ nhiệm vụ triển khai local này.
+
 ## CARD-AUDIO-PAGES-RELEASE-20261024 — commit, push và phát hành game web
 
 - **Nguồn phát hành:** đã review nhóm diff âm thanh lá bài và bổ sung khử phát trùng đối xứng cho thứ tự `PlaySound`/game log; test mới khóa cả hai thứ tự. Commit [`d5efdabf`](https://github.com/babypussct/tqs/commit/d5efdabf) đã push lên `origin/main`. Không đổi pin, `runtime/flist.txt`, native đang chạy, TQSShop/API hay Cloudflare KV.
@@ -1218,20 +1254,53 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T15:46:08.798Z (UTC).
-- Nhánh: `main` · HEAD: `d5efdabf3555`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T18:20:59.610Z (UTC).
+- Nhánh: `main` · HEAD: `90db5fbadf9f`.
+- File thay đổi hiển thị: 34 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/mobile/Caddyfile
  M docs/CODEX_PLAN.md
+ M game/gateway/scripts/gateway.test.mjs
+ M game/gateway/src/static.mjs
+ M game/web/package.json
+ M game/web/scripts/browser-e2e/harness.tsx
+ M game/web/scripts/browser-e2e/run.ts
+ M game/web/scripts/build-service-worker.mjs
+ M game/web/scripts/pwa-e2e/run.ts
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/App.tsx
+ M game/web/src/BootScreen.tsx
+ M game/web/src/GameBoardScreen.tsx
+ M game/web/src/LobbyScreen.tsx
+ M game/web/src/LoginScreen.tsx
+ M game/web/src/engine/bundle.ts
+ M game/web/src/engine/connection.ts
+ M game/web/src/engine/gameAdapter.ts
+ M game/web/src/main.tsx
+ M game/web/src/styles.css
+ M game/web/vite.config.ts
+ M gateway/src/security.mjs
+ M gateway/src/server.mjs
+ M gateway/src/static.mjs
+?? game/web/public/_headers
+?? game/web/scripts/system-updates.test.ts
+?? game/web/src/ForceUpdateGuard.tsx
+?? game/web/src/StatusFooter.tsx
+?? game/web/src/SystemDialog.tsx
+?? game/web/src/system/Signal.ts
+?? game/web/src/system/buildInfo.ts
+?? game/web/src/system/clientVersion.ts
+?? game/web/src/system/updates.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+90db5fba docs: record Hegemony card audio Pages release
 d5efdabf feat(game): ship Hegemony card audio and native sound events
 0a74ab50 feat(game): complete Hegemony UI native parity refinements
-9a250248 docs: record Hegemony Pages UI release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

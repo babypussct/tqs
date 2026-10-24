@@ -1352,7 +1352,7 @@ function Fixture() {
       .catch((e: unknown) => useGameStore.getState().update({ error: String((e as Error).message) }))
       .finally(() => setBusy(false));
   };
-  return <main className={`shell ${phase === 'playing' ? 'shell-playing' : ''}${visualEvidence ? ' visual-evidence-shell' : ''}`}>
+  return <main className={`shell ${phase === 'playing' ? 'shell-playing' : phase === 'lobby' ? 'sg-app-shell sg-lobby-shell' : phase === 'room' ? 'sg-app-shell sg-room-shell' : ''}${visualEvidence ? ' visual-evidence-shell' : ''}`}>
     {!visualEvidence && <h1>TQS real Lua WASM E2E</h1>}
     {error && <div className="notice error-notice" role="alert">{error}</div>}
     {!visualEvidence && phase !== 'playing' && <section className="panel" aria-label="Bắt đầu ván test tương tác">

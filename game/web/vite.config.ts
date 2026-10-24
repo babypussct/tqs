@@ -225,8 +225,21 @@ const serveRealLuaFixturePlugin: Plugin = {
   },
 };
 
+// Include the timestamp before Rollup hashes filenames: changing the embedded
+// build ID after emission must never reuse an immutable HTTP asset URL.
+const buildTimestamp = new Date().toISOString();
+const buildStampPlugin: Plugin = {
+  name: 'tqs-build-stamp',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: '.tqs-build-stamp.json', source: JSON.stringify({ builtAt: buildTimestamp }) });
+  },
+};
 export default defineConfig({
-  plugins: [react(), servePackagesPlugin, serveRealLuaFixturePlugin],
+  define: {
+    __APP_BUILD_ID__: JSON.stringify('__TQS_BUILD_ID_PLACEHOLDER__'),
+    __APP_BUILT_AT__: JSON.stringify(buildTimestamp),
+  },
+  plugins: [react(), servePackagesPlugin, serveRealLuaFixturePlugin, buildStampPlugin],
   server: {
     proxy: {
       '/gateway': {

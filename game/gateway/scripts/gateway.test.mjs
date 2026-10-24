@@ -65,6 +65,8 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
 
   const webDist = path.join(root, 'web');
   mkdirSync(path.join(webDist, 'assets'), { recursive: true });
+  writeFileSync(path.join(webDist, 'version.json'), '{"buildId":"fixture"}');
+  writeFileSync(path.join(webDist, 'sw.js'), '// fixture worker');
   writeFileSync(path.join(webDist, 'index.html'), '<h1>Frozen build</h1>');
   writeFileSync(path.join(webDist, 'assets/app-123.js'), 'console.log(1)');
   symlinkSync(secret, path.join(webDist, 'escape.svg'));
@@ -92,6 +94,11 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
 
     assert.equal(await (await fetch(baseUrl)).text(), '<h1>Frozen build</h1>');
     assert.equal((await fetch(`${baseUrl}/gateway/healthz`)).status,200);
+    for (const endpoint of ['/version.json', '/sw.js']) {
+      const response = await fetch(`${baseUrl}${endpoint}`);
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    }
     assert.equal((await fetch(`${baseUrl}/assets/app-123.js`)).headers.get('content-type'),'text/javascript; charset=utf-8');
     const icon = await fetch(`${baseUrl}/icon-192.png`);
     assert.equal(icon.headers.get('content-type'),'image/png');

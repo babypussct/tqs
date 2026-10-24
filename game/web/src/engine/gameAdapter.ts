@@ -37,7 +37,7 @@ export class GameAdapter {
   private readonly gateway: string;
   private gameSession: GameSession | null = null;
 
-  constructor(gateway: string) {
+  constructor(gateway: string, private readonly beforeEntry?: () => Promise<void>) {
     this.gateway = gateway.replace(/\/$/, '');
   }
 
@@ -58,6 +58,7 @@ export class GameAdapter {
   }
 
   async login(session: GameSession): Promise<void> {
+    await this.beforeEntry?.();
     if (!this.loaded) throw new Error('Dữ liệu chiến trường chưa được nạp xong. Vui lòng tải lại trang.');
     const name = session.nativeName.trim();
     if (!name || !session.ticket || session.expiresAt <= Math.floor(Date.now() / 1000)) {
@@ -245,6 +246,7 @@ export class GameAdapter {
   async createRoom(name: string, capacity: number, timeout = 30, disabledPacks: string[] = [], disabledGenerals: string[] = [], modeSettings: Record<string, boolean> = {}) {
     const roomName = name.trim();
     if (!roomName || roomName.length > 80) throw new Error('Tên phòng phải dài từ 1 đến 80 ký tự');
+    await this.beforeEntry?.();
     await this.refreshGameSession();
     const conn = this.requireConnection();
     const feasible = conn.lua.call<boolean>('__web_room_feasible', 'new_heg_mode', capacity, timeout);
@@ -270,13 +272,15 @@ export class GameAdapter {
     this.notify('CreateRoom', [roomName, capacity, timeout, settings]);
   }
 
-  joinRoom(roomId: number, password = '') {
+  async joinRoom(roomId: number, password = '') {
     if (!Number.isInteger(roomId) || roomId <= 0) throw new Error('ID phòng không hợp lệ');
+    await this.beforeEntry?.();
     this.notify('EnterRoom', [roomId, password]);
   }
 
-  observeRoom(roomId: number, password = '') {
+  async observeRoom(roomId: number, password = '') {
     if (!Number.isInteger(roomId) || roomId <= 0) throw new Error('ID phòng không hợp lệ');
+    await this.beforeEntry?.();
     this.notify('ObserveRoom', [roomId, password]);
   }
 

@@ -1,5 +1,31 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## GAME-ALL-CHANGES-RELEASE-20261025 — commit/push/production toàn bộ working tree
+
+- [x] Người dùng đã cho phép commit, push và production toàn bộ thay đổi hiện có.
+- [x] Review tất cả source, đồng bộ gateway legacy/canonical theo gate CI, test tính năng cập nhật/gateway/release/pipeline; build production OAuth same-origin + `/gateway`, PWA PASS; shop build-clean-rebuild tuần tự PASS và root dist không đổi.
+- [ ] Commit/push source và xác nhận SHA remote.
+- [ ] Deploy Pages `tqsvn` production/main, smoke build bytes/version/no-store headers/gateway/OAuth và UI trình duyệt; lưu deployment evidence và kết quả CI.
+- [ ] Authenticated full-match/reconnect và iPhone/Android vật lý giữ gate riêng; HTTP/Chrome smoke không thay thế nghiệm thu đó.
+
+## GAME-LAYOUT-MULTI-MODE-20261025 — Tối ưu hiển thị đa chế độ (Portrait · Landscape · Desktop)
+
+- [x] **Desktop (`>=900×521`)**: bài `84×114px`, vùng cuộn **138px** đủ hover `-12px`/selected `-20px`, khung tướng `124×156px`, rail `28px`, cột trang bị `160×156px` căn thẳng khung tướng; kiểm kích thước và hit-test mép bài thật.
+- [x] **Mobile Portrait (`<=600px`)**: giữ Sắp xếp/Ủy thác cả tại 320×568, sort đủ 4 nấc và trust trong/ngoài lượt; giữ hợp đồng 5 ô trang bị. Bàn 6/8/10 người kiểm cùng lá đang xử lý ở 320/390/600px: center `top:58%`, width `min(224px, calc(100vw - 180px))`, chồng rút/bỏ nhỏ hơn ở `<=360px`, không đè khung tướng hoặc clip lá.
+- [x] **Tablet Portrait (`601–899px`)**: grid 2 hàng; bài đo thực tế `74×104px`, nằm trọn trong vùng `110px`; HUD không che skill rail, drawer không che nút hành động; kiểm 601/768/899px.
+- [x] **Landscape / hộp thoại / sảnh**: giữ center `top:50%` ở landscape và dialog căn giữa; kiểm sảnh 2 cột tại 740/844/932/1280px, danh sách phòng trước form ở 320/390px. Fixture Lua dùng đúng lobby/room shell của App; lưới gói tự thích nghi chiều rộng.
+- [x] **Kiểm thử trực tiếp 25/10 sau review**: browser **42/42** (bộ cũ 38/38 chưa phủ các lỗi mới tìm thấy), Lua **72/72**, card-display **21/21**, store **50/50**, typecheck **PASS**, build-safety **7/7**, check:build/build **PASS** (SW 524 tệp), PWA trên artifact cuối **PASS**, diff check và protected root dist **PASS**. Evidence và build ID trong `CODEX_STATE.md`.
+- [x] Hoàn thiện local và checkpoint; giữ các thay đổi có trước, chưa commit/push/deploy.
+- [ ] Nghiệm thu thiết bị vật lý/hosted và phát hành khi được yêu cầu; không dùng local PASS để đóng gate production/device.
+
+## GAME-SYSTEM-STATUS-UPDATES-20261025 — trạng thái kết nối, định danh build và cập nhật an toàn
+
+- [x] Chân trang dùng chung Boot/Login/Lobby/WaitingRoom: tín hiệu RTT 15 giây khi visible, online/offline/native status, popup đo lại/số tệp/MD5/disconnect sảnh và badge build rõ ràng.
+- [x] `/version.json` + build ID nhúng, filename JS đổi theo timestamp trước Vite hash, header no-store cho version/SW; phát hiện web build/worker waiting/bundleHash/MD5, kiểm boot/visible/5 phút và chặn trước native login/create/join/observe.
+- [x] Đang chơi chỉ thông báo, GameOver mới bắt cập nhật; SKIP_WAITING/claim, purge riêng shell, dựng lại cache có kiểm hash và reload; không có thao tác xóa IndexedDB/Auth.
+- [x] LOCAL 25/10: system **10/10**, Chrome UI **38/38**, Lua **72/72**, connection **33/33**, store **50/50**, bundle **4/4**, gateway **9/9**, typecheck/build/build-safety/release **PASS**; PWA thật kiểm waiting-worker/activation/cache rebuild/IndexedDB sentinel/offline **PASS**. Shop build-clean-rebuild tuần tự **PASS**, root dist không đổi. Evidence và giới hạn trong `CODEX_STATE.md`.
+- [ ] Phát hành Pages/hosted headers, nghiệm thu Google session thật, full-game/reconnect/device vật lý và multi-tab trên deployment mới khi được yêu cầu. Chưa commit/push/deploy; local PASS không đóng gate production/device.
+
 ## CARD-AUDIO-PAGES-RELEASE-20261024 — phát hành âm thanh lá bài trên production Pages
 
 - [x] Review diff, sửa khử phát trùng âm thanh `PlaySound`/game log trong cả hai thứ tự; test hồi quy `15/15 PASS`. Các gate `typecheck:all`, build safety, release test và build production **PASS**.

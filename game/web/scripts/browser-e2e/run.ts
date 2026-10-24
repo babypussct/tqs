@@ -565,10 +565,14 @@ async function runSuite(page: Page) {
             const seat = document.querySelector('.board-local-seat')!.getBoundingClientRect();
             const plate = document.querySelector('.board-local-self-equipment .native-equip-plate')!.getBoundingClientRect();
             return { seatRight: seat.right, plateLeft: plate.left, plateRight: plate.right,
+              seatTop: seat.top, seatBottom: seat.bottom, plateTop: plate.top, plateBottom: plate.bottom,
               width: plate.width, height: plate.height };
           });
           assert.ok(equipment.plateLeft >= equipment.seatRight - 1 && equipment.width >= 110 &&
             equipment.height >= 80, `desktop equipment must clear the avatar: ${JSON.stringify(equipment)}`);
+          assert.ok(Math.abs(equipment.plateTop - equipment.seatTop) <= 1 &&
+            Math.abs(equipment.plateBottom - equipment.seatBottom) <= 1,
+          `desktop equipment must align with the avatar: ${JSON.stringify(equipment)}`);
         } else {
           await p.locator('.board-local-seat .native-equip-plate').waitFor();
           assert.equal(await p.locator('.board-local-self-equipment .native-equip-plate').count(), 0);
@@ -1011,7 +1015,7 @@ async function runSuite(page: Page) {
       assert.match(await p.evaluate((n) => window.__tqsE2e.attempt(n), id) ?? '', /không còn hiệu lực/);
       assert.equal((await snapshot(p)).replyCount, 1);
     }],
-    ['App protects a running match from leaving, disconnecting and reload, with BOT alternative', async (p) => {
+    ['App protects a running match from leaving and reload, with BOT alternative', async (p) => {
       await p.goto('/e2e.html?app=1');
       await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
       await p.evaluate(() => window.__tqsE2e.begin('choices'));
@@ -1028,7 +1032,8 @@ async function runSuite(page: Page) {
       assert.deepEqual(await p.evaluate(() => window.__tqsE2e.appActions()), baseline);
       await p.getByRole('button', { name: 'Tiếp tục ván', exact: true }).click();
       assert.equal(await p.getByRole('alertdialog').count(), 0);
-      await p.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click();
+      await p.getByRole('button', { name: 'Tùy chọn trận đấu' }).click();
+      await p.getByRole('button', { name: 'Rời trận', exact: true }).click();
       await p.getByRole('alertdialog').waitFor();
       assert.deepEqual(await p.evaluate(() => window.__tqsE2e.appActions()), baseline);
       await p.getByRole('alertdialog').getByRole('button', { name: 'BOT chơi hộ', exact: true }).click();
@@ -1051,10 +1056,52 @@ async function runSuite(page: Page) {
         window.dispatchEvent(event);
         return event.defaultPrevented;
       }), false);
+      await p.evaluate(() => window.__tqsE2e.returnLobby());
+      await p.getByRole('button', { name: 'Chi tiết kết nối', exact: true }).click();
       await p.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click();
       await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
       assert.equal(await p.getByRole('alertdialog').count(), 0);
       assert.equal((await p.evaluate(() => window.__tqsE2e.appActions())).at(-1), 'disconnect');
+      await p.goto('/e2e.html');
+    }],
+    ['Shared status footer fits phones and update guard defers until GameOver', async (p) => {
+      await p.route('**/gateway/healthz?*', route => route.fulfill({ status: 200, body: 'ok' }));
+      await p.goto('/e2e.html?app=1');
+      await p.getByRole('button', { name: 'Chi tiết kết nối', exact: true }).waitFor();
+      for (const viewport of [{width:320,height:568},{width:390,height:844},{width:844,height:390},{width:1280,height:800}]) {
+        await p.setViewportSize(viewport);
+        assert.equal(await p.locator('.tqs-status-footer').count(), 1);
+        const boxes = await p.locator('.tqs-status-footer button').evaluateAll(buttons => buttons.map(button => {
+          const r=button.getBoundingClientRect(); return {left:r.left,right:r.right,bottom:r.bottom};
+        }));
+        assert.ok(boxes[0].left >= 0 && boxes[0].right <= boxes[1].left && boxes[1].right <= viewport.width);
+        assert.ok(boxes.every(b => b.bottom <= viewport.height));
+      }
+      await p.setViewportSize({width:390,height:844});
+      const systemEvidence = path.resolve(root, '../../scratch/evidence/status-updates');
+      mkdirSync(systemEvidence, {recursive:true});
+      await p.screenshot({path:path.join(systemEvidence,'login-footer.png')});
+      await p.getByRole('button', {name:'Chi tiết kết nối',exact:true}).click();
+      await p.getByRole('dialog',{name:'Chi tiết kết nối',exact:true}).waitFor();
+      await p.getByRole('button',{name:'Đo lại tín hiệu',exact:true}).waitFor();
+      await p.screenshot({path:path.join(systemEvidence,'connection-dialog.png')});
+      await p.keyboard.press('Escape');
+      await p.getByRole('button',{name:'Thông tin phiên bản',exact:true}).click();
+      await p.getByRole('dialog',{name:'Thông tin Phiên bản & Đồng bộ Hệ thống',exact:true}).waitFor();
+      await p.keyboard.press('Escape');
+      await p.evaluate(() => window.__tqsE2e.begin('choices'));
+      const baseline = await p.evaluate(() => window.__tqsE2e.appActions());
+      await p.evaluate(() => window.__tqsE2e.systemPending(true));
+      await p.getByText('● Có bản mới · Cập nhật sau khi kết thúc ván',{exact:true}).waitFor();
+      assert.equal(await p.getByRole('dialog').count(),0);
+      assert.deepEqual(await p.evaluate(() => window.__tqsE2e.appActions()), baseline);
+      await p.evaluate(() => window.__tqsE2e.finishGame());
+      await p.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true}).waitFor();
+      await p.screenshot({path:path.join(systemEvidence,'force-update-after-gameover.png')});
+      await p.keyboard.press('Escape');
+      assert.equal(await p.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true}).count(),1);
+      await p.evaluate(() => window.__tqsE2e.systemPending(false));
+      await p.unroute('**/gateway/healthz?*');
       await p.goto('/e2e.html');
     }],
     ['A second game in the same session starts without the previous game projection', async (p) => {
@@ -1096,7 +1143,110 @@ async function runSuite(page: Page) {
       }
       await p.setViewportSize({ width: 390, height: 844 });
     }],
+    ['Portrait table centre clears side seats in six, eight and ten player rooms', async (p) => {
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 600, height: 960 }]) {
+        await p.setViewportSize(viewport);
+        for (const count of [6, 8, 10]) {
+          await start(p, 'choices');
+          await p.evaluate((value) => window.__tqsE2e.layoutSeats(value), count);
+          await p.waitForFunction((value) => document.querySelectorAll('.board-opponents .sg-photo-panel').length === value - 1, count);
+          await p.waitForTimeout(300); // Seat position/scale transitions must settle before measuring.
+          const geometry = await p.evaluate(() => {
+            const center = document.querySelector('.board-center')!.getBoundingClientRect();
+            return { center: center.toJSON(), card: document.querySelector('.native-resolving-card')!.getBoundingClientRect().toJSON(),
+              pile: document.querySelector('.native-table-pile')!.getBoundingClientRect().toJSON(),
+              covered: [...document.querySelectorAll('.board-opponents .sg-photo-panel')]
+              .map(el => el.getBoundingClientRect().toJSON()).filter(r =>
+                Math.min(r.right, center.right) - Math.max(r.left, center.left) > 1 &&
+                Math.min(r.bottom, center.bottom) - Math.max(r.top, center.top) > 1) };
+          });
+          assert.deepEqual(geometry.covered, [], `${count} seats at ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+          assert.ok(geometry.card.left >= geometry.pile.left && geometry.card.right <= geometry.pile.right,
+            `processing card is clipped at ${count} seats, ${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`);
+        }
+      }
+    }],
+    ['Phone trust controls remain reachable during a request and while idle', async (p) => {
+      await p.goto('/e2e.html?app=1');
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        for (const idle of [false, true]) {
+          if (idle) await p.evaluate(() => window.__tqsE2e.cancel());
+          const trust = p.locator('.sg-dashboard-left-tools .sg-tool-btn').filter({ hasText: 'Ủy thác' });
+          const before = await p.evaluate(() => window.__tqsE2e.appActions().length);
+          await trust.click();
+          const actions = await p.evaluate(() => window.__tqsE2e.appActions());
+          assert.equal(actions.length, before + 1);
+          assert.equal(actions.at(-1), 'Trust');
+        }
+      }
+      await p.goto('/e2e.html');
+    }],
+    ['Tablet hand cards keep their size and stay below the skill rail', async (p) => {
+      for (const viewport of [{ width: 601, height: 960 }, { width: 768, height: 1024 },
+        { width: 899, height: 1200 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        const card = p.getByRole('button', { name: 'Sát', exact: true });
+        await card.hover();
+        const geometry = await p.evaluate(() => {
+          return { card: document.querySelector('.sg-hand-fan .sg-card-button')!.getBoundingClientRect().toJSON(),
+            hand: document.querySelector('.sg-hand-fan')!.getBoundingClientRect().toJSON(),
+            rail: document.querySelector('.board-local-skill-rail')!.getBoundingClientRect().toJSON(),
+            seat: document.querySelector('.board-local-seat')!.getBoundingClientRect().toJSON(),
+            actions: document.querySelector('.sg-action-bar')!.getBoundingClientRect().toJSON(),
+            choice: document.querySelector('.sg-inline-choice-dock')!.getBoundingClientRect().toJSON() };
+        });
+        const info = `${viewport.width}x${viewport.height}: ${JSON.stringify(geometry)}`;
+        assert.equal(geometry.card.width, 74, info);
+        assert.equal(geometry.card.height, 104, info);
+        assert.ok(geometry.card.top >= geometry.hand.top && geometry.card.bottom <= geometry.hand.bottom, info);
+        assert.ok(geometry.hand.top >= geometry.rail.bottom && geometry.hand.right <= geometry.seat.left, info);
+        assert.ok(geometry.actions.bottom <= geometry.rail.top, `actions cover tablet skills: ${info}`);
+        assert.ok(geometry.choice.bottom <= geometry.actions.top, `choice drawer covers tablet actions: ${info}`);
+        await p.getByRole('button', { name: 'Xác nhận' }).click();
+        await waitReplies(p, 1);
+      }
+    }],
+    ['Desktop hover and selection leave the entire card inside the scroll viewport', async (p) => {
+      for (const viewport of [{ width: 900, height: 600 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        const card = p.getByRole('button', { name: 'Sát', exact: true });
+        await p.mouse.move(0, 0);
+        for (const state of ['rest', 'hover', 'selected'] as const) {
+          if (state === 'hover') await card.hover();
+          if (state === 'selected') await card.click();
+          await p.waitForTimeout(200); // Wait for the actual card transform to finish.
+          const geometry = await card.evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            const hand = el.closest('.sg-hand-fan')!.getBoundingClientRect();
+            const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 2);
+            return { card: r.toJSON(), hand: hand.toJSON(), lift: getComputedStyle(el).getPropertyValue('--card-lift').trim(),
+              topReachable: el.contains(hit) };
+          });
+          const info = `${viewport.width}x${viewport.height} ${state}: ${JSON.stringify(geometry)}`;
+          assert.equal(geometry.card.width, 84, info);
+          assert.equal(geometry.card.height, 114, info);
+          assert.equal(geometry.lift, state === 'selected' ? '-20px' : state === 'hover' ? '-12px' : '0px', info);
+          assert.ok(geometry.card.top >= geometry.hand.top && geometry.card.bottom <= geometry.hand.bottom, info);
+          assert.equal(geometry.topReachable, true, info);
+        }
+      }
+    }],
     ['Hand sort button cycles 4 native modes and toolbar toggles are mutually exclusive', async (p) => {
+      for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 },
+        { width: 768, height: 1024 }, { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+        await p.setViewportSize(viewport);
+        await start(p, 'choices');
+        const sortBtn = p.locator('.sg-sort-btn');
+        await sortBtn.waitFor({ state: 'visible' });
+        for (const label of ['Sắp xếp: Loại', 'Sắp xếp: Chất', 'Sắp xếp: Điểm', 'Sắp xếp']) {
+          await sortBtn.click();
+          assert.equal(await sortBtn.textContent(), label, `${viewport.width}x${viewport.height}`);
+        }
+      }
       await p.setViewportSize({ width: 844, height: 390 });
       try {
         await start(p, 'choices');

@@ -15,6 +15,9 @@ import BootScreen from './BootScreen';
 import LoginScreen from './LoginScreen';
 import LobbyScreen, { WaitingRoomScreen } from './LobbyScreen';
 import InitialGeneralPanel from './InitialGeneralPanel';
+import StatusFooter from './StatusFooter';
+import ForceUpdateGuard from './ForceUpdateGuard';
+import { UpdateCoordinator } from './system/updates';
 import { userFacingError } from './engine/connectionMessages';
 
 export { default as LobbyScreen } from './LobbyScreen';
@@ -23,7 +26,28 @@ export { WaitingRoomScreen } from './LobbyScreen';
 const gateway = (import.meta.env.VITE_GATEWAY_URL ?? '/gateway').replace(/\/$/, '');
 
 export default function App() {
-  const adapter = useMemo(() => new GameAdapter(gateway), []);
+  const updates = useMemo(() => new UpdateCoordinator({ gateway, webChecks: import.meta.env.PROD,
+    manifest: () => useGameStore.getState().manifest,
+    playing: () => useGameStore.getState().phase === 'playing',
+  }), []);
+  const adapter = useMemo(() => new GameAdapter(gateway, () => updates.beforeEntry()), [updates]);
+  useEffect(() => {
+    let active = true;
+    let unwatch: (() => void) | undefined;
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((registration) => {
+        if (active) unwatch = updates.watchRegistration(registration);
+      }).catch(() => {});
+    }
+    const check = () => { if (document.visibilityState === 'visible') void updates.check(); };
+    check();
+    const timer = setInterval(check, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', check); window.addEventListener('online', check);
+    return () => { active = false; unwatch?.(); clearInterval(timer);
+      document.removeEventListener('visibilitychange', check); window.removeEventListener('online', check); };
+  }, [updates]);
+  const loadedManifest = useGameStore((s) => s.manifest);
+  useEffect(() => { if (loadedManifest) void updates.check(); }, [loadedManifest, updates]);
   const snapshot = useGameStore();
   const [busy, setBusy] = useState(false);
   const [networkOnline, setNetworkOnline] = useState(navigator.onLine);
@@ -183,7 +207,8 @@ export default function App() {
         !(snapshot.pendingRequest.command === 'CustomDialog' && snapshot.initialGeneral) &&
         !(['AskForChoices', 'AskForOptions'].includes(snapshot.pendingRequest.command) && snapshot.pendingRequest.choicePrompt) &&
         <div className="notice error-notice" role="alert">Trò chơi vừa nhận một yêu cầu chưa được phiên bản này hỗ trợ. Hãy tải lại trang; nếu vẫn gặp lỗi, vui lòng liên hệ ban điều hành.</div>}
-      {snapshot.connection.kind === 'online' && <footer className="footer"><span>{snapshot.manifest?.fileCount ?? 0} tệp đã xác minh</span><button className="button ghost" disabled={busy} onClick={() => snapshot.phase === 'playing' ? setExitAction('disconnect') : run(disconnect)}>Ngắt kết nối</button></footer>}
+      <StatusFooter gateway={gateway} updates={updates} disconnect={() => run(disconnect)} />
+      <ForceUpdateGuard playing={snapshot.phase === 'playing'} updates={updates} />
     </main>
   );
 }

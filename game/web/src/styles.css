@@ -301,9 +301,11 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     padding-left: max(18px, env(safe-area-inset-left), calc((100vw - 684px) / 2));
     padding-right: max(18px, env(safe-area-inset-right), calc((100vw - 684px) / 2));
   }
-  .shell-playing {
-    padding-left: max(18px, env(safe-area-inset-left), calc((100vw - 1364px) / 2));
-    padding-right: max(18px, env(safe-area-inset-right), calc((100vw - 1364px) / 2));
+  .shell-playing,
+  .sg-lobby-shell,
+  .sg-room-shell {
+    padding-left: max(18px, env(safe-area-inset-left), calc((100vw - 1180px) / 2));
+    padding-right: max(18px, env(safe-area-inset-right), calc((100vw - 1180px) / 2));
   }
   .board-logs, .gameplay-hand { overscroll-behavior-y: contain; }
 }
@@ -687,12 +689,18 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   gap: 12px;
   width: 100%;
 }
+.sg-lobby-grid .sg-list-panel {
+  order: -1;
+}
 
-@media (min-width: 820px) {
+@media (min-width: 720px) {
   .sg-lobby-grid {
     flex-direction: row;
     align-items: flex-start;
     gap: 16px;
+  }
+  .sg-lobby-grid .sg-list-panel {
+    order: 0;
   }
   .sg-create-panel {
     width: 48%;
@@ -851,7 +859,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
 .pool-options {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 5px;
   margin-top: 4px;
 }
@@ -3373,6 +3381,73 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   max-width: none;
   border-radius: 6px;
 }
+
+@media (min-width: 601px) and (max-width: 899px) and (orientation: portrait) {
+  .board-local-dashboard {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 116px !important;
+    grid-template-rows: 28px 110px !important;
+    gap: 4px 8px !important;
+    align-items: end !important;
+  }
+  .board-local-utility-row {
+    display: contents !important;
+  }
+  .board-local-skill-rail {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    height: 28px !important;
+  }
+  .board-local-dashboard > .sg-gameplay-controls,
+  .board-local-dashboard > .board-local-idle-area {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+  .board-local-seat {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    order: 2 !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    height: 142px !important;
+    min-height: 142px !important;
+  }
+  .board-local-seat .sg-photo-panel {
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    height: 142px !important;
+    min-height: 142px !important;
+  }
+  .sg-dashboard-left-tools {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    order: 2 !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan,
+  .board-local-idle-area .sg-hand-idle {
+    height: 110px !important;
+    min-height: 110px !important;
+    padding: 2px 4px 4px !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button,
+  .board-local-idle-area .sg-hand-idle .sg-card-button {
+    flex: 0 0 74px !important;
+    width: 74px !important;
+    min-width: 74px !important;
+    height: 104px !important;
+    --card-lift: 0px !important;
+  }
+  /* Clear the first grid row before drawing actions or the choice drawer. */
+  .sg-gameplay-controls .sg-floating-controls-hud {
+    bottom: calc(100% + 36px) !important;
+  }
+  .board-local-dashboard > .sg-gameplay-controls > .sg-inline-choice-dock {
+    bottom: calc(100% + 110px) !important;
+  }
+}
 .board-local-dashboard > .sg-gameplay-controls,
 .board-local-dashboard .fake-skill-dock,
 .board-local-dashboard > .board-status,
@@ -3666,10 +3741,10 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     flex: 1 1 auto !important;
     min-width: 0 !important;
     width: 100% !important;
-    min-height: 122px !important;
-    height: 122px !important;
+    min-height: 138px !important;
+    height: 138px !important;
     gap: 6px !important;
-    padding: 4px 6px !important;
+    padding: 20px 6px 4px !important;
     margin: 0 !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
@@ -3678,14 +3753,24 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
   .sg-gameplay-controls .sg-hand-fan .sg-card-button,
   .board-local-idle-area .sg-hand-idle .sg-card-button {
-    flex: 0 0 82px !important;
-    width: 82px !important;
-    min-width: 82px !important;
+    flex: 0 0 84px !important;
+    width: 84px !important;
+    min-width: 84px !important;
     height: 114px !important;
     padding: 4px !important;
     border-radius: 6px !important;
-    --card-lift: 0px !important;
     margin-left: calc(-1 * var(--card-overlap-desktop, 0px)) !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button:hover:not(:disabled),
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button:focus-visible:not(:disabled),
+  .board-local-idle-area .sg-hand-idle .sg-card-button:hover:not(:disabled),
+  .board-local-idle-area .sg-hand-idle .sg-card-button:focus-visible:not(:disabled) {
+    --card-lift: -12px !important;
+  }
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected,
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected:hover,
+  .sg-gameplay-controls .sg-hand-fan .sg-card-button.selected:focus-visible {
+    --card-lift: -20px !important;
   }
   .sg-floating-controls-hud {
     position: absolute !important;
@@ -4135,7 +4220,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   padding-bottom: 2px;
   z-index: 23;
 }
-@media (max-width: 899px) {
+@media (max-width: 899px) and (orientation: landscape) and (min-height: 521px) {
   .sg-dashboard-left-tools {
     display: none !important;
   }
@@ -4532,6 +4617,25 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .sg-board-table .native-resolving-footnote {
     font-size: 8px;
   }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .sg-board-table .board-center {
+    width: min(224px, calc(100vw - 124px)) !important;
+    max-width: calc(100vw - 124px) !important;
+  }
+  /* Multi-seat profiles have opponents on both edges and across the top.
+     Reserve their scaled portrait width before placing the processing pile. */
+  .sg-board-table:not(.board-table-seats-2) .board-center {
+    top: 58%;
+    width: min(224px, calc(100vw - 180px)) !important;
+    max-width: calc(100vw - 180px) !important;
+  }
+}
+
+@media (max-width: 360px) and (orientation: portrait) {
+  .sg-board-table:not(.board-table-seats-2) .native-table-center { gap: 4px; }
+  .sg-board-table:not(.board-table-seats-2) .native-deck-slot { width: 28px; }
 }
 
 @media (max-width: 600px) {
@@ -5531,6 +5635,34 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .sg-gameplay-controls .sg-btn-end {
     min-width: 72px !important;
     width: auto !important;
+  }
+
+  /* Tools and trust in mobile portrait */
+  .sg-dashboard-left-tools {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    z-index: 23 !important;
+  }
+  .sg-dashboard-left-tools .sg-tool-btn,
+  .sg-dashboard-left-tools .sg-sort-btn {
+    height: 18px !important;
+    min-height: 18px !important;
+    padding: 0 6px !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    border-radius: 3px !important;
+    white-space: nowrap !important;
+  }
+  .board-local-idle-area {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
 
   /* Hand cards in mobile portrait */
@@ -6681,7 +6813,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
 
   .sg-board-table .board-center {
-    top: 56% !important;
+    top: 50% !important;
   }
 
   /* The native resolving row needs its full card height inside the felt.
@@ -6692,7 +6824,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     top: 40% !important;
   }
   .sg-board-table.board-table-seats-2 .board-center-seats-2 {
-    top: 56% !important;
+    top: 50% !important;
   }
 
   .sg-game-shell .board-toolbar,
@@ -7610,6 +7742,11 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   overflow-wrap: anywhere;
   box-shadow: 0 18px 52px rgba(0,0,0,.9), 0 0 0 100vmax rgba(0,0,0,.72) !important;
 }
+@media (min-width: 720px) {
+  .sg-request-dialog.request-panel {
+    width: min(740px, calc(100vw - 32px)) !important;
+  }
+}
 .sg-request-dialog.request-panel > [role="region"] { min-width: 0; max-width: 100%; }
 .sg-request-dialog.request-panel .gameplay-options { min-width: 0; max-width: 100%; }
 
@@ -7695,59 +7832,29 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     font-size: 12px !important;
   }
   .board-local-dashboard {
-    grid-template-columns: 108px minmax(0, 1fr) !important;
-    grid-template-rows: 28px 90px !important;
-    gap: 2px 8px !important;
-    padding: 3px 8px !important;
+    grid-template-columns: 124px 160px minmax(0, 1fr) !important;
+    grid-template-rows: 28px 138px !important;
+    gap: 4px 8px !important;
+    padding: 4px 8px 6px 8px !important;
   }
   .board-local-seat {
-    width: 108px !important;
-    min-width: 108px !important;
-    max-width: 108px !important;
-    height: 114px !important;
-    min-height: 114px !important;
-    max-height: 114px !important;
+    width: 124px !important;
+    min-width: 124px !important;
+    max-width: 124px !important;
+    height: 156px !important;
+    min-height: 156px !important;
+    max-height: 156px !important;
   }
   .board-local-seat .sg-photo-panel {
-    width: 108px !important;
-    min-width: 108px !important;
-    max-width: 108px !important;
-    height: 114px !important;
-    min-height: 114px !important;
-    max-height: 114px !important;
+    width: 124px !important;
+    min-width: 124px !important;
+    max-width: 124px !important;
+    height: 156px !important;
+    min-height: 156px !important;
+    max-height: 156px !important;
     overflow: visible !important;
   }
-  .board-local-seat .sg-photo-panel-compact .sg-portrait-frame { height: 80px !important; }
-  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact {
-    position: absolute !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 108px !important;
-    max-width: 108px !important;
-    height: 33px !important;
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    grid-template-rows: 1fr !important;
-    gap: 1px !important;
-    padding: 1px !important;
-    box-sizing: border-box !important;
-  }
-  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-rides-split {
-    display: contents !important;
-  }
-  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-row,
-  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact > .native-equip-half { min-width: 0 !important; }
-  .board-local-seat .sg-photo-panel-compact .native-equip-plate-compact .native-eq-name {
-    display: -webkit-box !important;
-    -webkit-box-orient: vertical !important;
-    -webkit-line-clamp: 2 !important;
-    white-space: normal !important;
-    overflow: hidden !important;
-    overflow-wrap: anywhere;
-    font-size: 6px !important;
-    line-height: 1.05 !important;
-  }
+  .board-local-seat .sg-photo-panel-compact .sg-portrait-frame { height: 114px !important; }
   .board-local-skill-rail { height: 28px !important; max-height: 28px !important; }
   .board-local-skill-rail .sg-skill-button,
   .board-local-skill-rail .fake-skill-button,
@@ -7760,16 +7867,18 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   }
   .sg-gameplay-controls .sg-hand-fan,
   .board-local-idle-area .sg-hand-idle {
-    height: 84px !important;
-    min-height: 84px !important;
+    /* 114px card + 20px selected lift + 4px bottom clearance. */
+    height: 138px !important;
+    min-height: 138px !important;
+    padding: 20px 6px 4px !important;
   }
   .sg-gameplay-controls .sg-hand-fan .sg-card-button,
   .board-local-idle-area .sg-hand-idle .sg-card-button {
-    flex: 0 0 58px !important;
-    width: 58px !important;
-    min-width: 58px !important;
-    height: 78px !important;
-    padding: 2px !important;
+    flex: 0 0 84px !important;
+    width: 84px !important;
+    min-width: 84px !important;
+    height: 114px !important;
+    padding: 3px !important;
   }
   .board-local-idle-area .board-status { font-size: 11px !important; }
 }
@@ -8118,15 +8227,17 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
    avatar, leaving the first control row for scrolling skills. */
 @media (min-width: 900px) and (min-height: 521px) {
   .board-local-dashboard {
-    grid-template-columns: 108px 158px minmax(0, 1fr) !important;
+    grid-template-columns: 124px 160px minmax(0, 1fr) !important;
     column-gap: 8px !important;
   }
   .board-local-seat { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
   .board-local-self-equipment {
     grid-column: 2;
     grid-row: 1 / span 2;
-    align-self: stretch;
+    align-self: end;
     min-width: 0;
+    width: 160px !important;
+    height: 156px !important;
     position: relative;
     z-index: 22;
   }
@@ -8170,23 +8281,23 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
     justify-content: flex-start;
     gap: 3px;
     padding: 1px 3px;
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.1;
   }
   .board-local-self-equipment .native-equip-row.empty,
   .board-local-self-equipment .native-equip-half.empty { opacity: .65; }
-  .board-local-self-equipment .native-eq-icon { width: 15px; flex: 0 0 15px; }
-  .board-local-self-equipment .native-eq-thumb { height: 13px; max-width: 15px; }
-  .board-local-self-equipment .sg-equip-icon { width: 13px; height: 13px; }
+  .board-local-self-equipment .native-eq-icon { width: 16px; flex: 0 0 16px; }
+  .board-local-self-equipment .native-eq-thumb { height: 14px; max-width: 16px; }
+  .board-local-self-equipment .sg-equip-icon { width: 14px; height: 14px; }
   .board-local-self-equipment .native-eq-name {
     min-width: 0;
     flex: 1 1 0;
-    font-size: 10px !important;
+    font-size: 10.5px !important;
     line-height: 1.1 !important;
     white-space: nowrap !important;
     text-overflow: ellipsis;
   }
-  .board-local-self-equipment .native-eq-suit { font-size: 9px; }
+  .board-local-self-equipment .native-eq-suit { font-size: 9.5px; }
 }
 
 /* A compact plate flattens the ride wrapper into two grid cells via
@@ -9370,3 +9481,37 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   border-color: rgba(231, 76, 60, 0.45) !important;
   color: #e6b0aa;
 }
+
+/* Shared system footer; leave room for phone home indicators. */
+.tqs-status-footer {
+  position: fixed; inset: auto 0 0; z-index: 120; display: flex;
+  align-items: center; justify-content: space-between; gap: 6px;
+  padding: 7px max(10px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  background: linear-gradient(transparent, #100e0a 30%); font: 11px/1.3 system-ui, sans-serif;
+}
+.tqs-status-footer button { min-height: 32px; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.tqs-signal { display: flex; align-items: center; gap: 5px; background: #111915e8; border: 1px solid currentColor; border-radius: 18px; padding: 5px 9px; }
+.tqs-signal.good { color: #2ecc71; }
+.tqs-signal.fair { color: #f39c12; }
+.tqs-signal.weak, .tqs-signal.offline { color: #e74c3c; }
+.tqs-signal-dot { width: 5px; height: 5px; flex-shrink: 0; background: currentColor; border-radius: 50%; }
+.tqs-signal.offline .tqs-signal-dot { animation: tqs-signal-pulse 1.5s infinite; }
+@keyframes tqs-signal-pulse { 50% { opacity: .3; } }
+.tqs-version { border: 1px solid #b28a52; border-radius: 7px; padding: 5px 9px; color: #ffe2ac; background: #231b10f2; white-space: nowrap; }
+.tqs-new-version { color: #ffd279; }
+.tqs-system-dialog { color: #f5e8ca; background: #211b14; border: 1px solid #a2814e; border-radius: 14px; padding: 22px; width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 28px); overflow: auto; box-shadow: 0 16px 60px #000b; }
+.tqs-system-dialog::backdrop { background: #000c; }
+.tqs-system-dialog h2 { margin: 0 0 16px; font-size: 19px; color: #ffe2ac; }
+.tqs-system-dialog button { margin: 8px 6px 0 0; }
+.tqs-system-details { margin: 12px 0; font-size: 13px; }
+.tqs-system-details dt { color: #cbb891; margin-top: 12px; }
+.tqs-system-details dd { margin: 3px 0 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.tqs-update-notice { position: fixed; top: max(5px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 100520; pointer-events: none; padding: 5px 9px; background: #322610ee; border: 1px solid #a2814e; border-radius: 8px; color: #ffe2ac; font-size: 11px; max-width: 90vw; width: max-content; }
+.sg-boot-canvas, .sg-login-canvas, .sg-lobby-screen.sg-game-canvas, .sg-waiting-screen.sg-game-canvas { padding-bottom: max(52px, calc(44px + env(safe-area-inset-bottom))); }
+@media (max-width: 360px) { .tqs-status-footer { font-size: 10px; } .tqs-signal, .tqs-version { padding: 4px 6px; } }
+@media (prefers-reduced-motion: reduce) { .tqs-signal.offline .tqs-signal-dot { animation: none; } }
+
+.tqs-signal { min-width: 0; flex: 0 1 auto; }
+.tqs-signal svg { flex-shrink: 0; }
+.tqs-signal > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tqs-version { flex-shrink: 0; }

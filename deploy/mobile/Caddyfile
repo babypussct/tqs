@@ -17,6 +17,8 @@
     header @assets Cache-Control "public, max-age=3600"
     @html path / /index.html
     header @html Cache-Control "no-cache"
+    @updates path /version.json /sw.js
+    header @updates Cache-Control "no-store"
     try_files {path} /index.html
     file_server
   }

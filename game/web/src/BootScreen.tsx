@@ -210,14 +210,8 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
         </div>
       )}
 
-      {/* BOTTOM FOOTER */}
-      <div className="sg-bottom-footer">
-        <div className="sg-ping-box">
-          <span className="sg-ping-indicator-dot" />
-          <span className="sg-ping-text">Tín hiệu: Sẵn sàng</span>
-        </div>
-        <span>Phiên bản: Thử nghiệm</span>
-      </div>
+
+      <span className="sg-visually-hidden">Phiên bản: Thử nghiệm</span>
     </div>
   );
 }

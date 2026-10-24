@@ -47,9 +47,9 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
 }) {
   const { players, board, ownId, roomName, gameplay, pendingRequest, fakeSkills, nativeVfxEvents } = useGameStore((s) => s);
   const text = useDisplayText();
-  const isMobilePortrait = useMediaQuery('(max-width: 640px) and (orientation: portrait)');
+  const isMobilePortrait = useMediaQuery('(max-width: 600px) and (orientation: portrait)');
   const isMobileLandscape = useMediaQuery('(orientation: landscape) and (max-height: 520px)');
-  const isCompactWidth = useMediaQuery('(max-width: 640px)');
+  const isCompactWidth = useMediaQuery('(max-width: 600px)');
   const isPortrait = useMediaQuery('(orientation: portrait)');
   const isMobile = isMobilePortrait || isMobileLandscape || isCompactWidth;
   const isDesktopEquipment = useMediaQuery('(min-width: 900px) and (min-height: 521px)');

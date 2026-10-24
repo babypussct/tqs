@@ -487,14 +487,8 @@ export function LobbyScreen({ adapter, run, busy }: {
         </div>
       </div>
 
-      {/* Bottom Footer Bar */}
-      <footer className="sg-bottom-footer-bar">
-        <div className="sg-ping-cluster">
-          <span className="sg-ping-green" />
-          <span>Máy chủ: Hoạt động tốt</span>
-        </div>
-        <span>Quốc Chiến · Bản BETA</span>
-      </footer>
+
+      <span className="sg-visually-hidden">Quốc Chiến · Bản BETA</span>
     </div>
   );
 }
@@ -722,14 +716,8 @@ export function WaitingRoomScreen({ adapter, run, busy }: {
         </section>
       </div>
 
-      {/* Bottom Footer Bar */}
-      <footer className="sg-bottom-footer-bar">
-        <div className="sg-ping-cluster">
-          <span className="sg-ping-green" />
-          <span>Máy chủ: Hoạt động tốt</span>
-        </div>
-        <span>Quốc Chiến · Bản BETA</span>
-      </footer>
+
+      <span className="sg-visually-hidden">Quốc Chiến · Bản BETA</span>
     </div>
   );
 }
