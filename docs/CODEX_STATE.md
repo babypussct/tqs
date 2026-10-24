@@ -1127,20 +1127,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T03:15:49.579Z (UTC).
-- Nhánh: `main` · HEAD: `2a96c067e158`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T03:16:00.367Z (UTC).
+- Nhánh: `main` · HEAD: `3aea5e1b7668`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+3aea5e1b docs: record Hegemony translation release
 2a96c067 feat(game): add Hegemony Vietnamese translation overlay
 d0517262 docs: checkpoint clean local main after TQSVN reconciliation
-403c3f39 docs(tqsvn): record verified local commits and translation work queue
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
