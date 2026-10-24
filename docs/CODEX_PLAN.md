@@ -1,5 +1,21 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## HEGEMONY-VI-QUEUE-ACCOUNTING-20261024 — hoàn tất lượt điền bản dịch và phân loại hàng đợi
+
+- [x] Hoàn tất lượt xử lý bảo thủ cho toàn bộ **4.843/4.843 key** trong `HEGEMONY_VIETNAMESE_WORK_QUEUE.csv`: **3.941** dòng có `proposed_vi` được nạp vào các overlay runtime `vietnameseHegemony*.ts`, **902** dòng còn lại có trạng thái provenance rõ ràng (33 dòng đã có tiếng Việt/shared text hiện hành; 869 dòng không có văn bản nguồn và được giữ là alias/token/static hoặc không an toàn để tự dịch). Không thay source Lua, nguyên văn Trung Quốc hay wire key.
+- [x] Theo mức ưu tiên: P0 **1.820/1.820** đã được xử lý (1.034 overlay, phần còn lại được phân loại); P1 **629/629** (571 overlay); P2 **2.394/2.394** (2.336 overlay, gồm toàn bộ **1.874/1.874** câu thoại có nguyên văn tiếng Trung). CSV vẫn có **4.843 key duy nhất** và tất cả dòng đều có `proposed_vi` hoặc `review`.
+- [x] Bổ sung kiểm thử queue-accounting: mọi `proposed_vi` phải resolve trong runtime; kiểm CJK, placeholder và cấu trúc tag rich-text; không cho phép dòng chưa dịch cũng chưa có trạng thái. `test:hegemony-translation` **1/1 PASS**, `typecheck` **PASS**, `test:vietnamese` **4/4 PASS**, `test:store` **48/48 PASS**.
+- [ ] Trạng thái trên là **hoàn tất lượt điền/phân loại inventory**, chưa phải duyệt ngữ nghĩa cuối: các bản dịch mới được đánh dấu `semantic_review_pending`, cần đối chiếu Moegirl và scenario `new_heg_mode` trước khi coi là bản phát hành/đã nghiệm thu hiển thị. Không commit, push, deploy.
+
+## HEGEMONY-VI-OVERLAY-20261024 — lô P0 gameplay Việt hóa đầu tiên (snapshot lịch sử)
+
+> Snapshot của thời điểm bắt đầu; trạng thái hàng đợi hiện hành nằm ở `HEGEMONY-VI-QUEUE-ACCOUNTING-20261024` phía trên.
+
+- [x] Thêm `game/web/src/engine/vietnameseHegemony.ts` và nạp overlay sau `VI_SKILL_REVIEWED` trong `VI_ADDITIONS`, giữ nguyên wire key, source Lua/Trung Quốc, placeholder và rich-text.
+- [x] Dịch và ghi provenance cho 171 hàng queue: 27 `card_description`, 94 `skill_description` có nguồn `runtime/packages/hegemony`, cùng các `card_name_prompt`, `skill_name_generated`, `skill_prompt`, `choice_ui_other` và alias trực tiếp; overlay có 185 key runtime.
+- [x] Thêm `scripts/hegemony-translation-overlay.test.ts`; CSV còn **4.843 hàng / 4.843 key duy nhất**, bản test kiểm resolver, CJK, placeholder và cấu trúc tag HTML. `typecheck`, `test:vietnamese` 4/4, `test:store` 48/48 và test overlay 1/1 đều PASS.
+- [ ] Tiếp tục rà scenario `new_heg_mode`, đối chiếu Moegirl theo quy định nguồn chính thống, duyệt ngữ nghĩa 171 hàng đã đề xuất và xử lý phần còn lại của P0/P1/P2; chưa đánh dấu toàn bộ inventory là đã dịch.
+
 ## SOURCE-LOCAL-RECONCILIATION-20261024 — source snapshot và Việt hóa Quốc Chiến
 
 - [x] Snapshot local main thành hai commit `1a0497c7` (source/QA/build) và `712906f3` (docs/evidence/danh mục). Đã kiểm tra staged diff không lỗi whitespace; log vận hành `freekill.log` được ignore và giữ nguyên trên máy. Không push/deploy.

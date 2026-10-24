@@ -1,6 +1,10 @@
 import { VI_SKILL_TRANSLATIONS } from './vietnameseSkills';
 import { VI_SKILL_REFINEMENTS } from './vietnameseSkillRefinements';
 import { VI_SKILL_REVIEWED } from './vietnameseSkillReviewed';
+import { VI_HEGEMONY_TRANSLATIONS } from './vietnameseHegemony';
+import { VI_HEGEMONY_P0_SUPPLEMENT } from './vietnameseHegemonyP0Supplement';
+import { VI_HEGEMONY_P1_SUPPLEMENT } from './vietnameseHegemonyP1Supplement';
+import { VI_HEGEMONY_P2_SUPPLEMENT } from './vietnameseHegemonyP2Supplement';
 import OFFICIAL_TRANSLATIONS from './officialTranslations.json';
 
 /** Web display additions for the pinned Hegemony package, which has no vi_VN table.
@@ -265,6 +269,10 @@ export const VI_ADDITIONS: Record<string, string> = {
   ...(OFFICIAL_TRANSLATIONS as Record<string, string>),
   ...VI_SKILL_REFINEMENTS,
   ...VI_SKILL_REVIEWED,
+  ...VI_HEGEMONY_TRANSLATIONS,
+  ...VI_HEGEMONY_P0_SUPPLEMENT,
+  ...VI_HEGEMONY_P1_SUPPLEMENT,
+  ...VI_HEGEMONY_P2_SUPPLEMENT,
   '#TargetCancelled': 'Mục tiêu %to đã bị hủy khỏi lá %arg do %from sử dụng.',
   '#AskForSkillInvoke': 'Bạn có muốn kích hoạt %arg?',
   '#AskForUseActiveSkill': 'Hãy phát động kỹ năng %arg',

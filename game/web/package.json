@@ -75,6 +75,7 @@
     "test:general-pair-winrate": "tsx --test scripts/general-pair-winrate.test.ts",
     "run:general-pair-winrate": "tsx scripts/general-pair-winrate.ts",
     "test:release": "node --test ../../deploy/mobile/release.test.mjs",
+    "test:hegemony-translation": "tsx --test scripts/hegemony-translation-overlay.test.ts",
     "audit:translations": "tsx scripts/translation-inventory.ts"
   },
   "dependencies": {
