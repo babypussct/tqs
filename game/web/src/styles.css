@@ -24,6 +24,10 @@ input:focus, select:focus { border-color: #e7c888; }
 label { display: block; color: #e9deb9; font-size: .9rem; font-weight: 600; }
 .shell { width: 100%; max-width: 720px; min-width: 0; margin: auto; padding: max(30px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 .shell-playing {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   max-width: 100vw;
   width: 100vw;
   height: 100dvh;
@@ -526,7 +530,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 /* Step 3: Sanguosha Mobile Lobby & Waiting Room (Sa Bàn Quân Trướng & Trướng Chỉ Huy) */
 .sg-lobby-shell,
 .sg-room-shell {
-  max-width: 1060px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0;
   width: 100%;
@@ -535,8 +539,8 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .sg-lobby-screen.sg-game-canvas,
 .sg-waiting-screen.sg-game-canvas {
   width: 100%;
-  min-height: calc(100vh - 16px);
-  max-width: 1040px;
+  min-height: 100dvh;
+  max-width: 100%;
   margin: 0 auto;
   position: relative;
   display: flex;
@@ -1558,7 +1562,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
    existing public projection; this skin never changes card IDs, replies, or
    hidden opponent data. */
 .sg-game-shell {
-  max-width: 1440px;
+  max-width: 100%;
   --sg-faction-wei: #3598e8;
   --sg-faction-shu: #d9453b;
   --sg-faction-wu: #27ae60;
@@ -5761,15 +5765,15 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 /* ============================================================== */
 .sg-boot-shell,
 .sg-login-shell {
-  max-width: 1040px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .sg-game-canvas {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -9515,3 +9519,33 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 .tqs-signal svg { flex-shrink: 0; }
 .tqs-signal > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tqs-version { flex-shrink: 0; }
+
+/* One viewport-sized stage in every orientation. The table receives the
+   remaining height after notices and the dashboard, including on tablets
+   and large monitors where the older minimum-height rules left empty space. */
+.shell-playing > .game-board {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+}
+.shell-playing .board-layout,
+.shell-playing .board-main {
+  flex: 1 1 0 !important;
+  width: 100%;
+  min-height: 0;
+}
+.shell-playing .board-main {
+  display: flex !important;
+  flex-direction: column;
+}
+.shell-playing .sg-board-table {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+.shell-playing .board-local-dashboard { flex: 0 0 auto; }
+@media (orientation: landscape) and (max-height: 600px) {
+  /* Scaled upper portraits still need their half-height above the seat
+     anchor on shallow tables; keep the entire target surface in view. */
+  .shell-playing .sg-board-table .board-opponents { inset: 16px 0 0; }
+}

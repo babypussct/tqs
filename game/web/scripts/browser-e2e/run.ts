@@ -1143,6 +1143,78 @@ async function runSuite(page: Page) {
       }
       await p.setViewportSize({ width: 390, height: 844 });
     }],
+    ['Full App fills the viewport across 24 sizes with active and idle 2/6/8/10-seat boards', async (p) => {
+      await p.goto('/e2e.html?app=1');
+      await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
+      for (const [width, height] of [
+        [320, 568], [360, 640], [390, 844], [412, 915], [540, 720], [600, 960],
+        [601, 960], [768, 1024], [820, 1180], [899, 1200], [900, 1200], [1024, 1366],
+        [568, 320], [640, 360], [740, 360], [844, 390], [932, 430], [1024, 520],
+        [1024, 521], [900, 600], [1280, 720], [1440, 900], [1920, 1080], [2560, 1440],
+      ]) {
+        await p.setViewportSize({ width, height });
+        for (const count of [2, 6, 8, 10]) {
+          await start(p, 'choices');
+          await p.evaluate(n => window.__tqsE2e.layoutSeats(n), count);
+          await p.waitForTimeout(300); // Finish the real seat scale/position transition.
+          for (const idle of [false, true]) {
+            if (idle) await p.evaluate(() => window.__tqsE2e.cancel());
+            await p.locator(idle ? '.sg-hand-idle' : '.sg-hand-fan').waitFor();
+            const geometry = await p.evaluate(() => {
+              const [shell, table, dashboard, hand, card] = ['.shell', '.sg-board-table', '.board-local-dashboard',
+                '.sg-hand-fan, .sg-hand-idle', '.sg-hand-fan .sg-card-button, .sg-hand-idle .sg-card-button']
+                .map(s => document.querySelector(s)!.getBoundingClientRect().toJSON());
+              return { shell, table, dashboard, hand, card,
+                seats: [...document.querySelectorAll('.board-opponents .sg-photo-panel')].map(el => el.getBoundingClientRect().toJSON()),
+                scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight };
+            });
+            const info = `${width}x${height}, seats=${count}, idle=${idle}: ${JSON.stringify(geometry)}`;
+            assert.ok(geometry.shell.width >= width - 1 && geometry.table.width >= width - 44, `unused screen width: ${info}`);
+            assert.ok(geometry.scrollWidth <= width + 1 && geometry.scrollHeight <= height + 1, `page overflow: ${info}`);
+            assert.ok(geometry.dashboard.bottom <= height && height - geometry.dashboard.bottom <= 28, `unused bottom space: ${info}`);
+            assert.ok(geometry.table.height > 150 && geometry.table.bottom <= geometry.dashboard.top + 1, `table/dashboard overlap: ${info}`);
+            assert.ok(geometry.card.top >= geometry.hand.top - 1 && geometry.card.bottom <= geometry.hand.bottom + 1, `clipped hand: ${info}`);
+            assert.ok(geometry.seats.length === count - 1 && geometry.seats.every(r =>
+              r.left >= geometry.table.left - 1 && r.right <= geometry.table.right + 1 &&
+              r.top >= geometry.table.top - 1 && r.bottom <= geometry.table.bottom + 1), `clipped seat: ${info}`);
+          }
+        }
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+      await p.goto('/e2e.html');
+    }],
+    ['Boot, login, lobby and waiting room use full width and retain reachable controls on short screens', async (p) => {
+      await p.goto('/e2e.html?app=1');
+      await p.getByRole('heading', { name: 'Cổng Doanh Trại', exact: true }).waitFor();
+      for (const [width, height] of [[320, 568], [390, 844], [568, 320], [844, 390], [601, 960],
+        [768, 1024], [1024, 521], [1280, 720], [1920, 1080]]) {
+        await p.setViewportSize({ width, height });
+        for (const phase of ['boot', 'login', 'lobby', 'room'] as const) {
+          await p.evaluate(value => window.__tqsE2e.layoutPhase(value), phase);
+          await p.locator('.sg-game-canvas').waitFor();
+          const geometry = await p.locator('.sg-game-canvas').evaluate(el => el.getBoundingClientRect().toJSON());
+          assert.ok(geometry.width >= width - 1 && geometry.height >= height - 1,
+            `${phase} leaves unused space at ${width}x${height}: ${JSON.stringify(geometry)}`);
+          const controls = p.locator('.sg-game-canvas button:not(.sg-hero-switch-btn):visible:enabled');
+          for (const button of [controls.first(), controls.last()]) {
+            if (!await button.count()) continue;
+            await button.evaluate(el => el.scrollIntoView({ block: 'center' }));
+            await button.click({ trial: true });
+          }
+          const footer = await p.locator('.tqs-status-footer').boundingBox();
+          assert.ok(footer && footer.y + footer.height <= height + 1);
+          assert.ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+          // Native dialogs must fit even when the screen cannot fit the page content.
+          await p.getByRole('button', { name: 'Thông tin phiên bản', exact: true }).click();
+          const dialog = p.getByRole('dialog', { name: 'Thông tin Phiên bản & Đồng bộ Hệ thống', exact: true });
+          const rect = await dialog.boundingBox();
+          assert.ok(rect && rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width + 1 && rect.y + rect.height <= height + 1);
+          await p.keyboard.press('Escape');
+        }
+      }
+      await p.setViewportSize({ width: 390, height: 844 });
+      await p.goto('/e2e.html');
+    }],
     ['Portrait table centre clears side seats in six, eight and ten player rooms', async (p) => {
       for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 600, height: 960 }]) {
         await p.setViewportSize(viewport);

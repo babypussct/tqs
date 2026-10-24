@@ -1,5 +1,12 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống, commit/push/production
+
+- [x] Đo và sửa stage flex thiếu chiều cao, shell width cap, layout 1024×520 bị co, đỉnh đối thủ bị cắt ở landscape thấp; canvas boot/login/lobby/room full width + 100dvh.
+- [x] Regression trên App thật: 24 viewport × 4 số ghế × request/idle (**192**) và 9 viewport × 4 screen (**36**), trial-click/scroll và system dialog. Browser **44/44**, Lua **72/72**, card **21/21**, store **50/50**, types/build-safety/check:build/release/build/PWA và protected root dist **PASS**. Evidence và artifact trong CODEX_STATE.
+- [ ] Commit/push `origin/main`, Pages Direct Upload Production/main và hosted byte/header/Chrome smoke trên bản mới theo quyền người dùng.
+- [ ] iPhone/Android vật lý và authenticated full-game/reconnect giữ gate riêng; không đóng bằng Chrome giả lập.
+
 ## GAME-ALL-CHANGES-RELEASE-20261025 — commit/push/production toàn bộ working tree
 
 - [x] Người dùng cho phép toàn bộ thay đổi; commit đủ 35 tệp ở `2f633b92`, đồng bộ gateway canonical/legacy, push `origin/main` và đối chiếu SHA.

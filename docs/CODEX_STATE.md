@@ -1,5 +1,16 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (LOCAL PASS, chờ phát hành)
+
+- **Yêu cầu / quyền phát hành:** người dùng yêu cầu kiểm tra/sửa mọi kích thước màn hình, loại khoảng trống thừa, commit, push và production bản mới nhất. Phạm vi theo ứng dụng đang bàn giao là Quốc Chiến `game/web`; không thay Shop/API, luật, pin, gateway/native hoặc KV.
+- **Lỗi đo trực tiếp:** tablet 601–899px để trống 180–420px dưới dashboard; desktop/tablet lớn để trống 59–693px do chain thiếu flex-grow và table min-height cố định; `.sg-game-shell` khóa 1440px tạo gutter lớn. 1024×520 bàn co còn ~249px dù viewport 1024px. 568×320 và 1024×521 cắt đỉnh chân dung bàn 8/10 ghế. Boot/login/lobby/room khóa nền 1040px; lobby/room thiếu 16px chiều cao và dùng vh thay dynamic viewport.
+- **Sửa:** `game/web/src/styles.css` cấp flex stage từ shell → game-board → layout → main → table, giữ dashboard theo nội dung, width 100% và table nhận chiều cao còn lại; bỏ cap shell 1440/1040/1060px, canvas dùng 100dvh. Landscape <=600px chừa 16px cho anchor đối thủ tránh cắt đỉnh. Giữ hand/skill scroll ngang và portal/dialog hiện hữu.
+- **Regression:** `scripts/browser-e2e/{run.ts,harness.tsx}` thêm App thật trên 24 viewport từ 320×568/568×320 tới 2560×1440, bao gồm 600/601/899/900px và 520/521px; 2/6/8/10 ghế × request/idle = **192** geometry checks về stage width, bottom gap, scroll, table/dashboard, hand/seat clipping. 9 viewport × boot/login/lobby/room = **36** screen checks với trial-click các nút sau cuộn và system dialog trong viewport. Synthetic own-hand cho idle, không tài khoản/luật thật.
+- **Kiểm thử quan sát 25/10:** Browser **44/44 PASS**, real Lua **72/72 PASS**, card-display **21/21**, store **50/50**, `typecheck:all` + tools **PASS**, build-safety **7/7**, check:build **PASS**, release **5/5**, production game build **PASS**, PWA **PASS** (524 verified shell files, waiting-worker → activation, giữ IndexedDB/cache khác, offline reload, không cache private). `git diff --check` và protected root `git diff --exit-code -- dist` **PASS**. Một lượt browser bị HMR reload khi sửa fixture giữa test; đã chạy lại toàn bộ source ổn định **44/44 PASS**. Hai lỗi test đầu (__name do tsx serialization, idle fixture không có hand) đã sửa trong fixture/test, không phải lỗi native.
+- **Artifact:** OAuth same-origin + gateway `/gateway`, build `9778d65e6d92a29b8fcdb3f3b6d28b4de9dbe4a96085ff703a1fb1a3b5cd4797`, builtAt `2026-10-24T19:03:55.237Z` (**02:03 ngày 25/10 giờ Việt Nam**).
+- **Evidence:** `scratch/evidence/responsive-release-20261025/` với logs, probe JSON, before/after PNG. Đã xem ảnh trước/sau 1920×1080, 1024×520 và sau sửa 768×1024, 320×568.
+- **Giới hạn / bước tiếp:** commit/push source, Pages Direct Upload Production/main, đối chiếu bytes/headers/gateway/OAuth và Chrome hosted mới. Không tuyên bố mọi thiết bị/vật lý hoặc authenticated full-game/reconnect PASS từ fixture và Chrome; các gate đó giữ riêng.
+
 ## GAME-ALL-CHANGES-RELEASE-20261025 — toàn bộ thay đổi đã push và lên Pages production (HOSTED SMOKE PASS)
 
 - **Ủy quyền / phạm vi:** người dùng yêu cầu commit, push và production toàn bộ working tree, gồm cả các thay đổi ngoài layout. Đã commit đủ **35 tệp**: responsive UI, footer RTT/trạng thái, định danh build/version/update guard, cache headers, tests/fixtures/docs và đồng bộ gateway legacy. Không thay Shop/API/native/package pin, KV hoặc cấu hình tunnel.
@@ -1260,20 +1271,23 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T18:51:39.794Z (UTC).
-- Nhánh: `main` · HEAD: `6b92a45af9c6`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T19:06:13.325Z (UTC).
+- Nhánh: `main` · HEAD: `3b078d0840f4`.
+- File thay đổi hiển thị: 4 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M game/web/scripts/browser-e2e/harness.tsx
+ M game/web/scripts/browser-e2e/run.ts
+ M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+3b078d08 docs: record production rollout and passing release verification
 6b92a45a test(game): match Lua fixture viewport to the production shell
 a138a661 fix(game): serve cached HTML after Pages canonical redirects
-2f633b92 feat(game): ship responsive layout and safe client updates
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

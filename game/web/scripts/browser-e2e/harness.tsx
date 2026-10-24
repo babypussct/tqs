@@ -187,12 +187,16 @@ const api = {
     const seats = Array.from({ length: count }, (_, index) => index + 1);
     const state = useGameStore.getState();
     state.update({ players: seats.map((id) => ({ id, name: `Ghế ${id}`, avatar: '', ready: true, owner: id === 1 })),
-      board: { ...state.board, seats, processingCards: [{ name: 'slash', suit: 1, number: 7 }] } });
+      board: { ...state.board, seats, selfHandCards: [{ id: 7, name: 'slash', suit: 1, number: 7 }],
+        processingCards: [{ name: 'slash', suit: 1, number: 7 }] } });
   },
   emitUiError: (value: unknown) => emit('ErrorDlg', value),
   appActions: () => appActions.slice(),
   systemPending: (pending: boolean) => useUpdateStore.setState({ pending, reason: 'Bản cập nhật kiểm thử', error: null }),
   returnLobby: () => useGameStore.getState().update({ phase: 'lobby', result: null }),
+  layoutPhase: (phase: 'boot' | 'login' | 'lobby' | 'room') => useGameStore.getState().update({
+    phase, pendingRequest: null, result: null, error: null,
+  }),
   finishGame: () => emit('GameOver', '1'),
   seedRoundData: () => {
     emit('ArrangeSeats', [1, 2]);
