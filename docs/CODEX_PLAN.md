@@ -1,5 +1,12 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## CARD-AUDIO-PAGES-RELEASE-20261024 — phát hành âm thanh lá bài trên production Pages
+
+- [x] Review diff, sửa khử phát trùng âm thanh `PlaySound`/game log trong cả hai thứ tự; test hồi quy `15/15 PASS`. Các gate `typecheck:all`, build safety, release test và build production **PASS**.
+- [x] Commit nguồn `d5efdabf` đã push `origin/main`; Pages Direct Upload `tqsvn` đã deploy `Production/main` ID `726f59cd-7751-444b-8572-2f98e02dccc4` với Functions bundle.
+- [x] Production alias và deployment URL: HTML, JS, CSS, SW, 3 MP3 mẫu khớp byte build local; gateway health/manifest, Firebase init và OAuth helper đều HTTP `200`. Chi tiết và giới hạn ở [`CODEX_STATE.md`](CODEX_STATE.md).
+- [ ] Authenticated full-game, reconnect và nghiệm thu âm thanh trên iPhone/Android thật của deployment này vẫn mở; HTTP smoke không đóng các gate đó. Native server và TQSShop/API không thuộc lượt phát hành này.
+
 ## CARD-AUDIO-COMPLETE-PARITY-20261024 — Hoàn tất bổ sung và đồng bộ đầy đủ âm thanh lá bài so với FreeKill gốc
 
 - [x] **Trích xuất & bổ sung 40 file âm thanh `.mp3` gốc:**
