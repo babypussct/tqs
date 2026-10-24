@@ -2,11 +2,11 @@
 
 ## GAME-ALL-CHANGES-RELEASE-20261025 — commit/push/production toàn bộ working tree
 
-- [x] Người dùng đã cho phép commit, push và production toàn bộ thay đổi hiện có.
-- [x] Review tất cả source, đồng bộ gateway legacy/canonical theo gate CI, test tính năng cập nhật/gateway/release/pipeline; build production OAuth same-origin + `/gateway`, PWA PASS; shop build-clean-rebuild tuần tự PASS và root dist không đổi.
-- [x] Commit/push toàn bộ 35 tệp ở `2f633b92`, remote SHA khớp.
-- [ ] Pages `3bf5fdce…` đã deploy, HTTP/byte/header smoke 26/26; smoke hosted tìm lỗi offline canonical redirect. Bản sửa worker + fixture 301 đã local PWA PASS, đang push/deploy và xác minh lại. CI nguồn đầu FAIL ở prepare:upstream, không đánh dấu CI PASS.
-- [ ] Authenticated full-match/reconnect và iPhone/Android vật lý giữ gate riêng; HTTP/Chrome smoke không thay thế nghiệm thu đó.
+- [x] Người dùng cho phép toàn bộ thay đổi; commit đủ 35 tệp ở `2f633b92`, đồng bộ gateway canonical/legacy, push `origin/main` và đối chiếu SHA.
+- [x] Local unit/type/build/PWA và shop build-clean-rebuild tuần tự PASS; root dist giữ nguyên. Smoke hosted phát hiện offline canonical redirect, đã sửa ở `a138a661`, thêm fixture 301 và PWA regression PASS.
+- [x] Pages **Production/main** deployment **`6a7fdc43-f190-4cd4-b949-1ccb0f636029`**, source **a138a66**, build **aa8c0f9935b4…**, live [`tqsvn.pages.dev`](https://tqsvn.pages.dev). HTTP/byte/header/gateway/OAuth **26/26**, Chrome 4 viewport + đúng build + SW 524 tệp + offline reload + 0 page errors **PASS**.
+- [ ] GitHub CI nguồn: run `40120315756` FAIL ở prepare:upstream; run fix `40120780675` upstream/build/browser PASS, Lua 71/72 do fixture debug heading làm bài tràn 9,5px ở Linux 320×568. Đã đọc log qua Chrome, dùng đúng playing shell/ẩn heading như App thật, giữ assertions; local Lua chạy lại 72/72 PASS. Đang push để CI kiểm lại; giữ pin và gate.
+- [ ] Approved Google/full-match/reconnect và iPhone/Android vật lý giữ gate riêng; smoke HTTP/Chrome ẩn danh không thay thế các nghiệm thu đó.
 
 ## GAME-LAYOUT-MULTI-MODE-20261025 — Tối ưu hiển thị đa chế độ (Portrait · Landscape · Desktop)
 

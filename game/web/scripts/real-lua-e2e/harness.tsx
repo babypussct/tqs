@@ -1352,8 +1352,13 @@ function Fixture() {
       .catch((e: unknown) => useGameStore.getState().update({ error: String((e as Error).message) }))
       .finally(() => setBusy(false));
   };
-  return <main className={`shell ${phase === 'playing' ? 'shell-playing' : phase === 'lobby' ? 'sg-app-shell sg-lobby-shell' : phase === 'room' ? 'sg-app-shell sg-room-shell' : ''}${visualEvidence ? ' visual-evidence-shell' : ''}`}>
-    {!visualEvidence && <h1>TQS real Lua WASM E2E</h1>}
+  const shellVariant = phase === 'playing' ? 'shell-playing sg-app-shell sg-game-shell'
+    : phase === 'lobby' ? 'sg-app-shell sg-lobby-shell'
+    : phase === 'room' ? 'sg-app-shell sg-room-shell' : '';
+  return <main className={`shell ${shellVariant}${visualEvidence ? ' visual-evidence-shell' : ''}`}>
+    {/* The production App hides its header in a match. A fixture banner must
+        not steal viewport height or change the geometry under test. */}
+    {!visualEvidence && phase !== 'playing' && <h1>TQS real Lua WASM E2E</h1>}
     {error && <div className="notice error-notice" role="alert">{error}</div>}
     {!visualEvidence && phase !== 'playing' && <section className="panel" aria-label="Bắt đầu ván test tương tác">
       <h2>Ván test tương tác</h2>
