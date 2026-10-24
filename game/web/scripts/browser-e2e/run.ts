@@ -307,7 +307,7 @@ async function runSuite(page: Page) {
       await p.getByRole('alert').getByText('Máy chủ đang tạm thời không khả dụng. Vui lòng thử tải lại trò chơi sau ít phút.').waitFor();
       await p.goto('/e2e.html');
       await p.unroute('**/gateway/manifest.json');
-      await p.getByRole('heading', { name: 'TQS browser E2E cục bộ' }).waitFor();
+      await p.locator('.sg-game-board').waitFor();
     }],
     ['Game errors remain visible in the active match and hide native protocol details', async (p) => {
       await p.goto('/e2e.html?app=1');
@@ -1130,7 +1130,7 @@ async function runSuite(page: Page) {
       ]) {
         await p.setViewportSize(viewport);
         await p.goto('/e2e.html');
-        await p.getByRole('heading', { name: 'TQS browser E2E cục bộ' }).waitFor();
+        await p.locator('.sg-game-board').waitFor();
         const metrics = await p.evaluate(() => ({
           width: document.documentElement.clientWidth,
           scrollWidth: document.documentElement.scrollWidth,

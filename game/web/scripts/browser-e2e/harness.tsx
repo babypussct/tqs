@@ -276,8 +276,8 @@ function Fixture() {
       useGameStore.getState().update({ error: err instanceof Error ? err.message : String(err) });
     }).finally(() => setBusy(false));
   };
-  return <main className="shell shell-playing">
-    <h1>TQS browser E2E cục bộ</h1>
+  return <main className="shell shell-playing sg-app-shell sg-game-shell">
+    <header className="app-header"><h1>TQS browser E2E cục bộ</h1></header>
     {new URLSearchParams(location.search).has('idle-suit-preview') && (
       <div className="sg-idle-suit-preview" style={{ display: 'flex', gap: 8 }}>
         {([1, 2, 3, 4] as const).map((suit, index) => (

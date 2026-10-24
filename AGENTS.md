@@ -74,3 +74,7 @@ Các quy tắc dưới đây được rút ra từ lỗi thật trong SMARTAI-FA
 - `selectPair()` exhaustive search phải reset lựa chọn trước từng cặp `(a,b)`. Nếu chỉ reset khi đổi `a`, một cặp không hợp lệ làm selection cũ còn sót và runner có thể báo giả `No valid native general pair`.
 - Scenario native bounded kết thúc bằng `GameOver` không được đi qua nhánh Trust/full-match hoặc chờ nút `Về sảnh`; runner phải coi `GameOver` packet là điều kiện hoàn tất và chỉ đóng browser sau khi evidence đã ghi.
 - Native QA restart sau lỗi `RoomThread` không được giả định unit `freekill-asio` theo tên process: binary có thể hiện `comm=MainThread` và chạy dưới `root`. Phải xác thực đúng PID/process owner, dừng process QA root, relaunch `run-server.sh` với auth environment của máy QA (không in giá trị), chờ log `server is ready` và kiểm `9527/9000` trước khi rerun. Nếu không, room/account stale có thể làm lượt control tiếp theo fail ở lobby và tạo evidence nhiễu; cleanup phải xác nhận `tqsQa=false`, package/symlink QA absent.
+
+## Bài học responsive E2E (25/10/2026)
+
+- Fixture đo layout phải dùng đúng shell classes của App và ẩn debug heading như production. Tiêu đề debug trong flex stage từng chiếm thêm chiều cao khác nhau giữa font macOS/Linux, làm browser E2E báo giả center đè chân dung ở 320×568 dù full-App matrix PASS. Chờ `.sg-game-board` thay vì yêu cầu debug heading visible; giữ nguyên assertions chống chồng/cắt và chạy lại CI. Không sửa tọa độ production chỉ để bù chiều cao do fixture tự thêm.

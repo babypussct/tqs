@@ -4,7 +4,8 @@
 
 - [x] Đo và sửa stage flex thiếu chiều cao, shell width cap, layout 1024×520 bị co, đỉnh đối thủ bị cắt ở landscape thấp; canvas boot/login/lobby/room full width + 100dvh.
 - [x] Regression trên App thật: 24 viewport × 4 số ghế × request/idle (**192**) và 9 viewport × 4 screen (**36**), trial-click/scroll và system dialog. Browser **44/44**, Lua **72/72**, card **21/21**, store **50/50**, types/build-safety/check:build/release/build/PWA và protected root dist **PASS**. Evidence và artifact trong CODEX_STATE.
-- [ ] Commit/push `origin/main`, Pages Direct Upload Production/main và hosted byte/header/Chrome smoke trên bản mới theo quyền người dùng.
+- [x] Commit `08574e6e` push `origin/main`; Pages Production/main `e289dc79…`, build `9778d65e6d92…`; hosted HTTP **26/26**, Chrome **10 viewport**, SW/offline shell/0 JS errors **PASS**.
+- [ ] CI Linux run `40123776715` full-App PASS nhưng debug heading làm fixture portrait **43/44**; sửa shell/header fixture khớp App, giữ nguyên assertions, chạy lại browser/tools và CI.
 - [ ] iPhone/Android vật lý và authenticated full-game/reconnect giữ gate riêng; không đóng bằng Chrome giả lập.
 
 ## GAME-ALL-CHANGES-RELEASE-20261025 — commit/push/production toàn bộ working tree

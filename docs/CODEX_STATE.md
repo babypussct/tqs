@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (LOCAL PASS, chờ phát hành)
+## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (PRODUCTION SMOKE PASS; CI fixture đang xác minh)
 
 - **Yêu cầu / quyền phát hành:** người dùng yêu cầu kiểm tra/sửa mọi kích thước màn hình, loại khoảng trống thừa, commit, push và production bản mới nhất. Phạm vi theo ứng dụng đang bàn giao là Quốc Chiến `game/web`; không thay Shop/API, luật, pin, gateway/native hoặc KV.
 - **Lỗi đo trực tiếp:** tablet 601–899px để trống 180–420px dưới dashboard; desktop/tablet lớn để trống 59–693px do chain thiếu flex-grow và table min-height cố định; `.sg-game-shell` khóa 1440px tạo gutter lớn. 1024×520 bàn co còn ~249px dù viewport 1024px. 568×320 và 1024×521 cắt đỉnh chân dung bàn 8/10 ghế. Boot/login/lobby/room khóa nền 1040px; lobby/room thiếu 16px chiều cao và dùng vh thay dynamic viewport.
@@ -9,7 +9,10 @@
 - **Kiểm thử quan sát 25/10:** Browser **44/44 PASS**, real Lua **72/72 PASS**, card-display **21/21**, store **50/50**, `typecheck:all` + tools **PASS**, build-safety **7/7**, check:build **PASS**, release **5/5**, production game build **PASS**, PWA **PASS** (524 verified shell files, waiting-worker → activation, giữ IndexedDB/cache khác, offline reload, không cache private). `git diff --check` và protected root `git diff --exit-code -- dist` **PASS**. Một lượt browser bị HMR reload khi sửa fixture giữa test; đã chạy lại toàn bộ source ổn định **44/44 PASS**. Hai lỗi test đầu (__name do tsx serialization, idle fixture không có hand) đã sửa trong fixture/test, không phải lỗi native.
 - **Artifact:** OAuth same-origin + gateway `/gateway`, build `9778d65e6d92a29b8fcdb3f3b6d28b4de9dbe4a96085ff703a1fb1a3b5cd4797`, builtAt `2026-10-24T19:03:55.237Z` (**02:03 ngày 25/10 giờ Việt Nam**).
 - **Evidence:** `scratch/evidence/responsive-release-20261025/` với logs, probe JSON, before/after PNG. Đã xem ảnh trước/sau 1920×1080, 1024×520 và sau sửa 768×1024, 320×568.
-- **Giới hạn / bước tiếp:** commit/push source, Pages Direct Upload Production/main, đối chiếu bytes/headers/gateway/OAuth và Chrome hosted mới. Không tuyên bố mọi thiết bị/vật lý hoặc authenticated full-game/reconnect PASS từ fixture và Chrome; các gate đó giữ riêng.
+- **Phát hành đã quan sát:** commit `08574e6eca60e8e3648374f535a92c2cf0be3024` push `origin/main`, remote SHA khớp. Pages Direct Upload deployment **`e289dc79-e346-47a8-9608-a57d18458bac`**, Production/main/source `08574e6`, URL [`e289dc79.tqsvn.pages.dev`](https://e289dc79.tqsvn.pages.dev), alias [`tqsvn.pages.dev`](https://tqsvn.pages.dev). HTTP/byte/header/gateway/OAuth **26/26 PASS**; Chrome anonymous **10 viewport PASS**, Google trial-click và canvas full width/height, đúng build, footer/dialog, SW 524 paths, offline shell reload, **0 JS page errors**. Đã xem hosted desktop 1920×1080, landscape 568×320 và offline; portrait image ngoài shell cache có thể thiếu khi offline.
+- **CI Linux phát hiện sai lệch fixture:** run [`40123776715`](https://github.com/babypussct/tqs/actions/runs/40123776715) Browser **43/44**, full-App matrix PASS nhưng fixture-only portrait center FAIL: debug h1 visible trong flex stage ăn chiều cao khác font Linux, upper seat bottom ~186.93px và center top 181.5px ở 320×568. Đã đọc log trực tiếp qua GitHub Chrome (API logs 403). Sửa fixture dùng đúng `shell-playing sg-app-shell sg-game-shell`, debug heading trong `.app-header` ẩn như App; chờ `.sg-game-board`, giữ nguyên assertions. Không đổi CSS/artifact production để bù lỗi fixture. Bài học đã ghi trong AGENTS.md.
+- **Sau sửa fixture:** browser local **44/44 PASS** (`browser-ci-fix.log`), tools typecheck **PASS**; production CSS/build giữ nguyên.
+- **Giới hạn / bước tiếp:** push fixture và chạy lại CI, cập nhật nhật ký sau CI. Không tuyên bố mọi thiết bị/vật lý hoặc authenticated full-game/reconnect PASS từ fixture và Chrome; các gate đó giữ riêng.
 
 ## GAME-ALL-CHANGES-RELEASE-20261025 — toàn bộ thay đổi đã push và lên Pages production (HOSTED SMOKE PASS)
 
@@ -1271,23 +1274,23 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T19:06:13.325Z (UTC).
-- Nhánh: `main` · HEAD: `3b078d0840f4`.
+- Ghi lúc: 2026-10-24T19:13:04.212Z (UTC).
+- Nhánh: `main` · HEAD: `08574e6eca60`.
 - File thay đổi hiển thị: 4 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M AGENTS.md
  M docs/CODEX_PLAN.md
  M game/web/scripts/browser-e2e/harness.tsx
  M game/web/scripts/browser-e2e/run.ts
- M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+08574e6e fix(game): fill responsive stages across phone tablet and desktop
 3b078d08 docs: record production rollout and passing release verification
 6b92a45a test(game): match Lua fixture viewport to the production shell
-a138a661 fix(game): serve cached HTML after Pages canonical redirects
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
