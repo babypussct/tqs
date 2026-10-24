@@ -1,5 +1,13 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## GAME-UI-UX-PAGES-RELEASE-20261024 — UI Quốc Chiến lên Pages production (DEPLOYED / HTTP VERIFIED)
+
+- **Nguồn phát hành:** `main` tại commit `1684bcaae525dca900c01828e52da31d69f31bf6` (đã push `origin/main`), gồm UI/UX P0–P4 và các sửa lỗi sát thương/MoveFocus/BOT. Checkout sạch trước phát hành. Phát hành chỉ frontend `game/web`, không đụng Shop, native, Cloudflare KV hay gateway VM.
+- **Build thực tế 24/10:** từ `game/web`, `VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH=true VITE_GATEWAY_URL=/gateway npm run build` **PASS** (audit và TypeScript, 524 file service worker); `npm run test:build-safety` **7/7 PASS**, `npm run check:build` **PASS**, `npm run typecheck:all` **PASS**; browser/Lua regression **36/36** và **72/72 PASS** ở lượt rà lỗi trước. Cảnh báo Vite bundle >500 kB chỉ là thông tin về kích thước.
+- **Deploy:** Wrangler 4.152.0, chạy `npx wrangler pages deploy dist --project-name tqsvn --branch main --commit-hash 1684bcaae525dca900c01828e52da31d69f31bf6` từ `game/web`: **PASS**; 2.238 asset (4 mới, 2.234 đã có) và Functions bundle. Cloudflare xác nhận `Production/main`, deployment ID `a376a2ad-1e4c-4bad-b8a3-a72d9df551e9`, URL bất biến `https://a376a2ad.tqsvn.pages.dev`, alias `https://tqsvn.pages.dev`.
+- **Xác minh sau deploy:** cả URL bất biến và alias đều trả `200`, cùng SHA-256/byte với artifact local cho `/`, `/sw.js`, `/__/firebase/init.json`, bundle JS `index-BxlK5FRk.js`, CSS `index-D2K0qbuM.css` (**10/10 PASS**). Trên cả hai host, `/gateway/healthz`, `/gateway/manifest.json`, `/__/auth/handler`, `/__/auth/handler.js` đều `200`, POST `/api/game/session` thiếu token trả `401` (**10/10 PASS**). `git diff --exit-code -- dist` **PASS**.
+- **Giới hạn:** smoke HTTP và bundle xác nhận phát hành frontend/Functions, chưa kiểm Google OAuth có tài khoản được duyệt, tạo/chơi trọn trận trên production sau bản phát hành, iOS/Android vật lý hoặc canary chính thức. Trạng thái các gate native/IPBAN và thiết bị thật giữ nguyên; bước tiếp theo là authenticated gameplay/device smoke khi có điều kiện phù hợp.
+
 ## GAME-UI-UX-GIT-REVIEW-20261024 — rà lỗi trước khi đồng bộ mã nguồn
 
 - **Phạm vi:** kiểm tra toàn bộ lô sửa UI/UX `new_heg_mode` ở `game/web`, giữ các thay đổi chưa commit của phiên trước; tập trung vào tương tác, trạng thái thời gian thực, trợ năng và regression. Không thay Lua/native, Shop hoặc dịch vụ đang chạy.
@@ -1160,39 +1168,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T08:54:32.722Z (UTC).
-- Nhánh: `main` · HEAD: `8500d67fae41`.
-- File thay đổi hiển thị: 20 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T09:34:47.148Z (UTC).
+- Nhánh: `main` · HEAD: `1684bcaae525`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/scripts/store.test.ts
- M game/web/src/App.tsx
- M game/web/src/CardSelectionPanel.tsx
- M game/web/src/CardsAndChoicePanel.tsx
- M game/web/src/ChoicePanel.tsx
- M game/web/src/GameBoardScreen.tsx
- M game/web/src/GameResultPanel.tsx
- M game/web/src/GameplayControls.tsx
- M game/web/src/HandCardItem.tsx
- M game/web/src/NativeDialogPanel.tsx
- M game/web/src/PlayerPhotoPanel.tsx
- M game/web/src/RequestDialog.tsx
- M game/web/src/store/boardState.ts
- M game/web/src/store/cardVfxState.ts
- M game/web/src/store/gameStore.ts
- M game/web/src/store/nativeVfxEvents.ts
- M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+1684bcaa feat(game): refine Hegemony board UI and combat feedback
 8500d67f docs: refresh Codex checkpoint after Pages release
 3aea5e1b docs: record Hegemony translation release
-2a96c067 feat(game): add Hegemony Vietnamese translation overlay
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

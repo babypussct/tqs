@@ -1,5 +1,13 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## GAME-UI-UX-PAGES-RELEASE-20261024 — phát hành giao diện Quốc Chiến production
+
+- [x] Git `main` đã push commit nguồn `1684bcaa` cho UI/UX P0–P4; Pages Direct Upload phát hành riêng với OAuth same-origin và gateway `/gateway`.
+- [x] Build game production **PASS**, root `test:build-safety` **7/7 PASS**, `check:build` và `typecheck:all` **PASS**; service worker kiểm **524** file.
+- [x] Wrangler deploy có Pages Functions/KV binding theo `game/web/wrangler.toml` lên Cloudflare Pages `tqsvn` `Production/main`: deployment `a376a2ad-1e4c-4bad-b8a3-a72d9df551e9`, alias `https://tqsvn.pages.dev`.
+- [x] Post-deploy cả deployment URL và production alias: HTML/JS/CSS/SW/Firebase config khớp byte với build (**10/10**); gateway health/manifest và OAuth handler/JS HTTP `200`, API session thiếu Bearer `401` (**10/10**).
+- [ ] Sau phát hành: xác nhận đăng nhập thật, lobby/phòng/chọn chủ-phó/đánh bài/GameOver/reconnect trên deployment này và thao tác thiết bị vật lý nếu cần; không coi HTTP smoke là full gameplay/device acceptance. Không thay native/IPBAN/Shop trong release frontend này.
+
 ## GAME-UI-UX-COMPREHENSIVE-20261024 — Cải tiến toàn diện UI/UX bàn chơi và tương tác (Phase P0–P4)
 
 - [x] **P0 — Bố cục bàn chơi & tương tác tinh gọn:**
@@ -33,7 +41,8 @@
   - Production Web Build (`npm --prefix game/web run build`): **PASS** (toàn bộ audit crypto, skills, hidden rules, native callers và service worker 524 file).
   - Rà lỗi trước khi đồng bộ Git: hạn `MoveFocus` tự kết thúc, số sát thương native 2/3 được hiển thị đúng và không kích hoạt khi hồi máu, BOT trở lại đúng ngữ nghĩa nút bấm. `test:store` (bao gồm hạn và thay thế focus), `test:card-effects` **13/13 PASS**, real Lua E2E **72/72 PASS** có kiểm tra UI thực tế; `npm run check:build` **PASS**.
   - Ma trận viewport: `320×568`, `390×844`, `844×390`, `1280×800` không tràn ngang, không vỡ layout khi mở popover/nhật ký.
-- [ ] Nghiệm thu giao diện trên thiết bị thật và phát hành Pages khi có yêu cầu riêng; đồng bộ Git không phải nghiệm thu hosted.
+- [x] Pages frontend đã phát hành ở deployment `a376a2ad` với HTTP/bundle smoke PASS; xem `GAME-UI-UX-PAGES-RELEASE-20261024`.
+- [ ] Nghiệm thu giao diện trên thiết bị thật và authenticated gameplay production sau deployment mới; HTTP/bundle smoke chưa đóng gate này.
 
 ## GAME-BOARD-FOCUS-20261024 — giao diện chỉ tập trung vào bàn chơi
 
