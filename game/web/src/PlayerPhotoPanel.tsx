@@ -144,10 +144,22 @@ function HealthColumn({ game }: { game: BoardPlayer | undefined }) {
   </div>;
 }
 
-function HandCardBadge({ count }: { count: number | null | undefined }) {
+function HandCardBadge({
+  count, maxCards, hp,
+}: {
+  count: number | null | undefined;
+  maxCards?: number | null;
+  hp?: number | null;
+}) {
   const displayCount = count ?? '?';
-  return <div className="sg-hand-count-badge native-handcard-badge" title={`${displayCount} lá trên tay`}>
-    <span className="native-handcard-count-text">{displayCount}</span>
+  const showMax = maxCards != null && count != null && (hp == null || (maxCards !== hp && hp >= 0));
+  const maxText = maxCards != null ? (maxCards < 900 ? String(maxCards) : '∞') : '';
+  const visibleReadout = showMax ? `${displayCount}/${maxText}` : String(displayCount);
+  const titleText = showMax
+    ? `${displayCount} lá trên tay (giới hạn ${maxText})`
+    : `${displayCount} lá trên tay`;
+  return <div className="sg-hand-count-badge native-handcard-badge" title={titleText}>
+    <span className="native-handcard-count-text">{visibleReadout}</span>
     <span className="sg-hand-count-compat sg-visually-hidden">{displayCount} lá trên tay</span>
   </div>;
 }
@@ -215,64 +227,70 @@ function equipNameClass(name: string): string {
 }
 
 function EquipRow({
-  slot, typeLabel, card, text,
+  slot, typeLabel, card, text, sealed = false,
 }: {
   slot: EquipmentSlotKey;
   typeLabel: string;
   card?: BoardEquipment;
   text: (value: string) => string;
+  sealed?: boolean;
 }) {
   const info = card ? suitInfo(card) : null;
   const name = resolveEquipName(card, typeLabel, text);
   const suitText = info ? info.text : '';
-  const detail = card ? `${name} · ${suitText}${card.range != null ? ` · Tầm ${card.range}` : ''}` : `${typeLabel} trống`;
+  const detail = sealed
+    ? `${typeLabel} đã khóa`
+    : card ? `${name} · ${suitText}${card.range != null ? ` · Tầm ${card.range}` : ''}` : `${typeLabel} trống`;
   const nameClass = equipNameClass(card ? name : typeLabel);
 
-  return <div className={`native-equip-row ${card ? 'equipped' : 'empty'}`} title={detail} aria-label={detail}>
+  return <div className={`native-equip-row ${card ? 'equipped' : 'empty'}${sealed ? ' is-sealed' : ''}`} title={detail} aria-label={detail}>
     <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot={slot} card={card} /></span>
-    <span className={`native-eq-name ${nameClass}`}>{card ? name : typeLabel}</span>
-    {card && <span className={`native-eq-suit card-suit-ink ${info?.colorClass}`}>{suitText}</span>}
+    <span className={`native-eq-name ${nameClass}`}>{sealed ? 'Đã khóa' : card ? name : typeLabel}</span>
+    {card && !sealed && <span className={`native-eq-suit card-suit-ink ${info?.colorClass}`}>{suitText}</span>}
   </div>;
 }
 
 function EquipRidesSplit({
-  defCard, offCard, text,
+  defCard, offCard, text, defSealed = false, offSealed = false,
 }: {
   defCard?: BoardEquipment;
   offCard?: BoardEquipment;
   text: (value: string) => string;
+  defSealed?: boolean;
+  offSealed?: boolean;
 }) {
   const defInfo = defCard ? suitInfo(defCard) : null;
   const offInfo = offCard ? suitInfo(offCard) : null;
   const defName = resolveEquipName(defCard, '+1', text);
   const offName = resolveEquipName(offCard, '-1', text);
-  const defDetail = defCard ? `${defName} · ${defInfo?.text}` : '+1 Mã trống';
-  const offDetail = offCard ? `${offName} · ${offInfo?.text}` : '-1 Mã trống';
+  const defDetail = defSealed ? '+1 Mã đã khóa' : defCard ? `${defName} · ${defInfo?.text}` : '+1 Mã trống';
+  const offDetail = offSealed ? '-1 Mã đã khóa' : offCard ? `${offName} · ${offInfo?.text}` : '-1 Mã trống';
   const defNameClass = equipNameClass(defCard ? defName : '+1');
   const offNameClass = equipNameClass(offCard ? offName : '-1');
 
   return <div className="native-equip-rides-split">
-    <div className={`native-equip-half ${defCard ? 'equipped' : 'empty'}`} title={defDetail} aria-label={defDetail}>
+    <div className={`native-equip-half ${defCard ? 'equipped' : 'empty'}${defSealed ? ' is-sealed' : ''}`} title={defDetail} aria-label={defDetail}>
       <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="defensive_ride" card={defCard} /></span>
-      <span className={`native-eq-name ${defNameClass}`}>{defCard ? defName : '+1'}</span>
-      {defCard && <span className={`native-eq-suit card-suit-ink ${defInfo?.colorClass}`}>{defInfo?.text}</span>}
+      <span className={`native-eq-name ${defNameClass}`}>{defSealed ? 'Khóa' : defCard ? defName : '+1'}</span>
+      {defCard && !defSealed && <span className={`native-eq-suit card-suit-ink ${defInfo?.colorClass}`}>{defInfo?.text}</span>}
     </div>
-    <div className={`native-equip-half ${offCard ? 'equipped' : 'empty'}`} title={offDetail} aria-label={offDetail}>
+    <div className={`native-equip-half ${offCard ? 'equipped' : 'empty'}${offSealed ? ' is-sealed' : ''}`} title={offDetail} aria-label={offDetail}>
       <span className="native-eq-icon" aria-hidden="true"><EquipSlotVisual slot="offensive_ride" card={offCard} /></span>
-      <span className={`native-eq-name ${offNameClass}`}>{offCard ? offName : '-1'}</span>
-      {offCard && <span className={`native-eq-suit card-suit-ink ${offInfo?.colorClass}`}>{offInfo?.text}</span>}
+      <span className={`native-eq-name ${offNameClass}`}>{offSealed ? 'Khóa' : offCard ? offName : '-1'}</span>
+      {offCard && !offSealed && <span className={`native-eq-suit card-suit-ink ${offInfo?.colorClass}`}>{offInfo?.text}</span>}
     </div>
   </div>;
 }
 
 function EquipmentPlate({
-  slotCards, text, count, self, compact,
+  slotCards, text, count, self, compact, sealedSlots = [],
 }: {
   slotCards: Map<EquipmentSlotKey, BoardEquipment>;
   text: (value: string) => string;
   count: number;
   self: boolean;
   compact: boolean;
+  sealedSlots?: string[];
 }) {
   const label = self ? 'Trang bị của bạn' : 'Trang bị công khai';
   const equippedNames = [...slotCards.values()]
@@ -289,10 +307,11 @@ function EquipmentPlate({
   return <div className={`sg-equip-plate native-equip-plate${compact ? ' native-equip-plate-compact' : ''}`}
     aria-label={ariaLabel} aria-description={`${label}: ${equipmentSummary}`} title={`${label}: ${equipmentSummary}`}
     data-equipped-count={slotCards.size} data-equipment-summary={equipmentSummary}>
-    <EquipRow slot="treasure" typeLabel="Bảo vật" card={slotCards.get('treasure')} text={text} />
-    <EquipRow slot="weapon" typeLabel="Vũ khí" card={slotCards.get('weapon')} text={text} />
-    <EquipRow slot="armor" typeLabel="Phòng cụ" card={slotCards.get('armor')} text={text} />
-    <EquipRidesSplit defCard={slotCards.get('defensive_ride')} offCard={slotCards.get('offensive_ride')} text={text} />
+    <EquipRow slot="treasure" typeLabel="Bảo vật" card={slotCards.get('treasure')} text={text} sealed={sealedSlots.includes('TreasureSlot')} />
+    <EquipRow slot="weapon" typeLabel="Vũ khí" card={slotCards.get('weapon')} text={text} sealed={sealedSlots.includes('WeaponSlot')} />
+    <EquipRow slot="armor" typeLabel="Phòng cụ" card={slotCards.get('armor')} text={text} sealed={sealedSlots.includes('ArmorSlot')} />
+    <EquipRidesSplit defCard={slotCards.get('defensive_ride')} offCard={slotCards.get('offensive_ride')} text={text}
+      defSealed={sealedSlots.includes('DefensiveRideSlot')} offSealed={sealedSlots.includes('OffensiveRideSlot')} />
   </div>;
 }
 
@@ -471,12 +490,12 @@ export default function PlayerPhotoPanel({
     <HealthColumn game={game} />
 
     {/* 4. HANDCARD COUNT BADGE */}
-    <HandCardBadge count={game?.handcardNum} />
+    <HandCardBadge count={game?.handcardNum} maxCards={game?.maxCards} hp={game?.hp} />
 
     {/* 5. AUTHENTIC 4-ROW / 5-SLOT EQUIPMENT PLATE */}
     {equipmentPortalTarget
-      ? createPortal(<EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />, equipmentPortalTarget)
-      : <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} />}
+      ? createPortal(<EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} sealedSlots={game?.sealedSlots} />, equipmentPortalTarget)
+      : <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} sealedSlots={game?.sealedSlots} />}
 
     {/* 6. MARKS AND DOM COMPATIBILITY HOOKS */}
     {marks.length > 0 && <div className="sg-photo-marks" aria-label="Dấu hiệu công khai">

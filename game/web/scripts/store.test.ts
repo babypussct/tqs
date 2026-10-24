@@ -949,3 +949,52 @@ test('card skill keys and prompts resolve to Vietnamese without leaking code tok
   assert.equal(displayText('#m_ex__fenji-invoke::-10', VI_ADDITIONS), 'Phấn Kích: Bạn có muốn cho mục tiêu rút 2 lá bài và bạn mất 1 máu không?');
   assert.equal(displayText('#unlisted_skill-invoke::-10', VI_ADDITIONS), 'unlisted_skill: Bạn có muốn kích hoạt lên mục tiêu không?');
 });
+
+test('UI-P1/P2 native parity: expanded pile footnotes, maxCards, sealedSlots, SetPlayerFocus, and InvokeSkill VFX', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  state = reduceUiEvent(state, 'AddPlayer', [17, 'Bạn', '', false, 0]);
+  state = reduceUiEvent(state, 'AddPlayer', [-1, 'Đối thủ', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+
+  // maxCard / maxCards & sealedSlots
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'maxCard', 5]);
+  assert.equal(state.board.player[17].maxCards, 5);
+  state = reduceUiEvent(state, 'PropertyUpdate', [17, 'sealedSlots', ['WeaponSlot', 'TreasureSlot']]);
+  assert.deepEqual(state.board.player[17].sealedSlots, ['WeaponSlot', 'TreasureSlot']);
+  assert.equal(
+    reduceUiEvent(state, 'PropertyUpdate', [17, 'sealedSlots', ['WeaponSlot', 'InvalidSlot']]).board,
+    state.board,
+  );
+
+  // MoveFocus
+  state = reduceUiEvent(state, 'MoveFocus', [[-1], 'PlayCard', 15000]);
+  assert.ok(state.board.focusState);
+  assert.deepEqual(state.board.focusState?.playerIds, [-1]);
+  assert.equal(state.board.focusState?.command, 'PlayCard');
+  assert.equal(state.board.focusState?.timeoutMs, 15000);
+
+  // InvokeSkill & InvokeUltSkill nativeVfxEvents
+  state = reduceUiEvent(state, 'Animate', { type: 'InvokeSkill', player: -1, name: 'hs__jianxiong' });
+  const lastVfx = state.nativeVfxEvents.at(-1);
+  assert.equal(lastVfx?.kind, 'invoke_skill');
+  if (lastVfx?.kind === 'invoke_skill') {
+    assert.equal(lastVfx.playerId, -1);
+    assert.equal(lastVfx.skill, 'hs__jianxiong');
+  }
+
+  // Expanded pile footnote on CardItem in UpdateRequestUI._new
+  state = reduceUiEvent(state, 'UpdateRequestUI', {
+    _type: 'RoomScene',
+    _new: [{
+      type: 'CardItem',
+      data: {
+        id: 88,
+        enabled: true,
+        selected: false,
+        card: { id: 88, name: 'slash', suit: 1, number: 7 },
+      },
+      ui_data: { reason: 'expand', footnote: 'wooden_ox' },
+    }],
+  });
+  assert.equal((state.gameplay.items.CardItem['88']?.card as Record<string, unknown>)?.footnote, 'wooden_ox');
+});

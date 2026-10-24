@@ -1,5 +1,28 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## GAME-UI-UX-AUDIT-PASS2-20261024 — Rà soát lần 2 đối chiếu QML gốc & kế hoạch UI/UX toàn diện (Phase P0–P4)
+
+- **Phạm vi:** Rà soát đối chiếu từng hạng mục giữa mã nguồn QML/Lua gốc (`runtime/packages/freekill-core/LunarLtk/`, `runtime/packages/freekill-core/ltk/`) và kế hoạch UI/UX 5 giai đoạn (`UI-P0-01` đến `UI-P4-01`), bổ sung các chi tiết tinh tế còn thiếu mà không đụng tới luật Lua/C++ hoặc TQSShop.
+- **Đã bổ sung trong lượt rà soát lần 2:**
+  - `UI-P1-02`: Định dạng hàng nhóm chọn bài `.sg-card-selection-group` theo bố cục nhãn trái `PoxiLabel` của `PlayerCardBox.qml` (`styles.css`).
+  - `UI-P1-04`: Bảo toàn `entry.ui_data.footnote` trên `CardItem` khi `ReqActiveSkill:expandPile` thêm bài từ pile mở rộng (`wooden_ox`, `$Equip`, `hs__yiji`, v.v.) trong `gameplayState.ts`; hiển thị huy hiệu `.sg-card-area-badge` trên `HandCardItem.tsx` tương đương `HandcardArea.qml` (`card.areaText = model.footnote`); nâng cấp danh sách `expandItems` (`ToBeDecided`) trong `GameplayControls.tsx` dùng `DialogCardItem`.
+  - `UI-P2-03`: Bổ sung `maxCard`/`maxCards` và `sealedSlots` vào `PropertyUpdate` trong `boardState.ts`; hiển thị `${count}/${maxCards}` trên `HandCardBadge` khi `maxCards !== hp` theo đúng `Photo.qml:216-223` và trạng thái ô trang bị bị phong ấn (`.is-sealed`, `[Phong ấn]`) theo `EquipArea.qml` trong `PlayerPhotoPanel.tsx`.
+  - `UI-P3-01`: Bổ sung cử chỉ nhấn giữ 380ms (`longPress`) trên `SkillInfoEntry` (`SkillInfo.tsx`) để mở `SkillInfoSheet` xem chi tiết kỹ năng mà không kích hoạt click kỹ năng, song song với nút `ⓘ`.
+  - `UI-P3-02`: Bổ sung nút thu gọn/mở rộng nhật ký cuối trận (`Thu gọn` / `Xem chi tiết`) trong `GameResultPanel.tsx` (mặc định mở để giữ nguyên contract E2E).
+  - `UI-P4-01`: Bổ sung unit test và E2E test cho các tính năng P0–P3 trong `scripts/card-display.test.ts`, `scripts/store.test.ts` và `scripts/browser-e2e/run.ts`.
+- **Kiểm thử quan sát trực tiếp 24/10:**
+  - `npm --prefix game/web run test:card-display`: **21/21 PASS**
+  - `npm --prefix game/web run test:store`: **50/50 PASS**
+  - `npm --prefix game/web run test:initial-general`: **4/4 PASS**
+  - `npm --prefix game/web run test:connection`: **33/33 PASS**
+  - `npm --prefix game/web run test:e2e`: **37/37 PASS**
+  - `npm --prefix game/web run test:e2e:lua`: **72/72 PASS**
+  - `npm run typecheck:all`: **PASS**
+  - `npm run test:build-safety`: **7/7 PASS**
+  - `npm --prefix game/web run build`: **PASS** (524 file service worker)
+  - `git diff --check`: **PASS**
+- **Giới hạn / bước tiếp theo:** Toàn bộ thay đổi đang giữ trong working tree local, chưa commit, push hay deploy theo đúng quy tắc bảo toàn của dự án. Sẵn sàng để người dùng nghiệm thu trực quan hoặc chỉ thị phát hành khi cần.
+
 ## GAME-UI-UX-PAGES-RELEASE-20261024 — UI Quốc Chiến lên Pages production (DEPLOYED / HTTP VERIFIED)
 
 - **Nguồn phát hành:** `main` tại commit `1684bcaae525dca900c01828e52da31d69f31bf6` (đã push `origin/main`), gồm UI/UX P0–P4 và các sửa lỗi sát thương/MoveFocus/BOT. Checkout sạch trước phát hành. Phát hành chỉ frontend `game/web`, không đụng Shop, native, Cloudflare KV hay gateway VM.
@@ -1168,20 +1191,31 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T09:34:47.148Z (UTC).
-- Nhánh: `main` · HEAD: `1684bcaae525`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T10:32:20.122Z (UTC).
+- Nhánh: `main` · HEAD: `9a250248e7f4`.
+- File thay đổi hiển thị: 12 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M game/web/scripts/browser-e2e/run.ts
+ M game/web/scripts/card-display.test.ts
+ M game/web/scripts/store.test.ts
+ M game/web/src/GameResultPanel.tsx
+ M game/web/src/GameplayControls.tsx
+ M game/web/src/HandCardItem.tsx
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/SkillInfo.tsx
+ M game/web/src/store/boardState.ts
+ M game/web/src/store/gameplayState.ts
+ M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+9a250248 docs: record Hegemony Pages UI release
 1684bcaa feat(game): refine Hegemony board UI and combat feedback
 8500d67f docs: refresh Codex checkpoint after Pages release
-3aea5e1b docs: record Hegemony translation release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

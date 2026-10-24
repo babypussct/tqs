@@ -982,6 +982,13 @@ export function HandCardItem({
       {/* Layer 3: Central Illustration (Native Asset or Neutral Frame) */}
       <CardArt card={card} />
 
+      {/* Expanded pile / area footnote (mirrors HandcardArea.qml card.areaText) */}
+      {card?.footnote && (
+        <span className="sg-card-area-badge" aria-hidden="true">
+          {text(card.footnote)}
+        </span>
+      )}
+
       {/* Layer 4: Card Name Banner */}
       <div className="sg-card-banner">
         <span className="sg-card-name">{displayName}</span>

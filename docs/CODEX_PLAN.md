@@ -19,23 +19,25 @@
 - [x] **P1 — Dialog tương tác trực quan & đồng bộ tiến trình đếm ngược:**
   - `DialogCardItem` chuẩn hóa thẻ bài trực quan 4 lớp (chất, điểm, minh họa, nhãn, huy hiệu) dùng chung cho tất cả hộp thoại chọn/xem bài (`HandCardItem.tsx`).
   - Tích hợp thanh tiến trình thời gian và số giây đếm ngược trực tiếp trên header của `RequestDialog.tsx`.
-  - Nâng cấp `CardSelectionPanel.tsx` (chọn bài đối thủ/đoán bài) từ nút bấm văn bản thô sang thẻ bài trực quan theo chuẩn `PlayerCardBox.qml`.
+  - Nâng cấp `CardSelectionPanel.tsx` (chọn bài đối thủ/đoán bài) từ nút bấm văn bản thô sang thẻ bài trực quan và hàng nhãn trái theo chuẩn `PlayerCardBox.qml`.
   - Nâng cấp `CardsAndChoicePanel.tsx` sang hiển thị bài trực quan với hỗ trợ bài úp và thẻ hành vi.
   - Nâng cấp `NativeDialogPanel.tsx` với thẻ bài trực quan và chân dung tướng `GeneralPortrait` chuẩn SVG/ảnh.
-  - Hiển thị ký hiệu chất/điểm và chú thích phong cách bản địa trong danh sách `expandItems` (`GameplayControls.tsx`).
+  - Bảo toàn `entry.ui_data.footnote` từ `ReqActiveSkill:expandPile` (`gameplayState.ts`) và hiển thị huy hiệu `.sg-card-area-badge` trên `HandCardItem.tsx` cùng `DialogCardItem` cho `expandItems` (`GameplayControls.tsx`).
   - Ẩn thanh đếm ngược ngoài bàn khi đang mở hộp thoại modal tương tác (`App.tsx`).
 - [x] **P2 — Trực quan hóa trạng thái bàn chơi thời gian thực:**
   - Chiếu lệnh `MoveFocus` từ Lua/server vào `focusState` (`boardState.ts`, `gameStore.ts`), hỗ trợ viền sáng `.is-thinking` và thanh đếm ngược thời gian suy nghĩ trên ảnh chân dung người chơi đang tới lượt (`PlayerPhotoPanel.tsx`).
   - Bổ sung hiệu ứng hiển thị kỹ năng `【Skill】` nổi trên chân dung người dùng/đối thủ khi kích hoạt (`nativeVfxEvents.ts`, `cardVfxState.ts`).
   - Bổ sung hiệu ứng số nhảy sát thương `sg-photo-damage-pop` theo đúng `damageNum` của native `LogEvent/Damage`; hồi máu không phát số sát thương.
+  - Bổ sung `maxCard`/`maxCards` (`count/maxCards` khi `maxCards !== hp`) và `sealedSlots` (`.is-sealed`, `[Phong ấn]`) trên `PlayerPhotoPanel.tsx` theo đúng `Photo.qml` và `EquipArea.qml`.
 - [x] **P3 — Công thái học thanh kỹ năng & màn hình tổng kết trận (GameOver):**
   - Giữ độ rộng tối thiểu 62px, chiều cao 26-28px, vuốt ngang mượt mà cho `.board-local-skill-rail` trên mobile.
-  - Nút xem mô tả kỹ năng độc lập `sg-skill-info-trigger` không kích hoạt gửi lệnh đánh bài.
-  - Nâng cấp bảng kết quả `GameResultPanel.tsx` với chân dung tướng chủ/phó, huy hiệu vinh danh, nhật ký cuối trận và nút "Ở lại phòng chờ" bên cạnh "Về sảnh".
+  - Nút xem mô tả kỹ năng độc lập `sg-skill-info-trigger` kết hợp cử chỉ nhấn giữ 380ms (`SkillInfo.tsx`) không kích hoạt gửi lệnh đánh bài.
+  - Nâng cấp bảng kết quả `GameResultPanel.tsx` với chân dung tướng chủ/phó, huy hiệu vinh danh, nhật ký cuối trận có nút thu gọn/mở rộng và nút "Ở lại phòng chờ" bên cạnh "Về sảnh".
 - [x] **P4 — Ma trận kiểm thử & kiểm tra tính toàn vẹn (Hoàn thành):**
-  - Browser E2E (`npm --prefix game/web run test:e2e`): **36/36 PASS**.
+  - Browser E2E (`npm --prefix game/web run test:e2e`): **37/37 PASS**.
   - Real Lua E2E (`npm --prefix game/web run test:e2e:lua`): **72/72 PASS**.
-  - Card Display (`npm --prefix game/web run test:card-display`): **20/20 PASS**.
+  - Card Display (`npm --prefix game/web run test:card-display`): **21/21 PASS**.
+  - Store Unit (`npm --prefix game/web run test:store`): **50/50 PASS**.
   - TypeScript Typecheck (`npm run typecheck:all`): **PASS** (Shop, Game Web, Game Tools).
   - Build Safety (`npm run test:build-safety`): **7/7 PASS**.
   - Production Web Build (`npm --prefix game/web run build`): **PASS** (toàn bộ audit crypto, skills, hidden rules, native callers và service worker 524 file).

@@ -505,6 +505,22 @@ async function runSuite(page: Page) {
       assert.equal(await info.evaluate((button) => document.activeElement === button), true,
         'inspector must restore focus to its trigger');
 
+      // The touch-style long press must inspect the skill without invoking
+      // its gameplay/prelight action when the browser synthesizes a click.
+      const fakeSkill = p.locator('.board-local-skill-rail .fake-skill-dock .fake-skill-button');
+      const box = await fakeSkill.boundingBox();
+      assert.ok(box, 'fake skill button must be visible for long-press test');
+      await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await p.mouse.down();
+      await p.waitForTimeout(430);
+      await dialog.waitFor();
+      await p.mouse.up();
+      assert.deepEqual((await snapshot(p)).actions, previous.actions);
+      assert.deepEqual((await snapshot(p)).sent, previous.sent);
+      assert.deepEqual((await snapshot(p)).fakeSkills, previous.fakeSkills);
+      await p.getByRole('button', { name: 'Đóng thông tin kỹ năng' }).click();
+      await dialog.waitFor({ state: 'hidden' });
+
       await p.evaluate(() => window.__tqsE2e.cancel());
       const regular = p.locator('.board-local-skill-rail .regular-skill-dock .sg-skill-info-trigger');
       await regular.click();
@@ -1079,6 +1095,38 @@ async function runSuite(page: Page) {
           `body overflows ${viewport.width}px: ${JSON.stringify(metrics)}`);
       }
       await p.setViewportSize({ width: 390, height: 844 });
+    }],
+    ['Hand sort button cycles 4 native modes and toolbar toggles are mutually exclusive', async (p) => {
+      await p.setViewportSize({ width: 844, height: 390 });
+      try {
+        await start(p, 'choices');
+        const sortBtn = p.locator('.sg-sort-btn');
+        await sortBtn.waitFor();
+        assert.equal(await sortBtn.textContent(), 'Sắp xếp');
+        await sortBtn.click();
+        assert.equal(await sortBtn.textContent(), 'Sắp xếp: Loại');
+        await sortBtn.click();
+        assert.equal(await sortBtn.textContent(), 'Sắp xếp: Chất');
+        await sortBtn.click();
+        assert.equal(await sortBtn.textContent(), 'Sắp xếp: Điểm');
+        await sortBtn.click();
+        assert.equal(await sortBtn.textContent(), 'Sắp xếp');
+
+        const toolsBtn = p.getByRole('button', { name: 'Tùy chọn trận đấu' });
+        const logBtn = p.locator('.sg-toolbar-log-toggle');
+        await toolsBtn.click();
+        assert.equal(await toolsBtn.getAttribute('aria-expanded'), 'true');
+        assert.equal(await logBtn.getAttribute('aria-expanded'), 'false');
+        await logBtn.click();
+        assert.equal(await toolsBtn.getAttribute('aria-expanded'), 'false');
+        assert.equal(await logBtn.getAttribute('aria-expanded'), 'true');
+        await toolsBtn.click();
+        assert.equal(await toolsBtn.getAttribute('aria-expanded'), 'true');
+        assert.equal(await logBtn.getAttribute('aria-expanded'), 'false');
+        await toolsBtn.click();
+      } finally {
+        await p.setViewportSize({ width: 390, height: 844 });
+      }
     }],
   ];
 

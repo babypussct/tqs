@@ -58,6 +58,8 @@ export interface BoardPlayer {
   equipment: BoardEquipment[];
   delayedTricks: BoardEquipment[];
   marks: Record<string, string | number | boolean>;
+  maxCards?: number | null;
+  sealedSlots?: string[];
 }
 
 export interface BoardFocusState {
@@ -418,6 +420,21 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     case 'faceup':
       if (typeof value !== 'boolean') return board;
       next = { ...prior, [name]: value }; break;
+    case 'maxCard':
+    case 'maxCards': {
+      const n = numberOrNull(value);
+      if (n === null) return board;
+      next = { ...prior, maxCards: n }; break;
+    }
+    case 'sealedSlots': {
+      if (!Array.isArray(value) || value.length > 16) return board;
+      const validSlots = new Set([
+        'WeaponSlot', 'ArmorSlot', 'OffensiveRideSlot',
+        'DefensiveRideSlot', 'TreasureSlot', 'JudgeSlot', 'HandSlot',
+      ]);
+      if (!value.every((s): s is string => typeof s === 'string' && validSlots.has(s))) return board;
+      next = { ...prior, sealedSlots: [...new Set(value)] }; break;
+    }
     default:
       return board;
   }

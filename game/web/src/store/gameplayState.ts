@@ -112,7 +112,7 @@ function publicCard(value: unknown): unknown {
   const data = record(value);
   if (!data) return undefined;
   const card: Record<string, unknown> = {};
-  for (const key of ['name', 'trueName', 'extension', 'picName'] as const) {
+  for (const key of ['name', 'trueName', 'extension', 'picName', 'footnote'] as const) {
     if (typeof data[key] === 'string' && data[key].length <= 120 &&
         !/[\u0000-\u001F\u007F]/.test(data[key])) card[key] = data[key];
   }
@@ -137,7 +137,14 @@ function mergeItem(prior: GameplayItem | undefined, raw: unknown): GameplayItem 
   };
   if ('card' in data) {
     const card = publicCard(data.card);
-    if (card !== undefined) next.card = card;
+    if (card !== undefined) {
+      const priorCard = record(prior?.card);
+      const nextCard = record(card);
+      if (nextCard && typeof priorCard?.footnote === 'string' && !('footnote' in nextCard)) {
+        nextCard.footnote = priorCard.footnote;
+      }
+      next.card = card;
+    }
     else if (prior && 'card' in prior) next.card = prior.card;
   } else if (prior && 'card' in prior) next.card = prior.card;
   const skills = Array.isArray(data.skills) ? data.skills.slice(0, 128) : null;
@@ -185,7 +192,16 @@ export function reduceGameplay(scene: GameplayScene, raw: unknown): GameplayScen
       const value = record(entry);
       if (!value || !itemType(value.type)) continue;
       const item = mergeItem(undefined, value.data);
-      if (item) items[value.type][String(item.id)] = item;
+      if (item) {
+        const uiData = record(value.ui_data);
+        const card = record(item.card);
+        if (value.type === 'CardItem' && card && typeof uiData?.footnote === 'string' &&
+            uiData.footnote.length > 0 && uiData.footnote.length <= 120 &&
+            !/[\u0000-\u001F\u007F]/.test(uiData.footnote)) {
+          card.footnote = uiData.footnote;
+        }
+        items[value.type][String(item.id)] = item;
+      }
     }
   }
   for (const type of GAMEPLAY_ITEMS) {

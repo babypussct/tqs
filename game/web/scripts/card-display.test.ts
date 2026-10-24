@@ -364,3 +364,18 @@ test('IdleHandCard maintains identical 4-layer structure to active cards', () =>
   assert.match(idleFn, /className="sg-card-banner"/);
   assert.doesNotMatch(idleFn, /sg-card-badge-cluster/);
 });
+
+test('DialogCardItem and expanded pile footnote badges preserve native QML card semantics', () => {
+  const itemSource = readFileSync(path.join(rootDir, 'src/HandCardItem.tsx'), 'utf8');
+  const cardSelectionSource = readFileSync(path.join(rootDir, 'src/CardSelectionPanel.tsx'), 'utf8');
+  const cardsAndChoiceSource = readFileSync(path.join(rootDir, 'src/CardsAndChoicePanel.tsx'), 'utf8');
+  const nativeDialogSource = readFileSync(path.join(rootDir, 'src/NativeDialogPanel.tsx'), 'utf8');
+
+  assert.match(itemSource, /export function DialogCardItem/);
+  assert.match(itemSource, /sg-dialog-card-back/);
+  assert.match(itemSource, /sg-card-area-badge/);
+  assert.match(cardSelectionSource, /<DialogCardItem/);
+  assert.match(cardsAndChoiceSource, /<DialogCardItem/);
+  assert.match(nativeDialogSource, /<DialogCardItem/);
+  assert.match(nativeDialogSource, /<GeneralPortrait/);
+});

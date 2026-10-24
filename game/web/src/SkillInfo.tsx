@@ -83,6 +83,17 @@ export function SkillInfoEntry({ name, children }: { name: string; children: Rea
   const translations = useGameStore((state) => state.translations);
   const description = skillDescription(name, translations);
   const trigger = useRef<HTMLButtonElement>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressTriggered = useRef(false);
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+  useEffect(() => () => cancelLongPress(), []);
+
   const showPreview = () => {
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches || !trigger.current) return;
     const rect = trigger.current.getBoundingClientRect();
@@ -91,7 +102,29 @@ export function SkillInfoEntry({ name, children }: { name: string; children: Rea
       top: rect.bottom + 6 > window.innerHeight / 2 ? rect.top - 6 : rect.bottom + 6 });
     setHover(true);
   };
-  return <div className="sg-skill-info-entry">
+  return <div className="sg-skill-info-entry"
+    onPointerDownCapture={(event) => {
+      if ((event.target as Element | null)?.closest?.('.sg-skill-info-trigger')) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      cancelLongPress();
+      longPressTriggered.current = false;
+      longPressTimer.current = window.setTimeout(() => {
+        longPressTimer.current = null;
+        longPressTriggered.current = true;
+        setHover(false);
+        setOpen(true);
+      }, 380);
+    }}
+    onPointerUpCapture={cancelLongPress}
+    onPointerCancelCapture={cancelLongPress}
+    onPointerLeave={cancelLongPress}
+    onClickCapture={(event) => {
+      if (longPressTriggered.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        longPressTriggered.current = false;
+      }
+    }}>
     {children}
     <button ref={trigger} type="button" className="sg-skill-info-trigger"
       aria-label={`Xem mô tả kỹ năng ${text(name)}`} title={`Xem mô tả ${text(name)}`}

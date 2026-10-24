@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { localizedGameLog, useDisplayText } from './engine/displayText';
 import type { GameResult } from './store/gameStore';
 import { GeneralPortrait } from './GeneralChoiceCard';
@@ -10,10 +10,11 @@ export default function GameResultPanel({ result, busy, leave, onDismiss }: {
   onDismiss?: () => void;
 }) {
   const text = useDisplayText();
+  const [showLogs, setShowLogs] = useState(true);
   const logList = useRef<HTMLOListElement>(null);
   useLayoutEffect(() => {
-    if (logList.current) logList.current.scrollTop = logList.current.scrollHeight;
-  }, [result]);
+    if (showLogs && logList.current) logList.current.scrollTop = logList.current.scrollHeight;
+  }, [result, showLogs]);
   const outcomeClass = result.outcome === 'win' ? 'is-win' : result.outcome === 'loss' ? 'is-loss' : 'is-draw';
   const title = { win: 'Bạn đã thắng!', loss: 'Bạn đã thua', draw: 'Ván đấu hòa', unknown: 'Ván đấu đã kết thúc' }[result.outcome];
   const winnerIds = new Set(result.winners.map((w) => w.id));
@@ -76,12 +77,24 @@ export default function GameResultPanel({ result, busy, leave, onDismiss }: {
 
           {result.summary.logs.length > 0 && (
             <div className="board-log-panel sg-result-log-section">
-              <h3>Nhật ký cuối trận</h3>
-              <ol className="board-logs sg-result-logs" ref={logList} aria-label="Nhật ký cuối trận">
-                {result.summary.logs.map((log, index) => (
-                  <li key={index}>{localizedGameLog(log)}</li>
-                ))}
-              </ol>
+              <div className="sg-result-log-header">
+                <h3>Nhật ký cuối trận</h3>
+                <button
+                  type="button"
+                  className="button secondary button-compact sg-result-log-toggle"
+                  aria-expanded={showLogs}
+                  onClick={() => setShowLogs((prev) => !prev)}
+                >
+                  {showLogs ? 'Thu gọn' : `Xem chi tiết (${result.summary.logs.length})`}
+                </button>
+              </div>
+              {showLogs && (
+                <ol className="board-logs sg-result-logs" ref={logList} aria-label="Nhật ký cuối trận">
+                  {result.summary.logs.map((log, index) => (
+                    <li key={index}>{localizedGameLog(log)}</li>
+                  ))}
+                </ol>
+              )}
             </div>
           )}
         </>

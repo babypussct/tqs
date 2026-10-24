@@ -6,7 +6,7 @@ import type { GameplayItem, GameplayItemType, GameplayScene } from './store/game
 import type { RegularSkill } from './store/gameStore';
 import {
   CardDetailSheet,
-  CardSuitMark,
+  DialogCardItem,
   formatRank,
   getCardCategory,
   getSuitInfo,
@@ -213,16 +213,16 @@ function InteractionPicker({ item, dispatch, direct, busy }: {
           const suit = typeof prop?.suit === 'number' || typeof prop?.suit === 'string' ? prop.suit : undefined;
           const number = typeof prop?.number === 'number' ? prop.number : undefined;
           const footnote = typeof prop?.footnote === 'string' ? prop.footnote : typeof row.footnote === 'string' ? row.footnote : undefined;
-          return <button key={`${index}-${row.cid}`} type="button"
-            className={`gameplay-choice ${pendings.includes(row.cid) ? 'selected' : ''}`}
+          return <DialogCardItem key={`${index}-${row.cid}`}
+            name={cardName}
+            suit={suit}
+            number={number}
+            footnote={footnote}
+            selected={pendings.includes(row.cid)}
             disabled={disabled || (enabledIds !== null && !enabledIds.includes(row.cid))}
             onClick={() => send('update', {
               elemType: 'ExpandItem', cid: row.cid, name: row.name, autoTarget: false,
-            })}>
-            {text(cardName)}
-            {suit !== undefined && number !== undefined && <CardSuitMark suit={suit} number={number} />}
-            {footnote && <span className="sg-card-footnote"> ({text(footnote)})</span>}
-          </button>;
+            })} />;
         })}
       </div>}
       {!option && !list(refresh?.expandItems).length && <p className="muted">Đang chờ lựa chọn do Lua cung cấp.</p>}
