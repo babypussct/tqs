@@ -1,12 +1,21 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## HEGEMONY-VI-RELEASE-20261024 — trạng thái phát hành đã quan sát
+
+- **Commit/push:** commit `2a96c067` chứa toàn bộ lô queue/overlay/test/tài liệu Việt hóa; `git push origin main` đã PASS và `origin/main` nhận đúng commit.
+- **Build:** `VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH=true VITE_GATEWAY_URL=/gateway npm run build` đã PASS; artifact local mới có `index.html` SHA-256 `0431e697…`, JS `5e670c3f…`, CSS `ef6c1b91…`, service worker `4becb19e…`.
+- **Deploy:** Cloudflare Pages project `tqsvn` đã nhận deployment `https://41014dea.tqsvn.pages.dev`; alias production `https://tqsvn.pages.dev` phục vụ cùng HTML/JS/CSS byte-exact với local.
+- **Public probe:** trên cả preview và alias, root/JS/CSS trả `200`, JS chứa bản dịch Hegemony mới; `/gateway/healthz`, `/gateway/manifest.json`, `/__/firebase/init.json`, `/__/auth/handler`, `/__/auth/iframe`, `/__/auth/handler.js` đều trả `200`. Product hiện đã chạy bundle mới, không còn bundle cũ của checkpoint trước.
+- **Giới hạn:** đây là deploy web/public artifact và HTTP smoke; semantic review Moegirl + scenario `new_heg_mode`, authenticated gameplay/OAuth full-match và các gate native/device riêng vẫn giữ trạng thái mở theo kế hoạch. Không ghi nhận deploy này là official semantic sign-off.
+- **Bước tiếp theo:** nếu cần đóng chất lượng bản dịch, rà các dòng `semantic_review_pending` theo nguồn chính thống và scenario; nếu chỉ cần kiểm tra vận hành, chạy public OAuth/gameplay runner theo tài khoản QA được phê duyệt, không dùng credential trong repo.
+
 ## HEGEMONY-VI-QUEUE-ACCOUNTING-20261024 — trạng thái hiện hành của lượt dịch Quốc Chiến
 
 - **Hàng đợi:** `docs/translations/HEGEMONY_VIETNAMESE_WORK_QUEUE.csv` có **4.843 hàng / 4.843 key duy nhất**; **3.941** hàng có bản Việt trong runtime overlay và **902** hàng không tạo overlay mới nhưng đã có provenance review. Trong 902 hàng này có 33 hàng đã có tiếng Việt/shared text hiện hành và 869 hàng không có văn bản nguồn, chủ yếu là alias nội bộ, token mark, tên sinh tự động hoặc voice alias; không tự bịa bản dịch cho nhóm này.
 - **Độ phủ theo ưu tiên:** P0 **1.820/1.820** đã được xử lý, gồm 1.034 overlay; P1 **629/629**, gồm 571 overlay; P2 **2.394/2.394**, gồm 2.336 overlay. Toàn bộ **1.874/1.874** câu thoại `voice_death` có nguyên văn tiếng Trung đã có đề xuất tiếng Việt. Các dòng còn lại được giữ nguyên source/current text hoặc gắn trạng thái `source_not_provided`/`not_safe_to_translate` phù hợp.
 - **Runtime:** overlay hiện hành gồm 3.955 key unique, được ghép trong `VI_ADDITIONS` theo thứ tự base → P0 → P1 → P2; 14 key trực tiếp ngoài static queue vẫn được giữ vì cần cho runtime. Source Lua/React và catalog gốc không bị ghi đè.
 - **Kiểm tra:** `npm --prefix game/web run test:hegemony-translation` **1/1 PASS**; `npm --prefix game/web run typecheck` **PASS**; `test:vietnamese` **4/4 PASS**; `test:store` **48/48 PASS**. Test queue xác nhận mọi dòng đều có `proposed_vi` hoặc `review`, mọi đề xuất resolve được, không còn CJK trong overlay, placeholder và rich-text tag shape được giữ.
-- **Giới hạn cần nhớ:** đây là hoàn tất lượt điền/phân loại inventory, không phải semantic sign-off hay bằng chứng mọi key đều hiển thị trong `new_heg_mode`. Các dòng mới mang `semantic_review_pending`; phải đối chiếu Moegirl và scenario hiển thị trước khi phát hành. Không commit, push, deploy.
+- **Giới hạn cần nhớ:** đây là hoàn tất lượt điền/phân loại inventory, không phải semantic sign-off hay bằng chứng mọi key đều hiển thị trong `new_heg_mode`. Các dòng mới mang `semantic_review_pending`; phải đối chiếu Moegirl và scenario hiển thị trước khi coi là đã nghiệm thu ngữ nghĩa. Commit/push/deploy web đã được ghi ở checkpoint `HEGEMONY-VI-RELEASE-20261024` phía trên.
 
 ## HEGEMONY-VI-OVERLAY-20261024 — lô P0 gameplay Việt hóa đầu tiên (snapshot lịch sử)
 
@@ -1118,20 +1127,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-23T21:08:38.535Z (UTC).
-- Nhánh: `main` · HEAD: `403c3f39b491`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T03:15:49.579Z (UTC).
+- Nhánh: `main` · HEAD: `2a96c067e158`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+2a96c067 feat(game): add Hegemony Vietnamese translation overlay
+d0517262 docs: checkpoint clean local main after TQSVN reconciliation
 403c3f39 docs(tqsvn): record verified local commits and translation work queue
-712906f3 docs(tqsvn): capture recovery state, QA evidence and Vietnamese translation backlog
-1a0497c7 feat(tqsvn): consolidate account-based bans, gameplay fixes and guarded builds
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

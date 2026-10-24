@@ -1,11 +1,20 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## HEGEMONY-VI-RELEASE-20261024 — commit, push, build và Pages production
+
+- [x] Commit toàn bộ lô Việt hóa hiện hành trong `2a96c067` (`feat(game): add Hegemony Vietnamese translation overlay`), gồm queue, overlay runtime P0/P1/P2, test và tài liệu bàn giao.
+- [x] Push fast-forward `main` lên `origin/main`; remote đã nhận `2a96c067`.
+- [x] Build production từ commit này với `VITE_TQS_GAME_SAME_ORIGIN_GOOGLE_AUTH=true VITE_GATEWAY_URL=/gateway npm run build`: build/audit/typecheck PASS; local artifact có HTML SHA-256 `0431e697…`, JS `5e670c3f…`, CSS `ef6c1b91…`, service worker `4becb19e…`.
+- [x] Deploy trực tiếp Pages project `tqsvn` bằng Wrangler; deployment `https://41014dea.tqsvn.pages.dev` hoàn tất và alias production `https://tqsvn.pages.dev` đã phục vụ cùng artifact.
+- [x] Public post-deploy probe trên preview và production: root/JS/CSS byte-exact với local, JS có bản dịch Hegemony mới, `/gateway/healthz`, `/gateway/manifest.json`, Firebase init và ba OAuth helper đều trả `200`. Đây là bằng chứng product đang chạy bundle mới, không phải semantic sign-off cho toàn bộ 4.843 key.
+- [ ] Semantic review theo Moegirl và scenario `new_heg_mode` vẫn mở; các dòng mới còn `semantic_review_pending`. Không gắn nhãn bản dịch đã được duyệt đầy đủ chỉ từ structural test và HTTP deploy.
+
 ## HEGEMONY-VI-QUEUE-ACCOUNTING-20261024 — hoàn tất lượt điền bản dịch và phân loại hàng đợi
 
 - [x] Hoàn tất lượt xử lý bảo thủ cho toàn bộ **4.843/4.843 key** trong `HEGEMONY_VIETNAMESE_WORK_QUEUE.csv`: **3.941** dòng có `proposed_vi` được nạp vào các overlay runtime `vietnameseHegemony*.ts`, **902** dòng còn lại có trạng thái provenance rõ ràng (33 dòng đã có tiếng Việt/shared text hiện hành; 869 dòng không có văn bản nguồn và được giữ là alias/token/static hoặc không an toàn để tự dịch). Không thay source Lua, nguyên văn Trung Quốc hay wire key.
 - [x] Theo mức ưu tiên: P0 **1.820/1.820** đã được xử lý (1.034 overlay, phần còn lại được phân loại); P1 **629/629** (571 overlay); P2 **2.394/2.394** (2.336 overlay, gồm toàn bộ **1.874/1.874** câu thoại có nguyên văn tiếng Trung). CSV vẫn có **4.843 key duy nhất** và tất cả dòng đều có `proposed_vi` hoặc `review`.
 - [x] Bổ sung kiểm thử queue-accounting: mọi `proposed_vi` phải resolve trong runtime; kiểm CJK, placeholder và cấu trúc tag rich-text; không cho phép dòng chưa dịch cũng chưa có trạng thái. `test:hegemony-translation` **1/1 PASS**, `typecheck` **PASS**, `test:vietnamese` **4/4 PASS**, `test:store` **48/48 PASS**.
-- [ ] Trạng thái trên là **hoàn tất lượt điền/phân loại inventory**, chưa phải duyệt ngữ nghĩa cuối: các bản dịch mới được đánh dấu `semantic_review_pending`, cần đối chiếu Moegirl và scenario `new_heg_mode` trước khi coi là bản phát hành/đã nghiệm thu hiển thị. Không commit, push, deploy.
+- [~] Trạng thái trên là **hoàn tất lượt điền/phân loại inventory**, chưa phải duyệt ngữ nghĩa cuối: các bản dịch mới được đánh dấu `semantic_review_pending`, cần đối chiếu Moegirl và scenario `new_heg_mode` trước khi coi là đã nghiệm thu ngữ nghĩa. Lô hiện hành đã được commit, push và deploy Pages theo checkpoint `HEGEMONY-VI-RELEASE-20261024`; việc phát hành không thay thế semantic review.
 
 ## HEGEMONY-VI-OVERLAY-20261024 — lô P0 gameplay Việt hóa đầu tiên (snapshot lịch sử)
 
