@@ -5,7 +5,7 @@
 - [x] Người dùng cho phép toàn bộ thay đổi; commit đủ 35 tệp ở `2f633b92`, đồng bộ gateway canonical/legacy, push `origin/main` và đối chiếu SHA.
 - [x] Local unit/type/build/PWA và shop build-clean-rebuild tuần tự PASS; root dist giữ nguyên. Smoke hosted phát hiện offline canonical redirect, đã sửa ở `a138a661`, thêm fixture 301 và PWA regression PASS.
 - [x] Pages **Production/main** deployment **`6a7fdc43-f190-4cd4-b949-1ccb0f636029`**, source **a138a66**, build **aa8c0f9935b4…**, live [`tqsvn.pages.dev`](https://tqsvn.pages.dev). HTTP/byte/header/gateway/OAuth **26/26**, Chrome 4 viewport + đúng build + SW 524 tệp + offline reload + 0 page errors **PASS**.
-- [ ] GitHub CI nguồn: run `40120315756` FAIL ở prepare:upstream; run fix `40120780675` upstream/build/browser PASS, Lua 71/72 do fixture debug heading làm bài tràn 9,5px ở Linux 320×568. Đã đọc log qua Chrome, dùng đúng playing shell/ẩn heading như App thật, giữ assertions; local Lua chạy lại 72/72 PASS. Đang push để CI kiểm lại; giữ pin và gate.
+- [x] CI source cuối [`40121861353`](https://github.com/babypussct/tqs/actions/runs/40121861353) trên `6b92a45a`: workflow/TQSVN/Pipeline gate **SUCCESS**, Browser E2E **42/42**, Lua **72/72**, build/types/gateway parity/tests và protected dist **PASS**. Fixture playing shell khớp App; không thay pin hoặc skip gate.
 - [ ] Approved Google/full-match/reconnect và iPhone/Android vật lý giữ gate riêng; smoke HTTP/Chrome ẩn danh không thay thế các nghiệm thu đó.
 
 ## GAME-LAYOUT-MULTI-MODE-20261025 — Tối ưu hiển thị đa chế độ (Portrait · Landscape · Desktop)

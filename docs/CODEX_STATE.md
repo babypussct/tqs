@@ -11,9 +11,10 @@
 - **Pages Direct Upload:** deployment **`6a7fdc43-f190-4cd4-b949-1ccb0f636029`**, **Production/main**, source **`a138a66`**, URL [`6a7fdc43.tqsvn.pages.dev`](https://6a7fdc43.tqsvn.pages.dev), alias [`tqsvn.pages.dev`](https://tqsvn.pages.dev). Wrangler upload `_headers` và Functions bundle thành công, không nối Git provider.
 - **Hosted HTTP/byte smoke:** **26/26 PASS** trên cả URL deployment và alias. HTML/version/SW/glue.wasm/JS/CSS khớp byte build local; `/version.json` và `/sw.js` có **no-store**; gateway health/manifest, Firebase init, OAuth handler/JS/iframe **200**; POST session thiếu token **401** đúng boundary.
 - **Chrome production:** Lua thật nạp tới nút Google; dialog phiên bản chứa đúng build ID; footer và dialog vừa màn hình 320×568, 390×844, 844×390, 1280×800; không có modal cập nhật giả. SW thực tế kiểm/cached đủ **524 tệp**, không cache gateway hoặc version metadata, offline reload **PASS**, **0 page errors**. Đã xem ảnh dialog build cuối và màn hình offline. Lỗi network console khi chủ động offline là trạng thái dự kiến, không phải exception JavaScript.
-- **CI:** nguồn đầu run [`40120315756`](https://github.com/babypussct/tqs/actions/runs/40120315756) **FAIL** tại `npm --prefix game/web run prepare:upstream`; các bước sau không chạy. Nguồn fix run [`40120780675`](https://github.com/babypussct/tqs/actions/runs/40120780675) đã vượt qua upstream/build/browser nhưng Lua **71/72 FAIL**: ordinary Peach geometry tại 320×568 có card bottom **577.5px**. API log trả **403**, đã đọc log bằng phiên GitHub trên Chrome: fixture có tiêu đề chẩn đoán chiếm chiều cao, trong khi App thật ẩn header khi chơi. Đã dùng đúng playing shell của App và chỉ hiện tiêu đề fixture ngoài trận; giữ nguyên assertion card/action phải nằm trong viewport. Chạy lại local toàn bộ Lua **72/72 PASS**, tools typecheck **PASS**, không thay runtime/app artifact. Đang push fix fixture để CI kiểm lại trên Linux. Không thay SHA pin hoặc bỏ gate để lấy PASS; hosted/local PASS không đồng nghĩa CI PASS.
+- **CI nguồn cuối — PASS:** commit kiểm thử `6b92a45af9c64ac4c66e948d53eafb469526d7a8`, run [`40121861353`](https://github.com/babypussct/tqs/actions/runs/40121861353), workflow **SUCCESS**, **TQSVN checks SUCCESS**, **Pipeline gate SUCCESS**. Đã quan sát Chrome job log **Real Lua Browser E2E: 72/72 PASS**, Browser E2E và protected root dist PASS; upstream/type/build/gateway parity/tests đều PASS. Shop job skipped đúng mapping game-only; Shop build-clean-rebuild local đã PASS ở trên.
+- **Lịch sử CI và sửa fixture:** nguồn đầu run `40120315756` FAIL ở prepare:upstream; các run sau đã vượt qua, không đổi pin hoặc skip gate. Run `40120780675` Lua 71/72 do debug heading của fixture chiếm chiều cao khác App thật, card bottom 577.5px ở Linux 320×568. Đọc log qua phiên GitHub trên Chrome sau khi API tải log trả 403; commit `6b92a45a` dùng đúng playing shell/ẩn debug heading như production, giữ nguyên assertions. Local Lua chạy lại **72/72 PASS**, Linux CI cũng **72/72 PASS**. Đây chỉ là sửa fixture, artifact ứng dụng production vẫn đúng build `aa8c0f9935b4…` tại source `a138a661` (ancestor của commit kiểm thử).
 - **Evidence / giới hạn:** `scratch/evidence/production-release-20261025/{http-smoke.json,http-smoke-final.log,browser-smoke.json,browser-smoke-final.log,pages-final.log,deploy-fix.log,pwa-production-fix.log,ci-source-fix.json}` và ảnh `production-*.png`; `git diff --check`, protected root dist và gateway parity **PASS**. Chưa chạy approved Google login/full-game/reconnect hoặc iPhone/Android vật lý, không đóng các gate đó bằng smoke ẩn danh. Các tab legacy trước khi có guard cần đóng hết tab/PWA cũ rồi mở lại để nạp client mới.
-- **Bước tiếp theo:** chờ CI trên bản sửa fixture (upstream đã PASS ở run sau), ghi kết quả cuối và push commit tài liệu; nghiệm thu authenticated/device khi có điều kiện. Không để tiến trình kiểm thử chạy ngầm sau bàn giao.
+- **Bước tiếp theo:** phát hành web và gate CI đã hoàn tất; commit/push nhật ký sau phát hành, sau đó nghiệm thu approved Google/full-match/reconnect và thiết bị thật khi có yêu cầu/điều kiện. Không còn test local chạy ngầm cần chờ.
 
 ## GAME-LAYOUT-MULTI-MODE-20261025 — kiểm tra lại và hoàn thiện giao diện (LOCAL PASS)
 
@@ -1259,21 +1260,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T18:41:17.660Z (UTC).
-- Nhánh: `main` · HEAD: `a138a661e90d`.
-- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-24T18:51:39.794Z (UTC).
+- Nhánh: `main` · HEAD: `6b92a45af9c6`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/web/scripts/real-lua-e2e/harness.tsx
 ```
 
 Ba commit gần nhất:
 
 ```text
+6b92a45a test(game): match Lua fixture viewport to the production shell
 a138a661 fix(game): serve cached HTML after Pages canonical redirects
 2f633b92 feat(game): ship responsive layout and safe client updates
-90db5fba docs: record Hegemony card audio Pages release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
