@@ -1100,6 +1100,11 @@ async function runSuite(page: Page) {
       await p.screenshot({path:path.join(systemEvidence,'force-update-after-gameover.png')});
       await p.keyboard.press('Escape');
       assert.equal(await p.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true}).count(),1);
+      await p.evaluate(() => window.__tqsE2e.systemPending(true, true));
+      const dataDialog = p.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true});
+      await dataDialog.getByText('Gói dữ liệu chiến trường đã thay đổi.', { exact: true }).waitFor();
+      assert.equal(await dataDialog.locator('strong').count(), 1, 'data-only update shows one current UI version');
+      assert.equal(await dataDialog.getByText(/Bản mới nhất:/).count(), 0, 'data-only update must not claim a new UI version');
       await p.evaluate(() => window.__tqsE2e.systemPending(false));
       await p.unroute('**/gateway/healthz?*');
       await p.goto('/e2e.html');

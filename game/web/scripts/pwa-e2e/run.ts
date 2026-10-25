@@ -15,6 +15,11 @@ const server=await preview({configFile:false,root:web,
  }}],preview:{host:'127.0.0.1',port:5293,strictPort:true}});
 const workerFile=path.join(web,'dist/sw.js');
 const originalWorker=fs.readFileSync(workerFile,'utf8');
+const fixtureBackups = new Map<string, Buffer>();
+function writeFixture(file: string, bytes: string | Buffer) {
+ if (!fixtureBackups.has(file)) fixtureBackups.set(file, fs.readFileSync(file));
+ fs.writeFileSync(file, bytes);
+}
 const build=JSON.parse(fs.readFileSync(path.join(web,'dist/version.json'),'utf8'));
 assert.equal(build.version,'0.5.25');assert.equal(build.swVersion,build.buildId);
 const files: string[]=[];
@@ -58,7 +63,7 @@ try {
  }),true,'fixture reproduces Pages /index.html canonical redirect');
  assert.ok(cache.requests.includes('/icon-192.png'));assert.ok(!cache.requests.some(p=>p.startsWith('/gateway/')));
  await page.unroute('**/gateway/private-cache-test');
- // A real waiting worker must open the update gate; reset keeps unrelated cache/Auth IndexedDB.
+ // Keep unrelated cache/Auth IndexedDB through same-build and genuine-update workers.
  await page.evaluate(async()=>{
    await (await caches.open('tqs-unrelated-fixture')).put('/preserve',new Response('keep'));
    await new Promise<void>((resolve,reject)=>{
@@ -69,9 +74,50 @@ try {
        tx.objectStore('auth').put('signed-in-fixture','session');tx.oncomplete=()=>{db.close();resolve();};};
    });
  });
- fs.writeFileSync(workerFile,originalWorker.replace(/const CACHE=PREFIX\+([^;]+);/,'const CACHE=PREFIX+$1+"-upgrade-fixture";'));
+ // Different worker bytes/cache state alone must not claim a new web release.
+ writeFixture(workerFile,originalWorker.replace(/const CACHE=PREFIX\+([^;]+);/,'const CACHE=PREFIX+$1+"-same-build-fixture";'));
+ const sameBuildCheck = page.waitForResponse(r => new URL(r.url()).pathname === '/version.json');
  await page.evaluate(async()=>{await (await navigator.serviceWorker.ready).update();});
- await page.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true}).waitFor({timeout:60000});
+ await page.waitForFunction(async()=>!!(await navigator.serviceWorker.ready).waiting);
+ await (await sameBuildCheck).finished();
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ assert.equal(await page.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true}).count(),0,
+   'same build with a waiting worker must not force an update');
+ // Stage a second, coherent build: new JS bytes, normalized full-build ID,
+ // embedded runtime ID, metadata, cache name and verified shell hashes.
+ const entry=files.find(file=>file.endsWith('.js') && fs.readFileSync(file,'utf8').includes(build.buildId))!;
+ writeFixture(entry,fs.readFileSync(entry,'utf8')+'\n// PWA next release fixture\n');
+ const nextDigest=createHash('sha256');
+ for(const file of files){
+   let bytes=fs.readFileSync(file);
+   if(/\.(js|html)$/.test(file))bytes=Buffer.from(bytes.toString().replaceAll(build.buildId,'__TQS_BUILD_ID_PLACEHOLDER__'));
+   nextDigest.update(path.relative(path.join(web,'dist'),file).split(path.sep).join('/'));nextDigest.update('\0');nextDigest.update(bytes);nextDigest.update('\0');
+ }
+ const nextId=nextDigest.digest('hex');assert.notEqual(nextId,build.buildId);
+ for(const file of files)if(/\.(js|html)$/.test(file)){
+   const source=fs.readFileSync(file,'utf8');
+   if(source.includes(build.buildId))writeFixture(file,source.replaceAll(build.buildId,nextId));
+ }
+ writeFixture(path.join(web,'dist/version.json'),JSON.stringify({...build,buildId:nextId,swVersion:nextId}));
+ const nextFiles=workerFiles.map(file=>({...file,sha256:createHash('sha256').update(fs.readFileSync(path.join(web,'dist',file.url))).digest('hex')}));
+ writeFixture(workerFile,originalWorker.replace('const CACHE=PREFIX+'+JSON.stringify(build.buildId),
+   'const CACHE=PREFIX+'+JSON.stringify(nextId)).replace(/const FILES=.*;/,'const FILES='+JSON.stringify(nextFiles)+';'));
+ await page.evaluate(async()=>{await (await navigator.serviceWorker.ready).update();});
+ const updateDialog=page.getByRole('dialog',{name:'Cần cập nhật chiến trường',exact:true});
+ await updateDialog.waitFor({timeout:60000});
+ const labels=await updateDialog.locator('strong').allTextContents();
+ assert.equal(labels.length,2);assert.notEqual(labels[0],labels[1]);
+ assert.ok(labels[0].includes(build.buildId.slice(0,12)) && labels[1].includes(nextId.slice(0,12)));
+ const updateEvidence=path.resolve(web,'../../scratch/evidence/update-version-logic-20261025');
+ fs.mkdirSync(updateEvidence,{recursive:true});
+ for(const viewport of [{width:320,height:568},{width:844,height:390},{width:1280,height:800}]){
+   await page.setViewportSize(viewport);
+   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+   const box=await updateDialog.boundingBox();
+   assert.ok(box && box.x>=0 && box.y>=0 && box.x+box.width<=viewport.width && box.y+box.height<=viewport.height);
+   await page.screenshot({path:path.join(updateEvidence,`update-different-build-${viewport.width}x${viewport.height}.png`)});
+ }
+ await page.setViewportSize({width:390,height:844});
  const reloaded=page.waitForNavigation({waitUntil:'load',timeout:90000});
  await page.getByRole('button',{name:'Cập Nhật Ngay',exact:true}).click();
  await reloaded;
@@ -85,7 +131,9 @@ try {
      get.onsuccess=()=>{db.close();resolve(get.result);};};
  })),'signed-in-fixture');
  const upgradedKeys=await page.evaluate(()=>caches.keys());
- assert.ok(upgradedKeys.some(k=>k.endsWith('-upgrade-fixture')));
+ assert.ok(upgradedKeys.includes('tqs-shell-'+nextId));
+ assert.ok((await page.locator('.tqs-version').innerText()).includes(nextId.slice(0,4)));
+ assert.ok(!upgradedKeys.some(k=>k.endsWith('-same-build-fixture')));
  assert.ok(!upgradedKeys.includes(cache.keys[0]),'old shell removed');
  await context.setOffline(true);await page.reload();
  await page.getByRole('heading',{name:/Tam Quốc Sát/}).waitFor();
@@ -95,6 +143,6 @@ try {
  const output=path.resolve(web,'../../scratch/evidence');fs.mkdirSync(output,{recursive:true});
  await page.screenshot({path:path.join(output,'cp13-pwa-offline.png'),fullPage:true});
  assert.deepEqual(errors,[]);
- fs.writeFileSync(path.join(output,'cp13-pwa-e2e.json'),JSON.stringify({at:new Date().toISOString(),result:'PASS',cachedPaths:cache.requests,scope:'isolated Chrome: normalized full-build identity, verified install, real waiting-worker gate/activation, shell purge/rebuild, IndexedDB sentinel/unrelated cache preserved, offline reload, private traffic excluded; no real Google account or physical device'},null,2));
- console.log('PASS real Chrome PWA: verified install, waiting-worker gate, activation, shell refresh, preserved IndexedDB/unrelated cache, offline reload, no private cache');
-}finally{fs.writeFileSync(workerFile,originalWorker);await browser.close();await new Promise<void>(r=>server.httpServer.close(()=>r()));}
+ fs.writeFileSync(path.join(output,'cp13-pwa-e2e.json'),JSON.stringify({at:new Date().toISOString(),result:'PASS',cachedPaths:cache.requests,scope:'isolated Chrome: normalized full-build identity, verified install, same-build waiting-worker suppression and distinct-build gate/activation, shell purge/rebuild, IndexedDB sentinel/unrelated cache preserved, offline reload, private traffic excluded; no real Google account or physical device'},null,2));
+ console.log('PASS real Chrome PWA: verified install, same-build waiting worker ignored, distinct-build labels/gate, activation, shell refresh, preserved IndexedDB/unrelated cache, offline reload, no private cache');
+}finally{for(const [file,bytes] of fixtureBackups)fs.writeFileSync(file,bytes);fs.writeFileSync(workerFile,originalWorker);await browser.close();await new Promise<void>(r=>server.httpServer.close(()=>r()));}

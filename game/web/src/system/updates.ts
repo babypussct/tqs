@@ -21,6 +21,7 @@ export class UpdateCoordinator {
   private flight: Promise<boolean> | null = null;
   private flightIdentity: string | null = null;
   private registration: ServiceWorkerRegistration | undefined;
+  private bundleChanged = false;
   private listeners = new Set<() => void>();
   constructor(private options: {
     gateway: string; build?: BuildInfo; webChecks: boolean;
@@ -28,13 +29,12 @@ export class UpdateCoordinator {
     state?: typeof useUpdateStore; fetch?: typeof fetchFresh; reload?: () => void;
   }) {}
   private get state() { return this.options.state ?? useUpdateStore; }
-  private mark(reason: string, latest?: BuildInfo) {
-    this.state.setState({ pending: true, reason, ...(latest ? { latest } : {}) });
-  }
   watchRegistration(registration: ServiceWorkerRegistration): () => void {
     this.registration = registration;
     const inspect = () => {
-      if (registration.waiting && registration.active) this.mark('Giao diện ngoại tuyến có bản mới.');
+      // A waiting worker can belong to the build this page already loaded
+      // over the network. Only fresh release metadata establishes a change.
+      if (registration.waiting && registration.active) void this.check();
     };
     const watch = () => {
       const worker = registration.installing;
@@ -76,14 +76,14 @@ export class UpdateCoordinator {
     if (this.options.webChecks) checks.push((async () => {
       const latest = parseBuild(await (await fresh(`/version.json?t=${Date.now()}`)).json());
       this.state.setState({ latest });
-      if (latest.buildId !== (this.options.build ?? BUILD).buildId) this.mark('Có bản giao diện mới.', latest);
     })());
     if (this.options.manifest()) checks.push((async () => {
       const raw: unknown = await (await fresh(`${this.options.gateway}/manifest.json?t=${Date.now()}`)).json();
       assertManifest(raw);
       const loaded = this.options.manifest();
-      if (loaded && (raw.bundleHash.toLowerCase() !== loaded.bundleHash.toLowerCase() || raw.md5.toLowerCase() !== loaded.md5.toLowerCase())) this.mark('Gói dữ liệu chiến trường đã thay đổi.');
+      this.bundleChanged = !!loaded && (raw.bundleHash.toLowerCase() !== loaded.bundleHash.toLowerCase() || raw.md5.toLowerCase() !== loaded.md5.toLowerCase());
     })());
+    else this.bundleChanged = false;
     const results = await Promise.allSettled(checks);
     if (results.some((r) => r.status === 'rejected')) {
       ok = false;
@@ -91,8 +91,11 @@ export class UpdateCoordinator {
     }
     // Worker update failure alone must not claim a new release or prevent online play.
     if (this.registration) void this.registration.update().catch(() => {});
-    if (this.registration?.waiting && this.registration.active) this.mark('Giao diện ngoại tuyến có bản mới.');
-    this.state.setState({ checking: false, checkedAt: ok ? Date.now() : this.state.getState().checkedAt });
+    const latest = this.state.getState().latest;
+    const webChanged = this.options.webChecks && !!latest && latest.buildId !== (this.options.build ?? BUILD).buildId;
+    this.state.setState({ pending: webChanged || this.bundleChanged,
+      reason: webChanged ? 'Có bản giao diện mới.' : this.bundleChanged ? 'Gói dữ liệu chiến trường đã thay đổi.' : '',
+      checking: false, checkedAt: ok ? Date.now() : this.state.getState().checkedAt });
     return ok && !this.state.getState().pending;
   }
   async beforeEntry(): Promise<void> {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { UpdateCoordinator, useUpdateStore } from '../src/system/updates';
-import { parseBuild, buildLabel, type BuildInfo } from '../src/system/buildInfo';
+import { parseBuild, buildLabel, buildComparisonLabels, type BuildInfo } from '../src/system/buildInfo';
 import { signalView } from '../src/system/Signal';
 import { GameAdapter } from '../src/engine/gameAdapter';
 const build: BuildInfo = { version: '0.5.25', buildId: 'a'.repeat(64), swVersion: 'a'.repeat(64), builtAt: '2026-10-24T12:00:00.000Z' };
@@ -92,12 +92,13 @@ test('a coalesced boot request cannot bypass the newly loaded Lua identity', asy
   release(); await boot;
   await assert.rejects(entry, /Có bản mới/);
 });
-test('waiting worker is detected independently of matching version metadata', async () => {
+test('waiting worker with matching release metadata does not invent an update', async () => {
   const s = setup();
   const registration = Object.assign(new EventTarget(), { active: {}, waiting: {}, installing: null, update: async () => {} }) as unknown as ServiceWorkerRegistration;
   const remove = s.coordinator.watchRegistration(registration);
-  await assert.rejects(s.coordinator.beforeEntry(), /Có bản mới/);
-  assert.equal(useUpdateStore.getState().pending, true); remove();
+  await s.coordinator.beforeEntry();
+  assert.equal(useUpdateStore.getState().pending, false);
+  assert.equal(useUpdateStore.getState().reason, ''); remove();
 });
 test('a match that starts while manual check is in flight prevents reload', async () => {
   useUpdateStore.setState({ pending: false, applying: false, error: null });
@@ -110,4 +111,38 @@ test('a match that starts while manual check is in flight prevents reload', asyn
   });
   const applying = coordinator.apply(true); playing = true; release(); await applying;
   assert.equal(reloads, 0); assert.equal(useUpdateStore.getState().applying, false);
+});
+
+test('comparison labels distinguish matching short prefixes without changing the compact footer', () => {
+  for (const prefix of [4, 12]) {
+    const latest = { ...build, buildId: 'a'.repeat(prefix) + 'd'.repeat(64 - prefix) };
+    assert.equal(buildLabel(build), buildLabel(latest));
+    const labels = buildComparisonLabels(build, latest);
+    assert.notEqual(labels[0], labels[1]);
+  }
+});
+test('a confirmed matching release clears a previous web update and stale pending state', async () => {
+  const changes = { build: { ...build, buildId: 'd'.repeat(64), swVersion: 'd'.repeat(64) } };
+  const s = setup(changes); await s.coordinator.check();
+  assert.equal(useUpdateStore.getState().pending, true);
+  changes.build = build;
+  await s.coordinator.beforeEntry();
+  assert.equal(useUpdateStore.getState().pending, false);
+  assert.equal(useUpdateStore.getState().reason, '');
+});
+test('a failed recheck retains a known update; a matching bundle clears only its own update', async () => {
+  const changes = { md5: 'e'.repeat(32), fail: false };
+  const s = setup(changes); await s.coordinator.check();
+  changes.fail = true; await s.coordinator.check();
+  assert.equal(useUpdateStore.getState().pending, true);
+  changes.fail = false; changes.md5 = manifest.md5;
+  await s.coordinator.beforeEntry();
+  assert.equal(useUpdateStore.getState().pending, false);
+});
+test('waiting worker notification still discovers a genuine release difference', async () => {
+  const s = setup({ build: { ...build, buildId: 'd'.repeat(64), swVersion: 'd'.repeat(64) } });
+  const registration = Object.assign(new EventTarget(), { active: {}, waiting: {}, installing: null, update: async () => {} }) as unknown as ServiceWorkerRegistration;
+  const remove = s.coordinator.watchRegistration(registration);
+  await assert.rejects(s.coordinator.beforeEntry(), /Có bản mới/);
+  assert.equal(useUpdateStore.getState().reason, 'Có bản giao diện mới.'); remove();
 });

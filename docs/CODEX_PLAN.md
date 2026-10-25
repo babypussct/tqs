@@ -1,5 +1,11 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## GAME-UPDATE-VERSION-LOGIC-20261025 — cập nhật giả cùng build và nhãn trùng
+
+- [x] Root cause: waiting worker bị coi là release mới dù full build ID khớp; pending sticky; badge 4 ký tự có thể trùng. Dùng metadata làm nguồn xác nhận, tính lại pending, giữ known mismatch khi lỗi; phân biệt UI mới/data-only và nhãn so sánh 12/full ID.
+- [x] LOCAL: system **14/14**, browser **44/44**, types/build/audits/PWA **PASS**. PWA chứng minh same-build waiting không modal và build thứ hai nhất quán → hai nhãn khác → activate/reload không modal; IndexedDB/cache khác/offline/private exclusion PASS; modal 320/844/1280 geometry PASS. Build-safety **7/7**, check:build, release **5/5**, protected dist/diff **PASS**.
+- [ ] Commit/push riêng bản sửa, Pages production, hosted byte/header/Chrome và CI; giữ nguyên các tài liệu upstream/capacity đang sửa song song. Chi tiết trong CODEX_STATE.
+
 ## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống, commit/push/production
 
 - [x] Đo và sửa stage flex thiếu chiều cao, shell width cap, layout 1024×520 bị co, đỉnh đối thủ bị cắt ở landscape thấp; canvas boot/login/lobby/room full width + 100dvh.

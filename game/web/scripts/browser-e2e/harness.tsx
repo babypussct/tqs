@@ -7,6 +7,7 @@ import GameBoardScreen from '../../src/GameBoardScreen';
 import { IdleHandCard } from '../../src/HandCardItem';
 import App from '../../src/App';
 import { useUpdateStore } from '../../src/system/updates';
+import { BUILD } from '../../src/system/buildInfo';
 import { GameAdapter } from '../../src/engine/gameAdapter';
 import { GameConnection, type SocketHandlers } from '../../src/engine/connection';
 import { CLIENT_REPLY, PacketStream, PacketType, encodePacket } from '../../src/engine/packet';
@@ -192,7 +193,9 @@ const api = {
   },
   emitUiError: (value: unknown) => emit('ErrorDlg', value),
   appActions: () => appActions.slice(),
-  systemPending: (pending: boolean) => useUpdateStore.setState({ pending, reason: 'Bản cập nhật kiểm thử', error: null }),
+  systemPending: (pending: boolean, dataOnly = false) => useUpdateStore.setState({ pending,
+    latest: pending ? dataOnly ? BUILD : { ...BUILD, buildId: 'f'.repeat(64), swVersion: 'f'.repeat(64) } : null,
+    reason: dataOnly ? 'Gói dữ liệu chiến trường đã thay đổi.' : 'Bản cập nhật kiểm thử', error: null }),
   returnLobby: () => useGameStore.getState().update({ phase: 'lobby', result: null }),
   layoutPhase: (phase: 'boot' | 'login' | 'lobby' | 'room') => useGameStore.getState().update({
     phase, pendingRequest: null, result: null, error: null,
