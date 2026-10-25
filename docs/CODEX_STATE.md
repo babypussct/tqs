@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-## GAME-UPDATE-VERSION-LOGIC-20261025 — sửa cập nhật giả cùng build (LOCAL PASS, chờ production)
+## GAME-UPDATE-VERSION-LOGIC-20261025 — sửa cập nhật giả cùng build (PRODUCTION + CI PASS)
 
 - **Yêu cầu:** người dùng báo modal “Giao diện ngoại tuyến có bản mới” nhưng đang lưu/mới nhất đều `v0.5.25 · 2510.9778`. Đây là sửa tiếp bản production đã được người dùng yêu cầu commit/push/phát hành; chỉ chạm web update coordinator/UI và regression.
 - **Root cause quan sát source:** `watchRegistration` và `performCheck` đánh dấu pending chỉ vì có active + waiting worker, không so bản đang chạy với release metadata. Trang mới có thể đã nạp build mới qua network trong khi worker chờ kích hoạt cùng build. `pending` sticky không được tính lại khi metadata trở về khớp. Bốn ký tự hash trên cả hai nhãn còn có khả năng trùng giữa hai build khác nhau.
@@ -8,7 +8,10 @@
 - **Regression:** `system-updates.test.ts` 14/14, gồm waiting + same metadata cho entry, mismatch thật, stale pending clear, fail giữ known mismatch, prefix 4/12 trùng. Browser fixture phân biệt web/data-only, assert data-only không có “Bản mới nhất”; Browser **44/44 PASS**. PWA thật tạo waiting worker khác bytes/cùng build → không modal; tạo build thứ hai nhất quán (JS byte, normalized full ID, metadata, worker cache và SHA-256 shell) → modal có hai nhãn khác, apply/activate/reload → build mới/không modal; giữ IndexedDB/cache khác, offline shell và private-cache exclusion **PASS**. Fixture restore toàn bộ output ở finally. Đã xem modal 320×568 và 844×390; geometry 1280×800 cũng PASS.
 - **Kiểm tra local:** `typecheck:all`, tools typecheck, production build/audits, build-safety **7/7**, check:build, release **5/5**, diff check và protected root dist **PASS**. Logs/PNG tại `scratch/evidence/update-version-logic-20261025/`. Artifact Pages OAuth same-origin + `/gateway`: build `b1fe999169c09929ae1f3276868683cd53c787eee71c6713f06ac792e3cdc022`, builtAt `2026-10-25T06:53:23.203Z` (13:53 giờ Việt Nam).
 - **Thay đổi song song:** có tài liệu review/capacity/upstream từ công việc khác đang dirty, phát sinh sau khi bắt đầu lượt này. Bảo toàn chúng, chỉ stage/commit source và phần checkpoint của ticket này; không gom nội dung review vào release web.
-- **Bước tiếp:** commit/push riêng bản sửa, deploy Pages Production/main và smoke metadata/bytes/Chrome + CI. Không thay native/gateway/KV/Shop, không dùng anonymous smoke để tuyên bố authenticated gameplay hoặc thiết bị vật lý PASS.
+- **Phát hành:** source `b18e43a8ec1777d92b78d6579a4d2eff0c6806f9` đã push `origin/main`, remote SHA khớp. Pages Direct Upload **Production/main**, deployment `f17c76ac-37cf-4166-a9a4-1dab429ae94e`, URL [`f17c76ac.tqsvn.pages.dev`](https://f17c76ac.tqsvn.pages.dev), alias [`tqsvn.pages.dev`](https://tqsvn.pages.dev). Build giữ `b1fe999169c0…`, badge `v0.5.25 · 2510.b1fe`; metadata/SW no-store và HTTP/byte/header/gateway/OAuth **26/26 PASS**.
+- **Hosted regression trực tiếp:** anonymous Chrome 10 viewport, đúng build và 524 shell paths, offline reload/không private cache/0 JS page errors **PASS**. Chủ động register `/sw.js?same-build-regression=1` trong browser context cô lập: worker `/sw.js` active + query worker waiting thật, page/server cùng full build → **không modal**, Google trial-click **PASS**; đã xem ảnh `production-same-build-waiting.png`. Console lỗi mạng khi chủ động offline là trạng thái dự kiến. Không thay đăng ký trên browser/PWA người dùng; context QA được đóng.
+- **CI nguồn:** run [`40175126721`](https://github.com/babypussct/tqs/actions/runs/40175126721) trên đúng `b18e43a8…` **completed/success**; TQSVN checks và Pipeline gate **SUCCESS**, Shop skipped theo scope. API evidence `ci-final.json`, `ci-jobs.json`.
+- **Bước tiếp:** bản sửa, phát hành và CI đã hoàn tất. Tab cũ cần nạp bản mới một lần (Cập Nhật Ngay hoặc tải lại); sau đó same-build waiting không còn tạo thông báo giả. Không thay native/gateway/KV/Shop, không dùng anonymous smoke để tuyên bố authenticated gameplay hoặc thiết bị vật lý PASS.
 
 ## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (PRODUCTION + CI PASS)
 
@@ -1285,22 +1288,15 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-25T07:53:37.662Z (UTC).
-- Nhánh: `main` · HEAD: `936f3f8c953a`.
-- File thay đổi hiển thị: 15 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-25T08:55:42.417Z (UTC).
+- Nhánh: `main` · HEAD: `b18e43a8ec17`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
  M docs/web-client/UPSTREAM_IMPLEMENTATION_SUMMARY.md
  M docs/web-client/UPSTREAM_RELEASE_2026-10-17_PLAN.md
  M docs/web-client/UPSTREAM_SURVEY_2026-10-19.md
- M game/web/scripts/browser-e2e/harness.tsx
- M game/web/scripts/browser-e2e/run.ts
- M game/web/scripts/pwa-e2e/run.ts
- M game/web/scripts/system-updates.test.ts
- M game/web/src/ForceUpdateGuard.tsx
- M game/web/src/system/buildInfo.ts
- M game/web/src/system/updates.ts
 ?? docs/web-client/PRODUCTION_CAPACITY_2026-10-25.md
 ?? docs/web-client/UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md
 ?? docs/web-client/UPSTREAM_PARALLEL_CUTOVER_2026-10-25.md
@@ -1310,9 +1306,9 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 Ba commit gần nhất:
 
 ```text
+b18e43a8 fix(game): compare release identities before requiring an update
 936f3f8c docs: record responsive production release and passing CI
 39c5685b test(game): match responsive fixture shell to production App
-08574e6e fix(game): fill responsive stages across phone tablet and desktop
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

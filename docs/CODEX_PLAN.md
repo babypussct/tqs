@@ -4,7 +4,7 @@
 
 - [x] Root cause: waiting worker bị coi là release mới dù full build ID khớp; pending sticky; badge 4 ký tự có thể trùng. Dùng metadata làm nguồn xác nhận, tính lại pending, giữ known mismatch khi lỗi; phân biệt UI mới/data-only và nhãn so sánh 12/full ID.
 - [x] LOCAL: system **14/14**, browser **44/44**, types/build/audits/PWA **PASS**. PWA chứng minh same-build waiting không modal và build thứ hai nhất quán → hai nhãn khác → activate/reload không modal; IndexedDB/cache khác/offline/private exclusion PASS; modal 320/844/1280 geometry PASS. Build-safety **7/7**, check:build, release **5/5**, protected dist/diff **PASS**.
-- [ ] Commit/push riêng bản sửa, Pages production, hosted byte/header/Chrome và CI; giữ nguyên các tài liệu upstream/capacity đang sửa song song. Chi tiết trong CODEX_STATE.
+- [x] Source `b18e43a8` commit/push riêng; Pages Production/main `f17c76ac…`, build `b1fe999169c0…`; hosted HTTP **26/26**, Chrome **10 viewport**, same-build waiting worker thật **không modal/Google trial-click PASS**, offline/524 shell/0 page errors PASS. CI [`40175126721`](https://github.com/babypussct/tqs/actions/runs/40175126721) **SUCCESS** (TQSVN/Pipeline gate). Giữ nguyên các tài liệu upstream/capacity đang sửa song song.
 
 ## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống, commit/push/production
 
