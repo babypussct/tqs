@@ -1,6 +1,6 @@
 # CODEX_STATE — bàn giao công việc TQS
 
-## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (PRODUCTION SMOKE PASS; CI fixture đang xác minh)
+## GAME-RESPONSIVE-ALL-SIZES-20261025 — sửa khoảng trống và kiểm lại toàn bộ shell (PRODUCTION + CI PASS)
 
 - **Yêu cầu / quyền phát hành:** người dùng yêu cầu kiểm tra/sửa mọi kích thước màn hình, loại khoảng trống thừa, commit, push và production bản mới nhất. Phạm vi theo ứng dụng đang bàn giao là Quốc Chiến `game/web`; không thay Shop/API, luật, pin, gateway/native hoặc KV.
 - **Lỗi đo trực tiếp:** tablet 601–899px để trống 180–420px dưới dashboard; desktop/tablet lớn để trống 59–693px do chain thiếu flex-grow và table min-height cố định; `.sg-game-shell` khóa 1440px tạo gutter lớn. 1024×520 bàn co còn ~249px dù viewport 1024px. 568×320 và 1024×521 cắt đỉnh chân dung bàn 8/10 ghế. Boot/login/lobby/room khóa nền 1040px; lobby/room thiếu 16px chiều cao và dùng vh thay dynamic viewport.
@@ -12,7 +12,8 @@
 - **Phát hành đã quan sát:** commit `08574e6eca60e8e3648374f535a92c2cf0be3024` push `origin/main`, remote SHA khớp. Pages Direct Upload deployment **`e289dc79-e346-47a8-9608-a57d18458bac`**, Production/main/source `08574e6`, URL [`e289dc79.tqsvn.pages.dev`](https://e289dc79.tqsvn.pages.dev), alias [`tqsvn.pages.dev`](https://tqsvn.pages.dev). HTTP/byte/header/gateway/OAuth **26/26 PASS**; Chrome anonymous **10 viewport PASS**, Google trial-click và canvas full width/height, đúng build, footer/dialog, SW 524 paths, offline shell reload, **0 JS page errors**. Đã xem hosted desktop 1920×1080, landscape 568×320 và offline; portrait image ngoài shell cache có thể thiếu khi offline.
 - **CI Linux phát hiện sai lệch fixture:** run [`40123776715`](https://github.com/babypussct/tqs/actions/runs/40123776715) Browser **43/44**, full-App matrix PASS nhưng fixture-only portrait center FAIL: debug h1 visible trong flex stage ăn chiều cao khác font Linux, upper seat bottom ~186.93px và center top 181.5px ở 320×568. Đã đọc log trực tiếp qua GitHub Chrome (API logs 403). Sửa fixture dùng đúng `shell-playing sg-app-shell sg-game-shell`, debug heading trong `.app-header` ẩn như App; chờ `.sg-game-board`, giữ nguyên assertions. Không đổi CSS/artifact production để bù lỗi fixture. Bài học đã ghi trong AGENTS.md.
 - **Sau sửa fixture:** browser local **44/44 PASS** (`browser-ci-fix.log`), tools typecheck **PASS**; production CSS/build giữ nguyên.
-- **Giới hạn / bước tiếp:** push fixture và chạy lại CI, cập nhật nhật ký sau CI. Không tuyên bố mọi thiết bị/vật lý hoặc authenticated full-game/reconnect PASS từ fixture và Chrome; các gate đó giữ riêng.
+- **CI nguồn cuối — PASS:** fixture commit `39c5685b` đã push `origin/main`; run [`40124308056`](https://github.com/babypussct/tqs/actions/runs/40124308056) **completed/success**. Đã đọc API job/step: Detect affected applications, TQSVN checks và Pipeline gate **SUCCESS**; browser E2E, real-Lua E2E, type/build, source/gateway tests/parity và protected root dist đều **SUCCESS**; Shop skipped theo scope. `git diff 08574e6e..39c5685b -- game/web/src` rỗng: artifact production vẫn đúng source ứng dụng cuối; commit sau phát hành chỉ sửa fixture và hướng dẫn/bàn giao.
+- **Giới hạn / bước tiếp:** phát hành và CI đã hoàn tất; commit/push nhật ký sau phát hành. Không tuyên bố mọi thiết bị/vật lý hoặc authenticated full-game/reconnect PASS từ fixture và Chrome; các gate đó giữ riêng. Không còn process test local cần chờ.
 
 ## GAME-ALL-CHANGES-RELEASE-20261025 — toàn bộ thay đổi đã push và lên Pages production (HOSTED SMOKE PASS)
 
@@ -1274,23 +1275,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-10-24T19:13:04.212Z (UTC).
-- Nhánh: `main` · HEAD: `08574e6eca60`.
-- File thay đổi hiển thị: 4 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-10-25T02:20:40.627Z (UTC).
+- Nhánh: `main` · HEAD: `39c5685b603b`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M AGENTS.md
  M docs/CODEX_PLAN.md
- M game/web/scripts/browser-e2e/harness.tsx
- M game/web/scripts/browser-e2e/run.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+39c5685b test(game): match responsive fixture shell to production App
 08574e6e fix(game): fill responsive stages across phone tablet and desktop
 3b078d08 docs: record production rollout and passing release verification
-6b92a45a test(game): match Lua fixture viewport to the production shell
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
