@@ -4,9 +4,10 @@
 
 - **Production native cutover 15/11:** sau user authorization, candidate release `/opt/freekill-hegemony/releases/upstream-first-20261115` đã được stage, build lại trên host với ABI hiện hành và chuyển vào `/opt/freekill-hegemony/current`. Binary SHA-256 `315b10cc3f76cf0e7743ef5274bfced3f1cbb9a2eede88109103e8b78ba2405d`; Lua 5.4, listener `9527`, admin `9000`, service active và executable identity đều PASS. Rollback release `/opt/freekill-hegemony/releases/ai-prompt4-20261022-prod-clean` được giữ nguyên; backup production mode 600, tar integrity PASS, SHA-256 `4f5cabd712a5082ef3aaf9819becaf5db120e30c9bfd283cc7af2e0261726cff`. Evidence đầy đủ ở [`UPSTREAM_FIRST_PRODUCTION_PROMOTION_2026-11-15.json`](web-client/UPSTREAM_FIRST_PRODUCTION_PROMOTION_2026-11-15.json).
 - **Staging cleanup/runtime identity:** archive macOS đã tạo 15.457 file `._*`; đã dừng services trong maintenance window, xóa đúng các file này, restart sạch và xác nhận package bundle còn 5.338 file/16 package, không có `tqs_qa`. Native tự sinh flist sau startup thành MD5 `a21b6d26b4e350276266d79a94d41d54`; đây là runtime identity đang live, khác flist pre-start artifact `2e453ed…` do artifact cũ có 43 hash stale và 13 Lua entries chưa được enumerate.
-- **Public promotion 15/11:** Quick Tunnel mới `iron-enlargement-sampling-apply.trycloudflare.com` trả direct health/manifest 200; KV `TQS_GATEWAY_CONFIG/quick-tunnel-url` đã cập nhật. Pages deployment `9e17bf40.tqsvn.pages.dev` đã promote production alias `https://tqsvn.pages.dev`; index SHA `0b8fbc41…`, build ID `14e37d26…`, manifest candidate `a21b6d26…`/bundle `cd3581d00549f8f8`/5.338 files, bundle bytes 7.089.395 và WebSocket upgrade 101 đều PASS.
+- **Public promotion 15/11:** Quick Tunnel mới `iron-enlargement-sampling-apply.trycloudflare.com` trả direct health/manifest 200; KV `TQS_GATEWAY_CONFIG/quick-tunnel-url` đã cập nhật. Sau khi phát hiện lượt static-only không mang Functions, đã build `game/web/functions` thành Pages Worker + `_routes.json` và redeploy final `dda30ae9.tqsvn.pages.dev` lên alias `https://tqsvn.pages.dev`; immutable và alias đều health `200 ok`, manifest `200` với MD5 `a21b6d26…`/bundle `cd3581d00549f8f8`/5.338 files, index SHA `0e55a135…`, build ID `28ccc9e5…`, WebSocket alias `101`.
 - **Verification status:** typecheck, live snapshot **2/2**, public OAuth contract **5/5** PASS. Manual authenticated production acceptance cũng PASS: Google session → lobby → phòng `new_heg_mode` 2 ghế + bot → initial general flow → Khuê Tú → GameOver → về sảnh → ngắt WebSocket → vào lại sảnh → `Đổi tài khoản khác` → Google account chooser → re-login → lobby mới. Evidence metadata-only ở [`PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-15.json`](web-client/PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-15.json); card-wire v1 production vẫn OFF. CLI public runner được thử nhưng không attach được Codex-controlled browser profile và fail trước gameplay ở `google_session_required`; giữ đây là harness limitation, không phủ định direct production observation.
 - **Bước tiếp theo:** không còn blocker gameplay/reconnect cho upstream promotion; nếu cần formal headless runner artifact riêng, phải cấp một Playwright-owned persistent profile ngoài Chrome session hiện tại. Không dùng runner limitation để hạ PASS manual hoặc tự mở card-wire v1.
+- **Checkpoint phát hành:** commit/push `a48d9ad1` đã lên `origin/main`; worktree sạch sau khi ghi nhận deployment cuối. Native rollback vẫn là `/opt/freekill-hegemony/releases/ai-prompt4-20261022-prod-clean`; card-wire v1 production vẫn OFF.
 
 ## UPSTREAM-FIRST-CARD-WIRE-PRIVACY-REMEDIATION-20261102 — ACTIVE / release PAUSED / OPEN-HOLD
 
@@ -1778,90 +1779,21 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-15T04:33:22.528Z (UTC).
-- Nhánh: `main` · HEAD: `c74e6ff8c365`.
-- File thay đổi hiển thị: 158 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-15T04:52:04.053Z (UTC).
+- Nhánh: `main` · HEAD: `a48d9ad17902`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M AGENTS.md
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/tqs_qa/catalog.json
- M deploy/freekill-native/qa/tqs_qa/init.lua
- M deploy/freekill-native/scripts/run-server.sh
- M deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md
- M deploy/mobile/tqs-tunnel-register.service
  M docs/CODEX_PLAN.md
- M docs/web-client/UPSTREAM_IMPLEMENTATION_SUMMARY.md
- M docs/web-client/UPSTREAM_RELEASE_2026-10-17_PLAN.md
- M docs/web-client/UPSTREAM_SURVEY_2026-10-19.md
- M game/web/index.html
- M game/web/package.json
- M game/web/public/apple-touch-icon.png
- M game/web/public/favicon.svg
- M game/web/public/icon-192.png
- M game/web/public/icon-512.png
- M game/web/public/manifest.webmanifest
- M game/web/scripts/build-service-worker.mjs
- M game/web/scripts/connection.test.ts
- M game/web/scripts/live-gateway-e2e/configure.ts
- M game/web/scripts/live-gateway-e2e/run.ts
- M game/web/scripts/live-gateway-e2e/snapshot.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/qa-scenarios.test.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/qa-scenarios.ts
- M game/web/src/BootScreen.tsx
- M game/web/src/HeroSpotlight.tsx
- M game/web/src/LoginScreen.tsx
- M game/web/src/engine/connection.ts
- M game/web/src/engine/hostLua.ts
- M game/web/src/styles.css
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/QC.md
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/before-after.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/huang-yueying-artwork-restored.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/hybrid-preview.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/imagegen-candidate.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/preservation-mask-preview.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/qc-crops/face-and-hair.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/qc-crops/lower-restoration.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/qc-crops/source-to-reconstruction-seam.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/qc-crops/top-overlay-removal.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/restoration-mask.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/restoration-master-744.png
-?? artifacts/artwork-reconstruction/huang-yueying-84fe1819/source-original.png
-?? artifacts/sanguosha-art-reconstruction-65905f/BAO_CAO_PHUC_DUNG.md
-?? artifacts/sanguosha-art-reconstruction-65905f/ORIGINAL_PROMPT.md
-?? artifacts/sanguosha-art-reconstruction-65905f/imagegen-candidate.png
-?? artifacts/sanguosha-art-reconstruction-65905f/preservation-mask.png
-?? artifacts/sanguosha-art-reconstruction-65905f/sanguosha-artwork-restored.png
-?? artifacts/sanguosha-art-reconstruction-65905f/source-card.png
-?? deploy/freekill-native/qa/card-handle-protocol-probe.lua
-?? deploy/freekill-native/qa/card-handle-protocol.lua
-?? deploy/freekill-native/qa/card-mark-privacy-source-probe.lua
-?? deploy/freekill-native/qa/card-wire-card-mark-physical-source-probe.lua
-?? deploy/freekill-native/qa/card-wire-cbor-integrated-source-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-area-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-area.lua
-?? deploy/freekill-native/qa/card-wire-client-deck-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-deck.lua
-?? deploy/freekill-native/qa/card-wire-client-metadata-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-metadata.lua
-?? deploy/freekill-native/qa/card-wire-client-moves-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-moves.lua
-?? deploy/freekill-native/qa/card-wire-client-public-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-public.lua
-?? deploy/freekill-native/qa/card-wire-client-refs-probe.lua
-?? deploy/freekill-native/qa/card-wire-client-refs.lua
-?? deploy/freekill-native/qa/card-wire-client-request-probe.lua
-... và 88 mục nữa; xem git status trực tiếp.
+ M docs/web-client/UPSTREAM_FIRST_PRODUCTION_PROMOTION_2026-11-15.json
 ```
 
 Ba commit gần nhất:
 
 ```text
+a48d9ad1 feat: complete upstream hegemony promotion
 c74e6ff8 docs: record same-build update regression and production verification
 b18e43a8 fix(game): compare release identities before requiring an update
-936f3f8c docs: record responsive production release and passing CI
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
