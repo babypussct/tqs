@@ -37,6 +37,20 @@ export type QaScenarioId =
   | 'hidden-reveal-deputy'
   | 'hidden-active'
   | 'hidden-active-main'
+  | 'delta-xiongsuan'
+  | 'delta-wenji'
+  | 'delta-lord-wenji'
+  | 'delta-qiance'
+  | 'delta-jianchu'
+  | 'delta-tieqi'
+  | 'delta-chujue'
+  | 'delta-zhente'
+  | 'delta-halberd'
+  | 'delta-sijian'
+  | 'delta-bawei'
+  | 'delta-fengshi-siege'
+  | 'delta-fengshi-no-siege'
+  | 'delta-xishe'
   | 'ai-trace'
   | 'chooser-trace'
   | 'general-pair-trace'
@@ -107,7 +121,7 @@ export type QaScenarioId =
 export type QaCardMatcher =
   | { trueName: string; color?: 'red' | 'black' }
   | { name: string }
-  | { type: 'equip' }
+  | { type: 'equip'; subtype?: 'weapon' | 'armor' }
   | { suit: string };
 
 export type QaCardArea = 'hand' | 'equip';
@@ -139,6 +153,20 @@ export type QaScenarioTrigger =
   | 'hidden-fankui'
   | 'hidden-reveal'
   | 'hidden-active'
+  | 'delta-xiongsuan'
+  | 'delta-wenji'
+  | 'delta-lord-wenji'
+  | 'delta-qiance'
+  | 'delta-jianchu'
+  | 'delta-tieqi'
+  | 'delta-chujue'
+  | 'delta-zhente'
+  | 'delta-halberd'
+  | 'delta-sijian'
+  | 'delta-bawei'
+  | 'delta-fengshi-siege'
+  | 'delta-fengshi-no-siege'
+  | 'delta-xishe'
   | 'ai-trace'
   | 'chooser-trace'
   | 'general-pair-trace'
@@ -191,6 +219,8 @@ export interface QaCardDescriptor {
   suit?: string;
   /** The fixture normalizes the native enum to keep this module package-agnostic. */
   type: string;
+  /** Native Card.SubtypeWeapon/Armor, normalized by the harness. */
+  subtype?: 'weapon' | 'armor';
 }
 
 export interface ResolvedQaScenario {
@@ -452,6 +482,193 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     slots: [slot('zhiheng-card', trueName('slash'), 'self', 'hand', true, 0)],
     trigger: 'hidden-active',
     expectedCommand: 'PlayCard',
+  },
+  'delta-xiongsuan': {
+    version: 1,
+    id: 'delta-xiongsuan',
+    title: '凶算 chọn một lá trên tay, gây sát thương, rút ba và reset limited',
+    seed: 0x5d6e7ff0,
+    drawSequence: [trueName('jink')],
+    slots: [slot('xiongsuan-discard', trueName('jink'), 'self', 'hand', true, 0)],
+    trigger: 'delta-xiongsuan',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'delta-wenji': {
+    version: 1,
+    id: 'delta-wenji',
+    title: '问计 chuyển Slash và chặn đáp lại trong CardUsing',
+    seed: 0x5d6e7ffa,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      slot('wenji-gift', trueName('slash'), 'opponent', 'hand', true, 0),
+      slot('wenji-target-jink', trueName('jink'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-wenji',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'delta-lord-wenji': {
+    version: 1,
+    id: 'delta-lord-wenji',
+    title: '问计 từ lord_ex chuyển Sát, chặn Thiểm và trả lại Đào sau khi dùng',
+    seed: 0x5d6e8022,
+    drawSequence: [trueName('peach'), trueName('slash'), trueName('jink')],
+    slots: [
+      slot('lord-wenji-return', trueName('peach'), 'self', 'hand', true, 0),
+      slot('lord-wenji-gift', trueName('slash'), 'opponent', 'hand', true, 1),
+      slot('lord-wenji-target-jink', trueName('jink'), 'opponent', 'hand', true, 2),
+    ],
+    trigger: 'delta-lord-wenji',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'delta-qiance': {
+    version: 1,
+    id: 'delta-qiance',
+    title: '谦策 chặn Slash đáp lại từ target đại thế lực',
+    seed: 0x5d6e8004,
+    drawSequence: [trueName('duel'), trueName('slash')],
+    slots: [
+      slot('qiance-duel', trueName('duel'), 'self', 'hand', true, 0),
+      slot('qiance-target-slash', trueName('slash'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-qiance',
+    expectedCommand: 'AskForUseCard',
+  },
+  'delta-jianchu': {
+    version: 1,
+    id: 'delta-jianchu',
+    title: '鞬出 bỏ equipment và chặn Jink đáp lại',
+    seed: 0x5d6e800e,
+    drawSequence: [trueName('slash'), trueName('jink'), equip()],
+    slots: [
+      slot('jianchu-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('jianchu-target-jink', trueName('jink'), 'opponent', 'hand', true, 1),
+      slot('jianchu-target-equip', equip(), 'opponent', 'equip', true, 2),
+    ],
+    trigger: 'delta-jianchu',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-tieqi': {
+    version: 1,
+    id: 'delta-tieqi',
+    title: '铁骑: cùng chất thất bại hủy bỏ discard và chặn Thiểm đáp lại',
+    seed: 0x5d6e800f,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      slot('tieqi-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('tieqi-target-jink', trueName('jink'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-tieqi',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-xishe': {
+    version: 1,
+    id: 'delta-xishe',
+    title: 'Tập kích: bỏ hai trang bị thật để dùng Sát và đối chiếu đáp lại',
+    seed: 0x5d6e8019,
+    drawSequence: [{ type: 'equip', subtype: 'weapon' }, { type: 'equip', subtype: 'armor' },
+      trueName('jink'), trueName('jink')],
+    slots: [
+      slot('xishe-weapon', { type: 'equip', subtype: 'weapon' }, 'self', 'equip', true, 0),
+      slot('xishe-armor', { type: 'equip', subtype: 'armor' }, 'self', 'equip', true, 1),
+      slot('xishe-target-jink', trueName('jink'), 'opponent', 'hand', true, 2),
+      slot('xishe-control-jink', trueName('jink'), 'opponent', 'hand', true, 3),
+    ],
+    trigger: 'delta-xishe',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-chujue': {
+    version: 1,
+    id: 'delta-chujue',
+    title: '除绝 chỉ chặn đáp lại với thế lực đã có người chết',
+    seed: 0x5d6e8018,
+    drawSequence: [trueName('slash'), trueName('slash'), trueName('jink'), trueName('jink')],
+    slots: [
+      slot('chujue-dead-faction-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('chujue-control-faction-slash', trueName('slash'), 'self', 'hand', true, 1),
+      slot('chujue-dead-faction-jink', trueName('jink'), 'opponent', 'hand', true, 2),
+      slot('chujue-control-faction-jink', trueName('jink'), 'opponent', 'hand', true, 3),
+    ],
+    trigger: 'delta-chujue',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-zhente': {
+    version: 1,
+    id: 'delta-zhente',
+    title: '贞特: target-aware nullification of a black Slash',
+    seed: 0x5d6e801d,
+    drawSequence: [trueName('slash', 'black')],
+    slots: [
+      slot('zhente-black-slash', trueName('slash', 'black'), 'self', 'hand', true, 0),
+    ],
+    trigger: 'delta-zhente',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-halberd': {
+    version: 1,
+    id: 'delta-halberd',
+    title: '方天画戟: add one distinct-kingdom target to Slash',
+    seed: 0x5d6e801e,
+    drawSequence: [trueName('slash'), { name: 'sa__halberd' }],
+    slots: [
+      slot('halberd-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('halberd-weapon', { name: 'sa__halberd' }, 'self', 'equip', true, 1),
+    ],
+    trigger: 'delta-halberd',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'delta-sijian': {
+    version: 1,
+    id: 'delta-sijian',
+    title: '死谏: mất lá cuối trên tay rồi bỏ một lá của người khác',
+    seed: 0x5d6e801f,
+    drawSequence: [trueName('jink'), trueName('peach')],
+    slots: [
+      slot('sijian-owner-last-hand', trueName('jink'), 'self', 'hand', true, 0),
+      slot('sijian-target-card', trueName('peach'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-sijian',
+    expectedCommand: 'AskForUseActiveSkill',
+  },
+  'delta-bawei': {
+    version: 1,
+    id: 'delta-bawei',
+    title: '霸威: sát thương trong vòng hiện tại chặn Thiểm có chọn lọc',
+    seed: 0x5d6e801a,
+    drawSequence: [trueName('slash'), trueName('slash'), trueName('jink'), trueName('jink')],
+    slots: [
+      slot('bawei-damaged-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('bawei-control-slash', trueName('slash'), 'self', 'hand', true, 1),
+      slot('bawei-damaged-jink', trueName('jink'), 'opponent', 'hand', true, 2),
+      slot('bawei-control-jink', trueName('jink'), 'opponent', 'hand', true, 3),
+    ],
+    trigger: 'delta-bawei',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-fengshi-siege': {
+    version: 1,
+    id: 'delta-fengshi-siege',
+    title: '锋矢: Sát đầu lượt trong thế vây đánh chặn Thiểm của bot Ngụy',
+    seed: 0x5d6e801b,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      slot('fengshi-first-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('fengshi-target-jink', trueName('jink'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-fengshi-siege',
+    expectedCommand: 'AskForSkillInvoke',
+  },
+  'delta-fengshi-no-siege': {
+    version: 1,
+    id: 'delta-fengshi-no-siege',
+    title: '锋矢: Sát đầu lượt ngoài thế vây đánh cho phép bot Ngụy dùng Thiểm',
+    seed: 0x5d6e801c,
+    drawSequence: [trueName('slash'), trueName('jink')],
+    slots: [
+      slot('fengshi-first-slash', trueName('slash'), 'self', 'hand', true, 0),
+      slot('fengshi-target-jink', trueName('jink'), 'opponent', 'hand', true, 1),
+    ],
+    trigger: 'delta-fengshi-no-siege',
+    expectedCommand: 'AskForSkillInvoke',
   },
   'ai-trace': {
     version: 1,
@@ -1158,7 +1375,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'draw-sequence', 'card-chosen', 'poxi', 'cards-and-choice',
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
-  'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main', 'ai-trace', 'chooser-trace', 'general-pair-trace',
+  'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main', 'delta-xiongsuan', 'delta-wenji', 'delta-lord-wenji', 'delta-qiance', 'delta-jianchu', 'delta-tieqi', 'delta-xishe', 'delta-chujue', 'delta-zhente', 'delta-halberd', 'delta-sijian', 'delta-bawei', 'delta-fengshi-siege', 'delta-fengshi-no-siege', 'ai-trace', 'chooser-trace', 'general-pair-trace',
   'general-pair-match-a', 'general-pair-match-b', 'general-pair-match-c', 'general-pair-match-d',
   'general-pair-match-mixed-a', 'general-pair-match-mixed-b', 'general-pair-match-mixed-c', 'general-pair-match-mixed-d',
   'hidden-fanjian', 'hidden-fanjian-deputy',
@@ -1210,7 +1427,8 @@ function matches(card: QaCardDescriptor, requirement: QaCardMatcher): boolean {
   }
   if ('name' in requirement) return card.name === requirement.name;
   if ('suit' in requirement) return card.suit === requirement.suit;
-  return requirement.type === 'equip' && card.type === 'equip';
+  return requirement.type === 'equip' && card.type === 'equip' &&
+    (requirement.subtype === undefined || requirement.subtype === card.subtype);
 }
 
 function nextRandom(state: number): number {
@@ -1270,6 +1488,158 @@ function validatePlan(plan: QaScenarioPlan): void {
     if (plan.slots.length !== 1 || plan.slots[0].key !== 'zhiheng-card' ||
         !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash') {
       throw new QaScenarioError(`${plan.id} must reserve one actor Slash for Chế Hành`);
+    }
+  }
+  if (plan.trigger === 'delta-xiongsuan') {
+    if (plan.slots.length !== 1 || plan.slots[0].key !== 'xiongsuan-discard' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve one actor Jink for 凶算`);
+    }
+  }
+  if (plan.trigger === 'delta-wenji') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'wenji-gift' ||
+        plan.slots[0].owner !== 'opponent' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'wenji-target-jink' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve a target Slash and target Jink for 问计`);
+    }
+  }
+  if (plan.trigger === 'delta-lord-wenji') {
+    const expected = [
+      ['lord-wenji-return', 'self', 'peach'],
+      ['lord-wenji-gift', 'opponent', 'slash'],
+      ['lord-wenji-target-jink', 'opponent', 'jink'],
+    ] as const;
+    if (plan.slots.length !== expected.length || expected.some(([key, owner, card], index) => {
+      const slot = plan.slots[index];
+      return slot.key !== key || slot.owner !== owner || slot.area !== 'hand' ||
+        !('trueName' in slot.match) || slot.match.trueName !== card;
+    })) {
+      throw new QaScenarioError(`${plan.id} must reserve actor Peach, target Slash and target Jink`);
+    }
+  }
+  if (plan.trigger === 'delta-qiance') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'qiance-duel' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'duel' ||
+        plan.slots[1].key !== 'qiance-target-slash' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'slash') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Duel and a target Slash for 谦策`);
+    }
+  }
+  if (plan.trigger === 'delta-jianchu') {
+    if (plan.slots.length !== 3 || plan.slots[0].key !== 'jianchu-slash' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'jianchu-target-jink' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'jink' ||
+        plan.slots[2].key !== 'jianchu-target-equip' || plan.slots[2].owner !== 'opponent' ||
+        plan.slots[2].area !== 'equip' || !('type' in plan.slots[2].match) ||
+        plan.slots[2].match.type !== 'equip') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Slash, target Jink and target equipment for 鞬出`);
+    }
+  }
+  if (plan.trigger === 'delta-tieqi') {
+    if (plan.slots.length !== 2 || plan.slots[0].key !== 'tieqi-slash' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'tieqi-target-jink' || plan.slots[1].owner !== 'opponent' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Slash and target Jink for 铁骑`);
+    }
+  }
+  if (plan.trigger === 'delta-xishe') {
+    const [weapon, armor, target, control] = plan.slots;
+    if (plan.slots.length !== 4 || weapon?.key !== 'xishe-weapon' || armor?.key !== 'xishe-armor' ||
+        weapon.owner !== 'self' || armor.owner !== 'self' || weapon.area !== 'equip' || armor.area !== 'equip' ||
+        !('type' in weapon.match) || weapon.match.type !== 'equip' || weapon.match.subtype !== 'weapon' ||
+        !('type' in armor.match) || armor.match.type !== 'equip' || armor.match.subtype !== 'armor' ||
+        target?.key !== 'xishe-target-jink' || control?.key !== 'xishe-control-jink' ||
+        target.owner !== 'opponent' || control.owner !== 'opponent' ||
+        target.area !== 'hand' || control.area !== 'hand' ||
+        !('trueName' in target.match) || target.match.trueName !== 'jink' ||
+        !('trueName' in control.match) || control.match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} requires two different actor equipment slots and two Jinks`);
+    }
+  }
+  if (plan.trigger === 'delta-chujue') {
+    if (plan.slots.length !== 4 || plan.slots[0].key !== 'chujue-dead-faction-slash' ||
+        plan.slots[0].owner !== 'self' || plan.slots[0].area !== 'hand' ||
+        !('trueName' in plan.slots[0].match) || plan.slots[0].match.trueName !== 'slash' ||
+        plan.slots[1].key !== 'chujue-control-faction-slash' || plan.slots[1].owner !== 'self' ||
+        plan.slots[1].area !== 'hand' || !('trueName' in plan.slots[1].match) ||
+        plan.slots[1].match.trueName !== 'slash' ||
+        plan.slots[2].key !== 'chujue-dead-faction-jink' || plan.slots[2].owner !== 'opponent' ||
+        plan.slots[2].area !== 'hand' || !('trueName' in plan.slots[2].match) ||
+        plan.slots[2].match.trueName !== 'jink' ||
+        plan.slots[3].key !== 'chujue-control-faction-jink' || plan.slots[3].owner !== 'opponent' ||
+        plan.slots[3].area !== 'hand' || !('trueName' in plan.slots[3].match) ||
+        plan.slots[3].match.trueName !== 'jink') {
+      throw new QaScenarioError(`${plan.id} must reserve two actor Slashes and one Jink for each 除绝 branch`);
+    }
+  }
+  if (plan.trigger === 'delta-zhente') {
+    const [slash] = plan.slots;
+    if (plan.slots.length !== 1 || slash?.key !== 'zhente-black-slash' ||
+        slash.owner !== 'self' || slash.area !== 'hand' ||
+        !('trueName' in slash.match) || slash.match.trueName !== 'slash' ||
+        slash.match.color !== 'black') {
+      throw new QaScenarioError(`${plan.id} must reserve one black actor Slash for 贞特`);
+    }
+  }
+  if (plan.trigger === 'delta-halberd') {
+    const [slash, weapon] = plan.slots;
+    if (plan.slots.length !== 2 || slash?.key !== 'halberd-slash' ||
+        slash.owner !== 'self' || slash.area !== 'hand' ||
+        !('trueName' in slash.match) || slash.match.trueName !== 'slash' ||
+        weapon?.key !== 'halberd-weapon' || weapon.owner !== 'self' ||
+        weapon.area !== 'equip' || !('name' in weapon.match) ||
+        weapon.match.name !== 'sa__halberd') {
+      throw new QaScenarioError(`${plan.id} must reserve an actor Slash and the upstream 方天画戟 weapon`);
+    }
+  }
+  if (plan.trigger === 'delta-sijian') {
+    const [ownerCard, targetCard] = plan.slots;
+    if (plan.slots.length !== 2 || ownerCard?.key !== 'sijian-owner-last-hand' ||
+        ownerCard.owner !== 'self' || ownerCard.area !== 'hand' ||
+        !('trueName' in ownerCard.match) || ownerCard.match.trueName !== 'jink' ||
+        targetCard?.key !== 'sijian-target-card' || targetCard.owner !== 'opponent' ||
+        targetCard.area !== 'hand' || !('trueName' in targetCard.match) ||
+        targetCard.match.trueName !== 'peach') {
+      throw new QaScenarioError(`${plan.id} must reserve the owner's last hand card and one target hand card for 死谏`);
+    }
+  }
+  if (plan.trigger === 'delta-bawei') {
+    const expected = [
+      ['bawei-damaged-slash', 'self', 'slash'],
+      ['bawei-control-slash', 'self', 'slash'],
+      ['bawei-damaged-jink', 'opponent', 'jink'],
+      ['bawei-control-jink', 'opponent', 'jink'],
+    ];
+    if (plan.slots.length !== 4 || plan.slots.some((slot, index) =>
+      slot.key !== expected[index][0] || slot.owner !== expected[index][1] ||
+      slot.area !== 'hand' || !('trueName' in slot.match) ||
+      slot.match.trueName !== expected[index][2] || slot.drawIndex !== index)) {
+      throw new QaScenarioError(`${plan.id} must reserve two physical Slashes and a Jink for each 霸威 response branch`);
+    }
+  }
+  if (plan.trigger === 'delta-fengshi-siege' || plan.trigger === 'delta-fengshi-no-siege') {
+    const expected = [
+      ['fengshi-first-slash', 'self', 'slash'],
+      ['fengshi-target-jink', 'opponent', 'jink'],
+    ];
+    if (plan.drawSequence.length !== 2 || plan.slots.length !== 2 ||
+        plan.slots.some((item, index) => item.key !== expected[index][0] ||
+          item.owner !== expected[index][1] || item.area !== 'hand' ||
+          item.drawIndex !== index || !('trueName' in item.match) ||
+          item.match.trueName !== expected[index][2])) {
+      throw new QaScenarioError(`${plan.id} must reserve first physical Slash and native bot Jink for 锋矢`);
     }
   }
   if (plan.trigger === 'hidden-fanjian') {

@@ -23,7 +23,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { CLIENT_NOTIFY, PacketStream, PacketType, toHex, type Packet } from '../../src/engine/packet';
 import { LuaRuntime } from '../../src/engine/luaRuntime';
 import { packageSpec } from '../upstream-packages';
-import { PACKAGES } from './snapshot';
+import { LIVE_MANIFEST_PACKAGES, PACKAGES } from './snapshot';
 
 const roomPools = process.argv.includes('--room-pools');
 const uiTranslations = process.argv.includes('--ui-translations');
@@ -594,7 +594,7 @@ try {
   // current release. Do not silently accept a reduced hosted inventory: that
   // would let an older Render/native pair pass after the source release has
   // added a required dependency such as jsrg or mougong.
-  assert.deepEqual(manifest.packages, PACKAGES);
+  assert.deepEqual(manifest.packages, LIVE_MANIFEST_PACKAGES);
   if (snapshotRoot) assert.equal(snapshotMd5(snapshotRoot), manifest.md5,
     `Lua snapshot MD5 ${snapshotMd5(snapshotRoot)} does not match live manifest ${manifest.md5}; refresh the pinned runtime before retrying`);
   if (!deploymentUrl) {

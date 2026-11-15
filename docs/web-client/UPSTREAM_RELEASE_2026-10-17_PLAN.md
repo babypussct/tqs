@@ -1,6 +1,12 @@
 # Kế hoạch đánh giá và nâng cấp upstream Quốc Chiến (mốc 17/10/2026)
 
+> **Kế hoạch thực thi mới từ 28/10/2026:** [UPSTREAM_FIRST_MASTER_PLAN_2026-10-28.md](UPSTREAM_FIRST_MASTER_PLAN_2026-10-28.md). Đây là hồ sơ gate/đánh giá gốc; các đoạn chỉ hướng vận hành theo phương án 25/10 mang tính lịch sử.
+
 Trạng thái: **ĐỀ XUẤT / CHƯA TRIỂN KHAI** · Lập ngày 19/10/2026.
+
+> **Cách thực hiện hiện hành:** [UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md](UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md) chi tiết U0–U8 theo quyết định giữ production và nâng dần. Không chạy thêm native thường trực/build native trên VM live; QA candidate tạm thời ngoài live, rồi chuyển một bộ đồng bộ sau nghiệm thu. Các gate kỹ thuật bên dưới vẫn là căn cứ, đọc cùng cập nhật/waiver mới.
+
+> **Đối chiếu hiện hành ngày 25/10:** đọc [UPSTREAM_REVIEW_2026-10-25.md](UPSTREAM_REVIEW_2026-10-25.md) trước khi triển khai. Master vẫn `d069cd1`, chưa có commit mới từ khảo sát 19/10; các con số/source/dirty trong tài liệu dưới đây là lịch sử. U0–U3 bổ sung diff ba phía và bảo toàn runtime patch TQS hiện hành, không lấy checkout upstream sạch làm toàn bộ baseline. Device/physical-network đã `WAIVED_BY_USER` theo bàn giao 23/10; các yêu cầu thiết bị trong bản gốc được thay bằng ghi nhận waiver/coverage, không bỏ kiểm reconnect/browser. Các gate native/luật/rollback trên target mới vẫn OPEN.
 
 > **Kế hoạch tổng kết và prompt giao việc U0–U8:** [UPSTREAM_IMPLEMENTATION_SUMMARY.md](UPSTREAM_IMPLEMENTATION_SUMMARY.md). Core và các repo luật/phụ thuộc bắt buộc được đánh giá trong scope Quốc Chiến; quyết định giữ/nâng cần có bằng chứng tương thích và tác động luật/privacy, không chỉ START PASS. Dùng bản tổng kết để giao từng giai đoạn; tài liệu này giữ chi tiết kỹ thuật và số liệu khảo sát ban đầu.
 

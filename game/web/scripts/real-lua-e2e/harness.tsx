@@ -544,7 +544,9 @@ const api = {
       local card = Fk:getCardById(id)
       return {id=id, name=card.name, trueName=card.trueName,
         color=card:getColorString(), suit=card:getSuitString(),
-        type=card.type == Card.TypeEquip and 'equip' or 'other'}
+        type=card.type == Card.TypeEquip and 'equip' or 'other',
+        subtype=card.sub_type == Card.SubtypeWeapon and 'weapon' or
+          (card.sub_type == Card.SubtypeArmor and 'armor' or nil)}
     end)`);
     const resolved = resolveQaScenario(plan, nativeCards);
     serverNotify('PrepareDrawPile', serverCbor(`{${resolved.drawPile.join(',')}}`));
@@ -960,6 +962,20 @@ const api = {
       case 'hidden-jilix':
       case 'hidden-kuanggu':
       case 'hidden-enyuan':
+      case 'delta-xiongsuan':
+      case 'delta-wenji':
+      case 'delta-lord-wenji':
+      case 'delta-qiance':
+      case 'delta-jianchu':
+      case 'delta-tieqi':
+      case 'delta-xishe':
+      case 'delta-chujue':
+      case 'delta-zhente':
+      case 'delta-halberd':
+      case 'delta-sijian':
+      case 'delta-bawei':
+      case 'delta-fengshi-siege':
+      case 'delta-fengshi-no-siege':
       case 'ai-trace':
       case 'chooser-trace':
       case 'general-pair-trace':

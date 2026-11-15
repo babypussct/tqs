@@ -10,6 +10,12 @@ import { UPSTREAM_PACKAGE_NAMES, packageSpec } from '../upstream-packages';
 // such as SP or OL.
 export const PACKAGES = [...UPSTREAM_PACKAGE_NAMES].sort();
 
+// FreeKill reports the built-in card packages in UpdatePackage and the
+// gateway exposes their client assets, but they are not independent pinned
+// upstream checkouts in this repository.
+export const BUILTIN_PACKAGES = ['maneuvering', 'standard_cards'] as const;
+export const LIVE_MANIFEST_PACKAGES = [...PACKAGES, ...BUILTIN_PACKAGES].sort();
+
 /** Match freekill-asio core/util.cpp: sorted recursive traversal, then
  * concatenate Lua, QML, JS hashes, with CRLF normalized within each file. */
 export function fileList(packagesRoot: string): string {

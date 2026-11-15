@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-14",
+  "scope": "sanitized U0 baseline and upstream-first candidate provenance; no production mutation",
+  "repository": {
+    "head": "c74e6ff8c3654a64447b6a66642ee1cf1d98af44",
+    "branch": "main",
+    "workingTree": "dirty; pre-existing changes and untracked artifacts preserved",
+    "productionMutation": false,
+    "integrationOwner": "not selected; current worktree contains unrelated dirty/untracked changes"
+  },
+  "upstream": {
+    "hegemony": {
+      "url": "https://gitee.com/qsgs-fans/hegemony.git",
+      "branch": "refs/heads/master",
+      "remoteMasterObserved": "e8d93acd34a357f96b0105aef7d661708c211626",
+      "candidateTarget": "e8d93acd34a357f96b0105aef7d661708c211626",
+      "parent": "d069cd1f5c6df8d93af0ea101b82a5bed2781f01",
+      "candidateCheckout": "e8d93acd34a357f96b0105aef7d661708c211626",
+      "checkoutStatus": "clean",
+      "verification": "observed-in-this-run"
+    },
+    "nativeSource": {
+      "sourceCommit": "b8a2ad48305aea7b55ccca325fcbeb100cb8a01a",
+      "verification": "reported-from-isolated-build-evidence"
+    }
+  },
+  "packages": {
+    "freekill-core": {
+      "productionPin": "ade837d74c616dbd2d169934b0bec4a5a5dc0a85",
+      "candidateApiFloor": "3c40e0f8dc54608a3b862c0cfcad80e5e61f5e02",
+      "candidateCheckout": "3c40e0f8dc54608a3b862c0cfcad80e5e61f5e02",
+      "remoteMasterObserved": "0010a2f4035d6b49d098a120bb754d8cd5252b0a",
+      "decision": "candidate floor only; exact final pin remains provisional"
+    },
+    "utility": "f86d3d05b5a6835584323e56ab85db1fd87ddacf",
+    "gamemode": "cf168265c56dd262ae79497cf71d55285bca4bb8",
+    "standard_ex": "b041d9d4151d436bb6c357f7b772fa2f1a040df0",
+    "shzl": "a6743be11ac36db4efb57c5c2546102e2be805a0",
+    "yj": "10edd0f42f492eaeece5de14a6ef19aa14560cd0",
+    "mobile": "dcd523cc887e5bd010b26b7450486ab26f54d5ac",
+    "sp": "ab42a3fbba1e15e424b942e29ac8e0157c7086fc",
+    "tenyear": "91a769c87f48006cce3e1ded90e4a1beb028f7ad",
+    "overseas": "6780626a34f9fdafa25e15772b9f0609c62c7999",
+    "mougong": "2ce058ec5aaceda4ebe3517278612a3d41e26045",
+    "jsrg": "36201e75a6afc2a6f35a96bb07f4cd9a8a983193",
+    "ol": "ceee01b97dfc0b01eae27e6d5f2fabf6ead46413"
+  },
+  "patches": {
+    "reconnect-safe-tempban.patch": "782aa8da369b48f1cc2b4adafa0bdcf55a82e01fdc26ac744ac4962f2995555e",
+    "tqs-compiler-compat.patch": "19dad19d12cd45be3870f7e5fe3b0d0a2f97c7341d46ee87c42124b0522909ef",
+    "tqs-game-access.patch": "e247d13eed07bfa80dd0df021f2c46871e1b7b09e149b37357706ea148f99cbe"
+  },
+  "native": {
+    "productionSourcePin": "b8a2ad48305aea7b55ccca325fcbeb100cb8a01a",
+    "productionBinarySha256": "080b2d14e1e7840275ae431ae2474c679ff904a3351baf242c188d78c5bcf14b",
+    "candidateBinarySha256": "901b3f54db98828a7c8a7b00a8600cdd180d1f1b7398a0c9b7f16c6b62de1bc1",
+    "candidateBuildEvidence": "scratch/evidence/upstream-first-a-20261028/candidate-native-build-20261028.json",
+    "status": "isolated build/link/boot observed; not production parity or release acceptance"
+  },
+  "candidateRuntime": {
+    "publicFlistMd5": "2e453ed37f894bed95c0b80f99bd1809",
+    "qaOverlayFlistMd5": "3d2313798baed1a443df965bd909a68d",
+    "compatibilityPatchedNativeQaRuntimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+    "runtimeEvidence": "scratch/evidence/upstream-first-a-20261028/candidate-flist-repair-20261028.json",
+    "nativePrivacyEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794649239476.json"
+  },
+  "web": {
+    "distVersion": "0.5.25",
+    "buildId": "a3a6c2d1a52322468d4091c1f9af8d8da1b208325903cbb65c97bfb2691c2b60",
+    "serviceWorkerVersion": "a3a6c2d1a52322468d4091c1f9af8d8da1b208325903cbb65c97bfb2691c2b60",
+    "distFileCount": 2312,
+    "distTreeSha256": "a19c857fb1a4a15c32a47cce03b22d5048b35597390d98ad0ddd2db553c0c9e1",
+    "verification": "observed-in-this-run; current dist is not claimed as candidate-release artifact"
+  },
+  "restore": {
+    "evidence": "scratch/evidence/upstream-first-a-20261028/production-restore-startup-20261029.json",
+    "archiveSha256": "193716514f0208def8db910b0499c5b24d5bf1fb7f3fbdbd5cd97b56f517373d",
+    "archiveEntries": 19771,
+    "sqliteIntegrity": {
+      "server/users.db": "ok",
+      "server/game.db": "ok",
+      "packages/packages.db": "ok"
+    },
+    "rawArchiveStartup": "not-verified; archived QA flag and dangling qa_packages target make it ineligible as-is",
+    "normalizedPrivateRestore": "PASS bounded; Lua 5.4, listener, admin API, cleanup and no startup error markers",
+    "productionTouched": false
+  },
+  "gateway": {
+    "manifest": "public Pages route observed-failed-in-this-run; direct origin observed PASS with legacy runtime",
+    "dbSchemaVersion": "not-verified-in-this-run",
+    "publicHealthz": "HTTP 530; Origin DNS error for marker-structured-loves-album.trycloudflare.com",
+    "publicManifest": "HTTP 530; Origin DNS error for marker-structured-loves-album.trycloudflare.com",
+    "publicKvTarget": "marker-structured-loves-album.trycloudflare.com",
+    "directOriginHostname": "telecharger-catalogue-reduce-owen.trycloudflare.com",
+    "directOriginHealthz": "HTTP 200; ok",
+    "directOriginManifest": "HTTP 200; md5 845498010a0c9f790254ec86e3dfc999; bundleHash 5beabc83feac2d67; fileCount 5281",
+    "directOriginServices": "gateway/tunnel/native active; verified read-only over SSH",
+    "candidateRuntimeMd5": "2e453ed37f894bed95c0b80f99bd1809",
+    "directOriginRuntimeMd5": "845498010a0c9f790254ec86e3dfc999",
+    "namedTunnel": "tqsvn-gateway/f2a6cc9c-a403-42e7-badb-c5224d4ae72d; inactive, disabled and has no published hostname",
+    "pagesProductionSecretNames": "TQS_GAME_AUTH_ORIGIN, TQS_TUNNEL_REGISTRATION_TOKEN; encrypted names observed read-only",
+    "oracleRegistrarSecretMetadata": "present; mode 600; owner root; value not read",
+    "registrarTimer": "disabled",
+    "registrarLastObserved": "failed; HTTP 401 from /api/tunnel/register; no mutation attempted in this run",
+    "observedAt": "2026-11-14T10:21:00Z",
+    "productionServiceMutation": false
+  },
+  "gateStatus": {
+    "U0": "improved-to-baseline-and-normalized-restore-evidence; raw-archive-startup remains open",
+    "U1": "target SHA revalidated; dependency decisions and 43-overlay ledger remain candidate/provisional",
+    "U2": "candidate native build and target-law/privacy evidence observed; exact final dependency pin remains provisional",
+    "U3-U8": "OPEN/HOLD"
+  }
+}

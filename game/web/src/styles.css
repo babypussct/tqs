@@ -5857,6 +5857,26 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   padding: 2px 16px 0;
 }
 
+/* Brand seal and wordmark; text remains accessible through the h1/image alt. */
+.sg-brand-title {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  line-height: 1;
+}
+
+.sg-brand-lockup {
+  display: block;
+  width: min(370px, 94vw);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.75));
+}
+
+@media (max-width: 360px) {
+  .sg-brand-lockup { width: min(286px, 91vw); }
+}
+
 .sg-logo-title {
   font-family: "FZLBGBK", "STLiti", "Kaiti SC", "Noto Serif CJK SC", Georgia, serif;
   font-size: 32px;
@@ -6679,7 +6699,16 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
 
 @media (orientation: landscape) and (max-height: 520px) {
   .sg-logo-area {
-    display: none;
+    position: absolute;
+    top: 3px;
+    left: max(8px, env(safe-area-inset-left));
+    width: min(166px, 26vw);
+    padding: 0;
+    z-index: 51;
+  }
+
+  .sg-brand-lockup {
+    width: 100%;
   }
 
   .sg-top-bar {

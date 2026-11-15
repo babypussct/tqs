@@ -1,7 +1,7 @@
 /** Two distinct private test accounts, one frozen candidate, real C++ server.
  * Only command/request metadata is persisted; credentials and game payloads stay in memory. */
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, readFileSync, writeFileSync, statSync, mkdirSync, cpSync, mkdtempSync, rmSync, readdirSync } from 'node:fs';
 import { randomBytes, createHash } from 'node:crypto';
@@ -15,13 +15,116 @@ import { chromium, type Page } from 'playwright-core';
 import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
 import { P1_QA_SOURCE_BASELINE, verifyCandidateIdentity, verifyQaPackageManifest, verifyQaSourceIdentity } from './identity';
 import { assertTqs1Ticket, createTqs1Ticket } from './qa-ticket';
+import { sanitizeQaEvidence } from './evidence-sanitize';
+import { PRIVACY_CATEGORIES, parsePrivacyCoverage } from './native-privacy';
 
-type LiveScenario = '' | 'draw-sequence' | 'card-chosen' | 'cards-and-choice' | 'poxi' | 'rescue-normal' | 'rescue-battle' | 'founding' | 'fazheng-enyuan' | 'hidden-yiji' | 'hidden-yiji-deputy' | 'hidden-rehide-yiji' | 'hidden-rehide-yiji-deputy' | 'hidden-jianxiong' | 'hidden-jianxiong-deputy' | 'hidden-fankui' | 'hidden-fankui-deputy' | 'hidden-reveal' | 'hidden-reveal-deputy' | 'hidden-active' | 'hidden-active-main' | 'ai-trace' | 'chooser-trace' | 'general-pair-trace' | 'general-pair-match-a' | 'general-pair-match-b' | 'general-pair-match-c' | 'general-pair-match-d' | 'general-pair-match-mixed-a' | 'general-pair-match-mixed-b' | 'general-pair-match-mixed-c' | 'general-pair-match-mixed-d' | 'hidden-fanjian' | 'hidden-fanjian-deputy' | 'hidden-view-as' | 'hidden-view-as-main' | 'hidden-dual' | 'hidden-luoshen' | 'hidden-luoshen-deputy' | 'hidden-tiandu' | 'hidden-tiandu-deputy' | 'hidden-jizhi' | 'hidden-jizhi-deputy' | 'hidden-mingshi' | 'hidden-mingshi-deputy' | 'hidden-gongqing' | 'hidden-gongqing-deputy' | 'hidden-enyuan' | 'hidden-enyuan-deputy' | 'hidden-fuyin' | 'hidden-fuyin-deputy' | 'hidden-qianxun' | 'hidden-qianxun-deputy' | 'hidden-qianxun-indulgence' | 'hidden-qianxun-indulgence-deputy' | 'hidden-kongcheng' | 'hidden-kongcheng-deputy' | 'hidden-weimu' | 'hidden-weimu-deputy' | 'hidden-weimu-indulgence' | 'hidden-weimu-indulgence-deputy' | 'hidden-xiaoji' | 'hidden-xiaoji-deputy' | 'hidden-guanxing' | 'hidden-guanxing-deputy' | 'hidden-yingzi' | 'hidden-yingzi-deputy' | 'hidden-tianxiang' | 'hidden-tianxiang-deputy' | 'hidden-duanchang' | 'hidden-duanchang-deputy' | 'hidden-liegong' | 'hidden-liegong-deputy' | 'hidden-kuanggu' | 'hidden-kuanggu-deputy' | 'hidden-jueqing' | 'hidden-jueqing-deputy' | 'hidden-ejue' | 'hidden-ejue-deputy' | 'hidden-dufu' | 'hidden-dufu-deputy' | 'hidden-jianzhi' | 'hidden-jianzhi-deputy' | 'hidden-zhiman' | 'hidden-zhiman-deputy' | 'hidden-jilix' | 'hidden-jilix-deputy';
+type LiveScenario =
+  | ''
+  | 'draw-sequence'
+  | 'card-chosen'
+  | 'cards-and-choice'
+  | 'poxi'
+  | 'rescue-normal'
+  | 'rescue-battle'
+  | 'founding'
+  | 'fazheng-enyuan'
+  | 'hidden-yiji'
+  | 'hidden-yiji-deputy'
+  | 'hidden-rehide-yiji'
+  | 'hidden-rehide-yiji-deputy'
+  | 'hidden-jianxiong'
+  | 'hidden-jianxiong-deputy'
+  | 'hidden-fankui'
+  | 'hidden-fankui-deputy'
+  | 'hidden-reveal'
+  | 'hidden-reveal-deputy'
+  | 'hidden-active'
+  | 'hidden-active-main'
+  | 'delta-xiongsuan'
+  | 'delta-wenji'
+  | 'delta-lord-wenji'
+  | 'delta-qiance'
+  | 'delta-jianchu'
+  | 'delta-tieqi'
+  | 'delta-xishe'
+  | 'delta-chujue'
+  | 'delta-zhente'
+  | 'delta-halberd'
+  | 'delta-sijian'
+  | 'delta-bawei'
+  | 'delta-fengshi-siege'
+  | 'delta-fengshi-no-siege'
+  | 'ai-trace'
+  | 'chooser-trace'
+  | 'general-pair-trace'
+  | 'general-pair-match-a'
+  | 'general-pair-match-b'
+  | 'general-pair-match-c'
+  | 'general-pair-match-d'
+  | 'general-pair-match-mixed-a'
+  | 'general-pair-match-mixed-b'
+  | 'general-pair-match-mixed-c'
+  | 'general-pair-match-mixed-d'
+  | 'hidden-fanjian'
+  | 'hidden-fanjian-deputy'
+  | 'hidden-view-as'
+  | 'hidden-view-as-main'
+  | 'hidden-dual'
+  | 'hidden-luoshen'
+  | 'hidden-luoshen-deputy'
+  | 'hidden-tiandu'
+  | 'hidden-tiandu-deputy'
+  | 'hidden-jizhi'
+  | 'hidden-jizhi-deputy'
+  | 'hidden-mingshi'
+  | 'hidden-mingshi-deputy'
+  | 'hidden-gongqing'
+  | 'hidden-gongqing-deputy'
+  | 'hidden-enyuan'
+  | 'hidden-enyuan-deputy'
+  | 'hidden-fuyin'
+  | 'hidden-fuyin-deputy'
+  | 'hidden-qianxun'
+  | 'hidden-qianxun-deputy'
+  | 'hidden-qianxun-indulgence'
+  | 'hidden-qianxun-indulgence-deputy'
+  | 'hidden-kongcheng'
+  | 'hidden-kongcheng-deputy'
+  | 'hidden-weimu'
+  | 'hidden-weimu-deputy'
+  | 'hidden-weimu-indulgence'
+  | 'hidden-weimu-indulgence-deputy'
+  | 'hidden-xiaoji'
+  | 'hidden-xiaoji-deputy'
+  | 'hidden-guanxing'
+  | 'hidden-guanxing-deputy'
+  | 'hidden-yingzi'
+  | 'hidden-yingzi-deputy'
+  | 'hidden-tianxiang'
+  | 'hidden-tianxiang-deputy'
+  | 'hidden-duanchang'
+  | 'hidden-duanchang-deputy'
+  | 'hidden-liegong'
+  | 'hidden-liegong-deputy'
+  | 'hidden-kuanggu'
+  | 'hidden-kuanggu-deputy'
+  | 'hidden-jueqing'
+  | 'hidden-jueqing-deputy'
+  | 'hidden-ejue'
+  | 'hidden-ejue-deputy'
+  | 'hidden-dufu'
+  | 'hidden-dufu-deputy'
+  | 'hidden-jianzhi'
+  | 'hidden-jianzhi-deputy'
+  | 'hidden-zhiman'
+  | 'hidden-zhiman-deputy'
+  | 'hidden-jilix'
+  | 'hidden-jilix-deputy';
 const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('--card-chosen') ? 'card-chosen' : '')) as LiveScenario;
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
   testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy' || testScenario === 'hidden-rehide-yiji' || testScenario === 'hidden-rehide-yiji-deputy' || testScenario === 'hidden-reveal' ||
-  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'ai-trace' || testScenario === 'chooser-trace' || testScenario === 'general-pair-trace' || testScenario === 'general-pair-match-a' || testScenario === 'general-pair-match-b' || testScenario === 'general-pair-match-c' || testScenario === 'general-pair-match-d' || testScenario === 'general-pair-match-mixed-a' || testScenario === 'general-pair-match-mixed-b' || testScenario === 'general-pair-match-mixed-c' || testScenario === 'general-pair-match-mixed-d' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
+  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'delta-xiongsuan' || testScenario === 'delta-wenji' || testScenario === 'delta-lord-wenji' || testScenario === 'delta-qiance' || testScenario === 'delta-jianchu' || testScenario === 'delta-tieqi' || testScenario === 'delta-xishe' || testScenario === 'delta-chujue' || testScenario === 'delta-zhente' || testScenario === 'delta-halberd' || testScenario === 'delta-sijian' || testScenario === 'delta-bawei' || testScenario === 'delta-fengshi-siege' || testScenario === 'delta-fengshi-no-siege' || testScenario === 'ai-trace' || testScenario === 'chooser-trace' || testScenario === 'general-pair-trace' || testScenario === 'general-pair-match-a' || testScenario === 'general-pair-match-b' || testScenario === 'general-pair-match-c' || testScenario === 'general-pair-match-d' || testScenario === 'general-pair-match-mixed-a' || testScenario === 'general-pair-match-mixed-b' || testScenario === 'general-pair-match-mixed-c' || testScenario === 'general-pair-match-mixed-d' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
   testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main' || testScenario === 'hidden-dual' ||
   testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy' ||
   testScenario === 'hidden-tiandu' || testScenario === 'hidden-tiandu-deputy' ||
@@ -46,7 +149,7 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-ejue' || testScenario === 'hidden-ejue-deputy' ||
   testScenario === 'hidden-dufu' || testScenario === 'hidden-dufu-deputy' ||
   testScenario === 'hidden-jianzhi' || testScenario === 'hidden-jianzhi-deputy' || testScenario === 'hidden-zhiman' || testScenario === 'hidden-zhiman-deputy' || testScenario === 'hidden-jilix' || testScenario === 'hidden-jilix-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, ai-trace, chooser-trace, general-pair-trace, general-pair-match-a, general-pair-match-b, general-pair-match-c, general-pair-match-d, general-pair-match-mixed-a, general-pair-match-mixed-b, general-pair-match-mixed-c, general-pair-match-mixed-d, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, delta-xiongsuan, delta-wenji, delta-lord-wenji, delta-qiance, delta-jianchu, delta-tieqi, delta-xishe, delta-chujue, delta-zhente, delta-halberd, delta-sijian, delta-bawei, delta-fengshi-siege, delta-fengshi-no-siege, ai-trace, chooser-trace, general-pair-trace, general-pair-match-a, general-pair-match-b, general-pair-match-c, general-pair-match-d, general-pair-match-mixed-a, general-pair-match-mixed-b, general-pair-match-mixed-c, general-pair-match-mixed-d, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
 // These scenarios deliberately require an explicit opt-in. An interrupted
 // active room exercises reconnect/cleanup and therefore must run only against
 // the isolated QA runtime, whose installer sets tempBanTime=0. Local fixtures
@@ -70,6 +173,32 @@ assert.ok(!['hidden-reveal', 'hidden-reveal-deputy'].includes(testScenario) || (
   'hidden-reveal scenarios require native QA and --manual to control the active reveal helper');
 assert.ok(!['hidden-active', 'hidden-active-main'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
   'hidden-active scenarios require native QA and --manual to control the native PlayCard skill selection');
+assert.ok(testScenario !== 'delta-xiongsuan' || (nativeQa && process.argv.includes('--manual')),
+  'delta-xiongsuan requires native QA and --manual to control the card/target active-skill path');
+assert.ok(testScenario !== 'delta-wenji' || (nativeQa && process.argv.includes('--manual')),
+  'delta-wenji requires native QA and --manual to control the choose-player/card and Slash paths');
+assert.ok(testScenario !== 'delta-lord-wenji' || (nativeQa && process.argv.includes('--manual')),
+  'delta-lord-wenji requires native QA and --manual for both handoffs and the transferred Slash');
+assert.ok(testScenario !== 'delta-qiance' || (nativeQa && process.argv.includes('--manual')),
+  'delta-qiance requires native QA and --manual to control the Duel and 谦策 invoke paths');
+assert.ok(testScenario !== 'delta-jianchu' || (nativeQa && process.argv.includes('--manual')),
+  'delta-jianchu requires native QA and --manual to control the equipment selection and 鞬出 invoke paths');
+assert.ok(testScenario !== 'delta-tieqi' || (nativeQa && process.argv.includes('--manual')),
+  'delta-tieqi requires native QA and --manual to control general choice, discard cancel and Slash paths');
+assert.ok(testScenario !== 'delta-chujue' || (nativeQa && process.argv.includes('--manual')),
+  'delta-chujue requires native QA and --manual to control both dead-kingdom and control-kingdom Slash paths');
+assert.ok(testScenario !== 'delta-zhente' || (nativeQa && process.argv.includes('--manual')),
+  'delta-zhente requires native QA and --manual to control the target invoke, negate choice and black Slash path');
+assert.ok(testScenario !== 'delta-halberd' || (nativeQa && process.argv.includes('--manual')),
+  'delta-halberd requires native QA and --manual to control the attached weapon and extra-target path');
+assert.ok(testScenario !== 'delta-sijian' || (nativeQa && process.argv.includes('--manual')),
+  'delta-sijian requires native QA and --manual to control the empty-hand trigger and target-card path');
+assert.ok(testScenario !== 'delta-bawei' || (nativeQa && process.argv.includes('--manual')),
+  'delta-bawei requires native QA and --manual for both damaged-target and untouched-control Slash paths');
+assert.ok(!['delta-fengshi-siege', 'delta-fengshi-no-siege'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
+  'delta-fengshi requires native QA and --manual for its first physical Slash and native bot Jink observation');
+assert.ok(testScenario !== 'delta-xishe' || (nativeQa && process.argv.includes('--manual')),
+  'delta-xishe requires native QA and --manual for both equipment discards and optional cancel');
 assert.ok(!['hidden-fanjian', 'hidden-fanjian-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
   'hidden-fanjian scenarios require native QA and --manual to control the native PlayCard and target-choice path');
 assert.ok(!['hidden-view-as', 'hidden-view-as-main'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
@@ -169,6 +298,17 @@ if(!existsSync(secondFile)) writeFileSync(secondFile,JSON.stringify({username:`t
 assert.equal(statSync(secondFile).mode & 0o077,0);
 const second=JSON.parse(readFileSync(secondFile,'utf8')) as typeof first;
 assert.notEqual(first.username,second.username);
+const observeNativePrivacy = process.env.TQS_LIVE_CARD_WIRE_OBSERVER === '1';
+const observerFile = process.env.TQS_LIVE_OBSERVER_ACCOUNT_FILE;
+assert.ok(!observeNativePrivacy || (nativeQa && process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1' && observerFile),
+  'Observer privacy requires native privacy QA and a private third-account file');
+if (observeNativePrivacy) assert.equal(statSync(observerFile!).mode & 0o077, 0);
+const observerAccount = observeNativePrivacy
+  ? JSON.parse(readFileSync(observerFile!, 'utf8')) as typeof first : null;
+if (observerAccount) {
+  assert.ok(observerAccount.username && observerAccount.password);
+  assert.ok(![first.username, second.username].includes(observerAccount.username));
+}
 const frozenDist = mkdtempSync(path.join(os.tmpdir(),'tqs-frozen-multiplayer-'));
 cpSync(path.join(web,'dist'),frozenDist,{recursive:true});
 const distIndexSha256 = createHash('sha256').update(readFileSync(path.join(frozenDist,'index.html'))).digest('hex');
@@ -181,6 +321,12 @@ const deploymentUrl = process.env.TQS_LIVE_URL;
 // the matching remote runtime instead of silently bundling a different local
 // flist and receiving a native md5-mismatch disconnect.
 const gatewayTarget = process.env.TQS_LIVE_GATEWAY_TARGET?.replace(/\/$/,'') ?? null;
+const auditNativeDeck = process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1';
+assert.ok(!auditNativeDeck || (nativeQa && !deploymentUrl && !gatewayTarget),
+  'Native privacy audit requires an isolated local QA runtime');
+const requireAllNativePrivacy = process.env.TQS_LIVE_CARD_WIRE_REQUIRE_ALL === '1';
+assert.ok(!requireAllNativePrivacy || (auditNativeDeck && observeNativePrivacy),
+  'Full native privacy requires raw CBOR audit and a separate observer');
 // A local QA runtime must enforce the same signed-ticket contract used by the
 // test-only browser session. A legacy native binary accepts its configuration
 // but ignores tqsAuthRequired, then rejects the TQS1 ticket as a password.
@@ -236,7 +382,19 @@ let gateway=deploymentUrl || gatewayTarget ? null : startGateway();
 const peerGateway=testGatewayRestart ? startGateway(peerGatewayPort) : null;
 let server:Awaited<ReturnType<typeof preview>>|undefined;
 let browser:Awaited<ReturnType<typeof chromium.launch>>|undefined;
-const traces:[{direction:string;command:string;requestId:number;type:number}[],{direction:string;command:string;requestId:number;type:number}[]]=[[],[]];
+const traces:{direction:string;command:string;requestId:number;type:number}[][]=
+  observeNativePrivacy ? [[],[],[]] : [[],[]];
+// Opt-in candidate audit of raw native bytes, before browser Lua localization.
+// No payload, raw exception, card ID or token is retained in the evidence.
+const nativeDeckCommands = new Set(['PrepareDrawPile', 'ShuffleDrawPile', 'SyncDrawPile',
+  'ChangeCardArea', 'Reconnect', 'Observe', 'MoveCards', 'SetPlayerPile']);
+const nativeDeckPrivacy = traces.map(() => ({
+  negotiated: false, failures: 0,
+  projectorSha256: auditNativeDeck ? createHash('sha256').update(readFileSync(
+    path.join(runtime, 'packages/freekill-core/lua/server/card_wire_projection.lua'))).digest('hex') : null,
+  commands: Object.fromEntries([...nativeDeckCommands].map((command) => [command, 0])),
+  categoryCounts: Object.fromEntries(PRIVACY_CATEGORIES.map((category) => [category, 0])),
+}));
 const errors:string[]=[];let gameStarted=false;let finished=false;
 const testRecovery = process.argv.includes('--reconnect') || testGatewayRestart;
 const testManual = process.argv.includes('--manual');
@@ -262,6 +420,7 @@ if (winrateRunId) assert.match(winrateRunId, /^[A-Za-z0-9_.-]{1,100}$/, 'TQS_WIN
 const errorContexts: unknown[] = [];
 let recovered = false;
 const pages:Page[]=[];
+let observerPage: Page | undefined;
 const currentSockets: unknown[] = [];
 const transportOpen = [false,false];
 // The native QA director binds its actor to the first allowlisted user
@@ -277,7 +436,7 @@ const progressTimer = setInterval(() => console.log(JSON.stringify({stage:finish
 progressTimer.unref();
 const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   general: RegExp; generalId: string; skill: RegExp | null; pack: RegExp; packId: string; requiredCommand: string;
-  qaMode?: 'battle-royal-new' | 'battle-royal-old'; sameKingdom?: boolean; capacity?: 2 | 4; requiresGeneral?: boolean;
+  qaMode?: 'battle-royal-new' | 'battle-royal-old'; sameKingdom?: boolean; capacity?: 2 | 3 | 4; requiresGeneral?: boolean;
 }> = {
   'draw-sequence': { general: /$^/, generalId: '', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
   'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
@@ -320,6 +479,35 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // The server must reveal Tôn Quyền before running the active Chế Hành effect.
   'hidden-active': { general: /Lục Tốn|陆逊|Lu\s*Xun/i, generalId: 'hs__luxun', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
   'hidden-active-main': { general: /Tôn Quyền|孙权|Sun\s*Quan/i, generalId: 'hs__sunquan', skill: /Chế Hành|制衡|zhiheng|hs__zhiheng/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
+  // The upstream P0 regression is a normal active-skill request. The QA
+  // director pre-uses the target's limited skill so the source xiongsuan
+  // choice must be reached and reset at TurnEnd.
+  'delta-xiongsuan': { general: /李傕郭汜|Lý Giác|Lý Quách|xiongsuan|凶算/i, generalId: 'ld__lijueguosi', skill: /凶算|Hung\s*Toán|xiongsuan/i, pack: /^transformation$/i, packId: 'transformation', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  // Wenji's old Hegemony branch uses choose_players_skill and
+  // choose_cards_skill before the transferred Slash reaches CardUsing.
+  'delta-wenji': { general: /刘琦|Liu\s*Qi|问计|Vấn\s*Kế|wenji/i, generalId: 'nos_heg__liuqi', skill: /问计|Vấn\s*Kế|wenji|nos_heg__wenji/i, pack: /^hegemony_nos$/i, packId: 'hegemony_nos', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  'delta-lord-wenji': { general: /刘琦|Liu\s*Qi|问计|Vấn\s*Kế|wenji/i, generalId: 'ld__liuqi', skill: /问计|Vấn\s*Kế|wenji|ld__wenji/i, pack: /^lord_ex$/i, packId: 'lord_ex', requiredCommand: 'AskForUseActiveSkill', requiresGeneral: false },
+  // Qiance is the upstream CardUsing trigger. Both fixed seats are Shu so
+  // the target is a big-kingdom player in the two-seat fixture; the target's
+  // Slash must remain in hand when the Duel response is suppressed.
+  'delta-qiance': { general: /徐庶|Xu\s*Shu|谦策|Khiêm\s*Sách|qiance/i, generalId: 'ld__xushu', skill: /谦策|Khiêm\s*Sách|qiance|ld__qiance/i, pack: /^lord_ex$/i, packId: 'lord_ex', requiredCommand: 'AskForUseCard', requiresGeneral: false },
+  // Jianchu's upstream delta is the equipment branch: the selected target
+  // equipment is discarded and the target must not receive a response
+  // request for the source Slash.  Native QA fixes the Pang De/Cao Cao
+  // roster and card areas; the browser only drives the real requests.
+  'delta-jianchu': { general: /庞德|Bàng Đức|Pang\s*De|鞬出|jianchu/i, generalId: 'hs__pangde', skill: /鞬出|Kiền\s*Xuất|jianchu/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', requiresGeneral: false },
+  'delta-tieqi': { general: /马超|Mã\s*Siêu|Ma\s*Chao|铁骑|tieqi/i, generalId: 'hs__machao', skill: /铁骑|Thiết\s*Kỵ|tieqi|hs__tieqi/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForSkillInvoke', capacity: 2, requiresGeneral: false },
+  // Chujue compares a living target against a dead seat's kingdom. The
+  // native QA catalog fixes four seats so the browser can drive both the
+  // suppressed-response and ordinary-response branches.
+  'delta-chujue': { general: /贾充|Giả\s*Sung|Jia\s*Chong|除绝|chujue/i, generalId: 'heg__jiachong', skill: /除绝|Trừ\s*Tuyệt|chujue|heg__chujue/i, pack: /^zqdl$/i, packId: 'zqdl', requiredCommand: 'AskForSkillInvoke', capacity: 4, requiresGeneral: false },
+  'delta-zhente': { general: /陆玉生|Lục\s*Ngọc\s*Sinh|Luyusheng|贞特|zhente/i, generalId: 'ty_heg__luyusheng', skill: /贞特|Trinh\s*Đặc|zhente|ty_heg__zhente/i, pack: /^tenyear_heg$/i, packId: 'tenyear_heg', requiredCommand: 'AskForSkillInvoke', capacity: 2, requiresGeneral: false },
+  'delta-halberd': { general: /马超|Mã\s*Siêu|Ma\s*Chao|方天画戟|halberd/i, generalId: 'hs__machao', skill: /方天画戟|Fang\s*Tian|halberd|sa__halberd/i, pack: /^strategic_advantage$/i, packId: 'strategic_advantage', requiredCommand: 'AskForUseActiveSkill', capacity: 3, requiresGeneral: false },
+  'delta-sijian': { general: /田丰|Tian\s*Feng|死谏|sijian/i, generalId: 'hs__tianfeng', skill: /死谏|Tu\s*Gian|sijian/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseActiveSkill', capacity: 2, requiresGeneral: false },
+  'delta-bawei': { general: /孙策|Tôn\s*Sách|Sun\s*Ce|霸威|bawei/i, generalId: 'm_heg__lordsunce', skill: /霸威|bawei|m_heg__bawei/i, pack: /^mobile_heg$/i, packId: 'mobile_heg', requiredCommand: 'AskForSkillInvoke', capacity: 3, requiresGeneral: false },
+  'delta-fengshi-siege': { general: /张任|Trương\s*Nhậm|Zhang\s*Ren|锋矢|fengshi/i, generalId: 'm_heg__zhangren', skill: /锋矢|fengshi|m_heg__fengshi/i, pack: /^mobile_heg$/i, packId: 'mobile_heg', requiredCommand: 'AskForSkillInvoke', capacity: 3, requiresGeneral: false },
+  'delta-fengshi-no-siege': { general: /张任|Trương\s*Nhậm|Zhang\s*Ren|锋矢|fengshi/i, generalId: 'm_heg__zhangren', skill: /锋矢|fengshi|m_heg__fengshi/i, pack: /^mobile_heg$/i, packId: 'mobile_heg', requiredCommand: 'AskForSkillInvoke', capacity: 3, requiresGeneral: false },
+  'delta-xishe': { general: /黄祖|Hoàng\s*Tổ|Huang\s*Zu|袭射|xishe/i, generalId: 'ld__huangzu', skill: /袭射|Tập\s*Xạ|xishe|ld__xishe/i, pack: /^lord_ex$/i, packId: 'lord_ex', requiredCommand: 'AskForSkillInvoke', capacity: 3, requiresGeneral: false },
   // ai-trace is a native-only four-seat run.  Its fixed seat roster lives in
   // the server QA catalog; this entry only keeps the browser/native command
   // contract in lockstep and prevents accidental use without the QA package.
@@ -468,6 +656,19 @@ const hiddenRevealScenario = testScenario === 'hidden-reveal' || testScenario ==
 const hiddenRevealDeputyScenario = testScenario === 'hidden-reveal-deputy';
 const hiddenActiveScenario = testScenario === 'hidden-active' || testScenario === 'hidden-active-main';
 const hiddenActiveMainScenario = testScenario === 'hidden-active-main';
+const deltaXiongsuanScenario = testScenario === 'delta-xiongsuan';
+const deltaWenjiScenario = testScenario === 'delta-wenji';
+const deltaLordWenjiScenario = testScenario === 'delta-lord-wenji';
+const deltaQianceScenario = testScenario === 'delta-qiance';
+const deltaJianchuScenario = testScenario === 'delta-jianchu';
+const deltaTieqiScenario = testScenario === 'delta-tieqi';
+const deltaChujueScenario = testScenario === 'delta-chujue';
+const deltaZhenteScenario = testScenario === 'delta-zhente';
+const deltaHalberdScenario = testScenario === 'delta-halberd';
+const deltaSijianScenario = testScenario === 'delta-sijian';
+const deltaBaweiScenario = testScenario === 'delta-bawei';
+const deltaFengshiScenario = testScenario === 'delta-fengshi-siege' || testScenario === 'delta-fengshi-no-siege';
+const deltaXisheScenario = testScenario === 'delta-xishe';
 const hiddenFanjianScenario = testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy';
 const hiddenFanjianDeputyScenario = testScenario === 'hidden-fanjian-deputy';
 const hiddenViewAsScenario = testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main';
@@ -524,6 +725,13 @@ const hiddenZhimanDeputyScenario = testScenario === 'hidden-zhiman-deputy';
 const hiddenJilixScenario = testScenario === 'hidden-jilix' || testScenario === 'hidden-jilix-deputy';
 const hiddenJilixDeputyScenario = testScenario === 'hidden-jilix-deputy';
 const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJianxiongScenario || hiddenFankuiScenario || hiddenRevealScenario || hiddenActiveScenario || hiddenFanjianScenario || hiddenViewAsScenario || hiddenDualScenario || hiddenLuoshenScenario || hiddenTianduScenario || hiddenJizhiScenario || hiddenMingshiScenario || hiddenGongqingScenario || hiddenEnyuanScenario || hiddenFuyinScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenWeimuScenario || hiddenXiaojiScenario || hiddenGuanxingScenario || hiddenYingziScenario || hiddenTianxiangScenario || hiddenDuanchangScenario || hiddenLiegongScenario || hiddenKuangguScenario || hiddenJueqingScenario || hiddenEjueScenario || hiddenDufuScenario || hiddenJianzhiScenario || hiddenZhimanScenario || hiddenJilixScenario;
+// Bounded native QA probes end at the server-issued GameOver boundary and do
+// not promise the ordinary result-screen/lobby/disconnect DOM transition. All
+// hidden-skill probes are deliberately bounded this way: the QA package emits
+// GameOver after the skill branch, so routing them through the ordinary lobby
+// cleanup would turn a completed native assertion into a false failure.
+const nativeQaGameOverCompletion = nativeQa &&
+  (testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || hiddenScenario);
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
@@ -639,6 +847,47 @@ let scenarioPoxiReply = false;
 let scenarioPoxiMultiple = false;
 let scenarioCardsAndChoiceReply = false;
 let scenarioActiveSkillReply = false;
+let scenarioXiongsuanChoiceReply = false;
+let scenarioWenjiPlayerReply = false;
+let scenarioWenjiCardReply = false;
+let scenarioWenjiUseReply = false;
+let scenarioLordWenjiGateReply = false;
+let scenarioLordWenjiPlayerReply = false;
+let scenarioLordWenjiCardReply = false;
+let scenarioLordWenjiUseReply = false;
+let scenarioLordWenjiReturnReply = false;
+let scenarioQianceCardReply = false;
+let scenarioQianceInvokeReply = false;
+let scenarioJianchuGateReply = false;
+let scenarioJianchuUseReply = false;
+let scenarioJianchuInvokeReply = false;
+let scenarioJianchuCardReply = false;
+let scenarioTieqiGateReply = false;
+let scenarioTieqiUseReply = false;
+let scenarioTieqiGeneralReply = false;
+let scenarioTieqiDiscardReply = false;
+let scenarioChujueGateReply = false;
+let scenarioChujueDeadFactionUseReply = false;
+let scenarioChujueControlFactionUseReply = false;
+let scenarioZhenteGateReply = false;
+let scenarioZhenteUseReply = false;
+let scenarioZhenteInvokeReply = false;
+let scenarioZhenteChoiceReply = false;
+let scenarioHalberdGateReply = false;
+let scenarioHalberdUseReply = false;
+let scenarioHalberdExtraTargetReply = false;
+let scenarioSijianGateReply = false;
+let scenarioSijianTargetReply = false;
+let scenarioSijianCardReply = false;
+let scenarioBaweiGateReply = false;
+let scenarioBaweiDamagedUseReply = false;
+let scenarioBaweiControlUseReply = false;
+let scenarioFengshiGateReply = false;
+let scenarioFengshiSlashReply = false;
+let scenarioXisheGateReply = false;
+let scenarioXisheWeaponReply = false;
+let scenarioXisheCancelReply = false;
+let scenarioXisheArmorReply = false;
 let scenarioRescueReply = false;
 let scenarioRescuePeach = false;
 let scenarioRescueBlocked = false;
@@ -734,6 +983,7 @@ let hiddenZhimanInvoked = false;
 let hiddenZhimanCardReply = false;
 let hiddenJilixGateReply = false;
 let hiddenJilixCardReply = false;
+let hiddenJilixChoiceReply = false;
 const scenarioObservations: { command: string; requestId: number; reply: boolean; detail?: string }[] = [];
 
 type PublicBotAudit = {
@@ -888,7 +1138,9 @@ function shouldAttempt(requestId: number) {
 
 async function chooseTargetIfNeeded(page: Page) {
   const target = page.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
-  if (await target.count() && await target.getAttribute('aria-pressed') !== 'true') await target.click();
+  if (await target.count() && await target.getAttribute('aria-pressed') !== 'true') {
+    await target.click();
+  }
 }
 
 async function observeBattleRoyal(page: Page) {
@@ -904,6 +1156,125 @@ async function observeBattleRoyal(page: Page) {
 /** Complete the real Lua active-skill scene without inspecting private payloads. */
 async function completeActiveSkill(page: Page, client: number, requestId: number, prefer: RegExp | null) {
   const controls = page.getByRole('region', { name: 'Điều khiển lượt chơi' });
+  // GameplayControls also contains the skill rail, hand, disabled-reason
+  // details and stale turn affordances. Read only the current prompt node so
+  // a previous Wenji choose-player string cannot classify the following
+  // target-card request as another choose-player step.
+  const promptNode = controls.locator('.gameplay-prompt:visible').first();
+  const activePrompt = await promptNode.count()
+    ? await promptNode.innerText().catch(() => '')
+    : await controls.innerText().catch(() => '');
+
+  if (deltaLordWenjiScenario) {
+    // The two #ld__wenji-give prompts have the same translation, but
+    // originate from different seats. The first gives the target Slash;
+    // CardUseFinished requests the actor's different Peach afterwards.
+    const choosePlayers = /#ld__wenji-choose|问计.*(?:令一名|choose_players_skill)|Vấn\s*Kế.*(?:khiến một người|chọn một người)/i.test(activePrompt);
+    const giveCard = /#ld__wenji-give|问计.*(?:请交给|give)|Vấn\s*Kế.*(?:phải giao|hãy giao)|choose_cards_skill/i.test(activePrompt);
+    const useTransferredSlash = /delta-lord-wenji|dùng Sát được hỏi kế/i.test(activePrompt);
+    const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+    if (choosePlayers) {
+      await chooseTargetIfNeeded(page);
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-lord-wenji must enable native target selection');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) scenarioLordWenjiPlayerReply = true;
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: 'delta-lord-wenji-choose-giver' });
+      return replied;
+    }
+    if (giveCard) {
+      const returnDifferentCard = scenarioLordWenjiCardReply;
+      const card = controls.locator('.gameplay-hand')
+        .getByRole('button', { name: returnDifferentCard ? /Đào|Peach|桃/i : /Sát|Slash|杀/i }).first();
+      assert.ok(await card.count(), returnDifferentCard
+        ? 'delta-lord-wenji must expose the distinct actor Peach for the return'
+        : 'delta-lord-wenji must expose the target Slash for the initial handoff');
+      await card.click();
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-lord-wenji must enable confirmation for the card handoff');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) {
+        if (returnDifferentCard) scenarioLordWenjiReturnReply = true;
+        else scenarioLordWenjiCardReply = true;
+      }
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: returnDifferentCard ? 'delta-lord-wenji-return-different-peach' : 'delta-lord-wenji-target-gives-slash' });
+      return replied;
+    }
+    if (useTransferredSlash) {
+      const slash = controls.locator('.gameplay-hand button:enabled').filter({ hasText: /Sát|Slash|杀/i }).first();
+      assert.ok(await slash.count(), 'delta-lord-wenji must expose the transferred Slash');
+      await slash.click();
+      await chooseTargetIfNeeded(page);
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-lord-wenji must confirm the transferred Slash against its giver');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) scenarioLordWenjiUseReply = true;
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: 'delta-lord-wenji-use-transferred-slash' });
+      return replied;
+    }
+    throw new Error('delta-lord-wenji received an unclassified native active-skill prompt');
+  }
+  if (deltaWenjiScenario) {
+    // Room:askToChoosePlayers() and Room:askToCards() both arrive as the
+    // production AskForUseActiveSkill scene. Keep the three Wenji steps
+    // explicit so the runner never guesses between the actor and target hand.
+    const choosePlayers = /问计.*(?:令一名|choose_players_skill)|Vấn\s*Kế.*(?:có thể khiến|khiến một người|chọn một người)|#(?:nos_heg__)?wenji-choose/i.test(activePrompt);
+    const giveCard = !choosePlayers && /问计.*(?:请交给|give)|Vấn\s*Kế.*(?:phải giao|hãy giao)|#(?:nos_heg__)?wenji-give|choose_cards_skill/i.test(activePrompt);
+    const useTransferredSlash = /delta-wenji|dùng Sát được hỏi kế/i.test(activePrompt);
+    if (choosePlayers) {
+      await chooseTargetIfNeeded(page);
+      const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-wenji must enable target confirmation for the Wenji recipient');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) scenarioWenjiPlayerReply = true;
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: 'delta-wenji-choose-recipient' });
+      return replied;
+    }
+    if (giveCard) {
+      const card = controls.locator('.gameplay-hand')
+        .getByRole('button', { name: /Sát|Slash|杀/i }).first();
+      assert.ok(await card.count(), 'delta-wenji must expose the reserved target Slash by its accessible card name');
+      await card.click();
+      const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-wenji must enable confirmation after the target selects the Slash');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) scenarioWenjiCardReply = true;
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: 'delta-wenji-target-gives-slash' });
+      return replied;
+    }
+    if (useTransferredSlash) {
+      const hand = controls.locator('.gameplay-hand button:enabled');
+      const labelledSlash = hand.filter({ hasText: /Sát|Slash|杀/i }).first();
+      const card = await labelledSlash.count() ? labelledSlash : hand.first();
+      assert.ok(await card.count(), 'delta-wenji must expose the transferred actor Slash');
+      await card.click();
+      await chooseTargetIfNeeded(page);
+      const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+      assert.ok(await ok.count() && await ok.isEnabled(),
+        'delta-wenji must enable confirmation after using the transferred Slash');
+      await ok.click();
+      const replied = await waitForReply(client, requestId);
+      if (replied) {
+        scenarioWenjiUseReply = true;
+        scenarioActiveSkillReply = true;
+      }
+      scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+        detail: 'delta-wenji-use-transferred-slash' });
+      return replied;
+    }
+  }
   // The production skill rail is a sibling of GameplayControls, not a child
   // of its request region.  Scope to the rail directly so active skills are
   // found on the same DOM path used by the real UI and the local Lua tests.
@@ -937,6 +1308,25 @@ async function completeActiveSkill(page: Page, client: number, requestId: number
     if (!await button.isEnabled()) continue;
     const label = await button.innerText();
     if (prefer?.test(label)) { await button.click(); clicked = true; break; }
+  }
+  const xiongsuanActiveRequest = /xiongsuan|凶算|Hung\s*Toán/i.test(activePrompt);
+  if (deltaXiongsuanScenario && prefer && xiongsuanActiveRequest) {
+    // AskForUseActiveSkill already identifies xiongsuan in the native request.
+    // Some web projections render its skill button as informational/disabled;
+    // the card/target reply remains the production-valid path in that case.
+    const hand = controls.locator('.gameplay-hand button:enabled');
+    const jink = hand.filter({ hasText: /Thiểm|Jink|闪/i }).first();
+    const card = await jink.count() ? jink : hand.first();
+    assert.ok(await card.count(), 'delta-xiongsuan must expose the reserved actor Jink');
+    await chooseTargetIfNeeded(page);
+    await card.click();
+    const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+    assert.ok(await ok.count() && await ok.isEnabled(),
+      'delta-xiongsuan must enable confirmation after selecting one card and one target');
+    await ok.click();
+    const replied = await waitForReply(client, requestId);
+    if (replied) scenarioActiveSkillReply = true;
+    return replied;
   }
   // A non-scenario active request must still be completed so that later
   // caller requests are not starved by an unrelated skill scene. Cancel it;
@@ -980,6 +1370,14 @@ async function completeDamageExchangeActiveSkill(page: Page, client: number, req
   const prompt = await controls.innerText();
   const yiji = /Di Kế|遗计|yiji|hs__yiji/i.test(prompt);
   const enyuan = /Ân Oán|恩怨|enyuan|ld__enyuan/i.test(prompt);
+  if (hiddenRehideYijiScenario) {
+    console.log('hidden-rehide-yiji UI metadata', JSON.stringify({
+      yiji, enyuan,
+      hand: await controls.locator('.gameplay-hand button').count(),
+      selectable: await controls.locator('.gameplay-hand button:enabled:not([aria-pressed="true"])').count(),
+      selfTargets: await page.locator('.board-self .gameplay-target:enabled').count(),
+    }));
+  }
   if (enyuan) {
     // Preserve Slash 3. Giving an arbitrary first card would invalidate the
     // empty-hand branch; the reserved Peach must be given after attack 2.
@@ -1168,6 +1566,12 @@ async function selectPair(page:Page, preferredLabel?:RegExp): Promise<number>{
   if (preferredLabel && preferredCount === 0) {
     throw new Error('Scenario caller general was not offered by the real server');
   }
+  // Upstream's larger general/skill snapshot makes the deputy-compatibility
+  // Lua probe noticeably slower on a cold Wasmoon page.  The UI deliberately
+  // disables every other choice while that probe is running, so keep the
+  // bounded wait local to this step instead of masking unrelated failures with
+  // a longer global Playwright timeout.
+  const pairChoiceTimeout = 60000;
   for(const a of order){
     for(const b of order){
       if(a===b)continue;
@@ -1177,15 +1581,39 @@ async function selectPair(page:Page, preferredLabel?:RegExp): Promise<number>{
       // the previous selection and the exhaustive search can falsely report
       // that no legal pair exists.
       if(await reset.isEnabled())await reset.click();
-      await buttons.nth(a).click();
-      await buttons.nth(b).click();
+      await buttons.nth(a).click({ timeout: pairChoiceTimeout });
+      // InitialGeneralPanel evaluates every deputy synchronously after the
+      // main selection.  A syntactically offered card can therefore become a
+      // disabled, rule-invalid deputy; do not ask Playwright to click it and
+      // wait out the whole request timeout.  Wait for the panel to leave its
+      // bounded evaluation state, then skip only the cards the UI rejected.
+      await page.waitForFunction(() => Array.from(document.querySelectorAll('.sg-general-choice-entry'))
+        .every((entry) => entry.getAttribute('data-general-status') !== 'busy'), undefined,
+      { timeout: pairChoiceTimeout });
+      if (!await buttons.nth(b).isEnabled()) continue;
+      await buttons.nth(b).click({ timeout: pairChoiceTimeout });
       if(await page.getByRole('button',{name:'Xác nhận tướng'}).isEnabled()){
-        console.log(`Native pair candidate: ${await buttons.nth(a).innerText()} + ${await buttons.nth(b).innerText()}`);
+        console.log('Native pair candidate: legally selectable two-slot pair');
         await page.getByRole('button',{name:'Xác nhận tướng'}).click();return n;
       }
     }
   }
   throw new Error('No valid native general pair');
+}
+
+async function clickTrustAction(page: Page, timeout = 15000): Promise<void> {
+  if (await page.locator('.board-trust-status').isVisible().catch(() => false)) return;
+  const trust = page.getByRole('button', { name: 'BOT chơi hộ', exact: true });
+  if (await trust.isVisible().catch(() => false)) {
+    await trust.click({ timeout });
+    return;
+  }
+  // The production board keeps the trust action inside a collapsed toolbar;
+  // open that toolbar before querying the action so the harness follows the
+  // same accessible path a user sees on mobile and desktop.
+  await page.getByRole('button', { name: 'Tùy chọn trận đấu', exact: true }).click({ timeout });
+  if (await page.getByRole('button', { name: 'Tự chơi lại', exact: true }).isVisible().catch(() => false)) return;
+  await page.getByRole('button', { name: 'BOT chơi hộ', exact: true }).click({ timeout });
 }
 
 async function offersGeneral(page: Page, preferredLabel: RegExp) {
@@ -1231,16 +1659,18 @@ try{
   if (!deploymentUrl) server=await preview({configFile:false,root:web,build:{outDir:frozenDist},preview:{host:'127.0.0.1',port:webPort,strictPort:true,
     proxy:{'/gateway':{target:gatewayTarget ?? `http://127.0.0.1:${gatewayPort}`,ws:true,rewrite:p=>p.replace(/^\/gateway/,'')}}}});
   browser=await chromium.launch({executablePath:chrome,headless:true});
-  for(let i=0;i<2;i++){
-    const context=await browser.newContext({viewport:{width:390,height:844}});const p=await context.newPage();pages.push(p);
+  for(let i=0;i<(observeNativePrivacy ? 3 : 2);i++){
+    const account=i===0?first:i===1?second:observerAccount!;
+    const context=await browser.newContext({viewport:{width:390,height:844}});const p=await context.newPage();
+    if (i < 2) pages.push(p); else observerPage = p;
     await p.addInitScript(() => {
       // Opt in to numeric-only WASM/Lua and callback telemetry.
       (window as unknown as { __tqsEnableLuaTelemetry: boolean }).__tqsEnableLuaTelemetry = true;
       const original=console.error;
-      const stacks:string[]=[];
-      (window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks=stacks;
+      (window as unknown as {__tqsMemoryFaultCount:number}).__tqsMemoryFaultCount=0;
       console.error=(...args:unknown[])=>{
-        if(args.some(v=>typeof v==='string' && v.includes('Cannot enlarge memory')))stacks.push(new Error('WASM allocation diagnostic').stack ?? 'no stack');
+        if(args.some(v=>typeof v==='string' && v.includes('Cannot enlarge memory')))
+          (window as unknown as {__tqsMemoryFaultCount:number}).__tqsMemoryFaultCount++;
         original(...args);
       };
     });
@@ -1251,26 +1681,114 @@ try{
       } });
       (window as unknown as { __tqsTestDisconnect(): void }).__tqsTestDisconnect = () => active.close();
     }, testGatewayRestart && i===1 ? `ws://127.0.0.1:${peerGatewayPort}/ws` : null);
-    p.setDefaultTimeout(15000);p.on('pageerror',()=>errors.push(`client-${i+1}: JavaScript error`));
+    p.setDefaultTimeout(15000);p.on('pageerror',()=>{errors.push(`client-${i+1}: JavaScript error`);});
     p.on('console',m=>{if(m.type()==='error'){
-      let detail=m.text();for(const value of [first.username,second.username,first.password,second.password])detail=detail.split(value).join('[redacted]');
-      errors.push(`client-${i+1}: ${detail.slice(0,1200)}`);
-      errorContexts.push({client:i+1,lastIncoming:traces[i].filter(t=>t.direction==='incoming').at(-1)?.command ?? null,location:m.location()});
+      // The console message and source URL may contain private cards, generals,
+      // credentials or filesystem paths. Persist only a bounded error signal.
+      errors.push(`client-${i+1}: browser-console-error`);
+      const context = {client:i+1,
+        lastIncoming:traces[i].filter(t=>t.direction==='incoming').at(-1)?.command ?? null,
+        diagnosticCode:0};
+      errorContexts.push(context);
+      if (auditNativeDeck) {
+        const message = m.text();
+        const categories = [
+          'Lua dispatch failed', 'Lua callback failed', 'Error invoking Lua',
+          'TypeError', 'ReferenceError', 'SyntaxError', 'Error: ',
+          'AskForUseActiveSkill', 'CardItem', 'MoveCards', 'SetCardMark',
+          'Cannot enlarge memory', 'invalid', 'unknown', 'stale', 'area',
+          'assert', 'card', 'CBOR', 'throw', 'WebSocket',
+        ].filter((token) => message.includes(token));
+        const luaSource = message.match(/(?:ltk\/client|packages\/freekill-core|packages\/hegemony)\/[a-zA-Z0-9_/.\-]+\.lua:\d+/u);
+        console.warn(`client-${i+1}: browser diagnostic categories=${categories.join(',') || 'unmatched'}` +
+          (luaSource ? ` lua=${luaSource[0]}` : ''));
+      }
+      if (auditNativeDeck) {
+        // A finite diagnostic vocabulary helps investigate native failures
+        // without exporting the console text or exception payload.
+        for (const [code, label] of [
+          'MoveCards retired reference is absent from its source area',
+          'MoveCards retired opaque reference is unknown or stale',
+          'MoveCards incoming reference is duplicated in its source',
+          'MoveCards incoming draw reference already belongs to an area',
+          'MoveCards draw source position is out of range',
+          'MoveCards incoming reference is absent from its source area',
+          'projected snapshot requires negotiated Hegemony v1',
+          'projected snapshot requires Hegemony settings',
+          'client card-wire aliases are unavailable',
+          'snapshot state requires the validated Hegemony room',
+          'MoveCards stable reference is absent from its source area',
+          'MoveCards hidden reference is unknown without a transition ref',
+          'MoveCards draw source is not anonymous',
+        ].entries()) if (m.text().includes(label)) {
+          context.diagnosticCode = code + 1;
+          console.warn(`client-${i+1}: ${label}`);
+        }
+      }
     } else if (m.type() === 'warning' && m.text().includes('AskForCardsAndChoice')) {
-      console.warn(`client-${i+1}: ${m.text().slice(0, 400)}`);
+      console.warn(`client-${i+1}: AskForCardsAndChoice warning`);
     }});
     p.on('websocket',ws=>{
       currentSockets[i] = ws; transportOpen[i] = true;
+      // A new transport must prove its physical identity independently. In
+      // particular, an observed player's Lua Self is not the observer socket.
+      let boundSeat: number | null = null;
+      let socketNegotiated = false;
       ws.on('close', () => { if (currentSockets[i] === ws) transportOpen[i] = false; });
       const streams={incoming:new PacketStream(),outgoing:new PacketStream()};
       const record = (direction: 'incoming' | 'outgoing', payload: string | Buffer) => {
         if(typeof payload==='string')return;
-        for(const packet of streams[direction].push(payload))traces[i].push({direction,command:packet.command,requestId:packet.requestId,type:packet.type});
+        for(const packet of streams[direction].push(payload)) {
+          traces[i].push({direction,command:packet.command,requestId:packet.requestId,type:packet.type});
+          if (auditNativeDeck && direction === 'incoming') {
+            if (packet.command === 'Setup') {
+              const identity = spawnSync('lua', [path.join(repo,
+                'deploy/freekill-native/qa/card-wire-native-deck-audit.lua'),
+              path.join(runtime, 'packages/freekill-core'), 'Setup', 'identity'], {
+                input: Buffer.from(packet.data).toString('hex'), encoding: 'utf8',
+                timeout: 10_000, maxBuffer: 1024,
+                env: { ...process.env, TQS_PRIVACY_EXPECTED_ACCOUNT: account.username },
+              });
+              const match = identity.status === 0 && !identity.error
+                ? /^IDENTITY=([1-9]\d*)\s*$/u.exec(identity.stdout) : null;
+              const seat = match ? Number(match[1]) : null;
+              if (seat === null || !Number.isSafeInteger(seat) ||
+                  (boundSeat !== null && boundSeat !== seat)) {
+                nativeDeckPrivacy[i].failures++;
+                errors.push(`client-${i+1}: native-identity-rejected`);
+              } else {
+                boundSeat = seat;
+              }
+            }
+            if (packet.command === 'CardWireNegotiated') {
+              socketNegotiated = true;
+              nativeDeckPrivacy[i].negotiated = true;
+            }
+            if (nativeDeckCommands.has(packet.command)) {
+              const audit = spawnSync('lua', [path.join(repo,
+                'deploy/freekill-native/qa/card-wire-native-deck-audit.lua'),
+              path.join(runtime, 'packages/freekill-core'), packet.command,
+              i === 2 ? 'observer' : 'player', String(boundSeat ?? '')], {
+                input: Buffer.from(packet.data).toString('hex'), encoding: 'utf8',
+                timeout: 10_000, maxBuffer: 1024,
+              });
+              const coverage = audit.status === 0 ? parsePrivacyCoverage(audit.stdout) : null;
+              if (!socketNegotiated || boundSeat === null || audit.error || !coverage) {
+                nativeDeckPrivacy[i].failures++;
+                errors.push(`client-${i+1}: native-deck-privacy-rejected`);
+              } else {
+                nativeDeckPrivacy[i].commands[packet.command]++;
+                for (const category of PRIVACY_CATEGORIES) {
+                  nativeDeckPrivacy[i].categoryCounts[category] += coverage[category];
+                }
+              }
+            }
+          }
+        }
       };
       ws.on('framereceived',({payload})=>record('incoming',payload));
       ws.on('framesent',({payload})=>record('outgoing',payload));
     });
-    const account=i===0?first:second;
     await p.addInitScript((session) => {
       (window as Window & { __tqsE2eGameSession?: unknown }).__tqsE2eGameSession = session;
     }, {
@@ -1307,13 +1825,40 @@ try{
   await a.getByLabel('Tên phòng',{exact:true}).fill(roomName);await a.getByLabel('Số người',{exact:true}).selectOption(String(playerCapacity));
   await configureScenarioPool(a);
   await a.getByLabel('Thời gian lượt',{exact:true}).selectOption('60');await a.getByRole('button',{name:'Tạo phòng Quốc Chiến'}).click();
-  await a.getByRole('heading',{name:roomName,exact:true}).waitFor();await b.getByRole('button',{name:'Làm mới',exact:true}).click();
+  // A cold native process loads all Lua extensions after the first authenticated
+  // lobby connection.  The browser can already show EnterLobby while that
+  // bounded startup phase is still running, so allow the room transition to
+  // wait for the actual server readiness rather than treating it as a lobby
+  // or package failure.
+  const roomTransitionTimeout = 90000;
+  await a.getByRole('heading',{name:roomName,exact:true}).waitFor({ timeout: roomTransitionTimeout });
+  await b.getByRole('button',{name:'Làm mới',exact:true}).click();
   await b.locator('.room-item').filter({hasText:roomName}).getByRole('button',{name:'Vào phòng',exact:true}).click();
-  await b.getByRole('heading',{name:roomName,exact:true}).waitFor();
+  await b.getByRole('heading',{name:roomName,exact:true}).waitFor({ timeout: roomTransitionTimeout });
   if (playerCapacity > 2) {
     for (let n = 2; n < playerCapacity; n++) {
-      await a.getByRole('button',{name:'+ Thêm bot',exact:true}).click();
-      await a.waitForFunction((expected) => document.querySelectorAll('.player-item:not(.sg-seat-empty)').length === expected, n + 1, { timeout: 30000 });
+      const expectedPlayers = n + 1;
+      const addBot = a.getByRole('button',{name:'+ Thêm bot',exact:true});
+      const botDeadline = Date.now() + 90000;
+      let nextBotRequest = 0;
+      while (Date.now() < botDeadline) {
+        const currentPlayers = await a.locator('.player-item:not(.sg-seat-empty)').count();
+        if (currentPlayers >= expectedPlayers) break;
+        const now = Date.now();
+        if (now >= nextBotRequest && await addBot.isEnabled().catch(() => false)) {
+          await addBot.click();
+          // A cold native process can accept login before its Lua extension
+          // load completes. Retry the idempotent seat request only while the
+          // expected seat is still absent, with enough spacing to avoid a
+          // burst if the first request is merely waiting in native startup.
+          nextBotRequest = now + 15000;
+        }
+        await a.waitForFunction((expected) => document.querySelectorAll('.player-item:not(.sg-seat-empty)').length >= expected,
+          expectedPlayers, { timeout: 1000 }).catch(() => undefined);
+      }
+      assert.ok(await a.locator('.player-item:not(.sg-seat-empty)').count() >= expectedPlayers,
+        `Native room did not add bot seat ${expectedPlayers} within the bounded retry window`);
+      console.log(`room bot seat reached: ${expectedPlayers}`);
     }
   }
   await Promise.all(pages.map(p=>p.waitForFunction((expected)=>document.querySelectorAll('.player-item:not(.sg-seat-empty)').length===expected, playerCapacity,{timeout:30000})));
@@ -1343,17 +1888,30 @@ try{
         'opponent hand IDs must not render');
     }
   }
-  if (nativeQa && selectedScenario?.skill && !hiddenScenario) {
+  if (observerPage) {
+    await observerPage.getByRole('button', { name: 'Làm mới', exact: true }).click();
+    await observerPage.locator('.room-item').filter({ hasText: roomName })
+      .getByRole('button', { name: 'Quan sát', exact: true }).click();
+    await observerPage.locator('.game-board').waitFor({ timeout: 30000 });
+    await observerPage.waitForFunction((expected) =>
+      document.querySelectorAll('.board-player').length === expected,
+    playerCapacity, { timeout: 30000 });
+    assert.ok(nativeDeckPrivacy[2].negotiated && nativeDeckPrivacy[2].commands.Observe > 0,
+      'A fresh observer must negotiate and receive an audited native snapshot');
+    console.log('PASS fresh native observer: separate account, negotiation and audited Observe snapshot');
+  }
+  if (nativeQa && selectedScenario?.skill && !hiddenScenario &&
+    !deltaBaweiScenario && !deltaFengshiScenario && !deltaXisheScenario && !deltaZhenteScenario && !deltaHalberdScenario && !deltaSijianScenario) {
     // The QA director binds the actor by allowlist order, while room seats and
     // browser tabs are independent.  Resolve the private owner from the
     // production skill rail before delegating the other seat to Trust.
     const ownerDeadline = Date.now() + 15000;
     let owner = -1;
-    let observedSkillLabels: string[][] = [[], []];
+    const observedSkillCounts: number[] = pages.map(() => 0);
     while (Date.now() < ownerDeadline && owner < 0) {
       for (let client = 0; client < pages.length; client++) {
         const labels = await pages[client].locator('button.sg-skill-button').allTextContents();
-        observedSkillLabels[client] = labels;
+        observedSkillCounts[client] = labels.length;
         if (labels.some((label) => selectedScenario.skill!.test(label))) {
           owner = client;
           break;
@@ -1363,7 +1921,7 @@ try{
     }
     assert.ok(owner >= 0,
       `Native QA ${testScenario} did not expose its actor skill on either private skill rail; ` +
-      `observed=${JSON.stringify(observedSkillLabels)}`);
+      `skillCounts=${JSON.stringify(observedSkillCounts)}`);
     scenarioClient = owner;
     console.log(`Scenario ${testScenario}: native caller skill is on client ${scenarioClient + 1}`);
   }
@@ -1382,12 +1940,10 @@ try{
       }
       if (weiOwner < 0 || shuOwner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    const observedRosters = await Promise.all(pages.map((page) =>
-      page.locator('.board-self .board-generals').innerText().catch(() => '[unavailable]')));
     assert.ok(weiOwner >= 0,
-      `Native damage scenario must reveal Quách Gia + Tư Mã Ý on one private client; observed=${JSON.stringify(observedRosters)}`);
+      `Native damage scenario must reveal Quách Gia + Tư Mã Ý on one private client; weiOwnerFound=${weiOwner >= 0}, shuOwnerFound=${shuOwner >= 0}`);
     assert.ok(shuOwner >= 0,
-      `Native damage scenario must reveal Triệu Vân + Pháp Chính on one private client; observed=${JSON.stringify(observedRosters)}`);
+      `Native damage scenario must reveal Triệu Vân + Pháp Chính on one private client; weiOwnerFound=${weiOwner >= 0}, shuOwnerFound=${shuOwner >= 0}`);
     scenarioClient = weiOwner;
     assert.match(await pages[weiOwner].locator('.board-self .board-generals').innerText(), /Quách Gia.*Tư Mã Ý/s,
       'Native damage scenario must reveal Quách Gia + Tư Mã Ý on the Wei client');
@@ -1825,10 +2381,25 @@ try{
     console.log(`PASS hidden-reveal pre-request: native fake Qianxun and active reveal dock are visible on client ${owner + 1}`);
   }
   if (hiddenActiveScenario) {
-    await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
-    assert.ok(await pages[0].locator('button.regular-skill-button').filter({ hasText: /Chế Hành|制衡|zhiheng/i }).count(),
+    // Native QA binds the actor to the first allowlisted account, but room
+    // seat/order assignment can place that account on either browser tab.
+    // Discover the private regular projection instead of assuming page 0.
+    const label = /Chế Hành|制衡|zhiheng/i;
+    const deadline = Date.now() + 30000;
+    let owner = -1;
+    while (Date.now() < deadline && owner < 0) {
+      for (let client = 0; client < pages.length; client++) {
+        if (await pages[client].locator('button.regular-skill-button').filter({ hasText: label }).count()) {
+          owner = client;
+          break;
+        }
+      }
+      if (owner < 0) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(owner >= 0,
       'hidden-active must project native fake active Chế Hành as a regular skill before PlayCard');
-    console.log('PASS hidden-active pre-request: native active Chế Hành is projected while both generals remain hidden');
+    scenarioClient = owner;
+    console.log(`PASS hidden-active pre-request: native active Chế Hành is projected while both generals remain hidden on client ${owner + 1}`);
   }
   if (hiddenViewAsScenario) {
     await pages[0].waitForFunction(() => document.querySelectorAll('button.regular-skill-button').length > 0, null, { timeout: 30000 });
@@ -1844,28 +2415,27 @@ try{
       'hidden-dual must retain the native fake dual skill in the private dock before reveal');
     console.log('PASS hidden-dual pre-request: dual trigger/ViewAs skill is projected while both actor generals remain hidden');
   }
-  if ((testBotAudit || damageExchangeScenario || hiddenScenario) && !boundedAiTraceScenario)
+  if ((testBotAudit || damageExchangeScenario || hiddenScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || deltaLordWenjiScenario || deltaTieqiScenario) && !boundedAiTraceScenario)
     await Promise.all(pages.map(installPublicBotAudit));
-  if (selectedScenario && !hiddenScenario) {
-    const selfGenerals = await pages[scenarioClient].locator('.board-self .board-generals').innerText().catch(() => '');
-    console.log(`Scenario ${testScenario}: ${nativeQa ? 'native QA package injected the server-side precondition; ' : ''}selected self general slots are ${selfGenerals.replace(/\s+/g, ' ').slice(0, 220)}`);
-  }
+  if (selectedScenario && !hiddenScenario)
+    console.log(`Scenario ${testScenario}: general-slot selection completed`);
   console.log('PASS both clients: room/join/ready/StartGame/native general pairs; no opponent card IDs in board DOM');
   if (testManual) {
     let actor = pages[scenarioClient];
     let actorTrace = traces[scenarioClient];
     const botPage = pages[1 - scenarioClient];
     const rescueScenario = testScenario === 'rescue-normal' || testScenario === 'rescue-battle';
-    if (!damageExchangeScenario && !hiddenScenario && !rescueScenario) {
-      await botPage.getByRole('button',{name:'BOT chơi hộ',exact:true}).click();
+    if (!damageExchangeScenario && !hiddenScenario && !rescueScenario && !deltaXiongsuanScenario && !deltaWenjiScenario && !deltaLordWenjiScenario && !deltaQianceScenario && !deltaJianchuScenario && !deltaTieqiScenario && !deltaChujueScenario && !deltaZhenteScenario && !deltaHalberdScenario && !deltaSijianScenario && !deltaBaweiScenario && !deltaFengshiScenario && !deltaXisheScenario) {
+      await clickTrustAction(botPage);
     }
     const deadline=Date.now()+manualDeadlineMs;
     let printedScenarioSkills = false;
+    let lastQianceRequestLog = '';
     const selectActiveClient = async () => {
       if (nativeQa) {
         const nativeCommands = new Set(['PlayCard', 'AskForChoices', 'AskForSkillInvoke', 'AskForUseActiveSkill',
           'AskForUseCard', 'AskForResponseCard', 'AskForCardChosen', 'AskForPoxi', 'AskForCardsAndChoice',
-          'AskForArrangeCards']);
+          'AskForArrangeCards', 'CustomDialog']);
         for (const client of [0, 1]) {
           const request = pendingRequest(client);
           if (request && nativeCommands.has(request.command ?? '')) return client;
@@ -1888,6 +2458,40 @@ try{
       (testScenario === 'rescue-normal' && scenarioRescueReply && scenarioRescuePeach) ||
       (testScenario === 'rescue-battle' && scenarioRescueReply && scenarioRescuePeach && scenarioViewAsReply && scenarioBattleRoyalObserved) ||
       (testScenario === 'founding' && scenarioFoundingReply) ||
+      (deltaXiongsuanScenario && scenarioActiveSkillReply && scenarioXiongsuanChoiceReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaWenjiScenario && scenarioWenjiPlayerReply && scenarioWenjiCardReply && scenarioWenjiUseReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaLordWenjiScenario && scenarioLordWenjiGateReply && scenarioLordWenjiPlayerReply &&
+        scenarioLordWenjiCardReply && scenarioLordWenjiUseReply && scenarioLordWenjiReturnReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaQianceScenario && scenarioQianceCardReply && scenarioQianceInvokeReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaJianchuScenario && scenarioJianchuGateReply && scenarioJianchuUseReply &&
+        scenarioJianchuInvokeReply && scenarioJianchuCardReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaTieqiScenario && scenarioTieqiGateReply && scenarioTieqiGeneralReply &&
+        scenarioTieqiUseReply && scenarioTieqiDiscardReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaChujueScenario && scenarioChujueGateReply && scenarioChujueDeadFactionUseReply &&
+        scenarioChujueControlFactionUseReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaZhenteScenario && scenarioZhenteGateReply && scenarioZhenteUseReply &&
+        scenarioZhenteInvokeReply && scenarioZhenteChoiceReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaHalberdScenario && scenarioHalberdGateReply && scenarioHalberdUseReply &&
+        scenarioHalberdExtraTargetReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaSijianScenario && scenarioSijianGateReply && scenarioSijianTargetReply && scenarioSijianCardReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaBaweiScenario && scenarioBaweiGateReply && scenarioBaweiDamagedUseReply &&
+        scenarioBaweiControlUseReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaFengshiScenario && scenarioFengshiGateReply && scenarioFengshiSlashReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
+      (deltaXisheScenario && scenarioXisheGateReply && scenarioXisheWeaponReply &&
+        scenarioXisheCancelReply && scenarioXisheArmorReply &&
+        traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (damageExchangeScenario && scenarioSlashReplies === 3 && scenarioLongdanDefenseReply &&
         scenarioLongdanAttackReply && scenarioEnyuanReply && scenarioYijiInvoked && scenarioYijiReply && scenarioFankuiReply) ||
       (hiddenRehideYijiScenario && hiddenGateReply && hiddenYijiAsked && hiddenYijiInvoked && hiddenYijiReply &&
@@ -1918,7 +2522,7 @@ try{
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenZhimanScenario && hiddenZhimanGateReply && hiddenZhimanDamageReply && hiddenZhimanInvoked && hiddenZhimanCardReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
-      (hiddenJilixScenario && hiddenJilixGateReply && hiddenJilixCardReply &&
+      (hiddenJilixScenario && hiddenJilixGateReply && hiddenJilixCardReply && hiddenJilixChoiceReply &&
         traces.some((trace) => trace.some((packet) => packet.direction === 'incoming' && packet.command === 'GameOver'))) ||
       (hiddenRevealScenario && hiddenRevealReply &&
         hiddenRevealGateReply &&
@@ -1963,7 +2567,7 @@ try{
       testScenario === 'rescue-battle' || testScenario === 'founding';
     const nativeQaGateDeadline = Date.now() + nativeQaGateTimeoutMs;
     const failIfNativeQaGateMissing = () => {
-      if (!nativeQa || !hiddenScenario || nativeQaGateSeen) return;
+      if (!nativeQa || (!hiddenScenario && !deltaLordWenjiScenario && !deltaQianceScenario && !deltaJianchuScenario && !deltaTieqiScenario && !deltaChujueScenario && !deltaZhenteScenario && !deltaHalberdScenario && !deltaSijianScenario && !deltaBaweiScenario && !deltaFengshiScenario && !deltaXisheScenario) || nativeQaGateSeen) return;
       const gameOverObserved = traces.some((trace) => trace.some((packet) =>
         packet.direction === 'incoming' && packet.command === 'GameOver'));
       if (!gameOverObserved && Date.now() < nativeQaGateDeadline) return;
@@ -1974,7 +2578,7 @@ try{
       throw new Error(`Native QA ${testScenario} did not emit its server-only readiness AskForSkillInvoke gate: ${reason}; ` +
         'verify the installed tqs_qa package and tqsQa server config before treating this as gameplay evidence');
     };
-    while(Date.now()<deadline && (damageExchangeScenario || hiddenScenario
+    while(Date.now()<deadline && (damageExchangeScenario || hiddenScenario || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario
       ? !scenarioDone()
       : rescueOrFoundingScenario ? !scenarioDone() : (!manualCardReply || !scenarioDone()))) {
       failIfNativeQaGateMissing();
@@ -1983,6 +2587,13 @@ try{
       actorTrace = traces[activeClient];
       await observeBattleRoyal(actor);
       const latest=actorTrace.filter(t=>t.direction==='incoming' && (t.type & 0x100)!==0).at(-1);
+      if (deltaQianceScenario && latest) {
+        const requestLogKey = `${activeClient}:${latest.command}:${latest.requestId}`;
+        if (requestLogKey !== lastQianceRequestLog) {
+          lastQianceRequestLog = requestLogKey;
+          console.log(`Scenario delta-qiance request: client=${activeClient} command=${latest.command} requestId=${latest.requestId}`);
+        }
+      }
       if(latest && actorTrace.some(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY && t.requestId===latest.requestId)) {
         await new Promise(r=>setTimeout(r,250));continue;
       }
@@ -2006,6 +2617,10 @@ try{
             /kuanggu|狂骨|Cuồng Cốt|draw1|rút|bốc|draw card/i.test(choiceText);
           const hiddenLiegongChoice = hiddenLiegongScenario &&
             /liegong|烈弓|Liệt Cung|damage|sát thương|伤害/i.test(choiceText);
+          const hiddenJilixChoice = hiddenJilixScenario &&
+            /jilix|寄篱|Ký Ly|ld__jilix|移除此武将牌|loại bỏ.*tướng|xóa.*tướng|remove.*(?:general|this)/i.test(choiceText);
+          const deltaZhenteChoice = deltaZhenteScenario &&
+            /ty_heg__zhente_negate|贞特|zhente|vô hiệu|无效|negate/i.test(choiceText);
           const preferred = hiddenJianxiongChoice
             ? choices.locator('button.gameplay-choice:enabled')
               .filter({ hasText: /hs__jianxiong-obtain|jianxiong-obtain|obtain|获得|damage.*card|lá Sát|gây sát thương/i }).first()
@@ -2024,6 +2639,12 @@ try{
             : hiddenLiegongChoice
             ? choices.locator('button.gameplay-choice:enabled')
               .filter({ hasText: /hs__liegong_damage|liegong_damage|damage|sát thương|伤害|\+1/i }).first()
+            : hiddenJilixChoice
+            ? choices.locator('button.gameplay-choice:enabled')
+              .filter({ hasText: /ld__jilix_remove|移除此武将牌|loại bỏ.*tướng|xóa.*tướng|remove.*(?:general|this)/i }).first()
+            : deltaZhenteChoice
+            ? choices.locator('button.gameplay-choice:enabled')
+              .filter({ hasText: /ty_heg__zhente_negate|vô hiệu|无效|negate|对.*无效/i }).first()
             : (selectedScenario && !(testScenario === 'cards-and-choice' && scenarioActiveSkillReply))
             ? choices.locator('button.gameplay-choice:enabled').filter({ hasText: /revealMain|Lật chủ tướng|主将|main/i }).first()
             : testScenario === 'cards-and-choice'
@@ -2042,10 +2663,34 @@ try{
             'hidden-kuanggu must expose the native draw1 choice');
           if (hiddenLiegongChoice) assert.ok(await preferred.count(),
             'hidden-liegong must expose the native damage-plus-one choice');
+          if (hiddenJilixChoice) assert.ok(await preferred.count(),
+            'hidden-jilix must expose the native remove-general choice');
+          if (deltaZhenteChoice) assert.ok(await preferred.count(),
+            'delta-zhente must expose the native target-negate choice');
           let submitted = false;
           const confirm=choices.getByRole('button',{name:'Xác nhận lựa chọn',exact:true});
           if(await option.count()) {
-            await option.click();
+            // ChoicePanel refreshes its countdown every 250ms.  Playwright's
+            // visibility/stability gate can therefore observe the button,
+            // lose the portal node during the timer render, and wait until
+            // the native request expires without ever dispatching the click.
+            // Keep the enabled check, then dispatch the normal DOM click on
+            // the current React node so the production handler still owns
+            // validation and the exact reply bytes.
+            const clicked = await option.evaluate((element) => {
+              if (!(element instanceof HTMLButtonElement) || element.disabled) return false;
+              element.click();
+              return true;
+            }, undefined, { timeout: 900 }).catch((error: unknown) => {
+              // The countdown can replace the portal node between count() and
+              // evaluate(). Retry the live locator on the next runner tick.
+              if (error instanceof Error && /detached|not attached|resolved to|timeout/i.test(error.message)) return false;
+              throw error;
+            });
+            if (!clicked) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+              continue;
+            }
             if (await confirm.count() && await confirm.isEnabled()) {
               await confirm.click();
               submitted = true;
@@ -2069,6 +2714,9 @@ try{
             if (hiddenDuanchangChoice && replied) hiddenDuanchangChoiceReply = true;
             if (hiddenKuangguChoice && replied) hiddenKuangguChoiceReply = true;
             if (hiddenLiegongChoice && replied) hiddenLiegongChoiceReply = true;
+            if (hiddenJilixChoice && replied) hiddenJilixChoiceReply = true;
+            if (deltaZhenteChoice && replied) scenarioZhenteChoiceReply = true;
+            if (deltaXiongsuanScenario && replied) scenarioXiongsuanChoiceReply = true;
             if (replied) scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
             detail: testScenario === 'founding' || /lập quốc|quốc hiệu|founding|wild-choose|建国|Dã tâm/i.test(choiceText) ? 'founding-kingdom' :
                 hiddenJianxiongChoice ? 'hidden-jianxiong-obtain' :
@@ -2077,6 +2725,9 @@ try{
                 hiddenDuanchangChoice ? 'hidden-duanchang-lose-main-skills' :
                 hiddenKuangguChoice ? 'hidden-kuanggu-draw1' :
                 hiddenLiegongChoice ? 'hidden-liegong-damage-plus-one' :
+                hiddenJilixChoice ? 'hidden-jilix-remove-general' :
+                deltaZhenteChoice ? 'delta-zhente-negate-choice' :
+                deltaXiongsuanScenario ? 'delta-xiongsuan-reset-choice' :
                 testScenario === 'cards-and-choice' ? 'shangyi_card choice' : 'choice'});
           }
         }
@@ -2118,6 +2769,24 @@ try{
         const isHiddenJianzhiGate = hiddenJianzhiScenario && /TQS QA|prelight|tqs_qa_hidden_jianzhi_gate/i.test(invokeText);
         const isHiddenZhimanGate = hiddenZhimanScenario && /TQS QA|prelight|tqs_qa_hidden_zhiman_gate/i.test(invokeText);
         const isHiddenJilixGate = hiddenJilixScenario && /TQS QA|prelight|tqs_qa_hidden_jilix_gate/i.test(invokeText);
+        const isDeltaXiongsuanGate = deltaXiongsuanScenario && /TQS QA|xiongsuan|凶算|Hung\s*Toán/i.test(invokeText);
+        const isDeltaWenjiGate = deltaWenjiScenario && /TQS QA|wenji|问计|Vấn\s*Kế/i.test(invokeText);
+        const isDeltaLordWenjiGate = deltaLordWenjiScenario && /tqs_qa_delta_lord_wenji_gate|TQS QA/i.test(invokeText);
+        const isDeltaQianceGate = deltaQianceScenario && /TQS QA|tqs_qa_delta_qiance_gate/i.test(invokeText);
+        const isDeltaJianchuGate = deltaJianchuScenario && /TQS QA|tqs_qa_delta_jianchu_gate/i.test(invokeText);
+        const isDeltaTieqiGate = deltaTieqiScenario && /TQS QA|tqs_qa_delta_tieqi_gate/i.test(invokeText);
+        const isDeltaChujueGate = deltaChujueScenario && /TQS QA|tqs_qa_delta_chujue_gate/i.test(invokeText);
+        const isDeltaZhenteGate = deltaZhenteScenario && /TQS QA|tqs_qa_delta_zhente_gate/i.test(invokeText);
+        const isDeltaHalberdGate = deltaHalberdScenario && /TQS QA|tqs_qa_delta_halberd_gate/i.test(invokeText);
+        const isDeltaSijianGate = deltaSijianScenario && /TQS QA|tqs_qa_delta_sijian_gate/i.test(invokeText);
+        const isDeltaBaweiGate = deltaBaweiScenario && /tqs_qa_delta_bawei_gate|TQS QA/i.test(invokeText);
+        const isDeltaFengshiGate = deltaFengshiScenario && /tqs_qa_delta_fengshi_gate|TQS QA/i.test(invokeText);
+        const isDeltaXisheGate = deltaXisheScenario && /tqs_qa_delta_xishe_gate|TQS QA/i.test(invokeText);
+        if (isDeltaBaweiGate || isDeltaFengshiGate || isDeltaXisheGate || isDeltaTieqiGate) {
+          // The native director reveals these real skills only after the
+          // readiness reply. Resolve the actor from that server request.
+          scenarioClient = activeClient;
+        }
         const isHiddenYijiInvoke = (hiddenYijiScenario || hiddenRehideYijiScenario) && !isHiddenGate && /Di Kế|遗计|yiji|hs__yiji/i.test(invokeText);
         const isHiddenJianxiongInvoke = hiddenJianxiongScenario && !isHiddenJianxiongGate && /Gian Hùng|奸雄|jianxiong|hs__jianxiong/i.test(invokeText);
         const isHiddenJianzhiInvoke = hiddenJianzhiScenario && !isHiddenJianzhiGate && /Gian Chí|奸志|jianzhi|heg__jianzhi/i.test(invokeText);
@@ -2126,7 +2795,15 @@ try{
         const isHiddenJizhiInvoke = hiddenJizhiScenario && !isHiddenJizhiGate && /Tập Trí|集智|jizhi|hs__jizhi/i.test(invokeText);
         const isHiddenGuanxingInvoke = hiddenGuanxingScenario && !isHiddenGuanxingGate && /Quan Tinh|观星|guanxing|hs__guanxing/i.test(invokeText);
         const isHiddenTianxiangInvoke = hiddenTianxiangScenario && !isHiddenTianxiangGate && /Thiên Hương|天香|tianxiang|hs__tianxiang/i.test(invokeText);
-        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate) {
+        const isDeltaQianceInvoke = deltaQianceScenario && !isDeltaQianceGate && /谦策|Khiêm\s*Sách|qiance|ld__qiance/i.test(invokeText);
+        const isDeltaJianchuInvoke = deltaJianchuScenario && !isDeltaJianchuGate && isCardChosenInvoke;
+        const isDeltaHalberdInvoke = deltaHalberdScenario && /方天画戟|halberd|sa__halberd/i.test(invokeText);
+        const isDeltaZhenteInvoke = deltaZhenteScenario && !isDeltaZhenteGate && /贞特|Trinh\s*Đặc|zhente|ty_heg__zhente/i.test(invokeText);
+        if (isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate || isDeltaXiongsuanGate || isDeltaWenjiGate || isDeltaLordWenjiGate || isDeltaQianceGate || isDeltaJianchuGate || isDeltaTieqiGate || isDeltaChujueGate || isDeltaZhenteGate || isDeltaHalberdGate || isDeltaSijianGate || isDeltaBaweiGate || isDeltaFengshiGate || isDeltaXisheGate) {
+          nativeQaGateSeen = true;
+          nativeQaGateCommand = latest.command;
+        }
+        if (isDeltaZhenteGate || isDeltaHalberdGate) {
           nativeQaGateSeen = true;
           nativeQaGateCommand = latest.command;
         }
@@ -2345,7 +3022,7 @@ try{
         // A manual run may encounter unrelated optional skills while the
         // target prompt is still pending. Only invoke the requested caller
         // skill; cancel everything else so it cannot starve a native choice.
-        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate
+        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate || isDeltaXiongsuanGate || isDeltaWenjiGate || isDeltaLordWenjiGate || isDeltaQianceGate || isDeltaJianchuGate || isDeltaChujueGate || isDeltaZhenteGate || isDeltaBaweiGate || isDeltaFengshiGate || isDeltaXisheGate
           ? true
           : isHiddenYijiInvoke
           ? hiddenRehideYijiScenario || hiddenYijiMode === 'positive'
@@ -2363,9 +3040,18 @@ try{
           ? true
           : isHiddenTianxiangInvoke
           ? true
+          : isDeltaJianchuInvoke
+          ? true
+          : isDeltaZhenteInvoke
+          ? true
+          : isDeltaTieqiGate
+          ? true
           : testScenario === 'card-chosen'
           ? isCardChosenInvoke
           : isScenarioSkillInvoke;
+        if (deltaXisheScenario) {
+          console.log(`delta-xishe invoke request gate=${isDeltaXisheGate} skill=${isScenarioSkillInvoke} invoke=${shouldInvoke}`);
+        }
         const choice = shouldInvoke
           ? actor.locator('.request-panel').getByRole('button', { name: 'Kích hoạt', exact: true })
           : actor.locator('.request-panel').getByRole('button', { name: /^(Bỏ qua|Hủy)$/ });
@@ -2402,6 +3088,16 @@ try{
         if (hiddenJianzhiScenario && isHiddenJianzhiGate && replied) hiddenJianzhiGateReply = true;
         if (hiddenZhimanScenario && isHiddenZhimanGate && replied) hiddenZhimanGateReply = true;
         if (hiddenJilixScenario && isHiddenJilixGate && replied) hiddenJilixGateReply = true;
+        if (deltaJianchuScenario && isDeltaJianchuGate && replied) scenarioJianchuGateReply = true;
+        if (deltaTieqiScenario && isDeltaTieqiGate && replied) scenarioTieqiGateReply = true;
+        if (deltaChujueScenario && isDeltaChujueGate && replied) scenarioChujueGateReply = true;
+        if (deltaZhenteScenario && isDeltaZhenteGate && replied) scenarioZhenteGateReply = true;
+        if (deltaHalberdScenario && isDeltaHalberdGate && replied) scenarioHalberdGateReply = true;
+        if (deltaSijianScenario && isDeltaSijianGate && replied) scenarioSijianGateReply = true;
+        if (deltaBaweiScenario && isDeltaBaweiGate && replied) scenarioBaweiGateReply = true;
+        if (deltaFengshiScenario && isDeltaFengshiGate && replied) scenarioFengshiGateReply = true;
+        if (deltaXisheScenario && isDeltaXisheGate && replied) scenarioXisheGateReply = true;
+        if (deltaLordWenjiScenario && isDeltaLordWenjiGate && replied) scenarioLordWenjiGateReply = true;
         if ((hiddenYijiScenario || hiddenRehideYijiScenario) && isHiddenYijiInvoke && replied) {
           hiddenYijiAsked = true;
           hiddenYijiInvoked = shouldInvoke;
@@ -2420,6 +3116,10 @@ try{
           if (/Phản Quỹ|反馈|fankui/i.test(invokeText)) scenarioFankuiInvoked = shouldInvoke;
           if (/Di Kế|遗计|yiji/i.test(invokeText)) scenarioYijiInvoked = shouldInvoke;
         }
+        if (deltaQianceScenario && isDeltaQianceInvoke && replied) scenarioQianceInvokeReply = shouldInvoke;
+        if (deltaJianchuScenario && isDeltaJianchuInvoke && replied) scenarioJianchuInvokeReply = shouldInvoke;
+        if (deltaZhenteScenario && isDeltaZhenteInvoke && replied) scenarioZhenteInvokeReply = shouldInvoke;
+        if (deltaHalberdScenario && isDeltaHalberdInvoke && replied) scenarioHalberdExtraTargetReply = shouldInvoke;
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
           detail: isHiddenRevealGate ? 'hidden-reveal-readiness-gate' :
             isHiddenActiveGate ? 'hidden-active-readiness-gate' :
@@ -2445,6 +3145,20 @@ try{
             isHiddenDufuGate ? 'hidden-dufu-readiness-gate' :
             isHiddenJianzhiGate ? 'hidden-jianzhi-readiness-gate' :
             isHiddenZhimanGate ? 'hidden-zhiman-readiness-gate' :
+            isDeltaWenjiGate ? 'delta-wenji-readiness-gate' :
+            isDeltaLordWenjiGate ? 'delta-lord-wenji-readiness-gate' :
+            isDeltaQianceGate ? 'delta-qiance-readiness-gate' :
+            isDeltaQianceInvoke ? 'invoke-delta-qiance' :
+            isDeltaJianchuGate ? 'delta-jianchu-readiness-gate' :
+            isDeltaTieqiGate ? 'delta-tieqi-readiness-gate' :
+            isDeltaChujueGate ? 'delta-chujue-readiness-gate' :
+            isDeltaZhenteGate ? 'delta-zhente-readiness-gate' :
+            isDeltaHalberdGate ? 'delta-halberd-readiness-gate' :
+            isDeltaSijianGate ? 'delta-sijian-readiness-gate' :
+            isDeltaBaweiGate ? 'delta-bawei-readiness-gate' :
+            isDeltaFengshiGate ? 'delta-fengshi-readiness-gate' :
+            isDeltaXisheGate ? 'delta-xishe-readiness-gate' :
+            isDeltaJianchuInvoke ? 'invoke-delta-jianchu' :
             isHiddenJianxiongGate ? 'hidden-jianxiong-readiness-gate' :
             isHiddenJizhiInvoke ? 'invoke-hidden-jizhi' :
             isHiddenJianxiongInvoke ? 'invoke-hidden-jianxiong' :
@@ -2455,6 +3169,186 @@ try{
             shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
       } else if(latest?.command==='AskForUseActiveSkill') {
         const activePrompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+        if (deltaSijianScenario) {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          if (!scenarioSijianGateReply) {
+            const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+            if (await cancel.count() && await cancel.isEnabled()) await cancel.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-sijian-close-pre-gate-active-skill' });
+            continue;
+          }
+          if (!scenarioSijianTargetReply) {
+            await chooseTargetIfNeeded(actor);
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            await confirm.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await confirm.isEnabled(), 'delta-sijian target confirmation must be enabled');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) scenarioSijianTargetReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-sijian-choose-target' });
+            continue;
+          }
+          const replied = await completeActiveSkill(actor, activeClient, latest.requestId, null);
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: replied, detail: 'delta-sijian-close-unrelated-active-skill' });
+          continue;
+        }
+        if (deltaHalberdScenario) {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          if (!scenarioHalberdGateReply) {
+            const replied = await completeActiveSkill(actor, activeClient, latest.requestId, null);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-halberd-close-unrelated-active-skill' });
+            continue;
+          }
+          if (!scenarioHalberdUseReply) {
+            const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+              .filter({ hasText: /Sát|Slash|杀/i }).first();
+            await slash.waitFor({ state: 'visible', timeout: 10000 });
+            await slash.click();
+            const firstTarget = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+            await firstTarget.waitFor({ state: 'visible', timeout: 10000 });
+            if (await firstTarget.getAttribute('aria-pressed') !== 'true') await firstTarget.click();
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            await confirm.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await confirm.isEnabled(), 'delta-halberd first Slash target confirmation must be enabled');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) scenarioHalberdUseReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-halberd-first-slash-semantic-active-skill' });
+            continue;
+          }
+          const extraTargets = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          assert.equal(await extraTargets.count(), 1,
+            'delta-halberd must expose exactly one legal extra target from a distinct kingdom');
+          if (await extraTargets.first().getAttribute('aria-pressed') !== 'true') await extraTargets.first().click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-halberd extra-target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioHalberdExtraTargetReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: replied, detail: 'delta-halberd-extra-target-semantic-active-skill' });
+          continue;
+        }
+        if (deltaZhenteScenario) {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          if (!scenarioZhenteGateReply || scenarioZhenteUseReply ||
+              !/delta-zhente|dùng Sát đen|kiểm tra 贞特|ty_heg__zhente/i.test(activePrompt)) {
+            const replied = await completeActiveSkill(actor, activeClient, latest.requestId, null);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-zhente-close-unrelated-active-skill' });
+            continue;
+          }
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-zhente black Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioZhenteUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: replied, detail: 'delta-zhente-black-slash-semantic-active-skill' });
+          continue;
+        }
+        if (deltaTieqiScenario) {
+          const isTieqiDiscard = /hs__tieqi|铁骑|Thiết\s*Kỵ|tieqi|bỏ\s*chọn|弃置|discard/i.test(activePrompt);
+          const isTieqiUse = /delta-tieqi|dùng\s*Sát|use.*Slash|tqs_qa_delta_tieqi_use/i.test(activePrompt);
+          if (!scenarioTieqiGateReply) {
+            const cancel = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+              .getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+            if (await cancel.count() && await cancel.isEnabled()) {
+              await cancel.click();
+              await waitForReply(activeClient, latest.requestId);
+            }
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: true, detail: 'delta-tieqi-pre-gate-active-skill' });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+          }
+          if (isTieqiDiscard && scenarioTieqiUseReply) {
+            const cancel = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+              .getByRole('button', { name: 'Hủy', exact: true });
+            await cancel.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await cancel.isEnabled(), 'delta-tieqi must expose a cancellable target discard request');
+            await cancel.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) scenarioTieqiDiscardReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-tieqi-discard-cancel' });
+            continue;
+          }
+          if (isTieqiUse && !scenarioTieqiUseReply) {
+            const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+            const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+              .filter({ hasText: /Sát|Slash|杀/i }).first();
+            await slash.waitFor({ state: 'visible', timeout: 10000 });
+            await slash.click();
+            const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+            await target.waitFor({ state: 'visible', timeout: 10000 });
+            if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            await confirm.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await confirm.isEnabled(), 'delta-tieqi must enable the reserved Slash target confirmation');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) scenarioTieqiUseReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-tieqi-slash-semantic-active-skill' });
+            continue;
+          }
+        }
+        if (deltaXisheScenario) {
+          assert.ok(scenarioXisheGateReply, 'delta-xishe must pass the readiness gate before discarding equipment');
+          assert.match(activePrompt, /袭射|Tập\s*Xạ|ld__xishe|xishe/i,
+            'delta-xishe received an unrelated active-skill request while expecting equipment discard');
+          assert.ok(!scenarioXisheArmorReply, 'delta-xishe must not receive an extra equipment request after the final armor discard');
+          // Upstream room:askToDiscard(include_equip=true) expands equipped
+          // cards into real CardItem entries. Click the projected weapon/armor
+          // in the human client's native request, without using card IDs.
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const cancelBranch = scenarioXisheWeaponReply && !scenarioXisheCancelReply;
+          const cardType = !scenarioXisheWeaponReply ? 'Vũ Khí' : 'Phòng Cụ';
+          const detail = !scenarioXisheWeaponReply ? 'delta-xishe-weapon-discard'
+            : cancelBranch ? 'delta-xishe-optional-cancel' : 'delta-xishe-armor-discard';
+          if (cancelBranch) {
+            const cancel = controls.getByRole('button', { name: 'Hủy', exact: true });
+            await cancel.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await cancel.isEnabled(), 'delta-xishe must expose a cancellable repeated discard offer');
+            await cancel.click();
+          } else {
+            const equipment = controls.locator('.gameplay-hand button[data-card-id].type-equip:enabled')
+              .filter({ hasText: cardType }).first();
+            await equipment.waitFor({ state: 'visible', timeout: 10000 });
+            await equipment.click();
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            await confirm.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await confirm.isEnabled(), `delta-xishe must allow selecting the ${cardType} equipment`);
+            await confirm.click();
+          }
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (!scenarioXisheWeaponReply && replied) scenarioXisheWeaponReply = true;
+          else if (cancelBranch && replied) scenarioXisheCancelReply = true;
+          else if (replied) scenarioXisheArmorReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied, detail });
+          continue;
+        }
+        if (deltaXiongsuanScenario) {
+          const skillCount = await actor.locator('button.sg-skill-button').count().catch(() => 0);
+          console.log(`delta-xiongsuan active request client=${activeClient + 1} request=${latest.requestId} ` +
+            `panel=${activePrompt.length > 0} skillCount=${skillCount}`);
+        }
         const hiddenYijiActive = (hiddenYijiScenario || hiddenRehideYijiScenario) && /Di Kế|遗计|yiji|hs__yiji/i.test(activePrompt);
         const hiddenJianxiongDamage = hiddenJianxiongScenario &&
           /hidden_jianxiong_damage|dùng Sát lên Cao Cao|kiểm tra Gian Hùng/i.test(activePrompt);
@@ -2498,6 +3392,8 @@ try{
         const hiddenFuyinSlash = hiddenFuyinScenario &&
           nativeQaGateSeen &&
           /hidden_fuyin_damage|dùng Sát|父荫|Phụ Âm|bóng mát của cha|fuyin/i.test(activePrompt);
+        const chujueControlFactionSlash = deltaChujueScenario &&
+          /chưa có người chết|control.?kingdom|control.?faction|chujue-control|kiểm tra đáp lại/i.test(activePrompt);
         const deferredHiddenScenario = hiddenFuyinScenario || hiddenJilixScenario;
         const deferredGateAccepted = hiddenFuyinScenario ? hiddenFuyinGateReply : hiddenJilixGateReply;
         if (deferredHiddenScenario && !deferredGateAccepted) {
@@ -2840,6 +3736,143 @@ try{
           }
           await new Promise((resolve) => setTimeout(resolve, 250));
           continue;
+        } else if (deltaChujueScenario) {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const controlBranch = chujueControlFactionSlash || scenarioChujueDeadFactionUseReply;
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i })
+            .first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const targets = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          // Native askToUseRealCard() supplies exclusive_targets for each
+          // branch, so the browser intentionally receives one target only.
+          const target = targets.first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await target.count() > 0,
+            `delta-chujue must expose the ${controlBranch ? 'control-kingdom' : 'dead-kingdom'} target`);
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-chujue Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (!controlBranch && replied) scenarioChujueDeadFactionUseReply = true;
+          if (controlBranch && replied) scenarioChujueControlFactionUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: controlBranch ? 'delta-chujue-control-faction-slash' : 'delta-chujue-dead-faction-slash' });
+          continue;
+        } else if (deltaFengshiScenario) {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const prompt = `${await actor.locator('.request-panel').innerText().catch(() => '')} ${await controls.locator('.gameplay-prompt:visible').innerText().catch(() => '')}`;
+          if (!scenarioFengshiGateReply || !/delta-fengshi|dùng lá Sát đầu lượt/i.test(prompt)) {
+            // Start phase is deferred until after ordinary active-skill
+            // requests. Resolve these without spending the reserved Slash.
+            const replied = await completeActiveSkill(actor, activeClient, latest.requestId, null);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-fengshi-pre-gate-active-skill' });
+            continue;
+          }
+          // The native fixture restricts the first physical Slash to one
+          // bot target. Both variants follow the same client request path.
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const targets = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          await targets.first().waitFor({ state: 'visible', timeout: 10000 });
+          assert.equal(await targets.count(), 1, 'delta-fengshi must restrict Slash to the native bot target');
+          if (await targets.first().getAttribute('aria-pressed') !== 'true') await targets.first().click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-fengshi first physical Slash must be legal');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioFengshiSlashReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-fengshi-first-slash' });
+          continue;
+        } else if (deltaBaweiScenario) {
+          // The director first asks for the Slash against the previously
+          // damaged Wei bot, then the Slash against the untouched Shu bot.
+          // Each request restricts the legal target to its own branch.
+          if (!scenarioBaweiGateReply) {
+            // A normal active-card request can arrive while the native
+            // readiness gate is still pending (the bot may start its phase
+            // before the QA director reaches the actor). Do not consume it
+            // as one of the two reserved Bawei Slashes; this mirrors the
+            // Fengshi pre-gate handling and keeps the gate authoritative.
+            const replied = await completeActiveSkill(actor, activeClient, latest.requestId, null);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'delta-bawei-pre-gate-active-skill' });
+            continue;
+          }
+          const controlBranch = scenarioBaweiDamagedUseReply;
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-bawei must enable the reserved Slash target');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied && controlBranch) scenarioBaweiControlUseReply = true;
+          if (replied && !controlBranch) scenarioBaweiDamagedUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: controlBranch ? 'delta-bawei-control-slash' : 'delta-bawei-damaged-slash' });
+          continue;
+        } else if (deltaJianchuScenario) {
+          // The native adapter exposes askToUseRealCard() as
+          // AskForUseActiveSkill for this QA helper. Select the fixed Slash
+          // and the only opponent target; Jianchu itself will then emit the
+          // source-card AskForCardChosen request.
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i })
+            .first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-jianchu active-skill Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioJianchuUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-jianchu-slash-semantic-active-skill' });
+          continue;
+        } else if (deltaQianceScenario) {
+          // askToUseRealCard() is exposed by this native build as
+          // AskForUseActiveSkill when a QA skill_name is supplied.  It still
+          // renders the real hand-card/target controls, so drive the reserved
+          // Duel through those controls instead of letting completeActiveSkill
+          // cancel the request as an unrelated skill.
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const duel = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Quyết Đấu|Duel|决斗/i })
+            .first();
+          await duel.waitFor({ state: 'visible', timeout: 10000 });
+          await duel.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-qiance active-skill Duel target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioQianceCardReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-qiance-duel-semantic-active-skill' });
+          continue;
         } else if (damageExchangeScenario || hiddenYijiActive || hiddenRevealActive) {
           const prompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
           const replied = hiddenRevealActive
@@ -2862,16 +3895,232 @@ try{
         }
         const activeSkill = testScenario === 'rescue-battle'
           ? selectedScenario?.skill ?? null
-          : testScenario === 'cards-and-choice' || testScenario === 'poxi'
+          : testScenario === 'cards-and-choice' || testScenario === 'poxi' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario
             ? selectedScenario?.skill ?? null : null;
         const replied = await completeActiveSkill(actor, activeClient, latest.requestId, activeSkill);
         if (replied && testScenario === 'rescue-battle' && activeSkill) scenarioViewAsReply = true;
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
           detail: activeSkill?.source ?? 'cancel'});
       } else if(latest?.command==='AskForUseCard' || latest?.command==='AskForResponseCard') {
+        if ((deltaWenjiScenario || deltaLordWenjiScenario) && latest.command === 'AskForResponseCard') {
+          throw new Error(`${testScenario} must suppress the target response request after UseCardData:setDisresponsive()`);
+        }
+        if (deltaQianceScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-qiance must suppress the target Slash response request after qiance setDisresponsive()');
+        }
+        if (deltaJianchuScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-jianchu must suppress the target Jink response request after Jianchu setDisresponsive()');
+        }
+        if (deltaTieqiScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-tieqi must suppress the target Jink response request after Tieqi setDisresponsive()');
+        }
+        if (deltaChujueScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-chujue must suppress only the dead-kingdom target response request; control response is native-bot evidence');
+        }
+        if (deltaBaweiScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-bawei real clients must not receive a Jink request; the control response belongs to the native bot');
+        }
+        if (deltaFengshiScenario && latest.command === 'AskForResponseCard') {
+          throw new Error('delta-fengshi real clients must not receive a Jink request; the response belongs to the native bot');
+        }
         if (damageExchangeScenario) {
           const result = await completeDamageExchangeUseCard(actor, activeClient, latest.requestId);
           scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: result.replied, detail: result.detail });
+          continue;
+        }
+        if (deltaZhenteScenario && latest.command === 'AskForUseCard') {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const prompt = `${await actor.locator('.request-panel').innerText().catch(() => '')} ${await controls.innerText().catch(() => '')}`;
+          if (!scenarioZhenteGateReply || scenarioZhenteUseReply ||
+              !/delta-zhente|dùng Sát đen|kiểm tra 贞特|ty_heg__zhente/i.test(prompt)) {
+            const result = await completeUseCard(actor, activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: result.replied, detail: 'delta-zhente-close-unrelated-use-card' });
+            continue;
+          }
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-zhente black Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioZhenteUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: replied, detail: 'delta-zhente-black-slash-semantic-card-target' });
+          continue;
+        }
+        if (deltaChujueScenario && latest.command === 'AskForUseCard') {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const prompt = `${await actor.locator('.request-panel').innerText().catch(() => '')} ${await controls.innerText().catch(() => '')}`;
+          const controlBranch = /chưa có người chết|control.?kingdom|control.?faction|chujue-control|kiểm tra đáp lại/i.test(prompt) ||
+            scenarioChujueDeadFactionUseReply;
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i })
+            .first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const targets = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          // Native askToUseRealCard() supplies exclusive_targets for each
+          // branch, so the browser intentionally receives one target only.
+          const target = targets.first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await target.count() > 0,
+            `delta-chujue must expose the ${controlBranch ? 'control-kingdom' : 'dead-kingdom'} target`);
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-chujue Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (controlBranch && replied) scenarioChujueControlFactionUseReply = true;
+          if (!controlBranch && replied) scenarioChujueDeadFactionUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: controlBranch ? 'delta-chujue-control-faction-slash-card' : 'delta-chujue-dead-faction-slash-card' });
+          continue;
+        }
+        if (deltaFengshiScenario && latest.command === 'AskForUseCard') {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const prompt = `${await actor.locator('.request-panel').innerText().catch(() => '')} ${await controls.innerText().catch(() => '')}`;
+          if (!scenarioFengshiGateReply || !/delta-fengshi|dùng lá Sát đầu lượt/i.test(prompt)) {
+            // The actor's Start phase is deferred. Earlier ordinary use-card
+            // requests must resolve without consuming the reserved first Slash.
+            const result = await completeUseCard(actor, activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: result.replied, detail: 'delta-fengshi-pre-gate-use-card' });
+            continue;
+          }
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const targets = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
+          await targets.first().waitFor({ state: 'visible', timeout: 10000 });
+          assert.equal(await targets.count(), 1, 'delta-fengshi must restrict Slash to the native bot target');
+          if (await targets.first().getAttribute('aria-pressed') !== 'true') await targets.first().click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-fengshi first physical Slash must be legal');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioFengshiSlashReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-fengshi-first-slash-card' });
+          continue;
+        }
+        if (deltaBaweiScenario && latest.command === 'AskForUseCard') {
+          if (!scenarioBaweiGateReply) {
+            // The actor can expose an ordinary turn PlayCard request while
+            // the deferred EventPhaseStart gate is still crossing the real
+            // client. Resolve that request without spending either reserved
+            // Slash; the native director cannot enter its bounded fixture
+            // until the readiness AskForSkillInvoke has been answered.
+            const result = await completeUseCard(actor, activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: result.replied, detail: 'delta-bawei-pre-gate-use-card' });
+            continue;
+          }
+          const controlBranch = scenarioBaweiDamagedUseReply;
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-bawei must enable the reserved Slash target');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied && controlBranch) scenarioBaweiControlUseReply = true;
+          if (replied && !controlBranch) scenarioBaweiDamagedUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: controlBranch ? 'delta-bawei-control-slash-card' : 'delta-bawei-damaged-slash-card' });
+          continue;
+        }
+        if (deltaJianchuScenario && latest.command === 'AskForUseCard') {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i })
+            .first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-jianchu Slash target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioJianchuUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-jianchu-slash-semantic-card-target' });
+          continue;
+        }
+        if (deltaTieqiScenario && latest.command === 'AskForUseCard') {
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const prompt = `${await actor.locator('.request-panel').innerText().catch(() => '')} ${await controls.innerText().catch(() => '')}`;
+          if (!scenarioTieqiGateReply) {
+            const result = await completeUseCard(actor, activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: result.replied, detail: 'delta-tieqi-pre-gate-use-card' });
+            continue;
+          }
+          if (scenarioTieqiUseReply || !/delta-tieqi|dùng\s*Sát|use.*Slash|铁骑|tieqi/i.test(prompt)) {
+            const result = await completeUseCard(actor, activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: result.replied, detail: 'delta-tieqi-close-unrelated-use-card' });
+            continue;
+          }
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          await slash.waitFor({ state: 'visible', timeout: 10000 });
+          await slash.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-tieqi must enable the reserved Slash target confirmation');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioTieqiUseReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-tieqi-slash-semantic-card-target' });
+          continue;
+        }
+        if (deltaQianceScenario && latest.command === 'AskForUseCard') {
+          // Qiance's fixture has a reserved Duel and a fixed non-self target.
+          // Do not let the generic first-enabled-card helper consume a stale
+          // hand button or submit the card before the target control has
+          // rendered; the native fixture deliberately asserts both values.
+          const duel = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Quyết Đấu|Duel|决斗/i })
+            .first();
+          await duel.waitFor({ state: 'visible', timeout: 10000 });
+          await duel.click();
+          const target = actor.locator('.board-player:not(.board-self) .gameplay-target:enabled').first();
+          console.log(`Scenario delta-qiance controls: client=${activeClient} duelCount=${await duel.count()} targetCount=${await target.count()}`);
+          await target.waitFor({ state: 'visible', timeout: 10000 });
+          if (await target.getAttribute('aria-pressed') !== 'true') await target.click();
+          const confirm = actor.getByRole('region', { name: 'Điều khiển lượt chơi' })
+            .getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-qiance Duel target confirmation must be enabled');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioQianceCardReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+            detail: 'delta-qiance-duel-semantic-card-target' });
           continue;
         }
         const result = await completeUseCard(actor, activeClient, latest.requestId);
@@ -2879,24 +4128,32 @@ try{
         if (result.rescue && result.peach && result.replied) scenarioRescuePeach = true;
         if (result.rescue && result.blocked) scenarioRescueBlocked = true;
         if (result.viewAs && result.replied) scenarioViewAsReply = true;
+        if (deltaQianceScenario && latest.command === 'AskForUseCard' && result.replied) {
+          scenarioQianceCardReply = true;
+        }
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: result.replied,
-          detail: result.rescue ? result.viewAs ? 'rescue-peach-view-as' : result.peach ? 'rescue-peach' : result.blocked ? 'rescue-peach-blocked' : 'rescue-no-peach' : undefined});
+          detail: deltaQianceScenario ? 'delta-qiance-duel' : result.rescue ? result.viewAs ? 'rescue-peach-view-as' : result.peach ? 'rescue-peach' : result.blocked ? 'rescue-peach-blocked' : 'rescue-no-peach' : undefined});
       } else if(latest?.command==='AskForCardChosen') {
         const panel=actor.getByRole('region',{name:'Chọn bài đối thủ'});
         const options=panel.locator('button.gameplay-choice:enabled');
         const labels=await options.allTextContents();
         const hiddenIndex=labels.findIndex((label)=>/Bài úp/i.test(label.trim()));
-        const option=options.nth(hiddenIndex >= 0 ? hiddenIndex : 0);
+        const visibleIndex=labels.findIndex((label)=>!/Bài úp/i.test(label.trim()));
+        const option=options.nth(deltaJianchuScenario
+          ? (visibleIndex >= 0 ? visibleIndex : 0)
+          : (hiddenIndex >= 0 ? hiddenIndex : 0));
         if(await option.count())await option.click();
         const replied = await waitForReply(activeClient, latest.requestId);
         if (replied) {
           scenarioCardChosenReply=true;
           if (hiddenIndex >= 0) scenarioCardChosenHidden=true;
+          if (deltaJianchuScenario) scenarioJianchuCardReply = true;
           if (damageExchangeScenario && scenarioFankuiInvoked) scenarioFankuiReply = true;
           if (hiddenFankuiScenario) hiddenFankuiChoiceReply = true;
           if (hiddenZhimanScenario) hiddenZhimanCardReply = true;
+          if (deltaSijianScenario) scenarioSijianCardReply = true;
           scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: true,
-            detail: hiddenZhimanScenario ? 'hidden-zhiman-obtain-equipment' : hiddenFankuiScenario ? 'hidden-fankui-obtain' : hiddenIndex >= 0 ? 'hidden-card' : 'public-card'});
+            detail: deltaSijianScenario ? 'delta-sijian-select-target-card' : deltaJianchuScenario ? 'delta-jianchu-select-equipment' : hiddenZhimanScenario ? 'hidden-zhiman-obtain-equipment' : hiddenFankuiScenario ? 'hidden-fankui-obtain' : hiddenIndex >= 0 ? 'hidden-card' : 'public-card'});
         }
       } else if(latest?.command==='AskForPoxi') {
         const panel=actor.getByRole('region',{name:'Chọn bài đối thủ'});
@@ -2950,9 +4207,24 @@ try{
           }
         }
       } else if(latest && ['AskForArrangeCards','AskForAG','CustomDialog','AskForGeneral','AskForMoveCardInBoard'].includes(latest.command)) {
-        const replied = await completeNativeDialog(actor, activeClient, latest.requestId);
-        if (hiddenGuanxingScenario && latest.command === 'AskForArrangeCards' && replied) {
-          hiddenGuanxingArrangeReply = true;
+        if (deltaTieqiScenario && latest.command === 'CustomDialog') {
+          const panel = actor.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' });
+          const choices = panel.locator('button.sg-general-choice-token:enabled');
+          await choices.first().waitFor({ state: 'visible', timeout: 10000 });
+          await choices.first().click();
+          const confirm = panel.getByRole('button', { name: 'Xác nhận', exact: true });
+          await confirm.waitFor({ state: 'visible', timeout: 10000 });
+          assert.ok(await confirm.isEnabled(), 'delta-tieqi must enable the real general-choice confirmation');
+          await confirm.click();
+          const replied = await waitForReply(activeClient, latest.requestId);
+          if (replied) scenarioTieqiGeneralReply = true;
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: replied, detail: 'delta-tieqi-general-choice' });
+        } else {
+          const replied = await completeNativeDialog(actor, activeClient, latest.requestId);
+          if (hiddenGuanxingScenario && latest.command === 'AskForArrangeCards' && replied) {
+            hiddenGuanxingArrangeReply = true;
+          }
         }
       } else if(latest?.command==='PlayCard') {
         const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
@@ -2961,7 +4233,113 @@ try{
         const skillButtons=actor.locator('button.sg-skill-button');
         if (selectedScenario && !printedScenarioSkills) {
           printedScenarioSkills = true;
-          console.log(`Scenario ${testScenario} first PlayCard skills: ${(await skillButtons.allTextContents()).join(' | ') || '(none)'}`);
+          console.log(`Scenario ${testScenario} first PlayCard skill-control count: ${await skillButtons.count()}`);
+        }
+        if (deltaFengshiScenario) {
+          const prompt = await controls.innerText().catch(() => '');
+          if (!scenarioFengshiGateReply || !/delta-fengshi|dùng lá Sát đầu lượt/i.test(prompt)) {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+            const action = await end.count() && await end.isEnabled() ? end : cancel;
+            if (await action.count() && await action.isEnabled()) {
+              await action.click();
+              await waitForReply(activeClient, latest.requestId);
+            }
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: true, detail: 'delta-fengshi-close-unrelated-play-card' });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+          }
+        }
+        if (deltaXiongsuanScenario) {
+          // The native delta fixture completes the real xiongsuan action and
+          // then emits GameOver from the QA director.  A stale PlayCard
+          // request from the other seat can still be visible for one polling
+          // turn while that packet propagates.  Do not let the generic card
+          // loop consume (or re-index) the deterministic hand; close the
+          // stale request and let the GameOver packet terminate the scenario.
+          const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+          const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+          const action = await end.count() && await end.isEnabled() ? end : cancel;
+          if (await action.count() && await action.isEnabled()) {
+            await action.click();
+            await waitForReply(activeClient, latest.requestId);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
+        if (deltaWenjiScenario || deltaLordWenjiScenario) {
+          // Room:askToUseRealCard() is normally represented by the native
+          // userealcard active-skill request, but some adapters publish the
+          // same request as a regular PlayCard. Accept only the explicit QA
+          // prompt here; any stale normal-turn request must not consume the
+          // deterministic transferred Slash.
+          const prompt = await controls.innerText().catch(() => '');
+          if (/delta-(?:lord-)?wenji|dùng Sát được hỏi kế/i.test(prompt)) {
+            const slash = controls.locator('.gameplay-hand button:enabled')
+              .filter({ hasText: /Sát|Slash|杀/i }).first();
+            assert.ok(await slash.count(), `${testScenario} PlayCard must expose the transferred Slash`);
+            await slash.click();
+            await chooseTargetIfNeeded(actor);
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            assert.ok(await confirm.count() && await confirm.isEnabled(),
+              `${testScenario} PlayCard must enable confirmation after selecting the transferred Slash`);
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) {
+              if (deltaLordWenjiScenario) scenarioLordWenjiUseReply = true;
+              else scenarioWenjiUseReply = true;
+              scenarioActiveSkillReply = true;
+            }
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+              detail: `${testScenario}-use-transferred-slash-play-card` });
+          } else {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+            const action = await end.count() && await end.isEnabled() ? end : cancel;
+            if (await action.count() && await action.isEnabled()) {
+              await action.click();
+              await waitForReply(activeClient, latest.requestId);
+            }
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: `${testScenario}-close-stale-play-card` });
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
+        if (deltaQianceScenario) {
+          // Room:askToUseRealCard() is normally published as AskForUseCard,
+          // but a compatible adapter may expose the same explicit QA prompt
+          // as PlayCard. Consume only that prompt; never spend the reserved
+          // Duel on an unrelated stale turn request.
+          const prompt = await controls.innerText().catch(() => '');
+          if (/delta-qiance|dùng Quyết Đấu|Duel|谦策/i.test(prompt)) {
+            const duel = controls.locator('.gameplay-hand button:enabled')
+              .filter({ hasText: /Quyết Đấu|Duel|决斗/i }).first();
+            assert.ok(await duel.count(), 'delta-qiance PlayCard must expose the reserved Duel');
+            await duel.click();
+            await chooseTargetIfNeeded(actor);
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            assert.ok(await confirm.count() && await confirm.isEnabled(),
+              'delta-qiance PlayCard must enable confirmation after selecting the Duel');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            if (replied) scenarioQianceCardReply = true;
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: replied,
+              detail: 'delta-qiance-duel-play-card' });
+          } else {
+            const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+            const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+            const action = await end.count() && await end.isEnabled() ? end : cancel;
+            if (await action.count() && await action.isEnabled()) {
+              await action.click();
+              await waitForReply(activeClient, latest.requestId);
+            }
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId, reply: true,
+              detail: 'delta-qiance-close-stale-play-card' });
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
         }
         if (hiddenJizhiScenario || hiddenMingshiScenario || hiddenQianxunScenario || hiddenKongchengScenario || hiddenEnyuanScenario || hiddenFuyinScenario || hiddenJilixScenario) {
           // Fuyin and Jilix are deliberately deferred to the actor's native
@@ -3322,11 +4700,17 @@ try{
         }
         const hand=controls.locator('.gameplay-hand button:enabled');
         const preferred:number[]=[];const fallback:number[]=[];
-        for(let i=0;i<await hand.count();i++) {
+        const initialHandCount = await hand.count();
+        for(let i=0;i<initialHandCount;i++) {
           const label=await hand.nth(i).innerText();
           (testScenario === 'card-chosen' && /Sát|杀|Slash/i.test(label) ? preferred : fallback).push(i);
         }
         for(const i of [...preferred,...fallback]) {
+          // Selecting/submitting a card can remove it while React re-renders
+          // the hand.  Re-check the live count before reusing a numeric
+          // locator so a one-card fixture cannot produce a stale nth(1)
+          // timeout.
+          if (i >= await hand.count()) continue;
           const card=hand.nth(i);await card.click();
           const target=actor.locator('.board-player:not(.board-self) .gameplay-target:enabled');
           if(await target.count() && await target.first().getAttribute('aria-pressed')!=='true')await target.first().click();
@@ -3354,6 +4738,126 @@ try{
       assert.ok(scenarioFankuiInvoked && scenarioFankuiReply,
         'fazheng-enyuan manual mode must invoke Phản Quỹ and answer its source-card request');
       console.log('PASS fazheng-enyuan requests: three Wei Slashes, both Longdan conversions, Enyuan gift, optional Yiji/Fankui invoked');
+    } else if (deltaXiongsuanScenario) {
+      assert.ok(scenarioActiveSkillReply,
+        'delta-xiongsuan must complete the native active-skill card/target request');
+      assert.ok(scenarioXiongsuanChoiceReply,
+        'delta-xiongsuan must answer the native limited-skill reset choice');
+      console.log('PASS delta-xiongsuan: native card-filter selection, damage/draw and limited reset reached GameOver');
+    } else if (deltaWenjiScenario) {
+      assert.ok(scenarioWenjiPlayerReply,
+        'delta-wenji must choose the recipient through the native AskForUseActiveSkill request');
+      assert.ok(scenarioWenjiCardReply,
+        'delta-wenji must give the reserved Slash through the native card-selection request');
+      assert.ok(scenarioWenjiUseReply,
+        'delta-wenji must use the transferred Slash through the native real-card request');
+      const responseRequests = traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard');
+      assert.equal(responseRequests.length, 0,
+        'delta-wenji must not expose AskForResponseCard after setDisresponsive()');
+      console.log('PASS delta-wenji: native recipient/card handoff, transferred Slash use and response suppression reached GameOver');
+    } else if (deltaLordWenjiScenario) {
+      assert.ok(scenarioLordWenjiGateReply, 'delta-lord-wenji must complete the readiness gate');
+      assert.ok(scenarioLordWenjiPlayerReply, 'delta-lord-wenji must choose the upstream gift source');
+      assert.ok(scenarioLordWenjiCardReply, 'delta-lord-wenji must receive the native Slash gift');
+      assert.ok(scenarioLordWenjiUseReply, 'delta-lord-wenji must use the transferred Slash');
+      assert.ok(scenarioLordWenjiReturnReply, 'delta-lord-wenji must return the distinct Peach');
+      const responseRequests = traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard');
+      assert.equal(responseRequests.length, 0,
+        'delta-lord-wenji must not expose AskForResponseCard after setDisresponsive()');
+      console.log('PASS delta-lord-wenji: upstream source/gift, disresponsive Slash and distinct-card return reached GameOver');
+    } else if (deltaQianceScenario) {
+      assert.ok(scenarioQianceCardReply,
+        'delta-qiance must use the reserved Duel through the native real-card request');
+      assert.ok(scenarioQianceInvokeReply,
+        'delta-qiance must invoke the upstream 谦策 CardUsing trigger');
+      const responseRequests = traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard');
+      assert.equal(responseRequests.length, 0,
+        'delta-qiance must not expose AskForResponseCard after qiance setDisresponsive()');
+      console.log('PASS delta-qiance: native Duel CardUsing, upstream 谦策 invoke and big-kingdom response suppression reached GameOver');
+    } else if (deltaJianchuScenario) {
+      assert.ok(scenarioJianchuGateReply,
+        'delta-jianchu must complete the native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioJianchuUseReply,
+        'delta-jianchu must use the reserved Slash through the native real-card request');
+      assert.ok(scenarioJianchuInvokeReply,
+        'delta-jianchu must invoke the upstream 鞬出 trigger');
+      assert.ok(scenarioJianchuCardReply,
+        'delta-jianchu must choose the visible target equipment through AskForCardChosen');
+      const responseRequests = traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard');
+      assert.equal(responseRequests.length, 0,
+        'delta-jianchu must not expose AskForResponseCard after Jianchu setDisresponsive()');
+      console.log('PASS delta-jianchu: native Slash, equipment discard, 鞬出 invoke and Jink response suppression reached GameOver');
+    } else if (deltaTieqiScenario) {
+      assert.ok(scenarioTieqiGateReply, 'delta-tieqi must complete the native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioTieqiGeneralReply, 'delta-tieqi must choose a real target general through CustomDialog');
+      assert.ok(scenarioTieqiUseReply, 'delta-tieqi must use the reserved Slash through the native real-card request');
+      assert.ok(scenarioTieqiDiscardReply, 'delta-tieqi must cancel the target suit-discard request');
+      assert.equal(traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length, 0,
+      'delta-tieqi must not expose AskForResponseCard after the upstream trigger blocks response');
+      console.log('PASS delta-tieqi: native general choice, failed-suit discard cancel, Slash damage and response suppression reached GameOver');
+    } else if (deltaChujueScenario) {
+      assert.ok(scenarioChujueGateReply,
+        'delta-chujue must complete the native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioChujueDeadFactionUseReply,
+        'delta-chujue must use the reserved Slash against the dead-kingdom target');
+      assert.ok(scenarioChujueControlFactionUseReply,
+        'delta-chujue must use the reserved Slash against the control-kingdom target');
+      const responseRequests = traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard');
+      assert.equal(responseRequests.length, 0,
+        'delta-chujue real clients must not receive a response request for the dead-kingdom branch; the control response is native-bot evidence');
+      console.log('PASS delta-chujue: native dead-kingdom response suppression and control-kingdom Jink response reached GameOver');
+    } else if (deltaZhenteScenario) {
+      assert.ok(scenarioZhenteGateReply, 'delta-zhente must complete the native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioZhenteUseReply, 'delta-zhente must use the reserved black Slash through the native real-card request');
+      assert.ok(scenarioZhenteInvokeReply, 'delta-zhente must invoke the upstream target skill');
+      assert.ok(scenarioZhenteChoiceReply, 'delta-zhente must choose the native target-negate option');
+      assert.equal(traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length, 0,
+      'delta-zhente must nullify the target before a response request is emitted');
+      console.log('PASS delta-zhente: native target invoke, negate choice and black-Slash nullification reached GameOver');
+    } else if (deltaHalberdScenario) {
+      assert.ok(scenarioHalberdGateReply, 'delta-halberd must complete the native readiness gate');
+      assert.ok(scenarioHalberdUseReply, 'delta-halberd must use the reserved Slash against the first target');
+      assert.ok(scenarioHalberdExtraTargetReply, 'delta-halberd must select the legal distinct-kingdom extra target');
+      assert.equal(traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length, 0,
+      'delta-halberd bounded proof must not require a private human response-card request');
+      console.log('PASS delta-halberd: native attached weapon, extra-target selection and multi-target Slash reached GameOver');
+    } else if (deltaSijianScenario) {
+      assert.ok(scenarioSijianGateReply, 'delta-sijian must complete the native readiness gate');
+      assert.ok(scenarioSijianTargetReply, 'delta-sijian must choose a real other-player target');
+      assert.ok(scenarioSijianCardReply, 'delta-sijian must choose the target hand card through AskForCardChosen');
+      console.log('PASS delta-sijian: native empty-hand AfterCardsMove trigger, target selection and discard reached GameOver');
+    } else if (deltaFengshiScenario) {
+      assert.ok(scenarioFengshiGateReply, 'delta-fengshi must complete the native readiness gate');
+      assert.ok(scenarioFengshiSlashReply, 'delta-fengshi must use the reserved first physical Slash');
+      assert.equal(traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length, 0,
+      'delta-fengshi real clients must not receive a native bot Jink request');
+      console.log('PASS delta-fengshi manual requests: first physical Slash reached its exclusive native bot target');
+    } else if (deltaBaweiScenario) {
+      assert.ok(scenarioBaweiGateReply,
+        'delta-bawei must complete the native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioBaweiDamagedUseReply && scenarioBaweiControlUseReply,
+        'delta-bawei must use both physical Slashes against their respective exclusive targets');
+      assert.equal(traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length, 0,
+      'delta-bawei real clients must not receive a native bot Jink request');
+      console.log('PASS delta-bawei manual requests: damaged and untouched targets were each attacked with a reserved Slash');
+    } else if (deltaXisheScenario) {
+      assert.ok(scenarioXisheGateReply, 'delta-xishe must complete its native readiness AskForSkillInvoke gate');
+      assert.ok(scenarioXisheWeaponReply && scenarioXisheCancelReply && scenarioXisheArmorReply,
+        'delta-xishe must discard weapon, cancel the repeated offer and discard armor through three native requests');
+      assert.equal(traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length, 0,
+      'delta-xishe Jink response must come from the native control bot, not either real client');
+      console.log('PASS delta-xishe manual requests: weapon discarded, optional repeat cancelled and armor discarded');
     } else if (hiddenRehideYijiScenario) {
       assert.ok(hiddenGateReply, 'hidden-rehide-yiji must complete the native prelight gate');
       assert.ok(hiddenYijiAsked && hiddenYijiInvoked && hiddenYijiReply,
@@ -3397,6 +4901,7 @@ try{
     } else if (hiddenJilixScenario) {
       assert.ok(hiddenJilixGateReply, 'hidden-jilix must complete the native prelight gate');
       assert.ok(hiddenJilixCardReply, 'hidden-jilix must complete the native red Slash request');
+      assert.ok(hiddenJilixChoiceReply, 'hidden-jilix must choose the native remove-general branch');
       console.log(`PASS hidden-jilix: native hidden TargetConfirmed repeated the red Slash, second DamageInflicted was prevented and the owning ${hiddenJilixDeputyScenario ? 'deputy' : 'main'} slot was removed`);
     } else if (hiddenKuangguScenario) {
       assert.ok(hiddenKuangguGateReply, 'hidden-kuanggu must complete the native prelight gate');
@@ -3549,12 +5054,11 @@ try{
     } else if (!damageExchangeScenario && !hiddenScenario) {
       const cleanupPages = rescueScenario ? pages : [actor];
       for (const page of cleanupPages) {
-        const trust = page.getByRole('button', { name: 'BOT chơi hộ', exact: true });
-        if (await trust.isVisible()) await trust.click();
+        await clickTrustAction(page).catch(() => undefined);
       }
     }
   } else if (!boundedAiTraceScenario) {
-    await Promise.all(pages.map(p=>p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click()));
+    await Promise.all(pages.map((page) => clickTrustAction(page)));
   }
   if (testRecovery) {
     const recovering = [a];
@@ -3575,7 +5079,7 @@ try{
       await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
       assert.equal(await p.locator('.board-player').count(),playerCapacity);
       assert.equal(await p.locator('.board-player:not(.board-self) [data-card-id]').count(),0);
-      const trust=p.getByRole('button',{name:'BOT chơi hộ',exact:true});if(await trust.isVisible())await trust.click();
+      await clickTrustAction(p).catch(() => undefined);
     }
     if(testGatewayRestart) {assert.equal(transportOpen[1],true);assert.ok(!traces[1].some(t=>t.direction==='incoming' && t.command==='Reconnect'),'Independent peer must not reconnect');}
     recovered=true;
@@ -3585,7 +5089,7 @@ try{
   // answered; that source path intentionally does not end the whole match.
   // Waiting for a result screen here would leave the QA runner playing an
   // unrelated full game after the rule under test has already passed.
-  let publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
+  let publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || deltaLordWenjiScenario || deltaTieqiScenario)
     ? boundedAiTraceScenario
       ? pages.map(() => metadataOnlyPublicAudit())
       : (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
@@ -3593,7 +5097,7 @@ try{
   let generalPairTelemetry: GeneralPairTelemetry | null = null;
   if (testScenario === 'founding') {
     finished = true;
-  } else if (boundedAiTraceScenario) {
+  } else if (boundedAiTraceScenario || nativeQaGameOverCompletion) {
     // These are bounded native AI probes, not full matches. The QA director
     // calls GameOver after the fixed-seat makeReply calls, so the runner must
     // not wait for the ordinary result/lobby DOM.
@@ -3605,7 +5109,7 @@ try{
     }
     assert.ok(traces.every((trace) => trace.some((packet) =>
       packet.direction === 'incoming' && packet.command === 'GameOver')),
-      'bounded AI trace must observe native GameOver on every live client');
+      'bounded native QA scenario must observe native GameOver on every live client');
     finished = true;
   } else {
     await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));
@@ -3624,7 +5128,7 @@ try{
         await new Promise((resolve) => setTimeout(resolve, 250));
       } while (Date.now() < telemetryDeadline);
     } else {
-      publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario)
+      publicBotAudit = (testBotAudit || damageExchangeScenario || hiddenScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || deltaLordWenjiScenario || deltaTieqiScenario)
         ? (await Promise.all(pages.map(readPublicBotAudit))).map((audit) => sanitizePublicAudit(audit, [first.username, second.username]))
         : [];
     }
@@ -3716,6 +5220,103 @@ try{
         `Each native client must observe verified outcome ${result}`);
     }
     console.log('PASS fazheng-enyuan public audit: all four native HP/card-transfer outcomes verified and visible to both clients');
+  } else if (deltaLordWenjiScenario) {
+    assert.ok(publicBotAudit.length === 2 && publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream lord_ex 问计:') &&
+      /phase_handoff=true/iu.test(log) && /slash_disresponsive=true/iu.test(log) &&
+      /target_jink_retained=true/iu.test(log) && /different_card_returned=true/iu.test(log))),
+    'Both real clients must observe the four server-issued lord_ex Wenji proof markers');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-lord-wenji must finish once on both real clients');
+    console.log('PASS delta-lord-wenji public audit: both real clients observed phase gift, unanswerable Slash, retained Jink and distinct-card return');
+  } else if (deltaChujueScenario) {
+    const publicLogs = publicBotAudit.flatMap((audit) => audit.logs);
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      /除绝|chujue/iu.test(log) && /dead_kingdom_response_blocked=true/iu.test(log) &&
+      /control_response_allowed=true/iu.test(log) && /control_responded=true/iu.test(log))),
+      'delta-chujue must expose the sanitized native proof for both response branches to both clients');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-chujue must finish after both native card-use branches');
+    assert.ok(publicLogs.some((log) => /target_jink_retained=true/iu.test(log)),
+      'delta-chujue public audit must retain the dead-kingdom target Jink marker');
+    console.log('PASS delta-chujue public audit: both native clients observed dead-kingdom suppression and control-kingdom Jink response');
+  } else if (deltaZhenteScenario) {
+    assert.equal(publicBotAudit.length, 2, 'delta-zhente must audit both real clients');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 贞特:') &&
+      /target_confirmed=true/iu.test(log) && /target_response_blocked=true/iu.test(log) &&
+      /choice_negate=true/iu.test(log) && /damage=0/iu.test(log))),
+      'delta-zhente must expose the sanitized native target-nullification proof to both clients');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-zhente must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-zhente public audit: both clients observed target confirmation, negate choice and zero damage');
+  } else if (deltaHalberdScenario) {
+    assert.equal(publicBotAudit.length, 2, 'delta-halberd must audit both real clients');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 方天画戟:') &&
+      /first_target_confirmed=true/iu.test(log) &&
+      /extra_target_confirmed=true/iu.test(log) &&
+      /targets_added=true/iu.test(log) && /damage=2/iu.test(log))),
+      'delta-halberd must expose the sanitized native extra-target proof to both clients');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-halberd must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-halberd public audit: both clients observed the attached weapon and two-target Slash');
+  } else if (deltaSijianScenario) {
+    assert.equal(publicBotAudit.length, 2, 'delta-sijian must audit both real clients');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 死谏:') &&
+      /owner_empty_after_hand_loss=true/iu.test(log) &&
+      /target_confirmed=true/iu.test(log) &&
+      /target_card_discarded=true/iu.test(log))),
+      'delta-sijian must expose the sanitized empty-hand and target-card discard proof to both clients');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-sijian must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-sijian public audit: both real clients observed empty-hand trigger and target-card discard');
+  } else if (deltaBaweiScenario) {
+    assert.equal(publicBotAudit.length, 2, 'delta-bawei must audit both real clients');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 霸威:') &&
+      /round_damage_recorded=true/iu.test(log) &&
+      /damaged_response_blocked=true/iu.test(log) &&
+      /damaged_jink_retained=true/iu.test(log) &&
+      /control_responded=true/iu.test(log) && /damage=1/iu.test(log))),
+      'delta-bawei must expose all server-issued history, selective response and damage proof markers to both clients');
+    assert.ok(botAuditTrace.length === 2 && botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-bawei must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-bawei public audit: both clients observed round damage, blocked Wei Jink and allowed Shu Jink');
+  } else if (deltaFengshiScenario) {
+    const expectSiege = testScenario === 'delta-fengshi-siege';
+    assert.equal(publicBotAudit.length, 2, 'delta-fengshi must audit both real clients');
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 锋矢:') &&
+      /first_use=true/iu.test(log) &&
+      new RegExp(`siege_relation=${expectSiege}`, 'iu').test(log) &&
+      new RegExp(`response_blocked=${expectSiege}`, 'iu').test(log) &&
+      new RegExp(`target_jink_retained=${expectSiege}`, 'iu').test(log) &&
+      new RegExp(`target_responded=${!expectSiege}`, 'iu').test(log))),
+      `delta-fengshi ${expectSiege ? 'siege' : 'no-siege'} must expose both response branches through the server-issued native marker`);
+    assert.ok(botAuditTrace.length === 2 && botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-fengshi must finish with exactly one native GameOver per real client');
+    console.log(`PASS ${testScenario} public audit: both clients observed the first Slash and native Jink ${expectSiege ? 'blocked' : 'allowed'}`);
+  } else if (deltaXisheScenario) {
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 袭射:') &&
+      /lower_hp_blocked=true/iu.test(log) && /target_jink_retained=true/iu.test(log) &&
+      /equal_hp_allowed=true/iu.test(log) && /control_responded=true/iu.test(log) &&
+      /equip_discarded=2/iu.test(log) && /damage=1/iu.test(log))),
+      'delta-xishe must expose every native response/equipment proof marker to both real clients');
+    assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-xishe must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-xishe public audit: both clients observed strict lower-HP response blocking and equal-HP native Jink');
+  } else if (deltaTieqiScenario) {
+    assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
+      log.startsWith('[TQS QA] Upstream 铁骑:') &&
+      /judge_discard_cancelled=true/iu.test(log) && /response_blocked=true/iu.test(log) &&
+      /target_jink_retained=true/iu.test(log) && /damage=1/iu.test(log))),
+      'delta-tieqi must expose the sanitized native judge/discard, response and damage proof marker to both clients');
+    assert.ok(botAuditTrace.length === 2 && botAuditTrace.every((trace) => trace.gameOver === 1),
+      'delta-tieqi must finish with exactly one native GameOver per real client');
+    console.log('PASS delta-tieqi public audit: both clients observed failed-suit discard cancellation and blocked Jink response');
   } else if (hiddenRehideYijiScenario) {
     const expectedPosition = hiddenRehideYijiDeputyScenario ? 'phó tướng' : 'chủ tướng';
     assert.ok(publicBotAudit.every((audit) => audit.logs.some((log) =>
@@ -4211,14 +5812,8 @@ try{
       assert.ok(states.some((text) => /Triệu Vân/.test(text) && /Pháp Chính/.test(text) &&
         /♥\s*1\s*\/\s*3/.test(text) && /1 lá trên tay/.test(text)), 'Both UIs must retain Shu final HP 1/3 and one hand card');
     }
-    const evidenceDir = path.join(repo, 'scratch/evidence/cp65-native');
-    mkdirSync(evidenceDir, { recursive: true });
-    for (let i = 0; i < pages.length; i++) {
-      await pages[i].screenshot({ path: path.join(evidenceDir, `scenario-board-client-${i + 1}.png`),
-        fullPage: true, mask: [pages[i].locator('.board-player-name'), pages[i].locator('.player-item'),
-          pages[i].locator('.board-logs li').filter({ hasText: first.username }),
-          pages[i].locator('.board-logs li').filter({ hasText: second.username })] });
-    }
+    // Keep private hands and unrevealed generals in the live DOM for the
+    // assertion. Full-board screenshots are not safe QA evidence exports.
   }
   for(let i=0;i<2;i++){
     if (testScenario !== 'founding') {
@@ -4226,17 +5821,229 @@ try{
     }
     const replies=traces[i].filter(t=>t.direction==='outgoing' && t.type===CLIENT_REPLY);
     assert.equal(new Set(replies.map(t=>t.requestId)).size,replies.length,'one reply per request');
-    if (testScenario !== 'founding' && !boundedAiTraceScenario) {
+    if (testScenario !== 'founding' && !boundedAiTraceScenario && !nativeQaGameOverCompletion) {
       await pages[i].getByRole('button',{name:'Về sảnh',exact:true}).click();
       await pages[i].getByRole('heading',{name:'Danh sách phòng',exact:true}).waitFor();
       await pages[i].getByRole('button',{name:'Ngắt kết nối',exact:true}).click();
     }
   }
+  if (auditNativeDeck) {
+    assert.ok(nativeDeckPrivacy.every((audit) => audit.negotiated && audit.failures === 0) &&
+      nativeDeckPrivacy.slice(0, 2).every((audit) => audit.commands.PrepareDrawPile > 0),
+    'Native deck privacy requires negotiation and audited PrepareDrawPile on both clients');
+    assert.ok(!testRecovery || nativeDeckPrivacy.some((audit) => audit.commands.Reconnect > 0),
+      'Native reconnect privacy requires an audited Reconnect snapshot');
+    assert.ok(!requireAllNativePrivacy || PRIVACY_CATEGORIES.every((category) =>
+      nativeDeckPrivacy.some((audit) => audit.categoryCounts[category] > 0)),
+    'Strict native privacy requires nonempty actual coverage of all twelve exposure groups');
+  }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenTianduGateReply,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenGongqingGateReply,hiddenEnyuanGateReply,hiddenEnyuanCardReply,hiddenFuyinGateReply,hiddenFuyinCardReply,hiddenQianxunGateReply,hiddenQianxunCardReply,hiddenKongchengGateReply,hiddenKongchengCardReply,hiddenWeimuGateReply,hiddenWeimuCardReply,hiddenXiaojiGateReply,hiddenXiaojiCardReply,hiddenGuanxingGateReply,hiddenGuanxingInvoked,hiddenGuanxingArrangeReply,hiddenTianxiangGateReply,hiddenTianxiangCardReply,hiddenTianxiangInvoked,hiddenTianxiangChoiceReply,hiddenDuanchangGateReply,hiddenDuanchangChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenFanjianGateReply,hiddenFanjianReply,hiddenFanjianChoiceReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,hiddenJianzhiGateReply,hiddenJianzhiDamageReply,hiddenJianzhiInvoked,hiddenZhimanGateReply,hiddenZhimanDamageReply,hiddenZhimanInvoked,hiddenZhimanCardReply,hiddenJilixGateReply,hiddenJilixCardReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTiandu:hiddenTianduScenario ? {deputy:hiddenTianduDeputyScenario,gate:hiddenTianduGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGongqing:hiddenGongqingScenario ? {deputy:hiddenGongqingDeputyScenario,gate:hiddenGongqingGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenEnyuan:hiddenEnyuanScenario ? {deputy:hiddenEnyuanDeputyScenario,gate:hiddenEnyuanGateReply,card:hiddenEnyuanCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFuyin:hiddenFuyinScenario ? {deputy:hiddenFuyinDeputyScenario,gate:hiddenFuyinGateReply,card:hiddenFuyinCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJilix:hiddenJilixScenario ? {deputy:hiddenJilixDeputyScenario,gate:hiddenJilixGateReply,card:hiddenJilixCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenQianxun:hiddenQianxunScenario ? {indulgence:hiddenQianxunIndulgenceScenario,deputy:hiddenQianxunDeputyScenario,gate:hiddenQianxunGateReply,card:hiddenQianxunCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenKongcheng:hiddenKongchengScenario ? {deputy:hiddenKongchengDeputyScenario,gate:hiddenKongchengGateReply,card:hiddenKongchengCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenWeimu:hiddenWeimuScenario ? {deputy:hiddenWeimuDeputyScenario,gate:hiddenWeimuGateReply,card:hiddenWeimuCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenXiaoji:hiddenXiaojiScenario ? {deputy:hiddenXiaojiDeputyScenario,gate:hiddenXiaojiGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGuanxing:hiddenGuanxingScenario ? {deputy:hiddenGuanxingDeputyScenario,gate:hiddenGuanxingGateReply,invoked:hiddenGuanxingInvoked,arrange:hiddenGuanxingArrangeReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTianxiang:hiddenTianxiangScenario ? {deputy:hiddenTianxiangDeputyScenario,gate:hiddenTianxiangGateReply,card:hiddenTianxiangCardReply,invoked:hiddenTianxiangInvoked,choice:hiddenTianxiangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDuanchang:hiddenDuanchangScenario ? {deputy:hiddenDuanchangDeputyScenario,gate:hiddenDuanchangGateReply,choice:hiddenDuanchangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFanjian:hiddenFanjianScenario ? {deputy:hiddenFanjianDeputyScenario,gate:hiddenFanjianGateReply,reply:hiddenFanjianReply,choice:hiddenFanjianChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenFanjianScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fanjian ${hiddenFanjianDeputyScenario ? 'deputy' : 'main'} active reveal, Peach gift and target lose-HP choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenTianduScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tiandu ${hiddenTianduDeputyScenario ? 'deputy' : 'main'} prelight, FinishJudge and judged-card obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenGongqingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-gongqing ${hiddenGongqingDeputyScenario ? 'deputy' : 'main'} prelight, low/high attack-range damage branches and Pan Jun reveal / no physical device` : hiddenEnyuanScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ${hiddenEnyuanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenFuyinScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fuyin TargetConfirmed Slash nullification and Zhuge Zhan reveal ${hiddenFuyinDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenJilixScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jilix TargetConfirmed repeat, second DamageInflicted prevention and correct-slot removal ${hiddenJilixDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenQianxunScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-qianxun ${hiddenQianxunIndulgenceScenario ? 'BeforeCardsMove Indulgence discard mirror' : 'TargetConfirming Snatch cancellation'} ${hiddenQianxunDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenWeimuScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenXiaojiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenGuanxingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-guanxing EventPhaseStart reveal and AskForArrangeCards ${hiddenGuanxingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenTianxiangScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenDuanchangScenario ? `two real accounts + two native bots / four-seat C++ / hidden-duanchang fk.Death, killer main-general choice and slot skill loss ${hiddenDuanchangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
-    memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks:string[]}).__tqsMemoryStacks))),
+  writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify(sanitizeQaEvidence({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenTianduGateReply,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenGongqingGateReply,hiddenEnyuanGateReply,hiddenEnyuanCardReply,hiddenFuyinGateReply,hiddenFuyinCardReply,hiddenQianxunGateReply,hiddenQianxunCardReply,hiddenKongchengGateReply,hiddenKongchengCardReply,hiddenWeimuGateReply,hiddenWeimuCardReply,hiddenXiaojiGateReply,hiddenXiaojiCardReply,hiddenGuanxingGateReply,hiddenGuanxingInvoked,hiddenGuanxingArrangeReply,hiddenTianxiangGateReply,hiddenTianxiangCardReply,hiddenTianxiangInvoked,hiddenTianxiangChoiceReply,hiddenDuanchangGateReply,hiddenDuanchangChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenFanjianGateReply,hiddenFanjianReply,hiddenFanjianChoiceReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,hiddenJianzhiGateReply,hiddenJianzhiDamageReply,hiddenJianzhiInvoked,hiddenZhimanGateReply,hiddenZhimanDamageReply,hiddenZhimanInvoked,hiddenZhimanCardReply,hiddenJilixGateReply,hiddenJilixCardReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTiandu:hiddenTianduScenario ? {deputy:hiddenTianduDeputyScenario,gate:hiddenTianduGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGongqing:hiddenGongqingScenario ? {deputy:hiddenGongqingDeputyScenario,gate:hiddenGongqingGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenEnyuan:hiddenEnyuanScenario ? {deputy:hiddenEnyuanDeputyScenario,gate:hiddenEnyuanGateReply,card:hiddenEnyuanCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFuyin:hiddenFuyinScenario ? {deputy:hiddenFuyinDeputyScenario,gate:hiddenFuyinGateReply,card:hiddenFuyinCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJilix:hiddenJilixScenario ? {deputy:hiddenJilixDeputyScenario,gate:hiddenJilixGateReply,card:hiddenJilixCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenQianxun:hiddenQianxunScenario ? {indulgence:hiddenQianxunIndulgenceScenario,deputy:hiddenQianxunDeputyScenario,gate:hiddenQianxunGateReply,card:hiddenQianxunCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenKongcheng:hiddenKongchengScenario ? {deputy:hiddenKongchengDeputyScenario,gate:hiddenKongchengGateReply,card:hiddenKongchengCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenWeimu:hiddenWeimuScenario ? {deputy:hiddenWeimuDeputyScenario,gate:hiddenWeimuGateReply,card:hiddenWeimuCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenXiaoji:hiddenXiaojiScenario ? {deputy:hiddenXiaojiDeputyScenario,gate:hiddenXiaojiGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGuanxing:hiddenGuanxingScenario ? {deputy:hiddenGuanxingDeputyScenario,gate:hiddenGuanxingGateReply,invoked:hiddenGuanxingInvoked,arrange:hiddenGuanxingArrangeReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTianxiang:hiddenTianxiangScenario ? {deputy:hiddenTianxiangDeputyScenario,gate:hiddenTianxiangGateReply,card:hiddenTianxiangCardReply,invoked:hiddenTianxiangInvoked,choice:hiddenTianxiangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDuanchang:hiddenDuanchangScenario ? {deputy:hiddenDuanchangDeputyScenario,gate:hiddenDuanchangGateReply,choice:hiddenDuanchangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFanjian:hiddenFanjianScenario ? {deputy:hiddenFanjianDeputyScenario,gate:hiddenFanjianGateReply,reply:hiddenFanjianReply,choice:hiddenFanjianChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenFanjianScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fanjian ${hiddenFanjianDeputyScenario ? 'deputy' : 'main'} active reveal, Peach gift and target lose-HP choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenTianduScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tiandu ${hiddenTianduDeputyScenario ? 'deputy' : 'main'} prelight, FinishJudge and judged-card obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenGongqingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-gongqing ${hiddenGongqingDeputyScenario ? 'deputy' : 'main'} prelight, low/high attack-range damage branches and Pan Jun reveal / no physical device` : hiddenEnyuanScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ${hiddenEnyuanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenFuyinScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fuyin TargetConfirmed Slash nullification and Zhuge Zhan reveal ${hiddenFuyinDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenJilixScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jilix TargetConfirmed repeat, second DamageInflicted prevention and correct-slot removal ${hiddenJilixDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenQianxunScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-qianxun ${hiddenQianxunIndulgenceScenario ? 'BeforeCardsMove Indulgence discard mirror' : 'TargetConfirming Snatch cancellation'} ${hiddenQianxunDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenWeimuScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenXiaojiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenGuanxingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-guanxing EventPhaseStart reveal and AskForArrangeCards ${hiddenGuanxingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenTianxiangScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenDuanchangScenario ? `two real accounts + two native bots / four-seat C++ / hidden-duanchang fk.Death, killer main-general choice and slot skill loss ${hiddenDuanchangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+    scenarioWenji: deltaWenjiScenario ? {
+      playerReply: scenarioWenjiPlayerReply,
+      cardReply: scenarioWenjiCardReply,
+      useReply: scenarioWenjiUseReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-wenji')),
+    } : null,
+    scenarioWenjiScope: deltaWenjiScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream nos_heg__wenji recipient and card handoff, transferred Slash and disresponsive CardUsing / no physical device'
+      : null,
+    scenarioLordWenji: deltaLordWenjiScenario ? {
+      gateReply: scenarioLordWenjiGateReply,
+      playerReply: scenarioLordWenjiPlayerReply,
+      cardReply: scenarioLordWenjiCardReply,
+      useReply: scenarioLordWenjiUseReply,
+      returnReply: scenarioLordWenjiReturnReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-lord-wenji')),
+      // Public logs can include a viewer's private hand; persist only the
+      // bounded native proof marker and count-only transport observations.
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream lord_ex 问计:')),
+        boardPlayers: [],
+        botNames: [],
+        skillLogs: [],
+        botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioLordWenjiScope: deltaLordWenjiScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream ld__wenji phase gift, disresponsive Slash, different-card return / no physical device'
+      : null,
+    scenarioQiance: deltaQianceScenario ? {
+      cardReply: scenarioQianceCardReply,
+      invokeReply: scenarioQianceInvokeReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-qiance')),
+    } : null,
+    scenarioQianceScope: deltaQianceScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream ld__qiance CardUsing and big-kingdom Duel response suppression / no physical device'
+      : null,
+    scenarioJianchu: deltaJianchuScenario ? {
+      gateReply: scenarioJianchuGateReply,
+      useReply: scenarioJianchuUseReply,
+      invokeReply: scenarioJianchuInvokeReply,
+      cardReply: scenarioJianchuCardReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-jianchu')),
+    } : null,
+    scenarioJianchuScope: deltaJianchuScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream hs__pangde Jianchu equipment branch, equipment discard and Jink response suppression / no physical device'
+      : null,
+    scenarioTieqi: deltaTieqiScenario ? {
+      gateReply: scenarioTieqiGateReply,
+      generalReply: scenarioTieqiGeneralReply,
+      useReply: scenarioTieqiUseReply,
+      discardReply: scenarioTieqiDiscardReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-tieqi')),
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 铁骑:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioTieqiScope: deltaTieqiScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream hs__tieqi failed-suit discard cancellation, damage and response suppression / no physical device'
+      : null,
+    scenarioChujue: deltaChujueScenario ? {
+      gateReply: scenarioChujueGateReply,
+      deadFactionUseReply: scenarioChujueDeadFactionUseReply,
+      controlFactionUseReply: scenarioChujueControlFactionUseReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-chujue')),
+      // The browser's ordinary public log also contains each viewer's own
+      // initial hand/general text. Keep only the server-issued bounded proof
+      // marker in evidence; private card/general details never leave memory.
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 除绝:')),
+        boardPlayers: [],
+        botNames: [],
+        skillLogs: [],
+        botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioChujueScope: deltaChujueScenario
+      ? 'two real accounts + two native bots / four-seat candidate native C++ / upstream heg__chujue dead-kingdom response suppression versus control-kingdom Jink response / no physical device'
+      : null,
+    scenarioZhente: deltaZhenteScenario ? {
+      gateReply: scenarioZhenteGateReply,
+      useReply: scenarioZhenteUseReply,
+      invokeReply: scenarioZhenteInvokeReply,
+      choiceReply: scenarioZhenteChoiceReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-zhente')),
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 贞特:')),
+        boardPlayers: [],
+        botNames: [],
+        skillLogs: [],
+        botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioZhenteScope: deltaZhenteScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream ty_heg__zhente TargetConfirmed black-Slash target nullification / no physical device'
+      : null,
+    scenarioHalberd: deltaHalberdScenario ? {
+      gateReply: scenarioHalberdGateReply,
+      useReply: scenarioHalberdUseReply,
+      extraTargetReply: scenarioHalberdExtraTargetReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-halberd')),
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 方天画戟:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioHalberdScope: deltaHalberdScenario
+      ? 'two real accounts + one native bot / three-seat candidate native C++ / upstream sa__halberd attached weapon, distinct-kingdom extra target and two-target Slash / no physical device'
+      : null,
+    scenarioSijian: deltaSijianScenario ? {
+      gateReply: scenarioSijianGateReply,
+      targetReply: scenarioSijianTargetReply,
+      cardReply: scenarioSijianCardReply,
+      responseRequests: traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-sijian')),
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 死谏:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioSijianScope: deltaSijianScenario
+      ? 'two real accounts / two Chrome mobile viewports / candidate native C++ / upstream sijian AfterCardsMove empty-hand trigger, target selection and card discard / no physical device'
+      : null,
+    scenarioBawei: deltaBaweiScenario ? {
+      gateReply: scenarioBaweiGateReply,
+      damagedUseReply: scenarioBaweiDamagedUseReply,
+      controlUseReply: scenarioBaweiControlUseReply,
+      responseRequests: traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-bawei')),
+      // The raw public logs can include either viewer's private hand and
+      // general names. Retain only the sanitized server-issued proof marker.
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 霸威:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioBaweiScope: deltaBaweiScenario
+      ? 'two real accounts + one native bot / three-seat candidate native C++ / upstream m_heg__bawei HistoryRound damage and selective Jink response / no physical device'
+      : null,
+    scenarioFengshi: deltaFengshiScenario ? {
+      variant: testScenario,
+      gateReply: scenarioFengshiGateReply,
+      slashReply: scenarioFengshiSlashReply,
+      responseRequests: traces.flat().filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-fengshi')),
+      // Only persist server-issued public proof; the other logs can contain
+      // private hand/general text from the two mobile clients.
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 锋矢:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioFengshiScope: deltaFengshiScenario
+      ? 'two real accounts + one native bot / three-seat candidate native C++ / upstream m_heg__fengshi first physical Slash, native siege relation and Jink response / no physical device'
+      : null,
+    scenarioXishe: deltaXisheScenario ? {
+      gateReply: scenarioXisheGateReply,
+      weaponReply: scenarioXisheWeaponReply,
+      cancelReply: scenarioXisheCancelReply,
+      armorReply: scenarioXisheArmorReply,
+      responseRequests: traces.flat().filter((trace) =>
+        trace.direction === 'incoming' && trace.command === 'AskForResponseCard').length,
+      observations: scenarioObservations.filter((observation) => observation.detail?.startsWith('delta-xishe')),
+      // Preserve only the server-issued metadata proof, never private cards,
+      // general names or raw browser logs in this candidate evidence.
+      public: publicBotAudit.map((audit) => ({
+        logs: audit.logs.filter((log) => log.startsWith('[TQS QA] Upstream 袭射:')),
+        boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [],
+      })),
+      trace: botAuditTrace,
+    } : null,
+    scenarioXisheScope: deltaXisheScenario
+      ? 'two real accounts + two native bots / four-seat candidate native C++ / upstream ld__xishe equipment discard loop with lower-HP blocked response and equal-HP native Jink / no physical device'
+      : null,
+    memoryAllocationDiagnosticCounts:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryFaultCount:number}).__tqsMemoryFaultCount))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
-    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts},null,2));
+    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts}),null,2));
   if (generalPairMatchScenario) {
     const evidenceFiles = readdirSync(out)
       // Full-match evidence can be written as multiplayer, reconnect, or
@@ -4276,7 +6083,7 @@ try{
         return { logs, boardPlayers: [], botNames: [], skillLogs: [], botSkillLogs: [], humanSkillActors: [] };
       });
     }
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenEnyuanScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4296,7 +6103,7 @@ try{
     };
     evidence.scope = 'two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ' +
       (hiddenEnyuanDeputyScenario ? 'deputy' : 'main') + ' prelight / no physical device';
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenFuyinScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4316,7 +6123,7 @@ try{
     };
     evidence.scope = 'two real accounts / two Chrome mobile viewports / native C++ / hidden-fuyin TargetConfirmed Slash nullification and Zhuge Zhan reveal ' +
       (hiddenFuyinDeputyScenario ? 'deputy' : 'main') + ' prelight / no physical device';
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenKongchengScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4335,7 +6142,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-kongcheng TargetConfirming Duel cancellation ${hiddenKongchengDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenKuangguScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4356,7 +6163,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-kuanggu BeforeHpChanged→Damage close-range Slash and draw1 choice ${hiddenKuangguDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenLiegongScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4377,7 +6184,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-liegong TargetSpecified Slash, reveal and damage+1 choice ${hiddenLiegongDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenJueqingScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4396,7 +6203,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-jueqing PreDamage Slash, reveal and HP-loss conversion ${hiddenJueqingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenEjueScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4415,7 +6222,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-ejue DamageCaused Slash, unknown-kingdom damage+1 and reveal ${hiddenEjueDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenDufuScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4434,7 +6241,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-dufu DamageCaused Slash, different-kingdom damage+1 and reveal ${hiddenDufuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenJianzhiScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4455,7 +6262,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-jianzhi lethal DamageCaused Slash, discard-all-hand and triple reward with reveal ${hiddenJianzhiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenZhimanScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4478,7 +6285,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-zhiman DamageCaused Slash, damage prevention, equipment obtain and reveal ${hiddenZhimanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenWeimuScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4498,7 +6305,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu ${hiddenWeimuIndulgenceScenario ? 'BeforeCardsMove black Indulgence discard mirror' : 'TargetConfirming black Duel cancellation'} ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenXiaojiScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4515,7 +6322,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenYingziScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4532,7 +6339,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-yingzi DrawNCards extra-card reveal ${hiddenYingziDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenTianxiangScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4555,7 +6362,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (hiddenRehideYijiScenario) {
     const evidenceFiles = readdirSync(out)
@@ -4574,7 +6381,7 @@ try{
       trace: botAuditTrace,
     };
     evidence.scope = `two real accounts / two Chrome mobile viewports / native C++ / hidden-rehide-yiji reveal, Di Kế distribution and hideGeneral fake/prelight reattachment ${hiddenRehideYijiDeputyScenario ? 'deputy' : 'main'} / no physical device`;
-    writeFileSync(path.join(out, evidencePath), JSON.stringify(evidence, null, 2));
+    writeFileSync(path.join(out, evidencePath), JSON.stringify(sanitizeQaEvidence(evidence), null, 2));
   }
   if (testScenario === 'founding') {
     await Promise.all(pages.map((page) => page.close()));
@@ -4582,6 +6389,8 @@ try{
   assert.deepEqual(errors,[]);
   console.log(testScenario === 'founding'
     ? 'PASS both clients: founding choice evidence saved; browser sessions closed after the source choice (no GameOver required by this scenario)'
+    : nativeQaGameOverCompletion
+      ? `PASS ${testScenario}: bounded native QA interaction reached GameOver on both clients; sanitized trace saved`
     : boundedAiTraceScenario
       ? (generalPairTraceScenario
         ? 'PASS general-pair-trace: native fixed-seat initial CustomDialog reached GameOver; sanitized browser trace saved; server metadata trace is required for the A/B comparison'
@@ -4590,23 +6399,32 @@ try{
       ? `PASS ${testScenario}: full native match reached GameOver/result; sanitized browser trace saved; winner seats are collected from native QA logs`
     : 'PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
 }catch(e){
-  console.error('FAIL two-client candidate verification:', (e as Error).message.split(first.username).join('[account]').split(second.username).join('[account]').split(first.password).join('[redacted]').split(second.password).join('[redacted]'));
+  console.error('FAIL two-client candidate verification:', (e as Error).name === 'AssertionError' ? 'assertion failed' : 'runner or browser error');
+  const runnerLocation = (e as Error).stack?.match(/multiplayer-e2e\/run\.ts:(\d+):(\d+)/u);
+  if (runnerLocation) console.error(`Runner source location: run.ts:${runnerLocation[1]}:${runnerLocation[2]}`);
+  if (observerPage) console.error('Observer UI metadata:', JSON.stringify(await observerPage.evaluate(() => ({
+    gameBoards: document.querySelectorAll('.game-board').length,
+    boardPlayers: document.querySelectorAll('.board-player').length,
+    roomLists: document.querySelectorAll('.room-list').length,
+    errorNotices: document.querySelectorAll('.error-notice').length,
+    connected: document.querySelector('.status')?.textContent === 'Đã kết nối',
+    playingShell: document.querySelectorAll('.shell-playing').length,
+  })).catch(() => null)));
   const feedback:string[]=[];
   for (const p of pages) {
-    for (let message of await p.locator('.error-notice').allTextContents().catch(()=>[])) {
-      for (const value of [first.username,second.username,first.password,second.password]) message=message.split(value).join('[redacted]');
-      feedback.push(message.slice(0,600));
-      console.error('Visible application feedback:',message.slice(0,600));
+    for (const _message of await p.locator('.error-notice').allTextContents().catch(()=>[])) {
+      feedback.push('application-error-notice');
+      console.error('Visible application error notice observed');
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
-    memoryStacks:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryStacks?:string[]}).__tqsMemoryStacks ?? []).catch(()=>[]))),
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify(sanitizeQaEvidence({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
+    memoryAllocationDiagnosticCounts:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryFaultCount?:number}).__tqsMemoryFaultCount ?? 0).catch(()=>0))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
-    errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'},null,2));
+    errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'}),null,2));
   if(gameStarted && !finished){
     console.error('Preserving the connected test browser and candidate processes while attempting safe GameOver cleanup; no immediate mid-game disconnect');
-    for(const p of pages)await p.getByRole('button',{name:'BOT chơi hộ',exact:true}).click({timeout:3000}).catch(()=>{});
+    for(const p of pages)await clickTrustAction(p, 3000).catch(()=>{});
     // GameOver belongs to the shared room. A disconnected participant may never
     // render the result panel, so do not wait forever for that DOM after a failure.
     const backInLobby = (client:number) => {

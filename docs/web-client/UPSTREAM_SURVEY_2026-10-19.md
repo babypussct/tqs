@@ -1,5 +1,7 @@
 # Khảo sát upstream và tính khả thi U0–U8 — 19/10/2026
 
+> **Lần rà soát mới nhất:** [UPSTREAM_REVIEW_2026-10-25.md](UPSTREAM_REVIEW_2026-10-25.md) xác minh remote Git/API vẫn cùng target `d069cd1`, chạy lại START/pool probe bằng client hiện tại và bổ sung port các patch TQS sau ngày 19/10. Báo cáo dưới đây giữ nguyên bằng chứng lịch sử; trạng thái source/dirty/device đọc theo lần rà soát mới.
+
 **Kết luận sau khi chốt phạm vi với người dùng:** nâng **Hegemony/Quốc Chiến `new_heg_mode` và phụ thuộc cần thiết**, giữ pin các repo còn lại. Không cần nâng nguyên bộ 14 HEAD mới. Blocker Mobile/Mưu Công bên dưới thuộc tổ hợp nâng toàn hệ sinh thái, không phải blocker bắt buộc của bản nâng Hegemony riêng. U0–U2 có thể bắt đầu; U5 vẫn phải nghiệm thu danh mục tướng/bài thay đổi. Chưa đủ điều kiện candidate hoặc production.
 
 ## Phạm vi TQSVN đã đối chiếu lại

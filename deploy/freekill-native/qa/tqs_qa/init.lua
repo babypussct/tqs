@@ -861,6 +861,449 @@ local function validateHiddenActiveScenario(scenario)
   end
 end
 
+local function validateDeltaXiongsuanScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-xiongsuan must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "ld__lijueguosi" or
+      actor.deputy ~= "hs__jiaxu" or actor.kingdom ~= "qun" then
+    fail("delta-xiongsuan actor must use Li Jue Guo Si + Jia Xu in Qun")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__jiaxu" or
+      target.deputy ~= "ld__lijueguosi" or target.kingdom ~= "qun" then
+    fail("delta-xiongsuan target must use the reversed Qun pair so xiongsuan can be reset")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" then
+    fail("delta-xiongsuan must expose AskForUseActiveSkill for the native active skill")
+  end
+  if #scenario.cards ~= 1 or type(scenario.cards[1]) ~= "table" or
+      scenario.cards[1].key ~= "xiongsuan-discard" or scenario.cards[1].owner ~= "actor" or
+      scenario.cards[1].area ~= "hand" or type(scenario.cards[1].match) ~= "table" or
+      scenario.cards[1].match.trueName ~= "jink" then
+    fail("delta-xiongsuan must reserve exactly one actor Jink for the card-filter regression")
+  end
+end
+
+local function validateDeltaWenjiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-wenji must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "nos_heg__liuqi" or
+      actor.deputy ~= "nos_heg__zhanglu" or actor.kingdom ~= "qun" then
+    fail("delta-wenji actor must use Liu Qi + Zhang Lu in Qun")
+  end
+  if type(target) ~= "table" or target.general ~= "nos_heg__caohong" or
+      target.deputy ~= "nos_heg__yuejin" or target.kingdom ~= "wei" then
+    fail("delta-wenji target must use Cao Hong + Yue Jin in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" then
+    fail("delta-wenji must expose AskForUseActiveSkill for choose-player/card and real-card paths")
+  end
+  if #scenario.cards ~= 2 then
+    fail("delta-wenji must reserve exactly one target Slash and one target Jink")
+  end
+  local gift, response = nil, nil
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "wenji-gift" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      gift = card
+    elseif card.key == "wenji-target-jink" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      response = card
+    end
+  end
+  if not gift or not response then
+    fail("delta-wenji must reserve a target Slash and a target Jink")
+  end
+end
+
+local function validateDeltaLordWenjiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-lord-wenji must define exactly two players")
+  end
+  local actor, target = scenario.players.actor, scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "ld__liuqi" or
+      actor.deputy ~= "nos_heg__zhanglu" or actor.kingdom ~= "qun" then
+    fail("delta-lord-wenji must select Liu Qi and a compatible Qun deputy")
+  end
+  if type(target) ~= "table" or target.general ~= "nos_heg__caohong" or
+      target.deputy ~= "nos_heg__yuejin" or target.kingdom ~= "wei" then
+    fail("delta-lord-wenji must select the fixed Wei target")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" or #scenario.cards ~= 3 then
+    fail("delta-lord-wenji requires native choose/card requests and three fixed cards")
+  end
+  local expected = {
+    ["lord-wenji-return"] = { "actor", "peach" },
+    ["lord-wenji-gift"] = { "target", "slash" },
+    ["lord-wenji-target-jink"] = { "target", "jink" },
+  }
+  for _, card in ipairs(scenario.cards) do
+    local contract = expected[card.key]
+    if not contract or card.owner ~= contract[1] or card.area ~= "hand" or
+        type(card.match) ~= "table" or card.match.trueName ~= contract[2] then
+      fail("delta-lord-wenji fixture must reserve actor Peach and target Slash/Jink")
+    end
+    expected[card.key] = nil
+  end
+  if next(expected) then fail("delta-lord-wenji card fixture is incomplete") end
+end
+
+local function validateDeltaQianceScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-qiance must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "ld__xushu" or
+      actor.deputy ~= "ld__mengda" or actor.kingdom ~= "shu" then
+    fail("delta-qiance actor must use Xu Shu + Meng Da in Shu")
+  end
+  if type(target) ~= "table" or target.general ~= "ld__fazheng" or
+      target.deputy ~= "ld__wangping" or target.kingdom ~= "shu" then
+    fail("delta-qiance target must use Fa Zheng + Wang Ping in Shu")
+  end
+  if scenario.expectedCommand ~= "AskForUseCard" then
+    fail("delta-qiance must expose AskForUseCard for the common-trick path")
+  end
+  if #scenario.cards ~= 2 then
+    fail("delta-qiance must reserve exactly one actor Duel and one target Slash")
+  end
+  local duel, slash = nil, nil
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "qiance-duel" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "duel" then
+      duel = card
+    elseif card.key == "qiance-target-slash" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      slash = card
+    end
+  end
+  if not duel or not slash then
+    fail("delta-qiance must reserve an actor Duel and a target Slash")
+  end
+end
+
+local function validateDeltaJianchuScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-jianchu must define exactly two players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "hs__pangde" or
+      actor.deputy ~= "hs__jiaxu" or actor.kingdom ~= "qun" then
+    fail("delta-jianchu actor must use Pang De + Jia Xu in Qun")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__caocao" or
+      target.deputy ~= "hs__simayi" or target.kingdom ~= "wei" then
+    fail("delta-jianchu target must use Cao Cao + Sima Yi in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("delta-jianchu must expose the native Jianchu skill-invoke request")
+  end
+  if #scenario.cards ~= 3 then
+    fail("delta-jianchu must reserve exactly one actor Slash, target Jink and target equipment")
+  end
+  local slash, jink, equip = nil, nil, nil
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "jianchu-slash" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      slash = card
+    elseif card.key == "jianchu-target-jink" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      jink = card
+    elseif card.key == "jianchu-target-equip" and card.owner == "target" and card.area == "equip" and
+        type(card.match) == "table" and card.match.type == "equip" then
+      equip = card
+    end
+  end
+  if not slash or not jink or not equip then
+    fail("delta-jianchu must reserve an actor Slash, target Jink and target equipment")
+  end
+end
+
+local function validateDeltaTieqiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-tieqi must define exactly two players")
+  end
+  local actor, target = scenario.players.actor, scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "hs__machao" or
+      actor.deputy ~= "hs__guanyu" or actor.kingdom ~= "shu" then
+    fail("delta-tieqi actor must use Ma Chao + Guan Yu in Shu")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__guojia" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("delta-tieqi target must use Guo Jia + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" or #scenario.cards ~= 2 then
+    fail("delta-tieqi must expose a readiness gate and reserve Slash/Jink")
+  end
+  local slash, jink
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "tieqi-slash" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      slash = card
+    elseif card.key == "tieqi-target-jink" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      jink = card
+    end
+  end
+  if not slash or not jink then
+    fail("delta-tieqi must reserve one actor Slash and one target Jink")
+  end
+end
+
+local function validateDeltaXisheScenario(scenario)
+  if scenario.playerCount ~= 3 or type(scenario.players) ~= "table" then
+    fail("delta-xishe must reserve three seats")
+  end
+  local actor, target, control = scenario.players.actor, scenario.players.target, scenario.players.control
+  if not actor or actor.general ~= "ld__huangzu" or actor.deputy ~= "ld__yanbaihu" or
+      actor.kingdom ~= "qun" or not target or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" or
+      not control or control.general ~= "hs__liubei" or
+      control.deputy ~= "hs__guanyu" or control.kingdom ~= "shu" then
+    fail("delta-xishe must reserve the source Huang Zu and two distinct target kingdoms")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" or #scenario.cards ~= 4 then
+    fail("delta-xishe must reserve one readiness gate, two equipment and two Jinks")
+  end
+  for _, required in ipairs({
+    { "xishe-weapon", "actor", "equip", "weapon" },
+    { "xishe-armor", "actor", "equip", "armor" },
+    { "xishe-target-jink", "target", "hand", "jink" },
+    { "xishe-control-jink", "control", "hand", "jink" },
+  }) do
+    local card = nil
+    for _, entry in ipairs(scenario.cards) do
+      if entry.key == required[1] then
+        card = entry
+        break
+      end
+    end
+    local match = card and card.match
+    if not card or card.owner ~= required[2] or card.area ~= required[3] or
+        type(match) ~= "table" or (required[3] == "equip" and
+        (match.type ~= "equip" or match.subtype ~= required[4])) or
+        (required[3] == "hand" and match.trueName ~= required[4]) then
+      fail("delta-xishe invalid equipment or Jink fixture: " .. required[1])
+    end
+  end
+end
+
+local function validateDeltaBaweiScenario(scenario)
+  if scenario.playerCount ~= 3 or type(scenario.players) ~= "table" then
+    fail("delta-bawei must reserve exactly three seats")
+  end
+  local actor, target, control = scenario.players.actor, scenario.players.target, scenario.players.control
+  if not actor or actor.general ~= "m_heg__lordsunce" or actor.deputy ~= "hs__sunquan" or actor.kingdom ~= "wu" or
+      not target or target.general ~= "hs__zhangliao" or target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" or
+      not control or control.general ~= "hs__liubei" or control.deputy ~= "hs__guanyu" or control.kingdom ~= "shu" then
+    fail("delta-bawei must reserve the Wu source and distinct Wei/Shu targets")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" or #scenario.cards ~= 4 then
+    fail("delta-bawei must reserve readiness, two Slashes and two Jinks")
+  end
+  for _, required in ipairs({
+    { "bawei-damaged-slash", "actor", "slash" },
+    { "bawei-control-slash", "actor", "slash" },
+    { "bawei-damaged-jink", "target", "jink" },
+    { "bawei-control-jink", "control", "jink" },
+  }) do
+    local found
+    for _, entry in ipairs(scenario.cards) do
+      if entry.key == required[1] then
+        found = entry
+        break
+      end
+    end
+    if not found or found.owner ~= required[2] or found.area ~= "hand" or
+        type(found.match) ~= "table" or found.match.trueName ~= required[3] then
+      fail("delta-bawei invalid reserved card: " .. required[1])
+    end
+  end
+end
+
+local function validateDeltaFengshiScenario(scenario)
+  local siege = scenario.trigger == "delta-fengshi-siege"
+  if scenario.playerCount ~= 3 or type(scenario.players) ~= "table" then
+    fail("delta-fengshi must reserve exactly three seats")
+  end
+  local actor, target, control = scenario.players.actor, scenario.players.target, scenario.players.control
+  if not actor or actor.general ~= "m_heg__zhangren" or actor.deputy ~= "hs__jiling" or
+      actor.kingdom ~= "qun" or not target or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" or
+      not control or control.general ~= (siege and "hs__huatuo" or "hs__liubei") or
+      control.deputy ~= (siege and "hs__diaochan" or "hs__guanyu") or
+      control.kingdom ~= (siege and "qun" or "shu") then
+    fail("delta-fengshi must reserve a Qun actor, Wei bot target and matching siege/no-siege control")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" or #scenario.cards ~= 2 then
+    fail("delta-fengshi must reserve readiness, one Slash and one Jink")
+  end
+  for _, required in ipairs({
+    { "fengshi-first-slash", "actor", "slash" },
+    { "fengshi-target-jink", "target", "jink" },
+  }) do
+    local card
+    for _, entry in ipairs(scenario.cards) do
+      if entry.key == required[1] then
+        card = entry
+        break
+      end
+    end
+    if not card or card.owner ~= required[2] or card.area ~= "hand" or
+        type(card.match) ~= "table" or card.match.trueName ~= required[3] then
+      fail("delta-fengshi invalid physical card fixture: " .. required[1])
+    end
+  end
+end
+
+local function validateDeltaChujueScenario(scenario)
+  if scenario.playerCount ~= 4 or type(scenario.players) ~= "table" then
+    fail("delta-chujue must define exactly four players")
+  end
+  local actor = scenario.players.actor
+  local target = scenario.players.target
+  local control = scenario.players.control
+  local dead = scenario.players.dead
+  if type(actor) ~= "table" or actor.general ~= "heg__jiachong" or
+      actor.deputy ~= "heg__guohuaij" or actor.kingdom ~= "jin" then
+    fail("delta-chujue actor must use Jia Chong + Guo Huai in Jin")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("delta-chujue target must use Zhang Liao + Xu Chu in Wei")
+  end
+  if type(control) ~= "table" or control.general ~= "hs__liubei" or
+      control.deputy ~= "hs__guanyu" or control.kingdom ~= "shu" then
+    fail("delta-chujue control seat must use Liu Bei + Guan Yu in Shu")
+  end
+  if type(dead) ~= "table" or dead.general ~= "hs__caoren" or
+      dead.deputy ~= "hs__xiahoudun" or dead.kingdom ~= "wei" then
+    fail("delta-chujue dead seat must use Cao Ren + Xiahou Dun in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" then
+    fail("delta-chujue must expose AskForSkillInvoke as its synchronization gate")
+  end
+  if #scenario.cards ~= 4 then
+    fail("delta-chujue must reserve two actor Slashes and one Jink for each response branch")
+  end
+  local deadSlash, controlSlash, deadJink, controlJink = nil, nil, nil, nil
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "chujue-dead-faction-slash" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      deadSlash = card
+    elseif card.key == "chujue-control-faction-slash" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      controlSlash = card
+    elseif card.key == "chujue-dead-faction-jink" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      deadJink = card
+    elseif card.key == "chujue-control-faction-jink" and card.owner == "control" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      controlJink = card
+    end
+  end
+  if not deadSlash or not controlSlash or not deadJink or not controlJink then
+    fail("delta-chujue must reserve actor Slashes, target Jink and control-seat Jink")
+  end
+end
+
+function validateDeltaZhenteScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-zhente must define exactly two players")
+  end
+  local actor, target = scenario.players.actor, scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "hs__machao" or
+      actor.deputy ~= "hs__guanyu" or actor.kingdom ~= "shu" then
+    fail("delta-zhente actor must use Ma Chao + Guan Yu in Shu")
+  end
+  if type(target) ~= "table" or target.general ~= "ty_heg__luyusheng" or
+      target.deputy ~= "hs__sunquan" or target.kingdom ~= "wu" then
+    fail("delta-zhente target must use Lu Yu Sheng + Sun Quan in Wu")
+  end
+  if scenario.expectedCommand ~= "AskForSkillInvoke" or #scenario.cards ~= 1 then
+    fail("delta-zhente must expose one readiness gate and one black Slash")
+  end
+  local slash = scenario.cards[1]
+  if type(slash) ~= "table" or slash.key ~= "zhente-black-slash" or
+      slash.owner ~= "actor" or slash.area ~= "hand" or type(slash.match) ~= "table" or
+      slash.match.trueName ~= "slash" or slash.match.color ~= "black" then
+    fail("delta-zhente must reserve one black actor Slash")
+  end
+end
+
+function validateDeltaHalberdScenario(scenario)
+  if scenario.playerCount ~= 3 or type(scenario.players) ~= "table" then
+    fail("delta-halberd must define exactly three players")
+  end
+  local actor, target, control = scenario.players.actor, scenario.players.target, scenario.players.control
+  if type(actor) ~= "table" or actor.general ~= "hs__machao" or
+      actor.deputy ~= "hs__guanyu" or actor.kingdom ~= "shu" then
+    fail("delta-halberd actor must use Ma Chao + Guan Yu in Shu")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("delta-halberd first target must use Zhang Liao + Xu Chu in Wei")
+  end
+  if type(control) ~= "table" or control.general ~= "hs__sunquan" or
+      control.deputy ~= "hs__ganning" or control.kingdom ~= "wu" then
+    fail("delta-halberd extra target must use Sun Quan + Gan Ning in Wu")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" or #scenario.cards ~= 2 then
+    fail("delta-halberd must expose an active-skill request and two physical cards")
+  end
+  local slash, weapon
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "halberd-slash" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "slash" then
+      slash = card
+    elseif card.key == "halberd-weapon" and card.owner == "actor" and card.area == "equip" and
+        type(card.match) == "table" and card.match.name == "sa__halberd" then
+      weapon = card
+    end
+  end
+  if not slash or not weapon then
+    fail("delta-halberd must reserve an actor Slash and the upstream sa__halberd weapon")
+  end
+end
+
+function validateDeltaSijianScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("delta-sijian must define exactly two players")
+  end
+  local actor, target = scenario.players.actor, scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "hs__tianfeng" or
+      actor.deputy ~= "hs__panfeng" or actor.kingdom ~= "qun" then
+    fail("delta-sijian actor must use Tian Feng + Pan Feng in Qun")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__zhangliao" or
+      target.deputy ~= "hs__xuchu" or target.kingdom ~= "wei" then
+    fail("delta-sijian target must use Zhang Liao + Xu Chu in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForUseActiveSkill" or #scenario.cards ~= 2 then
+    fail("delta-sijian must expose the native choose-player/card path and two physical cards")
+  end
+  local ownerCard, targetCard
+  for _, card in ipairs(scenario.cards) do
+    if card.key == "sijian-owner-last-hand" and card.owner == "actor" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "jink" then
+      ownerCard = card
+    elseif card.key == "sijian-target-card" and card.owner == "target" and card.area == "hand" and
+        type(card.match) == "table" and card.match.trueName == "peach" then
+      targetCard = card
+    end
+  end
+  if not ownerCard or not targetCard then
+    fail("delta-sijian must reserve the owner's last hand card and target Peach")
+  end
+end
+
 local function validateHiddenFanjianScenario(scenario)
   if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
     fail("hidden-fanjian scenarios must define exactly two players")
@@ -1577,11 +2020,50 @@ local function validateGeneralPairTraceScenario(scenario)
   end
 end
 
+local function validateInitialPairOfferScenario(scenario)
+  local offer = scenario.initialPairOffer
+  local label = scenario.id or "initial-pair-offer"
+  if type(offer) ~= "table" or type(offer.enabledKingdoms) ~= "table" or
+      #offer.enabledKingdoms == 0 or type(offer.offeredGroups) ~= "table" or
+      scenario.playerCount ~= #offer.offeredGroups then
+    fail(label .. " must define one initial-pair offer group per player")
+  end
+  local enabled = {}
+  for _, kingdom in ipairs(offer.enabledKingdoms) do
+    if type(kingdom) ~= "string" or kingdom == "" or enabled[kingdom] then
+      fail(label .. " has an invalid or duplicate initial-pair kingdom")
+    end
+    enabled[kingdom] = true
+  end
+  for seat, offered in ipairs(offer.offeredGroups) do
+    if type(offered) ~= "table" or #offered ~= 5 then
+      fail(label .. " initial-pair seat " .. tostring(seat) .. " must offer exactly five generals")
+    end
+    local seen = {}
+    for _, name in ipairs(offered) do
+      local general = type(Fk) == "table" and type(Fk.generals) == "table" and
+        type(name) == "string" and Fk.generals[name] or nil
+      local invalidDefinition = type(Fk) == "table" and type(Fk.generals) == "table" and
+        (not general or not enabled[general.kingdom])
+      if type(name) ~= "string" or seen[name] or invalidDefinition then
+        fail(label .. " has an invalid or duplicate initial-pair general at seat " .. tostring(seat))
+      end
+      seen[name] = true
+    end
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
       type(scenario.trigger) ~= "string" or type(scenario.cards) ~= "table" then
     fail("invalid or duplicate scenario catalog entry")
+  end
+  if scenario.cardWire ~= nil and scenario.cardWire ~= true then
+    fail("scenario cardWire must be true when present")
+  end
+  if scenario.initialPairOffer ~= nil then
+    validateInitialPairOfferScenario(scenario)
   end
   if scenario.trigger == "damage-exchange" then
     validateDamageExchangeScenario(scenario)
@@ -1613,6 +2095,32 @@ for _, scenario in ipairs(catalog.scenarios) do
     validateHiddenRevealScenario(scenario)
   elseif scenario.trigger == "hidden-active" then
     validateHiddenActiveScenario(scenario)
+  elseif scenario.trigger == "delta-xiongsuan" then
+    validateDeltaXiongsuanScenario(scenario)
+  elseif scenario.trigger == "delta-wenji" then
+    validateDeltaWenjiScenario(scenario)
+  elseif scenario.trigger == "delta-lord-wenji" then
+    validateDeltaLordWenjiScenario(scenario)
+  elseif scenario.trigger == "delta-qiance" then
+    validateDeltaQianceScenario(scenario)
+  elseif scenario.trigger == "delta-jianchu" then
+    validateDeltaJianchuScenario(scenario)
+  elseif scenario.trigger == "delta-tieqi" then
+    validateDeltaTieqiScenario(scenario)
+  elseif scenario.trigger == "delta-xishe" then
+    validateDeltaXisheScenario(scenario)
+  elseif scenario.trigger == "delta-bawei" then
+    validateDeltaBaweiScenario(scenario)
+  elseif scenario.trigger == "delta-fengshi-siege" or scenario.trigger == "delta-fengshi-no-siege" then
+    validateDeltaFengshiScenario(scenario)
+  elseif scenario.trigger == "delta-chujue" then
+    validateDeltaChujueScenario(scenario)
+  elseif scenario.trigger == "delta-zhente" then
+    validateDeltaZhenteScenario(scenario)
+  elseif scenario.trigger == "delta-halberd" then
+    validateDeltaHalberdScenario(scenario)
+  elseif scenario.trigger == "delta-sijian" then
+    validateDeltaSijianScenario(scenario)
   elseif scenario.trigger == "hidden-fanjian" then
     validateHiddenFanjianScenario(scenario)
   elseif scenario.trigger == "hidden-view-as" then
@@ -1719,6 +2227,46 @@ local function parseRequest(room)
   return resolved, seed
 end
 
+local function maybeNegotiateCardWire(room, scenario)
+  if room.card_wire_negotiated == true then return end
+  if scenario.cardWire ~= true then return end
+  if config.cardWireVersion ~= 1 then
+    -- Keep the catalog annotation harmless for the ordinary QA package. The
+    -- candidate protocol is opt-in at the isolated config boundary; without
+    -- the explicit version flag this scenario remains on the legacy wire.
+    return
+  end
+  assert(type(room.negotiateCardWireV1) == "function",
+    "candidate core has no QA card-wire negotiation seam")
+  room:negotiateCardWireV1()
+  fk.qInfo(string.format("[tqs_qa] card_wire_negotiated version=1 scenario=%s players=%d",
+    scenario.id, #room.players))
+end
+
+-- The Hegemony game logic prepares and broadcasts the draw pile before the
+-- ordinary fk.GamePrepared event. Install this callback only in the isolated
+-- QA configuration so CardWireNegotiated is delivered before any card-bearing
+-- notification. The candidate Hegemony mode calls the callback at its exact
+-- pre-draw boundary; ordinary/production runtimes do not contain that call.
+--
+-- The package can load before the Lua Room module has been assigned to a
+-- global. Resolve the same class through require here as the later QA hook
+-- installer does; otherwise the callback silently misses the only safe
+-- negotiation boundary and the first PrepareDrawPile remains legacy-shaped.
+local CardWireRoomClass = Room
+if type(CardWireRoomClass) ~= "table" and type(require) == "function" then
+  local roomOk, loadedRoom = pcall(require, "ltk.server.room")
+  if roomOk then CardWireRoomClass = loadedRoom end
+end
+if config.cardWireVersion == 1 and type(CardWireRoomClass) == "table" and
+    not CardWireRoomClass.__tqs_qa_card_wire_pre_draw_hook then
+  CardWireRoomClass.__tqs_qa_card_wire_pre_draw_hook = true
+  CardWireRoomClass.__tqs_qa_beforePrepareDrawPile = function(room)
+    local scenario = parseRequest(room)
+    if scenario then maybeNegotiateCardWire(room, scenario) end
+  end
+end
+
 -- General-pair selection happens inside HegLogic:chooseGenerals, before
 -- fk.GamePrepared and therefore before the ordinary scenario state exists.
 -- Resolve only this validated QA room from its room name so the
@@ -1728,7 +2276,8 @@ local function generalPairTraceScenarioForRoom(room)
   if roomName:sub(1, #roomPrefix) ~= roomPrefix then return nil end
   local id, seedText = roomName:sub(#roomPrefix + 1):match("^([%w%-]+)/(0[xX][0-9a-fA-F]+)$")
   local scenario = id and scenarioById[id] or nil
-  if not scenario or (scenario.trigger ~= "general-pair-trace" and scenario.trigger ~= "general-pair-match") then
+  if not scenario or (scenario.trigger ~= "general-pair-trace" and scenario.trigger ~= "general-pair-match" and
+      type(scenario.initialPairOffer) ~= "table") then
     return nil
   end
   local seed = parseSeed(seedText)
@@ -1776,6 +2325,15 @@ local function cardMatches(card, matcher)
   if matcher.type == "equip" and card.type ~= Card.TypeEquip then
     return false
   end
+  if matcher.subtype == "weapon" and card.sub_type ~= Card.SubtypeWeapon then
+    return false
+  end
+  if matcher.subtype == "armor" and card.sub_type ~= Card.SubtypeArmor then
+    return false
+  end
+  if matcher.subtype and matcher.subtype ~= "weapon" and matcher.subtype ~= "armor" then
+    return false
+  end
   if matcher.color and card:getColorString() ~= matcher.color then
     return false
   end
@@ -1798,6 +2356,7 @@ end
 local function playerForRole(state, owner)
   if owner == "actor" then return state.actor end
   if owner == "target" then return state.target end
+  if owner == "control" then return state.control end
   fail("unknown card owner: " .. tostring(owner))
 end
 
@@ -1934,6 +2493,30 @@ local function shuffleTail(room, seed)
     room:setCardArea(id, Card.DrawPile, nil)
   end
   room:syncDrawPile()
+end
+
+-- Drive the native deck/pile notifications used by the strict physical-wire
+-- privacy audit. All cards are taken from the actual QA room, and every
+-- transition goes through the engine's public movement APIs.
+local function triggerNativeCardWireCoverage(room, state)
+  assert(#room.draw_pile >= 2, "card-wire QA requires two drawable cards")
+  -- The browser reconnects the first allowlisted account (state.actor).
+  -- Keep this pile on the other seat so Reconnect must project opaque refs
+  -- for an actual non-owner, in addition to the live SetPlayerPile packet.
+  assert(state.target and state.target ~= state.actor,
+    "card-wire QA requires a separate private-pile owner")
+  local privatePileName = "$tqs_qa_wire_private"
+  local privateId = room.draw_pile[#room.draw_pile]
+  state.target:addToPile(privatePileName, privateId, false, "tqs_qa")
+  local privatePile = state.target:getPile(privatePileName)
+  assert(#privatePile == 1 and privatePile[1] == privateId,
+    "native private-pile movement must complete before SetPlayerPile")
+  room:setPlayerPile(state.target, privatePileName, privatePile)
+
+  local areaId = room.draw_pile[#room.draw_pile]
+  room:changeCardArea({ areaId }, Card.Void)
+  room:changeCardArea({ areaId }, Card.DrawPile)
+  room:shuffleDrawPile()
 end
 
 -- Prompt 4 native replay uses a private, metadata-only card fixture.  The
@@ -2085,6 +2668,20 @@ local function setupCards(room, state, scenario)
     for _ = 1, 4 do
       table.insert(state.fixedHands[source.id], takeCard(room, { trueName = "jink" }, reserved))
     end
+  end
+  if scenario.trigger == "delta-wenji" or scenario.trigger == "delta-lord-wenji" then
+    -- Keep the source's handoff deterministic: the older nos_heg__wenji
+    -- actor starts empty, while the ld__wenji actor starts with a Peach to
+    -- return. Both Wei targets hold the Slash gift and a Jink that remains
+    -- in hand when the transferred Slash becomes disresponsive.
+    state.fixedHands[state.actor.id] = state.fixedHands[state.actor.id] or {}
+    state.fixedHands[state.target.id] = state.fixedHands[state.target.id] or {}
+  end
+  if scenario.trigger == "delta-halberd" then
+    -- Keep both target seats empty so an incidental initial Jink cannot turn
+    -- the bounded two-target proof into a response-card test.
+    state.fixedHands[state.target.id] = {}
+    state.fixedHands[state.control.id] = {}
   end
 end
 
@@ -2244,6 +2841,45 @@ end
 
 local installAiTrace
 
+-- GamePrepared attaches the deterministic QA pair as public properties so the
+-- browser can render the fixed roster.  All immediate hidden-trigger probes
+-- must restore the real hidden-start state before GameStart; otherwise the
+-- director fails before the native reveal/prelight path is exercised.  The
+-- fuyin and jilix probes are intentionally deferred to EventPhaseStart, where
+-- their handlers perform the same re-hide after Hegemony's normal reveal.
+local hiddenStartTriggers = {
+  ["hidden-yiji"] = true,
+  ["hidden-rehide-yiji"] = true,
+  ["hidden-jianxiong"] = true,
+  ["hidden-fankui"] = true,
+  ["hidden-enyuan"] = true,
+  ["hidden-kuanggu"] = true,
+  ["hidden-liegong"] = true,
+  ["hidden-jueqing"] = true,
+  ["hidden-ejue"] = true,
+  ["hidden-dufu"] = true,
+  ["hidden-jianzhi"] = true,
+  ["hidden-zhiman"] = true,
+  ["hidden-reveal"] = true,
+  ["hidden-active"] = true,
+  ["hidden-fanjian"] = true,
+  ["hidden-view-as"] = true,
+  ["hidden-dual"] = true,
+  ["hidden-tiandu"] = true,
+  ["hidden-luoshen"] = true,
+  ["hidden-jizhi"] = true,
+  ["hidden-mingshi"] = true,
+  ["hidden-gongqing"] = true,
+  ["hidden-qianxun"] = true,
+  ["hidden-kongcheng"] = true,
+  ["hidden-weimu"] = true,
+  ["hidden-xiaoji"] = true,
+  ["hidden-guanxing"] = true,
+  ["hidden-yingzi"] = true,
+  ["hidden-tianxiang"] = true,
+  ["hidden-duanchang"] = true,
+}
+
 local function setupState(room, scenario, seed)
   assertRoomAllowed(room, scenario)
   local actor = table.find(room.players, function(player)
@@ -2263,6 +2899,8 @@ local function setupState(room, scenario, seed)
     startedAt = now(),
     actor = actor,
     target = target,
+    control = nil,
+    deadPlayer = nil,
     skillEffects = {},
     damageResults = {},
     cardEvents = {},
@@ -2287,7 +2925,86 @@ local function setupState(room, scenario, seed)
     hiddenJilixTargetConfirmed = false,
     hiddenJilixDamageInflicted = 0,
     prompt4EffectReplay = nil,
+    chujueControlResponded = false,
+    chujueResponseCount = 0,
+    baweiControlResponded = false,
+    baweiResponseCount = 0,
+    deltaBaweiPending = false,
+    deltaFengshiPending = false,
+    fengshiResponseCount = 0,
+    fengshiTargetResponded = false,
+    xisheControlResponded = false,
+    xisheResponseCount = 0,
+    tieqiTargetResponded = false,
+    tieqiResponseCount = 0,
+    zhenteTargetInvoked = false,
+    zhenteChoice = nil,
+    zhenteTargetConfirmed = false,
+    zhenteNullified = false,
+    halberdTargetConfirmed = false,
+    halberdUseConfirmed = false,
+    sijianTargetConfirmed = false,
+    sijianCardChosen = false,
   }
+  if scenario.trigger == "delta-chujue" or scenario.trigger == "delta-xishe" or scenario.trigger == "delta-bawei" then
+    -- Bot insertion is not guaranteed to preserve the two human seats at
+    -- room.players[1:2]. Bind the living Wei target to the second explicit
+    -- allowlisted account, then use only the remaining seats for the native
+    -- control/dead branches. This keeps the browser target-response branch
+    -- deterministic while the control Jink remains a real SmartAI request.
+    local secondHuman = table.find(room.players, function(player)
+      return player.id > 0 and player._splayer:getScreenName() == allowedUsers[2]
+    end)
+    if not secondHuman then
+      fail(scenario.trigger .. " requires the second allowlisted account as its target seat")
+    end
+    state.target = secondHuman
+    local extras = table.filter(room.players, function(player)
+      return player ~= state.actor and player ~= state.target
+    end)
+    if #extras < (scenario.trigger == "delta-chujue" and 2 or 1) then
+      fail(scenario.trigger .. " requires native control seats")
+    end
+    -- Keep the control bot adjacent to the actor in the four-seat table.
+    -- The native request bypasses distance, but the real browser scene still
+    -- evaluates the target filter locally; seats 1 -> 4 remain a legal
+    -- one-step target while the dedicated dead seat stays at seat 3.
+    state.control = scenario.trigger == "delta-chujue" and extras[2] or extras[1]
+    if scenario.trigger == "delta-chujue" then state.deadPlayer = extras[1] end
+  end
+  if scenario.trigger == "delta-fengshi-siege" or scenario.trigger == "delta-fengshi-no-siege" then
+    -- The actor and flanking control are humans, while Wei is an actual bot.
+    -- Native bot response exercises the real Jink path without handing a
+    -- response request to a human or scripting a fake card response.
+    local secondHuman = table.find(room.players, function(player)
+      return player.id > 0 and player._splayer:getScreenName() == allowedUsers[2]
+    end)
+    if not secondHuman or secondHuman == state.actor then
+      fail("delta-fengshi requires the second allowlisted human as siege/control flank")
+    end
+    local extras = table.filter(room.players, function(player)
+      return player ~= state.actor and player ~= secondHuman
+    end)
+    if #extras ~= 1 then fail("delta-fengshi requires exactly one native bot target") end
+    state.control = secondHuman
+    state.target = extras[1]
+  end
+  if scenario.trigger == "delta-halberd" then
+    -- Keep both browser seats deterministic and use the remaining native bot
+    -- as the legal extra target offered by #sa__halberd_active.
+    local secondHuman = table.find(room.players, function(player)
+      return player.id > 0 and player._splayer:getScreenName() == allowedUsers[2]
+    end)
+    if not secondHuman or secondHuman == state.actor then
+      fail("delta-halberd requires the second allowlisted account as its first target seat")
+    end
+    local extras = table.filter(room.players, function(player)
+      return player ~= state.actor and player ~= secondHuman
+    end)
+    if #extras ~= 1 then fail("delta-halberd requires exactly one native extra-target seat") end
+    state.target = secondHuman
+    state.control = extras[1]
+  end
   if scenario.trigger == "ai-trace" then
     -- Keep the seed-resolved fixture with the room state. The public scenario
     -- id remains stable for the existing parser, while all native pair and
@@ -2307,6 +3024,15 @@ local function setupState(room, scenario, seed)
   elseif scenario.players then
     attachGeneralPair(room, state.actor, scenario.players.actor)
     attachGeneralPair(room, state.target, scenario.players.target)
+    if scenario.trigger == "delta-chujue" or scenario.trigger == "delta-xishe" or scenario.trigger == "delta-bawei" or
+        scenario.trigger == "delta-fengshi-siege" or scenario.trigger == "delta-fengshi-no-siege" then
+      attachGeneralPair(room, state.control, scenario.players.control)
+      if scenario.trigger == "delta-chujue" then
+        attachGeneralPair(room, state.deadPlayer, scenario.players.dead)
+      end
+    elseif scenario.trigger == "delta-halberd" then
+      attachGeneralPair(room, state.control, scenario.players.control)
+    end
   elseif scenario.general then
     attachGeneral(room, state.actor, scenario.general)
     if scenario.trigger == "founding" then
@@ -2316,7 +3042,184 @@ local function setupState(room, scenario, seed)
       room:broadcastProperty(state.actor, "role")
     end
   end
+  if scenario.trigger == "delta-xiongsuan" then
+    -- attachGeneralPair intentionally mirrors the Hegemony roster as fake
+    -- skills while GamePrepared is still replacing the ordinary draft. This
+    -- delta is the visible ActiveSkill path, so promote the catalogued
+    -- upstream skill itself after the pair is attached. The skill object is
+    -- the real native registry entry; only the deterministic roster wiring is
+    -- QA-owned. Avoiding a hide/reveal transition here is important because
+    -- GamePrepared runs before Hegemony's normal reveal lifecycle exists.
+    state.actor:addSkill("xiongsuan")
+    state.target:addSkill("xiongsuan")
+    -- 凶算's upstream target filter compares the live kingdom property on the
+    -- client-side Player model.  GamePrepared's deterministic roster replaces
+    -- the draft pair after Hegemony has already established its private
+    -- visibility projection, so rebroadcast the two fixed kingdoms before the
+    -- readiness gate.  This is QA fixture synchronization only; production
+    -- Hegemony visibility and the upstream skill remain unchanged.
+    room:broadcastProperty(state.actor, "kingdom")
+    room:broadcastProperty(state.target, "kingdom")
+    if not state.actor:hasSkill("xiongsuan") or not state.target:hasSkill("xiongsuan") then
+      fail("delta-xiongsuan actor and target must carry the real limited xiongsuan skill")
+    end
+    -- Add a second real limited skill only to the deterministic QA target.
+    -- Without it, Room:askToChoice() legitimately auto-selects the sole
+    -- xiongsuan entry and never emits AskForChoices, leaving the browser
+    -- contract untested. The extra skill is not invoked; it only makes the
+    -- source-defined reset choice a real client/native request.
+    state.target:addSkill("xiongyi")
+    if not state.target:hasSkill("xiongyi") then
+      fail("delta-xiongsuan target must carry the secondary limited choice skill")
+    end
+    -- Seed both histories. The deterministic client selects xiongsuan first;
+    -- the native TurnEnd effect must reset that selected skill only.
+    state.target:addSkillUseHistory("xiongsuan", 1)
+    state.target:addSkillUseHistory("xiongyi", 1)
+  end
+  if scenario.trigger == "delta-wenji" then
+    -- Use the upstream registry skill itself while retaining the deterministic
+    -- QA roster. The target is revealed in triggerDeltaWenji so the nos branch
+    -- takes its distinct-kingdom path and leaves a real turn mark on the card.
+    -- attachGeneralPair adds the selected roster skills as fake skills so the
+    -- browser can render the deterministic pair. A fake TriggerSkill is not
+    -- attached to room.logic, so Player:addSkill() alone leaves the real
+    -- EventPhaseStart effect inert when the selected general already owns the
+    -- same name. Promote the registry skill through the normal room API.
+    if state.actor:isFakeSkill("nos_heg__wenji") then
+      state.actor:loseFakeSkill("nos_heg__wenji")
+    end
+    room:handleAddLoseSkills(state.actor, "nos_heg__wenji", nil, false, true)
+    if not state.actor:hasSkill("nos_heg__wenji") then
+      fail("delta-wenji actor must carry the real nos_heg__wenji skill")
+    end
+  end
+  if scenario.trigger == "delta-lord-wenji" then
+    -- Promote the actual lord_ex trigger in the deterministic room, leaving
+    -- the original Hegemony package source responsible for both card moves.
+    if state.actor:isFakeSkill("ld__wenji") then
+      state.actor:loseFakeSkill("ld__wenji")
+    end
+    room:handleAddLoseSkills(state.actor, "ld__wenji", nil, false, true)
+    if not state.actor:hasSkill("ld__wenji") or state.actor:isFakeSkill("ld__wenji") then
+      fail("delta-lord-wenji actor must carry the live ld__wenji trigger")
+    end
+  end
+  if scenario.trigger == "delta-qiance" then
+    -- Keep the deterministic roster projection from the QA catalog, but
+    -- promote the upstream TriggerSkill so CardUsing reaches the real
+    -- ld__qiance handler.  The actor is revealed before the trick is used,
+    -- which satisfies the source law's hasShownSkill predicate.
+    if state.actor:isFakeSkill("ld__qiance") then
+      state.actor:loseFakeSkill("ld__qiance")
+    end
+    room:handleAddLoseSkills(state.actor, "ld__qiance", nil, false, true)
+    if not state.actor:hasSkill("ld__qiance") then
+      fail("delta-qiance actor must carry the real ld__qiance skill")
+    end
+  end
+  if scenario.trigger == "delta-jianchu" then
+    -- Promote the upstream registry skill after deterministic roster wiring;
+    -- the selected Pang De pair otherwise carries only the QA fake projection.
+    if state.actor:isFakeSkill("jianchu") then
+      state.actor:loseFakeSkill("jianchu")
+    end
+    room:handleAddLoseSkills(state.actor, "jianchu", nil, false, true)
+    if not state.actor:hasSkill("jianchu") then
+      fail("delta-jianchu actor must carry the real jianchu skill")
+    end
+  end
+  if scenario.trigger == "delta-tieqi" then
+    if state.actor:isFakeSkill("hs__tieqi") then
+      state.actor:loseFakeSkill("hs__tieqi")
+    end
+    room:handleAddLoseSkills(state.actor, "hs__tieqi", nil, false, true)
+    if not state.actor:hasSkill("hs__tieqi") or state.actor:isFakeSkill("hs__tieqi") then
+      fail("delta-tieqi must use the registered upstream hs__tieqi trigger")
+    end
+  end
+  if scenario.trigger == "delta-xishe" then
+    if state.actor:isFakeSkill("ld__xishe") then
+      state.actor:loseFakeSkill("ld__xishe")
+    end
+    room:handleAddLoseSkills(state.actor, "ld__xishe", nil, false, true)
+    if not state.actor:hasSkill("ld__xishe") or state.actor:isFakeSkill("ld__xishe") then
+      fail("delta-xishe actor must carry the real ld__xishe trigger")
+    end
+  end
+  if scenario.trigger == "delta-bawei" then
+    if state.actor:isFakeSkill("m_heg__bawei") then
+      state.actor:loseFakeSkill("m_heg__bawei")
+    end
+    room:handleAddLoseSkills(state.actor, "m_heg__bawei", nil, false, true)
+    if not state.actor:hasSkill("m_heg__bawei") or state.actor:isFakeSkill("m_heg__bawei") then
+      fail("delta-bawei must use the registered upstream m_heg__bawei trigger")
+    end
+  end
+  if scenario.trigger == "delta-fengshi-siege" or scenario.trigger == "delta-fengshi-no-siege" then
+    if state.actor:isFakeSkill("m_heg__fengshi") then
+      state.actor:loseFakeSkill("m_heg__fengshi")
+    end
+    room:handleAddLoseSkills(state.actor, "m_heg__fengshi", nil, false, true)
+    if not state.actor:hasSkill("m_heg__fengshi") or state.actor:isFakeSkill("m_heg__fengshi") then
+      fail("delta-fengshi must carry the real upstream m_heg__fengshi registry skill")
+    end
+  end
+  if scenario.trigger == "delta-chujue" then
+    -- The selected Jin pair is projected as fake skills during GamePrepared.
+    -- Promote only the upstream registry skill so the real PreCardUse and
+    -- targetmod effects, including setDisresponsive(), own both card branches.
+    if state.actor:isFakeSkill("heg__chujue") then
+      state.actor:loseFakeSkill("heg__chujue")
+    end
+    room:handleAddLoseSkills(state.actor, "heg__chujue", nil, false, true)
+    if not state.actor:hasSkill("heg__chujue") then
+      fail("delta-chujue actor must carry the real heg__chujue skill")
+    end
+  end
+  if scenario.trigger == "delta-zhente" then
+    -- The deterministic roster projection initially uses fake general skills.
+    -- Promote 贞特 on the target seat so TargetConfirmed is owned by the real
+    -- tenyear_heg registry skill, while the actor remains the Slash user.
+    if state.target:isFakeSkill("ty_heg__zhente") then
+      state.target:loseFakeSkill("ty_heg__zhente")
+    end
+    room:handleAddLoseSkills(state.target, "ty_heg__zhente", nil, false, true)
+    if not state.target:hasSkill("ty_heg__zhente") or state.target:isFakeSkill("ty_heg__zhente") then
+      fail("delta-zhente target must carry the real upstream ty_heg__zhente trigger")
+    end
+  end
+  if scenario.trigger == "delta-halberd" then
+    -- The weapon's equip_skill is the source of truth.  Do not attach a QA
+    -- replacement; setupCards below equips the real sa__halberd card and the
+    -- native engine installs #sa__halberd_skill from that card definition.
+  end
+  if scenario.trigger == "delta-sijian" then
+    if state.actor:isFakeSkill("sijian") then
+      state.actor:loseFakeSkill("sijian")
+    end
+    room:handleAddLoseSkills(state.actor, "sijian", nil, false, true)
+    if not state.actor:hasSkill("sijian") or state.actor:isFakeSkill("sijian") then
+      fail("delta-sijian must use the registered upstream sijian trigger")
+    end
+  end
+  if hiddenStartTriggers[scenario.trigger] then
+    -- GamePrepared has already attached the deterministic pair as public
+    -- properties. Recreate the actual hidden-start state before GameStart so
+    -- the native SkillEffect path, rather than the QA director, owns reveal,
+    -- prelight retention, and any later re-hide behavior.
+    if state.actor.general ~= "anjiang" then state.actor:hideGeneral(false) end
+    if state.actor.deputyGeneral ~= "anjiang" then state.actor:hideGeneral(true) end
+  end
   setupCards(room, state, scenario)
+  if scenario.trigger == "delta-halberd" and
+      not state.actor:hasSkill("#sa__halberd_skill") then
+    fail("delta-halberd must install the real attached sa__halberd skill after equipping the card")
+  end
+  if scenario.trigger == "delta-sijian" and
+      not state.actor:hasSkill("sijian") then
+    fail("delta-sijian must retain the real upstream trigger after fixed-card setup")
+  end
   totalRuns = totalRuns + 1
   activeRooms[tostring(room)] = state
   room:setTag("tqs_qa", state)
@@ -2987,18 +3890,19 @@ local function installGeneralPairTraceHooks()
       if scenario and type(params) == "table" and params.isHeg then
         local targets = params.targets
         local targetCount = type(targets) == "table" and targets.id and 1 or #targets
-        if targetCount ~= scenario.playerCount then
-          fail("general-pair-trace received an unexpected target count")
+        local offer = scenario.initialPairOffer or scenario
+        if targetCount ~= scenario.playerCount or targetCount ~= #offer.offeredGroups then
+          fail("QA initial-pair offer received an unexpected target count")
         end
         local offered = {}
         for seat = 1, targetCount do
-          for _, name in ipairs(scenario.offeredGroups[seat]) do
+          for _, name in ipairs(offer.offeredGroups[seat]) do
             table.insert(offered, name)
           end
         end
         params.generals = offered
-        params.enabledKingdoms = table.simpleClone(scenario.enabledKingdoms)
-        local offerCount = #scenario.offeredGroups[1]
+        params.enabledKingdoms = table.simpleClone(offer.enabledKingdoms)
+        local offerCount = #offer.offeredGroups[1]
         local seatTokens = {}
         for seat = 1, targetCount do table.insert(seatTokens, tostring(seat)) end
         self:sendLog{
@@ -3022,6 +3926,41 @@ local function installGeneralPairTraceHooks()
   end
   if not SmartAIClass or type(SmartAIClass.makeReply) ~= "function" then
     fail("native SmartAI class is unavailable for general-pair QA")
+  end
+
+  -- freekill.lua loads the public SmartAI module before this server-only
+  -- package, so merely shipping a second smart_ai.lua under qa_packages does
+  -- not replace the already-cached class.  Patch only the bounded physical
+  -- Jink path on that live class; all other requests continue through the
+  -- pinned upstream handler and strategy registry.
+  if not SmartAIClass.__tqs_qa_jink_response_hook then
+    local originalResponse = SmartAIClass.handleAskForResponseCard
+    local originalUse = SmartAIClass.handleAskForUseCard
+    if type(originalResponse) ~= "function" or type(originalUse) ~= "function" then
+      fail("native SmartAI Jink response handlers are unavailable")
+    end
+    local function chooseJink(ai, data)
+      if type(data) ~= "table" or type(data[2]) ~= "string" then return nil end
+      local pattern = data[2]
+      local cards = ai:getEnabledCards(pattern)
+      if pattern ~= "jink" then return nil end
+      for _, id in ipairs(cards) do
+        ai:selectCard(id, true)
+        return ai:doOKButton()
+      end
+      return nil
+    end
+    SmartAIClass.handleAskForResponseCard = function(self, data)
+      local reply = chooseJink(self, data)
+      if reply ~= nil then return reply end
+      return originalResponse(self, data)
+    end
+    SmartAIClass.handleAskForUseCard = function(self, data)
+      local reply = chooseJink(self, data)
+      if reply ~= nil then return reply end
+      return originalUse(self, data)
+    end
+    SmartAIClass.__tqs_qa_jink_response_hook = true
   end
   local GeneralPair = dofile "qa_packages/tqs_qa/ltk/server/ai/general_pair.lua"
   -- The release runtime may carry an older public SmartAI without the
@@ -3290,12 +4229,27 @@ end
 -- semantics, but give this QA-only synchronization gate a bounded 60-second
 -- window so the request is not cancelled before the real client can answer.
 local function askQaSkillInvoke(room, player, params)
+  local diagnoseFengshi = params.skill_name == "tqs_qa_delta_fengshi_gate"
+  local controller = player.serverplayer
+  if diagnoseFengshi then
+    fk.qInfo(string.format("[tqs_qa] delta-fengshi gate_request actor_online=%s controller_thinking=%s owns_view=%s allowlisted_actor=%s",
+      tostring(controller:getState() == fk.Player_Online),
+      tostring(controller:thinking()),
+      tostring(table.contains(player._observers, controller)),
+      tostring(player._splayer:getScreenName() == allowedUsers[1])))
+  end
   local req = Request:new(player, "AskForSkillInvoke")
   req.timeout = math.max(tonumber(room.timeout) or 0, 60)
   req.focus_text = params.skill_name
   req.receive_decode = false
   req:setData(player, { params.skill_name, params.prompt })
   req:ask()
+  if diagnoseFengshi then
+    fk.qInfo(string.format("[tqs_qa] delta-fengshi gate_result sent_online=%s actor_online=%s answered=%s",
+      tostring(req.send_success[controller] == true),
+      tostring(controller:getState() == fk.Player_Online),
+      tostring(req:getResult(player) ~= "")))
+  end
   return req:getResult(player) ~= ""
 end
 
@@ -6640,6 +7594,1191 @@ local function triggerHiddenActive(room, state)
   room:gameOver("")
 end
 
+local function triggerDeltaTieqi(room, state)
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_tieqi_gate",
+    prompt = "TQS QA: xác nhận bài trước khi kiểm tra 铁骑.",
+  })
+  if not gate then fail("delta-tieqi readiness gate was cancelled") end
+
+  local slashId = state.slotCards["tieqi-slash"]
+  local jinkId = state.slotCards["tieqi-target-jink"]
+  if not slashId or not jinkId or
+      not table.contains(state.actor:getCardIds(Player.Hand), slashId) or
+      not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-tieqi must preserve the physical Slash and target Jink")
+  end
+
+  -- The target/general choice and the failed-suit discard are both real
+  -- source-defined requests. Keep both pairs visible so the upstream
+  -- askToChooseGeneralsAndChoice path can select one actual general.
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  if not state.actor:hasShownSkill("hs__tieqi") or state.actor:isFakeSkill("hs__tieqi") then
+    fail("delta-tieqi actor must reveal the real upstream skill")
+  end
+
+  room:setPlayerProperty(state.target, "maxHp", 4)
+  room:setPlayerProperty(state.target, "hp", 4)
+  room:broadcastProperty(state.target, "maxHp")
+  room:broadcastProperty(state.target, "hp")
+  local hpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { slashId },
+    skill_name = "tqs_qa_delta_tieqi_use",
+    prompt = "TQS QA delta-tieqi: dùng Sát lên mục tiêu để kiểm tra 铁骑.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= slashId or not use.tos or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    fail("delta-tieqi must use the reserved Slash against the target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "hs__tieqi" and entry.player == state.actor.id and not entry.fake
+  end)
+  local retained = table.contains(state.target:getCardIds(Player.Hand), jinkId)
+  if not effect or state.target.hp ~= hpBefore - 1 or not retained then
+    fail("delta-tieqi must execute the real trigger, deal one damage and retain the target Jink")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 铁骑: judge_discard_cancelled=%arg; response_blocked=%arg2; target_jink_retained=%arg3; damage=%arg4",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = tostring(retained), arg4 = "1",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-tieqi skill=hs__tieqi judge_discard_cancelled=true response_blocked=true target_jink_retained=%s damage=1 revision=%s",
+    tostring(retained), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaXiongsuan(room, state)
+  -- Let both clients finish applying the deterministic initial hand and
+  -- general/skill projection before the active-skill request.  The hidden
+  -- active probes use the same native synchronization boundary; without it,
+  -- the browser known-card tracker can receive the initial MoveCards packet
+  -- while the Lua room is already waiting on a second request.
+  fk.qInfo(string.format("[tqs_qa] delta-xiongsuan gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_xiongsuan_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 凶算.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-xiongsuan gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-xiongsuan readiness gate was cancelled")
+  end
+  local cardId = state.slotCards["xiongsuan-discard"]
+  if not cardId or not table.contains(state.actor:getCardIds(Player.Hand), cardId) then
+    fail("delta-xiongsuan must put its reserved Jink in the actor hand")
+  end
+  if not state.target:isFakeSkill("xiongsuan") and not state.target:hasSkill("xiongsuan") then
+    fail("delta-xiongsuan target must retain the limited skill used-history fixture")
+  end
+  if state.target:usedSkillTimes("xiongsuan", Player.HistoryGame) ~= 1 then
+    fail("delta-xiongsuan target must start with exactly one used limited-skill history")
+  end
+  -- The upstream target filter intentionally rejects an unknown kingdom. Make
+  -- the deterministic same-kingdom target public before the browser receives
+  -- the active-skill scene, matching the in-game state in which a player can
+  -- lawfully identify that ally.
+  state.target:revealGenerals()
+  room:setPlayerProperty(state.target, "role_shown", true)
+  room:broadcastProperty(state.target, "kingdom")
+
+  local beforeActorHand = #state.actor:getCardIds(Player.Hand)
+  local beforeTargetHp = state.target.hp
+  -- Use the same native request -> handleUseCardReply -> useSkill path as a
+  -- normal PlayCard/skill-button action.  Room:askToUseActiveSkill executes
+  -- ActiveSkill:onUse directly and intentionally omits the useSkill wrapper,
+  -- which would hide the limited-use history and SkillEffect contract under
+  -- test.
+  local request = Request:new(state.actor, "AskForUseActiveSkill")
+  request.focus_text = "xiongsuan"
+  request:setData(state.actor, {
+    "xiongsuan",
+    "TQS QA: chọn một lá trên tay và một đồng minh để kiểm tra 凶算.",
+    false,
+    Util.DummyTable,
+  })
+  local result = request:getResult(state.actor)
+  if result == "" or type(result) ~= "table" or type(result.card) ~= "table" then
+    fail("delta-xiongsuan must receive a native AskForUseActiveSkill reply")
+  end
+  local selectedCards = result.card.subcards
+  local selectedTargets = result.targets
+  if result.card.skill ~= "xiongsuan" or
+      type(selectedCards) ~= "table" or #selectedCards ~= 1 or selectedCards[1] ~= cardId or
+      type(selectedTargets) ~= "table" or #selectedTargets ~= 1 or
+      selectedTargets[1] ~= state.target.id then
+    fail("delta-xiongsuan must select exactly the reserved Jink and the same-kingdom target")
+  end
+
+  room:handleUseCardReply(state.actor, result)
+
+  -- xiongsuan is an ActiveSkill.  Room:askToUseActiveSkill resolves its
+  -- source-defined onUse directly; the normal handleUseCardReply path above
+  -- wraps it in useSkill so the native SkillEffect/history contract is real.
+  if state.actor:usedSkillTimes("xiongsuan", Player.HistoryGame) ~= 1 then
+    fail("delta-xiongsuan actor must consume its limited-use history")
+  end
+  if room:getCardArea(cardId) == Card.PlayerHand then
+    fail("delta-xiongsuan must discard the selected hand card")
+  end
+  if state.target.hp ~= beforeTargetHp - 1 then
+    fail("delta-xiongsuan must deal exactly one damage to the selected target")
+  end
+  local afterActorHand = #state.actor:getCardIds(Player.Hand)
+  if beforeActorHand ~= 1 or afterActorHand ~= 3 then
+    fail(string.format("delta-xiongsuan must draw three cards after discarding one (hand %d->%d)",
+      beforeActorHand, afterActorHand))
+  end
+
+  if state.actor:getMark("xiongsuan-turn") == 0 and state.actor:getMark("_xiongsuan-turn") == 0 then
+    fail("delta-xiongsuan must persist the selected reset skill until TurnEnd")
+  end
+  -- The upstream skill intentionally delays the reset to TurnEnd. Drive the
+  -- native event directly after the client answers the choice so the proof
+  -- covers both the corrected card filter and the complete limited reset.
+  room.logic:trigger(fk.TurnEnd, state.actor, {
+    who = state.actor,
+    reason = "game_rule",
+    phase_table = {},
+    phase_index = 0,
+    turn_end = true,
+  })
+  if state.target:usedSkillTimes("xiongsuan", Player.HistoryGame) ~= 0 then
+    fail("delta-xiongsuan TurnEnd must reset the selected limited skill history")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 凶算: ActiveSkillOnUse=%arg; chọn bài=%arg2; gây sát thương=%arg3; rút ba=%arg4; reset limited=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = tostring(state.target.hp == beforeTargetHp - 1),
+    arg4 = tostring(afterActorHand == 3),
+    arg5 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-xiongsuan skill=xiongsuan active_on_use=true card_filter_zero=true damage=1 draw=3 reset=true revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaWenji(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-wenji gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_wenji_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 问计.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-wenji gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-wenji readiness gate was cancelled")
+  end
+
+  local giftId = state.slotCards["wenji-gift"]
+  local jinkId = state.slotCards["wenji-target-jink"]
+  if not giftId or not table.contains(state.target:getCardIds(Player.Hand), giftId) or
+      not jinkId or not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-wenji must put the reserved Slash and Jink in the revealed target hand")
+  end
+  if #state.actor:getCardIds(Player.Hand) ~= 0 or #state.target:getCardIds(Player.Hand) ~= 2 then
+    fail("delta-wenji must keep deterministic empty-actor and two-card target hands")
+  end
+
+  -- The old skill uses a phase-start askToChoosePlayers -> askToCards chain.
+  -- Drive the real source event directly after the synchronization gate so
+  -- both active-skill requests still travel through the production client.
+  state.target:revealGenerals()
+  room:setPlayerProperty(state.actor, "phase", Player.Play)
+  room:broadcastProperty(state.actor, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor,
+    phase = Player.Play,
+  })
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "nos_heg__wenji" and entry.player == state.actor.id
+  end)
+  if not effect or effect.fake then
+    fail("delta-wenji must execute the real nos_heg__wenji phase-start effect")
+  end
+  if not table.contains(state.actor:getCardIds(Player.Hand), giftId) or
+      table.contains(state.target:getCardIds(Player.Hand), giftId) then
+    fail("delta-wenji must transfer the selected Slash from target to actor")
+  end
+  if not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-wenji target Jink must remain available for response-legality proof")
+  end
+  if not table.contains(state.actor:getTableMark("nos_heg__wenji-turn"), giftId) then
+    fail("delta-wenji must mark the transferred Slash for the actor's turn")
+  end
+
+  local targetHpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { giftId },
+    skill_name = "tqs_qa_delta_wenji_use",
+    prompt = "TQS QA delta-wenji: dùng Sát được hỏi kế lên đối thủ.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= giftId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("delta-wenji must use the transferred Slash against the source target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  if state.target.hp ~= targetHpBefore - 1 then
+    fail("delta-wenji must deal one damage without a response")
+  end
+  if room:getCardArea(giftId) == Card.PlayerHand or
+      table.contains(state.actor:getCardIds(Player.Hand), giftId) then
+    fail("delta-wenji transferred Slash must leave the actor hand after use")
+  end
+  if not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-wenji target Jink must remain in hand after disresponsive CardUsing")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 问计: phase_handoff=%arg; slash_used=%arg2; target_response_blocked=%arg3; target_jink_retained=%arg4",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-wenji skill=nos_heg__wenji phase_handoff=true card_using=true response_blocked=true target_jink_retained=true revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaLordWenji(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-lord-wenji gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_lord_wenji_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài trước khi kiểm tra ld__wenji.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-lord-wenji gate_reply=%s", tostring(gate)))
+  if not gate then fail("delta-lord-wenji readiness gate was cancelled") end
+
+  local peachId = state.slotCards["lord-wenji-return"]
+  local giftId = state.slotCards["lord-wenji-gift"]
+  local jinkId = state.slotCards["lord-wenji-target-jink"]
+  if not peachId or not giftId or not jinkId or
+      not table.contains(state.actor:getCardIds(Player.Hand), peachId) or
+      not table.contains(state.target:getCardIds(Player.Hand), giftId) or
+      not table.contains(state.target:getCardIds(Player.Hand), jinkId) or
+      #state.actor:getCardIds(Player.Hand) ~= 1 or
+      #state.target:getCardIds(Player.Hand) ~= 2 then
+    fail("delta-lord-wenji initial hands must be actor Peach and target Slash/Jink")
+  end
+
+  room:setPlayerProperty(state.actor, "phase", Player.Play)
+  room:broadcastProperty(state.actor, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor, phase = Player.Play,
+  })
+
+  local phaseEffect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "ld__wenji" and entry.player == state.actor.id and not entry.fake
+  end)
+  if not phaseEffect then fail("delta-lord-wenji must invoke the real phase-start trigger") end
+  if not table.contains(state.actor:getCardIds(Player.Hand), giftId) or
+      table.contains(state.target:getCardIds(Player.Hand), giftId) or
+      not table.contains(state.actor:getCardIds(Player.Hand), peachId) or
+      not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-lord-wenji native phase handoff must transfer only the target Slash")
+  end
+  local mark = Fk:getCardById(giftId):getTableMark("ld__wenji-turn")
+  if type(mark) ~= "table" or mark[1] ~= state.actor or mark[2] ~= state.target then
+    fail("delta-lord-wenji must retain native actor and giver provenance on the Slash")
+  end
+
+  local hpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { giftId },
+    skill_name = "tqs_qa_delta_lord_wenji_use",
+    prompt = "TQS QA delta-lord-wenji: dùng Sát được hỏi kế lên đối thủ.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true, skip = true,
+  })
+  if not use or not use.card or use.card.id ~= giftId or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    fail("delta-lord-wenji must use the received Slash against the original giver")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  if state.target.hp ~= hpBefore - 1 or
+      not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-lord-wenji must deal one damage while target Jink is unspent")
+  end
+  if table.contains(state.actor:getCardIds(Player.Hand), peachId) or
+      not table.contains(state.target:getCardIds(Player.Hand), peachId) or
+      room:getCardArea(peachId) ~= Card.PlayerHand or
+      #state.actor:getCardIds(Player.Hand) ~= 0 or
+      #state.target:getCardIds(Player.Hand) ~= 2 then
+    fail("delta-lord-wenji CardUseFinished must return the distinct Peach to its original giver")
+  end
+  if table.contains(state.actor:getCardIds(Player.Hand), giftId) then
+    fail("delta-lord-wenji transferred Slash must leave actor's hand after use")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream lord_ex 问计: phase_handoff=%arg; slash_disresponsive=%arg2; target_jink_retained=%arg3; different_card_returned=%arg4",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = "true", arg4 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-lord-wenji skill=ld__wenji real_phase=true card_using=true response_blocked=true jink_retained=true different_card_returned=true damage=1 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaQiance(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-qiance gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_qiance_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 谦策.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-qiance gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-qiance readiness gate was cancelled")
+  end
+
+  local duelId = state.slotCards["qiance-duel"]
+  local slashId = state.slotCards["qiance-target-slash"]
+  if not duelId or not table.contains(state.actor:getCardIds(Player.Hand), duelId) or
+      not slashId or not table.contains(state.target:getCardIds(Player.Hand), slashId) then
+    fail("delta-qiance must put the reserved Duel and Slash in the expected hands")
+  end
+
+  -- The source trigger is gated by hasShownSkill when the card user and the
+  -- qiance owner are different.  Reveal the deterministic pair explicitly so
+  -- the proof cannot pass through a fake/hidden skill projection.
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  if not state.actor:hasShownSkill("ld__qiance") then
+    fail("delta-qiance actor must have the real shown ld__qiance skill")
+  end
+
+  local targetHpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { duelId },
+    skill_name = "tqs_qa_delta_qiance_use",
+    prompt = "TQS QA delta-qiance: dùng Quyết Đấu lên đối thủ.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local useCardName = use and use.card and tostring(use.card.trueName or use.card.name or "unknown") or "none"
+  local useTargetCount = use and use.tos and #use.tos or 0
+  local useTargetMatch = use and use.tos and #use.tos == 1 and use.tos[1] == state.target or false
+  fk.qInfo(string.format("[tqs_qa] delta-qiance use_reply card=%s target_count=%d target_match=%s",
+    useCardName, useTargetCount, tostring(useTargetMatch)))
+  if not use or not use.card or use.card.id ~= duelId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("delta-qiance must use the reserved Duel against the same-kingdom target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "ld__qiance" and entry.player == state.actor.id
+  end)
+  if not effect or effect.fake then
+    fail("delta-qiance must execute the real ld__qiance SkillEffect")
+  end
+  if state.target.hp ~= targetHpBefore - 1 then
+    fail("delta-qiance must let the disresponsive Duel deal one damage")
+  end
+  if not table.contains(state.target:getCardIds(Player.Hand), slashId) then
+    fail("delta-qiance target Slash must remain in hand after response suppression")
+  end
+  if room:getCardArea(duelId) == Card.PlayerHand or
+      table.contains(state.actor:getCardIds(Player.Hand), duelId) then
+    fail("delta-qiance Duel must leave the actor hand after use")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 谦策: card_using=%arg; skill_effect=%arg2; target_big_kingdom=%arg3; response_blocked=%arg4; target_slash_retained=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = "true",
+    arg5 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-qiance skill=ld__qiance card_using=true skill_effect=true response_blocked=true target_slash_retained=true damage=1 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaJianchu(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-jianchu gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_jianchu_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 鞬出.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-jianchu gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-jianchu readiness gate was cancelled")
+  end
+
+  local slashId = state.slotCards["jianchu-slash"]
+  local jinkId = state.slotCards["jianchu-target-jink"]
+  local equipId = state.slotCards["jianchu-target-equip"]
+  if not slashId or not table.contains(state.actor:getCardIds(Player.Hand), slashId) or
+      not jinkId or not table.contains(state.target:getCardIds(Player.Hand), jinkId) or
+      not equipId or room:getCardArea(equipId) ~= Card.PlayerEquip or
+      not table.contains(state.target:getCardIds(Player.Equip), equipId) then
+    fail("delta-jianchu must put the reserved Slash, Jink and equipment in the expected areas")
+  end
+
+  -- Jianchu is attached to Pang De's selected pair. Reveal both deterministic
+  -- pairs so the real TargetSpecified trigger, rather than a fake projection,
+  -- owns the equipment branch.
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  if not state.actor:hasShownSkill("jianchu") then
+    fail("delta-jianchu actor must have the real shown jianchu skill")
+  end
+
+  local targetHpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { slashId },
+    skill_name = "tqs_qa_delta_jianchu_use",
+    prompt = "TQS QA delta-jianchu: dùng Sát lên đối thủ để kiểm tra nhánh bỏ equipment.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local useCardName = use and use.card and tostring(use.card.trueName or use.card.name or "unknown") or "none"
+  local useTargetCount = use and use.tos and #use.tos or 0
+  local useTargetMatch = use and use.tos and #use.tos == 1 and use.tos[1] == state.target or false
+  fk.qInfo(string.format("[tqs_qa] delta-jianchu use_reply card=%s target_count=%d target_match=%s",
+    useCardName, useTargetCount, tostring(useTargetMatch)))
+  if not use or not use.card or use.card.id ~= slashId or #use.tos ~= 1 or
+      use.tos[1] ~= state.target then
+    fail("delta-jianchu must use the reserved Slash against the same target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "jianchu" and entry.player == state.actor.id
+  end)
+  local equipmentDiscarded = room:getCardArea(equipId) == Card.DiscardPile and
+    not table.contains(state.target:getCardIds(Player.Equip), equipId)
+  local targetJinkRetained = table.contains(state.target:getCardIds(Player.Hand), jinkId)
+  if not effect or effect.fake then
+    fail("delta-jianchu must execute the real jianchu SkillEffect")
+  end
+  if not equipmentDiscarded then
+    fail("delta-jianchu must discard the selected target equipment")
+  end
+  if state.target.hp ~= targetHpBefore - 1 then
+    fail("delta-jianchu equipment branch must deal one damage without a response")
+  end
+  if not targetJinkRetained then
+    fail("delta-jianchu target Jink must remain in hand after response suppression")
+  end
+  if room:getCardArea(slashId) == Card.PlayerHand or
+      table.contains(state.actor:getCardIds(Player.Hand), slashId) then
+    fail("delta-jianchu Slash must leave the actor hand after use")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 鞬出: target_equipment_discarded=%arg; response_blocked=%arg2; target_jink_retained=%arg3; damage=%arg4",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = "true",
+    arg3 = "true",
+    arg4 = "1",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-jianchu skill=jianchu equipment_branch=true response_blocked=true target_jink_retained=true damage=1 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaXishe(room, state)
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_xishe_gate",
+    prompt = "TQS QA: xác nhận trang bị và hai mục tiêu trước khi kiểm tra 袭射.",
+  })
+  if not gate then fail("delta-xishe readiness gate was cancelled") end
+
+  local weaponId = state.slotCards["xishe-weapon"]
+  local armorId = state.slotCards["xishe-armor"]
+  local targetJinkId = state.slotCards["xishe-target-jink"]
+  local controlJinkId = state.slotCards["xishe-control-jink"]
+  if not weaponId or not armorId or
+      not table.contains(state.actor:getCardIds(Player.Equip), weaponId) or
+      not table.contains(state.actor:getCardIds(Player.Equip), armorId) or
+      not targetJinkId or not table.contains(state.target:getCardIds(Player.Hand), targetJinkId) or
+      not controlJinkId or not table.contains(state.control:getCardIds(Player.Hand), controlJinkId) then
+    fail("delta-xishe initial equipment and Jinks must occupy their reserved card areas")
+  end
+
+  state.actor:revealGenerals()
+  if not state.actor:hasShownSkill("ld__xishe") then
+    fail("delta-xishe actor must have the revealed real ld__xishe skill")
+  end
+  for _, hpState in ipairs({
+    { player = state.actor, hp = 4 },
+    { player = state.target, hp = 3 },
+    { player = state.control, hp = 4 },
+  }) do
+    if hpState.player.maxHp < hpState.hp then
+      room:setPlayerProperty(hpState.player, "maxHp", hpState.hp)
+      room:broadcastProperty(hpState.player, "maxHp")
+    end
+    room:setPlayerProperty(hpState.player, "hp", hpState.hp)
+    room:broadcastProperty(hpState.player, "hp")
+  end
+
+  -- Both phases invoke the actual upstream EventPhaseStart -> askToDiscard
+  -- loop -> virtual Slash -> CardUsing/setDisresponsive lifecycle. The first
+  -- human discard must consume the weapon and cancel the repeated offer.
+  room:setPlayerProperty(state.target, "phase", Player.Start)
+  room:broadcastProperty(state.target, "phase")
+  local xisheSkill = Fk.skills["ld__xishe"]
+  local xishePhaseTrigger = xisheSkill and (xisheSkill.event == fk.EventPhaseStart and xisheSkill or
+    table.find(xisheSkill.related_skills, function(skill) return skill.event == fk.EventPhaseStart end))
+  local registered = xishePhaseTrigger and
+    table.contains(room.logic.skill_table[fk.EventPhaseStart] or {}, xishePhaseTrigger)
+  local eligible = xishePhaseTrigger and
+    xishePhaseTrigger:triggerable(nil, state.target, state.actor, nil)
+  local discardable = table.find(state.actor:getCardIds("e"), function(id)
+    return not state.actor:prohibitDiscard(Fk:getCardById(id))
+  end)
+  local currentEvent = room.logic:getCurrentEvent()
+  local inTurnRing = false
+  local cursor = room.current
+  for _ = 1, #room.players do
+    if cursor == state.actor then inTurnRing = true end
+    cursor = cursor and cursor.next
+  end
+  fk.qInfo(string.format("[tqs_qa] delta-xishe pretrigger main_event=%s registered=%s eligible=%s shown=%s start_phase=%s discardable=%s current=%s turn_ring=%s event_killed=%s phase_count=%d equip_count=%d",
+    tostring(xisheSkill and xisheSkill.event == fk.EventPhaseStart),
+    tostring(not not registered), tostring(not not eligible),
+    tostring(state.actor:hasShownSkill("ld__xishe")),
+    tostring(state.target.phase == Player.Start), tostring(not not discardable),
+    tostring(room.current ~= nil), tostring(inTurnRing),
+    tostring(currentEvent and currentEvent.killed), #(room.logic.skill_table[fk.EventPhaseStart] or {}),
+    #state.actor:getCardIds("e")))
+  state.currentDamageStep = 1
+  local _, phaseEvent = room.logic:trigger(fk.EventPhaseStart, state.target,
+    { who = state.target, phase = Player.Start })
+  fk.qInfo(string.format("[tqs_qa] delta-xishe posttrigger refresh_only=%s triggered=%s cancel_cost=%s broken=%s effects=%d",
+    tostring(phaseEvent and phaseEvent.refresh_only),
+    tostring(phaseEvent and (phaseEvent.invoked_times or {})[xishePhaseTrigger.name]),
+    tostring(phaseEvent and phaseEvent:getSkillData(xishePhaseTrigger, "cancel_cost")),
+    tostring(phaseEvent and phaseEvent.broken),
+    #state.skillEffects))
+  state.currentDamageStep = nil
+  local targetEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "ld__xishe" and entry.player == state.actor.id and not entry.fake
+  end)
+  if not targetEffect or room:getCardArea(weaponId) ~= Card.DiscardPile or
+      room:getCardArea(armorId) ~= Card.PlayerEquip or
+      state.target.hp ~= 2 or not table.contains(state.target:getCardIds(Player.Hand), targetJinkId) or
+      state.xisheResponseCount ~= 0 then
+    fail("delta-xishe low-HP branch must discard weapon, retain armor, block Jink and deal one damage")
+  end
+
+  -- Equal HP must leave the control bot's real Jink response available.
+  state.currentDamageStep = 2
+  room:setPlayerProperty(state.control, "phase", Player.Start)
+  room:broadcastProperty(state.control, "phase")
+  room.logic:trigger(fk.EventPhaseStart, state.control, { who = state.control, phase = Player.Start })
+  state.currentDamageStep = nil
+  local controlEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 2 and entry.skill == "ld__xishe" and entry.player == state.actor.id and not entry.fake
+  end)
+  if not controlEffect or room:getCardArea(armorId) ~= Card.DiscardPile or
+      state.control.hp ~= 4 or room:getCardArea(controlJinkId) == Card.PlayerHand or
+      state.xisheResponseCount ~= 1 or not state.xisheControlResponded then
+    fail("delta-xishe equal-HP branch must discard armor and allow native Jink response")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 袭射: lower_hp_blocked=%arg; target_jink_retained=%arg2; equal_hp_allowed=%arg3; control_responded=%arg4; equip_discarded=%arg5; damage=%arg6",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = "true",
+    arg4 = "true", arg5 = "2", arg6 = "1",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-xishe skill=ld__xishe lower_hp_blocked=true target_jink_retained=true equal_hp_allowed=true control_responded=true equip_discarded=2 damage=1 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaBawei(room, state)
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_bawei_gate",
+    prompt = "TQS QA: xác nhận bài trước khi kiểm tra 霸威 trong vòng hiện tại.",
+  })
+  if not gate then fail("delta-bawei readiness gate was cancelled") end
+
+  local damagedSlashId = state.slotCards["bawei-damaged-slash"]
+  local controlSlashId = state.slotCards["bawei-control-slash"]
+  local damagedJinkId = state.slotCards["bawei-damaged-jink"]
+  local controlJinkId = state.slotCards["bawei-control-jink"]
+  if not damagedSlashId or not controlSlashId or not damagedJinkId or not controlJinkId or
+      not table.contains(state.actor:getCardIds(Player.Hand), damagedSlashId) or
+      not table.contains(state.actor:getCardIds(Player.Hand), controlSlashId) or
+      not table.contains(state.target:getCardIds(Player.Hand), damagedJinkId) or
+      not table.contains(state.control:getCardIds(Player.Hand), controlJinkId) then
+    fail("delta-bawei must preserve both physical Slashes and both physical Jinks")
+  end
+
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  state.control:revealGenerals()
+  if not state.actor:hasShownSkill("m_heg__bawei") or state.actor:isFakeSkill("m_heg__bawei") then
+    fail("delta-bawei must reveal the real compulsory upstream skill")
+  end
+
+  -- This setup runs in the actor's actual Start phase, inside a real Round.
+  -- GameStart has no HistoryRound event scope, so a fabricated mark or early
+  -- damage would not exercise bawei.lua's getActualDamageEvents predicate.
+  room:setPlayerProperty(state.target, "maxHp", 4)
+  room:setPlayerProperty(state.target, "hp", 4)
+  room:setPlayerProperty(state.control, "maxHp", 4)
+  room:setPlayerProperty(state.control, "hp", 4)
+  room:damage({ from = state.actor, to = state.target, damage = 1 })
+  local history = room.logic:getActualDamageEvents(1, function(e)
+    return e.data.from == state.actor and e.data.to == state.target
+  end, Player.HistoryRound)
+  if #history ~= 1 or state.target.hp ~= 3 or state.control.hp ~= 4 then
+    fail("delta-bawei must record exactly one real actor-to-target damage in HistoryRound")
+  end
+
+  local function useReservedSlash(cardId, to, step, skillName)
+    state.currentDamageStep = step
+    local use = room:askToUseRealCard(state.actor, {
+      pattern = { cardId },
+      skill_name = skillName,
+      prompt = "TQS QA delta-bawei: dùng lá Sát đã cấp lên mục tiêu được chỉ định.",
+      extra_data = {
+        bypass_times = true, bypass_distances = true, extraUse = true,
+        exclusive_targets = { to.id }, must_targets = { to.id },
+      },
+      cancelable = true,
+      skip = true,
+    })
+    if not use or not use.card or use.card.id ~= cardId or not use.tos or
+        #use.tos ~= 1 or use.tos[1] ~= to then
+      state.currentDamageStep = nil
+      fail("delta-bawei must use the exact physical Slash against its reserved target")
+    end
+    use.extraUse = true
+    room:useCard(use)
+    state.currentDamageStep = nil
+    local effect = table.find(state.skillEffects, function(entry)
+      return entry.step == step and entry.skill == "m_heg__bawei" and
+        entry.player == state.actor.id and not entry.fake
+    end)
+    if not effect then
+      fail("delta-bawei must execute the real source CardUsing SkillEffect on each Slash")
+    end
+  end
+
+  useReservedSlash(damagedSlashId, state.target, 1, "tqs_qa_delta_bawei_damaged_use")
+  local targetJinkRetained = table.contains(state.target:getCardIds(Player.Hand), damagedJinkId)
+  if state.target.hp ~= 2 or not targetJinkRetained or state.baweiResponseCount ~= 0 then
+    fail("delta-bawei must block damaged target Jink and inflict exactly one extra damage")
+  end
+
+  useReservedSlash(controlSlashId, state.control, 2, "tqs_qa_delta_bawei_control_use")
+  local controlJinkConsumed = room:getCardArea(controlJinkId) ~= Card.PlayerHand
+  if state.control.hp ~= 4 or not controlJinkConsumed or
+      state.baweiResponseCount ~= 1 or not state.baweiControlResponded then
+    fail("delta-bawei must allow an undamaged native bot to respond once with Jink")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 霸威: round_damage_recorded=%arg; damaged_response_blocked=%arg2; damaged_jink_retained=%arg3; control_responded=%arg4; damage=%arg5",
+    from = state.actor.id,
+    arg = "true", arg2 = "true", arg3 = tostring(targetJinkRetained),
+    arg4 = tostring(state.baweiControlResponded), arg5 = "1",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-bawei round_damage_recorded=true damaged_response_blocked=true damaged_jink_retained=%s control_responded=%s damage=1 revision=%s",
+    tostring(targetJinkRetained), tostring(state.baweiControlResponded), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaFengshi(room, state)
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_fengshi_gate",
+    prompt = "TQS QA: xác nhận bài trước khi kiểm tra 锋矢 đầu lượt.",
+  })
+  if not gate then fail("delta-fengshi readiness gate was cancelled") end
+
+  local slashId = state.slotCards["fengshi-first-slash"]
+  local jinkId = state.slotCards["fengshi-target-jink"]
+  if not slashId or not jinkId or
+      not table.contains(state.actor:getCardIds(Player.Hand), slashId) or
+      not table.contains(state.target:getCardIds(Player.Hand), jinkId) then
+    fail("delta-fengshi must preserve the exact physical Slash and native bot Jink")
+  end
+
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  state.control:revealGenerals()
+  if not state.actor:hasShownSkill("m_heg__fengshi") or
+      state.actor:isFakeSkill("m_heg__fengshi") then
+    fail("delta-fengshi must reveal the real upstream compulsory skill")
+  end
+
+  local H = require "packages.hegemony.util"
+  local siege = table.find(room.alive_players, function(p)
+    return H.inSiegeRelation(state.actor, state.actor, p) or
+      H.inSiegeRelation(p, p, state.actor)
+  end) ~= nil
+  local expectedSiege = state.scenario == "delta-fengshi-siege"
+  if siege ~= expectedSiege then
+    fail("delta-fengshi live native siege relation contradicts reserved roster")
+  end
+
+  -- The real CardUsing callback checks the first GameEvent.UseCard in
+  -- HistoryTurn. It cannot be proved from GameStart or a synthetic mark.
+  local before = room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+    return e.data.from == state.actor
+  end, Player.HistoryTurn)
+  if #before ~= 0 or state.actor:getMark("m_heg__fengshi-turn") ~= 0 then
+    fail("delta-fengshi actor must not have used a card this turn")
+  end
+
+  room:setPlayerProperty(state.target, "maxHp", 4)
+  room:setPlayerProperty(state.target, "hp", 4)
+  state.currentDamageStep = 1
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { slashId },
+    skill_name = "tqs_qa_delta_fengshi_first_use",
+    prompt = "TQS QA delta-fengshi: dùng lá Sát đầu lượt lên mục tiêu được chỉ định.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  if not use or not use.card or use.card.id ~= slashId or not use.tos or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    state.currentDamageStep = nil
+    fail("delta-fengshi must use the reserved physical first Slash")
+  end
+  use.extraUse = true
+  room:useCard(use)
+  state.currentDamageStep = nil
+
+  local uses = room.logic:getEventsOfScope(GameEvent.UseCard, 2, function(e)
+    return e.data.from == state.actor
+  end, Player.HistoryTurn)
+  -- room:useCard() wraps the submitted use in a fresh UseCardData instance.
+  -- Verify the actual recorded native event, rather than table identity.
+  local actual = uses[1] and uses[1].data
+  local firstPhysicalSlash = #uses == 1 and actual and
+    actual.from == state.actor and actual.card and actual.card.id == slashId and
+    actual.tos and #actual.tos == 1 and actual.tos[1] == state.target
+  local marked = state.actor:getMark("m_heg__fengshi-turn") == 1
+  if not firstPhysicalSlash or not marked then
+    fk.qInfo(string.format("[tqs_qa] delta-fengshi first_use_check use_count=%d physical_slash=%s turn_mark=%s",
+      #uses, tostring(not not firstPhysicalSlash), tostring(marked)))
+    fail("delta-fengshi must execute exactly the first real UseCard in HistoryTurn")
+  end
+
+  local skillEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "m_heg__fengshi" and
+      entry.player == state.actor.id and not entry.fake
+  end) ~= nil
+  local retained = table.contains(state.target:getCardIds(Player.Hand), jinkId)
+  local consumed = room:getCardArea(jinkId) ~= Card.PlayerHand
+  if expectedSiege then
+    if not skillEffect or state.target.hp ~= 3 or not retained or
+        state.fengshiResponseCount ~= 0 or state.fengshiTargetResponded then
+      fail("delta-fengshi siege must block native Jink and inflict one Slash damage")
+    end
+  elseif skillEffect or state.target.hp ~= 4 or not consumed or
+      state.fengshiResponseCount ~= 1 or not state.fengshiTargetResponded then
+    fail("delta-fengshi no-siege must allow one real bot Jink and prevent damage")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 锋矢: first_use=%arg; siege_relation=%arg2; response_blocked=%arg3; target_jink_retained=%arg4; target_responded=%arg5",
+    from = state.actor.id,
+    arg = "true", arg2 = tostring(siege), arg3 = tostring(expectedSiege),
+    arg4 = tostring(retained), arg5 = tostring(state.fengshiTargetResponded),
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-fengshi first_use=true siege_relation=%s response_blocked=%s target_jink_retained=%s target_responded=%s revision=%s",
+    tostring(siege), tostring(expectedSiege), tostring(retained),
+    tostring(state.fengshiTargetResponded), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+local function triggerDeltaChujue(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-chujue gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_chujue_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 除绝.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-chujue gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-chujue readiness gate was cancelled")
+  end
+
+  local deadFactionSlashId = state.slotCards["chujue-dead-faction-slash"]
+  local controlFactionSlashId = state.slotCards["chujue-control-faction-slash"]
+  local deadFactionJinkId = state.slotCards["chujue-dead-faction-jink"]
+  local controlFactionJinkId = state.slotCards["chujue-control-faction-jink"]
+  if not deadFactionSlashId or not controlFactionSlashId or
+      not table.contains(state.actor:getCardIds(Player.Hand), deadFactionSlashId) or
+      not table.contains(state.actor:getCardIds(Player.Hand), controlFactionSlashId) or
+      not deadFactionJinkId or not table.contains(state.target:getCardIds(Player.Hand), deadFactionJinkId) or
+      not controlFactionJinkId or not table.contains(state.control:getCardIds(Player.Hand), controlFactionJinkId) then
+    fail("delta-chujue must put both actor Slashes and both branch Jinks in the expected hands")
+  end
+
+  -- The source skill is compulsory and checks the shown skill on the card
+  -- user. Keep the real Jin pair visible before the dead-kingdom fixture is
+  -- introduced, so the proof cannot pass through a fake skill projection.
+  state.actor:revealGenerals()
+  if not state.actor:hasShownSkill("heg__chujue") then
+    fail("delta-chujue actor must have the real shown heg__chujue skill")
+  end
+
+  -- Leave three living kingdoms in the room after this death. This prevents
+  -- Hegemony's ordinary game-over judge from ending the probe before the two
+  -- response branches can be compared.
+  room:killPlayer({
+    who = state.deadPlayer,
+    killer = state.actor,
+  })
+  if not state.deadPlayer.dead or state.target.dead or state.control.dead then
+    fail("delta-chujue must kill only the dedicated dead-kingdom fixture seat")
+  end
+
+  local targetHpBefore = state.target.hp
+  state.currentDamageStep = 1
+  local deadFactionUse = room:askToUseRealCard(state.actor, {
+    pattern = { deadFactionSlashId },
+    skill_name = "tqs_qa_delta_chujue_dead_faction_use",
+    prompt = "TQS QA delta-chujue: dùng Sát lên thế lực đã có người chết.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local deadFactionCardName = deadFactionUse and deadFactionUse.card and
+    tostring(deadFactionUse.card.trueName or deadFactionUse.card.name or "unknown") or "none"
+  local deadFactionTargetMatch = deadFactionUse and deadFactionUse.tos and #deadFactionUse.tos == 1 and
+    deadFactionUse.tos[1] == state.target or false
+  fk.qInfo(string.format("[tqs_qa] delta-chujue dead_faction_use_reply card=%s target_match=%s",
+    deadFactionCardName, tostring(deadFactionTargetMatch)))
+  if not deadFactionUse or not deadFactionUse.card or deadFactionUse.card.id ~= deadFactionSlashId or
+      not deadFactionUse.tos or #deadFactionUse.tos ~= 1 or deadFactionUse.tos[1] ~= state.target then
+    state.currentDamageStep = nil
+    fail("delta-chujue must use the reserved Slash against the dead-kingdom target")
+  end
+  deadFactionUse.extraUse = true
+  room:useCard(deadFactionUse)
+  state.currentDamageStep = nil
+
+  local deadFactionEffect = table.find(state.skillEffects, function(entry)
+    return entry.step == 1 and entry.skill == "heg__chujue" and entry.player == state.actor.id
+  end)
+  local targetJinkRetained = table.contains(state.target:getCardIds(Player.Hand), deadFactionJinkId)
+  if not deadFactionEffect or deadFactionEffect.fake then
+    fail("delta-chujue must execute the real PreCardUse SkillEffect on the dead-kingdom branch")
+  end
+  if state.target.hp ~= targetHpBefore - 1 then
+    fail("delta-chujue dead-kingdom branch must deal exactly one damage")
+  end
+  if not targetJinkRetained then
+    fail("delta-chujue must retain the dead-kingdom target Jink when response is suppressed")
+  end
+  if state.chujueResponseCount ~= 0 then
+    fail("delta-chujue dead-kingdom branch must not ask the target to respond")
+  end
+
+  local controlHpBefore = state.control.hp
+  state.currentDamageStep = 2
+  local controlFactionUse = room:askToUseRealCard(state.actor, {
+    pattern = { controlFactionSlashId },
+    skill_name = "tqs_qa_delta_chujue_control_faction_use",
+    prompt = "TQS QA delta-chujue: dùng Sát lên thế lực chưa có người chết để kiểm tra đáp lại.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.control.id }, must_targets = { state.control.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local controlFactionCardName = controlFactionUse and controlFactionUse.card and
+    tostring(controlFactionUse.card.trueName or controlFactionUse.card.name or "unknown") or "none"
+  local controlFactionTargetMatch = controlFactionUse and controlFactionUse.tos and #controlFactionUse.tos == 1 and
+    controlFactionUse.tos[1] == state.control or false
+  fk.qInfo(string.format("[tqs_qa] delta-chujue control_faction_use_reply card=%s target_match=%s",
+    controlFactionCardName, tostring(controlFactionTargetMatch)))
+  if not controlFactionUse or not controlFactionUse.card or controlFactionUse.card.id ~= controlFactionSlashId or
+      not controlFactionUse.tos or #controlFactionUse.tos ~= 1 or controlFactionUse.tos[1] ~= state.control then
+    state.currentDamageStep = nil
+    fail("delta-chujue must use the reserved Slash against the control-kingdom target")
+  end
+  controlFactionUse.extraUse = true
+  room:useCard(controlFactionUse)
+  state.currentDamageStep = nil
+
+  local chujueEffectCount = 0
+  for _, entry in ipairs(state.skillEffects) do
+    if entry.skill == "heg__chujue" and entry.player == state.actor.id then
+      chujueEffectCount = chujueEffectCount + 1
+    end
+  end
+  local controlJinkConsumed = room:getCardArea(controlFactionJinkId) ~= Card.PlayerHand
+  if state.chujueResponseCount ~= 1 or not state.chujueControlResponded or
+      not controlJinkConsumed or state.control.hp ~= controlHpBefore then
+    fail("delta-chujue control-kingdom branch must allow and receive one native Jink response")
+  end
+  if chujueEffectCount ~= 1 then
+    fail("delta-chujue must apply its response suppression only to the dead-kingdom branch")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 除绝: dead_kingdom_response_blocked=%arg; target_jink_retained=%arg2; control_response_allowed=%arg3; control_responded=%arg4; damage=%arg5",
+    from = state.actor.id,
+    arg = "true",
+    arg2 = tostring(targetJinkRetained),
+    arg3 = "true",
+    arg4 = tostring(state.chujueControlResponded),
+    arg5 = "1",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-chujue skill=heg__chujue dead_kingdom=wei target_response_blocked=true target_jink_retained=%s control_response_allowed=true control_responded=%s damage=1 revision=%s",
+    tostring(targetJinkRetained), tostring(state.chujueControlResponded), manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+function triggerDeltaZhente(room, state)
+  fk.qInfo(string.format("[tqs_qa] delta-zhente gate_begin actor_online=%s",
+    tostring(state.actor.serverplayer:getState() == fk.Player_Online)))
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_zhente_gate",
+    prompt = "TQS QA: xác nhận đồng bộ bài ban đầu trước khi kiểm tra 贞特.",
+  })
+  fk.qInfo(string.format("[tqs_qa] delta-zhente gate_reply=%s", tostring(gate)))
+  if not gate then
+    fail("delta-zhente readiness gate was cancelled")
+  end
+
+  local slashId = state.slotCards["zhente-black-slash"]
+  if not slashId or not table.contains(state.actor:getCardIds(Player.Hand), slashId) then
+    fail("delta-zhente must put the reserved black Slash in the actor hand")
+  end
+
+  -- TargetConfirmed's source predicate requires the real skill to be shown
+  -- on the target. Keep both deterministic pairs visible before the physical
+  -- Slash enters the native use-card lifecycle.
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  if not state.target:hasShownSkill("ty_heg__zhente") then
+    fail("delta-zhente target must have the real shown ty_heg__zhente skill")
+  end
+
+  local targetHpBefore = state.target.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { slashId },
+    skill_name = "tqs_qa_delta_zhente_use",
+    prompt = "TQS QA delta-zhente: dùng Sát đen lên mục tiêu để kiểm tra 贞特.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local useCardName = use and use.card and tostring(use.card.trueName or use.card.name or "unknown") or "none"
+  local useTargetMatch = use and use.tos and #use.tos == 1 and use.tos[1] == state.target or false
+  fk.qInfo(string.format("[tqs_qa] delta-zhente use_reply card=%s target_match=%s",
+    useCardName, tostring(useTargetMatch)))
+  if not use or not use.card or use.card.id ~= slashId or not use.tos or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    fail("delta-zhente must use the reserved black Slash against the target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "ty_heg__zhente" and entry.player == state.target.id and not entry.fake
+  end)
+  if not effect or not state.zhenteTargetConfirmed or not state.zhenteNullified or
+      state.target.hp ~= targetHpBefore then
+    fail(string.format("delta-zhente must execute real TargetConfirmed nullification (effect=%s target_confirmed=%s nullified=%s hp_before=%d hp_after=%d)",
+      tostring(effect ~= nil), tostring(state.zhenteTargetConfirmed), tostring(state.zhenteNullified),
+      targetHpBefore, state.target.hp))
+  end
+  if room:getCardArea(slashId) == Card.PlayerHand or
+      table.contains(state.actor:getCardIds(Player.Hand), slashId) then
+    fail("delta-zhente black Slash must leave the actor hand after use")
+  end
+
+  room:sendLog{
+    type = "[TQS QA] Upstream 贞特: target_confirmed=%arg; target_response_blocked=%arg2; choice_negate=%arg3; damage=%arg4",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = "true", arg4 = "0",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-zhente skill=ty_heg__zhente target_confirmed=true target_response_blocked=true choice_negate=true damage=0 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+function triggerDeltaHalberd(room, state)
+  local slashId = state.slotCards["halberd-slash"]
+  local weaponId = state.slotCards["halberd-weapon"]
+  if not slashId or room:getCardArea(slashId) ~= Card.PlayerHand or
+      not table.contains(state.actor:getCardIds(Player.Hand), slashId) then
+    fail("delta-halberd must put the reserved Slash in the actor hand")
+  end
+  if not weaponId or room:getCardArea(weaponId) ~= Card.PlayerEquip or
+      not table.contains(state.actor:getCardIds(Player.Equip), weaponId) then
+    fail("delta-halberd must equip the reserved sa__halberd weapon")
+  end
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  state.control:revealGenerals()
+  if not state.actor:hasSkill("#sa__halberd_skill") or state.actor:isFakeSkill("#sa__halberd_skill") then
+    fail("delta-halberd must use the real attached sa__halberd skill")
+  end
+
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_halberd_gate",
+    prompt = "TQS QA: xác nhận đồng bộ trang bị trước khi kiểm tra 方天画戟.",
+  })
+  if not gate then fail("delta-halberd readiness gate was cancelled") end
+
+  local firstHpBefore = state.target.hp
+  local extraHpBefore = state.control.hp
+  local use = room:askToUseRealCard(state.actor, {
+    pattern = { slashId },
+    skill_name = "tqs_qa_delta_halberd_use",
+    prompt = "TQS QA delta-halberd: dùng Sát lên mục tiêu đầu tiên để mở 方天画戟.",
+    extra_data = {
+      bypass_times = true, bypass_distances = true, extraUse = true,
+      exclusive_targets = { state.target.id }, must_targets = { state.target.id },
+    },
+    cancelable = true,
+    skip = true,
+  })
+  local useTargetMatch = use and use.tos and #use.tos == 1 and use.tos[1] == state.target or false
+  fk.qInfo(string.format("[tqs_qa] delta-halberd use_reply target_match=%s", tostring(useTargetMatch)))
+  if not use or not use.card or use.card.id ~= slashId or not use.tos or
+      #use.tos ~= 1 or use.tos[1] ~= state.target then
+    fail("delta-halberd must use the reserved Slash against the first target")
+  end
+  use.extraUse = true
+  room:useCard(use)
+
+  local effect = table.find(state.skillEffects, function(entry)
+    return entry.skill == "#sa__halberd_skill" and entry.player == state.actor.id and not entry.fake
+  end)
+  if not effect or not state.halberdTargetConfirmed or not state.halberdUseConfirmed or
+      state.target.hp >= firstHpBefore or state.control.hp >= extraHpBefore then
+    fail(string.format("delta-halberd must add and resolve the real extra target (effect=%s target_confirmed=%s use_mark=%s first_hp=%d->%d extra_hp=%d->%d)",
+      tostring(effect ~= nil), tostring(state.halberdTargetConfirmed), tostring(state.halberdUseConfirmed),
+      firstHpBefore, state.target.hp, extraHpBefore, state.control.hp))
+  end
+  if room:getCardArea(slashId) == Card.PlayerHand or table.contains(state.actor:getCardIds(Player.Hand), slashId) then
+    fail("delta-halberd Slash must leave the actor hand after use")
+  end
+  room:sendLog{
+    type = "[TQS QA] Upstream 方天画戟: first_target_confirmed=%arg; extra_target_confirmed=%arg2; targets_added=%arg3; damage=%arg4",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = "true", arg4 = "2",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-halberd skill=#sa__halberd_skill first_target_confirmed=true extra_target_confirmed=true targets_added=true damage=2 revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
+function triggerDeltaSijian(room, state)
+  local ownerCardId = state.slotCards["sijian-owner-last-hand"]
+  local targetCardId = state.slotCards["sijian-target-card"]
+  if not ownerCardId or not table.contains(state.actor:getCardIds(Player.Hand), ownerCardId) or
+      #state.actor:getCardIds(Player.Hand) ~= 1 then
+    fail("delta-sijian must start with exactly the reserved last hand card")
+  end
+  if not targetCardId or not table.contains(state.target:getCardIds(Player.Hand), targetCardId) then
+    fail("delta-sijian must put the reserved target card in the target hand")
+  end
+
+  state.actor:revealGenerals()
+  state.target:revealGenerals()
+  if not state.actor:hasSkill("sijian") or state.actor:isFakeSkill("sijian") then
+    fail("delta-sijian must run the real upstream trigger")
+  end
+  local gate = askQaSkillInvoke(room, state.actor, {
+    skill_name = "tqs_qa_delta_sijian_gate",
+    prompt = "TQS QA: xác nhận tay cuối trước khi kiểm tra 死谏.",
+  })
+  if not gate then fail("delta-sijian readiness gate was cancelled") end
+
+  -- This is the real AfterCardsMove trigger: removing the owner's only hand
+  -- card must make the source predicate true, then the browser answers the
+  -- source-defined choose-player and choose-card requests.
+  room:throwCard(ownerCardId, "tqs_qa_delta_sijian_last_hand", state.actor, state.actor)
+  -- After the synchronous native trigger returns, the chosen target card has
+  -- already left the target hand. Verify the exact reserved physical card at
+  -- its legal terminal area instead of checking the pre-request hand state.
+  state.sijianTargetConfirmed = room:getCardArea(targetCardId) == Card.DiscardPile
+  state.sijianCardChosen = state.sijianTargetConfirmed
+  if not state.actor:isKongcheng() or not state.sijianTargetConfirmed or not state.sijianCardChosen then
+    fail(string.format("delta-sijian must empty the owner's hand and discard the selected target card (empty=%s target_hand=%s discarded=%s)",
+      tostring(state.actor:isKongcheng()), tostring(state.sijianTargetConfirmed), tostring(state.sijianCardChosen)))
+  end
+  room:sendLog{
+    type = "[TQS QA] Upstream 死谏: owner_empty_after_hand_loss=%arg; target_confirmed=%arg2; target_card_discarded=%arg3",
+    from = state.actor.id, arg = "true", arg2 = "true", arg3 = "true",
+  }
+  fk.qInfo(string.format("[tqs_qa] delta-sijian skill=sijian owner_empty_after_hand_loss=true target_confirmed=true target_card_discarded=true revision=%s",
+    manifest.sourceRevision))
+  state.gameOverRequested = true
+  room:gameOver("")
+end
+
 local function triggerHiddenFanjian(room, state)
   -- Chu Du's active skill is a real PlayCard action.  Keep both Wu generals
   -- hidden until the native SkillEffect runs; the SkillEffect itself must
@@ -8244,7 +10383,15 @@ director:addEffect(fk.SkillEffect, {
       state.scenario == "hidden-jianxiong-deputy" or state.scenario == "hidden-fankui" or
       state.scenario == "hidden-fankui-deputy" or state.scenario == "hidden-reveal" or
       state.scenario == "hidden-reveal-deputy" or state.scenario == "hidden-active" or
-      state.scenario == "hidden-active-main" or state.scenario == "hidden-fanjian" or
+      state.scenario == "hidden-active-main" or state.scenario == "delta-xiongsuan" or
+      state.scenario == "delta-wenji" or state.scenario == "delta-lord-wenji" or
+      state.scenario == "delta-qiance" or
+      state.scenario == "delta-jianchu" or state.scenario == "delta-tieqi" or
+      state.scenario == "delta-chujue" or state.scenario == "delta-zhente" or
+      state.scenario == "delta-halberd" or
+      state.scenario == "delta-xishe" or state.scenario == "delta-bawei" or
+      state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege" or
+      state.scenario == "hidden-fanjian" or
       state.scenario == "hidden-fanjian-deputy" or state.scenario == "hidden-view-as" or
       state.scenario == "hidden-view-as-main" or state.scenario == "hidden-dual" or
       state.scenario == "hidden-luoshen" or state.scenario == "hidden-luoshen-deputy" or
@@ -8445,6 +10592,78 @@ for _, eventName in ipairs({fk.CardUsing, fk.CardResponding}) do
   })
 end
 
+-- Both engine response forms must watch the damaged target in step 1 as
+-- well as the untouched bot in step 2. Otherwise the step-1 assertion of
+-- zero responses would pass even if the native target had actually Jinked.
+local function isDeltaJinkResponder(state, player)
+  if state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege" then
+    return state.currentDamageStep == 1 and player == state.target
+  end
+  return (state.currentDamageStep == 2 and player == state.control) or
+    (state.scenario == "delta-bawei" and state.currentDamageStep == 1 and player == state.target)
+end
+
+director:addEffect(fk.CardResponding, {
+  global = true, priority = -999,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "delta-chujue" or state.scenario == "delta-xishe" or state.scenario == "delta-bawei" or
+      state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege") and
+      isDeltaJinkResponder(state, player) and
+      data and data.card and data.card.trueName == "jink"
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    if state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege" then
+      state.fengshiTargetResponded = true
+      state.fengshiResponseCount = state.fengshiResponseCount + 1
+    elseif state.scenario == "delta-bawei" then
+      if state.currentDamageStep == 2 then state.baweiControlResponded = true end
+      state.baweiResponseCount = state.baweiResponseCount + 1
+    elseif state.scenario == "delta-xishe" then
+      state.xisheControlResponded = true
+      state.xisheResponseCount = state.xisheResponseCount + 1
+    else
+      state.chujueControlResponded = true
+      state.chujueResponseCount = state.chujueResponseCount + 1
+    end
+  end,
+})
+
+-- SlashOffsetFunc uses the upstream askToUseCard/useCard path for a physical
+-- Jink.  That path is still a native response: UseCard.main records the
+-- responseToEvent and runs CardUsing, while the explicit responseCard path
+-- runs CardResponding.  Count both engine representations so the bounded
+-- assertion observes the real card movement/effect without manufacturing a
+-- response in the QA director.
+director:addEffect(fk.CardUsing, {
+  global = true, priority = -999,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and (state.scenario == "delta-chujue" or state.scenario == "delta-xishe" or state.scenario == "delta-bawei" or
+      state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege") and
+      isDeltaJinkResponder(state, player) and
+      data and data.card and data.card.trueName == "jink" and
+      data.responseToEvent ~= nil
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    if state.scenario == "delta-fengshi-siege" or state.scenario == "delta-fengshi-no-siege" then
+      state.fengshiTargetResponded = true
+      state.fengshiResponseCount = state.fengshiResponseCount + 1
+    elseif state.scenario == "delta-bawei" then
+      if state.currentDamageStep == 2 then state.baweiControlResponded = true end
+      state.baweiResponseCount = state.baweiResponseCount + 1
+    elseif state.scenario == "delta-xishe" then
+      state.xisheControlResponded = true
+      state.xisheResponseCount = state.xisheResponseCount + 1
+    else
+      state.chujueControlResponded = true
+      state.chujueResponseCount = state.chujueResponseCount + 1
+    end
+  end,
+})
+
 director:addEffect(fk.Damaged, {
   global = true, priority = -1000,
   can_trigger = function(self, event, target, player, data)
@@ -8468,6 +10687,21 @@ director:addEffect(fk.TargetConfirmed, {
   end,
   on_trigger = function(self, event, target, player, data)
     stateFor(player.room).hiddenEnyuanTargetConfirmed = true
+  end,
+})
+
+director:addEffect(fk.TargetConfirmed, {
+  global = true,
+  priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.scenario == "delta-halberd" and target == state.control and
+      data and data.card and data.card.trueName == "slash" and data.from == state.actor
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.halberdTargetConfirmed = true
+    state.halberdUseConfirmed = data.use and data.use.extra_data and data.use.extra_data.saHalberd == true or false
   end,
 })
 
@@ -8499,6 +10733,22 @@ director:addEffect(fk.TargetConfirmed, {
   end,
   on_trigger = function(self, event, target, player, data)
     stateFor(player.room).hiddenJilixTargetConfirmed = true
+  end,
+})
+
+director:addEffect(fk.TargetConfirmed, {
+  global = true,
+  priority = -1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.scenario == "delta-zhente" and target == state.target and
+      data and data.card and data.card.trueName == "slash" and
+      data.from == state.actor
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.zhenteTargetConfirmed = true
+    state.zhenteNullified = data:isNullified()
   end,
 })
 
@@ -8591,6 +10841,7 @@ director:addEffect(fk.GamePrepared, {
     local room = player.room
     local scenario, seed = parseRequest(room)
     if not scenario then return false end
+    maybeNegotiateCardWire(room, scenario)
     setupState(room, scenario, seed)
   end,
 })
@@ -8622,6 +10873,10 @@ director:addEffect(fk.GameStart, {
     state.gameStartDone = true
     shuffleTail(room, state.seed)
     local scenario = scenarioById[state.scenario]
+    if scenario.id == "draw-sequence" and scenario.cardWire == true and
+      config.cardWireVersion == 1 then
+      triggerNativeCardWireCoverage(room, state)
+    end
     if scenario.trigger == "rescue" or scenario.trigger == "rescue-battle" then
       triggerRescue(room, state)
     elseif scenario.trigger == "founding" then
@@ -8653,6 +10908,32 @@ director:addEffect(fk.GameStart, {
     elseif scenario.trigger == "hidden-active" then
       runAiDecisionProbe(room, state)
       triggerHiddenActive(room, state)
+    elseif scenario.trigger == "delta-xiongsuan" then
+      triggerDeltaXiongsuan(room, state)
+    elseif scenario.trigger == "delta-wenji" then
+      triggerDeltaWenji(room, state)
+    elseif scenario.trigger == "delta-lord-wenji" then
+      triggerDeltaLordWenji(room, state)
+    elseif scenario.trigger == "delta-qiance" then
+      triggerDeltaQiance(room, state)
+    elseif scenario.trigger == "delta-jianchu" then
+      triggerDeltaJianchu(room, state)
+    elseif scenario.trigger == "delta-tieqi" then
+      triggerDeltaTieqi(room, state)
+    elseif scenario.trigger == "delta-xishe" then
+      triggerDeltaXishe(room, state)
+    elseif scenario.trigger == "delta-chujue" then
+      triggerDeltaChujue(room, state)
+    elseif scenario.trigger == "delta-zhente" then
+      triggerDeltaZhente(room, state)
+    elseif scenario.trigger == "delta-halberd" then
+      triggerDeltaHalberd(room, state)
+    elseif scenario.trigger == "delta-sijian" then
+      triggerDeltaSijian(room, state)
+    elseif scenario.trigger == "delta-bawei" then
+      state.deltaBaweiPending = true
+    elseif scenario.trigger == "delta-fengshi-siege" or scenario.trigger == "delta-fengshi-no-siege" then
+      state.deltaFengshiPending = true
     elseif scenario.trigger == "ai-trace" then
       runAiTraceProbe(room, state)
       runPrompt4NativeProbe(room, state)
@@ -8728,6 +11009,38 @@ director:addEffect(fk.GameStart, {
       -- GameStart has no Phase parent and cannot reproduce the source law.
       state.hiddenJilixPending = true
     end
+  end,
+})
+
+director:addEffect(fk.EventPhaseStart, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.deltaBaweiPending and target == state.actor and
+      player == state.actor and data.phase == Player.Start
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.deltaBaweiPending = false
+    player.room:delay(1500)
+    triggerDeltaBawei(player.room, state)
+  end,
+})
+
+director:addEffect(fk.EventPhaseStart, {
+  global = true,
+  priority = 1000,
+  can_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    return state and state.deltaFengshiPending and target == state.actor and
+      player == state.actor and data.phase == Player.Start
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local state = stateFor(player.room)
+    state.deltaFengshiPending = false
+    player.room:delay(1500)
+    triggerDeltaFengshi(player.room, state)
   end,
 })
 

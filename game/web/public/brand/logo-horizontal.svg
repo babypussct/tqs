@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 280" role="img" aria-label="Tam Quốc Sát Mobile">
+<defs><linearGradient id="gold" x2="0.2" y2="1"><stop stop-color="#ffe5a0"/><stop offset=".55" stop-color="#d4af37"/><stop offset="1" stop-color="#976122"/></linearGradient></defs>
+<path d="M125 12 233 70 222 194 125 261 28 194 17 70Z" fill="#42151a" stroke="url(#gold)" stroke-width="10"/>
+<path d="M81 74Q125 27 169 74L158 116 125 131 92 116Z" fill="url(#gold)"/>
+<path d="M80 155 125 137 170 155 163 206 125 235 87 206Z" fill="#100e0c" stroke="#d4af37" stroke-width="4"/>
+<text x="125" y="191" text-anchor="middle" font-family="Be Vietnam Pro,Arial,sans-serif" font-size="47" font-weight="900" fill="url(#gold)">TQS</text>
+<text x="275" y="120" font-family="Be Vietnam Pro,Arial,sans-serif" font-weight="900" font-size="83" fill="url(#gold)">TAM QUỐC SÁT</text>
+<path d="M280 147H959" stroke="#d4af37" stroke-width="4"/>
+<rect x="280" y="171" width="307" height="79" rx="13" fill="#6e1721" stroke="#d4af37" stroke-width="3"/>
+<text x="305" y="227" font-family="Be Vietnam Pro,Arial,sans-serif" font-weight="800" font-size="57" fill="#ffe5a0">MOBILE</text>
+</svg>

@@ -116,6 +116,21 @@ test('observer EnterRoom publishes self identity without occupying a player seat
   ]);
 });
 
+test('live Observe summary publishes the seated viewpoint separately from the observer identity', () => {
+  const h = harness();
+  const ui: [string, unknown][] = [];
+  h.conn['opts'].onUi = (command: string, data: unknown) => ui.push([command, data]);
+  h.conn.connect();
+  h.conn['setStatus']({ kind: 'online' });
+  h.conn.lua.eval = <T>(): T => [11, 'Viewpoint', 'avatar', false, true] as T;
+  h.conn.lua.receive = () => h.conn['handleLuaUi']('EnterRoom', [2, 30, { isObserver: true }]);
+  h.sockets[0].handlers.onData(encodePacket(h.packet('Observe')));
+  assert.deepEqual(ui, [
+    ['SelfIdentity', 11], ['AddPlayer', [11, 'Viewpoint', 'avatar', false]],
+    ['EnterRoom', [2, 30, { isObserver: true }]],
+  ]);
+});
+
 test('private skill snapshot refreshes SelfIdentity before AddSkill when native ChangeSelf is delayed', () => {
   const h = harness();
   const ui: [string, unknown][] = [];

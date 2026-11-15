@@ -31,7 +31,8 @@ const entries=[];
 const walk=dir=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})){
   const file=path.join(dir,e.name);
   if(e.isDirectory())walk(file);
-  else if(e.isFile() && e.name!=='sw.js' && /\.(html|js|css|wasm|svg|png|webmanifest)$/.test(e.name))
+  else if(e.isFile() && e.name!=='sw.js' && ( /\.(html|js|css|wasm|svg|png|webmanifest)$/.test(e.name)
+    || (path.relative(dist,file).startsWith('brand'+path.sep) && /\.webp$/.test(e.name)) ))
     entries.push({url:'/'+path.relative(dist,file).split(path.sep).join('/'),sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')});
 }};walk(dist);entries.sort((a,b)=>a.url.localeCompare(b.url));
 const version=buildId;

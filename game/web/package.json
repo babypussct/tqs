@@ -13,6 +13,7 @@
     "typecheck:tools": "tsc --noEmit -p tsconfig.tools.json",
     "prepare:upstream": "tsx scripts/prepare-upstream.mjs",
     "test:upstream-preparation": "tsx --test scripts/prepare-upstream.test.mjs",
+    "test:upstream-first-source": "node --test ../../deploy/freekill-native/qa/upstream-first-source.test.mjs",
     "audit:crypto-scope": "tsx --test scripts/crypto-scope.test.ts",
     "audit:skills": "tsx scripts/skill-audit.ts",
     "audit:skill-activation": "tsx scripts/skill-activation-audit.ts",

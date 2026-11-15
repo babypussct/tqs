@@ -39,22 +39,31 @@ export const HEROES: HeroInfo[] = [
   },
 ];
 
+// This is a promotional spotlight, not a playable general or native game ID.
+const BRAND_HERO: HeroInfo = {
+  id: 'brand-liu-bei',
+  name: 'Lưu Bị · Bạch Mã',
+  badgeTitle: 'CHIẾN ẤN',
+  img: '/brand/liu-bei-white-horse.webp',
+  quote: 'Hội tụ anh hùng · Dựng cờ Quốc Chiến',
+};
+
 interface HeroSpotlightProps {
   compact?: boolean;
 }
 
 export default function HeroSpotlight({ compact }: HeroSpotlightProps) {
   const [index, setIndex] = useState(0);
-  const hero = HEROES[index];
+  const hero = index === 0 ? BRAND_HERO : HEROES[index - 1];
 
   const nextHero = () => {
-    setIndex((prev) => (prev + 1) % HEROES.length);
+    setIndex((prev) => (prev + 1) % (HEROES.length + 1));
   };
 
   return (
     <div className={`sg-hero-card-container ${compact ? 'compact' : ''}`}>
       <div className="sg-hero-frame">
-        <div className="sg-hero-faction-badge">THẦN</div>
+        <div className="sg-hero-faction-badge">{index === 0 ? 'THỤC' : 'THẦN'}</div>
         <div className="sg-hero-name-ribbon">
           <span className="sg-hero-title-tag">{hero.badgeTitle}</span>
         </div>

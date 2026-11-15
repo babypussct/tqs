@@ -15,7 +15,7 @@ function fakeCards(): QaCardDescriptor[] {
     { id: 1, name: 'slash', trueName: 'slash', color: 'red', type: 'basic' },
     { id: 2, name: 'peach', trueName: 'peach', color: 'red', type: 'basic' },
     { id: 3, name: 'heg__nullification', trueName: 'nullification', color: 'black', type: 'trick' },
-    { id: 4, name: 'blade', trueName: 'blade', color: 'red', type: 'equip' },
+    { id: 4, name: 'blade', trueName: 'blade', color: 'red', type: 'equip', subtype: 'weapon' },
     { id: 5, name: 'jink', trueName: 'jink', color: 'red', type: 'basic' },
     { id: 6, name: 'duel', trueName: 'duel', color: 'black', type: 'trick' },
     { id: 7, name: 'fire_attack', trueName: 'fire_attack', color: 'red', type: 'trick' },
@@ -24,8 +24,12 @@ function fakeCards(): QaCardDescriptor[] {
     { id: 12, name: 'peach', trueName: 'peach', color: 'red', type: 'basic' },
     { id: 13, name: 'snatch', trueName: 'snatch', color: 'black', type: 'trick' },
     { id: 14, name: 'indulgence', trueName: 'indulgence', color: 'black', type: 'trick' },
-    { id: 15, name: 'kylin_bow', trueName: 'kylin_bow', color: 'red', type: 'equip' },
+    { id: 15, name: 'kylin_bow', trueName: 'kylin_bow', color: 'red', type: 'equip', subtype: 'weapon' },
     { id: 16, name: 'slash', trueName: 'slash', color: 'red', suit: 'heart', type: 'basic' },
+    { id: 17, name: 'eight_diagram', trueName: 'eight_diagram', color: 'black', type: 'equip', subtype: 'armor' },
+    { id: 18, name: 'jink', trueName: 'jink', color: 'black', type: 'basic' },
+    { id: 19, name: 'slash', trueName: 'slash', color: 'black', type: 'basic' },
+    { id: 20, name: 'sa__halberd', trueName: 'sa__halberd', color: 'red', type: 'equip', subtype: 'weapon' },
   ];
 }
 
@@ -74,4 +78,61 @@ test('resolver fails closed when a required native card is absent', () => {
     () => resolveQaScenario(QA_SCENARIOS['rescue-normal'], cards),
     (error: unknown) => error instanceof QaScenarioError && /cannot resolve/u.test(error.message),
   );
+});
+
+test('delta-xishe requires separate native weapon and armor subtype evidence', () => {
+  const plan = QA_SCENARIOS['delta-xishe'];
+  const cards = fakeCards();
+  assert.deepEqual(resolveQaScenario(plan, cards).drawPile.slice(0, 2), [4, 17]);
+  for (const invalid of [
+    cards.map((card) => card.id === 17 ? { ...card, subtype: 'weapon' as const } : card),
+    cards.map((card) => card.id === 17 ? { ...card, subtype: undefined } : card),
+    cards.map((card) => card.id === 17 ? { ...card, type: 'other' } : card),
+    cards.map((card) => card.id === 4 || card.id === 15 || card.id === 20 ? { ...card, subtype: 'armor' as const } : card),
+  ]) {
+    assert.throws(() => resolveQaScenario(plan, invalid),
+      (error: unknown) => error instanceof QaScenarioError && /cannot resolve/u.test(error.message));
+  }
+});
+
+test('delta-bawei reserves separate physical Slashes and both branch Jinks deterministically', () => {
+  const plan = QA_SCENARIOS['delta-bawei'];
+  assert.equal(plan.seed, 0x5d6e801a);
+  assert.equal(plan.expectedCommand, 'AskForSkillInvoke');
+  assert.deepEqual(plan.drawSequence.map((entry) => 'trueName' in entry ? entry.trueName : null),
+    ['slash', 'slash', 'jink', 'jink']);
+  assert.deepEqual(plan.slots.map(({ key, owner, area, drawIndex }) =>
+    ({ key, owner, area, drawIndex })), [
+    { key: 'bawei-damaged-slash', owner: 'self', area: 'hand', drawIndex: 0 },
+    { key: 'bawei-control-slash', owner: 'self', area: 'hand', drawIndex: 1 },
+    { key: 'bawei-damaged-jink', owner: 'opponent', area: 'hand', drawIndex: 2 },
+    { key: 'bawei-control-jink', owner: 'opponent', area: 'hand', drawIndex: 3 },
+  ]);
+  const resolved = resolveQaScenario(plan, fakeCards());
+  assert.deepEqual(resolved.drawPile.slice(0, 4), [1, 9, 5, 18]);
+  assert.equal(new Set(Object.values(resolved.slotCards)).size, 4);
+});
+
+test('delta-fengshi variants reserve identical first physical Slash and bot Jink with distinct native seeds', () => {
+  for (const [id, seed] of [
+    ['delta-fengshi-siege', 0x5d6e801b],
+    ['delta-fengshi-no-siege', 0x5d6e801c],
+  ] as const) {
+    const plan = QA_SCENARIOS[id];
+    assert.equal(plan.id, id);
+    assert.equal(plan.trigger, id);
+    assert.equal(plan.seed, seed);
+    assert.equal(plan.expectedCommand, 'AskForSkillInvoke');
+    assert.deepEqual(plan.drawSequence.map((entry) =>
+      ({ trueName: 'trueName' in entry ? entry.trueName : null })),
+      [{ trueName: 'slash' }, { trueName: 'jink' }]);
+    assert.deepEqual(plan.slots.map(({ key, owner, area, drawIndex }) =>
+      ({ key, owner, area, drawIndex })), [
+      { key: 'fengshi-first-slash', owner: 'self', area: 'hand', drawIndex: 0 },
+      { key: 'fengshi-target-jink', owner: 'opponent', area: 'hand', drawIndex: 1 },
+    ]);
+    const resolved = resolveQaScenario(plan, fakeCards());
+    assert.deepEqual(resolved.drawPile.slice(0, 2), [1, 5]);
+    assert.equal(new Set(Object.values(resolved.slotCards)).size, 2);
+  }
 });

@@ -745,13 +745,18 @@ export class GameConnection {
     // EnterRoom; publish that occupant to the web UI as native QML does.
     if (command === 'EnterRoom' && Array.isArray(data)) {
       const self = this.lua.eval<unknown[]>(`return {
-        Self.id, Self.player:getScreenName(), Self.player:getAvatar(), Self.ready or false
+        Self.id, Self.player:getScreenName(), Self.player:getAvatar(), Self.ready or false,
+        ClientInstance.observer_setup_data ~= nil and
+          Self.id ~= ClientInstance.observer_setup_data[1]
       }`);
       const generation = this.socketGeneration;
       this.opts.onUi('SelfIdentity', self[0]);
       if (generation !== this.socketGeneration) return;
-      if (!(data[2] as { isObserver?: boolean } | undefined)?.isObserver) {
-        this.opts.onUi('AddPlayer', self);
+      // In a live Observe snapshot, native Self is the seated viewpoint,
+      // while observer_setup_data keeps the separate observer identity. That
+      // seat has no AddPlayer packet of its own and still needs publishing.
+      if (!(data[2] as { isObserver?: boolean } | undefined)?.isObserver || self[4] === true) {
+        this.opts.onUi('AddPlayer', self.slice(0, 4));
         if (generation !== this.socketGeneration) return;
       }
     }

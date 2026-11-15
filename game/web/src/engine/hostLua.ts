@@ -864,27 +864,44 @@ function __web_notify(command, data)
   return true
 end
 
--- QML sends its reply payload through the native client as CBOR bytes.
--- In particular, the skill-invoke handler returns the strings "1" or
--- "__cancel"; passing raw UTF-8 would be interpreted as invalid CBOR by
--- Request:_checkReply on the server.
+-- Older pinned freekill-core clients do not ship the global ReplyToServer
+-- helper that newer client_util.lua provides. Keep the browser bridge
+-- compatible with that API floor; a newer client_util.lua loaded below
+-- replaces this fallback and retains its card-wire request translation.
+if type(ReplyToServer) ~= 'function' then
+  function ReplyToServer(data)
+    assert(__host_client and type(__host_client.replyToServer) == 'function',
+      'client reply transport is missing')
+    __host_client:replyToServer('', cbor.encode(data))
+  end
+end
+
+-- Browser replies use the exact same Lua path as QML replies.  In v1 this is
+-- what translates a local card alias into the one-shot request token before
+-- the bytes reach Request:_checkReply; sending directly through __host_client
+-- would leak the local numeric alias and fail the server resolver.
 function __web_reply(data)
   if type(data) ~= 'string' and type(data) ~= 'table' and
      not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
     error('invalid reply value')
   end
-  __host_client:replyToServer('', cbor.encode(data))
+  ReplyToServer(data)
   return true
 end
 
 -- The transport compares the wire representation independently before it
--- authorizes any reply. Both functions use the same Lua CBOR implementation.
+-- authorizes any reply. Preview the translated value without consuming the
+-- request context; __web_reply then consumes it exactly once.
 function __web_reply_hex(data)
   if type(data) ~= 'string' and type(data) ~= 'table' and
      not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
     error('invalid reply value')
   end
-  return bin2hex(cbor.encode(data))
+  local wire = data
+  if ClientInstance and ClientInstance.card_wire_version == 1 then
+    wire = require('ltk.client.card_wire_requests').encodeReply(ClientInstance, data, false)
+  end
+  return bin2hex(cbor.encode(wire))
 end
 
 -- Query public card faces only for IDs which the bridge has already checked

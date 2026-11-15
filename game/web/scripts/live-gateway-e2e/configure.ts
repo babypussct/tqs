@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import forge from 'node-forge';
 import { LuaRuntime } from '../../src/engine/luaRuntime';
 import { CLIENT_NOTIFY, PacketStream, encodePacket, encodeTextArray, toHex } from '../../src/engine/packet';
-import { buildSnapshot, PACKAGES } from './snapshot';
+import { buildSnapshot, BUILTIN_PACKAGES, PACKAGES } from './snapshot';
 import { packageSpec } from '../upstream-packages';
 
 const repo = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -74,7 +74,11 @@ try {
     });
   });
 } finally { lua.close(); }
-assert.deepEqual(summary.map((pkg) => pkg.name).sort(), PACKAGES, 'Unexpected enabled server packages');
+const packageNames = summary.map((pkg) => pkg.name).sort();
+assert.deepEqual(packageNames.filter((name) => !(BUILTIN_PACKAGES as readonly string[]).includes(name)), PACKAGES,
+  'Unexpected pinned upstream server packages');
+assert.deepEqual(packageNames.filter((name) => (BUILTIN_PACKAGES as readonly string[]).includes(name)), [...BUILTIN_PACKAGES].sort(),
+  'Unexpected built-in server packages');
 for (const pkg of summary) {
   assert.match(pkg.hash, /^[a-f0-9]{40}$/);
   const cwd = path.join(source, packageSpec(pkg.name).sourceDirectory);

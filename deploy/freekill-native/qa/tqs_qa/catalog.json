@@ -57,6 +57,7 @@
       "seed": 1369957073,
       "expectedCommand": "PlayCard",
       "trigger": "manual",
+      "cardWire": true,
       "cards": [
         { "key": "slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
         { "key": "peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
@@ -71,6 +72,18 @@
       "trigger": "manual",
       "general": "hs__pangde",
       "skill": "jianchu",
+      "playerCount": 2,
+      "players": {
+        "actor": { "general": "hs__pangde", "deputy": "hs__jiaxu", "kingdom": "qun" },
+        "target": { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" }
+      },
+      "initialPairOffer": {
+        "enabledKingdoms": ["qun"],
+        "offeredGroups": [
+          ["hs__pangde", "hs__jiaxu", "hs__huatuo", "hs__caiwenji", "hs__jiling"],
+          ["hs__pangde", "hs__jiaxu", "hs__huatuo", "hs__caiwenji", "hs__jiling"]
+        ]
+      },
       "cards": [
         { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
         { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
@@ -83,6 +96,7 @@
       "seed": 514834654,
       "expectedCommand": "AskForCardsAndChoice",
       "trigger": "manual",
+      "cardWire": true,
       "general": "ld__jiangqin",
       "skill": "shangyi",
       "cards": [
@@ -305,6 +319,7 @@
       "id": "hidden-rehide-yiji",
       "title": "Hidden Quách Gia Yiji reattaches as prelighted fake after re-hide",
       "seed": 1567522736,
+      "cardWire": true,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-rehide-yiji",
       "playerCount": 2,
@@ -326,6 +341,7 @@
       "id": "hidden-rehide-yiji-deputy",
       "title": "Hidden deputy Quách Gia Yiji reattaches as prelighted fake after re-hide",
       "seed": 1567522737,
+      "cardWire": true,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-rehide-yiji",
       "playerCount": 2,
@@ -483,6 +499,7 @@
       "id": "hidden-reveal",
       "title": "Hidden compulsory skill active reveal helper",
       "seed": 1567522689,
+      "cardWire": true,
       "expectedCommand": "AskForUseActiveSkill",
       "trigger": "hidden-reveal",
       "playerCount": 2,
@@ -504,6 +521,7 @@
       "id": "hidden-reveal-deputy",
       "title": "Hidden deputy compulsory skill active reveal helper",
       "seed": 1567522691,
+      "cardWire": true,
       "expectedCommand": "AskForUseActiveSkill",
       "trigger": "hidden-reveal",
       "playerCount": 2,
@@ -577,6 +595,443 @@
             "trueName": "slash"
           },
           "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-xiongsuan",
+      "title": "Upstream 凶算 card selection, damage, draw and limited reset",
+      "seed": 1567522800,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "delta-xiongsuan",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__lijueguosi",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__jiaxu",
+          "deputy": "ld__lijueguosi",
+          "kingdom": "qun"
+        }
+      },
+      "cards": [
+        {
+          "key": "xiongsuan-discard",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-wenji",
+      "title": "Upstream 问计 card handoff, Slash use and response suppression",
+      "seed": 1567522810,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "delta-wenji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "nos_heg__liuqi",
+          "deputy": "nos_heg__zhanglu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "nos_heg__caohong",
+          "deputy": "nos_heg__yuejin",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "wenji-gift",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "wenji-target-jink",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-lord-wenji",
+      "title": "Upstream lord_ex 问计 hands off Slash, suppresses Jink and returns a different card",
+      "seed": 1567522850,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "delta-lord-wenji",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__liuqi",
+          "deputy": "nos_heg__zhanglu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "nos_heg__caohong",
+          "deputy": "nos_heg__yuejin",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        { "key": "lord-wenji-return", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
+        { "key": "lord-wenji-gift", "match": { "trueName": "slash" }, "owner": "target", "area": "hand" },
+        { "key": "lord-wenji-target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-qiance",
+      "title": "Upstream 谦策 big-kingdom Duel response suppression",
+      "seed": 1567522820,
+      "expectedCommand": "AskForUseCard",
+      "trigger": "delta-qiance",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "ld__xushu",
+          "deputy": "ld__mengda",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "ld__fazheng",
+          "deputy": "ld__wangping",
+          "kingdom": "shu"
+        }
+      },
+      "cards": [
+        {
+          "key": "qiance-duel",
+          "match": {
+            "trueName": "duel"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "qiance-target-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "target",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-jianchu",
+      "title": "Upstream 鞬出 equipment branch response suppression",
+      "seed": 1567522830,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-jianchu",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__pangde",
+          "deputy": "hs__jiaxu",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__caocao",
+          "deputy": "hs__simayi",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "jianchu-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "jianchu-target-jink",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "jianchu-target-equip",
+          "match": {
+            "type": "equip"
+          },
+          "owner": "target",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "delta-tieqi",
+      "title": "Upstream 铁骑 failed-suit discard suppresses Slash response",
+      "seed": 1567522831,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-tieqi",
+      "playerCount": 2,
+      "players": {
+        "actor": { "general": "hs__machao", "deputy": "hs__guanyu", "kingdom": "shu" },
+        "target": { "general": "hs__guojia", "deputy": "hs__xuchu", "kingdom": "wei" }
+      },
+      "cards": [
+        { "key": "tieqi-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "tieqi-target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-xishe",
+      "title": "Upstream 袭射 equipment discard Slash response HP branches",
+      "seed": 1567522841,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-xishe",
+      "playerCount": 3,
+      "players": {
+        "actor": { "general": "ld__huangzu", "deputy": "ld__yanbaihu", "kingdom": "qun" },
+        "target": { "general": "hs__zhangliao", "deputy": "hs__xuchu", "kingdom": "wei" },
+        "control": { "general": "hs__liubei", "deputy": "hs__guanyu", "kingdom": "shu" }
+      },
+      "cards": [
+        { "key": "xishe-weapon", "match": { "type": "equip", "subtype": "weapon" }, "owner": "actor", "area": "equip" },
+        { "key": "xishe-armor", "match": { "type": "equip", "subtype": "armor" }, "owner": "actor", "area": "equip" },
+        { "key": "xishe-target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" },
+        { "key": "xishe-control-jink", "match": { "trueName": "jink" }, "owner": "control", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-bawei",
+      "title": "Upstream 霸威 current-round damage history and selective Jink suppression",
+      "seed": 1567522842,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-bawei",
+      "playerCount": 3,
+      "players": {
+        "actor": { "general": "m_heg__lordsunce", "deputy": "hs__sunquan", "kingdom": "wu" },
+        "target": { "general": "hs__zhangliao", "deputy": "hs__xuchu", "kingdom": "wei" },
+        "control": { "general": "hs__liubei", "deputy": "hs__guanyu", "kingdom": "shu" }
+      },
+      "cards": [
+        { "key": "bawei-damaged-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "bawei-control-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "bawei-damaged-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" },
+        { "key": "bawei-control-jink", "match": { "trueName": "jink" }, "owner": "control", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-fengshi-siege",
+      "title": "Upstream 锋矢 first Slash in Qun siege blocks native Wei Jink",
+      "seed": 1567522843,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-fengshi-siege",
+      "playerCount": 3,
+      "players": {
+        "actor": { "general": "m_heg__zhangren", "deputy": "hs__jiling", "kingdom": "qun" },
+        "target": { "general": "hs__zhangliao", "deputy": "hs__xuchu", "kingdom": "wei" },
+        "control": { "general": "hs__huatuo", "deputy": "hs__diaochan", "kingdom": "qun" }
+      },
+      "cards": [
+        { "key": "fengshi-first-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "fengshi-target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-fengshi-no-siege",
+      "title": "Upstream 锋矢 first Slash without Qun siege permits native Wei Jink",
+      "seed": 1567522844,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-fengshi-no-siege",
+      "playerCount": 3,
+      "players": {
+        "actor": { "general": "m_heg__zhangren", "deputy": "hs__jiling", "kingdom": "qun" },
+        "target": { "general": "hs__zhangliao", "deputy": "hs__xuchu", "kingdom": "wei" },
+        "control": { "general": "hs__liubei", "deputy": "hs__guanyu", "kingdom": "shu" }
+      },
+      "cards": [
+        { "key": "fengshi-first-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
+        { "key": "fengshi-target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" }
+      ]
+    },
+    {
+      "id": "delta-chujue",
+      "title": "Upstream 除绝 dead-kingdom target response suppression",
+      "seed": 1567522840,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-chujue",
+      "playerCount": 4,
+      "players": {
+        "actor": {
+          "general": "heg__jiachong",
+          "deputy": "heg__guohuaij",
+          "kingdom": "jin"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        },
+        "control": {
+          "general": "hs__liubei",
+          "deputy": "hs__guanyu",
+          "kingdom": "shu"
+        },
+        "dead": {
+          "general": "hs__caoren",
+          "deputy": "hs__xiahoudun",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "chujue-dead-faction-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "chujue-control-faction-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "chujue-dead-faction-jink",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "target",
+          "area": "hand"
+        },
+        {
+          "key": "chujue-control-faction-jink",
+          "match": {
+            "trueName": "jink"
+          },
+          "owner": "control",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-zhente",
+      "title": "Upstream 贞特 target-aware Slash nullification",
+      "seed": 1567522845,
+      "expectedCommand": "AskForSkillInvoke",
+      "trigger": "delta-zhente",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__machao",
+          "deputy": "hs__guanyu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "ty_heg__luyusheng",
+          "deputy": "hs__sunquan",
+          "kingdom": "wu"
+        }
+      },
+      "cards": [
+        {
+          "key": "zhente-black-slash",
+          "match": {
+            "trueName": "slash",
+            "color": "black"
+          },
+          "owner": "actor",
+          "area": "hand"
+        }
+      ]
+    },
+    {
+      "id": "delta-halberd",
+      "title": "Upstream 方天画戟 adds a distinct-kingdom Slash target",
+      "seed": 1567522846,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "delta-halberd",
+      "playerCount": 3,
+      "players": {
+        "actor": {
+          "general": "hs__machao",
+          "deputy": "hs__guanyu",
+          "kingdom": "shu"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        },
+        "control": {
+          "general": "hs__sunquan",
+          "deputy": "hs__ganning",
+          "kingdom": "wu"
+        }
+      },
+      "cards": [
+        {
+          "key": "halberd-slash",
+          "match": {
+            "trueName": "slash"
+          },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "halberd-weapon",
+          "match": {
+            "name": "sa__halberd"
+          },
+          "owner": "actor",
+          "area": "equip"
+        }
+      ]
+    },
+    {
+      "id": "delta-sijian",
+      "title": "Sijian empty-hand trigger and target discard",
+      "seed": 1567522847,
+      "expectedCommand": "AskForUseActiveSkill",
+      "trigger": "delta-sijian",
+      "playerCount": 2,
+      "players": {
+        "actor": {
+          "general": "hs__tianfeng",
+          "deputy": "hs__panfeng",
+          "kingdom": "qun"
+        },
+        "target": {
+          "general": "hs__zhangliao",
+          "deputy": "hs__xuchu",
+          "kingdom": "wei"
+        }
+      },
+      "cards": [
+        {
+          "key": "sijian-owner-last-hand",
+          "match": { "trueName": "jink" },
+          "owner": "actor",
+          "area": "hand"
+        },
+        {
+          "key": "sijian-target-card",
+          "match": { "trueName": "peach" },
+          "owner": "target",
           "area": "hand"
         }
       ]

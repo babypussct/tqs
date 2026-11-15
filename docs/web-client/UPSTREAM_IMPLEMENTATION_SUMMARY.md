@@ -1,6 +1,14 @@
 # Kế hoạch tổng kết và prompt nâng upstream TQSVN
 
+> **Nguồn điều phối mới 28/10/2026:** [UPSTREAM_FIRST_MASTER_PLAN_2026-10-28.md](UPSTREAM_FIRST_MASTER_PLAN_2026-10-28.md). Upstream-first, một candidate và bộ gate A–D/U0–U8; phần mô tả “giữ live/nâng dần” dưới đây là quyết định cũ, chỉ dùng tham khảo kỹ thuật. Prompt khởi động tiếp theo nằm cuối master plan mới.
+
 Chốt ngày **19/10/2026** theo phạm vi người dùng đã xác nhận. Đây là kế hoạch giao việc, **chưa triển khai nâng pin hoặc phát hành**. Mã U0–U8 giữ nguyên để tiếp nối kế hoạch chi tiết.
+
+> **Kế hoạch chi tiết hiện hành sau quyết định giữ live và nâng dần:** [UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md](UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md). Từng lô source/test ở local hoặc môi trường riêng, không đặt thêm native thường trực/build native trên VM production 954 MiB RAM. U7 là QA candidate tạm thời ngoài live; U8 chuyển một bộ native–Lua–web đồng bộ sau nghiệm thu. Mã U0–U8 và các prompt dưới đây dùng cùng tài liệu chi tiết này; kế hoạch chạy hai tuyến thường trực trước đó không còn là phương án mặc định.
+
+> **Rà soát hiện hành 25/10/2026:** [UPSTREAM_REVIEW_2026-10-25.md](UPSTREAM_REVIEW_2026-10-25.md). Remote master vẫn `d069cd1f5c6df8d93af0ea101b82a5bed2781f01`, TQS vẫn pin `d616978`; còn 7 commit/194 tệp. Probe lại bằng client hiện tại START PASS, 301→233 tướng, chưa nghiệm thu native target mới. U0–U3 phải kiểm kê/port các patch TQS đã phát sinh: runtime hiện khác pin ở 24 tệp core và 11 tệp Hegemony, hai tệp Hegemony chồng incoming diff. Các PASS AI/UI/production trên pin cũ là baseline, không đóng gate nâng upstream. Physical iOS/Android/network tiếp tục `WAIVED_BY_USER` theo bàn giao 23/10, không ghi PASS hoặc tự áp lại thành blocker.
+
+> **Khảo sát phương án song song trước khi đo RAM:** [UPSTREAM_PARALLEL_CUTOVER_2026-10-25.md](UPSTREAM_PARALLEL_CUTOVER_2026-10-25.md) giữ làm tham khảo cho cách ly/DB/drain/rollback. Phương án hiện hành nâng từng bước và chỉ một native live theo kế hoạch chi tiết phía trên; không xóa `main` hoặc coi Git branch là runtime.
 
 ## Mục tiêu và nguyên tắc chọn phiên bản
 
@@ -23,7 +31,7 @@ Chốt ngày **19/10/2026** theo phạm vi người dùng đã xác nhận. Đâ
 | **U4 — Build và đồng bộ artifact** | Cài/build native runtime phù hợp, web/Wasmoon, Lua bundle, media, flist, DB registry, manifest/RELEASE và service worker. Nếu không đổi native source, xác minh binary pin phù hợp và ghi rõ việc tái sử dụng. | Installer/verifier/build đạt, identity/hash native–web–gateway khớp; asset phục vụ Quốc Chiến đầy đủ. Output đúng thư mục riêng. |
 | **U5 — Luật, pool và thông tin kín** | Kiểm delta tướng/bài/skill của Quốc Chiến đang bật; pool theo capacity × generalNum (5/7/10 lá mỗi người), policy khóa gói, tương tác/lifecycle và privacy; nghiệm thu danh mục bị giảm/thay đổi. | Kịch bản cho delta luật/privacy P0 PASS; giữ đúng luật snapshot, không tự bỏ skill hay sửa luật để vượt test. Ghi rõ coverage còn thiếu. |
 | **U6 — Regression và native E2E** | Chạy audits/test cần cho Quốc Chiến và E2E browser → gateway → C++ thật. Kiểm trọn ván bot/hai người, hidden/reveal, card/skill/request, GameOver, reconnect; observer/privacy khi được bật. | Kết quả gắn đúng snapshot; không lỗi chặn Quốc Chiến, sai luật hoặc rò dữ liệu. START PASS/typecheck không thay thế gameplay. |
-| **U7 — Candidate và nghiệm thu điện thoại** | Sau U0–U6, triển khai native + web lên candidate riêng; kiểm identity public, chơi bot/hai người, reconnect và thao tác trên điện thoại thật. | Biên bản PASS/FAIL theo build/scenario/device; candidate được nghiệm thu cho Quốc Chiến. Không thay production alias/dịch vụ. |
+| **U7 — Candidate tạm thời và nghiệm thu** | Sau U0–U6, chạy native + gateway + web trên môi trường test ngoài VM live; kiểm identity, bot/hai người, reconnect, browser/mobile viewport. Xong lượt kiểm dừng process test; thiết bị/physical-network giữ `WAIVED_BY_USER`. | Biên bản ACCEPT/REJECT theo build/scenario/environment, ghi giới hạn capacity/device. Không cần server thứ hai thường trực; không thay production alias/dịch vụ. |
 | **U8 — Sẵn sàng phát hành và rollback** | Backup và restore thử, diễn tập rollback native+web cùng identity, kiểm điều kiện vận hành/giám sát/quota cần cho Quốc Chiến; chuẩn bị cutover. | Release/rollback checklist và bằng chứng restore hoàn chỉnh. Chỉ cutover production khi có chỉ thị phát hành riêng; không tự nâng hoặc restart. |
 
 Các bước có phụ thuộc phải làm lần lượt. Nếu phát hiện vấn đề cần đổi snapshot, cập nhật U1/U2, chạy lại phần nghiệm thu bị ảnh hưởng và ghi evidence; không tự mở rộng sang feature/mode khác.
@@ -64,7 +72,7 @@ Mỗi prompt dưới đây giao **một giai đoạn**. Đọc `AGENTS.md`, `doc
 
 ### U7
 
-> Triển khai U7 theo `docs/web-client/UPSTREAM_IMPLEMENTATION_SUMMARY.md` khi U0–U6 đạt: đưa native và web lên candidate cô lập, kiểm public identity và nghiệm thu Quốc Chiến bot/hai người/reconnect/điện thoại thật. Ghi rõ phần chưa kiểm trên thiết bị, lưu evidence/checkpoint; không thay production.
+> Triển khai U7 theo `docs/web-client/UPSTREAM_INCREMENTAL_PLAN_2026-10-25.md` khi U0–U6 đạt: chạy candidate native/gateway/web tạm thời ngoài VM production, kiểm identity và nghiệm thu Quốc Chiến bot/hai người/reconnect/browser/mobile viewport. Giữ waiver thiết bị/physical-network và ghi rõ coverage/capacity chưa kiểm, lưu evidence/checkpoint rồi dừng process test; không thay production.
 
 ### U8
 

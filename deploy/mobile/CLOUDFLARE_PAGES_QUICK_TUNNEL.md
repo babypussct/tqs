@@ -1,5 +1,7 @@
 # CP33 candidate: Cloudflare Pages + Oracle Quick Tunnel
 
+> **Cập nhật 26/10/2026:** gateway public `/gateway/healthz` và manifest đã phục hồi **200**, WebSocket upgrade **101** sau khi KV được cập nhật theo Quick Tunnel hostname mới. Pages production secret `TQS_TUNNEL_REGISTRATION_TOKEN` và Oracle file mode `0600` đã provision, registrar script được cài tại `/usr/local/libexec/tqs-tunnel-register.mjs`. Tuy nhiên manual registration **HTTP 401**, timer vẫn **disabled**. Secret được thêm sau Pages live deployment `f17c76ac`: cần production redeploy đúng artifact đã kiểm chứng để binding có hiệu lực, sau đó mới xác minh đăng ký thành công và bật timer. API retry thử trong lượt này bị lớp kiểm tra an toàn chặn trước khi thực thi; **không có redeploy**. Cloudflare account chưa có owned DNS zone để chuyển sang Named Tunnel. Nội dung ngày 17/10 bên dưới là lịch sử, kể cả trạng thái secret cũ.
+
 > **2026-10-23:** Named Tunnel `tqsvn-gateway` has been created, and Oracle gateway monitoring is now enabled. The production route still uses Quick Tunnel pending a controllable DNS zone and cutover tests. See [CLOUDFLARE_NAMED_TUNNEL.md](CLOUDFLARE_NAMED_TUNNEL.md) for current status and the cutover/rollback runbook. The historical snapshot below describes the earlier CP33 state.
 
 ## Update 2026-10-17 — same-origin gateway LIVE; hostname registration STAGED
@@ -23,6 +25,12 @@ curl -fsS https://tqsvn.pages.dev/gateway/healthz
 After an operator securely provisions one matching, unpredictable 32+ character secret as the encrypted Cloudflare Pages secret `TQS_TUNNEL_REGISTRATION_TOKEN` and Oracle root-only file `/etc/tqs-tunnel-register.secret`, activate:
 
 ```bash
+# Install the registrar script and unit together. A root-owned script under
+# /usr/local/libexec avoids the private /home/ubuntu directory (mode 0750):
+# the service deliberately drops discretionary-access override capabilities.
+ssh tqs-native-qa-replacement 'sudo install -d -m 755 /usr/local/libexec'
+ssh tqs-native-qa-replacement 'sudo tee /usr/local/libexec/tqs-tunnel-register.mjs >/dev/null && sudo chmod 644 /usr/local/libexec/tqs-tunnel-register.mjs' < deploy/mobile/oracle-tunnel-register.mjs
+ssh tqs-native-qa-replacement 'sudo tee /etc/systemd/system/tqs-tunnel-register.service >/dev/null && sudo systemctl daemon-reload' < deploy/mobile/tqs-tunnel-register.service
 ssh tqs-native-qa-replacement 'sudo systemctl enable --now tqs-tunnel-register.timer'
 ssh tqs-native-qa-replacement 'sudo systemctl start tqs-tunnel-register.service && sudo systemctl status tqs-tunnel-register.service --no-pager'
 curl -fsS https://tqsvn.pages.dev/gateway/healthz

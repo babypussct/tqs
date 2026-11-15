@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "manifestKind": "upstream-first-production-promotion",
+  "createdAt": "2026-11-15T01:57:34+07:00",
+  "scope": "new_heg_mode production promotion evidence; sanitized metadata only",
+  "authorization": "explicit user authorization received before production mutation",
+  "remoteHostAlias": "tqs-native-qa-replacement",
+  "release": {
+    "candidatePath": "/opt/freekill-hegemony/releases/upstream-first-20261115",
+    "rollbackPath": "/opt/freekill-hegemony/releases/ai-prompt4-20261022-prod-clean",
+    "currentSymlinkAfterPromotion": "/opt/freekill-hegemony/releases/upstream-first-20261115",
+    "nativeBinarySha256": "315b10cc3f76cf0e7743ef5274bfced3f1cbb9a2eede88109103e8b78ba2405d",
+    "nativeBinarySize": 2688376,
+    "abi": "PASS; libcbor.so.0.10, libgit2.so.1.7 and libspdlog.so.1.12 resolved on host",
+    "luaRuntime": "PASS; /usr/bin/lua5.4",
+    "qaFlag": false,
+    "stateFilesPreserved": ["server/users.db", "server/game.db", "server/rsa", "server/rsa_pub", "freekill.server.config.json"],
+    "backup": {
+      "path": "/opt/freekill-hegemony/backups/freekill-hegemony-20261114T182958Z.tar.gz",
+      "mode": "600",
+      "size": 919546332,
+      "sha256": "4f5cabd712a5082ef3aaf9819becaf5db120e30c9bfd283cc7af2e0261726cff",
+      "tarIntegrity": "PASS"
+    }
+  },
+  "runtimeIdentity": {
+    "stagedFlistMd5BeforeNativeStart": "2e453ed37f894bed95c0b80f99bd1809",
+    "appleDoubleFilesRemovedBeforeRestart": 15457,
+    "nativeGeneratedFlistMd5AfterRestart": "a21b6d26b4e350276266d79a94d41d54",
+    "nativeGeneratedFlistNote": "Native calcFileMD5 regenerated the flist from the cleaned runtime at startup; the pre-start release artifact flist was stale relative to 43 changed hashes and 13 newly enumerated Lua files.",
+    "gatewayBundleHash": "cd3581d00549f8f8",
+    "gatewayBundleFileCount": 5338,
+    "gatewayBundleBytes": 7089395,
+    "packageDirectories": 16,
+    "serverOnlyQaPresent": false
+  },
+  "nativePromotion": {
+    "isolatedBoot": "PASS; candidate booted on port 19777 and cleaned up",
+    "productionListener": "PASS; port 9527 ready after final restart",
+    "productionAdminApi": "PASS; port 9000 reported listening",
+    "productionProcessIdentity": "PASS; /proc executable resolved to candidate/freekill-asio",
+    "serviceState": "active",
+    "rollbackRehearsal": "PASS; guarded failed identity checks restored the old release and native listener before final promotion"
+  },
+  "gatewayPromotion": {
+    "localHealthz": "PASS; HTTP 200 ok",
+    "directQuickTunnel": "https://iron-enlargement-sampling-apply.trycloudflare.com",
+    "directHealthz": "PASS; HTTP 200 ok",
+    "directManifest": "PASS; HTTP 200; md5 a21b6d26b4e350276266d79a94d41d54; bundleHash cd3581d00549f8f8; fileCount 5338",
+    "kvKey": "quick-tunnel-url updated to iron-enlargement-sampling-apply.trycloudflare.com",
+    "pagesDeployment": "https://9e17bf40.tqsvn.pages.dev",
+    "pagesProductionAlias": "https://tqsvn.pages.dev",
+    "pagesHealthz": "PASS; HTTP 200 ok",
+    "pagesManifest": "PASS; HTTP 200; md5 a21b6d26b4e350276266d79a94d41d54; bundleHash cd3581d00549f8f8; fileCount 5338",
+    "pagesIndexSha256": "0b8fbc416a24afeb1448a017727f3e707559c5d26b687fddc564a707f7acfd96",
+    "pagesBuildId": "14e37d262ce6f7b3e31aec968c601460dfd3066eaabc8e963222c647e3a123a8",
+    "pagesBundleSha1Prefix": "cd3581d00549f8f8",
+    "pagesBundleBytes": 7089395,
+    "pagesWebSocketUpgrade": "PASS; HTTP 101 Switching Protocols"
+  },
+  "verification": {
+    "typecheck": "PASS",
+    "liveSnapshotTests": "2/2 PASS",
+    "publicOauthContract": "5/5 PASS",
+    "legacyHostedRunner": "NOT APPLICABLE; deployed UI uses Google OAuth and no longer exposes the legacy username/password heading",
+    "publicOauthGameplay": "PASS; sanitized manual production browser acceptance recorded in PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-15.json: Google session, lobby, two-seat new_heg_mode room, bot gameplay, Khuê Tú skill, GameOver, lobby return, disconnect/reconnect and Google account re-login",
+    "publicOauthRunner": "INCONCLUSIVE; CLI runner could not attach the Codex-controlled persistent browser profile and failed before gameplay at google_session_required; it did not contradict the direct authenticated production UI observation",
+    "productionCardWireV1": "OFF",
+    "credentialsIncluded": false,
+    "secretsPrinted": false
+  },
+  "decision": "PRODUCTION PROMOTION ACCEPTED; manual public OAuth gameplay/reconnect PASS; production card-wire v1 remains OFF and the CLI runner attachment limitation is retained as a harness note"
+}

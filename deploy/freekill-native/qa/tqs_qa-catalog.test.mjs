@@ -65,6 +65,199 @@ test('native tqs_qa catalog keeps the browser scenario ids, seeds and commands i
   }
 });
 
+test('delta-lord-wenji pins the real lord_ex phase gift, unanswerable Slash and distinct Peach return', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'delta-lord-wenji');
+  assert.ok(scenario, 'delta-lord-wenji native scenario is required');
+  assert.equal(scenario.trigger, 'delta-lord-wenji');
+  assert.equal(scenario.playerCount, 2);
+  assert.equal(scenario.seed, 0x5d6e8022);
+  assert.equal(scenario.expectedCommand, 'AskForUseActiveSkill');
+  assert.deepEqual(scenario.players, {
+    actor: { general: 'ld__liuqi', deputy: 'nos_heg__zhanglu', kingdom: 'qun' },
+    target: { general: 'nos_heg__caohong', deputy: 'nos_heg__yuejin', kingdom: 'wei' },
+  });
+  assert.deepEqual(scenario.cards.map(({ key, match, owner, area }) =>
+    ({ key, trueName: match.trueName, owner, area })), [
+    { key: 'lord-wenji-return', trueName: 'peach', owner: 'actor', area: 'hand' },
+    { key: 'lord-wenji-gift', trueName: 'slash', owner: 'target', area: 'hand' },
+    { key: 'lord-wenji-target-jink', trueName: 'jink', owner: 'target', area: 'hand' },
+  ]);
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const browserRunner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
+  assert.match(qaInit, /validateDeltaLordWenjiScenario\(scenario\)/u);
+  assert.match(qaInit, /room:handleAddLoseSkills\(state\.actor, "ld__wenji"/u);
+  assert.match(qaInit, /room\.logic:trigger\(fk\.EventPhaseStart, state\.actor/u);
+  assert.match(qaInit, /Fk:getCardById\(giftId\):getTableMark\("ld__wenji-turn"\)/u);
+  assert.match(qaInit, /local function triggerDeltaLordWenji\(room, state\)/u);
+  assert.match(qaInit, /\[TQS QA\] Upstream lord_ex 问计: phase_handoff=/u);
+  assert.match(browserRunner, /deltaLordWenjiScenario && scenarioLordWenjiGateReply && scenarioLordWenjiPlayerReply/u);
+  assert.match(browserRunner, /scenarioLordWenjiReturnReply/u);
+  assert.match(browserRunner, /scenarioLordWenjiScope: deltaLordWenjiScenario/u);
+  assert.match(browserRunner, /log\.startsWith\('\[TQS QA\] Upstream lord_ex 问计:'\)/u);
+});
+
+test('delta-xishe pins two equipment discards and the lower/equal HP response branches', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'delta-xishe');
+  assert.ok(scenario, 'delta-xishe native scenario is required');
+  assert.equal(scenario.trigger, 'delta-xishe');
+  assert.equal(scenario.playerCount, 3);
+  assert.equal(scenario.expectedCommand, 'AskForSkillInvoke');
+  assert.deepEqual(scenario.players, {
+    actor: { general: 'ld__huangzu', deputy: 'ld__yanbaihu', kingdom: 'qun' },
+    target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    control: { general: 'hs__liubei', deputy: 'hs__guanyu', kingdom: 'shu' },
+  });
+  assert.deepEqual(scenario.cards.map(({ key, match, owner, area }) =>
+    ({ key, match, owner, area })), [
+    { key: 'xishe-weapon', match: { type: 'equip', subtype: 'weapon' }, owner: 'actor', area: 'equip' },
+    { key: 'xishe-armor', match: { type: 'equip', subtype: 'armor' }, owner: 'actor', area: 'equip' },
+    { key: 'xishe-target-jink', match: { trueName: 'jink' }, owner: 'target', area: 'hand' },
+    { key: 'xishe-control-jink', match: { trueName: 'jink' }, owner: 'control', area: 'hand' },
+  ]);
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const runner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
+  assert.match(qaInit, /validateDeltaXisheScenario\(scenario\)/u);
+  assert.match(qaInit, /room:handleAddLoseSkills\(state\.actor, "ld__xishe"/u);
+  assert.match(qaInit, /room\.logic:trigger\(fk\.EventPhaseStart, state\.target/u);
+  assert.match(qaInit, /room\.logic:trigger\(fk\.EventPhaseStart, state\.control/u);
+  assert.match(qaInit, /state\.target\.hp ~= 2 or not table\.contains\(state\.target:getCardIds\(Player\.Hand\), targetJinkId\)/u);
+  assert.match(qaInit, /state\.xisheResponseCount ~= 0/u);
+  assert.match(qaInit, /state\.control\.hp ~= 4 or room:getCardArea\(controlJinkId\) == Card\.PlayerHand/u);
+  assert.match(qaInit, /state\.xisheResponseCount ~= 1 or not state\.xisheControlResponded/u);
+  assert.match(runner, /scenarioXisheWeaponReply && scenarioXisheCancelReply && scenarioXisheArmorReply/u);
+  assert.match(runner, /lower_hp_blocked=true/u);
+  assert.match(runner, /control_responded=true/u);
+  assert.match(runner, /botAuditTrace\.every\(\(trace\) => trace\.gameOver === 1\)/u);
+});
+
+test('delta-bawei exercises real round damage, two physical Slashes, and selective native Jink response', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'delta-bawei');
+  assert.ok(scenario, 'delta-bawei native scenario is required');
+  assert.equal(scenario.trigger, 'delta-bawei');
+  assert.equal(scenario.seed, 0x5d6e801a);
+  assert.equal(scenario.expectedCommand, 'AskForSkillInvoke');
+  assert.equal(scenario.playerCount, 3);
+  assert.deepEqual(scenario.players, {
+    actor: { general: 'm_heg__lordsunce', deputy: 'hs__sunquan', kingdom: 'wu' },
+    target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+    control: { general: 'hs__liubei', deputy: 'hs__guanyu', kingdom: 'shu' },
+  });
+  assert.deepEqual(scenario.cards.map(({ key, match, owner, area }) =>
+    ({ key, trueName: match.trueName, owner, area })), [
+    { key: 'bawei-damaged-slash', trueName: 'slash', owner: 'actor', area: 'hand' },
+    { key: 'bawei-control-slash', trueName: 'slash', owner: 'actor', area: 'hand' },
+    { key: 'bawei-damaged-jink', trueName: 'jink', owner: 'target', area: 'hand' },
+    { key: 'bawei-control-jink', trueName: 'jink', owner: 'control', area: 'hand' },
+  ]);
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const runner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
+  assert.match(qaInit, /validateDeltaBaweiScenario\(scenario\)/u);
+  assert.match(qaInit, /room:handleAddLoseSkills\(state\.actor, "m_heg__bawei"/u);
+  assert.match(qaInit, /state\.actor:hasShownSkill\("m_heg__bawei"\)/u);
+  assert.match(qaInit, /state\.scenario == "delta-xishe" or state\.scenario == "delta-bawei" or/u,
+    'delta-bawei must be observed by the real SkillEffect collector');
+  assert.match(qaInit, /room:damage\(\{ from = state\.actor, to = state\.target, damage = 1 \}\)/u);
+  assert.match(qaInit, /room\.logic:getActualDamageEvents\(1,[\s\S]*?Player\.HistoryRound/u);
+  assert.match(qaInit, /exclusive_targets = \{ to\.id \}, must_targets = \{ to\.id \}/u);
+  assert.match(qaInit, /useReservedSlash\(damagedSlashId, state\.target, 1,/u);
+  assert.match(qaInit, /useReservedSlash\(controlSlashId, state\.control, 2,/u);
+  assert.match(qaInit, /entry\.skill == "m_heg__bawei"/u);
+  assert.match(qaInit, /state\.scenario == "delta-bawei" and state\.currentDamageStep == 1 and player == state\.target/u,
+    'delta-bawei must observe the damaged target Jink branch, including a forbidden response');
+  assert.match(qaInit, /isDeltaJinkResponder\(state, player\)/u);
+  assert.match(qaInit, /state\.target\.hp ~= 2 or not targetJinkRetained or state\.baweiResponseCount ~= 0/u);
+  assert.match(qaInit, /state\.control\.hp ~= 4 or not controlJinkConsumed or[\s\S]*?state\.baweiResponseCount ~= 1 or not state\.baweiControlResponded/u);
+  assert.match(qaInit, /\[TQS QA\] Upstream 霸威: round_damage_recorded=/u);
+  assert.match(qaInit, /room:gameOver\(""\)/u);
+  assert.match(runner, /scenarioBaweiGateReply && scenarioBaweiDamagedUseReply &&[\s\S]*?scenarioBaweiControlUseReply/u);
+  assert.match(runner, /delta-bawei real clients must not receive a Jink request/u);
+  assert.match(runner, /scenarioBaweiDamagedUseReply && scenarioBaweiControlUseReply/u);
+  assert.match(runner, /publicBotAudit\.length, 2, 'delta-bawei must audit both real clients'/u);
+  assert.match(runner, /round_damage_recorded=true[\s\S]*?damaged_response_blocked=true[\s\S]*?damaged_jink_retained=true[\s\S]*?control_responded=true/u);
+  assert.match(runner, /botAuditTrace\.length === 2 && botAuditTrace\.every\(\(trace\) => trace\.gameOver === 1\)/u);
+  assert.match(runner, /scenarioBaweiScope: deltaBaweiScenario/u);
+});
+
+test('delta-fengshi variants require real first UseCard, siege relation, and native Jink observation', () => {
+  const cases = [
+    { id: 'delta-fengshi-siege', seed: 0x5d6e801b,
+      control: { general: 'hs__huatuo', deputy: 'hs__diaochan', kingdom: 'qun' } },
+    { id: 'delta-fengshi-no-siege', seed: 0x5d6e801c,
+      control: { general: 'hs__liubei', deputy: 'hs__guanyu', kingdom: 'shu' } },
+  ];
+  for (const { id, seed, control } of cases) {
+    const scenario = nativeCatalog.scenarios.find((entry) => entry.id === id);
+    assert.ok(scenario, `${id} native scenario is required`);
+    assert.equal(scenario.trigger, id);
+    assert.equal(scenario.seed, seed);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke');
+    assert.equal(scenario.playerCount, 3);
+    assert.deepEqual(scenario.players, {
+      actor: { general: 'm_heg__zhangren', deputy: 'hs__jiling', kingdom: 'qun' },
+      target: { general: 'hs__zhangliao', deputy: 'hs__xuchu', kingdom: 'wei' },
+      control,
+    });
+    assert.deepEqual(scenario.cards.map(({ key, match, owner, area }) =>
+      ({ key, trueName: match.trueName, owner, area })), [
+      { key: 'fengshi-first-slash', trueName: 'slash', owner: 'actor', area: 'hand' },
+      { key: 'fengshi-target-jink', trueName: 'jink', owner: 'target', area: 'hand' },
+    ]);
+  }
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const runner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
+  assert.match(qaInit, /validateDeltaFengshiScenario\(scenario\)/u);
+  assert.match(qaInit, /room:handleAddLoseSkills\(state\.actor, "m_heg__fengshi"/u);
+  assert.match(qaInit, /state\.actor:hasShownSkill\("m_heg__fengshi"\)/u);
+  assert.match(qaInit, /H\.inSiegeRelation\(state\.actor, state\.actor, p\)/u);
+  assert.match(qaInit, /H\.inSiegeRelation\(p, p, state\.actor\)/u);
+  assert.match(qaInit, /room\.logic:getEventsOfScope\(GameEvent\.UseCard, 1,[\s\S]*?Player\.HistoryTurn/u);
+  assert.match(qaInit, /state\.actor:getMark\("m_heg__fengshi-turn"\) == 1/u);
+  assert.match(qaInit, /actual\.card\.id == slashId/u);
+  assert.match(qaInit, /actual\.tos\[1\] == state\.target/u);
+  assert.match(qaInit, /exclusive_targets = \{ state\.target\.id \}, must_targets = \{ state\.target\.id \}/u);
+  assert.match(qaInit, /room:useCard\(use\)/u);
+  assert.match(qaInit, /entry\.skill == "m_heg__fengshi"/u);
+  assert.match(qaInit, /state\.fengshiResponseCount ~= 0 or state\.fengshiTargetResponded/u);
+  assert.match(qaInit, /state\.fengshiResponseCount ~= 1 or not state\.fengshiTargetResponded/u);
+  assert.match(qaInit, /state\.scenario == "delta-fengshi-siege" or state\.scenario == "delta-fengshi-no-siege"/u);
+  assert.match(qaInit, /data\.responseToEvent ~= nil/u);
+  assert.match(qaInit, /\[TQS QA\] Upstream 锋矢: first_use=/u);
+  assert.match(qaInit, /room:gameOver\(""\)/u);
+  assert.match(runner, /deltaFengshiScenario && scenarioFengshiGateReply && scenarioFengshiSlashReply/u);
+  assert.match(runner, /isDeltaFengshiGate = deltaFengshiScenario/u);
+  assert.match(runner, /delta-fengshi real clients must not receive a Jink request/u);
+  assert.match(runner, /scenarioFengshiSlashReply = true/u);
+  assert.match(runner, /first_use=true[\s\S]*?siege_relation=\$\{expectSiege\}[\s\S]*?response_blocked=\$\{expectSiege\}[\s\S]*?target_jink_retained=\$\{expectSiege\}[\s\S]*?target_responded=\$\{!expectSiege\}/u);
+  assert.match(runner, /scenarioFengshiScope: deltaFengshiScenario/u);
+  assert.match(runner, /logs: audit\.logs\.filter\(\(log\) => log\.startsWith\('\[TQS QA\] Upstream 锋矢:'\)\)/u);
+});
+
+test('card-chosen pins a legal Pang De initial-pair offer before GamePrepared', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'card-chosen');
+  assert.ok(scenario, 'card-chosen catalog entry is required');
+  assert.equal(scenario.playerCount, 2);
+  assert.deepEqual(scenario.players, {
+    actor: { general: 'hs__pangde', deputy: 'hs__jiaxu', kingdom: 'qun' },
+    target: { general: 'hs__caocao', deputy: 'hs__simayi', kingdom: 'wei' },
+  });
+  assert.deepEqual(scenario.initialPairOffer.enabledKingdoms, ['qun']);
+  assert.equal(scenario.initialPairOffer.offeredGroups.length, 2);
+  for (const [seat, offered] of scenario.initialPairOffer.offeredGroups.entries()) {
+    assert.equal(offered.length, 5, `seat ${seat + 1} must have five legal choices`);
+    assert.ok(offered.includes('hs__pangde'), `seat ${seat + 1} must retain Pang De in the offer`);
+  }
+
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /validateInitialPairOfferScenario\(scenario\)/u);
+  assert.match(qaInit, /type\(scenario\.initialPairOffer\) ~= "table"/u);
+  assert.match(qaInit, /local offer = scenario\.initialPairOffer or scenario/u);
+  assert.match(qaInit, /type\(scenario\.initialPairOffer\) ~= "table"\) then/u);
+});
+
 test('ai-trace exposes an explicit multi-seed semantic roster matrix', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'ai-trace');
   assert.ok(scenario, 'ai-trace catalog entry is required');
@@ -293,6 +486,8 @@ test('hidden-rehide-yiji locks prelight retention across reveal and hideGeneral 
   assert.match(hideSource, /self:addFakeSkill\(s\)/u);
   assert.match(serverPlayer, /if table\.contains\(self\.prelighted_skills, skill\) then[\s\S]*doNotify\("PrelightSkill", \{ skill\.name, true \}\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-rehide-yiji"[\s\S]*validateHiddenRehideYijiScenario/u);
+  assert.match(qaInit, /local hiddenStartTriggers = \{[\s\S]*\["hidden-yiji"\] = true[\s\S]*\["hidden-rehide-yiji"\] = true[\s\S]*\}/u);
+  assert.match(qaInit, /if hiddenStartTriggers\[scenario\.trigger\] then[\s\S]*state\.actor:hideGeneral\(false\)[\s\S]*state\.actor:hideGeneral\(true\)/u);
   assert.match(qaInit, /state\.rehideAfterYiji = true[\s\S]*triggerHiddenYiji\(room, state\)/u);
   assert.match(qaInit, /state\.actor:hideGeneral\(yijiIsDeputy\)[\s\S]*isFakeSkill\("hs__yiji"\)[\s\S]*isPrelighted\(state\.actor, "hs__yiji"\)/u);
   assert.match(qaInit, /regularDuplicate = table\.contains\(state\.actor\.player_skills, Fk\.skills\.hs__yiji\)/u);
@@ -772,57 +967,9 @@ test('hidden-xiaoji locks equipment-loss AfterCardsMove draw for both slots', ()
 });
 
 test('Tử Gián only triggers after the owner loses hand cards and becomes empty-handed', () => {
-  const fixture = `
-    Fk = { Ltk = { AI = { reuse = function() return nil end } } }
-    function Fk:loadTranslationTable() end
-    fk = { AfterCardsMove = 'AfterCardsMove' }
-    Card = { PlayerHand = 1, PlayerEquip = 2 }
-    function table.find(items, predicate)
-      for _, item in ipairs(items) do if predicate(item) then return item end end
-    end
-    function fk.CreateSkill(spec)
-      spec.effects = {}
-      function spec:addEffect(event, effect) self.effects[#self.effects + 1] = effect end
-      function spec:addAI() end
-      return spec
-    end
-
-    local skill = dofile(arg[1])
-    assert(skill.name == 'sijian', 'unexpected skill loaded')
-    local effect = skill.effects[1]
-    assert(effect and type(effect.can_trigger) == 'function', 'missing AfterCardsMove predicate')
-
-    local other = { nude = false }
-    function other:isNude() return self.nude end
-    local player = { hand = 0, room = {} }
-    function player:hasSkill() return true end
-    function player:isKongcheng() return self.hand == 0 end
-    function player.room:getOtherPlayers() return { other } end
-
-    local function handMove(from, area)
-      return {{ from = from, moveInfo = {{ fromArea = area }} }}
-    end
-    local function can_trigger(data)
-      return effect.can_trigger(effect, nil, nil, player, data)
-    end
-
-    assert(can_trigger(handMove(player, Card.PlayerHand)) == true,
-      'losing the last hand card must satisfy Tử Gián')
-    player.hand = 1
-    assert(not can_trigger(handMove(player, Card.PlayerHand)),
-      'Tử Gián must not trigger while the owner still has hand cards')
-    player.hand = 0
-    assert(not can_trigger(handMove(other, Card.PlayerHand)),
-      'another player losing a hand card must not trigger Tử Gián')
-    assert(not can_trigger(handMove(player, Card.PlayerEquip)),
-      'losing equipment must not trigger Tử Gián')
-    other.nude = true
-    assert(not can_trigger(handMove(player, Card.PlayerHand)),
-      'Tử Gián must not trigger when no other player has a discardable card')
-    print('sijian predicate fixture PASS')
-  `;
-  assert.match(execFileSync('lua', ['-', sijianSkillPath], { input: fixture, encoding: 'utf8' }),
-    /sijian predicate fixture PASS/u);
+  const probe = path.join(here, 'sijian-trigger-probe.lua');
+  assert.match(execFileSync('lua', [probe, sijianSkillPath, 'empty'], { encoding: 'utf8' }),
+    /PASS sijian source-level empty: 8 cases/u);
 
   const sijian = fs.readFileSync(sijianSkillPath, 'utf8');
   assert.match(sijian, /player:hasSkill\(sijian\.name\) and player:isKongcheng\(\)/u);
@@ -989,6 +1136,26 @@ test('hidden-reveal locks the hidden compulsory active reveal contract', () => {
     target: { general: 'hs__zhaoyun', deputy: 'ld__fazheng', kingdom: 'shu' },
   });
   assert.deepEqual(scenario.cards, []);
+});
+
+test('hidden trigger fixtures restore both slots before immediate native reveal paths', () => {
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const immediateHiddenTriggers = [
+    'hidden-yiji', 'hidden-rehide-yiji', 'hidden-jianxiong', 'hidden-fankui',
+    'hidden-enyuan', 'hidden-kuanggu', 'hidden-liegong', 'hidden-jueqing',
+    'hidden-ejue', 'hidden-dufu', 'hidden-jianzhi', 'hidden-zhiman',
+    'hidden-reveal', 'hidden-active', 'hidden-fanjian', 'hidden-view-as',
+    'hidden-dual', 'hidden-tiandu', 'hidden-luoshen', 'hidden-jizhi',
+    'hidden-mingshi', 'hidden-gongqing', 'hidden-qianxun', 'hidden-kongcheng',
+    'hidden-weimu', 'hidden-xiaoji', 'hidden-guanxing', 'hidden-yingzi',
+    'hidden-tianxiang', 'hidden-duanchang',
+  ];
+  for (const trigger of immediateHiddenTriggers) {
+    assert.ok(nativeCatalog.scenarios.some((scenario) => scenario.trigger === trigger),
+      `${trigger} must remain represented in the native QA catalog`);
+  }
+  assert.match(qaInit, /local hiddenStartTriggers = \{[\s\S]*\["hidden-reveal"\] = true[\s\S]*\["hidden-duanchang"\] = true[\s\S]*\}/u);
+  assert.match(qaInit, /if hiddenStartTriggers\[scenario\.trigger\] then[\s\S]*state\.actor:hideGeneral\(false\)[\s\S]*state\.actor:hideGeneral\(true\)/u);
 });
 
 test('hidden-active locks native PlayCard reveal-before-SkillEffect contract', () => {

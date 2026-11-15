@@ -109,10 +109,9 @@ export default function BootScreen({ phase, progress, error, retry }: BootScreen
 
       {/* LOGO AREA */}
       <div className="sg-logo-area">
-        <h1 className="sg-logo-title">Tam Quốc Sát</h1>
-        <div className="sg-logo-ribbon">
-          <span className="sg-logo-ribbon-text">QUỐC CHIẾN DI ĐỘNG BẢN</span>
-        </div>
+        <h1 className="sg-brand-title">
+          <img className="sg-brand-lockup" src="/brand/logo-horizontal.png" alt="Tam Quốc Sát Mobile" />
+        </h1>
       </div>
 
       {/* MAIN CONTENT AREA */}

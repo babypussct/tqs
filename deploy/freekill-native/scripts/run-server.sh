@@ -41,6 +41,25 @@ printf 'Lua runtime: %s\n' "$TQS_LUA54_BIN"
 QA_LINK="$RUNTIME_DIR/packages/freekill-core/qa_packages"
 QA_TARGET_REL="../../qa_packages"
 QA_PENDING_REL="../../.tqs_qa-pending"
+native_listener_ready() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -lntH 2>/dev/null | awk -v port=":$FREEKILL_PORT" '$4 ~ port "$" || $4 ~ port "]$"' | grep -q .
+    return $?
+  fi
+
+  # Minimal native QA images may intentionally omit iproute2/net-tools.  The
+  # server still exposes procfs, so detect LISTEN by port/state without
+  # adding a runtime dependency or touching the public package tree.
+  local hex_port
+  printf -v hex_port '%04X' "$FREEKILL_PORT"
+  awk -v port="$hex_port" '
+    NR > 1 && $4 == "0A" {
+      split($2, endpoint, ":")
+      if (toupper(endpoint[2]) == port) found = 1
+    }
+    END { exit found ? 0 : 1 }
+  ' /proc/net/tcp /proc/net/tcp6 2>/dev/null
+}
 if [[ -f "$RUNTIME_DIR/qa_packages/tqs_qa/init.lua" ]]; then
   [[ -L "$QA_LINK" || ! -e "$QA_LINK" ]] || die "refusing to replace non-symlink QA path: $QA_LINK"
   rm -f -- "$QA_LINK"
@@ -51,8 +70,7 @@ if [[ -f "$RUNTIME_DIR/qa_packages/tqs_qa/init.lua" ]]; then
       # $$ remains the native PID after exec below.  Stop quietly if startup
       # failed before the listener became ready.
       kill -0 "$$" 2>/dev/null || exit 0
-      if command -v ss >/dev/null 2>&1 &&
-        ss -lntH 2>/dev/null | awk -v port=":$FREEKILL_PORT" '$4 ~ port "$" || $4 ~ port "]$"' | grep -q .; then
+      if native_listener_ready; then
         ready_link="${QA_LINK}.ready.$$"
         rm -f -- "$ready_link"
         ln -s -- "$QA_TARGET_REL" "$ready_link"

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "manifestKind": "public-oauth-gameplay-reconnect",
+  "observedAt": "2026-11-15T11:28:28+07:00",
+  "site": "https://tqsvn.pages.dev/",
+  "scope": "sanitized manual acceptance on the authenticated production browser session",
+  "verification": {
+    "oauth": "PASS; existing Google-authenticated session was admitted by the production game session API and reached the Quốc Chiến lobby; account email and tokens omitted",
+    "lobbyWebSocket": "PASS; authenticated lobby was visible and connection details reported the verified production runtime",
+    "room": "PASS; created a new_heg_mode Quốc Chiến room with two seats and added one native bot",
+    "generalSelection": "PASS; initial general flow resolved and the battle journal recorded the selected hidden/main/deputy generals",
+    "skill": "PASS; accepted a server-generated Khuê Tú activation request and observed its effect in the battle journal",
+    "gameplay": "PASS; BOT takeover completed the real production match without a browser or connection error",
+    "gameOver": "PASS; production result panel observed with a winner and final battle journal",
+    "lobbyReturn": "PASS; returned from GameOver to the Quốc Chiến lobby",
+    "disconnectReconnect": "PASS; explicit Ngắt kết nối followed by Vào Chiến Trường opened a new authenticated session and returned to the lobby",
+    "logoutRelogin": "PASS; Đổi tài khoản khác opened Google account chooser, the same approved account was selected, and the new session returned to the lobby"
+  },
+  "runnerNote": "The CLI public runner was also attempted against local Chrome profile data and failed before gameplay at google_session_required because the Codex-controlled browser session is not attachable as that persistent profile. This harness limitation does not override the direct authenticated production UI observation above.",
+  "credentialsIncluded": false,
+  "secretsPrinted": false,
+  "rawFramesIncluded": false,
+  "decision": "PASS_MANUAL_PUBLIC_OAUTH_GAMEPLAY_RECONNECT"
+}
