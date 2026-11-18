@@ -128,6 +128,42 @@ test('release checkpoint holds dirty source and never implies official release',
     assert.equal(report.gates.physicalDeviceAndNetwork, 'WAIVED_BY_USER');
     assert.equal(report.gates.nodeForgeAdvisory, 'RISK_ACCEPTED_WITH_SCOPE');
     assert.match(report.holdReasons.join('\n'), /source checkout is dirty/);
+    assert.match(report.holdReasons.join('\n'), /P6 performance\/mapping-memory/);
+    assert.match(report.holdReasons.join('\n'), /independent release approval/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('release checkpoint stays HOLD even when provenance is clean until release gates are approved', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tqs-release-clean-evidence-'));
+  try {
+    const releaseRoot = path.join(temp, 'release');
+    fs.mkdirSync(releaseRoot, { recursive: true });
+    const manifest = {
+      schemaVersion: 2,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      runtimeMD5: '00000000000000000000000000000000',
+      packages: [...REQUIRED_PACKAGES].sort(),
+      runtimeFileCount: 1,
+      webFileCount: 1,
+      gatewayFileCount: 1,
+      files: { 'dist/index.html': 'a'.repeat(64) },
+    };
+    fs.writeFileSync(path.join(releaseRoot, 'RELEASE.json'), `${JSON.stringify(manifest)}\n`);
+    const report = createReleaseEvidence({
+      releaseRoot,
+      manifest,
+      gitState: { branch: 'main', commit: 'clean-review-commit', dirty: false, changedFileCount: 0 },
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      diffCheck: 'PASS',
+    });
+    assert.equal(report.status, 'HOLD');
+    assert.equal(report.publishEligible, false);
+    assert.equal(report.gates.sourceProvenance, 'PASS');
+    assert.equal(report.gates.p6ThresholdAndAttribution, 'PENDING');
+    assert.equal(report.gates.independentReleaseApproval, 'PENDING');
+    assert.match(report.holdReasons.join('\n'), /physical device\/network acceptance/);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }

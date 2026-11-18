@@ -97,6 +97,20 @@ export function createReleaseEvidence({
   }
   if (diffCheck !== 'PASS') holdReasons.push('git diff --check did not pass');
 
+  // A clean source checkout only establishes provenance.  It must never
+  // promote a candidate while the card-wire release gates below are still
+  // pending or explicitly waived.  Keep these reasons in the generated
+  // evidence so a future reviewer can see why publishEligible is false
+  // without having to infer it from the gate table.
+  const unresolvedReleaseGates = [
+    'approved P6 performance/mapping-memory thresholds and attribution are not recorded',
+    'production/canary rollback SLA and cold-start/quota evidence are not approved',
+    'live gameplay/native-rule acceptance is not an approved release gate',
+    'physical device/network acceptance is WAIVED_BY_USER and is not a PASS',
+    'independent release approval and official CI/installer sign-off are not recorded',
+  ];
+  holdReasons.push(...unresolvedReleaseGates);
+
   const report = {
     schemaVersion: 1,
     checkpoint: 'CP24-safe-release',
@@ -123,9 +137,12 @@ export function createReleaseEvidence({
       requiredRuntimePackages: 'PASS',
       sensitiveFilesAndSymlinks: 'PASS',
       nodeForgeAdvisory: 'RISK_ACCEPTED_WITH_SCOPE',
+      p6ThresholdAndAttribution: 'PENDING',
       liveGameplayAndNativeRules: 'PENDING',
       coldStartQuotaRollbackSla: 'PENDING',
       physicalDeviceAndNetwork: 'WAIVED_BY_USER',
+      independentReleaseApproval: 'PENDING',
+      officialCiInstaller: 'PENDING',
       officialRelease: 'PENDING',
     },
     holdReasons,
