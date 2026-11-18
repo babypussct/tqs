@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-18T15:54:17.393Z",
+  "observedAt": "2026-11-18T15:57:28.712Z",
   "status": "LOCALLY_VERIFIED_IMMUTABLE_CANDIDATE_PENDING_REVIEW",
   "scope": "Native card-wire v1 release candidate package and fail-closed release checkpoint; not a production promotion or release approval.",
   "source": {
     "branch": "codex/card-wire-production-20261118",
-    "commit": "5df51e08462f2ca397ed952926056d0a8ac7fdd5",
-    "tree": "848b9b7f553709d3165c48ee61016f849888c9d4",
+    "commit": "dd3db2368d108550213563f3322a7a98bb33bec8",
+    "tree": "93fc70fc07440a16b33ee0bf878f8291be292a1b",
     "dirty": false
   },
   "artifact": {
-    "releaseRoot": "/private/tmp/tqs-cardwire-reviewed-20261118-AzRANS/release",
+    "releaseRoot": "/private/tmp/tqs-cardwire-reviewed-final-20261118-nvR13Z/release",
     "manifestSha256": "8112708bd3c1373684f6eff39a5832a685fd7e5a9bbf6e9044186bf203f8aac1",
     "releaseFileCount": 17317,
     "releaseDirectoryFileCount": 17318,
@@ -39,8 +39,8 @@
     ]
   },
   "verification": {
-    "releaseCheckpoint": "/private/tmp/tqs-cardwire-reviewed-20261118-AzRANS/release-checkpoint.json",
-    "generatedAt": "2026-11-18T15:54:17.393Z",
+    "releaseCheckpoint": "/private/tmp/tqs-cardwire-reviewed-final-20261118-nvR13Z/release-checkpoint.json",
+    "generatedAt": "2026-11-18T15:57:28.712Z",
     "sourceProvenance": "PASS",
     "gitDiffCheck": "PASS",
     "releasePackageAndManifest": "PASS",
