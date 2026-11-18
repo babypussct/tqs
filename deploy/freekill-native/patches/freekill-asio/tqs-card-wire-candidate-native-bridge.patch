@@ -7,20 +7,20 @@ index c918da951a438ae9b06e99c09bb717f8dc2a6603..9d934d9a4026f16c38cae14feccb9a27
    int roomId = 0;
    std::string_view pw;
 +  std::string_view cardWireCapability;
- 
+
    cbor_decoder_result result;
    result = cbor_stream_decode(cbuf, len, &Cbor::arrayCallbacks, &sz);
    if (result.read == 0) return;
    cbuf += result.read; len -= result.read;
 -  if (sz != 2) return;
 +  if ((!observe && sz != 2) || (observe && (sz < 2 || sz > 3))) return;
- 
+
    result = cbor_stream_decode(cbuf, len, &Cbor::intCallbacks, &roomId);
    if (result.read == 0) return;
 @@ -234,6 +235,12 @@ void Lobby::joinRoom(ServerPlayer &sender, const Packet &pkt, bool observe) {
    if (result.read == 0) return;
    cbuf += result.read; len -= result.read;
- 
+
 +  if (observe && sz == 3) {
 +    result = cbor_stream_decode(cbuf, len, &Cbor::stringCallbacks, &cardWireCapability);
 +    if (result.read == 0) return;
@@ -37,7 +37,7 @@ index c918da951a438ae9b06e99c09bb717f8dc2a6603..9d934d9a4026f16c38cae14feccb9a27
 -          room->addObserver(sender);
 +          room->addObserver(sender, cardWireCapability);
          }
- 
+
          auto sroom = sender.getRoom().lock();
 diff --git a/src/server/room/room.cpp b/src/server/room/room.cpp
 index cf5e7c8cb82fc09f3a621fae2cc9805dbaf7abcf..655eacb56486bc3ee65d089228f525ef961d6256 100644
@@ -46,7 +46,7 @@ index cf5e7c8cb82fc09f3a621fae2cc9805dbaf7abcf..655eacb56486bc3ee65d089228f525ef
 @@ -364,7 +364,7 @@ static cbor_item_t* make_cbor_int(int val) {
    }
  }
- 
+
 -void Room::addObserver(ServerPlayer &player) {
 +void Room::addObserver(ServerPlayer &player, std::string_view cardWireCapability) {
    if (isRejected(player)) {
@@ -69,9 +69,9 @@ index 42ad7d830fddab1cd995d06ed9f0e844c9e7a0dd..78411acf52a81755f0ec4d1c8812179d
 --- a/src/server/room/room.h
 +++ b/src/server/room/room.h
 @@ -44,7 +44,7 @@ public:
- 
+
    void addRobot(ServerPlayer &player);
- 
+
 -  void addObserver(ServerPlayer &player);
 +  void addObserver(ServerPlayer &player, std::string_view cardWireCapability = {});
    void removeObserver(ServerPlayer &player);
@@ -82,17 +82,17 @@ index eaf5308ffeaea3996c68405c53688d161e23803c..665fdb55edeb09ee4d4e9654c0b174da
 --- a/src/server/rpc-lua/rpc-lua.cpp
 +++ b/src/server/rpc-lua/rpc-lua.cpp
 @@ -11,6 +11,8 @@
- 
+
  #include <unistd.h>
  #include <sys/wait.h>
 +#include <cerrno>
 +#include <signal.h>
  #include <nlohmann/json.hpp>
- 
+
  using json = nlohmann::json;
 @@ -620,6 +622,11 @@ std::string RpcLua::getConnectionInfo() const {
  }
- 
+
  bool RpcLua::alive() const {
 +#if defined(__linux__)
    auto procDir = fmt::format("/proc/{}/exe", child_pid);
@@ -102,4 +102,3 @@ index eaf5308ffeaea3996c68405c53688d161e23803c..665fdb55edeb09ee4d4e9654c0b174da
 +  return ::kill(child_pid, 0) == 0 || errno == EPERM;
 +#endif
  }
-

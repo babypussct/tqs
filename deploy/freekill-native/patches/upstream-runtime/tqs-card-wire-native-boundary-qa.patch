@@ -3,7 +3,7 @@
 @@ -10,6 +10,123 @@
  using asio::use_awaitable;
  using asio::redirect_error;
- 
+
 +namespace {
 +
 +struct NativeWireBoundaryMetrics {
@@ -126,7 +126,7 @@
    disconnected_callback = [this] {
 @@ -104,6 +221,10 @@
  }
- 
+
  void ClientSocket::send(const std::shared_ptr<std::string> msg) {
 +  // QA-only native transport boundary.  This runs before the bytes enter the
 +  // TCP write queue and records only decoded-shape/channel/size metadata.  It
@@ -144,11 +144,11 @@
        handled++;
        reset();
 @@ -264,6 +386,7 @@
- 
+
  cbor_decoder_status ClientSocket::handleBuffer(size_t length) {
    cborBuffer.insert(cborBuffer.end(), m_data, m_data + length);
 +  recordNativeInboundPredecode(length, cborBuffer.size());
- 
+
    auto cbuf = (unsigned char *)cborBuffer.data();
    auto len = cborBuffer.size();
 --- a/src/network/router.cpp
@@ -156,7 +156,7 @@
 @@ -8,8 +8,329 @@
  #include "core/c-wrapper.h"
  #include "core/util.h"
- 
+
 +#include <chrono>
 +#include <algorithm>
 +#include <cstdlib>
@@ -167,7 +167,7 @@
 +#include "server/room/room.h"
 +
  namespace asio = boost::asio;
- 
+
 +namespace {
 +
 +struct NativeWireSemanticMetrics {
@@ -486,7 +486,7 @@
 @@ -69,24 +145,37 @@
    m_reply = "__notready";
    replyMutex.unlock();
- 
+
 -  sendMessage(Cbor::encodeArray({
 +  const auto started = std::chrono::steady_clock::now();
 +  auto message = Cbor::encodeArray({
@@ -505,7 +505,7 @@
 +  appendNativeWireSemanticRecord("outbound", command, message, player, true);
 +  sendMessage(message);
  }
- 
+
  void Router::notify(int type, const std::string_view &command, const std::string_view &data) {
    if (!socket) return;
 +  const auto started = std::chrono::steady_clock::now();
@@ -528,9 +528,9 @@
    int requestId = packet.requestId;
    int type = packet.type;
    auto cborData = packet.cborData;
- 
+
    std::string unCompressed;
- 
+
    if (type & COMPRESSED) {
      unCompressed = qUncompress_std(cborData);
      cborData = unCompressed;
@@ -539,5 +539,5 @@
 +    (type & TYPE_REPLY) ? "inbound-reply" :
 +      ((type & TYPE_NOTIFICATION) ? "inbound-notify" : "inbound-request"),
 +    packet.command, cborData, player, false);
- 
+
    if (type & TYPE_NOTIFICATION) {
