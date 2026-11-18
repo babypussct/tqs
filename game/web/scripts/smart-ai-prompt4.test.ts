@@ -4,7 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { LuaRuntime } from '../src/engine/luaRuntime';
 import { runPrompt4Audit } from './smart-ai-prompt4-audit';
-import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
+import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot } from './upstream-packages';
 
 const PACKAGE_FILE = /\.(lua|json|md|qml|js)$/iu;
 
@@ -30,7 +30,7 @@ function mountRuntimePackages(): Map<string, Uint8Array> {
 
 test('Prompt 4 inventory uses the real new_heg_mode pool and records pool-vs-match frequency', async () => {
   const baseline = await runPrompt4Audit(loadUpstreamFiles(
-    path.resolve(process.cwd(), '../../scratch/upstream'), UPSTREAM_PACKAGE_NAMES,
+    resolveUpstreamRoot(path.resolve(process.cwd(), '../../scratch/upstream')), UPSTREAM_PACKAGE_NAMES,
   ));
   const report = await runPrompt4Audit();
   assert.equal(baseline.pass, true, baseline.failures.join('; '));

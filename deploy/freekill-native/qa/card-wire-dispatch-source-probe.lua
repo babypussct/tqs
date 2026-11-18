@@ -84,6 +84,7 @@ local room = {
   room = { hasObserver = function() return true end },
 }
 function room:getSettings(name) return self.settings[name] end
+function room:hasCardWireCapability() return true end
 function room:delay() error("unexpected delay") end
 local host = setmetatable({ id = 1, _observers = { seat, secondController, robot }, room = room },
   { __index = playerMethods })

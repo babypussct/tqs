@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T05:44:44+07:00",
+  "scope": "bounded isolated native QA in-flight card-wire drain/reconnect; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "runnerEvidence": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794868711742.json",
+    "artifactSha256": "fe1e29960e82f2dbb1ad18487b8b450a3fd8bbf314e067cba9a982616eded6f8",
+    "result": "PASS",
+    "errors": 0,
+    "recovered": true,
+    "manualCardReply": true,
+    "cardWireRollbackDrainRequested": true,
+    "cardWireRollbackDrainObserved": true,
+    "scenario": "draw-sequence",
+    "twoPlayerClients": true,
+    "controlledReconnect": true,
+    "freshNegotiationAfterReconnect": "runner asserted at least two incoming CardWireNegotiated packets",
+    "boundedGameOver": "runner log observed bounded GameOver completion",
+    "nativeDeckPrivacyFailures": [0, 0],
+    "nativeSupplementalFailures": [0, 0]
+  },
+  "rollbackMarker": {
+    "schemaVersion": 1,
+    "event": "drain_applied",
+    "activeRoomProtocol": 1,
+    "newRoomAdmission": "legacy",
+    "reconnectProtocol": 1,
+    "source": "sanitized fixed-schema native QA log marker"
+  },
+  "policyObserved": {
+    "activeNegotiatedV1RoomRetained": true,
+    "futureRoomAdmissionChangedToLegacy": true,
+    "activeRoomReconnectRetainedV1": true,
+    "productionMutation": false,
+    "legacyWireAfterCleanup": "enabled",
+    "cardWireVersion1AfterCleanup": "QA-only configuration restored; no drain mode retained"
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "qaPackageOverlaySymlinkAbsent": true,
+    "qaDrainConfigurationRestored": true,
+    "rawPayloadRetained": false,
+    "credentialsOrPrivateIdentityRetained": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "productionPromotionAllowed": false,
+    "v1Default": "disabled-by-default; isolated-QA-only",
+    "legacyWire": "enabled"
+  },
+  "limitations": [
+    "This is a QA-only simulation of in-flight drain semantics: an already-negotiated v1 room remains on v1 while new admission becomes legacy and reconnect remains v1.",
+    "It is not production or canary rollback-SLA evidence, not a new-room admission smoke test, and not proof of exhaustive stale/replay or every-emitter stress behavior.",
+    "P6 approved thresholds and attribution, physical device/network acceptance (WAIVED_BY_USER, not PASS), immutable reviewed artifact and independent release approval remain open."
+  ]
+}

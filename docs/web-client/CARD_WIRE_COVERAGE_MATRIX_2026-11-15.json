@@ -1,0 +1,904 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17",
+  "scope": "P0 card-wire v1 coverage contract for new_heg_mode; candidate evidence only",
+  "protocol": "TQS_HEG_CARD_WIRE",
+  "mode": "new_heg_mode",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "upstreamPinsChangedForThisMatrix": false
+  },
+  "publicPreflight": {
+    "artifact": "docs/web-client/CARD_WIRE_PUBLIC_PREFLIGHT_2026-11-16.json",
+    "productionAliasHealthz": "HTTP 200 / ok",
+    "immutableDeploymentHealthz": "HTTP 200 / ok",
+    "productionAliasManifest": "HTTP 200",
+    "immutableDeploymentManifest": "HTTP 200",
+    "publicRuntimeMD5": "a21b6d26b4e350276266d79a94d41d54",
+    "publicBundleHash": "cd3581d00549f8f8",
+    "publicBundleFileCount": 5338,
+    "matchesIsolatedCardWireCandidate": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "candidatePreview": {
+    "artifact": "docs/web-client/CARD_WIRE_PAGES_PREVIEW_2026-11-16.json",
+    "environment": "Preview",
+    "branch": "card-wire-qa-20261116",
+    "immutableUrl": "https://e1dd5f0b.tqsvn.pages.dev",
+    "aliasUrl": "https://card-wire-qa-20261116.tqsvn.pages.dev",
+    "pagesFunctionsActive": true,
+    "candidateWebDistSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "sourceSnapshot": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-17.json",
+    "sourceSnapshotStatus": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL",
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "artifactIdentityAudit": {
+    "artifact": "docs/web-client/CARD_WIRE_ARTIFACT_IDENTITY_AUDIT_2026-11-16.json",
+    "status": "HOLD-RELEASE-GATES",
+    "publishEligible": false
+  },
+  "baseline": {
+    "strictDiagnosticCommand": "lua5.4 deploy/freekill-native/qa/card-wire-exposure-source-probe.lua <candidate-core-root> --strict",
+    "strictDiagnosticExpectedCurrentResult": "exit-2-with-12-exposure-groups",
+    "strictDiagnosticEvidence": "docs/web-client/CARD_WIRE_BASELINE_2026-11-15.json",
+    "negotiatedV1StrictSource": {
+      "command": "lua5.4 deploy/freekill-native/qa/card-wire-privacy-v1-source-probe.lua <candidate-core-root> <card-handle-protocol.lua> --strict",
+      "result": "PASS",
+      "exitCode": 0,
+      "auditedCategories": 12,
+      "nestedCardMarksAudited": true,
+      "evidence": "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json#negotiatedV1StrictSource",
+      "nativeBrowser": "not-covered-by-source-gate"
+    },
+    "privacyInterpretation": "The legacy diagnostic remains an intentionally red baseline that reproduces pre-v1 physical-ID exposure; the negotiated v1 strict source gate is PASS, and live native v1 privacy is tracked separately in latestNativeEvidence.",
+    "handoffProtocolEvidence": "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+    "candidateSourceEvidence": "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json",
+    "nativeEvidence": "docs/web-client/CARD_WIRE_NATIVE_EVIDENCE_2026-11-15.json",
+    "verificationNote": "The strict baseline was observed with Lua 5.4.9 on the exact candidate core and remains a synthetic/source diagnostic. Latest isolated candidate native C++/CBOR evidence is scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json: draw-sequence covers strict 12/12 across reconnect/observer, while card-chosen, cards-and-choice, Poxi, Arrange and Luoshen/AG separately cover five real choice/reply families; the latest Luoshen run observes FillAG/TakeAG plus one AskForAG request/reply. Supplemental metadata/public/request/reply packets were independently audited before PacketStream with zero failures. The QA-only native C++ boundary patch deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch was rebuilt and observed on the same candidate flow: 1,758/1,758 outbound packets decoded at the outer-CBOR boundary, 740 card-wire-classified, and 24 inbound pre-cbor-decode markers matched 24 post-cbor-decode packets; the bounded metrics contain no payload/token/identity keys. The same flow recorded eight bounded server timing samples: three project, one request-project and four server.rpc.cbor.encode serialize samples (6–500 ms), plus 740 native outer-Cbor::encodeArray timing samples (83–77,625 ns, p95 4,333 ns); repeated/release memory and performance approval remain open. A same-candidate v1-to-legacy rollback rerun is observed in scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json and scratch/evidence/cp08-draw-sequence-reconnect-live-1794794083939.json; this is still candidate-only. The evidence does not convert candidate/native evidence into a release PASS; remaining choice variants, browser-network and production/canary rollback gates remain separate."
+  },
+  "latestNativeEvidence": {
+    "observedAt": "2026-11-17",
+    "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "freshPrepareVerified": true,
+    "runnerResult": "PASS",
+    "luaRuntime": "Lua 5.4.9; executable basename lua5.4",
+    "audiences": 3,
+    "strictPrivacyCategoriesObserved": 12,
+    "nativeDeckFailures": 0,
+    "rawWireFailures": 0,
+    "supplementalWireFailures": 0,
+    "supplementalChannels": ["negotiation", "metadata", "public", "request", "reply"],
+    "semanticEvidence": "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+    "semanticRecords": 1365,
+    "semanticPassRecords": 1365,
+    "semanticFailures": 0,
+    "outerDecodedRecords": "1365/1365",
+    "innerDecodedRecords": "1365/1365",
+    "semanticAudiences": {"owner": 476, "opponent": 475, "observer": 414, "unknown": 0},
+    "semanticChannels": {"metadata": 933, "public": 228, "request": 4, "deck": 192, "negotiation": 4, "reply": 4},
+    "semanticScopes": {"outbound": 1361, "inbound-reply": 4, "inbound-notify": 0, "inbound-request": 0},
+    "semanticInvalidReferences": 0,
+    "semanticForbiddenFields": 0,
+    "nativeTransportBoundary": {
+      "observedArtifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+      "patch": "deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch",
+      "outboundOuterDecoded": "1758/1758",
+      "outboundCardWireClassified": 740,
+      "inboundPredecode": 24,
+      "inboundPostDecode": 24,
+      "forbiddenMetadataKeys": false,
+      "scope": "outbound ClientSocket::send plus inbound handleBuffer before/after cbor_stream_decode; bounded server project/serialize and native outer-CBOR timing observed"
+    },
+    "productionMutation": false
+  },
+  "observerLeaveEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json",
+    "rawSanitizedEvidence": "scratch/evidence/cp19-draw-sequence-reconnect-live-1794852482109.json",
+    "scenario": "draw-sequence",
+    "result": "PASS-bounded-staging",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "binarySha256": "2e4e5850f6ab8897845becc3194bbf7955148ca7d67a9280f5b9fcefc8a2bc29",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "audiences": 3,
+    "observerNegotiatedAndObserved": true,
+    "observerLeaveRequested": true,
+    "observerLeaveObserved": true,
+    "observerTransportClosed": true,
+    "nativeDisconnectObserved": false,
+    "playerReconnectObserved": true,
+    "playerGameOverAudiences": 2,
+    "strictPrivacyCategoriesObserved": 12,
+    "nativeWireFailures": 0,
+    "rawWireFailures": 0,
+    "supplementalWireFailures": 0,
+    "recovered": true,
+    "qaCleanupPortsClosed": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "currentDrawReconnectEvidence": {
+    "aggregate": "docs/web-client/CARD_WIRE_NATIVE_DRAW_RECONNECT_CURRENT_2026-11-16.json",
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+    "semanticEvidence": "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+    "result": "PASS",
+    "freshPrepareVerified": true,
+    "anonymousDrawSourceRegression": "PASS",
+    "reconnectUiFilterRegression": "PASS",
+    "strictPrivacyCategoriesObserved": 12,
+    "nativeAndSupplementalFailures": 0,
+    "recovered": true,
+    "gameOverAudiences": 3,
+    "releaseStatus": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "nativeSemanticEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+    "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+    "result": "PASS-bounded-current-candidate",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "records": 1365,
+    "semanticPassRecords": 1365,
+    "outerDecodedRecords": 1365,
+    "innerDecodedRecords": 1365,
+    "audiences": {"owner": 476, "opponent": 475, "observer": 414, "unknown": 0},
+    "channels": {"metadata": 933, "public": 228, "request": 4, "deck": 192, "negotiation": 4, "reply": 4},
+    "scopes": {"outbound": 1361, "inbound-reply": 4, "inbound-notify": 0, "inbound-request": 0},
+    "invalidReferences": 0,
+    "forbiddenFields": 0,
+    "nestedDecoded": 2,
+    "maxDepth": 6,
+    "rawPayloadRetained": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD",
+    "limitation": "Bounded semantic parser/counters are current native proof for observed packets; exhaustive every-emitter, stale/replay stress and P6/release gates remain open."
+  },
+  "currentRollbackEvidence": {
+    "aggregate": "docs/web-client/CARD_WIRE_ROLLBACK_CURRENT_2026-11-16.json",
+    "v1Artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794827509499.json",
+    "legacyArtifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794827899921.json",
+    "sameRuntimeIdentity": true,
+    "v1RunResult": "PASS",
+    "legacyRunResult": "PASS",
+    "legacyQaOverlayAbsent": true,
+    "legacyCardWireNegotiatedInTrace": false,
+    "candidateRollbackObserved": true,
+    "productionCanaryRollback": "OPEN",
+    "productionMutation": false
+  },
+  "packetSizeComparison": {
+    "artifact": "docs/web-client/CARD_WIRE_PACKET_SIZE_COMPARISON_CURRENT_2026-11-16.json",
+    "status": "OBSERVED_COMPARISON_PASS",
+    "legacyRunResult": "PASS",
+    "v1RunResult": "PASS",
+    "legacyCardWireVersion": 0,
+    "v1CardWireVersion": 1,
+    "legacyAudiences": 2,
+    "v1Audiences": 3,
+    "v1StrictPrivacyCategories": 12,
+    "legacyCaptureFailures": 0,
+    "v1CaptureFailures": 0,
+    "legacyRecovered": true,
+    "v1Recovered": true,
+    "thresholdStatus": "OPEN",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "repeatedProcessEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+    "runCount": 3,
+    "scenario": "draw-sequence",
+    "allRunsPass": true,
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "totalProcessSamples": 894,
+    "observedMinimumRssKb": 8944,
+    "observedMaximumRssKb": 15040,
+    "maximumRunCpuSeconds": 1.29,
+    "totalObservedElapsedSeconds": 235.999,
+    "nativeWireRecords": 11705,
+    "nativeCborSerializationTimingRecords": 4233,
+    "serverTimingRecords": 24,
+    "logicalMappingSourceObservation": {
+      "maxActiveReferences": 124,
+      "cleanupActiveReferences": 0,
+      "retiredTombstones": 320,
+      "foreignRejections": 1,
+      "replayRejections": 1,
+      "staleRejections": 1,
+      "syntheticOnly": true,
+      "nativeBrowserRun": false
+    },
+    "currentNativeObservation": {
+      "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+      "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+      "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+      "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+      "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+      "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+      "mappingRecords": 951,
+      "maximumActiveReferences": 192,
+      "maximumActiveRequests": 2,
+      "finalActiveReferences": 0,
+      "finalAudiences": 0,
+      "finalCleanupActiveReferences": 0,
+      "retiredTombstones": 417,
+      "intermediateDisconnectCleanupActiveReferences": [
+        74,
+        37,
+        0,
+        128,
+        64,
+        0,
+        52,
+        26,
+        0
+      ],
+      "scope": "latest current-candidate run only; boundary telemetry was overwritten between isolated runs"
+    },
+    "thresholdStatus": "OPEN",
+    "mappingMemoryStatus": "OPEN",
+    "releaseApproval": "not-granted",
+    "productionMutation": false
+  },
+  "replayEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json",
+    "runnerEvidence": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1794866425823.json",
+    "scenario": "draw-sequence",
+    "result": "PASS",
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "replayRequested": true,
+    "replayInjected": true,
+    "replaySentAfterSubsequentRequest": true,
+    "requestIdRewrittenForNativeRouting": true,
+    "rejectionObserved": true,
+    "choiceRejectCount": 1,
+    "originalGameplayRemainedActive": true,
+    "gameOverObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "semanticRecords": 1496,
+    "semanticPassRecords": 1496,
+    "semanticFailures": 0,
+    "outerDecodedRecords": "1496/1496",
+    "innerDecodedRecords": "1496/1496",
+    "semanticInvalidReferences": 0,
+    "semanticForbiddenFields": 0,
+    "browserErrors": 0,
+    "rawPayloadRetained": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD",
+    "limitation": "One bounded real-native stale/duplicate observation with semantic capture for the observed packets; exhaustive replay/concurrency stress and every-emitter semantic proof remain open."
+  },
+  "rollbackEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_ROLLBACK_REGRESSION_2026-11-16.json",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "v1RunResult": "PASS",
+    "legacyRunResult": "PASS",
+    "sameRuntimeIdentity": true,
+    "v1NegotiationPackets": 4,
+    "legacyNegotiationPackets": 0,
+    "legacyQaOverlayAbsent": true,
+    "candidateRollbackObserved": true,
+    "productionCanaryRollback": "OPEN",
+    "productionMutation": false
+  },
+  "choiceEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_CHOICE_2026-11-16.json",
+    "scenario": "card-chosen",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenAskForCardChosenObserved": true,
+    "opaqueCardChosenReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "cardsAndChoiceEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_2026-11-16.json",
+    "scenario": "cards-and-choice",
+    "result": "PASS",
+    "qaPackageSha256": "1fb4741116440ef9629e02c8c0505aeb599448cff5b93e8af686407e06403258",
+    "audiences": 3,
+    "cardsAndChoiceReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "fankuiEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_FANKUI_2026-11-16.json",
+    "deputyScenario": "hidden-fankui-deputy",
+    "scenario": "hidden-fankui",
+    "result": "PASS",
+    "qaPackageSha256": "ddc9da1dd8870260da852ac192b76f3fcebe0d6c83a8b3fdc23a1f2a41f34769",
+    "audiences": 3,
+    "mainAndDeputyRunsPass": true,
+    "fankuiDamageReplyObserved": true,
+    "fankuiCardChosenReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "showCardObserved": false,
+    "showVirtualCardObserved": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "fanjianEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_FANJIAN_2026-11-16.json",
+    "deputyScenario": "hidden-fanjian-deputy",
+    "scenario": "hidden-fanjian",
+    "result": "PASS",
+    "qaPackageSha256": "a7934505b01c73c7ef2c67f974f7c89bda67ee19a352026e39b46c14dd59db80",
+    "audiences": 3,
+    "mainAndDeputyRunsPass": true,
+    "showCardObserved": true,
+    "showVirtualCardObserved": false,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "virtualCardEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_VIRTUAL_CARD_2026-11-16.json",
+    "deputyScenario": "hidden-reveal-deputy",
+    "scenario": "hidden-reveal",
+    "result": "PASS",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "audiences": 3,
+    "mainAndDeputyRunsPass": true,
+    "hiddenDuoshiInvoked": true,
+    "showVirtualCardObserved": true,
+    "showVirtualCardCount": 6,
+    "nativeSupplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "poxiEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_POXI_2026-11-16.json",
+    "scenario": "poxi",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "multiCardPoxiReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "arrangeEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_ARRANGE_2026-11-16.json",
+    "deputyArtifact": "docs/web-client/CARD_WIRE_NATIVE_GUANXING_DEPUTY_2026-11-16.json",
+    "scenario": "hidden-guanxing",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "arrangeCardsReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "deputyResult": "PASS",
+    "deputySlotObserved": true,
+    "deputyArrangeCardsReplyObserved": true,
+    "deputyCleanupObserved": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "rehideEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_REHIDE_CURRENT_2026-11-16.json",
+    "deputyArtifact": "docs/web-client/CARD_WIRE_NATIVE_REHIDE_CURRENT_DEPUTY_2026-11-16.json",
+    "scenario": "hidden-rehide-yiji",
+    "result": "PASS",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "audiences": 3,
+    "hiddenYijiInvoked": true,
+    "retainedPrelightObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "deputyResult": "PASS",
+    "deputySlotObserved": true,
+    "deputyCleanupObserved": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "luoshenEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_LUOSHEN_2026-11-16.json",
+    "scenario": "hidden-luoshen",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenLuoshenInvoked": true,
+    "hiddenLuoshenAgReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "luoshenDeputyEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_LUOSHEN_DEPUTY_2026-11-16.json",
+    "scenario": "hidden-luoshen-deputy",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenLuoshenInvoked": true,
+    "hiddenLuoshenAgReplyObserved": true,
+    "deputySlotObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "cleanupObserved": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "revealEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_REVEAL_2026-11-16.json",
+    "deputyArtifact": "docs/web-client/CARD_WIRE_NATIVE_REVEAL_DEPUTY_2026-11-16.json",
+    "scenario": "hidden-reveal",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "activeRevealRequestOwnerOnly": true,
+    "activeRevealReplyObserved": true,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "deputyResult": "PASS",
+    "deputySlotObserved": true,
+    "deputyOwnerOnlyActiveRequestObserved": true,
+    "deputyCleanupObserved": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "mappingEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MAPPING_2026-11-16.json",
+    "repeatedArtifact": "docs/web-client/CARD_WIRE_NATIVE_MAPPING_REPEATED_2026-11-16.json",
+    "scenario": "draw-sequence",
+    "result": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "strictPrivacyCategoriesObserved": 12,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "maxActiveReferences": 98,
+    "finalActiveReferences": 0,
+    "finalAudiences": 0,
+    "cleanupObserved": true,
+    "repeatedRunCount": 2,
+    "repeatedAllRunsPass": true,
+    "repeatedAllRunsCleanupObserved": true,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "strictPrivacyCategories": [
+    {
+      "id": "prepare_order",
+      "component": "Draw pile preparation",
+      "emitter": "ltk/core/gamelogic.lua::GameLogic:prepareDrawPile",
+      "directPaths": ["PrepareDrawPile"],
+      "projector": "lua/server/card_wire_projection.lua::project deck payload; ltk/client/card_wire_deck.lua",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/client.lua::Client:prepareDrawPile",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-notification-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua",
+        "game/web/scripts/card-wire-browser-negotiation-probe.ts"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "shuffle_order",
+      "component": "Draw pile shuffle",
+      "emitter": "ltk/server/room.lua::Room:shuffleDrawPile",
+      "directPaths": ["ShuffleDrawPile"],
+      "projector": "lua/server/card_wire_projection.lua::project deck payload; ltk/client/card_wire_deck.lua",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/client.lua::Client:handleShuffleDrawPile",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-notification-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua",
+        "game/web/scripts/card-wire-browser-negotiation-probe.ts"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "sync_order",
+      "component": "Draw pile synchronization",
+      "emitter": "ltk/server/room.lua::Room:syncDrawPile",
+      "directPaths": ["SyncDrawPile"],
+      "projector": "lua/server/card_wire_projection.lua::project deck payload; ltk/client/card_wire_deck.lua",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/client.lua::Client:syncDrawPile",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-notification-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua",
+        "game/web/scripts/card-wire-browser-negotiation-probe.ts"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "change_area_order",
+      "component": "Card-area transition, including draw-to-public movement",
+      "emitter": "ltk/server/room.lua::Room:changeCardArea",
+      "directPaths": ["ChangeCardArea"],
+      "projector": "lua/server/card_wire_projection.lua::project ChangeCardArea; ltk/client/card_wire_area.lua",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/client.lua::Client:handleChangeCardArea",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-area-probe.lua",
+        "deploy/freekill-native/qa/card-wire-notification-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "hidden_move_id",
+      "component": "Concealed MoveCards sent to a non-authorized player",
+      "emitter": "ltk/server/events/movecard.lua::MoveEventWrappers:notifyMoveCards",
+      "directPaths": ["MoveCards"],
+      "projector": "lua/server/card_wire_projection.lua::project MoveCards; ltk/client/card_wire_moves.lua",
+      "audiences": ["opponent"],
+      "clientHandler": "ltk/client/client.lua::Client:moveCards",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-moves-probe.lua",
+        "deploy/freekill-native/qa/card-wire-notification-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "observe_hidden_move_id",
+      "component": "Concealed MoveCards sent to an observer",
+      "emitter": "ltk/server/events/movecard.lua::MoveEventWrappers:notifyMoveCards plus lua/server/roombase.lua::ServerRoomBase:tellRoomToObserver",
+      "directPaths": ["MoveCards", "Observe"],
+      "projector": "lua/server/card_wire_projection.lua::project per physical observer; ltk/client/card_wire_moves.lua",
+      "audiences": ["observer"],
+      "clientHandler": "ltk/client/client.lua::Client:moveCards",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-observer-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-moves-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "special_pile_id",
+      "component": "Private player special pile",
+      "emitter": "ltk/server/room.lua::Room:setPlayerPile",
+      "directPaths": ["SetPlayerPile", "MoveCards"],
+      "projector": "lua/server/card_wire_projection.lua::project private pile; ltk/client/card_wire_area.lua and card_wire_snapshots.lua",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/client.lua::Client:setPlayerPile",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-private-physical-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "reconnect_deck",
+      "component": "Reconnect snapshot draw pile",
+      "emitter": "lua/server/roombase.lua::ServerRoomBase:serialize(player)",
+      "directPaths": ["Reconnect"],
+      "projector": "lua/server/card_wire_projection.lua::project snapshot; ltk/client/card_wire_snapshots.lua",
+      "audiences": ["owner", "opponent"],
+      "clientHandler": "lua/client/clientbase.lua::Client:reconnect plus ltk/client/card_wire_snapshots.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-snapshot-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "reconnect_hand",
+      "component": "Reconnect snapshot concealed hand",
+      "emitter": "lua/server/roombase.lua::ServerRoomBase:serialize(player)",
+      "directPaths": ["Reconnect"],
+      "projector": "lua/server/card_wire_projection.lua::project hand by physical audience; ltk/client/card_wire_snapshots.lua",
+      "audiences": ["owner", "opponent"],
+      "clientHandler": "lua/client/clientbase.lua::Client:reconnect plus ltk/client/card_wire_snapshots.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-snapshot-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "reconnect_special",
+      "component": "Reconnect snapshot concealed special pile",
+      "emitter": "lua/server/roombase.lua::ServerRoomBase:serialize(player)",
+      "directPaths": ["Reconnect"],
+      "projector": "lua/server/card_wire_projection.lua::project private pile by physical audience; ltk/client/card_wire_snapshots.lua",
+      "audiences": ["owner", "opponent"],
+      "clientHandler": "lua/client/clientbase.lua::Client:reconnect plus ltk/client/card_wire_snapshots.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-snapshot-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "observe_deck",
+      "component": "Observer snapshot draw pile",
+      "emitter": "lua/server/roombase.lua::ServerRoomBase:tellRoomToObserver and :serialize(..., observer=true)",
+      "directPaths": ["Observe"],
+      "projector": "lua/server/card_wire_projection.lua::project observer snapshot; ltk/client/card_wire_snapshots.lua",
+      "audiences": ["observer"],
+      "clientHandler": "lua/client/clientbase.lua::Client:observe plus ltk/client/card_wire_snapshots.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-observer-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "observe_hand",
+      "component": "Observer snapshot concealed hand",
+      "emitter": "lua/server/roombase.lua::ServerRoomBase:tellRoomToObserver and :serialize(..., observer=true)",
+      "directPaths": ["Observe"],
+      "projector": "lua/server/card_wire_projection.lua::project observer hand refs; ltk/client/card_wire_snapshots.lua",
+      "audiences": ["observer"],
+      "clientHandler": "lua/client/clientbase.lua::Client:observe plus ltk/client/card_wire_snapshots.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-exposure-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-observer-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-snapshot-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    }
+  ],
+  "supplementalChannels": [
+    {
+      "id": "private_card_marks_and_metadata",
+      "component": "Private card marks, hand metadata and nested card fields",
+      "emitter": "lua/server/roombase.lua::notifyProperty/setPlayerMark plus Room:setCardMark and ServerPlayerBase:doNotify",
+      "directPaths": ["PropertyUpdate", "SetPlayerMark", "SetCardMark", "SetCardFootnote", "SetCardVirtName", "FilterCard"],
+      "projector": "lua/server/card_wire_projection.lua::project private physical notification; card-wire metadata schemas",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/card_wire_metadata.lua and generic Client callbacks",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-private-physical-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-card-mark-physical-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-metadata-probe.lua",
+        "deploy/freekill-native/qa/card-wire-projection-source-probe.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "docs/web-client/CARD_WIRE_NATIVE_FANKUI_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_FANJIAN_2026-11-16.json"
+      ],
+      "status": "candidate-source-only-or-bounded-native; release-open"
+    },
+    {
+      "id": "public_card_metadata_and_logs",
+      "component": "Public ShowCard, ShowVirtualCard and GameLog descriptors",
+      "emitter": "lua/server/serverplayer_base.lua::ServerPlayerBase:doNotify",
+      "directPaths": ["ShowCard", "ShowVirtualCard", "GameLog"],
+      "projector": "lua/server/card_wire_projection.lua::project public card descriptor",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/card_wire_public.lua plus Client:showCard/showVirtualCard/appendLog",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-client-public-probe.lua",
+        "deploy/freekill-native/qa/card-wire-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-projection-source-probe.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "docs/web-client/CARD_WIRE_NATIVE_FANJIAN_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_VIRTUAL_CARD_2026-11-16.json"
+      ],
+      "status": "candidate-native-ShowCard-and-ShowVirtualCard-observed; release-open"
+    },
+    {
+      "id": "request_choice_reply",
+      "component": "Card requests, choices and client replies",
+      "emitter": "lua/server/request.lua::Request:_sendPacket plus client ReplyToServer bridge",
+      "directPaths": ["AskForCardChosen", "AskForPoxi", "AskForAG", "AskForCardsAndChoice", "AskForArrangeCards", "AskForUseCard", "AskForResponseCard", "PlayCard", "AskForChoices", "ReplyToServer"],
+      "projector": "lua/server/card_wire_request.lua::project request allowlist and one-shot reply token",
+      "audiences": ["owner", "opponent"],
+      "clientHandler": "ltk/client/card_wire_requests.lua and game/web/src/engine/hostLua.ts",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-request-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-request-cbor-integrated-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-request-probe.lua",
+        "game/web/scripts/card-wire-browser-negotiation-probe.ts",
+        "game/web/scripts/multiplayer-e2e/run.ts"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-card-chosen-multiplayer-live-1794793068564.json",
+        "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794793243641.json",
+        "scratch/evidence/cp08-poxi-multiplayer-live-1794792879627.json",
+        "scratch/evidence/cp08-hidden-guanxing-multiplayer-live-1794793799487.json",
+        "scratch/evidence/cp08-hidden-luoshen-multiplayer-live-1794793552276.json",
+        "docs/web-client/CARD_WIRE_NATIVE_FANKUI_2026-11-16.json"
+      ],
+      "status": "candidate-source-only-or-bounded-native; release-open"
+    },
+    {
+      "id": "reveal_rehide_retire",
+      "component": "Reveal, rehide, move and opaque-reference retirement",
+      "emitter": "MoveEventWrappers:notifyMoveCards plus ShowCard/ShowVirtualCard metadata paths",
+      "directPaths": ["MoveCards", "ShowCard", "ShowVirtualCard", "GameLog"],
+      "projector": "card_wire_projection.lua::Batch:rekey and standing-reference projection",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "ltk/client/card_wire_refs.lua, card_wire_moves.lua and card_wire_public.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-projection-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-refs-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-moves-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-public-probe.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-hidden-rehide-yiji-multiplayer-live-1794793339406.json",
+        "scratch/evidence/cp08-hidden-reveal-multiplayer-live-1794793444573.json",
+        "docs/web-client/CARD_WIRE_NATIVE_VIRTUAL_CARD_2026-11-16.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "secure_mint_and_runtime",
+      "component": "Opaque-reference minting and fail-closed runtime invariants",
+      "emitter": "card-wire projection mint boundary",
+      "directPaths": ["all v1 projected packets"],
+      "projector": "lua/server/card_wire_secure_mint.lua plus runtime invariant checks",
+      "audiences": ["owner", "opponent", "observer", "reconnect-session"],
+      "clientHandler": "ltk/client/card_wire_refs.lua",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-secure-mint.lua",
+        "deploy/freekill-native/qa/card-wire-secure-runtime-source-probe.lua",
+        "deploy/freekill-native/qa/card-wire-client-refs-probe.lua"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "docs/web-client/CARD_WIRE_CSPRNG_FAILURE_2026-11-16.json"
+      ],
+      "status": "candidate-native-observed; release-open"
+    },
+    {
+      "id": "negotiation_and_rollback",
+      "component": "Version negotiation, no downgrade and legacy rollback boundary",
+      "emitter": "ServerRoomBase:negotiateCardWireV1 and ClientCallback negotiation seam",
+      "directPaths": ["CardWireNegotiated", "Reconnect", "legacy notifications"],
+      "projector": "negotiation envelope and session protocol boundary",
+      "audiences": ["owner", "opponent", "observer", "legacy-client"],
+      "clientHandler": "ltk/client/card_wire_negotiation.lua and game/web/src/engine/connection.ts",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-negotiation-source-probe.lua",
+        "game/web/scripts/card-wire-browser-negotiation-probe.ts",
+        "game/web/scripts/multiplayer-e2e/run.ts"
+      ],
+      "evidence": [
+        "docs/web-client/UPSTREAM_CARD_WIRE_PROTOCOL_2026-11-01.md",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794794083939.json"
+      ],
+      "status": "candidate-native-observed; release-clean-rollback-open"
+    },
+    {
+      "id": "performance_and_telemetry",
+      "component": "Projection/CBOR cost, mapping cardinality, packet size and sanitized rejection telemetry",
+      "emitter": "candidate projector, Lua CBOR boundary, QA-only native Router::notify/request outer-CBOR timing, ClientSocket::send boundary and native browser-WebSocket capture",
+      "directPaths": [
+        "Projection.project",
+        "cbor.encode",
+        "outer CBOR packet capture",
+        "Router::notify/request Cbor::encodeArray QA timing",
+        "ClientSocket::send QA boundary",
+        "GameOver/disconnect cleanup"
+      ],
+      "projector": "same audience-scoped projector; telemetry is metadata-only and never carries identity or payload",
+      "audiences": [
+        "owner",
+        "opponent",
+        "observer"
+      ],
+      "clientHandler": "game/web/scripts/multiplayer-e2e/evidence-sanitize.ts bounded packetBytes buckets",
+      "tests": [
+        "deploy/freekill-native/qa/card-wire-performance-source-probe.lua",
+        "deploy/freekill-native/qa/upstream-first-source.test.mjs",
+        "game/web/scripts/multiplayer-e2e/evidence-sanitize.test.ts",
+        "game/web/scripts/card-wire-coverage.test.ts"
+      ],
+      "evidence": [
+        "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_NATIVE_EVIDENCE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CBOR_TIMING_2026-11-16.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+        "deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch"
+      ],
+      "status": "candidate-source-and-boundary-observed; native-release-performance-open"
+    },
+    {
+      "id": "gameover_cleanup",
+      "component": "GameOver and packets emitted during teardown",
+      "emitter": "native room GameOver lifecycle plus post-game notification cleanup",
+      "directPaths": ["GameOver", "SetPlayerState", "disconnect/reconnect boundary"],
+      "projector": "public scalar GameOver projection; no private card payload may bypass cleanup policy",
+      "audiences": ["owner", "opponent", "observer"],
+      "clientHandler": "game/web/scripts/multiplayer-e2e/run.ts trace and GameResult UI path",
+      "tests": [
+        "game/web/scripts/multiplayer-e2e/run.ts",
+        "game/web/scripts/multiplayer-e2e/native-privacy.ts",
+        "deploy/freekill-native/qa/card-wire-native-deck-audit.lua"
+      ],
+      "evidence": [
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json"
+      ],
+      "status": "candidate-native-observed; release-clean-rollback-open"
+    }
+  ]
+}

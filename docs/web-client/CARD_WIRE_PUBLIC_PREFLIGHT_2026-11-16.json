@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T21:18:57+07:00",
+  "scope": "read-only public preflight for card-wire candidate release decision",
+  "endpoints": {
+    "productionAlias": "https://tqsvn.pages.dev/",
+    "immutableDeployment": "https://dda30ae9.tqsvn.pages.dev/",
+    "healthz": {
+      "productionAlias": "HTTP 200; body ok",
+      "immutableDeployment": "HTTP 200; body ok"
+    },
+    "manifest": {
+      "productionAlias": "HTTP 200",
+      "immutableDeployment": "HTTP 200"
+    }
+  },
+  "publicIdentity": {
+    "indexSha256": "0e55a135d03beb2c765f861e50ec83adc1212c5819d9a213d1fdfb2ec2e5065b",
+    "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+    "bundleHash": "cd3581d00549f8f8",
+    "bundleFileCount": 5338,
+    "builtAt": "2026-11-14T18:46:48.239Z",
+    "packageCount": 16,
+    "productionMutation": false
+  },
+  "candidateComparison": {
+    "candidateRuntimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "candidateWebDistSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "publicMatchesCardWireCandidate": false,
+    "interpretation": "Public identity remains the approved upstream-first production artifact; the isolated card-wire candidate has not been promoted and v1 remains outside production."
+  },
+  "latestReadOnlyVerification": {
+    "observedAt": "2026-11-16T21:18:57+07:00",
+    "previewAlias": {
+      "healthz": "HTTP 200; body ok",
+      "rootIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+      "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+      "bundleHash": "cd3581d00549f8f8",
+      "fileCount": 5338,
+      "packageCount": 16,
+      "buildId": "4bb56f1a5c60e4c0e82b816e6c217c3ee7d96d86dee13ffd8af749dfcc50c2d7"
+    },
+    "previewImmutable": {
+      "healthz": "HTTP 200; body ok",
+      "rootIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+      "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+      "bundleHash": "cd3581d00549f8f8",
+      "fileCount": 5338,
+      "packageCount": 16,
+      "buildId": "4bb56f1a5c60e4c0e82b816e6c217c3ee7d96d86dee13ffd8af749dfcc50c2d7"
+    },
+    "productionAlias": {
+      "healthz": "HTTP 200; body ok",
+      "rootIndexSha256": "0e55a135d03beb2c765f861e50ec83adc1212c5819d9a213d1fdfb2ec2e5065b",
+      "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+      "bundleHash": "cd3581d00549f8f8",
+      "fileCount": 5338,
+      "packageCount": 16,
+      "buildId": "28ccc9e53c6e23db22827b01a535ab0162e563ac4bc6a2b529e4ab11dfd43796"
+    },
+    "productionImmutable": {
+      "healthz": "HTTP 200; body ok",
+      "rootIndexSha256": "0e55a135d03beb2c765f861e50ec83adc1212c5819d9a213d1fdfb2ec2e5065b",
+      "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+      "bundleHash": "cd3581d00549f8f8",
+      "fileCount": 5338,
+      "packageCount": 16,
+      "buildId": "28ccc9e53c6e23db22827b01a535ab0162e563ac4bc6a2b529e4ab11dfd43796"
+    },
+    "candidateStillNotPromoted": true
+  },
+  "privacy": {
+    "credentialsStored": false,
+    "rawPayloadStored": false,
+    "privateCardOrGeneralDataStored": false
+  },
+  "releaseStatus": "OPEN-HOLD",
+  "limits": [
+    "This is a read-only HTTPS preflight, not authenticated gameplay, device/network acceptance, production canary rollback, or release approval.",
+    "The integrated web tool could not open these public URLs; the observations above came from runtime curl and were not used as a substitute for the missing authenticated/device gates.",
+    "Legacy wire remains the production default and card-wire v1 remains off outside explicitly negotiated isolated QA."
+  ]
+}

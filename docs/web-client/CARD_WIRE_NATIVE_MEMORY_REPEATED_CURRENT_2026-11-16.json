@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only repeated native draw-sequence process and boundary observation for the current card-wire candidate",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+    "scenario": "draw-sequence",
+    "luaRuntime": "Lua 5.4.9; executable basename lua5.4"
+  },
+  "aggregateObservation": {
+    "runCount": 3,
+    "allRunsPass": true,
+    "allRunsRecovered": true,
+    "allRunsErrors": [],
+    "audiencesPerRun": 3,
+    "totalProcessSamples": 894,
+    "firstRssKbRange": [
+      14032,
+      14688
+    ],
+    "lastRssKbRange": [
+      11584,
+      12208
+    ],
+    "observedMinimumRssKb": 8944,
+    "observedMaximumRssKb": 15040,
+    "maximumRunCpuSeconds": 1.29,
+    "totalObservedElapsedSeconds": 235.999,
+    "nativeWireRecords": 11705,
+    "nativeWireOutboundRecords": 11509,
+    "nativeWireInboundRecords": 196,
+    "nativeWireOutboundOuterDecodedRecords": 11607,
+    "nativeWireCardWireRecords": 4233,
+    "nativeWireInboundPredecodeRecords": 98,
+    "nativeWireInboundPostdecodeRecords": 98,
+    "nativeWireChannels": {
+      "deck": 591,
+      "metadata": 2874,
+      "negotiation": 12,
+      "public": 740,
+      "request": 16,
+      "other": 7472
+    },
+    "nativeWirePacketBytes": {
+      "min": 0,
+      "max": 3460
+    },
+    "nativeCborSerializationTimingRecords": 4233,
+    "nativeCborSerializationTiming": {
+      "scopes": {
+        "notify": 4217,
+        "request": 16
+      },
+      "minElapsedNs": 83,
+      "p95ElapsedNs": 4708,
+      "maxElapsedNs": 823000,
+      "maxWireBytes": 3460,
+      "scope": "latest run only; native QA boundary/timing files were overwritten between isolated runs"
+    },
+    "serverTimingRecords": 24,
+    "serverTimingScopes": {
+      "project": 9,
+      "request-project": 3,
+      "serialize": 12
+    },
+    "serverTimingElapsedMs": {
+      "min": 2,
+      "max": 505
+    },
+    "supplementalCapture": {
+      "packets": 3654,
+      "frames": 11524,
+      "incomingPackets": 3640,
+      "replyPackets": 14,
+      "failures": 0,
+      "channels": {
+        "negotiation": 12,
+        "metadata": 2872,
+        "public": 740,
+        "request": 16,
+        "reply": 14
+      }
+    },
+    "strictPrivacy": {
+      "audiencesPerRun": 3,
+      "categoriesObserved": 12,
+      "nativeDeckFailures": 0,
+      "supplementalFailures": 0,
+      "projectorHashes": [
+        "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d"
+      ]
+    },
+    "memoryAllocationDiagnosticCounts": [
+      0,
+      0,
+      0
+    ],
+    "allRunsProcessesClosed": true,
+    "allRunsListenersClosed": true,
+    "productionMutation": false
+  },
+  "latestRunBoundaryTelemetry": {
+    "run": 3,
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794836390405.json",
+    "scope": "latest run only; native QA boundary/timing files were overwritten between isolated runs",
+    "nativeWire": {
+      "records": 11705,
+      "outboundRecords": 11509,
+      "outboundOuterDecodedRecords": 11607,
+      "outboundCardWireRecords": 4233,
+      "inboundPredecodeRecords": 98,
+      "inboundPostdecodeRecords": 98,
+      "channels": {
+        "deck": 591,
+        "metadata": 2874,
+        "negotiation": 12,
+        "public": 740,
+        "request": 16,
+        "other": 7472
+      },
+      "forbiddenMetadataKeysObserved": false,
+      "maxPacketBytes": 3460
+    },
+    "nativeCborSerializationTiming": {
+      "records": 4233,
+      "scopes": {
+        "notify": 4217,
+        "request": 16
+      },
+      "p95ElapsedNs": 4708,
+      "maxElapsedNs": 823000,
+      "maxWireBytes": 3460,
+      "forbiddenMetadataKeysObserved": false
+    },
+    "serverTiming": {
+      "records": 24,
+      "scopes": {
+        "project": 9,
+        "request-project": 3,
+        "serialize": 12
+      },
+      "minElapsedMs": 2,
+      "maxElapsedMs": 505,
+      "forbiddenMetadataKeysObserved": false
+    }
+  },
+  "logicalMappingSourceObservation": {
+    "artifact": "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json#performanceSourceEvidence",
+    "result": "PASS",
+    "cases": 6,
+    "audiences": 3,
+    "iterationsPerAudience": 12,
+    "projectP95Us": 181,
+    "serializeP95Us": 24,
+    "maxWireBytes": 5646,
+    "maxActiveReferences": 124,
+    "cleanupActiveReferences": 0,
+    "retiredTombstones": 320,
+    "foreignRejections": 1,
+    "replayRejections": 1,
+    "staleRejections": 1,
+    "syntheticOnly": true,
+    "nativeBrowserRun": false,
+    "interpretation": "Candidate source/runtime projection and Lua protocol cleanup evidence; it is retained for coverage compatibility and does not provide native process-memory attribution or release approval."
+  },
+  "liveNativeMappingObservation": {
+    "source": "scratch/evidence/card-wire-native-macos-20261103/native-card-wire-mapping.jsonl",
+    "scope": "latest current-candidate run only; the QA root telemetry files were overwritten between the three isolated runs",
+    "mappingRecords": 951,
+    "mappingEventCounts": {
+      "protocol_created": 3,
+      "batch_commit": 799,
+      "disconnect": 9
+    },
+    "maximumObserved": {
+      "audiences": 3,
+      "activeReferences": 192,
+      "activeRequests": 2,
+      "retiredTombstones": 417
+    },
+    "disconnectCleanupActiveReferences": [
+      74,
+      37,
+      0,
+      128,
+      64,
+      0,
+      52,
+      26,
+      0
+    ],
+    "finalDisconnect": {
+      "audiences": 0,
+      "activeReferences": 0,
+      "activeRequests": 0,
+      "activeTokenRefs": 0,
+      "retiredTombstones": 138,
+      "cleanupActiveReferences": 0,
+      "reason": "none"
+    },
+    "allAudiencesDisconnected": true,
+    "attributionStatus": "Observed logical mapping counters and final GameOver cleanup; this is not native RSS attribution and has no approved numeric memory threshold."
+  },
+  "runs": [
+    {
+      "run": 1,
+      "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794836211099.json",
+      "result": "PASS",
+      "recovered": true,
+      "errors": [],
+      "processMetrics": {
+        "sampleCount": 365,
+        "firstRssKb": 14688,
+        "minRssKb": 8944,
+        "maxRssKb": 15040,
+        "lastRssKb": 11584,
+        "maxCpuSeconds": 1.01,
+        "elapsedSeconds": 96.475,
+        "sampling": "ps-rss-cputime"
+      },
+      "audiences": 3,
+      "strictPrivacyCategoriesObserved": 12,
+      "nativeDeckFailures": 0,
+      "supplementalCapture": {
+        "packets": 1141,
+        "frames": 3589,
+        "incomingPackets": 1135,
+        "replyPackets": 6,
+        "failures": 0,
+        "channels": {
+          "negotiation": 4,
+          "metadata": 905,
+          "public": 218,
+          "request": 8,
+          "reply": 6
+        }
+      },
+      "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d",
+      "memoryAllocationDiagnosticCounts": [
+        0,
+        0
+      ]
+    },
+    {
+      "run": 2,
+      "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794836323470.json",
+      "result": "PASS",
+      "recovered": true,
+      "errors": [],
+      "processMetrics": {
+        "sampleCount": 350,
+        "firstRssKb": 14064,
+        "minRssKb": 11504,
+        "maxRssKb": 14992,
+        "lastRssKb": 12208,
+        "maxCpuSeconds": 1.29,
+        "elapsedSeconds": 92.249,
+        "sampling": "ps-rss-cputime"
+      },
+      "audiences": 3,
+      "strictPrivacyCategoriesObserved": 12,
+      "nativeDeckFailures": 0,
+      "supplementalCapture": {
+        "packets": 1622,
+        "frames": 5489,
+        "incomingPackets": 1618,
+        "replyPackets": 4,
+        "failures": 0,
+        "channels": {
+          "negotiation": 4,
+          "metadata": 1267,
+          "public": 343,
+          "request": 4,
+          "reply": 4
+        }
+      },
+      "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d",
+      "memoryAllocationDiagnosticCounts": [
+        0,
+        0
+      ]
+    },
+    {
+      "run": 3,
+      "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794836390405.json",
+      "result": "PASS",
+      "recovered": true,
+      "errors": [],
+      "processMetrics": {
+        "sampleCount": 179,
+        "firstRssKb": 14032,
+        "minRssKb": 11680,
+        "maxRssKb": 14912,
+        "lastRssKb": 12080,
+        "maxCpuSeconds": 0.62,
+        "elapsedSeconds": 47.275,
+        "sampling": "ps-rss-cputime"
+      },
+      "audiences": 3,
+      "strictPrivacyCategoriesObserved": 12,
+      "nativeDeckFailures": 0,
+      "supplementalCapture": {
+        "packets": 891,
+        "frames": 2446,
+        "incomingPackets": 887,
+        "replyPackets": 4,
+        "failures": 0,
+        "channels": {
+          "negotiation": 4,
+          "metadata": 700,
+          "public": 179,
+          "request": 4,
+          "reply": 4
+        }
+      },
+      "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d",
+      "memoryAllocationDiagnosticCounts": [
+        0,
+        0
+      ]
+    }
+  ],
+  "thresholdPolicy": {
+    "thresholdStatus": "OPEN",
+    "mappingMemoryStatus": "OPEN",
+    "releaseApproval": "not-granted",
+    "approvedNumericThresholdSource": null,
+    "note": "No repository-authoritative numeric memory or latency threshold was found for this gate. These repeated observations are evidence for review, not a release PASS."
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "limitations": [
+    "This aggregate covers one bounded draw-sequence scenario repeated three times with two clients and a fresh observer; it is not a full choice, reveal, re-hide, stale-reference or long-lived room-churn matrix.",
+    "The latest native mapping file provides one run's logical active-reference and disconnect-cleanup observation; intermediate disconnect cleanup values are retained, and only the final zero-audience row is a final cleanup observation.",
+    "The process metrics are post-server-ready RSS/CPU samples and cannot attribute memory to active or retired card references, room/session ownership, or a production memory budget.",
+    "Raw run artifacts are sanitized metadata-only traces. No credentials, account identifiers, card IDs, general names, hand contents, payloads or raw exceptions were copied into this aggregate.",
+    "The strict legacy exposure diagnostic remains intentionally open with 12 exposure groups; this candidate v1 observation does not turn the legacy diagnostic or production privacy decision into PASS.",
+    "Production/canary performance and rollback, hosted/canary network verification, an approved threshold, and release approval remain open; physical device/network testing is WAIVED_BY_USER and is not called PASS."
+  ],
+  "result": "PASS-repeated-current-candidate-native-process-boundary-and-final-mapping-cleanup-observation; mapping-memory attribution, approved thresholds and release gates remain OPEN"
+}

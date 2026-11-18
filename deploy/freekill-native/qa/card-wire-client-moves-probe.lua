@@ -237,6 +237,28 @@ check("private-to-public move retires opaque source and publishes canonical ID",
   rejects(function() room.card_wire_refs:toWire(localId) end, "expired or unrecognized")
 end)
 
+check("returning a hidden card to the draw pile mints an anonymous slot", function()
+  local room = newRoom(1)
+  local ref = token(12)
+  local localId = room.card_wire_refs:toLocal(ref)
+  room.players[2].player_cards[Player.Hand] = { localId }
+  room:setCardArea(localId, Card.PlayerHand, 2)
+  local replacementRef = token(13)
+  room:moveCards({ {
+    { from = 2, toArea = Card.DrawPile, drawPilePosition = 1,
+      moveInfo = { { cardId = replacementRef, fromArea = Card.PlayerHand,
+        cardWireRetiredRefs = { ref } } } },
+  }, 28 })
+  local drawId = room.draw_pile[1]
+  assert(drawId and room.card_wire_refs:isAnonymous(drawId),
+    "a returned draw-pile card must use an anonymous local slot")
+  assert(room.card_wire_refs.byToken[replacementRef] == nil,
+    "a draw-pile rekey must not retain an opaque destination handle")
+  assert(room.players[2].player_cards[Player.Hand][1] == nil and
+    room.card_place[drawId] == Card.DrawPile,
+    "the source hand must be replaced atomically by the anonymous draw slot")
+end)
+
 check("public rekey must retire the standing opaque source reference", function()
   local room = newRoom(1)
   local ref = token(11)
@@ -281,6 +303,32 @@ check("stable hidden move keeps its local identity", function()
   }, 20 })
   assert(room.players[2].special_cards["$secret"][1] == localId)
   assert(room.card_place[localId] == Card.PlayerSpecial and room.owner_map[localId] == 2)
+end)
+
+check("same-packet card transition retires a token minted earlier in the packet", function()
+  local room = newRoom(1)
+  local old = seedDraw(room, 2)
+  local remaining = old[2]
+  local ref = token(14)
+  room:moveCards({ {
+    { to = 2, toArea = Card.PlayerHand, moveInfo = {
+      { cardId = ref, fromArea = Card.DrawPile },
+    } },
+    { from = 2, toArea = Card.DiscardPile, moveVisible = true, moveInfo = {
+      { cardId = 105, fromArea = Card.PlayerHand,
+        cardWireRetiredRefs = { ref } },
+    } },
+  }, 29 })
+  assert(room.draw_pile[1] == remaining, string.format(
+    "same-packet draw transition must consume one anonymous slot (got %s, expected %s)",
+    tostring(room.draw_pile[1]), tostring(remaining)))
+  assert(#room.players[2].player_cards[Player.Hand] == 0,
+    "same-packet chained transition must remove the intermediate hand card")
+  assert(room.discard_pile[1] == 105 and room.card_place[105] == Card.DiscardPile,
+    "same-packet chained transition must publish the final public card")
+  assert(room.card_wire_refs.byToken[ref] == nil and
+    room.card_wire_refs.retiredTokens[ref] == true,
+    "the intermediate opaque token must retire exactly at the public transition")
 end)
 
 check("SetPlayerPile localizes private refs and classifies tracker knowledge", function()

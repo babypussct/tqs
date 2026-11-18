@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T19:41:16+07:00",
+  "scope": "local read-only source snapshot prepared for card-wire release review; no publish",
+  "snapshot": {
+    "relativePath": "scratch/evidence/CARD_WIRE_SOURCE_SNAPSHOT_2026-11-16.tar.gz",
+    "sha256": "45a059fabf0feeccc522f4c04499550d4d523afe937bbe8e9ae895e7a4c35e22",
+    "bytes": 86595510,
+    "archiveEntries": 3139,
+    "fileMode": "0444",
+    "archiveReadOnly": true,
+    "excluded": [
+      ".git",
+      "node_modules",
+      "scratch",
+      "game/web/dist",
+      "dist",
+      "dist-shop",
+      "runtime",
+      "deploy/freekill-native/runtime",
+      "game/web/public/glue.wasm",
+      "*.env",
+      "*.env.*",
+      "*.log"
+    ],
+    "sensitiveLookingNamesCheck": "PASS"
+  },
+  "source": {
+    "branch": "main",
+    "commit": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "checkoutWasDirty": true,
+    "changedFileCount": 109,
+    "gitDiffCheck": "PASS"
+  },
+  "review": {
+    "status": "PREPARED_NOT_REVIEWED",
+    "publishEligible": false,
+    "reason": "The archive captures the current dirty worktree for review, but no separate release approver has accepted its contents or the remaining card-wire gates.",
+    "remainingGates": [
+      "approved performance and mapping-memory thresholds",
+      "production/canary rollback SLA",
+      "physical device/network acceptance",
+      "separate release approval"
+    ]
+  },
+  "production": {
+    "mutation": false,
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only"
+  },
+  "relatedEvidence": [
+    "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_2026-11-16.json",
+    "docs/web-client/CARD_WIRE_PAGES_PREVIEW_2026-11-16.json"
+  ],
+  "supersededBy": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_2026-11-16.json"
+}

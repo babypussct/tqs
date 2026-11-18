@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T20:43:17+07:00",
+  "scope": "requirement-level audit of pasted card-wire v1 acceptance plan against the current dirty candidate worktree; no production promotion",
+  "sourcePlan": "pasted-text-1.txt",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "latestEvidenceIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "requirements": [
+    {
+      "id": "P0-coverage-baseline",
+      "status": "PASS-candidate",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_COVERAGE_MATRIX_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_BASELINE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json"
+      ],
+      "limitation": "The legacy physical-ID diagnostic intentionally remains OPEN/red; it is the protected baseline, not a v1 privacy result."
+    },
+    {
+      "id": "P1-opaque-reference-contract",
+      "status": "PASS-source-PARTIAL-native",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json",
+        "game/web/scripts/card-wire-coverage.test.ts",
+        "game/web/scripts/multiplayer-e2e/evidence-sanitize.test.ts",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_UPSTREAM_FIRST_SOURCE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794870822325.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json"
+      ],
+      "limitation": "Mint, audience mapping, move/retire, reveal/rehide, reverse validation, CSPRNG fail-closed and one real native stale/duplicate rejection are covered by source/unit probes and bounded native flows; exhaustive native stale/replay stress is not closed."
+    },
+    {
+      "id": "P2-projector-and-direct-send-paths",
+      "status": "PASS-source-PARTIAL-semantic-native",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_NATIVE_EVIDENCE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_UPSTREAM_FIRST_SOURCE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json"
+      ],
+      "limitation": "Source guards and bounded pre-decode counters cover the listed channels; the current semantic captures prove actual outer/inner CBOR for observed packets including the cards-and-choice emitter, while exhaustive every-emitter coverage remains open."
+    },
+    {
+      "id": "P3-native-cpp-cbor-and-audiences",
+      "status": "PASS-bounded-PARTIAL-exhaustive",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_NATIVE_EVIDENCE_2026-11-15.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CBOR_TIMING_2026-11-16.json",
+        "scratch/evidence/cp19-draw-sequence-reconnect-live-1794852482109.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_UPSTREAM_FIRST_SOURCE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794870822325.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json"
+      ],
+      "limitation": "Exact current candidate native binary and QA package now have a bounded b5 run with three audiences, actual outer/inner CBOR decode, inbound reply, reconnect, observer and GameOver; the run adds 895/895 semantic records and zero parser failures. The plan's exhaustive every-emitter/stress proof and approved release gates are not achieved."
+    },
+    {
+      "id": "P4-browser-bridge-and-lifecycle",
+      "status": "PASS-bounded-PARTIAL-matrix",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_BROWSER_E2E_CURRENT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp19-draw-sequence-reconnect-live-1794852482109.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794870822325.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_REAL_LUA_E2E_CURRENT_2026-11-18.json"
+      ],
+      "limitation": "Negotiation, owner/opponent/observer, draw, PlayCard, cards-and-choice, reconnect, Observe, semantic CBOR and GameOver pass on the current candidate across bounded scenarios, including a b5 identity-aligned reconnect run; the full choice/reveal/rehide/deputy/reconnect matrix remains distributed rather than one complete end-to-end run."
+    },
+    {
+      "id": "P5-strict-privacy-and-sanitization",
+      "status": "PASS-candidate",
+      "evidence": [
+        "scratch/evidence/cp19-draw-sequence-reconnect-live-1794852482109.json",
+        "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_UPSTREAM_FIRST_SOURCE_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_REAL_LUA_E2E_CURRENT_2026-11-18.json",
+        "game/web/scripts/multiplayer-e2e/evidence-sanitize.test.ts"
+      ],
+      "observed": {
+        "strictCategories": 12,
+        "nativeFailures": 0,
+        "rawWireFailures": 0,
+        "supplementalFailures": 0,
+        "browserErrors": 0,
+        "rawCredentialMarker": false
+      },
+      "limitation": "This is current isolated candidate evidence; it does not override the intentionally red legacy diagnostic or authorize production."
+    },
+    {
+      "id": "P6-performance-memory-and-telemetry",
+      "status": "OPEN",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_PACKET_SIZE_COMPARISON_CURRENT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CBOR_TIMING_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_P6_THRESHOLD_PROPOSAL_CURRENT_2026-11-18.json"
+      ],
+      "limitation": "Bounded packet, timing, RSS and sanitized native marker observations pass; a candidate threshold/attribution proposal is prepared but no numeric threshold or attribution has been approved."
+    },
+    {
+      "id": "rollback-and-drain-policy",
+      "status": "PASS-sequential-PARTIAL-in-flight",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_ROLLBACK_CURRENT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_REGRESSION_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_NEW_ROOM_SMOKE_CURRENT_2026-11-17.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794870822325.json",
+        "scratch/evidence/cp08-draw-sequence-multiplayer-live-1794871743264.json",
+        "scratch/evidence/cp08-draw-sequence-reconnect-live-1794868711742.json"
+      ],
+      "limitation": "Same-runtime v1 completion followed by a legacy-only room passes, and the current two-room same-process smoke observes an in-flight v1 room retaining v1 through reconnect followed by a new room with default v1 capability receiving zero CardWireNegotiated packets while gameplay completes on legacy. Production/canary rollback SLA, scale/exhaustive drain stress and broader mixed-version admission remain open."
+    },
+    {
+      "id": "legacy-regression",
+      "status": "PASS-candidate",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_ROLLBACK_CURRENT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_ARTIFACT_IDENTITY_AUDIT_2026-11-16.json",
+        "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json"
+      ],
+      "limitation": "Legacy remains the production path and candidate rollback was observed; this is not a production/canary approval."
+    },
+    {
+      "id": "ci-installer-browser-baseline",
+      "status": "PASS-local-PARTIAL-ci-release",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_BROWSER_E2E_CURRENT_2026-11-16.json",
+      "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json",
+      "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-17.json"
+      ],
+      "observed": {
+        "sourceSuite": "41/41",
+        "browserE2e": "72/72",
+        "qaServerContract": "66/66",
+        "releaseContract": "5/5",
+        "buildSafety": "7/7",
+        "typecheckAll": "PASS"
+      },
+      "limitation": "These are local candidate checks; an immutable reviewed release and official CI/installer sign-off are not established by this dirty checkout."
+    },
+    {
+      "id": "qa-cleanup-and-sanitized-checkpoint",
+      "status": "PASS-current-run",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ROLLBACK_NEW_ROOM_SMOKE_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+      "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-17.json",
+        "docs/CODEX_STATE.md"
+      ],
+      "observed": {
+        "portsClosed": [19681, 9000, 9527],
+        "nativeQaProcessClosed": true,
+        "screenClosed": true,
+        "productionMutation": false,
+        "sourceArchiveSymlinks": 0
+      }
+    },
+    {
+      "id": "device-network-acceptance",
+      "status": "WAIVED_BY_USER-not-PASS",
+      "evidence": ["docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json"],
+      "limitation": "No physical-device/network acceptance is claimed."
+    },
+    {
+      "id": "production-canary-release-approval",
+      "status": "OPEN",
+      "evidence": [
+        "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json",
+      "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-17.json",
+        "docs/web-client/CARD_WIRE_ARTIFACT_IDENTITY_AUDIT_2026-11-16.json"
+      ],
+      "limitation": "No approved threshold, production/canary rollback SLA, reviewed clean publish artifact or independent release approval is present."
+    }
+  ],
+  "latestNativeReplay": {
+    "metadata": "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+    "artifact": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1795007855791.json",
+    "status": "PASS-bounded-native-replay",
+    "runnerExitCode": 0,
+    "semanticRecords": 1136,
+    "semanticFailures": 0,
+    "replayRejectCount": 1,
+    "mappingFinalActiveReferences": 0,
+    "limitation": "One bounded two-client native replay run; exhaustive emitter/stale/concurrency stress, P6 thresholds and release gates remain open."
+  },
+  "latestNativeCSPRNG": {
+    "metadata": "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+    "artifacts": [
+      "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009289427.json",
+      "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009366511.json",
+      "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009422160.json"
+    ],
+    "status": "PASS-bounded-native-csprng",
+    "runnerExitCodes": [0, 0, 0],
+    "failureShapes": ["open", "short-read", "close"],
+    "negotiatedPackets": [2, 2, 2],
+    "cardBearingPackets": [0, 0, 0],
+    "batchAborts": [2, 3, 3],
+    "lastAbortActiveReferences": [0, 0, 0],
+    "lastAbortActiveRequests": [0, 0, 0],
+    "limitation": "Bounded two-client fail-closed lane only; no gameplay/GameOver claim and exhaustive emitter/stale/concurrency, P6 and release gates remain open."
+  },
+  "overall": {
+    "status": "OPEN-HOLD",
+    "candidateTechnicalEvidence": "substantially-pass-with-bounded-native-semantic-proof-and-explicit-open-areas",
+    "productionPromotionAllowed": false,
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only",
+    "nextActions": [
+      "Expand native semantic CBOR coverage to exhaustive emitter/stale/concurrency stress and review the bounded in-flight drain evidence against an approved rollback SLA; bounded native replay now has a current PASS artifact.",
+      "Review and approve or replace docs/web-client/CARD_WIRE_P6_THRESHOLD_PROPOSAL_CURRENT_2026-11-18.json; do not treat its candidate values as PASS.",
+      "Obtain production/canary rollback SLA, device/network decision and separate release approval.",
+      "Create or select an immutable reviewed clean release artifact before any promotion."
+    ]
+  }
+}

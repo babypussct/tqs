@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate Poxi multi-card native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-poxi-multiplayer-live-1794792879627.json",
+    "observedAt": "2026-11-16T01:34:39.627Z",
+    "scenario": "poxi",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "manualCardReply": true,
+    "poxiReplyObserved": true,
+    "multiCardPoxiReplyObserved": true,
+    "gameOverCountsByAudience": [1, 1, 1],
+    "nativeWire": {
+      "frames": 1155,
+      "packets": 69,
+      "packetBytesTotal": null,
+      "packetBytesMin": null,
+      "packetBytesMax": null,
+      "packetBytesLe256": null,
+      "packetBytesLe1024": null,
+      "packetBytesLe4096": null,
+      "packetBytesGt4096": 0,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 422,
+      "incomingPackets": 418,
+      "replyPackets": 4,
+      "packetBytesTotal": 22797,
+      "packetBytesMin": 17,
+      "packetBytesMax": 631,
+      "packetBytesLe256": 417,
+      "packetBytesLe1024": 5,
+      "packetBytesLe4096": 0,
+      "packetBytesGt4096": 0,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 330,
+        "public": 80,
+        "request": 5,
+        "reply": 4
+      },
+      "commandsObserved": {
+        "AskForPoxi": 1,
+        "AskForUseActiveSkill": 1,
+        "PlayCard": 1,
+        "GameOver": 3
+      },
+      "repliesObserved": {
+        "AskForPoxi": 1,
+        "PlayCard": 1,
+        "CustomDialog": 2
+      }
+    },
+    "nativeOuterCborTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 121,
+      "firstRssKb": 14784,
+      "minRssKb": 11104,
+      "maxRssKb": 15152,
+      "lastRssKb": 11616,
+      "maxCpuSeconds": 0.4,
+      "elapsedSeconds": 31.684,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-3NHGcp",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-3NHGcp/tqs-cardwire-qa-20261103-ZNid4V"
+  },
+  "limitations": [
+    "This is one current-candidate Poxi family; it does not close every request/reply or strict release privacy gate.",
+    "No reconnect is exercised by this scenario; draw-sequence remains the current reconnect/strict-12 evidence.",
+    "Production/canary rollback, browser-network/device verification, approved performance thresholds and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-poxi-multi-card-opaque-request-reply; release-gates-remain-OPEN"
+}

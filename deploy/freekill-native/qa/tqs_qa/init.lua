@@ -6,6 +6,285 @@ if not config or config.enabled ~= true then
   return nil
 end
 
+-- QA-only rollback drill.  A drain never mutates an active room to legacy:
+-- it disables the next v1 admission after the current room has negotiated and
+-- leaves the room's negotiated version intact until GameOver.  The option is
+-- intentionally absent from production/current configs and is rejected
+-- unless the isolated package starts with the explicit v1 opt-in.
+if config.cardWireRollbackMode ~= nil and config.cardWireRollbackMode ~= "drain" then
+  error("tqsQa.cardWireRollbackMode must be drain when present")
+end
+if config.cardWireRollbackMode == "drain" and config.cardWireVersion ~= 1 then
+  error("tqsQa.cardWireRollbackMode=drain requires cardWireVersion=1")
+end
+
+-- Optional metadata-only timing for the isolated native card-wire runner.
+-- This is deliberately disabled unless the launcher provides an explicit
+-- output path. It records only a bounded channel/scope and elapsed
+-- milliseconds; no command payload, card identity, account or request ID is
+-- serialized. The project/notify wrappers are QA instrumentation, not a
+-- production performance contract.
+do
+local nativeTimingPath = config.cardWireVersion == 1 and
+  config.nativeTimingFile or nil
+local nativeTimingCommands = {
+  CardWireNegotiated = "negotiation",
+  PropertyUpdate = "metadata", SetPlayerMark = "metadata",
+  SetCardMark = "metadata", SetCardFootnote = "metadata",
+  SetCardVirtName = "metadata", FilterCard = "metadata",
+  FillAG = "metadata", TakeAG = "metadata",
+  SetPlayerHandCards = "metadata", AddVirtualEquip = "metadata",
+  RemoveVirtualEquip = "metadata",
+  ShowVirtualCard = "public", GameLog = "public",
+  ShowCard = "public", GameOver = "public",
+  AskForCardChosen = "request", AskForPoxi = "request",
+  AskForAG = "request", AskForCardsAndChoice = "request",
+  AskForArrangeCards = "request", AskForMoveCardInBoard = "request",
+  PlayCard = "request", AskForUseActiveSkill = "request",
+  AskForUseCard = "request", AskForResponseCard = "request",
+  AskForChoices = "request", AskForOptions = "request",
+  AskForSkillInvoke = "request", CustomDialog = "request",
+  EmptyRequest = "request",
+  PrepareDrawPile = "deck", ShuffleDrawPile = "deck",
+  SyncDrawPile = "deck", ChangeCardArea = "deck",
+  MoveCards = "deck", SetPlayerPile = "deck",
+  Reconnect = "deck", Observe = "deck",
+}
+local nativeTimingCounts = {}
+
+local function nativeTimingChannel(room, command)
+  if type(room) ~= "table" and type(room) ~= "userdata" then return nil end
+  if room.card_wire_version ~= 1 then return nil end
+  return nativeTimingCommands[command]
+end
+
+local function appendNativeTiming(scope, channel, elapsedMs)
+  pcall(function()
+    if type(nativeTimingPath) ~= "string" or nativeTimingPath == "" or not channel or
+        type(fk) ~= "table" or type(fk.qInfo) ~= "function" then
+      return
+    end
+    local countKey = scope .. ":" .. channel
+    local count = (nativeTimingCounts[countKey] or 0) + 1
+    nativeTimingCounts[countKey] = count
+    -- Keep the instrumentation bounded so the qInfo bridge cannot perturb a
+    -- long reconnect/gameplay run. One sample per audited scope/channel pair
+    -- is enough for this QA timing artifact; repeated-memory/performance
+    -- acceptance remains a separate open gate.
+    if count > 1 then return end
+    -- The native Lua sandbox intentionally disallows write-mode io.open. Send
+    -- only this fixed metadata record through qInfo; launch.py validates the
+    -- marker and writes the isolated QA timing artifact outside Lua.
+    local encoded = string.format(
+      '{"schemaVersion":1,"scope":"%s","channel":"%s","elapsedMs":%d}',
+      scope, channel, math.max(0, math.floor(elapsedMs or 0)))
+    fk.qInfo("[TQS_QA_NATIVE_TIMING] " .. encoded)
+  end)
+end
+
+local function timingNowMs()
+  if type(os.getms) == "function" then return os.getms() end
+  return math.floor(os.clock() * 1000)
+end
+
+if type(nativeTimingPath) == "string" and nativeTimingPath ~= "" then
+  local serializeTimingChannel = nil
+  local cborTimingOk, cborTiming = pcall(require, "server.rpc.cbor")
+  local cborTimingEncode = false
+  if cborTimingOk and type(cborTiming) == "table" and type(cborTiming.encode) == "function" then
+    local originalCborEncode = cborTiming.encode
+    cborTiming.encode = function(value, ...)
+      local channel = serializeTimingChannel
+      serializeTimingChannel = nil
+      local started = channel and timingNowMs() or nil
+      local result = originalCborEncode(value, ...)
+      if started then
+        pcall(appendNativeTiming, "serialize", channel, timingNowMs() - started)
+      end
+      return result
+    end
+    cborTimingEncode = true
+  end
+
+  -- `Room:include(ServerRoomBase)` copies mixin methods into Room when the
+  -- class is loaded.  Wrapping only ServerRoomBase here therefore observes
+  -- nothing on live rooms; wrap the concrete class used by the scheduler.
+  local roomOk, RoomClass = pcall(require, "ltk.server.room")
+  assert(roomOk and type(RoomClass) == "table",
+    "native QA timing requires ltk.server.room")
+
+  local originalProject = RoomClass.projectCardWire
+  if type(originalProject) == "function" then
+    RoomClass.projectCardWire = function(self, seat, physical, command, data, batch)
+      local channel = nativeTimingChannel(self, command)
+      local started = channel and timingNowMs() or nil
+      local result = originalProject(self, seat, physical, command, data, batch)
+      if started then
+        pcall(appendNativeTiming, "project", channel, timingNowMs() - started)
+        serializeTimingChannel = cborTimingEncode and channel or nil
+      end
+      return result
+    end
+  end
+
+  local originalRequestProject = RoomClass.projectCardWireRequest
+  if type(originalRequestProject) == "function" then
+    RoomClass.projectCardWireRequest = function(self, seat, physical, command, data, batch, requestKey)
+      local channel = nativeTimingChannel(self, command)
+      local started = channel and timingNowMs() or nil
+      local result = originalRequestProject(self, seat, physical, command, data, batch, requestKey)
+      if started then
+        pcall(appendNativeTiming, "request-project", channel, timingNowMs() - started)
+        serializeTimingChannel = cborTimingEncode and channel or nil
+      end
+      return result
+    end
+  end
+
+end
+end
+
+-- Optional QA-only mapping telemetry for the isolated native card-wire run.
+-- The protocol itself remains the source of truth; this wrapper only emits
+-- bounded cardinalities and allowlisted rejection reasons through qInfo. No
+-- audience key, physical card ID, opaque token, request key or payload is
+-- serialized. Production/current never supplies nativeMappingMetricsFile.
+do
+local nativeMappingPath = config.cardWireVersion == 1 and
+  config.nativeMappingMetricsFile or nil
+if type(nativeMappingPath) == "string" and nativeMappingPath ~= "" and
+    type(fk) == "table" and type(fk.qInfo) == "function" then
+  local protocolOk, Protocol = pcall(require, "server.card_handle_protocol")
+  assert(protocolOk and type(Protocol) == "table" and type(Protocol.new) == "function",
+    "native card-wire mapping telemetry requires server.card_handle_protocol")
+  local emitted = 0
+  local batchSamples = 0
+  local eventNames = {
+    protocol_created = true, batch_commit = true, batch_abort = true,
+    choice_reject = true, disconnect = true,
+  }
+  local reasonNames = {
+    none = true, unknown_or_expired_request = true,
+    invalid_reference_array = true, invalid_cardinality = true,
+    unknown_or_duplicate_reference = true, expired_reference = true,
+    no_longer_eligible = true, other = true,
+  }
+
+  local function countMap(value)
+    local count = 0
+    if type(value) == "table" then
+      for _ in pairs(value) do count = count + 1 end
+    end
+    return count
+  end
+
+  local function snapshot(protocol)
+    local audiences, activeReferences, activeRequests = 0, 0, 0
+    local activeTokenRefs = 0
+    for _, state in pairs(protocol.audiences or {}) do
+      if type(state) == "table" then
+        audiences = audiences + 1
+        activeReferences = activeReferences + countMap(state.byId)
+        activeReferences = activeReferences + countMap(state.public)
+        activeReferences = activeReferences + countMap(state.metadata)
+        activeTokenRefs = activeTokenRefs + countMap(state.byToken)
+        for _, request in pairs(state.requests or {}) do
+          activeRequests = activeRequests + 1
+          if type(request) == "table" then
+            activeTokenRefs = activeTokenRefs + countMap(request.refs)
+          end
+        end
+      end
+    end
+    local issued = countMap(protocol.issued)
+    return {
+      audiences = audiences,
+      activeReferences = activeReferences,
+      activeRequests = activeRequests,
+      activeTokenRefs = activeTokenRefs,
+      retiredTombstones = math.max(0, issued - activeTokenRefs),
+    }
+  end
+
+  local function emitMapping(protocol, event, reason, before)
+    pcall(function()
+      if not eventNames[event] then return end
+      -- Batch commits are high-volume. Sample one in eight so the bounded
+      -- stream keeps room for choice rejection and GameOver disconnect
+      -- events, which are the lifecycle evidence this telemetry exists for.
+      if event == "batch_commit" then
+        batchSamples = batchSamples + 1
+        if batchSamples % 8 ~= 0 then return end
+      end
+      -- Disconnect events are always retained, even if the ordinary bounded
+      -- event budget is full; there are at most one per physical audience in
+      -- a room and cleanup must never be hidden by the sampling cap.
+      if event ~= "disconnect" then
+        if emitted >= 512 then return end
+        emitted = emitted + 1
+      end
+      local current = snapshot(protocol)
+      local safeReason = reasonNames[reason] and reason or "none"
+      local beforeAudiences = before and before.audiences or -1
+      local beforeActiveReferences = before and before.activeReferences or -1
+      local beforeActiveRequests = before and before.activeRequests or -1
+      local beforeActiveTokenRefs = before and before.activeTokenRefs or -1
+      local beforeRetiredTombstones = before and before.retiredTombstones or -1
+      local cleanupActiveReferences = event == "disconnect" and
+        current.activeReferences or -1
+      fk.qInfo(string.format(
+        '[TQS_QA_CARD_WIRE_MAPPING] {"schemaVersion":1,"event":"%s","audiences":%d,"activeReferences":%d,"activeRequests":%d,"activeTokenRefs":%d,"retiredTombstones":%d,"beforeAudiences":%d,"beforeActiveReferences":%d,"beforeActiveRequests":%d,"beforeActiveTokenRefs":%d,"beforeRetiredTombstones":%d,"cleanupActiveReferences":%d,"reason":"%s"}',
+        event, current.audiences, current.activeReferences,
+        current.activeRequests, current.activeTokenRefs,
+        current.retiredTombstones, beforeAudiences, beforeActiveReferences,
+        beforeActiveRequests, beforeActiveTokenRefs, beforeRetiredTombstones,
+        cleanupActiveReferences, safeReason))
+    end)
+  end
+
+  local originalNew = Protocol.new
+  Protocol.new = function(mint)
+    local protocol = originalNew(mint)
+    emitMapping(protocol, "protocol_created")
+
+    local originalBeginBatch = protocol.beginBatch
+    protocol.beginBatch = function(self, ...)
+      local batch = originalBeginBatch(self, ...)
+      local originalCommit = batch.commit
+      local originalAbort = batch.abort
+      batch.commit = function(batchSelf, ...)
+        local result = originalCommit(batchSelf, ...)
+        emitMapping(protocol, "batch_commit")
+        return result
+      end
+      batch.abort = function(batchSelf, ...)
+        local result = originalAbort(batchSelf, ...)
+        emitMapping(protocol, "batch_abort")
+        return result
+      end
+      return batch
+    end
+
+    local originalResolveChoice = protocol.resolveChoice
+    protocol.resolveChoice = function(self, audience, requestKey, references, stillEligible)
+      local result, reason = originalResolveChoice(self, audience, requestKey,
+        references, stillEligible)
+      if result == nil then emitMapping(protocol, "choice_reject", reason) end
+      return result, reason
+    end
+
+    local originalDisconnect = protocol.disconnect
+    protocol.disconnect = function(self, audience)
+      local before = snapshot(self)
+      local result = originalDisconnect(self, audience)
+      emitMapping(protocol, "disconnect", nil, before)
+      return result
+    end
+    return protocol
+  end
+end
+end
+
 -- Optional QA-only downstream replay.  The default is disabled, and every
 -- enabled skill has an explicit state profile.  Profiles with nested player
 -- requests must declare exact per-command deltas; a SkillEffect observation
@@ -2053,6 +2332,36 @@ local function validateInitialPairOfferScenario(scenario)
   end
 end
 
+local function validatePoxiScenario(scenario)
+  if scenario.playerCount ~= 2 or type(scenario.players) ~= "table" then
+    fail("poxi must define exactly two deterministic players")
+  end
+  local actor, target = scenario.players.actor, scenario.players.target
+  if type(actor) ~= "table" or actor.general ~= "ty_heg__dengzhi" or
+      actor.deputy ~= "hs__guanyu" or actor.kingdom ~= "shu" then
+    fail("poxi actor must use Deng Zhi + Guan Yu in Shu")
+  end
+  if type(target) ~= "table" or target.general ~= "hs__caocao" or
+      target.deputy ~= "hs__simayi" or target.kingdom ~= "wei" then
+    fail("poxi target must use Cao Cao + Sima Yi in Wei")
+  end
+  if scenario.expectedCommand ~= "AskForPoxi" or scenario.general ~= "ty_heg__dengzhi" or
+      scenario.skill ~= "ty_heg__weimeng" then
+    fail("poxi must expose the upstream Deng Zhi Weimeng Poxi request")
+  end
+  local targetHand = 0
+  local targetEquip = 0
+  for _, card in ipairs(scenario.cards) do
+    if type(card) == "table" and card.owner == "target" then
+      if card.area == "hand" then targetHand = targetHand + 1 end
+      if card.area == "equip" then targetEquip = targetEquip + 1 end
+    end
+  end
+  if targetHand < 2 or targetEquip < 1 then
+    fail("poxi must provide at least two target hand cards and one target equipment")
+  end
+end
+
 for _, scenario in ipairs(catalog.scenarios) do
   if type(scenario.id) ~= "string" or scenario.id == "" or scenarioById[scenario.id] or
       type(scenario.seed) ~= "number" or type(scenario.expectedCommand) ~= "string" or
@@ -2065,7 +2374,9 @@ for _, scenario in ipairs(catalog.scenarios) do
   if scenario.initialPairOffer ~= nil then
     validateInitialPairOfferScenario(scenario)
   end
-  if scenario.trigger == "damage-exchange" then
+  if scenario.id == "poxi" then
+    validatePoxiScenario(scenario)
+  elseif scenario.trigger == "damage-exchange" then
     validateDamageExchangeScenario(scenario)
   elseif scenario.trigger == "hidden-yiji" then
     validateHiddenYijiScenario(scenario)
@@ -2238,9 +2549,26 @@ local function maybeNegotiateCardWire(room, scenario)
   end
   assert(type(room.negotiateCardWireV1) == "function",
     "candidate core has no QA card-wire negotiation seam")
+  assert(type(room.hasAllCardWireCapabilities) == "function",
+    "candidate core has no card-wire capability gate")
+  if not room:hasAllCardWireCapabilities() then
+    -- A legacy or malformed client must not be silently mixed into a v1 room.
+    -- Select the explicitly labelled legacy session before any card-bearing
+    -- packet is prepared. This is a QA-only compatibility lane, not a
+    -- per-packet downgrade and never a mixed room.
+    room.card_wire_negotiation_state = "legacy_rejected"
+    room.card_wire_protocol = "legacy"
+    fk.qInfo(string.format("[tqs_qa] card_wire_rejected scenario=%s reason=capability_mismatch session=legacy",
+      scenario.id))
+    fk.qInfo(string.format("[tqs_qa] card_wire_legacy_session scenario=%s reason=capability_mismatch",
+      scenario.id))
+    return false
+  end
   room:negotiateCardWireV1()
+  room.card_wire_negotiation_state = "v1"
   fk.qInfo(string.format("[tqs_qa] card_wire_negotiated version=1 scenario=%s players=%d",
     scenario.id, #room.players))
+  return true
 end
 
 -- The Hegemony game logic prepares and broadcasts the draw pile before the
@@ -2894,6 +3222,9 @@ local function setupState(room, scenario, seed)
     scenario = scenario.id,
     seed = seed,
     revision = manifest.sourceRevision,
+    cardWireRollbackMode = config.cardWireRollbackMode,
+    cardWireRollbackApplied = false,
+    cardWireRollbackRetainedVersion = nil,
     matrixRosterSet = scenario.matrixRosterSet or "fixed",
     matrixSeatPermutation = scenario.matrixSeatPermutation or "fixed",
     startedAt = now(),
@@ -5714,15 +6045,79 @@ local function triggerHiddenReveal(room, state)
     fail("hidden-reveal must convert Qianxun from fake to active after reveal")
   end
 
+  -- Lục Tốn's real source skill `duoshi` uses `Room:useVirtualCard` with no
+  -- physical subcards at Play-phase start. Exercise that native branch after
+  -- the hidden reveal so the candidate card-wire audit observes the actual
+  -- ShowVirtualCard packet, rather than a synthetic notification.
+  room:setPlayerProperty(state.actor, "phase", Player.Play)
+  room:broadcastProperty(state.actor, "phase")
+  local duoshiCard = Fk:cloneCard("await_exhausted", nil, nil, "duoshi")
+  local duoshiSkill = Fk.skills["duoshi"]
+  local duoshiRegistered = duoshiSkill and table.contains(
+    room.logic.skill_table[fk.EventPhaseStart] or {}, duoshiSkill)
+  local duoshiTriggerable = duoshiSkill and duoshiSkill:triggerable(
+    nil, state.actor, state.actor, { who = state.actor, phase = Player.Play })
+  local duoshiCanUse = state.actor:canUse(duoshiCard)
+  local kingdomPeerCount = #table.filter(room.alive_players, function(p)
+    return p.kingdom == state.actor.kingdom
+  end)
+  fk.qInfo(string.format(
+    "[tqs_qa] hidden-reveal duoshi_pre has=%s fake=%s shown=%s registered=%s triggerable=%s can_use=%s prohibited=%s phase=%s kingdom_peer_count=%d",
+    tostring(state.actor:hasSkill("duoshi")), tostring(state.actor:isFakeSkill("duoshi")),
+    tostring(state.actor:hasShownSkill("duoshi")), tostring(not not duoshiRegistered),
+    tostring(not not duoshiTriggerable), tostring(not not duoshiCanUse),
+    tostring(state.actor:prohibitUse(duoshiCard)), tostring(state.actor.phase), kingdomPeerCount))
+  local virtualUseBefore = #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+    return e.data and e.data.from == state.actor and e.data.card and
+      e.data.card.trueName == "await_exhausted" and type(e.data.card.subcards) == "table" and
+      #e.data.card.subcards == 0
+  end, Player.HistoryGame)
+  room.logic:trigger(fk.EventPhaseStart, state.actor, {
+    who = state.actor,
+    phase = Player.Play,
+  })
+  -- `room:useVirtualCard` enters a real UseCard event, and its card effect
+  -- can suspend on the browser's native discard request.  This QA trigger is
+  -- launched from the setup event rather than a real Turn, so inspect the
+  -- complete game history and yield through the normal room scheduler until
+  -- the real discard reply and ShowVirtualCard/UseCard completion are seen.
+  local virtualUse
+  for _ = 1, 120 do
+    virtualUse = table.find(room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+      return e.data and e.data.from == state.actor and e.data.card and
+        e.data.card.trueName == "await_exhausted" and type(e.data.card.subcards) == "table" and
+        #e.data.card.subcards == 0
+    end, Player.HistoryGame), function(e)
+      return e.data and e.data.from == state.actor
+    end)
+    if virtualUse then break end
+    room:delay(100)
+  end
+  local duoshiEffects = #table.filter(state.skillEffects, function(entry)
+    return entry.skill == "duoshi" and entry.player == state.actor.id
+  end)
+  fk.qInfo(string.format(
+    "[tqs_qa] hidden-reveal duoshi_post use_before=%d use_after=%d skill_effects=%d actor_general=%s actor_deputy=%s actor_kingdom=%s",
+    virtualUseBefore, #room.logic:getEventsOfScope(GameEvent.UseCard, 1, function(e)
+      return e.data and e.data.from == state.actor and e.data.card and
+        e.data.card.trueName == "await_exhausted" and type(e.data.card.subcards) == "table" and
+        #e.data.card.subcards == 0
+    end, Player.HistoryGame), duoshiEffects, state.actor.general,
+    state.actor.deputyGeneral, state.actor.kingdom))
+  if virtualUseBefore > 0 or not virtualUse then
+    fail("hidden-reveal must execute the real Lục Tốn Duoshi zero-subcard virtual-card path")
+  end
+
   room:sendLog{
-    type = "[TQS QA] Hidden Mở tướng: %arg; vị trí=%arg4; Lục Tốn đã mở=%arg2; Tỏa định đã hoạt động=%arg3",
+    type = "[TQS QA] Hidden Mở tướng: %arg; vị trí=%arg4; Lục Tốn đã mở=%arg2; Tỏa định đã hoạt động=%arg3; Độ Thế virtual=%arg5",
     from = state.actor.id,
     arg = "reveal_skill&",
     arg2 = "true",
     arg3 = "true",
     arg4 = revealIsDeputy and "phó tướng" or "chủ tướng",
+    arg5 = "true",
   }
-  fk.qInfo(string.format("[tqs_qa] hidden-reveal helper=reveal_skill& slot=%s revealed=hs__luxun qianxun_active=true revision=%s",
+  fk.qInfo(string.format("[tqs_qa] hidden-reveal helper=reveal_skill& slot=%s revealed=hs__luxun qianxun_active=true duoshi_virtual=true revision=%s",
     revealIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
@@ -9225,6 +9620,41 @@ local function triggerHiddenLuoshen(room, state)
     fail("hidden Luoshen must convert from fake to active after reveal")
   end
 
+  -- Keep the Luoshen judgment proof and the public AG-display proof separate.
+  -- Amazing Grace's source path calls Room:askToAG after FillAG; exercise that
+  -- same native request here so card-wire QA observes a real AskForAG request
+  -- and a resolved opaque reply, not only the FillAG/TakeAG notifications.
+  local agCards = {}
+  for _, id in ipairs(state.actor:getCardIds(Player.Hand)) do
+    table.insert(agCards, id)
+    if #agCards == 2 then break end
+  end
+  if #agCards ~= 2 then
+    fail("hidden Luoshen AG proof requires two actor cards")
+  end
+  for _, id in ipairs(agCards) do
+    room:moveCardTo(id, Card.Processing, nil, fk.ReasonJustMove, "tqs_qa", nil, false)
+  end
+  room:fillAG(state.actor, agCards)
+  local agChosen = room:askToAG(state.actor, {
+    id_list = agCards, cancelable = false, skill_name = "tqs_qa_hidden_luoshen_ag",
+  })
+  if not table.contains(agCards, agChosen) then
+    fail("hidden Luoshen AG proof must resolve one offered card")
+  end
+  room:disableAG()
+  room:takeAG(state.actor, agChosen, room.players)
+  room:moveCardTo(agChosen, Card.PlayerHand, state.actor, fk.ReasonPrey,
+    "tqs_qa", nil, true, state.actor)
+  for _, id in ipairs(agCards) do
+    if id ~= agChosen then
+      room:moveCardTo(id, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile,
+        "tqs_qa", nil, false)
+    end
+  end
+  room:closeAG()
+  state.hiddenLuoshenAgChoice = true
+
   state.hiddenLuoshenBranch = "positive-prelight-phase-start-judge-obtain"
   room:sendLog{
     type = "[TQS QA] Hidden 洛神: %arg; vị trí=%arg6; prelight=%arg2; SkillEffect=%arg3; mở tướng=%arg4; lấy bài đen=%arg5",
@@ -10876,6 +11306,30 @@ director:addEffect(fk.GameStart, {
     if scenario.id == "draw-sequence" and scenario.cardWire == true and
       config.cardWireVersion == 1 then
       triggerNativeCardWireCoverage(room, state)
+      -- QA-only rollback drill: stop v1 admission for future rooms only.
+      -- The active room keeps its negotiated version through reconnect and
+      -- GameOver; production/current configs never reach this branch.
+      if state.cardWireRollbackMode == "drain" and
+          not state.cardWireRollbackApplied then
+        assert(room.card_wire_version == 1 and
+          room.card_wire_negotiated == true and
+          room.card_wire_protocol == "TQS_HEG_CARD_WIRE",
+          "card-wire drain requires an active negotiated v1 room")
+        config.cardWireVersion = nil
+        state.cardWireRollbackApplied = true
+        state.cardWireRollbackRetainedVersion = room.card_wire_version
+        room.card_wire_rollback_state = "draining"
+        pcall(function()
+          if type(config.nativeMappingMetricsFile) == "string" and
+              config.nativeMappingMetricsFile ~= "" and
+              type(fk) == "table" and type(fk.qInfo) == "function" then
+            fk.qInfo('[TQS_QA_CARD_WIRE_ROLLBACK] {"schemaVersion":1,"event":"drain_applied","activeRoomProtocol":1,"newRoomAdmission":"legacy","reconnectProtocol":1}')
+          end
+        end)
+        if type(fk) == "table" and type(fk.qInfo) == "function" then
+          fk.qInfo("[tqs_qa] card_wire_rollback mode=drain active_room=v1 new_rooms=legacy reconnect=v1")
+        end
+      end
     end
     if scenario.trigger == "rescue" or scenario.trigger == "rescue-battle" then
       triggerRescue(room, state)

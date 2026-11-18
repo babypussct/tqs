@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T20:24:00+07:00",
+  "scope": "candidate-only same-packet MoveCards dependency regression and native revalidation",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "regressionBeforeFix": {
+    "artifact": "scratch/evidence/reconnect-failure-1794834236757.json",
+    "result": "FAIL",
+    "runtimeMD5": "59ba7a604306ac94d34183ffc17eff62",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "failurePhase": "post-draw MoveCards",
+    "failureSignal": "six sanitized browser errors with diagnosticCode=2; retired opaque reference was unknown or stale",
+    "recovered": true,
+    "gameOver": false,
+    "nativeDeckPrivacyFailures": 0,
+    "nativeSupplementalFailures": 0
+  },
+  "rootCause": {
+    "classification": "same-packet dependency rejected during all-entry preflight",
+    "description": "The projector may emit a later transition that retires an opaque reference minted by an earlier transition in the same MoveCards packet. The client preflighted every entry before applying any entry, so that valid intra-packet reference appeared unseen.",
+    "privacyPosture": "fail-closed rejection was preserved; the fix does not accept unknown or stale references outside the simulated packet chain"
+  },
+  "fix": {
+    "sourceFiles": [
+      "deploy/freekill-native/qa/card-wire-client-moves.lua",
+      "deploy/freekill-native/qa/card-wire-client-moves-probe.lua",
+      "scripts/upstream-first-card-wire-client-moves-guard.mjs"
+    ],
+    "behavior": "preflight the complete packet on a private clone, simulate the legacy area transition between entries, then apply each validated transition sequentially on the live room",
+    "syntheticProbe": {
+      "command": "/opt/homebrew/opt/lua@5.4/bin/lua5.4 deploy/freekill-native/qa/card-wire-client-moves-probe.lua <isolated-candidate-core>",
+      "result": "PASS",
+      "cases": 10,
+      "newRegression": "draw-to-hand followed by public discard in one MoveCards packet; intermediate opaque token retired at the public transition"
+    },
+    "syntax": {
+      "lua54": "PASS",
+      "nodeGuard": "PASS",
+      "gitDiffCheck": "PASS"
+    }
+  },
+  "nativeRevalidation": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794835367983.json",
+    "result": "PASS",
+    "scenario": "draw-sequence",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "audiences": 3,
+    "recovered": true,
+    "errors": [],
+    "strictPrivacyCategories": 12,
+    "nativeDeckFailures": 0,
+    "nativeSupplementalFailures": 0,
+    "moveCardsObserved": 39,
+    "reconnectObserved": 1,
+    "gameOverAudiences": 3,
+    "nativeProcessMetrics": {
+      "sampleCount": 231,
+      "firstRssKb": 14032,
+      "minRssKb": 11152,
+      "maxRssKb": 14784,
+      "lastRssKb": 11776,
+      "maxCpuSeconds": 0.7,
+      "elapsedSeconds": 60.805,
+      "memoryAllocationDiagnosticCounts": [0, 0]
+    },
+    "cleanup": {
+      "launcherExit": "Native QA exit -9 after controlled interrupt",
+      "listenersClosed": [19681, 9000],
+      "nativeQaProcessesClosed": true
+    }
+  },
+  "releaseLimits": [
+    "This revalidation closes the observed MoveCards regression on one exact candidate runtime; it is not production or canary approval.",
+    "The current release checkpoint is locally rebuilt from the same runtime identity but remains HOLD because the checkout is dirty and separate performance, device/network, rollback-SLA and release approvals are open.",
+    "No candidate runtime was promoted to production."
+  ]
+}

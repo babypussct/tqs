@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "candidate-only native/browser card-wire v1 CSPRNG fail-closed matrix",
+  "protocol": "TQS_HEG_CARD_WIRE",
+  "mode": "new_heg_mode",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "identity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "94aee99a0414bada09f3365617556789",
+    "qaPackageSha256": "1fb4741116440ef9629e02c8c0505aeb599448cff5b93e8af686407e06403258",
+    "webDistSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "luaExecutable": "lua5.4"
+  },
+  "runs": [
+    {
+      "failureKind": "open",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1794808840195.json",
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 4,
+      "metadataOnlyBatchCommits": 514,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0,
+      "processSamples": 56,
+      "minRssKb": 14032,
+      "maxRssKb": 15120,
+      "maxCpuSeconds": 0.2,
+      "elapsedSeconds": 14.732
+    },
+    {
+      "failureKind": "short-read",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1794809427574.json",
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 10,
+      "metadataOnlyBatchCommits": 514,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0,
+      "processSamples": 52,
+      "minRssKb": 14096,
+      "maxRssKb": 15152,
+      "maxCpuSeconds": 0.18,
+      "elapsedSeconds": 13.59
+    },
+    {
+      "failureKind": "close",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1794809462464.json",
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 13,
+      "metadataOnlyBatchCommits": 514,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0,
+      "processSamples": 46,
+      "minRssKb": 14032,
+      "maxRssKb": 15088,
+      "maxCpuSeconds": 0.17,
+      "elapsedSeconds": 11.993
+    }
+  ],
+  "sourceCoverage": {
+    "osCsprng": "/dev/urandom",
+    "failureShapes": ["open", "short-read", "close"],
+    "midBatchFailure": true,
+    "atomicAbort": true,
+    "fallback": false,
+    "tokenOutputOnFailure": false
+  },
+  "runnerHardening": {
+    "boundedSecondClientNegotiationDrain": true,
+    "initialShortReadRaceDiagnosticExcluded": true
+  },
+  "cleanup": {
+    "nativeQaProcessesObservedAfterRun": 0,
+    "listeners19681": 0,
+    "listeners9000": 0
+  },
+  "result": "PASS",
+  "releaseStatus": "OPEN-HOLD"
+}

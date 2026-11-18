@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate hidden-rehide-yiji main-slot native/browser lifecycle observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "manifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "runtimeMD5": "a43770fedf82abb5ff082dfbb79e765f",
+    "distIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-hidden-rehide-yiji-multiplayer-live-1794825540590.json",
+    "scenario": "hidden-rehide-yiji",
+    "result": "PASS",
+    "errors": [],
+    "audiences": 3,
+    "slot": "main",
+    "hiddenSkillInvokeGateObserved": true,
+    "hiddenYijiInvoked": true,
+    "hiddenYijiReplyObserved": true,
+    "revealDistributionRehideObserved": true,
+    "retainedPrelightObserved": true,
+    "gameOverCountsByAudience": [1, 1, 1],
+    "scenarioObservations": [
+      "AskForSkillInvoke reply",
+      "AskForSkillInvoke reply",
+      "AskForUseActiveSkill reply"
+    ],
+    "nativeSupplemental": {
+      "beforePacketDecodeByAudience": [true, true, true],
+      "frames": 387,
+      "packets": 220,
+      "incomingPackets": 215,
+      "replyPackets": 5,
+      "packetBytesTotal": 12024,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 184,
+        "public": 23,
+        "request": 5,
+        "reply": 5
+      },
+      "commandsObserved": {
+        "CardWireNegotiated": 3,
+        "PropertyUpdate": 115,
+        "SetPlayerMark": 67,
+        "SetCardMark": 2,
+        "GameLog": 20,
+        "AskForUseActiveSkill": 1,
+        "AskForSkillInvoke": 2,
+        "CustomDialog": 2,
+        "GameOver": 3
+      }
+    },
+    "nativeMarker": "hidden-yiji branch=positive-prelight-invoke-rehide slot=main prelight=true invoked=true revealed=true moved=2 rehide=true"
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "productionMutation": false
+  },
+  "limitations": [
+    "This is bounded main-slot lifecycle evidence; it does not exercise reconnect or all twelve strict privacy categories, which remain covered by the draw-sequence aggregate.",
+    "The supplemental native auditor observed packets before browser PacketStream decoding; this scenario did not enable the separate raw-wire capture lane.",
+    "Approved performance/memory thresholds, browser-network/device verification, production/canary rollback and release approval remain open."
+  ],
+  "resultSummary": "PASS-current-candidate-hidden-rehide-yiji-main-lifecycle; release-gates-remain-OPEN"
+}

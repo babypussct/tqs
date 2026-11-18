@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T19:49:42+07:00",
+  "scope": "local source-code snapshot review for card-wire release candidate; no publish",
+  "snapshot": {
+    "relativePath": "scratch/evidence/CARD_WIRE_SOURCE_CODE_SNAPSHOT_2026-11-16.tar.gz",
+    "sha256": "a421ee9e3621a61285f0c2aaf5b5e00c4c26a12ad5532327cf451470b06d919d",
+    "bytes": 86157117,
+    "archiveEntries": 3102,
+    "extractedFiles": 2917,
+    "fileMode": "0444",
+    "archiveReadOnly": true,
+    "sensitiveLookingNamesCheck": "PASS",
+    "symlinkContainmentCheck": "PASS"
+  },
+  "review": {
+    "status": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL",
+    "publishEligible": false,
+    "reviewRoot": "/private/tmp/tqs-card-wire-source-review-20261116",
+    "checks": {
+      "keySourceHashParity": "PASS",
+      "luaCompilerSyntax": "PASS",
+      "luaCompiler": "Lua 5.4.9",
+      "nodeMjsSyntax": "PASS",
+      "sourceGitDiffCheck": "PASS"
+    },
+    "reviewLimits": [
+      "The snapshot intentionally excludes generated web dist, packaged runtime, .git, scratch and evidence metadata; those identities are recorded separately.",
+      "This local review does not constitute separate release approval.",
+      "This review does not approve performance/mapping-memory thresholds, device/network acceptance or production/canary rollback SLA."
+    ]
+  },
+  "source": {
+    "branch": "main",
+    "commit": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "checkoutWasDirty": true,
+    "changedFileCountAtArchive": 110
+  },
+  "production": {
+    "mutation": false,
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only"
+  },
+  "supersedes": "docs/web-client/CARD_WIRE_SOURCE_SNAPSHOT_2026-11-16.json"
+}

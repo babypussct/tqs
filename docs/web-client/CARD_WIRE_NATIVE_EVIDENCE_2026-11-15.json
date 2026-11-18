@@ -1,0 +1,1211 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated candidate native C++/CBOR card-wire v1 QA; not production approval",
+  "protocol": "TQS_HEG_CARD_WIRE",
+  "mode": "new_heg_mode",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "privacyGates": {
+    "negotiatedV1Source": {
+      "command": "lua5.4 deploy/freekill-native/qa/card-wire-privacy-v1-source-probe.lua <candidate-core-root> <card-handle-protocol.lua> --strict",
+      "result": "PASS",
+      "exitCode": 0,
+      "auditedCategories": 12,
+      "nestedCardMarksAudited": true,
+      "sourceSuite": "npm --prefix game/web run test:upstream-first-source",
+      "sourceSuiteObserved": "41/41 PASS on 2026-11-16 with exact candidate roots and Lua 5.4.9"
+    },
+    "nativeCandidate": {
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+      "result": "PASS",
+      "audiences": 3,
+      "strictCategoriesObserved": 12,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    "legacyBaselineDiagnostic": {
+      "command": "lua5.4 deploy/freekill-native/qa/card-wire-exposure-source-probe.lua <candidate-core-root> --strict",
+      "result": "OPEN",
+      "exitCode": 2,
+      "exposureGroups": 12,
+      "interpretation": "Intentional red baseline that reproduces pre-v1 legacy physical-ID exposure; it is not the negotiated-v1 source result and does not authorize production v1."
+    },
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "rehideDeputyEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_REHIDE_DEPUTY_2026-11-16.json",
+    "runEvidence": "scratch/evidence/cp08-hidden-rehide-yiji-deputy-multiplayer-live-1794785504113.json",
+    "result": "PASS",
+    "scenario": "hidden-rehide-yiji-deputy",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenYijiInvoked": true,
+    "retainedPrelightObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "mappingFinalActiveReferences": 0,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "luoshenDeputyEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_LUOSHEN_DEPUTY_2026-11-16.json",
+    "runEvidence": "scratch/evidence/cp08-hidden-luoshen-deputy-multiplayer-live-1794785800315.json",
+    "result": "PASS",
+    "scenario": "hidden-luoshen-deputy",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenLuoshenInvoked": true,
+    "hiddenLuoshenInvokeCount": 2,
+    "hiddenLuoshenAgReplyObserved": true,
+    "deputySlotObserved": true,
+    "phaseStartRevealObserved": true,
+    "judgmentContinuationObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "mappingFinalActiveReferences": 0,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "nativeOuterCborTimingRecords": 248,
+    "serverTimingRecords": 8,
+    "processSampleCount": 89,
+    "mappingRecords": 28,
+    "mappingMaximumActiveReferences": 38,
+    "mappingMaximumActiveTokenRefs": 16,
+    "mappingFinalActiveRequests": 0,
+    "mappingFinalActiveTokenRefs": 0,
+    "cleanupObserved": true,
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "revealDeputyEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_REVEAL_DEPUTY_2026-11-16.json",
+    "runEvidence": "scratch/evidence/cp08-hidden-reveal-deputy-multiplayer-live-1794786515000.json",
+    "result": "PASS",
+    "scenario": "hidden-reveal-deputy",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenRevealGateObserved": true,
+    "hiddenRevealReplyObserved": true,
+    "deputySlotObserved": true,
+    "ownerOnlyActiveRequestObserved": true,
+    "publicRevealAuditObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "mappingFinalActiveReferences": 0,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "nativeOuterCborTimingRecords": 175,
+    "serverTimingRecords": 8,
+    "processSampleCount": 68,
+    "mappingRecords": 20,
+    "mappingMaximumActiveReferences": 32,
+    "mappingMaximumActiveTokenRefs": 16,
+    "mappingFinalActiveRequests": 0,
+    "mappingFinalActiveTokenRefs": 0,
+    "cleanupObserved": true,
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "guanxingDeputyEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_GUANXING_DEPUTY_2026-11-16.json",
+    "runEvidence": "scratch/evidence/cp08-hidden-guanxing-deputy-multiplayer-live-1794787002042.json",
+    "result": "PASS",
+    "scenario": "hidden-guanxing-deputy",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "hiddenGuanxingGateObserved": true,
+    "hiddenGuanxingInvoked": true,
+    "hiddenGuanxingArrangeReplyObserved": true,
+    "deputySlotObserved": true,
+    "publicArrangeAuditObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "mappingFinalActiveReferences": 0,
+    "nativeWireFailures": 0,
+    "supplementalFailures": 0,
+    "nativeOuterCborTimingRecords": 186,
+    "serverTimingRecords": 8,
+    "processSampleCount": 89,
+    "mappingRecords": 22,
+    "mappingMaximumActiveReferences": 38,
+    "mappingMaximumActiveTokenRefs": 22,
+    "mappingFinalActiveRequests": 0,
+    "mappingFinalActiveTokenRefs": 0,
+    "cleanupObserved": true,
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "candidate": {
+    "runtimeSource": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages",
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeFlistMd5": "e40c8df7631c4907459ebb8321a7a921",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+    "requestProjectorSha256": "54a50cc495e8ff8495b281c55dc68fd5b8e826967d1f56636356abd2942ef34a",
+    "luaRuntime": "Lua 5.4.9; executable contract basename lua5.4"
+  },
+  "observedCommand": "PATH=/opt/homebrew/opt/lua@5.4/bin:$PATH TQS_PRIVACY_SCENARIO=draw-sequence TQS_QA_EXPECTED_REVISION=d285c893b08fa3d9137af2f7a81f112da2cd212b npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs; runner flags --manual --reconnect; native launcher via launch.sh",
+  "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+  "result": {
+    "runnerResult": "PASS",
+    "errors": [],
+    "negotiatedForAllAudiences": true,
+    "audienceTraces": 3,
+    "nativePrivacyFailures": 0,
+    "supplementalFailures": 0,
+    "reconnectObserved": true,
+    "observerSnapshotObserved": true,
+    "manualPlayCardObserved": true,
+    "gameOverObservedOnBothClients": true,
+    "rawWireCapture": {
+      "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+      "audiences": 3,
+      "frames": 1749,
+      "packets": 112,
+      "failures": 0,
+      "packetBytes": {
+        "total": 19496,
+        "min": 28,
+        "max": 3475,
+        "le256": 108,
+        "le1024": 2,
+        "le4096": 2,
+        "gt4096": 0
+      },
+      "all12CategoriesObservedAcrossAudiences": true
+    },
+    "supplementalWireCapture": {
+      "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+      "audiences": 3,
+      "packets": 594,
+      "incomingPackets": 590,
+      "replyPackets": 4,
+      "failures": 0,
+      "packetBytes": {
+        "total": 31425,
+        "min": 17,
+        "max": 419,
+        "le256": 590,
+        "le1024": 4,
+        "le4096": 0,
+        "gt4096": 0
+      },
+      "channels": {
+        "negotiation": 4,
+        "metadata": 459,
+        "public": 123,
+        "request": 4,
+        "reply": 4
+      },
+      "commandsObserved": [
+        "AskForChoices",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "FilterCard",
+        "GameLog",
+        "GameOver",
+        "PlayCard",
+        "PropertyUpdate",
+        "SetCardFootnote",
+        "SetCardMark",
+        "SetPlayerMark"
+      ]
+    },
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false
+  },
+  "choiceScenarioEvidence": {
+    "scenario": "card-chosen",
+    "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_QA_EXPECTED_REVISION=d285c893b08fa3d9137af2f7a81f112da2cd212b TQS_PRIVACY_SCENARIO=card-chosen npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs; runner flags --manual",
+    "rawSanitizedEvidence": "scratch/evidence/cp08-card-chosen-multiplayer-live-1794793068564.json",
+    "temporaryDiagnostics": "An earlier current-package attempt was excluded after the supplemental auditor rejected the upstream Player semantic-tag shape; this retained run follows the exact {tag=33001,value=<integer>} contract and reports zero auditor failures.",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "runnerResult": "PASS",
+    "errors": [],
+    "negotiatedForAllAudiences": true,
+    "audienceTraces": 3,
+    "nativePrivacyFailures": 0,
+    "supplementalFailures": 0,
+    "choiceFlow": {
+      "skillSelectedBeforePlayCard": false,
+      "skillButtonSelectionEvidence": "not retained in sanitized trace; the latest trace proves the native AskForSkillInvoke path after PlayCard",
+      "askForSkillInvokeObserved": 1,
+      "playCardObserved": 1,
+      "askForCardChosenObserved": 1,
+      "hiddenOptionObserved": true,
+      "replyObserved": true,
+      "gameOverObservedOnAllAudiences": true
+    },
+    "rawWireCapture": {
+      "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+      "audiences": 3,
+      "frames": 1957,
+      "packets": 111,
+      "failures": 0,
+      "all12CategoriesObservedAcrossAudiences": false,
+      "strictAllCategoriesDisabledBecause": "card-chosen exercises choice traffic but not reconnect/special-pile coverage; aggregate strict 12/12 remains evidenced by the draw-sequence trace above"
+    },
+    "supplementalWireCapture": {
+      "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+      "audiences": 3,
+      "packets": 628,
+      "incomingPackets": 623,
+      "replyPackets": 5,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 481,
+        "public": 134,
+        "request": 5,
+        "reply": 5
+      },
+      "commandsObserved": [
+        "AskForCardChosen",
+        "AskForSkillInvoke",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "FilterCard",
+        "GameLog",
+        "GameOver",
+        "PlayCard",
+        "PropertyUpdate",
+        "SetCardFootnote",
+        "SetCardMark",
+        "SetPlayerMark",
+        "ShowVirtualCard"
+      ],
+      "requestCommandsObserved": [
+        "AskForCardChosen",
+        "AskForSkillInvoke",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "FilterCard",
+        "GameLog",
+        "GameOver",
+        "PlayCard",
+        "PropertyUpdate",
+        "SetCardFootnote",
+        "SetCardMark",
+        "SetPlayerMark",
+        "ShowVirtualCard"
+      ],
+      "replyCommandsObserved": [
+        "AskForCardChosen",
+        "AskForSkillInvoke",
+        "CustomDialog",
+        "PlayCard"
+      ],
+      "opaqueReplyChannelObserved": true
+    },
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false
+  },
+  "choiceVariantEvidence": [
+    {
+      "scenario": "cards-and-choice",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794793243641.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "negotiatedForAllAudiences": true,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "choiceFlow": {
+        "askForChoicesObserved": 2,
+        "askForCardsAndChoiceObserved": 1,
+        "playCardObserved": 2,
+        "opaqueCardAndChoiceReplyObserved": true,
+        "replyObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 6899,
+        "packets": 314,
+        "failures": 0,
+        "packetBytes": {
+          "total": 44001,
+          "min": 28,
+          "max": 3041,
+          "le256": 306,
+          "le1024": 7,
+          "le4096": 1,
+          "gt4096": 0
+        }
+      },
+      "supplementalWireCapture": {
+        "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+        "audiences": 3,
+        "packets": 2185,
+        "incomingPackets": 2179,
+        "replyPackets": 6,
+        "failures": 0,
+        "packetBytes": {
+          "total": 108535,
+          "min": 17,
+          "max": 419,
+          "le256": 2180,
+          "le1024": 5,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "channels": {
+          "negotiation": 3,
+          "metadata": 1744,
+          "public": 425,
+          "request": 7,
+          "reply": 6
+        },
+        "commandsObserved": [
+          "AskForCardsAndChoice",
+          "AskForChoices",
+          "CardWireNegotiated",
+          "CustomDialog",
+          "FilterCard",
+          "GameLog",
+          "GameOver",
+          "PlayCard",
+          "PropertyUpdate",
+          "SetCardFootnote",
+          "SetCardMark",
+          "SetPlayerMark"
+        ]
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "poxi",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-poxi-multiplayer-live-1794792879627.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "choiceFlow": {
+        "askForChoicesObserved": 2,
+        "askForSkillInvokeObserved": 1,
+        "playCardObserved": 1,
+        "askForPoxiObserved": 1,
+        "multiCardReplyObserved": true,
+        "replyObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 1155,
+        "packets": 69,
+        "failures": 0,
+        "packetBytes": {
+          "total": 11185,
+          "min": 28,
+          "max": 3152,
+          "le256": 67,
+          "le1024": 1,
+          "le4096": 1,
+          "gt4096": 0
+        }
+      },
+      "supplementalWireCapture": {
+        "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+        "audiences": 3,
+        "packets": 422,
+        "incomingPackets": 418,
+        "replyPackets": 4,
+        "failures": 0,
+        "packetBytes": {
+          "total": 22797,
+          "min": 17,
+          "max": 631,
+          "le256": 417,
+          "le1024": 5,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "channels": {
+          "negotiation": 3,
+          "metadata": 330,
+          "public": 80,
+          "request": 5,
+          "reply": 4
+        },
+        "commandsObserved": [
+          "AskForPoxi",
+          "AskForUseActiveSkill",
+          "CardWireNegotiated",
+          "CustomDialog",
+          "FilterCard",
+          "GameLog",
+          "GameOver",
+          "PlayCard",
+          "PropertyUpdate",
+          "SetCardFootnote",
+          "SetCardMark",
+          "SetPlayerMark"
+        ]
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-guanxing",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-guanxing-multiplayer-live-1794793799487.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "choiceFlow": {
+        "askForSkillInvokeObserved": 2,
+        "askForArrangeCardsObserved": 1,
+        "arrangeReplyObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 333,
+        "packets": 24,
+        "failures": 0,
+        "packetBytes": {
+          "total": 6427,
+          "min": 28,
+          "max": 3260,
+          "le256": 18,
+          "le1024": 5,
+          "le4096": 1,
+          "gt4096": 0
+        }
+      },
+      "supplementalWireCapture": {
+        "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+        "audiences": 3,
+        "packets": 183,
+        "incomingPackets": 178,
+        "replyPackets": 5,
+        "failures": 0,
+        "packetBytes": {
+          "total": 9704,
+          "min": 9,
+          "max": 427,
+          "le256": 177,
+          "le1024": 6,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "channels": {
+          "negotiation": 3,
+          "metadata": 151,
+          "public": 19,
+          "request": 5,
+          "reply": 5
+        },
+        "commandsObserved": [
+          "AskForArrangeCards",
+          "AskForSkillInvoke",
+          "CardWireNegotiated",
+          "CustomDialog",
+          "GameLog",
+          "GameOver",
+          "PropertyUpdate",
+          "SetCardMark",
+          "SetPlayerMark"
+        ]
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-luoshen",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-luoshen-multiplayer-live-1794793552276.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "nativePrivacyFailures": 0,
+      "choiceFlow": {
+        "askForSkillInvokeObserved": 3,
+        "fillAGObserved": 2,
+        "takeAGObserved": 3,
+        "askForAGObserved": 1,
+        "gameOverObservedOnAllAudiences": true,
+        "interpretation": "AG display/fill/take path and one real AskForAG request/reply observed; standing opaque references were retained until MoveCards rekey"
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 408,
+        "packets": 45,
+        "failures": 0,
+        "packetBytes": {
+          "total": 8064,
+          "min": 28,
+          "max": 3258,
+          "le256": 42,
+          "le1024": 2,
+          "le4096": 1,
+          "gt4096": 0
+        }
+      },
+      "supplementalWireCapture": {
+        "boundary": "same complete outer CBOR packets, audited before PacketStream data decode",
+        "audiences": 3,
+        "packets": 225,
+        "incomingPackets": 219,
+        "replyPackets": 6,
+        "failures": 0,
+        "packetBytes": {
+          "total": 12765,
+          "min": 9,
+          "max": 383,
+          "le256": 219,
+          "le1024": 6,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "channels": {
+          "negotiation": 3,
+          "metadata": 173,
+          "public": 37,
+          "request": 6,
+          "reply": 6
+        },
+        "commandsObserved": [
+          "AskForAG",
+          "AskForSkillInvoke",
+          "CardWireNegotiated",
+          "CustomDialog",
+          "FillAG",
+          "FilterCard",
+          "GameLog",
+          "GameOver",
+          "PropertyUpdate",
+          "SetCardFootnote",
+          "SetCardMark",
+          "SetPlayerMark",
+          "TakeAG"
+        ]
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    }
+  ],
+  "lifecycleScenarioEvidence": [
+    {
+      "scenario": "hidden-rehide-yiji",
+      "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=0 TQS_PRIVACY_SCENARIO=hidden-rehide-yiji npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-rehide-yiji-multiplayer-live-1794793339406.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "audienceTraces": 3,
+      "nativePrivacyFailures": 0,
+      "lifecycleFlow": {
+        "hiddenSkillInvokeGateObserved": true,
+        "revealDistributionRehideObserved": true,
+        "retainedPrelightObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 371,
+        "packets": 21,
+        "failures": 0,
+        "all12CategoriesObservedAcrossAudiences": false,
+        "strictAllCategoriesDisabledBecause": "hidden-rehide-yiji exercises reveal/rehide lifecycle but not the full draw/reconnect/special-pile matrix; draw-sequence remains the strict 12/12 evidence"
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-rehide-yiji",
+      "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=0 TQS_PRIVACY_SCENARIO=hidden-rehide-yiji npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+      "aggregateEvidence": "docs/web-client/CARD_WIRE_NATIVE_REHIDE_2026-11-16.json",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-rehide-yiji-multiplayer-live-1794793339406.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "audienceTraces": 3,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "lifecycleFlow": {
+        "hiddenSkillInvokeGateObserved": true,
+        "hiddenYijiInvoked": true,
+        "hiddenYijiReplyObserved": true,
+        "revealDistributionRehideObserved": true,
+        "retainedPrelightObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "packetsByAudience": [
+          9,
+          9,
+          3
+        ],
+        "framesByAudience": [
+          170,
+          145,
+          56
+        ],
+        "packetBytesTotal": 5422,
+        "failures": 0,
+        "all12CategoriesObservedAcrossAudiences": false,
+        "strictAllCategoriesDisabledBecause": "hidden-rehide-yiji exercises reveal/rehide lifecycle but not the full draw/reconnect/special-pile matrix; draw-sequence remains the strict 12/12 evidence"
+      },
+      "supplementalWireCapture": {
+        "packets": 218,
+        "incomingPackets": 213,
+        "replyPackets": 5,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 182,
+          "public": 23,
+          "request": 5,
+          "reply": 5
+        }
+      },
+      "nativeOuterCborTimingRecords": 234,
+      "serverTimingRecords": 8,
+      "auditorCorrection": "The current supplemental auditor accepts the projector-aligned min_c_num/max_c_num constraints and bounded player-array keys while continuing to reject unknown numeric fields; the two pre-PASS fail-closed attempts were not counted as acceptance evidence.",
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-luoshen",
+      "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=0 TQS_PRIVACY_SCENARIO=hidden-luoshen npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+      "aggregateEvidence": "docs/web-client/CARD_WIRE_NATIVE_LUOSHEN_2026-11-16.json",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-luoshen-multiplayer-live-1794793552276.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "audienceTraces": 3,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "lifecycleFlow": {
+        "hiddenLuoshenGateObserved": true,
+        "hiddenLuoshenInvoked": true,
+        "phaseStartRevealObserved": true,
+        "judgmentContinuationObserved": true,
+        "askForAgReplyObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "packetsByAudience": [
+          17,
+          17,
+          11
+        ],
+        "framesByAudience": [
+          178,
+          163,
+          67
+        ],
+        "packetBytesTotal": 8065,
+        "failures": 0,
+        "all12CategoriesObservedAcrossAudiences": false,
+        "strictAllCategoriesDisabledBecause": "hidden-luoshen exercises phase-start reveal, judgment/AG continuation and choice reply but not the full draw/reconnect/special-pile matrix; draw-sequence remains the strict 12/12 evidence"
+      },
+      "supplementalWireCapture": {
+        "packets": 225,
+        "incomingPackets": 219,
+        "replyPackets": 6,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 173,
+          "public": 37,
+          "request": 6,
+          "reply": 6
+        }
+      },
+      "nativeOuterCborTimingRecords": 258,
+      "serverTimingRecords": 8,
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-reveal",
+      "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=0 TQS_PRIVACY_SCENARIO=hidden-reveal npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+      "aggregateEvidence": "docs/web-client/CARD_WIRE_NATIVE_REVEAL_2026-11-16.json",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-reveal-multiplayer-live-1794793444573.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "audienceTraces": 3,
+      "nativePrivacyFailures": 0,
+      "supplementalFailures": 0,
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "lifecycleFlow": {
+        "hiddenRevealGateObserved": true,
+        "activeRevealRequestOwnerOnly": true,
+        "activeRevealReplyObserved": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "packetsByAudience": [
+          8,
+          8,
+          2
+        ],
+        "framesByAudience": [
+          142,
+          128,
+          28
+        ],
+        "packetBytesTotal": 4604,
+        "failures": 0,
+        "all12CategoriesObservedAcrossAudiences": false,
+        "strictAllCategoriesDisabledBecause": "hidden-reveal exercises active reveal and owner-only private request/reply but not the full draw/reconnect/special-pile matrix; draw-sequence remains the strict 12/12 evidence"
+      },
+      "supplementalWireCapture": {
+        "packets": 168,
+        "incomingPackets": 164,
+        "replyPackets": 4,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 141,
+          "public": 16,
+          "request": 4,
+          "reply": 4
+        }
+      },
+      "nativeOuterCborTimingRecords": 173,
+      "serverTimingRecords": 8,
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    },
+    {
+      "scenario": "hidden-reveal",
+      "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=0 TQS_PRIVACY_SCENARIO=hidden-reveal npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-hidden-reveal-multiplayer-live-1794793444573.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedForAllAudiences": true,
+      "audienceTraces": 3,
+      "nativePrivacyFailures": 0,
+      "lifecycleFlow": {
+        "activeRevealGateObserved": true,
+        "activeRevealReplyObserved": true,
+        "privateActiveRequestOwnerOnly": true,
+        "gameOverObservedOnAllAudiences": true
+      },
+      "rawWireCapture": {
+        "boundary": "browser-WebSocket outer CBOR, before PacketStream data decode",
+        "audiences": 3,
+        "frames": 298,
+        "packets": 18,
+        "failures": 0,
+        "all12CategoriesObservedAcrossAudiences": false,
+        "strictAllCategoriesDisabledBecause": "hidden-reveal exercises active reveal and private request ownership but not the full draw/reconnect/special-pile matrix; draw-sequence remains the strict 12/12 evidence"
+      },
+      "rawCardIdsInSanitizedEvidence": false,
+      "rawCredentialsInEvidence": false
+    }
+  ],
+  "rollbackScenarioEvidence": {
+    "scope": "same isolated candidate runtime; v1 room completed before a new legacy-only room",
+    "candidateIdentity": {
+      "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+      "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+      "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+      "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+    },
+    "v1Run": {
+      "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedAudiences": 3,
+      "recovered": true,
+      "gameOverAudiences": 3,
+      "nativePrivacyFailures": 0,
+      "rawWireFrames": 1931,
+      "rawWirePackets": 112,
+      "rawWireFailures": 0,
+      "supplementalPackets": 594,
+      "supplementalFailures": 0
+    },
+    "rollbackAction": {
+      "isolatedConfigDisabled": true,
+      "cardWireVersionAfterRollback": null,
+      "qaOverlayAbsentBeforeLegacyStart": true,
+      "productionMutation": false
+    },
+    "legacyRun": {
+      "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794794083939.json",
+      "runnerResult": "PASS",
+      "errors": [],
+      "negotiatedAudiences": 0,
+      "recovered": true,
+      "gameOverAudiences": 2,
+      "manualPlayCardObserved": true,
+      "nativePrivacyAudit": "disabled-by-rollback-mode",
+      "sameCandidatePackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+      "sameCandidateRuntimeMD5": "e40c8df7631c4907459ebb8321a7a921"
+    },
+    "rollbackResult": "PASS-isolated-candidate-current-package",
+    "sameRuntimeIdentity": true,
+    "latestRerunObservedAt": "2026-11-16T01:54:43.939Z",
+    "qaCleanupObserved": true,
+    "rawCardIdsInEvidence": false,
+    "rawCredentialsInEvidence": false
+  },
+  "commandCounts": {
+    "PrepareDrawPile": 2,
+    "ShuffleDrawPile": 2,
+    "SyncDrawPile": 8,
+    "ChangeCardArea": 4,
+    "Reconnect": 1,
+    "Observe": 1,
+    "MoveCards": 88,
+    "SetPlayerPile": 2
+  },
+  "strictPrivacyCategoryCounts": {
+    "prepare_order": 2,
+    "shuffle_order": 2,
+    "sync_order": 8,
+    "change_area_order": 2,
+    "hidden_move_id": 16,
+    "observe_hidden_move_id": 8,
+    "special_pile_id": 1,
+    "reconnect_deck": 1,
+    "reconnect_hand": 1,
+    "reconnect_special": 1,
+    "observe_deck": 1,
+    "observe_hand": 2
+  },
+  "audiences": {
+    "owner": "negotiated v1; private owner path observed",
+    "opponent": "negotiated v1; concealed MoveCards path observed",
+    "observer": "separate third account; Observe snapshot and observer-hidden MoveCards path observed"
+  },
+  "cleanup": {
+    "qaPort": 19681,
+    "qaListenerAfterRun": "closed",
+    "qaRuntime": "temporary isolated runtime only",
+    "productionListenerTouched": false,
+    "productionConfigChanged": false,
+    "rollbackExecuted": true
+  },
+  "mappingLifecycleEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MAPPING_2026-11-16.json",
+    "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794783100735.json",
+    "runnerResult": "PASS",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "audiences": 3,
+    "records": 271,
+    "eventCounts": {
+      "protocol_created": 1,
+      "batch_commit": 267,
+      "batch_abort": 0,
+      "choice_reject": 0,
+      "disconnect": 3
+    },
+    "maxActiveReferences": 98,
+    "maxActiveRequests": 2,
+    "maxActiveTokenRefs": 23,
+    "retiredTombstones": 261,
+    "finalAudiences": 0,
+    "finalActiveReferences": 0,
+    "finalActiveRequests": 0,
+    "finalActiveTokenRefs": 0,
+    "cleanupObserved": true,
+    "forbiddenMetadataKeysObserved": false,
+    "rawIdentityTokenOrPayloadRetained": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "repeatedMappingLifecycleEvidence": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MAPPING_REPEATED_2026-11-16.json",
+    "runCount": 2,
+    "rawSanitizedEvidence": [
+      "scratch/evidence/cp08-draw-sequence-reconnect-live-1794783100735.json",
+      "scratch/evidence/cp08-draw-sequence-reconnect-live-1794784727745.json"
+    ],
+    "allRunsResult": "PASS",
+    "allRunsRecovered": true,
+    "allRunsErrors": [],
+    "mappingRecords": 749,
+    "maximumObservedActiveReferences": 150,
+    "maximumObservedActiveRequests": 2,
+    "maximumObservedActiveTokenRefs": 27,
+    "allRunsFinalAudiences": 0,
+    "allRunsFinalActiveReferences": 0,
+    "allRunsFinalActiveRequests": 0,
+    "allRunsFinalActiveTokenRefs": 0,
+    "cleanupObservedOnAllRuns": true,
+    "nativeWireBoundaryRecords": 9145,
+    "nativeCborTimingRecords": 3155,
+    "serverTimingRecords": 16,
+    "processSamples": 1741,
+    "forbiddenMetadataKeysObserved": false,
+    "rawIdentityTokenOrPayloadRetained": false,
+    "productionMutation": false,
+    "releaseStatus": "OPEN-HOLD"
+  },
+  "performanceEvidence": {
+    "sourceProbe": "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json#performanceSourceEvidence",
+    "nativeBoundary": "browser-WebSocket outer CBOR before PacketStream data decode",
+    "nativeTransportBoundary": {
+      "sourcePatch": "deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch",
+      "hook": "ClientSocket::send before send_queue.push_back",
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+      "metricsPath": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-wire-metrics.json",
+      "schemaVersion": 1,
+      "records": 1806,
+      "outboundRecords": 1758,
+      "outboundOuterDecodedRecords": 1758,
+      "outboundCardWireRecords": 740,
+      "inboundPredecodeRecords": 24,
+      "inboundPostDecodeRecords": 24,
+      "inboundPostDecodeCardWireRecords": 0,
+      "channels": {
+        "outboundDeck": 97,
+        "outboundMetadata": 509,
+        "outboundNegotiation": 4,
+        "outboundOther": 1018,
+        "outboundPublic": 125,
+        "outboundRequest": 5,
+        "inboundPostDecodeOther": 24
+      },
+      "packetBytes": {
+        "outboundTotal": 92330,
+        "min": 17,
+        "max": 3459,
+        "inboundInputTotal": 2311,
+        "inboundBufferedMax": 371
+      },
+      "forbiddenMetadataKeysObserved": false,
+      "nativeProcessMetrics": {
+        "sampleCount": 198,
+        "firstRssKb": 14688,
+        "minRssKb": 12000,
+        "maxRssKb": 15184,
+        "lastRssKb": 12256,
+        "maxCpuSeconds": 0.53,
+        "elapsedSeconds": 52.248525375,
+        "sampling": "ps-rss-cputime"
+      },
+      "build": {
+        "command": "cmake --build scratch/evidence/card-wire-native-macos-20261103/build --parallel 2",
+        "result": "PASS"
+      },
+      "scope": "QA-only native C++ outbound boundary before TCP write plus inbound pre-cbor-decode and post-cbor-decode count markers; metadata-only and no payload parse in the pre-hook; outer Cbor::encodeArray timing is recorded by a separate bounded QA hook",
+      "qaOnlyInertWithoutOutputPath": true,
+      "productionMutation": false,
+      "cleanup": "QA pointer, process and listener closed; exact runtime moved to recoverable temporary trash"
+    },
+    "rawDeckPackets": 112,
+    "rawDeckFrames": 1723,
+    "rawDeckBytes": 19496,
+    "rawDeckMaxPacketBytes": 3459,
+    "supplementalPackets": 594,
+    "supplementalBytes": 33997,
+    "supplementalMaxPacketBytes": 572,
+    "serverProjectSerializeTiming": "bounded server Lua project/project-request timing plus one serialize sample per channel through server.rpc.cbor.encode and native outer Cbor::encodeArray timing; repeated/release timing remains open",
+    "serverProjectTiming": {
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794777405481.json",
+      "timingPath": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-wire-timing.json",
+      "schemaVersion": 1,
+      "records": 8,
+      "samplePolicy": "one bounded sample per observed scope/channel pair; project and request-project markers wrap candidate projection while serialize markers wrap one QA-only server.rpc.cbor.encode call",
+      "scopes": {
+        "project": 3,
+        "request-project": 1,
+        "serialize": 4
+      },
+      "channels": {
+        "deck": 2,
+        "metadata": 2,
+        "public": 2,
+        "request": 2
+      },
+      "elapsedMs": {
+        "min": 6,
+        "max": 500,
+        "average": 74.75
+      },
+      "keys": [
+        "schemaVersion",
+        "scope",
+        "channel",
+        "elapsedMs"
+      ],
+      "forbiddenMetadataKeysObserved": false,
+      "cborSerializationIncluded": true,
+      "productionMutation": false,
+      "cleanup": "Timing artifact retained in recoverable temporary QA trash; pointer, process and listener closed"
+    },
+    "nativeCborSerializationTiming": {
+      "artifact": "docs/web-client/CARD_WIRE_NATIVE_CBOR_TIMING_2026-11-16.json",
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794777405481.json",
+      "timingPath": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-cbor-serialization-timing.json",
+      "schemaVersion": 1,
+      "records": 740,
+      "sampleCap": 4096,
+      "scopes": {
+        "notify": 735,
+        "request": 5
+      },
+      "channels": {
+        "deck": 97,
+        "metadata": 509,
+        "negotiation": 4,
+        "public": 125,
+        "request": 5
+      },
+      "keys": [
+        "schemaVersion",
+        "scope",
+        "channel",
+        "elapsedNs",
+        "wireBytes"
+      ],
+      "elapsedNs": {
+        "min": 83,
+        "p50": 625,
+        "p95": 4333,
+        "max": 77625,
+        "average": 1365.708108108108
+      },
+      "wireBytes": {
+        "min": 17,
+        "max": 3459,
+        "total": 51799
+      },
+      "measurement": "Cbor::encodeArray outer packet construction in Router::notify/request; inner Lua payload projection and serialization are measured separately",
+      "forbiddenMetadataKeysObserved": false,
+      "productionMutation": false,
+      "cleanup": "Raw metadata artifact retained in recoverable temporary QA trash; pointer, process and listener closed"
+    },
+    "nativeProcessMetrics": {
+      "source": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+      "sampling": "ps-rss-cputime",
+      "sampleCount": 198,
+      "firstRssKb": 14688,
+      "minRssKb": 12000,
+      "maxRssKb": 15184,
+      "lastRssKb": 12256,
+      "maxCpuSeconds": 0.53,
+      "elapsedSeconds": 52.248525375,
+      "scope": "post-server-ready isolated native QA process aggregate only; no PID, command line, account or path retained"
+    },
+    "nativeRepeatedProcessMetrics": {
+      "artifact": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+      "scenario": "draw-sequence",
+      "runCount": 3,
+      "allRunsPass": true,
+      "allRunsRecovered": true,
+      "totalProcessSamples": 865,
+      "firstRssKbRange": [
+        14048,
+        14816
+      ],
+      "lastRssKbRange": [
+        11920,
+        15136
+      ],
+      "observedMinimumRssKb": 11808,
+      "observedMaximumRssKb": 15456,
+      "maximumRunCpuSeconds": 1.11,
+      "totalObservedElapsedSeconds": 228.189,
+      "nativeWireRecords": 10050,
+      "nativeCborSerializationTimingRecords": 3681,
+      "serverTimingRecords": 24,
+      "serverTimingScopes": {
+        "project": 9,
+        "request-project": 3,
+        "serialize": 12
+      },
+      "logicalMappingSourceObservation": {
+        "maxActiveReferences": 124,
+        "cleanupActiveReferences": 0,
+        "retiredTombstones": 320,
+        "foreignRejections": 1,
+        "replayRejections": 1,
+        "staleRejections": 1,
+        "syntheticOnly": true,
+        "nativeBrowserRun": false
+      },
+      "currentNativeObservation": {
+        "runtimeMD5": "59ba7a604306ac94d34183ffc17eff62",
+        "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+        "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+        "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+        "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+        "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d",
+        "mappingRecords": 811,
+        "maximumActiveReferences": 140,
+        "maximumActiveRequests": 1,
+        "finalActiveReferences": 0,
+        "finalAudiences": 0,
+        "finalCleanupActiveReferences": 0,
+        "retiredTombstones": 374,
+        "intermediateDisconnectCleanupActiveReferences": [
+          54,
+          27,
+          0,
+          64,
+          32,
+          0,
+          93,
+          47,
+          0
+        ],
+        "scope": "latest current-candidate run only; QA root boundary telemetry was overwritten between isolated runs"
+      },
+      "allRunsProcessesClosed": true,
+      "allRunsListenersClosed": true,
+      "mappingMemoryStatus": "OPEN",
+      "thresholdStatus": "OPEN",
+      "releaseApproval": "not-granted",
+      "productionMutation": false,
+      "cleanup": "All three current-candidate QA launcher sessions were stopped after PASS; listener 19681 and the native/Lua QA processes were checked closed"
+    },
+    "memoryMeasurement": "candidate source probe records logical active-reference cardinality/cleanup plus three independent post-server-ready isolated native-process RSS/CPU observations totaling 865 samples; current-run native boundary/timing telemetry is recorded separately, while native mapping-memory attribution, repeated-room threshold approval and release-grade performance remain open",
+    "result": "PASS-bounded-native-boundaries-server-project-inner-and-outer-CBOR-timing-with-post-ready-process-observation; repeated/release-grade memory and native-performance release gates remain open"
+  },
+  "limitations": [
+    "This is candidate-only native C++/CBOR evidence; it does not change the production wire or enable v1.",
+    "The runner captured complete outer CBOR packets at the browser WebSocket boundary before PacketStream data decoding and audited them with Lua 5.4; the separate QA-only C++ hook now observes outbound ClientSocket::send before the TCP write queue and inbound ClientSocket::handleBuffer before/after cbor_stream_decode with bounded counts, but it does not retain payload or semantic parser state.",
+    "The draw-sequence scenario covers draw, shuffle, hidden move, observer snapshot, controlled reconnect, manual PlayCard and bounded GameOver; bounded source projection/CBOR, server.rpc.cbor.encode timing, native outbound boundary, outer Cbor::encodeArray timing and post-server-ready RSS observation now pass, but semantic payload proof, repeated process-memory evidence/thresholds and production/canary performance gates remain open.",
+    "Native card-chosen, cards-and-choice, Poxi, Arrange and AG variants cover five real opaque request/reply families; card-chosen, cards-and-choice, Poxi and Arrange main-slot artifacts now use the current QA package hash 5699f9c0; other choice variants remain unobserved on the live native path.",
+    "The latest separate card-chosen trace proves the real PlayCard → AskForSkillInvoke → hidden AskForCardChosen/reply → GameOver flow on three audiences; SkillButton selection state is not retained in sanitized evidence, strict-all was intentionally disabled for that scenario because it does not exercise reconnect/special-pile groups, and the raw choice payload itself was not retained or decoded in evidence.",
+    "The current candidate package also has a fresh card-chosen aggregate at docs/web-client/CARD_WIRE_NATIVE_CHOICE_2026-11-16.json: three audiences observed hidden AskForCardChosen plus one opaque reply with zero native/supplemental audit failures; this is choice-specific evidence, not full release coverage.",
+    "The current candidate package also has a fresh cards-and-choice aggregate at docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_2026-11-16.json: three audiences observed AskForCardsAndChoice plus AskForChoices replies with zero native/supplemental audit failures; it extends choice-family evidence but does not close the full matrix.",
+    "The current candidate package also has a fresh Poxi aggregate at docs/web-client/CARD_WIRE_NATIVE_POXI_2026-11-16.json: three audiences observed AskForChoices, AskForSkillInvoke, PlayCard and a multi-card AskForPoxi reply with zero native/supplemental audit failures; it extends reverse-mapping evidence but does not close the full matrix.",
+    "The current candidate package also has a fresh ArrangeCards aggregate at docs/web-client/CARD_WIRE_NATIVE_ARRANGE_2026-11-16.json: three audiences observed hidden Guanxing AskForArrangeCards plus reply with zero native/supplemental audit failures; it extends choice-family evidence but does not close the full matrix.",
+    "The current candidate package also has a fresh hidden-rehide-yiji aggregate at docs/web-client/CARD_WIRE_NATIVE_REHIDE_2026-11-16.json: three audiences observed hidden Di Kế invocation, reveal/distribution/rehide, retained prelight and GameOver with zero native/supplemental audit failures. The two pre-PASS fail-closed auditor attempts were excluded; the projector-aligned bounded auditor fix is recorded, while deputy/reconnect/full-matrix and release gates remain open.",
+    "The current candidate package also has a fresh hidden-luoshen aggregate at docs/web-client/CARD_WIRE_NATIVE_LUOSHEN_2026-11-16.json: three audiences observed phase-start hidden reveal, judgment/AG continuation and an opaque AskForAG reply with zero native/supplemental audit failures; this adds current AG evidence but does not close reconnect/full-matrix or release gates.",
+    "The current candidate package also has a fresh hidden-reveal aggregate at docs/web-client/CARD_WIRE_NATIVE_REVEAL_2026-11-16.json: three audiences observed hidden active reveal, owner-only private request/reply and GameOver with zero native/supplemental audit failures; this is separate current lifecycle evidence, not a strict 12/12 or release PASS.",
+    "The strict legacy exposure diagnostic remains exit 2 with 12 exposure groups; this native candidate result must not be reported as a release privacy PASS.",
+    "The supplemental auditor validates metadata, public, request and reply packets independently of the browser decoder; the bounded server.rpc.cbor.encode marker and C++ hook close observed server/native timing boundaries, while semantic payload proof and repeated memory remain separate open gates.",
+    "The current QA-only mapping lifecycle run records sampled batch commits plus three disconnect events and reaches zero audiences, active references, active requests and active token references after GameOver cleanup; the first capped telemetry attempt and the second manual-card runner failure are excluded, and repeated mapping-memory thresholds, browser/device, canary rollback and release approval remain open."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T06:30:19+07:00",
+  "scope": "bounded isolated native QA sequential-room smoke: drain an active v1 room, then admit a new room in the same native process; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "sequence": {
+    "nativeProcessContinuity": true,
+    "serverRestartBetweenRooms": false,
+    "clientCapabilityForNewRoom": "default v1 capability; TQS_LIVE_LEGACY_ONLY was unset",
+    "drainRoom": {
+      "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794871659707.json",
+      "artifactSha256": "7351d723ebf19ef1f1b843c9b4fd0cfe7c6456a3810e8dbd221e95a32afdb453",
+      "result": "PASS",
+      "errors": 0,
+      "recovered": true,
+      "manualCardReply": true,
+      "cardWireRollbackDrainRequested": true,
+      "cardWireRollbackDrainObserved": true,
+      "activeRoomProtocol": 1,
+      "newRoomAdmission": "legacy",
+      "reconnectProtocol": 1
+    },
+    "newRoom": {
+      "artifact": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1794871743264.json",
+      "artifactSha256": "5b0b79367bd58e09f9ebdf4b3190ab54a806bf388ac5ef799bb3cfa274f9c24c",
+      "result": "PASS",
+      "errors": 0,
+      "recovered": false,
+      "manualCardReply": true,
+      "incomingCardWireNegotiatedPackets": 0,
+      "incomingStartGamePackets": 2,
+      "incomingPlayCardPackets": 1,
+      "incomingGameOverPackets": 2,
+      "legacyAdmissionObservedWithV1Capability": true
+    }
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "qaPackageOverlaySymlinkAbsent": true,
+    "qaDrainConfigurationRestored": true,
+    "restoredBinarySha256": "2e4e5850f6ab8897845becc3194bbf7955148ca7d67a9280f5b9fcefc8a2bc29",
+    "rollbackModeAbsentAfterCleanup": true,
+    "productionMutation": false,
+    "credentialsOrPrivateIdentityRetained": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "productionPromotionAllowed": false,
+    "v1Default": "disabled-by-default; isolated-QA-only",
+    "legacyWire": "enabled"
+  },
+  "limitations": [
+    "This proves one bounded sequential two-room admission observation in one native process; it is not a production/canary rollback-SLA measurement or a scale/stress run.",
+    "The second room intentionally did not enable semantic or strict privacy capture; its claim is limited to legacy admission continuity, StartGame, manual PlayCard and GameOver with zero CardWireNegotiated packets.",
+    "Exhaustive drain/stale/replay/concurrency stress, approved P6 thresholds and attribution, physical device/network acceptance (WAIVED_BY_USER, not PASS), immutable reviewed artifact and independent release approval remain open."
+  ]
+}

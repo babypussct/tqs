@@ -14,9 +14,12 @@ const repoRoot = path.resolve(here, '../../..');
 const coreRoot = process.env.TQS_UPSTREAM_CORE_ROOT;
 const pkgRoot = process.env.TQS_UPSTREAM_HEGEMONY_PKG_ROOT;
 const mergedHegemonyRoot = process.env.TQS_UPSTREAM_HEGEMONY_RUNTIME_ROOT;
+const luaExecutable = process.env.TQS_LUA_BIN ?? 'lua5.4';
 
 assert.ok(coreRoot && pkgRoot,
   'Set TQS_UPSTREAM_CORE_ROOT and TQS_UPSTREAM_HEGEMONY_PKG_ROOT to the exact isolated candidate source roots');
+assert.match(path.basename(luaExecutable), /^lua5\.4$/u,
+  'TQS_LUA_BIN must point to a Lua 5.4 executable named lua5.4');
 
 const selectedSkills = new Map([
   ['standard/skills/tieqi.lua', 'c35cc7106119aaaef9ada526f07c1ecc9fbdf28c83bb8e31f673f5591f756b38'],
@@ -29,7 +32,7 @@ const selectedSkills = new Map([
 ]);
 
 function runLua(script, args) {
-  return execFileSync('lua', [path.join(here, script), ...args], {
+  return execFileSync(luaExecutable, [path.join(here, script), ...args], {
     encoding: 'utf8', timeout: 30_000, maxBuffer: 1024 * 1024,
   });
 }
@@ -157,7 +160,7 @@ test('candidate MoveCards and SetPlayerPile localize projected references before
       '--check', coreRoot], { encoding: 'utf8', timeout: 30_000 });
   assert.match(guard, /PASS isolated Hegemony v1 MoveCards\/SetPlayerPile client bridge --check/u);
   const output = runLua('card-wire-client-moves-probe.lua', [coreRoot]);
-  assert.match(output, /PASS candidate MoveCards\/SetPlayerPile client: local alias transitions, anonymous draw consumption, public reveal\/rehide, private pile trackers, standing-ref\/source-area rekey, schema\/mode\/legacy fail-close; 8 cases; synthetic-only; native\/browser NOT RUN/u);
+  assert.match(output, /PASS candidate MoveCards\/SetPlayerPile client: local alias transitions, anonymous draw consumption, public reveal\/rehide, private pile trackers, standing-ref\/source-area rekey, schema\/mode\/legacy fail-close; 10 cases; synthetic-only; native\/browser NOT RUN/u);
 });
 
 test('candidate client request bridge localizes opaque choices and reverses one-shot replies', () => {
@@ -248,7 +251,7 @@ test('candidate v1 physical privacy covers the twelve legacy exposure categories
 });
 
 test('strict negotiated v1 source gate audits all physical CBOR and embedded card marks', () => {
-  const result = spawnSync('lua', [path.join(here, 'card-wire-privacy-v1-source-probe.lua'),
+  const result = spawnSync(luaExecutable, [path.join(here, 'card-wire-privacy-v1-source-probe.lua'),
     coreRoot, path.join(here, 'card-handle-protocol.lua'), '--strict'],
     { encoding: 'utf8', timeout: 30_000 });
   assert.ifError(result.error);
@@ -265,7 +268,12 @@ test('native deck boundary audit rejects legacy identities and supplementary dec
 
 test('candidate QA negotiation activates v1 only after a card-free legacy envelope', () => {
   const output = runLua('card-wire-negotiation-source-probe.lua', [coreRoot]);
-  assert.match(output, /PASS candidate card-wire negotiation: actual QA room helper, legacy CBOR envelope, per-physical dedupe, actual ClientCallback activation and malformed\/legacy fail-closed; 4 cases; native C\+\+\/browser\/two-account NOT RUN/u);
+  assert.match(output, /PASS candidate card-wire negotiation: actual QA room helper, legacy CBOR envelope, per-physical dedupe, client capability advertise, wrong version\/protocol\/mode rejection, actual ClientCallback activation, active-v1 no-downgrade and malformed\/legacy fail-closed; 12 cases; native C\+\+\/browser\/two-account NOT RUN/u);
+  const repoRoot = path.resolve(here, '../../..');
+  const guard = execFileSync(process.execPath,
+    [path.join(repoRoot, 'scripts/upstream-first-card-wire-capability-guard.mjs'),
+      '--check', coreRoot], { encoding: 'utf8', timeout: 30_000 });
+  assert.match(guard, /PASS isolated Hegemony card-wire capability guard --check/u);
 });
 
 test('direct Observe snapshots project only for their physical observer and roll back on failure', () => {
@@ -287,6 +295,16 @@ test('concealed physical SetCardMark is projected per owner and fails closed bef
 test('candidate native card-wire runtime uses OS entropy and atomic physical-audience batches', () => {
   const output = runLua('card-wire-secure-runtime-source-probe.lua', [coreRoot]);
   assert.match(output, /PASS candidate native card-wire entropy: OS CSPRNG, per-physical audience, replay, reconnect, abort, entropy failure, guarded opt-in; synthetic IDs; native\/browser NOT RUN/u);
+  const mint = fs.readFileSync(path.join(here, 'card-wire-secure-mint.lua'), 'utf8');
+  assert.match(mint, /cardWireEntropyFailureAfter/u);
+  assert.match(mint, /card_wire_entropy_rejected mode=controlled kind=%s/u);
+  assert.match(mint, /card wire v1 requires OS CSPRNG: controlled QA failure/u);
+});
+
+test('candidate card-wire P6 measures bounded projection, CBOR, mapping and cleanup metadata', () => {
+  const output = runLua('card-wire-performance-source-probe.lua',
+    [coreRoot, path.join(here, 'card-handle-protocol.lua')]);
+  assert.match(output, /CARD_WIRE_PERFORMANCE=PASS;cases=\d+;audiences=3;iterations=12;project_p95_us=\d+;serialize_p95_us=\d+;max_wire_bytes=\d+;max_active_refs=\d+;cleanup_us=\d+;cleanup_active_refs=0;foreign_rejects=1;replay_rejects=1;stale_rejects=1;retired_tombstones=\d+;synthetic-only;native\/browser NOT RUN/u);
 });
 
 test('human Request packets and replies use physical, request-scoped card references', () => {
@@ -345,6 +363,7 @@ test('candidate wire dispatch, physical reconnect, Observe and owner-only sends 
     'upstream-first-card-wire-client-snapshot-guard.mjs',
     'upstream-first-card-wire-client-public-guard.mjs',
     'upstream-first-card-wire-request-projector-guard.mjs',
+    'upstream-first-card-wire-capability-guard.mjs',
     'upstream-first-card-mark-owner-guard.mjs',
     'upstream-first-card-mark-guard.mjs',
     'upstream-first-private-wire-guard.mjs',
@@ -372,7 +391,7 @@ test('diagnostic: candidate card wire still exposes concealed IDs (privacy relea
 });
 
 test('strict card-wire privacy release gate fails closed on current candidate', () => {
-  const result = spawnSync('lua', [path.join(here, 'card-wire-exposure-source-probe.lua'),
+  const result = spawnSync(luaExecutable, [path.join(here, 'card-wire-exposure-source-probe.lua'),
     coreRoot, '--strict'], { encoding: 'utf8', timeout: 30_000 });
   assert.ifError(result.error);
   assert.equal(result.status, 2, 'the privacy gate must reject exposed card identifiers');

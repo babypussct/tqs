@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate Fankui main/deputy native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "ddc9da1dd8870260da852ac192b76f3fcebe0d6c83a8b3fdc23a1f2a41f34769",
+    "manifestSha256": "8a076cdcf62ee4416c3fe259c0915860de6cfe01791cd35fadecc84313460593",
+    "catalogSha256": "a19b26845b498cab67ec9b277c38c765c8661e338d9aaccbf90650fd6675f6e6",
+    "runtimeMD5": "a43770fedf82abb5ff082dfbb79e765f",
+    "distIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "requestShapeRegression": {
+    "initialDiagnostic": "candidate request projection rejected the numeric cardIds field as unaudited",
+    "serverProjector": "deploy/freekill-native/qa/card-wire-request.lua",
+    "clientBridge": "deploy/freekill-native/qa/card-wire-client-requests.lua",
+    "arrayFieldAllowlisted": "cardIds",
+    "prepareGuardsApplied": [
+      "scripts/upstream-first-card-wire-request-projector-guard.mjs",
+      "scripts/upstream-first-card-wire-client-request-guard.mjs"
+    ],
+    "scope": "candidate QA runtime only; fail-closed allowlist preserved"
+  },
+  "runs": [
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-fankui-multiplayer-live-1794815528146.json",
+      "scenario": "hidden-fankui",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "fankuiPrelightReplyObserved": true,
+      "fankuiDamageReplyObserved": true,
+      "fankuiCardChosenReplyObserved": true,
+      "scenarioCardChosenHidden": true,
+      "scenarioCardChosenReply": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWire": {
+        "packetsByAudience": [11, 11, 5],
+        "framesByAudience": [159, 143, 52],
+        "packetBytesTotalByAudience": [981, 934, 3594],
+        "failures": 0,
+        "hiddenReferenceAudited": true,
+        "hiddenReferenceCollisions": 0
+      },
+      "nativeSupplemental": {
+        "packetsByAudience": [91, 79, 23],
+        "incomingPacketsByAudience": [86, 77, 23],
+        "replyPackets": 7,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 150,
+          "public": 26,
+          "request": 7,
+          "reply": 7
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 105,
+          "SetPlayerMark": 40,
+          "SetCardMark": 2,
+          "SetCardFootnote": 3,
+          "GameLog": 23,
+          "AskForCardChosen": 1,
+          "AskForUseActiveSkill": 1,
+          "AskForUseCard": 1,
+          "AskForSkillInvoke": 2,
+          "CustomDialog": 2,
+          "GameOver": 3,
+          "ShowCard": 0,
+          "ShowVirtualCard": 0
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 69,
+        "firstRssKb": 14704,
+        "minRssKb": 14704,
+        "maxRssKb": 15312,
+        "lastRssKb": 15312,
+        "maxCpuSeconds": 0.26,
+        "elapsedSeconds": 18.063,
+        "sampling": "ps-rss-cputime"
+      }
+    },
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-fankui-deputy-multiplayer-live-1794815585464.json",
+      "scenario": "hidden-fankui-deputy",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "fankuiPrelightReplyObserved": true,
+      "fankuiDamageReplyObserved": true,
+      "fankuiCardChosenReplyObserved": true,
+      "scenarioCardChosenHidden": true,
+      "scenarioCardChosenReply": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWire": {
+        "packetsByAudience": [11, 11, 5],
+        "framesByAudience": [164, 149, 47],
+        "packetBytesTotalByAudience": [981, 934, 3649],
+        "failures": 0,
+        "hiddenReferenceAudited": true,
+        "hiddenReferenceCollisions": 0
+      },
+      "nativeSupplemental": {
+        "packetsByAudience": [92, 82, 18],
+        "incomingPacketsByAudience": [87, 80, 18],
+        "replyPackets": 7,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 147,
+          "public": 28,
+          "request": 7,
+          "reply": 7
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 101,
+          "SetPlayerMark": 41,
+          "SetCardMark": 2,
+          "SetCardFootnote": 3,
+          "GameLog": 25,
+          "AskForCardChosen": 1,
+          "AskForUseActiveSkill": 1,
+          "AskForUseCard": 1,
+          "AskForSkillInvoke": 2,
+          "CustomDialog": 2,
+          "GameOver": 3,
+          "ShowCard": 0,
+          "ShowVirtualCard": 0
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 70,
+        "firstRssKb": 14016,
+        "minRssKb": 11808,
+        "maxRssKb": 15056,
+        "lastRssKb": 11808,
+        "maxCpuSeconds": 0.23,
+        "elapsedSeconds": 18.297,
+        "sampling": "ps-rss-cputime"
+      }
+    }
+  ],
+  "aggregate": {
+    "runs": 2,
+    "allRunsPass": true,
+    "audiencesPerRun": 3,
+    "nativeWirePackets": 54,
+    "nativeWireFrames": 714,
+    "nativeWirePacketBytes": 11073,
+    "nativeWireFailures": 0,
+    "nativeSupplementalPackets": 385,
+    "nativeSupplementalIncomingPackets": 371,
+    "nativeSupplementalReplyPackets": 14,
+    "nativeSupplementalFailures": 0,
+    "channels": {
+      "negotiation": 6,
+      "metadata": 297,
+      "public": 54,
+      "request": 14,
+      "reply": 14
+    },
+    "commandsObserved": {
+      "CardWireNegotiated": 6,
+      "PropertyUpdate": 206,
+      "SetPlayerMark": 81,
+      "SetCardMark": 4,
+      "SetCardFootnote": 6,
+      "GameLog": 48,
+      "AskForCardChosen": 2,
+      "AskForUseActiveSkill": 2,
+      "AskForUseCard": 2,
+      "AskForSkillInvoke": 4,
+      "CustomDialog": 4,
+      "GameOver": 6,
+      "ShowCard": 0,
+      "ShowVirtualCard": 0
+    },
+    "processesClosedAfterEachRun": true,
+    "listenersClosedAfterEachRun": ["19681", "9000"]
+  },
+  "limitations": [
+    "This is bounded candidate coverage for Fankui main and deputy only; it does not close the full request/reply, strict-12 or release privacy matrix.",
+    "ShowCard and ShowVirtualCard were not observed in either run; public-card descriptor coverage remains open.",
+    "Neither run exercises reconnect; draw-sequence remains the current reconnect/strict-12 evidence.",
+    "Approved performance/memory thresholds, browser-network/device verification, production/canary rollback and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-fankui-main-and-deputy-request-reply; public-card-and-release-gates-remain-OPEN"
+}

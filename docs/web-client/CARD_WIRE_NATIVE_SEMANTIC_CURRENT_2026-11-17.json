@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T04:26:20+07:00",
+  "scope": "bounded isolated native semantic CBOR proof for TQS_HEG_CARD_WIRE v1 on new_heg_mode; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+    "sourceSnapshot": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-17.json",
+    "lua": "5.4.9"
+  },
+  "runnerEvidence": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794864182994.json",
+    "sha256": "03720fc3b0b704d641ce72941dea4bd2e8ee6d1d4b38f76929391008e62f5d72",
+    "result": "PASS",
+    "scenario": "draw-sequence",
+    "clients": 3,
+    "recovered": true,
+    "errors": 0,
+    "manualCardReply": true,
+    "nativeReconnectObserved": true,
+    "observerObserveObserved": true,
+    "gameOverAudiences": 3,
+    "strictPrivacyCategoriesObserved": 12,
+    "nativeDeckFailures": 0,
+    "nativeSupplementalFailures": 0,
+    "browserErrors": 0
+  },
+  "semanticCapture": {
+    "requested": true,
+    "records": 1365,
+    "semanticPassRecords": 1365,
+    "semanticFailures": 0,
+    "outerDecodedRecords": 1365,
+    "innerDecodedRecords": 1365,
+    "inboundRecords": 4,
+    "outboundRecords": 1361,
+    "opaqueReferences": 69,
+    "numericReferences": 226,
+    "invalidReferences": 0,
+    "forbiddenFields": 0,
+    "nestedDecoded": 2,
+    "maxDepth": 6,
+    "audiences": {
+      "owner": 476,
+      "opponent": 475,
+      "observer": 414,
+      "unknown": 0
+    },
+    "channels": {
+      "metadata": 933,
+      "public": 228,
+      "request": 4,
+      "deck": 192,
+      "negotiation": 4,
+      "reply": 4
+    },
+    "scopes": {
+      "outbound": 1361,
+      "inbound-reply": 4,
+      "inbound-notify": 0,
+      "inbound-request": 0
+    },
+    "nativeJsonlLineCount": 1365
+  },
+  "privacyBoundary": {
+    "actualOuterCborDecoded": true,
+    "actualInnerCborDecoded": true,
+    "audienceSeparationObserved": ["owner", "opponent", "observer"],
+    "unknownAudienceRecords": 0,
+    "rawPayloadRetained": false,
+    "rawCardIdsRetained": false,
+    "privateNestedMetadataRetained": false,
+    "credentialsRetained": false,
+    "evidenceSanitized": true,
+    "legacyWireUnaffected": true
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "screenClosed": true,
+    "qaPackageSymlinkAbsent": true,
+    "productionMutation": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only",
+    "productionPromotionAllowed": false
+  },
+  "limitations": [
+    "The bounded native C++ parser decodes the actual outer and inner CBOR packets and records only allowlisted counters; it does not constitute command-by-command proof that every direct native emitter has been exhaustively exercised.",
+    "This run closes the current semantic reconnect/observer evidence lane, but exhaustive stale/replay stress, reveal/rehide/choice combinations beyond the existing bounded scenario set, in-flight v1 drain/reconnect rollback, P6 thresholds, device/network acceptance and release approval remain open.",
+    "No production or canary promotion was performed."
+  ]
+}

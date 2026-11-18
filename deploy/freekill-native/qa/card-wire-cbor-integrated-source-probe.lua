@@ -68,6 +68,7 @@ local room = {
   room = { hasObserver = function() return true end },
 }
 function room:getSettings(key) return self.settings[key] end
+function room:hasCardWireCapability() return true end
 function room:cardWireAudience(physical) return physical.audience end
 function room:beginCardWireBatch() return protocol:beginBatch() end
 function room:getCardArea(id)

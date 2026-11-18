@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T19:01:54+07:00",
+  "scope": "local card-wire candidate release packaging checkpoint; no publish",
+  "source": {
+    "branch": "main",
+    "commit": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "dirty": true,
+    "changedFileCount": 107,
+    "gitDiffCheck": "PASS"
+  },
+  "sourceSnapshot": {
+    "artifact": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_2026-11-16.json",
+    "archive": "scratch/evidence/CARD_WIRE_SOURCE_CODE_SNAPSHOT_2026-11-16.tar.gz",
+    "sha256": "a421ee9e3621a61285f0c2aaf5b5e00c4c26a12ad5532327cf451470b06d919d",
+    "status": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL",
+    "publishEligible": false
+  },
+  "artifact": {
+    "runtimeMD5": "021908b3e2f1ca07606fc170a2ce5db4",
+    "manifestSha256": "0fa9b138da00f8534e5d9394a991aeb8f8824fe4713e34e8dd08d1cd8b4e1e71",
+    "packageCount": 16,
+    "packages": [
+      "freekill-core",
+      "gamemode",
+      "hegemony",
+      "jsrg",
+      "maneuvering",
+      "mobile",
+      "mougong",
+      "ol",
+      "overseas",
+      "shzl",
+      "sp",
+      "standard_cards",
+      "standard_ex",
+      "tenyear",
+      "utility",
+      "yj"
+    ],
+    "releaseFileCount": 17137,
+    "runtimeFileCount": 14813,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "webIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "verification": {
+    "releasePackaging": "PASS",
+    "requiredRuntimePackages": "PASS",
+    "sensitiveFilesAndSymlinks": "PASS",
+    "serverOnlyQaExcluded": true,
+    "releaseContractTests": "5/5 PASS"
+  },
+  "decision": {
+    "status": "HOLD",
+    "publishEligible": false,
+    "holdReasons": [
+      "source checkout is dirty; a reviewed commit or immutable source snapshot is required before publishing",
+      "card-wire candidate native evidence and local release package runtime identities are not reconciled",
+      "card-wire approved performance/memory thresholds, production/canary rollback SLA and release approval remain open"
+    ],
+    "identityAudit": "docs/web-client/CARD_WIRE_ARTIFACT_IDENTITY_AUDIT_2026-11-16.json",
+    "deployed": false,
+    "productionMutation": false,
+    "credentialsIncluded": false,
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only"
+  },
+  "limits": [
+    "This is a local packaging checkpoint, not a deployment or official release approval.",
+    "The release package was created from the current dirty worktree for verification only; it must not be published as-is."
+  ]
+}

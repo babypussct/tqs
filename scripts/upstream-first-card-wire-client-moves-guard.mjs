@@ -11,7 +11,7 @@ const [mode, candidate] = process.argv.slice(2);
 assert.ok(['--apply', '--check'].includes(mode) && candidate,
   'expected --apply|--check <isolated candidate core>');
 const root = fs.realpathSync(candidate);
-assert.match(root, /\/scratch\/evidence\/[^/]+\/candidate-runtime\/packages\/freekill-core$/u,
+assert.match(root, /(?:\/scratch\/evidence\/[^/]+|\/private\/tmp\/tqs-cardwire-qa-20261103-[^/]+)\/candidate-runtime\/packages\/freekill-core$/u,
   'client MoveCards bridge restricted to isolated candidate');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const moduleRel = 'ltk/client/card_wire_moves.lua';
@@ -25,6 +25,8 @@ if (!fs.existsSync(modulePath)) {
   assert.equal(mode, '--apply', 'candidate client MoveCards module drifted');
   const reviewedPriorRevisions = new Set([
     '729b3f6bdebcbacca84001529bb38836dcfeb3ee5dbaa4cf2e923d73320a82a8',
+    '84c89355558b2c8b834696f5d1628f46a122509f78570a888fe803ba9164c08e',
+    'a99cf54a376dd6a3f9d8bf98d1ae906226d8effb9958d32dba860a4c94f36d6a',
   ]);
   const installed = fs.readFileSync(modulePath);
   assert.ok(reviewedPriorRevisions.has(createHash('sha256').update(installed).digest('hex')),

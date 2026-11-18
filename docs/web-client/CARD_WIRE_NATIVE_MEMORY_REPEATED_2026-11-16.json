@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only repeated native draw-sequence process observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "82d6171ce987e260838072123d365197",
+    "qaPackageSha256": "8a3d7e0e7ff996bda42faed60c7a201675d50d47092cd9b4ad4655006b3c4714",
+    "scenario": "draw-sequence",
+    "luaRuntime": "Lua 5.4.9; executable basename lua5.4"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false
+  },
+  "runCount": 3,
+  "functionalObservation": {
+    "allRunsResult": "PASS",
+    "allRunsRecovered": true,
+    "allRunsErrors": [],
+    "audiences": "two clients plus a fresh observer",
+    "observedFlow": [
+      "CardWireNegotiated",
+      "native general-pair selection",
+      "manual PlayCard with one exact reply",
+      "controlled reconnect with board restoration",
+      "bounded GameOver"
+    ],
+    "note": "Each run is an independent candidate-only native/browser observation; this repeated artifact does not convert the legacy strict diagnostic or release decision to PASS."
+  },
+  "runs": [
+    {
+      "id": "run-1",
+      "observedAt": "2026-11-15T21:29:36.543Z",
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794778176542.json",
+      "rawArtifactRoot": "/private/tmp/tqs-cardwire-trash-20261116-ObDDZQ/tqs-cardwire-qa-20261103-7qXAp9",
+      "processMetrics": {
+        "path": "/private/tmp/tqs-cardwire-trash-20261116-ObDDZQ/tqs-cardwire-qa-20261103-7qXAp9/native-process-metrics.json",
+        "sampleCount": 271,
+        "firstRssKb": 14656,
+        "minRssKb": 11776,
+        "maxRssKb": 15232,
+        "lastRssKb": 12272,
+        "maxCpuSeconds": 0.92,
+        "elapsedSeconds": 71.34419175,
+        "sampling": "ps-rss-cputime"
+      },
+      "boundaryTelemetry": {
+        "nativeWireRecords": 3790,
+        "nativeWireInboundRecords": 48,
+        "nativeWireOutboundRecords": 3742,
+        "nativeCborSerializationTimingRecords": 1339,
+        "serverTimingRecords": 8,
+        "serverTimingScopes": {
+          "project": 3,
+          "request-project": 1,
+          "serialize": 4
+        }
+      },
+      "cleanup": {
+        "processesClosed": true,
+        "listenersClosed": ["19681", "9000"],
+        "runtimeMovedToRecoverableTrash": true,
+        "pointerMovedToRecoverableTrash": true,
+        "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-ObDDZQ"
+      }
+    },
+    {
+      "id": "run-2",
+      "observedAt": "2026-11-15T21:31:46.505Z",
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794778306505.json",
+      "rawArtifactRoot": "/private/tmp/tqs-cardwire-trash-20261116-AOtG40/tqs-cardwire-qa-20261103-S25TBy",
+      "processMetrics": {
+        "path": "/private/tmp/tqs-cardwire-trash-20261116-AOtG40/tqs-cardwire-qa-20261103-S25TBy/native-process-metrics.json",
+        "sampleCount": 321,
+        "firstRssKb": 14736,
+        "minRssKb": 11856,
+        "maxRssKb": 15264,
+        "lastRssKb": 12240,
+        "maxCpuSeconds": 0.96,
+        "elapsedSeconds": 84.63285225,
+        "sampling": "ps-rss-cputime"
+      },
+      "boundaryTelemetry": {
+        "nativeWireRecords": 3584,
+        "nativeWireInboundRecords": 54,
+        "nativeWireOutboundRecords": 3530,
+        "nativeCborSerializationTimingRecords": 1374,
+        "serverTimingRecords": 8,
+        "serverTimingScopes": {
+          "project": 3,
+          "request-project": 1,
+          "serialize": 4
+        }
+      },
+      "cleanup": {
+        "processesClosed": true,
+        "listenersClosed": ["19681", "9000"],
+        "runtimeMovedToRecoverableTrash": true,
+        "pointerMovedToRecoverableTrash": true,
+        "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-AOtG40"
+      }
+    },
+    {
+      "id": "run-3",
+      "observedAt": "2026-11-15T21:33:14.190Z",
+      "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794778394190.json",
+      "rawArtifactRoot": "/private/tmp/tqs-cardwire-trash-20261116-yver0j/tqs-cardwire-qa-20261103-6EE4M9",
+      "processMetrics": {
+        "path": "/private/tmp/tqs-cardwire-trash-20261116-yver0j/tqs-cardwire-qa-20261103-6EE4M9/native-process-metrics.json",
+        "sampleCount": 220,
+        "firstRssKb": 14800,
+        "minRssKb": 14800,
+        "maxRssKb": 15456,
+        "lastRssKb": 15456,
+        "maxCpuSeconds": 0.73,
+        "elapsedSeconds": 58.124448833,
+        "sampling": "ps-rss-cputime"
+      },
+      "boundaryTelemetry": {
+        "nativeWireRecords": 2900,
+        "nativeWireInboundRecords": 48,
+        "nativeWireOutboundRecords": 2852,
+        "nativeCborSerializationTimingRecords": 1060,
+        "serverTimingRecords": 8,
+        "serverTimingScopes": {
+          "project": 3,
+          "request-project": 1,
+          "serialize": 4
+        }
+      },
+      "cleanup": {
+        "processesClosed": true,
+        "listenersClosed": ["19681", "9000"],
+        "runtimeMovedToRecoverableTrash": true,
+        "pointerMovedToRecoverableTrash": true,
+        "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-yver0j"
+      }
+    }
+  ],
+  "aggregateObservation": {
+    "totalProcessSamples": 812,
+    "firstRssKbRange": [14656, 14800],
+    "lastRssKbRange": [12240, 15456],
+    "observedMinimumRssKb": 11776,
+    "observedMaximumRssKb": 15456,
+    "maximumRunCpuSeconds": 0.96,
+    "totalObservedElapsedSeconds": 214.101492833,
+    "nativeWireRecords": 10274,
+    "nativeWireInboundRecords": 150,
+    "nativeWireOutboundRecords": 10124,
+    "nativeCborSerializationTimingRecords": 3773,
+    "serverTimingRecords": 24,
+    "serverTimingScopes": {
+      "project": 9,
+      "request-project": 3,
+      "serialize": 12
+    },
+    "allRunsProcessesClosed": true,
+    "allRunsListenersClosed": true,
+    "allRawArtifactsRetainedInRecoverableTrash": true
+  },
+  "logicalMappingSourceObservation": {
+    "artifact": "docs/web-client/CARD_WIRE_CANDIDATE_SOURCE_EVIDENCE_2026-11-15.json#performanceSourceEvidence",
+    "result": "PASS",
+    "cases": 6,
+    "audiences": 3,
+    "iterationsPerAudience": 12,
+    "projectP95Us": 181,
+    "serializeP95Us": 24,
+    "maxWireBytes": 5646,
+    "maxActiveReferences": 124,
+    "cleanupActiveReferences": 0,
+    "retiredTombstones": 320,
+    "foreignRejections": 1,
+    "replayRejections": 1,
+    "staleRejections": 1,
+    "syntheticOnly": true,
+    "nativeBrowserRun": false,
+    "interpretation": "Candidate source/runtime projection and Lua protocol cleanup evidence; it is linked for coverage context and does not provide native process-memory attribution or release approval."
+  },
+  "cardWireMappingMemory": {
+    "status": "OPEN",
+    "activeReferenceCardinality": "not-directly-instrumented",
+    "retiredReferenceCardinality": "not-directly-instrumented",
+    "roomSessionLeakCheck": "not-proven-by-process-RSS-alone",
+    "reason": "Process-level RSS samples show bounded observations for three isolated runs, but they cannot attribute memory to active/retired references or prove per-room/session collection after GameOver."
+  },
+  "thresholdPolicy": {
+    "thresholdStatus": "OPEN",
+    "releaseApproval": "not-granted",
+    "approvedNumericThresholdSource": null,
+    "note": "No repository-authoritative numeric memory or latency threshold was found for this gate. Repeated observations are evidence for review, not a release PASS."
+  },
+  "limitations": [
+    "This artifact covers one bounded draw-sequence scenario repeated three times; it is not a full choice/reveal/rehide/stale-reference/large-mapping matrix.",
+    "The raw metrics are metadata-only JSONL retained in recoverable temporary trash; payloads, card IDs, account identifiers and credentials are not copied into this aggregate.",
+    "The strict legacy diagnostic remains CARD_WIRE_PRIVACY=OPEN with 12 exposure groups; card-wire v1 remains disabled by default and isolated-QA-only.",
+    "Production/canary performance, rollback, device/browser-network verification and release approval remain open."
+  ],
+  "result": "PASS-repeated-bounded-native-process-and-boundary-observation; mapping-memory attribution, approved thresholds and release gates remain OPEN"
+}

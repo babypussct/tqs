@@ -70,6 +70,7 @@
       "seed": 748636695,
       "expectedCommand": "AskForCardChosen",
       "trigger": "manual",
+      "cardWire": true,
       "general": "hs__pangde",
       "skill": "jianchu",
       "playerCount": 2,
@@ -112,12 +113,19 @@
       "seed": 2066864612,
       "expectedCommand": "AskForPoxi",
       "trigger": "manual",
+      "cardWire": true,
       "general": "ty_heg__dengzhi",
       "skill": "ty_heg__weimeng",
+      "playerCount": 2,
+      "players": {
+        "actor": { "general": "ty_heg__dengzhi", "deputy": "hs__guanyu", "kingdom": "shu" },
+        "target": { "general": "hs__caocao", "deputy": "hs__simayi", "kingdom": "wei" }
+      },
       "cards": [
         { "key": "actor-slash", "match": { "trueName": "slash" }, "owner": "actor", "area": "hand" },
         { "key": "actor-peach", "match": { "trueName": "peach" }, "owner": "actor", "area": "hand" },
         { "key": "target-peach", "match": { "trueName": "peach" }, "owner": "target", "area": "hand" },
+        { "key": "target-jink", "match": { "trueName": "jink" }, "owner": "target", "area": "hand" },
         { "key": "target-equip", "match": { "type": "equip" }, "owner": "target", "area": "equip" }
       ]
     },
@@ -426,6 +434,7 @@
     "expectedCommand": "AskForCardChosen",
     "trigger": "hidden-fankui",
     "playerCount": 2,
+    "cardWire": true,
     "players": {
       "actor": {
         "general": "hs__simayi",
@@ -464,6 +473,7 @@
     "expectedCommand": "AskForCardChosen",
     "trigger": "hidden-fankui",
     "playerCount": 2,
+    "cardWire": true,
     "players": {
       "actor": {
         "general": "hs__guojia",
@@ -1043,6 +1053,7 @@
       "expectedCommand": "PlayCard",
       "trigger": "hidden-fanjian",
       "playerCount": 2,
+      "cardWire": true,
       "players": {
         "actor": {
           "general": "hs__zhouyu",
@@ -1081,6 +1092,7 @@
       "expectedCommand": "PlayCard",
       "trigger": "hidden-fanjian",
       "playerCount": 2,
+      "cardWire": true,
       "players": {
         "actor": {
           "general": "hs__daqiao",
@@ -1119,6 +1131,7 @@
       "expectedCommand": "PlayCard",
       "trigger": "hidden-view-as",
       "playerCount": 2,
+      "cardWire": true,
       "players": {
         "actor": {
           "general": "hs__guanyu",
@@ -1149,6 +1162,7 @@
       "expectedCommand": "PlayCard",
       "trigger": "hidden-view-as",
       "playerCount": 2,
+      "cardWire": true,
       "players": {
         "actor": {
           "general": "hs__zhaoyun",
@@ -1218,6 +1232,7 @@
       "seed": 1567522712,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-luoshen",
+      "cardWire": true,
       "playerCount": 2,
       "players": {
         "actor": {
@@ -1239,6 +1254,7 @@
       "seed": 1567522713,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-luoshen",
+      "cardWire": true,
       "playerCount": 2,
       "players": {
         "actor": {
@@ -1802,6 +1818,7 @@
       "seed": 1567522730,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-guanxing",
+      "cardWire": true,
       "playerCount": 2,
       "players": {
         "actor": {
@@ -1823,6 +1840,7 @@
       "seed": 1567522731,
       "expectedCommand": "AskForSkillInvoke",
       "trigger": "hidden-guanxing",
+      "cardWire": true,
       "playerCount": 2,
       "players": {
         "actor": {

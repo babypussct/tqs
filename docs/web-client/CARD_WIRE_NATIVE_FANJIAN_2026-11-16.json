@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate Fanjian main/deputy ShowCard native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "a7934505b01c73c7ef2c67f974f7c89bda67ee19a352026e39b46c14dd59db80",
+    "manifestSha256": "496ffbba910ae182da9d41b7aaa6f3fa0820f6cc048bdae452992e3151267996",
+    "catalogSha256": "ce93559ba50e12aa1122c5bdceb71bddb5ae803a83971fe591ddef26a51de789",
+    "runtimeMD5": "a43770fedf82abb5ff082dfbb79e765f",
+    "distIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "catalogChange": {
+    "scenarios": ["hidden-fanjian", "hidden-fanjian-deputy"],
+    "cardWireOptIn": true,
+    "scope": "candidate QA catalog only"
+  },
+  "runs": [
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-fanjian-multiplayer-live-1794816124548.json",
+      "scenario": "hidden-fanjian",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "fanjianPrelightReplyObserved": true,
+      "fanjianPlayCardReplyObserved": true,
+      "fanjianChoiceReplyObserved": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWire": {
+        "packets": 21,
+        "frames": 332,
+        "packetBytesTotal": 4319,
+        "failures": 0,
+        "hiddenReferenceAudited": true,
+        "hiddenReferenceCollisions": 0
+      },
+      "nativeSupplemental": {
+        "packets": 181,
+        "incomingPackets": 176,
+        "replyPackets": 5,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 139,
+          "public": 29,
+          "request": 5,
+          "reply": 5
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 101,
+          "SetPlayerMark": 36,
+          "SetCardMark": 2,
+          "GameLog": 23,
+          "AskForChoices": 1,
+          "AskForSkillInvoke": 1,
+          "PlayCard": 1,
+          "GameOver": 3,
+          "ShowCard": 3,
+          "ShowVirtualCard": 0
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 72,
+        "firstRssKb": 14704,
+        "minRssKb": 10944,
+        "maxRssKb": 15088,
+        "lastRssKb": 11856,
+        "maxCpuSeconds": 0.26,
+        "elapsedSeconds": 18.843,
+        "sampling": "ps-rss-cputime"
+      }
+    },
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-fanjian-deputy-multiplayer-live-1794816170215.json",
+      "scenario": "hidden-fanjian-deputy",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "fanjianPrelightReplyObserved": true,
+      "fanjianPlayCardReplyObserved": true,
+      "fanjianChoiceReplyObserved": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWire": {
+        "packets": 21,
+        "frames": 335,
+        "packetBytesTotal": 4363,
+        "failures": 0,
+        "hiddenReferenceAudited": true,
+        "hiddenReferenceCollisions": 0
+      },
+      "nativeSupplemental": {
+        "packets": 185,
+        "incomingPackets": 180,
+        "replyPackets": 5,
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 141,
+          "public": 31,
+          "request": 5,
+          "reply": 5
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 101,
+          "SetPlayerMark": 38,
+          "SetCardMark": 2,
+          "GameLog": 25,
+          "AskForChoices": 1,
+          "AskForSkillInvoke": 1,
+          "PlayCard": 1,
+          "GameOver": 3,
+          "ShowCard": 3,
+          "ShowVirtualCard": 0
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 73,
+        "firstRssKb": 14032,
+        "minRssKb": 11856,
+        "maxRssKb": 15072,
+        "lastRssKb": 12016,
+        "maxCpuSeconds": 0.22,
+        "elapsedSeconds": 19.108,
+        "sampling": "ps-rss-cputime"
+      }
+    }
+  ],
+  "aggregate": {
+    "runs": 2,
+    "allRunsPass": true,
+    "audiencesPerRun": 3,
+    "nativeWirePackets": 42,
+    "nativeWireFrames": 667,
+    "nativeWirePacketBytes": 8682,
+    "nativeWireFailures": 0,
+    "nativeSupplementalPackets": 366,
+    "nativeSupplementalIncomingPackets": 356,
+    "nativeSupplementalReplyPackets": 10,
+    "nativeSupplementalFailures": 0,
+    "channels": {
+      "negotiation": 6,
+      "metadata": 280,
+      "public": 60,
+      "request": 10,
+      "reply": 10
+    },
+    "commandsObserved": {
+      "CardWireNegotiated": 6,
+      "PropertyUpdate": 202,
+      "SetPlayerMark": 74,
+      "SetCardMark": 4,
+      "GameLog": 48,
+      "AskForChoices": 2,
+      "AskForSkillInvoke": 2,
+      "PlayCard": 2,
+      "GameOver": 6,
+      "ShowCard": 6,
+      "ShowVirtualCard": 0
+    },
+    "processesClosedAfterEachRun": true,
+    "listenersClosedAfterEachRun": ["19681", "9000"]
+  },
+  "limitations": [
+    "This is bounded candidate coverage for Fanjian main and deputy only; it does not close the complete public-card or release matrix.",
+    "ShowCard is observed on both slots, but ShowVirtualCard remains unobserved and requires a separate virtual-card path.",
+    "Neither run exercises reconnect; draw-sequence remains the current reconnect/strict-12 evidence.",
+    "Approved performance/memory thresholds, browser-network/device verification, production/canary rollback and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-fanjian-main-and-deputy-ShowCard; ShowVirtualCard-and-release-gates-remain-OPEN"
+}

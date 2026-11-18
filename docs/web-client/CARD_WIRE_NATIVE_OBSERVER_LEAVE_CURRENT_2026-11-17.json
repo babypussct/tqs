@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T01:10:24+07:00",
+  "scope": "isolated native macOS QA observer-leave lifecycle for new_heg_mode draw-sequence; metadata-only candidate evidence, no publish",
+  "result": "PASS-bounded-staging",
+  "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+  "runtime": {
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "binarySha256": "2e4e5850f6ab8897845becc3194bbf7955148ca7d67a9280f5b9fcefc8a2bc29",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "smartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "luaRuntime": "Lua 5.4.9; executable basename lua5.4"
+  },
+  "scenario": {
+    "mode": "new_heg_mode",
+    "name": "draw-sequence",
+    "audiences": 3,
+    "playersGameOver": 2,
+    "observerGameOverExpected": false
+  },
+  "observerLifecycle": {
+    "negotiated": true,
+    "observeSnapshotAudited": true,
+    "leaveRequested": true,
+    "leaveObserved": true,
+    "transportClosed": true,
+    "nativeDisconnectObserved": false,
+    "playerRoomRemainedActive": true,
+    "playerReconnectObserved": true
+  },
+  "privacy": {
+    "strictCategoriesObserved": 12,
+    "nativeDeckFailures": 0,
+    "rawWireFailures": 0,
+    "supplementalWireFailures": 0,
+    "browserErrors": 0,
+    "recovered": true,
+    "sanitizedEvidence": true
+  },
+  "cleanup": {
+    "qaPort19681Closed": true,
+    "qaAdminPort9000Closed": true,
+    "gatewayPort9527Closed": true,
+    "qaScreenClosed": true,
+    "qaSymlinkAbsent": true,
+    "productionMutation": false
+  },
+  "evidence": {
+    "rawSanitizedEvidence": "scratch/evidence/cp19-draw-sequence-reconnect-live-1794852482109.json",
+    "runnerResult": "PASS",
+    "exitCode": 0,
+    "rawCredentialMarkerCheck": "absent"
+  },
+  "releaseStatus": "OPEN-HOLD",
+  "limits": [
+    "This is bounded isolated candidate QA, not a production, canary, device/network or official release approval.",
+    "Approved packet/performance and mapping-memory thresholds, rollback SLA and release approval remain open.",
+    "Legacy wire remains enabled; card-wire v1 remains disabled-by-default and isolated-QA-only."
+  ]
+}

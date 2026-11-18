@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
+import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot } from './upstream-packages';
 
 const PACKAGE_FILE = /\.(lua|json|md|qml|js)$/iu;
 
@@ -384,7 +384,7 @@ test('deterministic baseline comparison over diverse offered rosters', async (co
 test('pinned 14-package Hegemony corpus: legal pair, server-order baseline, slot value and bounded CPU cost', async (context) => {
   // The pinned source loads the published general/skill definitions, while
   // this single module is overridden with the local candidate being tested.
-  const files = loadUpstreamFiles(path.resolve(process.cwd(), '../../scratch/upstream'), UPSTREAM_PACKAGE_NAMES);
+  const files = loadUpstreamFiles(resolveUpstreamRoot(path.resolve(process.cwd(), '../../scratch/upstream')), UPSTREAM_PACKAGE_NAMES);
   files.set('packages/freekill-core/ltk/server/ai/general_pair.lua',
     fs.readFileSync(path.resolve(process.cwd(), '../../runtime/packages/freekill-core/ltk/server/ai/general_pair.lua')));
   const runtime = new LuaRuntime({files, callbacks: {send() {}, ui() {}, setup() {}, log() {}}});

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-18T13:43:17.671Z",
+  "status": "PASS-bounded-native-csprng",
+  "scope": "isolated local native C++ QA only; exact e0 candidate; two real clients; controlled CSPRNG failure shapes open/short-read/close; no card-bearing packet or gameplay/GameOver claim; no hosted deployment or production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaPackageManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "qaPackageManifestEntrySha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "runs": [
+    {
+      "failureKind": "open",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009289427.json",
+      "artifactSha256": "b0d2d490c57232253d6a6a77f3b6cd3948f33b94303aaa2f5bbddb2aa652221b",
+      "runnerExitCode": 0,
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 2,
+      "batchCommits": 0,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0
+    },
+    {
+      "failureKind": "short-read",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009366511.json",
+      "artifactSha256": "e9e8072242ae5effd179fcb1bc522f22cf7ec7016078b1f1853216fec8486914",
+      "runnerExitCode": 0,
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 3,
+      "batchCommits": 0,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0
+    },
+    {
+      "failureKind": "close",
+      "artifact": "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009422160.json",
+      "artifactSha256": "480fda607a225a917fe212e3b7cf2cd2af2e9c30d95e5fc9064c62b6dc731125",
+      "runnerExitCode": 0,
+      "result": "PASS",
+      "negotiatedPackets": 2,
+      "cardBearingPackets": 0,
+      "batchAborts": 3,
+      "batchCommits": 0,
+      "lastAbortActiveReferences": 0,
+      "lastAbortActiveRequests": 0
+    }
+  ],
+  "sourceCoverage": {
+    "osCsprng": "/dev/urandom",
+    "failureShapes": ["open", "short-read", "close"],
+    "midBatchFailure": true,
+    "atomicAbort": true,
+    "fallback": false,
+    "tokenOutputOnFailure": false,
+    "negotiationObservedBeforeFailure": true,
+    "cardBearingPacketsObserved": 0
+  },
+  "limitations": [
+    "This closes the three controlled CSPRNG failure shapes on the current bounded two-client native lane only; it makes no gameplay/GameOver claim because the room intentionally fails closed before card-bearing gameplay.",
+    "This does not close exhaustive emitter/stale/replay/concurrency stress, the strict observer/reconnect matrix, approved P6 thresholds/attribution, rollback SLA, physical device/network acceptance or release approval.",
+    "The failure configuration and marker sidecars were QA-only and were removed/restored before cleanup; production/current configuration remains without entropy-failure fields."
+  ],
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "mappingSidecarsClosed": true,
+    "qaConfigRestored": true,
+    "productionMutation": false,
+    "credentialsIncluded": false,
+    "rawPayloadRetained": false,
+    "rawMetricsPublished": false
+  },
+  "releaseStatus": "OPEN-HOLD"
+}

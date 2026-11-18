@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "sanitized candidate card-wire source/client evidence; no production mutation",
+  "candidate": {
+    "coreRoot": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages/freekill-core",
+    "packageRoot": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages",
+    "hegemonyPackageRoot": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages/hegemony/pkg",
+    "hegemonyRuntimeRoot": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages/hegemony",
+    "flistMd5": "2e453ed37f894bed95c0b80f99bd1809",
+    "cardWireProjectionSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+    "cardWireRequestSha256": "54a50cc495e8ff8495b281c55dc68fd5b8e826967d1f56636356abd2942ef34a",
+    "cardWireSecureMintSha256": "922905c813c10c63422efb8df2e984412b09e3a2d4d8f5a01bb837269869aae3"
+  },
+  "luaSourceSuite": {
+    "command": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_UPSTREAM_CORE_ROOT=<absolute-candidate-core> TQS_UPSTREAM_HEGEMONY_PKG_ROOT=<absolute-hegemony-pkg> TQS_UPSTREAM_HEGEMONY_RUNTIME_ROOT=<absolute-hegemony-runtime> npm --prefix game/web run test:upstream-first-source",
+    "luaVersion": "Lua 5.4.9",
+    "tests": 41,
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "negotiatedV1StrictSource": {
+    "command": "lua5.4 deploy/freekill-native/qa/card-wire-privacy-v1-source-probe.lua <absolute-candidate-core> deploy/freekill-native/qa/card-handle-protocol.lua --strict",
+    "exitCode": 0,
+    "marker": "CARD_WIRE_PRIVACY_V1=PASS",
+    "auditedCategories": 12,
+    "nestedCardMarksAudited": true,
+    "syntheticOnly": true
+  },
+  "browserLuaOffline": {
+    "command": "npx tsx scripts/card-wire-browser-negotiation-probe.ts <absolute-candidate-packages>",
+    "cases": 16,
+    "result": "PASS",
+    "wasmoonBoot": true,
+    "browserNetwork": false,
+    "nativeCbor": false,
+    "twoAccountRun": false,
+    "observerRuntimeRun": false
+  },
+  "latestSourceRegression": {
+    "observedAt": "2026-11-16",
+    "command": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_UPSTREAM_CORE_ROOT=<absolute-candidate-core> TQS_UPSTREAM_HEGEMONY_PKG_ROOT=<absolute-hegemony-pkg> TQS_UPSTREAM_HEGEMONY_RUNTIME_ROOT=<absolute-hegemony-runtime> npm --prefix game/web run test:upstream-first-source",
+    "luaVersion": "Lua 5.4.9",
+    "tests": 41,
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "candidateProjectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3",
+    "candidateRequestProjectorSha256": "54a50cc495e8ff8495b281c55dc68fd5b8e826967d1f56636356abd2942ef34a",
+    "sourceChange": "audited public string-table mark @jilei-turn, Yi Gui ld__yigui_extra_data UseExtraData schema, AG FillAG/TakeAG standing-reference lifecycle and AG request visibility preservation, bounded P6 source probe, browser negotiation rejection for wrong protocol/version/mode with session-state preservation, and candidate-only per-physical client capability advertisement plus all-physical v1 gate; missing or mismatched capability stays on legacy/rejects fail-closed; no production or upstream pin change"
+  },
+  "performanceSourceEvidence": {
+    "command": "lua5.4 deploy/freekill-native/qa/card-wire-performance-source-probe.lua <absolute-candidate-core> deploy/freekill-native/qa/card-handle-protocol.lua",
+    "luaVersion": "Lua 5.4.9",
+    "result": "PASS",
+    "cases": 6,
+    "audiences": 3,
+    "iterationsPerAudience": 12,
+    "projectP95Us": 181,
+    "serializeP95Us": 24,
+    "maxWireBytes": 5646,
+    "maxActiveReferences": 124,
+    "cleanupUs": 2,
+    "cleanupActiveReferences": 0,
+    "foreignRejections": 1,
+    "replayRejections": 1,
+    "staleRejections": 1,
+    "retiredTombstones": 320,
+    "syntheticOnly": true,
+    "nativeBrowserRun": false,
+    "interpretation": "Bounded source/runtime measurement of actual candidate projection plus Lua CBOR encode and protocol cleanup; values are not native C++/browser performance acceptance."
+  },
+  "coveredInSourceSuite": [
+    "CSPRNG entropy and fail-closed minting",
+    "per-physical audience mapping",
+    "choice scope, replay and foreign-audience rejection",
+    "reconnect reset and stale-reference retirement",
+    "anonymous deck aliases and area/move transitions",
+    "private pile, card marks and metadata projection",
+    "ShowCard/ShowVirtualCard/GameLog public descriptors",
+    "request/choice/reply reverse mapping",
+    "Reconnect/Observe snapshot localization",
+    "per-physical client capability advertisement, all-client v1 gate and legacy-safe mismatch rejection",
+    "legacy and malformed packet fail-closed behavior",
+    "bounded project/CBOR, mapping-cardinality, cleanup and negative-rejection metadata"
+  ],
+  "releaseInterpretation": "Candidate source and offline browser checks plus bounded source P6 metrics pass, but this evidence does not prove native C++ server project/serialize latency, native process memory, live browser network privacy, two real accounts, observer runtime, rollback or production readiness. Production legacy wire remains enabled and card-wire v1 remains disabled by default."
+}

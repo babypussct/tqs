@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T12:23:39.000Z",
+  "scope": "isolated upstream-first source suite over the current e0 QA runtime's physical freekill-core and hegemony source trees; no native server, browser, production gateway or physical device",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "upstreamBaselineId": "tqsvn-production-2026-11-15",
+    "upstreamPackageCount": 14,
+    "lua": "5.4.9"
+  },
+  "runner": {
+    "command": "npm --prefix game/web run test:upstream-first-source",
+    "result": "PASS",
+    "totalTests": 41,
+    "passedTests": 41,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "rawPayloadRetained": false,
+    "sourcePathPolicySatisfied": true,
+    "groups": {
+      "upstreamSkillCallbacks": 57,
+      "opaqueClientAndServerBridges": 9,
+      "physicalProjectionAndCBOR": 11,
+      "privacyAndFailClosedDiagnostics": 2
+    }
+  },
+  "interpretation": {
+    "sourceContract": "PASS",
+    "legacyPhysicalIdDiagnosticRemainsOpen": true,
+    "nativeBrowserRun": false,
+    "productionMutation": false
+  },
+  "limitations": [
+    "This is source-level evidence for the current candidate tree; it does not replace native C++ packet capture or a live two-account/three-audience run.",
+    "The source suite does not approve P6 thresholds, production/canary rollback SLA, physical device/network acceptance, immutable reviewed release provenance or independent release approval."
+  ]
+}

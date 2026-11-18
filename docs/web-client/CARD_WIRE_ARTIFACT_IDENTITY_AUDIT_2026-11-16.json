@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T19:57:42+07:00",
+  "scope": "fail-closed identity reconciliation for card-wire candidate evidence and release packaging; read-only",
+  "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+  "sharedCandidateWebDistSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+  "sharedQaIdentity": {
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88"
+  },
+  "runtimeIdentities": {
+    "nativeDrawReconnectCurrent": {
+      "artifact": "docs/web-client/CARD_WIRE_NATIVE_DRAW_RECONNECT_CURRENT_2026-11-16.json",
+      "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef"
+    },
+    "nativeRollbackCurrent": {
+      "artifact": "docs/web-client/CARD_WIRE_ROLLBACK_CURRENT_2026-11-16.json",
+      "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef"
+    },
+    "nativeMemoryRepeatedCurrent": {
+      "artifact": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+      "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef"
+    },
+    "historicalLocalReleasePackage": {
+      "artifact": "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_2026-11-16.json",
+      "runtimeMd5": "021908b3e2f1ca07606fc170a2ce5db4",
+      "webIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+    },
+    "publicProduction": {
+      "artifact": "docs/web-client/CARD_WIRE_PUBLIC_PREFLIGHT_2026-11-16.json",
+      "runtimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+      "webIndexSha256": "0e55a135d03beb2c765f861e50ec83adc1212c5819d9a213d1fdfb2ec2e5065b"
+    },
+    "nativeMoveChainFixCurrent": {
+      "artifact": "docs/web-client/CARD_WIRE_NATIVE_MOVECHAIN_FIX_2026-11-16.json",
+      "rawArtifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794835367983.json",
+      "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+      "webIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+    },
+    "localReleasePackageCurrent": {
+      "artifact": "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json",
+      "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+      "manifestSha256": "6429a148d1eddf2e8f4c2b620ea81ce1868c07dd117277c5ff71207b02ddc6f7",
+      "webIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+    }
+  },
+  "checks": {
+    "sourceRevisionConsistentAcrossCandidateEvidence": true,
+    "qaPackageManifestCatalogConsistentAcrossNativeEvidence": true,
+    "nativeDrawAndRollbackRuntimeConsistent": true,
+    "nativeMemoryRuntimeMatchesDrawRuntime": true,
+    "releasePackageRuntimeMatchesNativeCandidateRuntime": true,
+    "historicalReleasePackageRuntimeMatchesNativeCandidateRuntime": false,
+    "publicProductionMatchesCardWireCandidate": false,
+    "productionMutation": false,
+    "qaListeners19681And9000ClosedAtObservation": true,
+    "freshMoveChainFixNativeRunPass": true,
+    "freshNativeMatchesCurrentReleasePackage": true,
+    "freshNativeMatchesCurrentWebIdentity": true,
+    "freshSourceSnapshotIncludesMoveChainFix": true,
+    "finalRollbackAndRepeatedMemoryOnFreshIdentity": true,
+    "currentBrowserE2eMatchesCurrentReleasePackage": true
+  },
+  "freshUnifiedIdentityRun": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMd5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "sourceSnapshot": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-16.json",
+    "releasePackage": "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json",
+    "result": "PASS-draw-reconnect-after-same-packet-fix",
+    "strictPrivacyCategories": 12,
+    "nativeDeckFailures": 0,
+    "nativeSupplementalFailures": 0,
+    "reconnect": true,
+    "rollback": "docs/web-client/CARD_WIRE_ROLLBACK_CURRENT_2026-11-16.json; v1 and legacy-only PASS on the same runtime",
+    "repeatedMemory": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json; 3/3 PASS on the same runtime",
+    "browserE2e": "docs/web-client/CARD_WIRE_BROWSER_E2E_CURRENT_2026-11-16.json; 72/72 PASS on the current release runtime",
+    "repeatedMemoryRuns": 3,
+    "gameOverAudiences": 3,
+    "listenersClosed": true
+  },
+  "decision": {
+    "status": "HOLD-RELEASE-GATES",
+    "publishEligible": false,
+    "interpretation": "The current fixed draw/reconnect, rollback, repeated-memory and browser evidence and the current local release package now share runtime e0f37effc5a5d72d850b0ece7f29c4ef. Release remains held because the checkout is dirty, no approved numeric threshold or rollback SLA is recorded, physical device/network testing is WAIVED_BY_USER (not PASS), and release approval has not been granted.",
+    "requiredNext": [
+      "review the current source snapshot, current release package and all fresh native evidence together",
+      "obtain separate performance, rollback-SLA and release approval; retain the documented physical-device/network waiver without calling it PASS"
+    ]
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only",
+    "productionMutation": false
+  }
+}

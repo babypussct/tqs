@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate hidden-guanxing deputy native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78",
+    "luaRuntime": "Lua 5.4.9; executable contract basename lua5.4"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-hidden-guanxing-deputy-multiplayer-live-1794793863270.json",
+    "scenario": "hidden-guanxing-deputy",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "nativeQaGateSeen": true,
+    "hiddenGuanxingGateObserved": true,
+    "hiddenGuanxingInvoked": true,
+    "hiddenGuanxingArrangeReplyObserved": true,
+    "deputySlotObserved": true,
+    "publicArrangeAuditObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "scenarioCommands": [
+      "AskForArrangeCards",
+      "AskForSkillInvoke",
+      "CardWireNegotiated",
+      "CustomDialog",
+      "GameLog",
+      "GameOver",
+      "PropertyUpdate",
+      "SetCardMark",
+      "SetPlayerMark"
+    ],
+    "nativeWire": {
+      "packetsByAudience": [
+        10,
+        10,
+        4
+      ],
+      "framesByAudience": [
+        152,
+        127,
+        43
+      ],
+      "packetBytesByAudience": [
+        1131,
+        1327,
+        3954
+      ],
+      "packetBytesTotal": 6412,
+      "failures": 0,
+      "allAudiencesNegotiated": true,
+      "commandsByAudience": [
+        [
+          "MoveCards",
+          "PrepareDrawPile",
+          "SyncDrawPile"
+        ],
+        [
+          "MoveCards",
+          "PrepareDrawPile",
+          "SyncDrawPile"
+        ],
+        [
+          "MoveCards",
+          "Observe"
+        ]
+      ]
+    },
+    "nativeSupplemental": {
+      "packets": 173,
+      "incomingPackets": 168,
+      "replyPackets": 5,
+      "packetBytesTotal": 9265,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 143,
+        "public": 17,
+        "request": 5,
+        "reply": 5
+      },
+      "commandsObserved": [
+        "AskForArrangeCards",
+        "AskForSkillInvoke",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "GameLog",
+        "GameOver",
+        "PropertyUpdate",
+        "SetCardMark",
+        "SetPlayerMark"
+      ]
+    },
+    "nativeOuterCbor": null,
+    "nativeOuterCborTiming": null,
+    "serverTiming": null,
+    "processMetrics": {
+      "sampleCount": 65,
+      "firstRssKb": 14672,
+      "minRssKb": 14672,
+      "maxRssKb": 15280,
+      "lastRssKb": 15280,
+      "maxCpuSeconds": 0.23,
+      "elapsedSeconds": 16.928,
+      "sampling": "ps-rss-cputime"
+    },
+    "mappingTelemetry": null
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": [
+      "19681",
+      "9000"
+    ],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-vsN3LP",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-vsN3LP/tqs-cardwire-qa-20261103-yluTiF"
+  },
+  "privacy": {
+    "rawCardIdsInSanitizedEvidence": false,
+    "rawCredentialsInEvidence": false,
+    "forbiddenMetadataKeysObserved": false,
+    "nativeWireFailures": 0,
+    "nativeSupplementalFailures": 0,
+    "rawIdentityTokenOrPayloadRetained": false
+  },
+  "limitations": [
+    "This is current-candidate deputy-slot ArrangeCards lifecycle evidence for hidden-guanxing; it does not exercise reconnect or all twelve strict privacy categories, which remain covered by the draw-sequence evidence.",
+    "Process RSS and bounded mapping counters are observations, not an approved numeric memory threshold; long-lived room churn and the full choice/deputy matrix remain open.",
+    "Production/canary rollback, browser-device network verification and release approval remain open."
+  ],
+  "resultSummary": "PASS-current-candidate-hidden-guanxing-deputy-arrangecards-lifecycle; release-gates-remain-OPEN"
+}

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate ArrangeCards native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-hidden-guanxing-multiplayer-live-1794793799487.json",
+    "observedAt": "2026-11-16T01:49:59.487Z",
+    "scenario": "hidden-guanxing",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "hiddenGuanxingInvoked": true,
+    "arrangeCardsReplyObserved": true,
+    "gameOverCountsByAudience": [
+      1,
+      1,
+      1
+    ],
+    "nativeWire": {
+      "packets": 24,
+      "frames": 333,
+      "packetBytesTotal": 6427,
+      "packetBytesMin": 28,
+      "packetBytesMax": 3260,
+      "packetBytesLe256": 18,
+      "packetBytesLe1024": 5,
+      "packetBytesLe4096": 1,
+      "packetBytesGt4096": 0,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 183,
+      "incomingPackets": 178,
+      "replyPackets": 5,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 151,
+        "public": 19,
+        "request": 5,
+        "reply": 5
+      },
+      "commandsObserved": {
+        "CardWireNegotiated": 3,
+        "PropertyUpdate": 108,
+        "SetPlayerMark": 41,
+        "SetCardMark": 2,
+        "SetCardFootnote": 0,
+        "SetCardVirtName": 0,
+        "FilterCard": 0,
+        "FillAG": 0,
+        "TakeAG": 0,
+        "SetPlayerHandCards": 0,
+        "AddVirtualEquip": 0,
+        "RemoveVirtualEquip": 0,
+        "ShowVirtualCard": 0,
+        "GameLog": 16,
+        "ShowCard": 0,
+        "GameOver": 3,
+        "AskForCardChosen": 0,
+        "AskForPoxi": 0,
+        "AskForAG": 0,
+        "AskForCardsAndChoice": 0,
+        "AskForArrangeCards": 1,
+        "AskForMoveCardInBoard": 0,
+        "PlayCard": 0,
+        "AskForUseActiveSkill": 0,
+        "AskForUseCard": 0,
+        "AskForResponseCard": 0,
+        "AskForChoices": 0,
+        "AskForOptions": 0,
+        "AskForSkillInvoke": 2,
+        "CustomDialog": 2,
+        "EmptyRequest": 0
+      },
+      "repliesObserved": {
+        "AskForCardChosen": 0,
+        "AskForPoxi": 0,
+        "AskForAG": 0,
+        "AskForCardsAndChoice": 0,
+        "AskForArrangeCards": 1,
+        "AskForMoveCardInBoard": 0,
+        "PlayCard": 0,
+        "AskForUseActiveSkill": 0,
+        "AskForUseCard": 0,
+        "AskForResponseCard": 0,
+        "AskForChoices": 0,
+        "AskForOptions": 0,
+        "AskForSkillInvoke": 2,
+        "CustomDialog": 2,
+        "EmptyRequest": 0
+      }
+    },
+    "nativeOuterCborTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 69,
+      "firstRssKb": 14720,
+      "minRssKb": 14720,
+      "maxRssKb": 15360,
+      "lastRssKb": 15360,
+      "maxCpuSeconds": 0.23,
+      "elapsedSeconds": 17.987,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": [
+      "19681",
+      "9000"
+    ],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-Ulrnwv",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-Ulrnwv/tqs-cardwire-qa-20261103-NbqGHt"
+  },
+  "limitations": [
+    "This is one current-candidate ArrangeCards family; it does not close every request/reply or strict release privacy gate.",
+    "No reconnect is exercised by this scenario; draw-sequence remains the current reconnect/strict-12 evidence.",
+    "Production/canary rollback, browser-network/device verification, approved performance thresholds and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-arrange-cards-opaque-request-reply; release-gates-remain-OPEN"
+}

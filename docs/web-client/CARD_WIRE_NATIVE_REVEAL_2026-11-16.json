@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate hidden-reveal native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-hidden-reveal-multiplayer-live-1794793444573.json",
+    "observedAt": "2026-11-16T01:44:04.573Z",
+    "scenario": "hidden-reveal",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "hiddenRevealGateObserved": true,
+    "activeRevealRequestOwnerOnly": true,
+    "activeRevealReplyObserved": true,
+    "gameOverCountsByAudience": [
+      1,
+      1,
+      1
+    ],
+    "scenarioObservations": [
+      {
+        "command": "AskForSkillInvoke",
+        "reply": true
+      },
+      {
+        "command": "AskForUseActiveSkill",
+        "reply": true
+      }
+    ],
+    "nativeWire": {
+      "packetsByAudience": [
+        8,
+        8,
+        2
+      ],
+      "framesByAudience": [
+        142,
+        128,
+        28
+      ],
+      "packetBytesTotal": 4635,
+      "packetBytesMin": 28,
+      "packetBytesMax": 3252,
+      "packetBytesLe256": 15,
+      "packetBytesLe1024": 2,
+      "packetBytesLe4096": 1,
+      "packetBytesGt4096": 0,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 168,
+      "incomingPackets": 164,
+      "replyPackets": 4,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 141,
+        "public": 16,
+        "request": 4,
+        "reply": 4
+      },
+      "commandsObserved": [
+        "AskForSkillInvoke",
+        "AskForUseActiveSkill",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "GameLog",
+        "GameOver",
+        "PropertyUpdate",
+        "SetCardMark",
+        "SetPlayerMark"
+      ]
+    },
+    "nativeOuterCbor": null,
+    "nativeCborSerializationTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 72,
+      "firstRssKb": 14720,
+      "minRssKb": 14720,
+      "maxRssKb": 15344,
+      "lastRssKb": 15344,
+      "maxCpuSeconds": 0.24,
+      "elapsedSeconds": 18.805,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": [
+      "19681",
+      "9000"
+    ],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-B5LlU4",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-B5LlU4/tqs-cardwire-qa-20261103-C0i4hi"
+  },
+  "limitations": [
+    "This is one current-candidate hidden-reveal lifecycle; the deputy mirror, full reconnect matrix and strict release privacy gate remain separate evidence or open gates.",
+    "The scenario observes the owner-only active reveal request and reply but does not exercise reconnect or all twelve strict privacy categories; draw-sequence remains the strict reconnect/12-category evidence.",
+    "Production/canary rollback, browser-network/device verification, approved performance thresholds and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-hidden-reveal-owner-only-active-request; release-gates-remain-OPEN"
+}

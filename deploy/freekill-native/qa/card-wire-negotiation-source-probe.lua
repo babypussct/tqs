@@ -19,10 +19,13 @@ local ownerSocket = { packets = {}, state = "online" }
 local observerSocket = { packets = {}, state = "online" }
 for _, physical in ipairs({ ownerSocket, observerSocket }) do
   function physical:getState() return self.state end
+  function physical:getId() return self.id end
   function physical:doNotify(command, payload)
     self.packets[#self.packets + 1] = { command = command, payload = payload }
   end
 end
+ownerSocket.id = 101
+observerSocket.id = 102
 
 local room = {
   card_wire_version = nil,
@@ -34,9 +37,20 @@ local room = {
   },
 }
 function room:getSettings(key) return self.settings[key] end
+function room:getPlayerById(id)
+  for _, player in ipairs(self.players) do
+    if player.id == id then return player end
+  end
+end
+room.room = {
+  getObservers = function() return {} end,
+}
 
 ServerConfig = { tqsQa = { enabled = true, cardWireVersion = 1 } }
-fk = { Player_Robot = "robot" }
+fk = {
+  Player_Robot = "robot",
+  qlist = function(values) return values end,
+}
 
 local serverMethods = {}
 local serverEnv = setmetatable({
@@ -46,12 +60,45 @@ local serverEnv = setmetatable({
   fk = fk,
 }, { __index = _G })
 local serverSource = read(coreRoot .. "/lua/server/roombase.lua")
+local capabilityStart = assert(serverSource:find(
+  "-- TQS_HEG_CARD_WIRE_CAPABILITY: a card-free", 1, true))
+local capabilityEnd = assert(serverSource:find(
+  "\n-- TQS_HEG_CARD_WIRE_NEGOTIATION:", capabilityStart, true))
+assert(load(serverSource:sub(capabilityStart, capabilityEnd - 1),
+  "=candidate/negotiation/capability", "t", serverEnv))()
 local serverStart = assert(serverSource:find(
   "function ServerRoomBase:negotiateCardWireV1(players)", 1, true))
 local serverEnd = assert(serverSource:find(
   "\nend\n\nfunction ServerRoomBase:handleChat", serverStart, true))
 assert(load(serverSource:sub(serverStart, serverEnd + 4),
   "=candidate/negotiation/server", "t", serverEnv))()
+setmetatable(room, { __index = serverMethods })
+
+assert(not serverMethods.hasAllCardWireCapabilities(room),
+  "missing capability must not pass the all-physical gate")
+assert(not pcall(function() serverMethods.negotiateCardWireV1(room) end),
+  "missing capability must fail closed before v1 packets")
+assert(room.card_wire_version == nil and #ownerSocket.packets == 0 and
+  #observerSocket.packets == 0)
+
+serverMethods.handleCardWireCapability(room, 11,
+  { "11", "card_wire_capability", "2", "TQS_HEG_CARD_WIRE", "new_heg_mode" })
+assert(not serverMethods.hasCardWireCapability(room, ownerSocket),
+  "wrong capability version must be rejected")
+serverMethods.handleCardWireCapability(room, 11,
+  { "11", "card_wire_capability", "1", "OTHER_CARD_WIRE", "new_heg_mode" })
+assert(not serverMethods.hasCardWireCapability(room, ownerSocket),
+  "wrong capability protocol must be rejected")
+serverMethods.handleCardWireCapability(room, 11,
+  { "11", "card_wire_capability", "1", "TQS_HEG_CARD_WIRE", "classic_mode" })
+assert(not serverMethods.hasCardWireCapability(room, ownerSocket),
+  "wrong capability mode must be rejected")
+serverMethods.handleCardWireCapability(room, 11,
+  { "11", "card_wire_capability", "1", "TQS_HEG_CARD_WIRE", "new_heg_mode" })
+serverMethods.handleCardWireCapability(room, 12,
+  { "12", "card_wire_capability", "1", "TQS_HEG_CARD_WIRE", "new_heg_mode" })
+assert(serverMethods.hasAllCardWireCapabilities(room),
+  "all physical capabilities must be required before v1")
 
 serverMethods.negotiateCardWireV1(room)
 assert(room.card_wire_version == 1 and room.card_wire_negotiated == true and
@@ -78,11 +125,15 @@ Fk = {
 }
 local client = {
   card_wire_version = nil,
+  client = { notifications = {} },
   callbacks = {},
   recording = false,
   replaying = false,
   notifications = {},
 }
+function client.client:notifyServer(command, payload)
+  self.notifications[#self.notifications + 1] = { command = command, payload = payload }
+end
 function client:notifyUI(command, data)
   self.notifications[#self.notifications + 1] = { command, data }
 end
@@ -117,6 +168,17 @@ local clientEnd = assert(clientSource:find(clientMarker, clientStart, true))
 assert(load(clientSource:sub(clientStart, clientEnd + 4),
   "=candidate/negotiation/client", "t", clientEnv))()
 
+local clientNegotiation = assert(dofile(coreRoot .. "/ltk/client/card_wire_negotiation.lua"))
+assert(clientNegotiation.advertise(client, "new_heg_mode"))
+assert(#client.client.notifications == 1 and
+  client.client.notifications[1].command == "PushRequest")
+assert(cbor.decode(client.client.notifications[1].payload) ==
+  "card_wire_capability,1,TQS_HEG_CARD_WIRE,new_heg_mode")
+assert(clientNegotiation.advertise(client, "new_heg_mode"))
+assert(#client.client.notifications == 1, "capability advertisement must be idempotent")
+assert(not clientNegotiation.advertise({ client = client.client }, "classic_mode"),
+  "non-Hegemony rooms must not advertise the Hegemony capability")
+
 clientEnv.ClientCallback(nil, "CardWireNegotiated", ownerSocket.packets[1].payload, false)
 assert(client.card_wire_version == 1 and client.card_wire_negotiated == true and
   client.card_wire_protocol == "TQS_HEG_CARD_WIRE" and #client.notifications == 0,
@@ -141,8 +203,25 @@ ServerConfig.tqsQa.cardWireVersion = nil
 assert(not pcall(function() serverMethods.negotiateCardWireV1(legacyRoom) end),
   "missing QA opt-in must fail closed")
 assert(legacyRoom.card_wire_version == nil)
+
+-- Rollback must not silently downgrade an in-flight v1 room.  Disabling the
+-- opt-in blocks a new negotiation, while the already negotiated room keeps
+-- its version marker until the room is drained or ended by its owner.
+local activeV1Room = {
+  card_wire_version = 1,
+  settings = { gameMode = "new_heg_mode" },
+  players = room.players,
+}
+function activeV1Room:getSettings(key) return self.settings[key] end
+assert(not pcall(function() serverMethods.negotiateCardWireV1(activeV1Room) end),
+  "rollback must not downgrade an active v1 room")
+assert(activeV1Room.card_wire_version == 1,
+  "an active v1 room must retain its protocol marker during rollback")
+
 ServerConfig.tqsQa.cardWireVersion = oldVersion
 
 print("PASS candidate card-wire negotiation: actual QA room helper, legacy CBOR " ..
-  "envelope, per-physical dedupe, actual ClientCallback activation and " ..
-  "malformed/legacy fail-closed; 4 cases; native C++/browser/two-account NOT RUN")
+  "envelope, per-physical dedupe, client capability advertise, wrong " ..
+  "version/protocol/mode rejection, actual ClientCallback activation, " ..
+  "active-v1 no-downgrade and malformed/legacy fail-closed; 12 cases; " ..
+  "native C++/browser/two-account NOT RUN")

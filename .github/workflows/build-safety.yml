@@ -72,10 +72,14 @@ jobs:
       - run: npm --prefix game/web ci
       - run: npm --prefix game/gateway ci
       - run: npm --prefix game/web run test:upstream-preparation
+      - run: npm --prefix game/web run check:upstream-baseline
+      - run: npm --prefix game/web run test:card-wire-coverage
+      - run: npm --prefix game/web run test:card-wire-raw-capture
+      - run: npm --prefix game/web run test:card-wire-evidence-sanitize
       - uses: actions/cache@v4
         with:
           path: scratch/upstream
-          key: upstream-${{ runner.os }}-${{ hashFiles('game/web/scripts/upstream-packages.ts') }}
+          key: upstream-${{ runner.os }}-${{ hashFiles('game/web/scripts/upstream-packages.ts', 'deploy/freekill-native/upstream-baseline.env') }}
       - run: npm --prefix game/web run prepare:upstream
       - run: npm --prefix game/web run typecheck
       - run: npm --prefix game/web run typecheck:tools
@@ -90,6 +94,7 @@ jobs:
       - run: npm --prefix game/gateway test
       - run: npm --prefix game/web run test:e2e
       - run: npm --prefix game/web run test:e2e:lua
+      - run: npm --prefix game/web run test:e2e:pwa
       - run: git diff --exit-code -- dist
 
   gate:

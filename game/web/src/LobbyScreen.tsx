@@ -81,7 +81,7 @@ function roomAvailability(room: LobbyRoom): { label: string; tone: 'open' | 'ful
 function LobbyRoomRow({ room, join, observe, busy }: {
   room: LobbyRoom;
   join: (id: number, pw: string) => void;
-  observe: (id: number, pw: string) => void;
+  observe: (id: number, pw: string, mode: string) => void;
   busy: boolean;
 }) {
   const [password, setPassword] = useState('');
@@ -143,7 +143,7 @@ function LobbyRoomRow({ room, join, observe, busy }: {
             className="sg-room-join-btn sg-room-observe-btn button secondary"
             type="button"
             disabled={busy || room.outdated || (room.hasPassword && !password)}
-            onClick={() => observe(room.id, password)}
+            onClick={() => observe(room.id, password, room.mode)}
           >
             Quan sát
           </button>
@@ -474,7 +474,7 @@ export function LobbyScreen({ adapter, run, busy }: {
                     key={room.id}
                     busy={busy}
                     join={(id, pw) => run(() => adapter.joinRoom(id, pw))}
-                    observe={(id, pw) => run(() => adapter.observeRoom(id, pw))}
+                    observe={(id, pw, mode) => run(() => adapter.observeRoom(id, pw, mode))}
                   />
                 ))}
               </ul>

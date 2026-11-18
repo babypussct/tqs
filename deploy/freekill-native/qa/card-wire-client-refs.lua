@@ -79,6 +79,17 @@ function Refs:toLocal(reference)
   return id
 end
 
+-- A card entering the concealed draw pile must receive a fresh positional
+-- alias, never an opaque card handle.  The server-side projector may still
+-- carry a rekeyed opaque reference in the MoveCards transition so the
+-- source area can be replaced atomically, but that reference must not become
+-- addressable from the anonymous deck.
+function Refs:mintAnonymous()
+  local id = self:_allocate()
+  self.anonymous[id] = true
+  return id
+end
+
 function Refs:toWire(id)
   integer(id, "local card ID")
   assert(not self.anonymous[id], "anonymous deck position is not a card choice")
@@ -124,9 +135,7 @@ function Refs:replaceAnonymousDeck(count, previous)
   end
   local result = {}
   for i = 1, count do
-    local id = self:_allocate()
-    self.anonymous[id] = true
-    result[i] = id
+    result[i] = self:mintAnonymous()
   end
   return result
 end

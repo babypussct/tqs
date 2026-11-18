@@ -49,7 +49,9 @@ export function preparePackage(sourceRoot, spec, checkOnly = false) {
 }
 
 function main() {
-  let sourceRoot = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
+  let sourceRoot = process.env.TQS_UPSTREAM_ROOT
+    ? path.resolve(process.env.TQS_UPSTREAM_ROOT)
+    : fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
   let selected = UPSTREAM_PACKAGES;
   let checkOnly = false;
   for (let i = 2; i < process.argv.length; i++) {

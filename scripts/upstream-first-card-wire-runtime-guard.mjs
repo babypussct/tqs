@@ -28,7 +28,12 @@ const modules = [
     // public-metadata refinement can be applied atomically.
     'd5b2759843d812be70ec628d1025203f0fd9e3781ab5435397f956b720a22084',
   ]],
-  ['card_wire_secure_mint.lua', 'card-wire-secure-mint.lua', null],
+  ['card_wire_secure_mint.lua', 'card-wire-secure-mint.lua', [
+    // The previous isolated candidate used the direct OS-CSPRNG-only module.
+    // Permit that exact reviewed source as the upgrade base for the bounded
+    // QA failure-injection contract; production/current still never loads it.
+    '922905c813c10c63422efb8df2e984412b09e3a2d4d8f5a01bb837269869aae3',
+  ]],
 ];
 for (const [dest, source, previousSha256] of modules) {
   const target = path.join(server, dest);

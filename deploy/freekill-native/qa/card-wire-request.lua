@@ -143,7 +143,20 @@ local function issue(room, seat, physical, batch, audience, requestKey, ids)
   local choices, standing = {}, {}
   for i, id in ipairs(ids) do
     local public = isPublic(room, seat, physical, id)
-    standing[i] = batch:reference(audience, id, public)
+    local agDisplay = isAmazingGraceCard(room, id)
+    if agDisplay then
+      -- FillAG/TakeAG are public display metadata. Keep the hidden source
+      -- handle live until MoveCards explicitly retires it, while exposing the
+      -- canonical ID as the AG model's standing display identity.
+      local current = batch:currentReference(audience, id)
+      standing[i] = batch:standing(audience, id, true)
+      -- The physical owner may already have a canonical public standing
+      -- reference from the preceding public transition. Preserve that state;
+      -- an outsider remains hidden until MoveCards carries the rekey.
+      public = type(current) == "number"
+    else
+      standing[i] = batch:reference(audience, id, public)
+    end
     choices[i] = { id = id, public = public }
   end
   local tokens = batch:issueChoice(audience, requestKey, choices, 0, #ids)
@@ -199,6 +212,7 @@ end
 local cardArrayKeys = {
   cards = true,
   card_ids = true,
+  cardIds = true,
   subcards = true,
   visible_pile = true,
   expand_pile = true,

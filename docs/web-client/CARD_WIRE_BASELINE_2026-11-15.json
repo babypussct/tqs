@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-15",
+  "scope": "sanitized P0 strict card-wire source diagnostic; synthetic candidate fixture only",
+  "command": "lua5.4 deploy/freekill-native/qa/card-wire-exposure-source-probe.lua scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages/freekill-core --strict",
+  "lua": {
+    "executable": "lua5.4",
+    "version": "Lua 5.4.9"
+  },
+  "candidate": {
+    "coreRoot": "scratch/evidence/upstream-first-a-20261028/candidate-runtime/packages/freekill-core",
+    "flistMd5": "2e453ed37f894bed95c0b80f99bd1809",
+    "flistBytes": 460215,
+    "cardWireProjectionSha256": "25e37d27d00038cb509ded1125632fee43ca8a21b7526d92f07b3703cfa37118",
+    "cardWireSecureMintSha256": "922905c813c10c63422efb8df2e984412b09e3a2d4d8f5a01bb837269869aae3"
+  },
+  "result": {
+    "exitCode": 2,
+    "marker": "CARD_WIRE_PRIVACY=OPEN",
+    "exposureCategories": [
+      "prepare_order",
+      "shuffle_order",
+      "sync_order",
+      "change_area_order",
+      "hidden_move_id",
+      "observe_hidden_move_id",
+      "special_pile_id",
+      "reconnect_deck",
+      "reconnect_hand",
+      "reconnect_special",
+      "observe_deck",
+      "observe_hand"
+    ],
+    "syntheticOnly": true,
+    "nativeCborRun": false,
+    "browserRun": false,
+    "twoAccountRun": false,
+    "observerRuntimeRun": false
+  },
+  "repository": {
+    "head": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "branch": "main",
+    "protectedDistUnchanged": true,
+    "productionMutation": false,
+    "v1ProductionEnabled": false
+  },
+  "interpretation": "This is a failing strict diagnostic by design: it reproduces the legacy raw-ID exposure in the synthetic source fixture. It is not native C++/CBOR acceptance, not browser privacy acceptance and not permission to enable card-wire v1."
+}

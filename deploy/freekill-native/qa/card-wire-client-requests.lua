@@ -120,6 +120,7 @@ end
 local cardArrayKeys = {
   cards = true,
   card_ids = true,
+  cardIds = true,
   subcards = true,
   visible_pile = true,
   expand_pile = true,

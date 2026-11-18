@@ -25,7 +25,7 @@ command -v apt-get >/dev/null 2>&1 || die "This bootstrap currently expects Debi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  ca-certificates curl git patch make gcc-14 g++-14 cmake pkg-config sqlite3 tmux \
+  ca-certificates curl git patch make gcc-14 g++-14 cmake pkg-config sqlite3 tmux unzip \
   libasio-dev libboost-system-dev libssl-dev libcbor-dev nlohmann-json3-dev \
   libsqlite3-dev libgit2-dev libreadline-dev libspdlog-dev \
   lua5.4 lua-socket lua-filesystem

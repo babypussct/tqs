@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T02:20:54+07:00",
+  "scope": "current source-code snapshot review after same-packet MoveCards fix, candidate-only macOS native bridge, isolated P6 outer-CBOR packet-size capture, active-v1 rollback no-downgrade guard, deferred observer leave QA branch with live PASS, bounded native stale/duplicate replay rejection with live PASS, and fail-closed coverage assertions; no publish",
+  "archive": {
+    "relativePath": "scratch/evidence/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-16.tar.gz",
+    "sha256": "da200711cdc143fbb595602e5704b5f9e4c93d10847f4402abdb8c1f686f7f11",
+    "archiveEntries": 3153,
+    "extractedFiles": 2968,
+    "mode": "0444",
+    "symlinkEscapes": false,
+    "metadataExcludedFromArchive": [
+      "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-16.json",
+      "docs/CODEX_STATE.md",
+      "docs/CODEX_PLAN.md",
+      "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json",
+      "docs/web-client/CARD_WIRE_PAGES_PREVIEW_2026-11-16.json"
+    ]
+  },
+  "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+  "supersedes": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_2026-11-16.json",
+  "includedCurrentSourceFiles": {
+    "deploy/freekill-native/qa/card-wire-client-moves.lua": "87c85425074c010d1bd15c4ab31f55a0f317034e082a9050763a7413e0cdf7d7",
+    "deploy/freekill-native/qa/card-wire-client-moves-probe.lua": "9bb42d8bf253ca1956ad80936da46a9fbf9194e7d11075bfa41b26f35530a867",
+    "deploy/freekill-native/qa/card-wire-negotiation-source-probe.lua": "953af806fc1a573c900fd5af5fc263f622952840e8ceca69477d871af2747104",
+    "deploy/freekill-native/qa/upstream-first-source.test.mjs": "6acbef02eab531f43dc67af72fb9b2d405f6e778f59db1de5ce706074a968674",
+    "scripts/upstream-first-card-wire-client-moves-guard.mjs": "ed7692f0966890f243fd4487382010e474aed3c35d8d9b423a08b1d98a02bc2a",
+    "game/web/package.json": "3bcc1c444acb7fefb7c9e65619ed7a1abd02e9b6e211004c761ef846a25936dc",
+    "game/web/scripts/multiplayer-e2e/run.ts": "595c1bec75d7361ea6c39d79f2ff210a7b6326646ee0f6eedf56c3b82fc37667",
+    "game/web/scripts/multiplayer-e2e/evidence-sanitize.ts": "910c8f347cdb60b1ed09df6db458ffb78124a8866c08b230caa20ca8009ea63a",
+    "game/web/scripts/multiplayer-e2e/evidence-sanitize.test.ts": "8f99835cb70e0ac49d49dc0098dadde44cfcb0983a382819849c439dac5991aa",
+    "game/web/scripts/card-wire-coverage.test.ts": "bf693af8993c7192e99e0bc4b7a24ed59e057d4c365280257934ae3ba124525a",
+    "deploy/freekill-native/patches/freekill-asio/tqs-card-wire-candidate-native-bridge.patch": "e2ce964307b4c861f0202d84908267ec61529efb6982daac76617fd9b4ea4123",
+    "deploy/freekill-native/qa/card-wire-native-source.test.mjs": "4e04892089eb455631c01dfce2dec394a1f4a5264b74a4b24f21db1246545de3",
+    "deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua": "45f32a8761fd9ced2e929d09312d0e2a006b734b2bf9952299d8c414a70f5fba"
+  },
+  "includedCurrentEvidenceFiles": {
+    "docs/web-client/CARD_WIRE_MACOS_NATIVE_SUPPLEMENT_2026-11-16.json": "56d8eef7c8524c0554fc37d84f448c613ba2b7cee907e2d1fdaea1ecc2d54ceb",
+    "docs/web-client/CARD_WIRE_COVERAGE_MATRIX_2026-11-15.json": "9674493980f6a69030585c1f75c5cfb38bcec9c7fcb8ae91dd11ffe5ae6a5626",
+    "docs/web-client/CARD_WIRE_PACKET_SIZE_COMPARISON_CURRENT_2026-11-16.json": "16e275346771f89a5d5cf5131aed2503fecd39ee045ca796c2499fba826445b0",
+    "scratch/evidence/cp08-draw-sequence-reconnect-live-1794843349939.json": "f9f2fc587c19a111e4c50dce19b0617d4432eb69305c37f73b780cc1a489a888",
+    "docs/web-client/CARD_WIRE_NATIVE_OBSERVER_LEAVE_CURRENT_2026-11-17.json": "90a12adc5505a19a3eadb9fb6c724a9492c567e33f6c067aa1e7599d8d58c083",
+    "docs/web-client/CARD_WIRE_ACCEPTANCE_AUDIT_CURRENT_2026-11-17.json": "c0d3ad18156754a0cdbcb512b387c87715ae7cb8d0a7338ee3f9ec3c82032a04",
+    "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-17.json": "3710fc8ca798b900303bf52d06964b4652d2b3f6ec4f996a0824d37f5b142b4d"
+  },
+  "review": {
+    "sensitiveLookingFilenames": 0,
+    "symlinkEscapes": 0,
+    "keySourceHashParity": "PASS",
+    "luaCompiler": "Lua 5.4.9 syntax PASS",
+    "nodeModuleSyntax": "PASS",
+    "upstreamFirstSourceSuite": "41/41 PASS; 0 fail; 0 skip; active-v1 rollback no-downgrade assertion included",
+    "packetSizeCaptureSourceSuite": "typecheck:tools PASS; evidence-sanitize 20/20; raw-capture 4/4; coverage 5/5; observer leave and bounded native stale/duplicate replay live PASS on exact current e0 candidate; full pasted-plan acceptance audit recorded with explicit OPEN/PARTIAL gates",
+    "gitDiffCheck": "PASS",
+    "status": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL",
+    "publishEligible": false
+  },
+  "limits": [
+    "The snapshot is an immutable local review artifact, not a clean reviewed commit or release approval.",
+    "The candidate native runtime and release package are reconciled separately in the current identity audit.",
+    "No production or canary mutation occurred."
+  ]
+}

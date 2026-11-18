@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate cards-and-choice native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "1fb4741116440ef9629e02c8c0505aeb599448cff5b93e8af686407e06403258",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "80c97cee9590bbebd679b4530480eec2"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794814734088.json",
+    "observedAt": "2026-11-16T07:38:54.088Z",
+    "scenario": "cards-and-choice",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "manualCardReply": true,
+    "cardsAndChoiceReplyObserved": true,
+    "observations": [
+      "AskForChoices reply",
+      "PlayCard reply",
+      "AskForChoices reply",
+      "AskForCardsAndChoice opaque reply"
+    ],
+    "gameOverCountsByAudience": [1, 1, 1],
+    "nativeWire": {
+      "packets": 191,
+      "frames": null,
+      "packetBytesTotal": null,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 1379,
+      "incomingPackets": null,
+      "replyPackets": 6,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 1100,
+        "public": 263,
+        "request": 7,
+        "reply": 6
+      },
+      "commandsObserved": {
+        "CardWireNegotiated": 3,
+        "AskForCardsAndChoice": 1,
+        "AskForChoices": 2,
+        "PlayCard": 2,
+        "GameOver": 3
+      },
+      "repliesObserved": {
+        "AskForCardsAndChoice": 1,
+        "AskForChoices": 2,
+        "PlayCard": 1,
+        "CustomDialog": 2
+      }
+    },
+    "nativeOuterCborTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 291,
+      "firstRssKb": 14064,
+      "minRssKb": 10736,
+      "maxRssKb": 14880,
+      "lastRssKb": 11792,
+      "maxCpuSeconds": 1.09,
+      "elapsedSeconds": 76.796,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "repeatRuns": [
+    {
+      "runEvidence": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794814442701.json",
+      "observedAt": "2026-11-16T07:34:02.701Z",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "cardsAndChoiceReplyObserved": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWireFailures": 0,
+      "nativeSupplementalFailures": 0,
+      "processesClosedAfterRun": true
+    },
+    {
+      "runEvidence": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794814734088.json",
+      "observedAt": "2026-11-16T07:38:54.088Z",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "cardsAndChoiceReplyObserved": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeWireFailures": 0,
+      "nativeSupplementalFailures": 0,
+      "processesClosedAfterRun": true
+    }
+  ],
+  "previousRunEvidence": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794793243641.json",
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-QL1kIo",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-QL1kIo/tqs-cardwire-qa-20261103-DodEQx"
+  },
+  "limitations": [
+    "This is one current-candidate cards-and-choice family; it does not close every request/reply or strict release privacy gate.",
+    "No reconnect is exercised by this scenario; draw-sequence remains the current reconnect/strict-12 evidence.",
+    "Production/canary rollback, browser-network/device verification, approved performance thresholds and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-cards-and-choice-opaque-request-reply; release-gates-remain-OPEN"
+}

@@ -10,7 +10,7 @@ const [mode, input] = process.argv.slice(2);
 assert.ok(['--apply', '--check'].includes(mode) && input,
   'usage: --apply|--check <candidate-core>');
 const root = fs.realpathSync(input);
-assert.match(root, /\/scratch\/evidence\/[^/]+\/candidate-runtime\/packages\/freekill-core$/u,
+assert.match(root, /(?:\/scratch\/evidence\/[^/]+\/candidate-runtime|\/private\/tmp\/tqs-cardwire-qa-20261103-[^/]+)\/packages\/freekill-core$/u,
   'request projector is restricted to the isolated candidate');
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 

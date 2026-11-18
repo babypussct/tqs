@@ -4,7 +4,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import { zipSync } from 'fflate';
-import { BASELINE_PACKAGE_NAMES, loadUpstreamFiles } from './scripts/upstream-packages';
+import { BASELINE_PACKAGE_NAMES, loadUpstreamFiles, resolveUpstreamRoot } from './scripts/upstream-packages';
 
 const runtimeRoot = path.resolve(__dirname, '../../runtime');
 const cardCatalogPath = path.resolve(__dirname, 'public/quoc-chien-card-inventory.json');
@@ -38,7 +38,7 @@ const nativeCardAssetPaths = [
   'packages/overseas/image/card/talisman.png',
   'packages/sp/image/card/delayedTrick/yanxiao_trick.png',
 ];
-const upstreamRoot = path.resolve(__dirname, '../../scratch/upstream');
+const upstreamRoot = resolveUpstreamRoot(path.resolve(__dirname, '../../scratch/upstream'));
 
 const RUNTIME_MEDIA_ROOTS = [
   'image/card',

@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
+import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot } from './upstream-packages';
 
 /**
  * Source-law regression gate for New Hegemony hidden generals.
@@ -17,7 +17,7 @@ import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
  */
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const runtimeRoot = path.resolve(process.env.TQS_NATIVE_RUNTIME_ROOT ?? path.join(repoRoot, 'runtime'));
-const upstreamRoot = path.join(repoRoot, 'scratch/upstream');
+const upstreamRoot = resolveUpstreamRoot(path.join(repoRoot, 'scratch/upstream'));
 
 const readRuntime = (relative: string) => readFileSync(path.join(runtimeRoot, 'packages', 'freekill-core', relative), 'utf8');
 

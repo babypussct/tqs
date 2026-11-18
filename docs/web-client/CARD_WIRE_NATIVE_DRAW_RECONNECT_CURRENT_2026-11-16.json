@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "candidate isolated native/browser draw-sequence reconnect regression after anonymous draw-slot, reconnect UI-filter and same-packet MoveCards fixes",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794835367983.json",
+  "result": "PASS",
+  "scenario": "draw-sequence",
+  "audiences": 3,
+  "recovered": true,
+  "errors": [],
+  "identity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "manifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "smartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e"
+  },
+  "fixesUnderTest": [
+    "MoveCards entering DrawPile mints a fresh anonymous positional alias instead of retaining an opaque source-area reference",
+    "Reconnect/Observe UI rebuild skips legacy filter callbacks for hidden and anonymous local aliases while retaining canonical legacy filtering",
+    "Same-packet MoveCards dependencies are preflighted on a private clone with legacy area transitions simulated between entries, then applied sequentially"
+  ],
+  "privacy": {
+    "strictCategories": [
+      "prepare_order",
+      "shuffle_order",
+      "sync_order",
+      "change_area_order",
+      "hidden_move_id",
+      "observe_hidden_move_id",
+      "special_pile_id",
+      "reconnect_deck",
+      "reconnect_hand",
+      "reconnect_special",
+      "observe_deck",
+      "observe_hand"
+    ],
+    "strictCategoryCount": 12,
+    "nativeAudiences": [
+      { "audience": "owner", "negotiated": true, "failures": 0, "reconnect": 1, "observe": 0 },
+      { "audience": "opponent", "negotiated": true, "failures": 0, "reconnect": 0, "observe": 0 },
+      { "audience": "observer", "negotiated": true, "failures": 0, "reconnect": 0, "observe": 1 }
+    ],
+    "nativeSupplementalFailures": 0,
+    "supplementalChannels": ["negotiation", "metadata", "public", "request", "reply"],
+    "hiddenReferenceCollision": 0
+  },
+  "gameplay": {
+    "manualPlayCard": true,
+    "controlledReconnect": true,
+    "boardRestored": true,
+    "gameOver": { "owner": 1, "opponent": 1, "observer": 1 }
+  },
+  "performanceObservation": {
+    "processSampleCount": 231,
+    "firstRssKb": 14032,
+    "minRssKb": 11152,
+    "maxRssKb": 14784,
+    "lastRssKb": 11776,
+    "maxCpuSeconds": 0.7,
+    "elapsedSeconds": 60.805,
+    "memoryAllocationDiagnosticCounts": [0, 0],
+    "approval": "observation-only; approved threshold gate remains OPEN"
+  },
+  "cleanup": {
+    "launcherExit": "Native QA exit -9 after controlled interrupt",
+    "listenersClosed": [19681, 9000],
+    "nativeQaProcessesClosed": true
+  },
+  "limitations": [
+    "Candidate isolated QA only; no production or canary mutation/deploy occurred",
+    "This run proves the bounded draw/reconnect lane, not device/network acceptance or release approval",
+    "The legacy physical-ID diagnostic remains an intentionally red baseline; negotiated v1 source gate and live candidate privacy are tracked separately"
+  ]
+}

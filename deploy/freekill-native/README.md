@@ -55,7 +55,9 @@ domain, a CDN or a web gateway during the first phase.
 
 ## What is included
 
-- `versions.env`: pinned release, package commits and server port.
+- `versions.env` and `upstream-baseline.env`: the canonical 15/11/2026 ASIO,
+  14-package, public-bundle and native-QML patch identities used by CI and a
+  fresh install.
 - `server/freekill.server.config.json`: small private-group configuration.
 - `scripts/bootstrap-amd64.sh`: downloads and verifies the upstream static
   amd64 release, then installs the pinned `freekill-core` and `hegemony` Git
@@ -63,11 +65,14 @@ domain, a CDN or a web gateway during the first phase.
 - `scripts/bootstrap-source.sh`: builds the pinned `freekill-asio` source on
   Linux, which is the path for Oracle A1/ARM64.
 - `scripts/install-packages.sh`: idempotently checks out the exact package
-  commits, applies the three hidden-skill prelight hardenings, and records them
-  in `packages/packages.db`.
+  commits, applies the content-addressed production Lua/JSON/Markdown bundle
+  plus the separately hashed 25-file native QML source patch, applies the
+  hidden-skill prelight hardenings, and records the package rows in
+  `packages/packages.db`.
 - `scripts/verify-install.sh`: validates executable, JSON, all 14 pinned
-  package commits, enabled flags, package database hashes and the hidden-skill
-  prelight source contract.
+  package commits, enabled flags, package database hashes, the public overlay
+  identity, the native QML patch identity and the hidden-skill prelight source
+  contract.
 - `scripts/run-server.sh`: starts the server with the interactive admin shell.
 - `scripts/backup.sh`: archives server state, packages and configuration.
 - `scripts/verify-backup.sh`: checks backup permissions, archive paths and the

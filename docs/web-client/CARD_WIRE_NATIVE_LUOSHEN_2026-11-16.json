@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate hidden-luoshen native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-hidden-luoshen-multiplayer-live-1794793552276.json",
+    "observedAt": "2026-11-16T01:45:52.276Z",
+    "scenario": "hidden-luoshen",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "hiddenLuoshenGateObserved": true,
+    "hiddenLuoshenInvoked": true,
+    "hiddenLuoshenInvokeCount": 2,
+    "hiddenLuoshenAgReplyObserved": true,
+    "phaseStartRevealObserved": true,
+    "judgmentContinuationObserved": true,
+    "blackCardObtainObserved": true,
+    "gameOverCountsByAudience": [
+      1,
+      1,
+      1
+    ],
+    "scenarioObservations": [
+      {
+        "command": "AskForSkillInvoke",
+        "reply": true
+      },
+      {
+        "command": "AskForSkillInvoke",
+        "reply": true
+      },
+      {
+        "command": "AskForSkillInvoke",
+        "reply": true
+      },
+      {
+        "command": "unknown",
+        "reply": true
+      }
+    ],
+    "nativeWire": {
+      "packetsByAudience": [
+        17,
+        17,
+        11
+      ],
+      "framesByAudience": [
+        178,
+        163,
+        67
+      ],
+      "packetBytesTotal": 8064,
+      "packetBytesMin": 28,
+      "packetBytesMax": 3258,
+      "packetBytesLe256": 42,
+      "packetBytesLe1024": 2,
+      "packetBytesLe4096": 1,
+      "packetBytesGt4096": 0,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 225,
+      "incomingPackets": 219,
+      "replyPackets": 6,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 173,
+        "public": 37,
+        "request": 6,
+        "reply": 6
+      },
+      "commandsObserved": [
+        "AskForAG",
+        "AskForSkillInvoke",
+        "CardWireNegotiated",
+        "CustomDialog",
+        "FillAG",
+        "FilterCard",
+        "GameLog",
+        "GameOver",
+        "PropertyUpdate",
+        "SetCardFootnote",
+        "SetCardMark",
+        "SetPlayerMark",
+        "TakeAG"
+      ]
+    },
+    "nativeOuterCbor": null,
+    "nativeCborSerializationTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 85,
+      "firstRssKb": 14736,
+      "minRssKb": 11616,
+      "maxRssKb": 15152,
+      "lastRssKb": 11984,
+      "maxCpuSeconds": 0.24,
+      "elapsedSeconds": 22.188,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": [
+      "19681",
+      "9000"
+    ],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-hgFBRa",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-hgFBRa/tqs-cardwire-qa-20261103-bBD3HR"
+  },
+  "limitations": [
+    "This is one current-candidate main-slot hidden-luoshen lifecycle; the deputy mirror, full reconnect matrix and strict release privacy gate remain separate evidence or open gates.",
+    "The scenario observes the native EventPhaseStart reveal, judgment/AG continuation and opaque AskForAG reply, but does not exercise reconnect or all twelve strict privacy categories; draw-sequence remains the strict reconnect/12-category evidence.",
+    "Production/canary rollback, browser-network/device verification, approved performance thresholds and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-hidden-luoshen-ag-lifecycle; release-gates-remain-OPEN"
+}

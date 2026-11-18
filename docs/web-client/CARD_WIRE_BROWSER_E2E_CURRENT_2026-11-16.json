@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated candidate runtime browser verification",
+  "candidateRootKind": "fresh exact pinned candidate-runtime package tree",
+  "currentReleaseIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "releaseManifestSha256": "6429a148d1eddf2e8f4c2b620ea81ce1868c07dd117277c5ff71207b02ddc6f7",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "projectorSha256": "ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d",
+    "releaseCheckpoint": "docs/web-client/CARD_WIRE_RELEASE_CHECKPOINT_CURRENT_2026-11-16.json"
+  },
+  "currentReleasePackageRun": {
+    "command": "TQS_UPSTREAM_ROOT=<current-release-runtime>/packages npm --prefix game/web run test:e2e:lua",
+    "fixtureFiles": 5602,
+    "compressedFixtureBytes": 7763765,
+    "tests": {
+      "passed": 72,
+      "failed": 0,
+      "total": 72,
+      "failedScenarios": []
+    },
+    "result": "PASS",
+    "browser": "Google Chrome headless via Playwright",
+    "productionMutation": false
+  },
+  "result": "PASS",
+  "command": "TQS_UPSTREAM_ROOT=<candidate-runtime>/packages npm --prefix game/web run test:e2e:lua",
+  "fixtureFiles": 5602,
+  "compressedFixtureBytes": 7762478,
+  "tests": {
+    "passed": 72,
+    "failed": 0,
+    "total": 72,
+    "failedScenarios": []
+  },
+  "freshCanonicalPreparationRun": {
+    "preparationCommand": "npm --prefix game/web run prepare:upstream -- --root <isolated-root>",
+    "packageCount": 14,
+    "exactManifestPins": true,
+    "rootLayout": "package directories are directly under the prepared root",
+    "hegemonyCommit": "e8d93acd34a357f96b0105aef7d661708c211626",
+    "fixtureFiles": 5588,
+    "compressedFixtureBytes": 7649550,
+    "roomPools": {
+      "test": "PASS",
+      "generalPool": "193 -> 146",
+      "drawPile": "215 -> 111"
+    },
+    "realLuaBrowserE2e": {
+      "passed": 72,
+      "failed": 0,
+      "total": 72
+    },
+    "ciOrdering": "prepare:upstream runs before test:e2e:lua in .github/workflows/build-safety.yml",
+    "productionMutation": false
+  },
+  "preparationNetworkNote": "One overseas fetch attempt timed out; the same exact package was retried and verified, and the remaining packages completed with exact pinned SHA checks.",
+  "independentBrowserRegression": {
+    "browserE2e": "44/44 PASS",
+    "pwaE2e": "PASS",
+    "nonBlockingLocalLogs": "Vite proxy /healthz ECONNREFUSED because no local gateway was running; browser assertions themselves passed.",
+    "ciWorkflowPwaGate": "added after test:e2e and test:e2e:lua in .github/workflows/build-safety.yml",
+    "productionMutation": false
+  },
+  "coverage": [
+    "real FreeKill Lua/WASM boot",
+    "Hegemony skill interactions and native request/reply contracts",
+    "hidden skill prelight, reveal, re-hide and privacy projections",
+    "draw/discard/processing card rendering without exposing hidden IDs",
+    "request expiry, replacement, disconnect and unsolicited-reply rejection",
+    "Reconnect and GameOver UI lifecycle",
+    "native room package/pool validation and disabled-generals policy",
+    "responsive board, hand and log layout assertions",
+    "bounded QA scenarios for deterministic draw, Longdan, Yiji and Fankui"
+  ],
+  "harnessCorrections": {
+    "upstreamDeclarationLoader": "idempotent for the exact reviewed ty__langmie declaration; unrelated or incomplete declarations still fail closed",
+    "pushRequestAssertion": "selects the exact prelight CBOR payload because candidate negotiation uses the same PushRequest command",
+    "productionRuntimeChanged": false
+  },
+  "privacy": {
+    "rawGameplayPayloadStored": false,
+    "credentialsStored": false,
+    "physicalIdentityStored": false
+  },
+  "releaseStatus": "OPEN-HOLD",
+  "limits": [
+    "This is isolated candidate browser evidence, not a production deployment or device/network acceptance.",
+    "Approved performance/memory thresholds, production/canary rollback approval and release approval remain open.",
+    "Legacy wire remains the production default and card-wire v1 remains off outside explicitly negotiated QA."
+  ],
+  "productionMutation": false
+}

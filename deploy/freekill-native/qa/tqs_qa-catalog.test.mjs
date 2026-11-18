@@ -7,6 +7,9 @@ import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const luaExecutable = process.env.TQS_LUA_BIN ?? 'lua5.4';
+assert.match(path.basename(luaExecutable), /^lua5\.4$/u,
+  'TQS_LUA_BIN must point to a Lua 5.4 executable named lua5.4');
 const packageDir = path.join(here, 'tqs_qa');
 const nativeCatalog = JSON.parse(fs.readFileSync(path.join(packageDir, 'catalog.json'), 'utf8'));
 const browserCatalogPath = path.resolve(here, '../../../game/web/scripts/real-lua-e2e/qa-scenarios.ts');
@@ -239,6 +242,7 @@ test('delta-fengshi variants require real first UseCard, siege relation, and nat
 test('card-chosen pins a legal Pang De initial-pair offer before GamePrepared', () => {
   const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'card-chosen');
   assert.ok(scenario, 'card-chosen catalog entry is required');
+  assert.equal(scenario.cardWire, true, 'card-chosen must negotiate the isolated card-wire v1 QA path');
   assert.equal(scenario.playerCount, 2);
   assert.deepEqual(scenario.players, {
     actor: { general: 'hs__pangde', deputy: 'hs__jiaxu', kingdom: 'qun' },
@@ -252,10 +256,93 @@ test('card-chosen pins a legal Pang De initial-pair offer before GamePrepared', 
   }
 
   const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  const browserRunner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
   assert.match(qaInit, /validateInitialPairOfferScenario\(scenario\)/u);
   assert.match(qaInit, /type\(scenario\.initialPairOffer\) ~= "table"/u);
   assert.match(qaInit, /local offer = scenario\.initialPairOffer or scenario/u);
   assert.match(qaInit, /type\(scenario\.initialPairOffer\) ~= "table"\) then/u);
+  assert.match(browserRunner, /testScenario === 'card-chosen' && activeClient === scenarioClient && !scenarioCardChosenHidden/u);
+  assert.match(browserRunner, /testScenario === 'card-chosen' && activeClient !== scenarioClient/u);
+  assert.match(browserRunner, /Lấy ra/u);
+  assert.match(browserRunner, /select-jianchu-before-slash/u);
+});
+
+test('poxi is explicitly opted into the isolated card-wire QA path', () => {
+  const scenario = nativeCatalog.scenarios.find(({ id }) => id === 'poxi');
+  assert.ok(scenario, 'poxi catalog entry is required');
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.equal(scenario.cardWire, true, 'poxi must negotiate the isolated card-wire v1 QA path');
+  assert.equal(scenario.expectedCommand, 'AskForPoxi');
+  assert.equal(scenario.seed, 2066864612);
+  assert.equal(scenario.general, 'ty_heg__dengzhi');
+  assert.equal(scenario.skill, 'ty_heg__weimeng');
+  assert.equal(scenario.playerCount, 2);
+  assert.deepEqual(scenario.players, {
+    actor: { general: 'ty_heg__dengzhi', deputy: 'hs__guanyu', kingdom: 'shu' },
+    target: { general: 'hs__caocao', deputy: 'hs__simayi', kingdom: 'wei' },
+  });
+  assert.deepEqual(scenario.cards.map(({ key, owner, area }) => ({ key, owner, area })), [
+    { key: 'actor-slash', owner: 'actor', area: 'hand' },
+    { key: 'actor-peach', owner: 'actor', area: 'hand' },
+    { key: 'target-peach', owner: 'target', area: 'hand' },
+    { key: 'target-jink', owner: 'target', area: 'hand' },
+    { key: 'target-equip', owner: 'target', area: 'equip' },
+  ]);
+  assert.match(qaInit, /validatePoxiScenario\(scenario\)/u);
+  assert.match(qaInit, /targetHand < 2 or targetEquip < 1/u);
+});
+
+test('QA v1 negotiation requires every physical client capability and keeps mismatch on legacy', () => {
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /hasAllCardWireCapabilities\(\)/u);
+  assert.match(qaInit, /card_wire_rejected scenario=%s reason=capability_mismatch session=legacy/u);
+  assert.match(qaInit, /card_wire_legacy_session scenario=%s reason=capability_mismatch/u);
+  assert.match(qaInit, /room\.card_wire_negotiation_state = "legacy_rejected"/u);
+  assert.match(qaInit, /room\.card_wire_negotiation_state = "v1"/u);
+  assert.match(qaInit, /return false\n  end\n  room:negotiateCardWireV1\(\)/u);
+});
+
+test('QA rollback drain keeps the active room on v1 and disables only new admission', () => {
+  const qaInit = fs.readFileSync(path.join(packageDir, 'init.lua'), 'utf8');
+  assert.match(qaInit, /cardWireRollbackMode/u);
+  assert.match(qaInit, /cardWireRollbackMode == "drain" and config\.cardWireVersion ~= 1/u);
+  assert.match(qaInit, /room\.card_wire_version == 1 and\s+room\.card_wire_negotiated == true/u);
+  assert.match(qaInit, /config\.cardWireVersion = nil/u);
+  assert.match(qaInit, /room\.card_wire_rollback_state = "draining"/u);
+  assert.match(qaInit, /activeRoomProtocol":1,"newRoomAdmission":"legacy","reconnectProtocol":1/u);
+  assert.match(qaInit, /state\.cardWireRollbackMode == "drain" and\n          not state\.cardWireRollbackApplied/u);
+});
+
+test('hidden guanxing variants are explicitly opted into the card-wire ArrangeCards QA path', () => {
+  for (const [id, seed, deputy] of [
+    ['hidden-guanxing', 1567522730, false],
+    ['hidden-guanxing-deputy', 1567522731, true],
+  ]) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.cardWire, true, `${id} must negotiate the isolated card-wire v1 QA path`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke');
+    assert.equal(scenario.seed, seed);
+    assert.equal(scenario.trigger, 'hidden-guanxing');
+    assert.equal(scenario.players.actor.general, deputy ? 'hs__zhaoyun' : 'hs__zhugeliang');
+    assert.equal(scenario.players.actor.deputy, deputy ? 'hs__zhugeliang' : 'hs__zhaoyun');
+  }
+});
+
+test('hidden luoshen variants are explicitly opted into the card-wire AG QA path', () => {
+  for (const [id, seed, deputy] of [
+    ['hidden-luoshen', 1567522712, false],
+    ['hidden-luoshen-deputy', 1567522713, true],
+  ]) {
+    const scenario = nativeCatalog.scenarios.find(({ id: scenarioId }) => scenarioId === id);
+    assert.ok(scenario, `${id} catalog entry is required`);
+    assert.equal(scenario.cardWire, true, `${id} must negotiate the isolated card-wire v1 QA path`);
+    assert.equal(scenario.expectedCommand, 'AskForSkillInvoke');
+    assert.equal(scenario.seed, seed);
+    assert.equal(scenario.trigger, 'hidden-luoshen');
+    assert.equal(scenario.players.actor.general, deputy ? 'hs__simayi' : 'hs__zhenji');
+    assert.equal(scenario.players.actor.deputy, deputy ? 'hs__zhenji' : 'hs__simayi');
+  }
 });
 
 test('ai-trace exposes an explicit multi-seed semantic roster matrix', () => {
@@ -334,7 +421,7 @@ test('native per-request metric delta fails closed on stale, missing and ambiguo
     expect("metric_drift", "none", zero, snapshot(2, 1, { invalid_reply = 1 }))
     print("metric-delta PASS")
   `;
-  assert.match(execFileSync('lua', ['-'], { input: fixture, encoding: 'utf8' }), /metric-delta PASS/u);
+  assert.match(execFileSync(luaExecutable, ['-'], { input: fixture, encoding: 'utf8' }), /metric-delta PASS/u);
 });
 
 test('Prompt4 native private-hand differential preserves exact offers and checks independent tactical feasibility', () => {
@@ -484,7 +571,7 @@ test('hidden-rehide-yiji locks prelight retention across reveal and hideGeneral 
   const hideSource = serverPlayer.slice(hideStart, hideEnd);
   assert.match(hideSource, /handleAddLoseSkills\(self, "-" \.\. sname/u);
   assert.match(hideSource, /self:addFakeSkill\(s\)/u);
-  assert.match(serverPlayer, /if table\.contains\(self\.prelighted_skills, skill\) then[\s\S]*doNotify\("PrelightSkill", \{ skill\.name, true \}\)/u);
+  assert.match(serverPlayer, /if table\.contains\(self\.prelighted_skills, skill\) then[\s\S]*(?:self:doNotify|self:notifyConcealedSkillOwner)\("PrelightSkill", \{ skill\.name, true \}\)/u);
   assert.match(qaInit, /scenario\.trigger == "hidden-rehide-yiji"[\s\S]*validateHiddenRehideYijiScenario/u);
   assert.match(qaInit, /local hiddenStartTriggers = \{[\s\S]*\["hidden-yiji"\] = true[\s\S]*\["hidden-rehide-yiji"\] = true[\s\S]*\}/u);
   assert.match(qaInit, /if hiddenStartTriggers\[scenario\.trigger\] then[\s\S]*state\.actor:hideGeneral\(false\)[\s\S]*state\.actor:hideGeneral\(true\)/u);
@@ -968,7 +1055,7 @@ test('hidden-xiaoji locks equipment-loss AfterCardsMove draw for both slots', ()
 
 test('Tử Gián only triggers after the owner loses hand cards and becomes empty-handed', () => {
   const probe = path.join(here, 'sijian-trigger-probe.lua');
-  assert.match(execFileSync('lua', [probe, sijianSkillPath, 'empty'], { encoding: 'utf8' }),
+  assert.match(execFileSync(luaExecutable, [probe, sijianSkillPath, 'empty'], { encoding: 'utf8' }),
     /PASS sijian source-level empty: 8 cases/u);
 
   const sijian = fs.readFileSync(sijianSkillPath, 'utf8');
@@ -1891,7 +1978,7 @@ test('server prelight projection is idempotent, ownership-safe and stale-cleanup
   assert.ok(addFakeSourceStart >= 0 && addFakeSourceEnd > addFakeSourceStart,
     'ServerPlayer:addFakeSkill source not found');
   const addFakeSource = source.slice(addFakeSourceStart, addFakeSourceEnd);
-  assert.match(addFakeSource, /self:doNotify\("PrelightSkill", \{ skill\.name, true \}\)/u);
+  assert.match(addFakeSource, /(?:self:doNotify|self:notifyConcealedSkillOwner)\("PrelightSkill", \{ skill\.name, true \}\)/u);
 
   // Execute the exact function body with the smallest native-like fixture.
   // This catches the real failure mode: duplicate true requests followed by
@@ -1939,7 +2026,7 @@ test('server prelight projection is idempotent, ownership-safe and stale-cleanup
     assert(notifications == 3)
     print('server prelight idempotency fixture PASS')
   `;
-  assert.match(execFileSync('lua', ['-'], { input: fixture, encoding: 'utf8' }), /fixture PASS/u);
+  assert.match(execFileSync(luaExecutable, ['-'], { input: fixture, encoding: 'utf8' }), /fixture PASS/u);
 
   const fakeFixture = `
     function table.contains(items, value)
@@ -1968,7 +2055,7 @@ test('server prelight projection is idempotent, ownership-safe and stale-cleanup
     assert(events[2][2][1] == 'hs__yiji' and events[2][2][2] == true)
     print('server fake-skill retained prelight fixture PASS')
   `;
-  assert.match(execFileSync('lua', ['-'], { input: fakeFixture, encoding: 'utf8' }), /fixture PASS/u);
+  assert.match(execFileSync(luaExecutable, ['-'], { input: fakeFixture, encoding: 'utf8' }), /fixture PASS/u);
 
   const roomSource = fs.readFileSync(roomPath, 'utf8');
   const roomStart = roomSource.indexOf('function Room:handlePrelight(id, data)');
@@ -2022,7 +2109,7 @@ test('server prelight projection is idempotent, ownership-safe and stale-cleanup
     assert(calls == 2, 'unknown and malformed prelight payloads must be ignored')
     print('room prelight ownership fixture PASS')
   `;
-  assert.match(execFileSync('lua', ['-'], { input: handlerFixture, encoding: 'utf8' }), /fixture PASS/u);
+  assert.match(execFileSync(luaExecutable, ['-'], { input: handlerFixture, encoding: 'utf8' }), /fixture PASS/u);
 });
 
 test('native package install and verification keep prelight hardening in the deployed runtime', () => {
@@ -2036,10 +2123,15 @@ test('native package install and verification keep prelight hardening in the dep
   assert.match(installer, /CORE_ROOM=.*freekill-core\/ltk\/server\/room\.lua/u);
   assert.match(installer, /Native Room fake-skill ownership hardening did not apply/u);
   assert.match(installer, /Native Room stale-prelight cleanup hardening did not apply/u);
+  assert.match(installer, /TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH/u);
+  assert.match(installer, /Native runtime source overlay does not match the pinned upstream checkout/u);
+  assert.match(installer, /Native source overlay: \$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT QML files/u);
   assert.match(verifier, /ServerPlayer prelight projection: idempotent source hardening verified/u);
   assert.match(verifier, /ServerPlayer prelight function still contains duplicate-unsafe append/u);
   assert.match(verifier, /ServerPlayer fake-skill reattach: retained prelight state verified/u);
   assert.match(verifier, /Room prelight ownership: fake-skill and stale-cleanup checks verified/u);
+  assert.match(verifier, /Native runtime source overlay marker is missing/u);
+  assert.match(verifier, /Native source overlay: \$source_overlay_file_count QML files/u);
 });
 
 test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () => {
@@ -2047,6 +2139,8 @@ test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () 
   const luaRuntime = fs.readFileSync(nativeLuaRuntimePath, 'utf8');
   const amd64Bootstrap = fs.readFileSync(nativeAmd64BootstrapPath, 'utf8');
   const verifier = fs.readFileSync(nativeInstallVerifierPath, 'utf8');
+  const browserRunner = fs.readFileSync(path.resolve(here, '../../../game/web/scripts/multiplayer-e2e/run.ts'), 'utf8');
+  const nativeDeckAuditor = fs.readFileSync(path.resolve(here, 'card-wire-native-deck-audit.lua'), 'utf8');
   assert.match(launcher, /source "\$SCRIPT_DIR\/lua-runtime\.sh"/u);
   assert.match(launcher, /lua54_prepare "\$RUNTIME_DIR"/u);
   assert.match(luaRuntime, /lua5\.4/u);
@@ -2058,6 +2152,37 @@ test('native launcher fails closed on Lua 5.5 and prepares Lua 5.4 modules', () 
   assert.match(luaRuntime, /require\("lfs"\)/u);
   assert.match(amd64Bootstrap, /lua5\.4 lua-socket lua-filesystem/u);
   assert.match(verifier, /lua54_prepare "\$RUNTIME_DIR"/u);
+  assert.match(browserRunner, /const luaExecutable = process\.env\.TQS_LUA_BIN \?\? 'lua5\.4'/u);
+  assert.match(browserRunner, /spawnSync\(luaExecutable, \['-e', 'assert\(_VERSION == "Lua 5\.4"\)'\]/u,
+    'native privacy audit must preflight an executable Lua 5.4 runtime');
+  assert.match(browserRunner, /assert\.equal\(luaPreflight\.status, 0/u,
+    'native privacy audit must fail closed when lua5.4 is missing or wrong');
+  assert.doesNotMatch(browserRunner, /spawnSync\('lua'/u,
+    'native privacy audit must not execute the host default Lua binary');
+  assert.match(browserRunner, /TQS_LIVE_QA_CLEANUP_TIMEOUT_MS \?\? '120000'/u,
+    'bounded native GameOver cleanup must default to the full 120-second window');
+  assert.match(nativeDeckAuditor, /TQS_PRIVACY_AUDIT_SALT/u,
+    'native raw-wire audit must use an ephemeral salt for hidden-reference comparison');
+  assert.match(nativeDeckAuditor, /hiddenFingerprints/u,
+    'native raw-wire audit must expose only bounded hidden-reference fingerprints');
+  assert.match(browserRunner, /parsePrivacyAudit\(audit\.stdout\)/u,
+    'browser runner must consume the semantic hidden-reference audit result');
+  assert.match(browserRunner, /native-hidden-reference-audience-collision/u,
+    'browser runner must fail closed on cross-audience hidden-reference reuse');
+});
+
+test('native supplemental audit follows the upstream Player semantic-tag contract', () => {
+  const auditor = fs.readFileSync(path.resolve(here, 'card-wire-native-supplemental-audit.lua'), 'utf8');
+  const playerSource = fs.readFileSync(playerPath, 'utf8');
+  assert.match(playerSource, /local CBOR_TAG_PLAYER = 33001/u);
+  assert.match(playerSource, /cbor\.tagged\(CBOR_TAG_PLAYER, self\.id\)/u);
+  assert.match(auditor, /local CBOR_TAG_PLAYER = 33001/u);
+  assert.match(auditor, /fields\(value, \{ tag = true, value = true \}\)/u);
+  assert.match(auditor, /assert\(value\.tag == CBOR_TAG_PLAYER\)/u);
+  assert.match(auditor, /playerReference\(item\[i\]\)/u);
+  assert.match(auditor, /mark == "ld__yigui_extra_data"/u);
+  assert.match(auditor, /local function yiguiExtraData\(value\)/u);
+  assert.doesNotMatch(auditor, /fields\(item\[i\], \{ id = true, player = true, serverplayer = true, class = true \}\)/u);
 });
 
 test('native launcher preserves the native MD5 and makes QA overlay optional', () => {
@@ -2067,6 +2192,12 @@ test('native launcher preserves the native MD5 and makes QA overlay optional', (
   assert.match(launcher, /exec "\$RUNTIME_DIR\/freekill-asio" --port "\$FREEKILL_PORT"/u);
   assert.match(launcher, /if \[\[ -f "\$RUNTIME_DIR\/qa_packages\/tqs_qa\/init\.lua" \]\]; then/u);
   assert.match(launcher, /unexpected QA path in production runtime/u);
+  assert.match(launcher, /command -v lsof/u,
+    'macOS QA startup must have a listener probe when procfs is unavailable');
+  assert.match(launcher, /mv -f -- "\$ready_link" "\$QA_LINK"/u,
+    'QA symlink promotion must work with BSD mv on macOS');
+  assert.doesNotMatch(launcher, /mv -Tf/u,
+    'QA symlink promotion must not require GNU-only mv -T');
   assert.match(freekill, /dofile "qa_packages\/tqs_qa\/init\.lua"/u);
   assert.doesNotMatch(freekill, /dofile "packages\/tqs_qa\/init\.lua"/u);
 });
@@ -2131,7 +2262,7 @@ function loadNativeCatalog(catalog) {
         'GamePrepared must read the native _splayer name and enforce the allowlist')
       print('native catalog startup fixture PASS')
     `);
-    return execFileSync('lua', [path.join(root, 'load.lua'), path.join(packageDir, 'init.lua')],
+    return execFileSync(luaExecutable, [path.join(root, 'load.lua'), path.join(packageDir, 'init.lua')],
       { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

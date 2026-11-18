@@ -1,4 +1,4 @@
-import { PRIVACY_CATEGORIES } from './native-privacy';
+import { PRIVACY_CATEGORIES, SUPPLEMENTAL_CHANNELS } from './native-privacy';
 
 /** The two-client runner retains raw UI state in memory for assertions.
  * Evidence exported to disk must be limited to known public QA markers and
@@ -115,7 +115,18 @@ function safePairMarker(log: string): boolean {
 const SAFE_EVIDENCE_KEYS = new Set(`
   armorReply arrange askForChoices askForResponseCard askForUseActiveSkill askForUseCard at
   boardPlayers botAudit botNames botSkillLogs callbacksActive callbacksPeak callbacksTotal
-  bundleHash cancelReply candidateId candidateIdentity card cardChosen cardReply cardUsing catalogSha256
+  bundleHash cancelReply candidateId candidateIdentity card cardChosen cardReply cardUsing cardWireObserverMode
+  cardWireObserverRejected cardWireObserverObservePackets cardWireObserverLeaveRequested
+  cardWireObserverLeaveObserved cardWireObserverLeaveNativeDisconnect
+  cardWireReplayRequested cardWireReplayInjected cardWireReplaySent cardWireReplayRejectObserved cardWireReplayRejectCount
+  cardWireRollbackDrainRequested cardWireRollbackDrainObserved
+  cardWirePlayerMode cardWirePlayerRejected
+  cardWirePlayerCapabilityDrops cardWirePlayerErrorPackets cardWirePlayerIndex
+  cardWirePlayerNegotiatedPackets catalogSha256
+  cardWireEntropyFailure cardWireEntropyFailureObserved cardWireEntropyFailureKind
+  cardWireEntropyNegotiatedPackets cardWireEntropyCardBearingPackets
+  cardWireEntropyBatchAborts cardWireEntropyBatchCommits
+  cardWireEntropyLastAbortActiveReferences cardWireEntropyLastAbortActiveRequests
   choice choiceReply choose command controlFactionUseReply controlUseReply damage damageExchange
   damagedUseReply deadFactionUseReply decisionSummary decisions deploymentUrl deputy direction
   discard discardAuto distIndexSha256 elapsedMs errorContexts errors feedback gameOver gate
@@ -131,10 +142,10 @@ const SAFE_EVIDENCE_KEYS = new Set(`
   hiddenJianxiongInvoked hiddenJianzhiDamageReply hiddenJianzhiGateReply hiddenJianzhiInvoked
   hiddenJilix hiddenJilixCardReply hiddenJilixGateReply hiddenJizhi hiddenJizhiCardReply
   hiddenJizhiGateReply hiddenJizhiInvoked hiddenKongcheng hiddenKongchengCardReply
-  hiddenKongchengGateReply hiddenLuoshen hiddenLuoshenGateReply hiddenLuoshenInvokeCount
+  hiddenKongchengGateReply hiddenLuoshen hiddenLuoshenAgReply hiddenLuoshenGateReply hiddenLuoshenInvokeCount
   hiddenLuoshenInvoked hiddenMingshi hiddenMingshiCardReply hiddenMingshiGateReply hiddenQianxun
   hiddenQianxunCardReply hiddenQianxunGateReply hiddenReveal hiddenRevealGateReply
-  hiddenRevealReply hiddenTiandu hiddenTianduGateReply hiddenTianxiang hiddenTianxiangCardReply
+  hiddenRevealReply hiddenDuoshiInvoked hiddenTiandu hiddenTianduGateReply hiddenTianxiang hiddenTianxiangCardReply
   hiddenTianxiangChoiceReply hiddenTianxiangGateReply hiddenTianxiangInvoked hiddenWeimu
   hiddenWeimuCardReply hiddenWeimuGateReply hiddenXiaoji hiddenXiaojiCardReply
   hiddenXiaojiGateReply hiddenYiji hiddenYijiAsked hiddenYijiInvoked hiddenYijiMode hiddenYijiReply
@@ -159,7 +170,10 @@ const SAFE_EVIDENCE_KEYS = new Set(`
   scenarioYijiInvoked scenarioYijiReply targetReply scope seatCapacity seatSwap seed skillEffect skillLogs
   slashReply smartAiSha256 sourceRevision status trace traces turn type useReply variant viewAs
   wasmBytes weaponReply winnerCount winnerKingdoms winnerSeats winningKingdoms
-  remoteGatewayManifest remoteIndexSha256 packages nativeDeckPrivacy
+  remoteGatewayManifest remoteIndexSha256 packages nativeDeckPrivacy nativeWireCapture nativeSupplementalCapture
+  nativePacketSizeCapture
+  nativeSemanticCapture
+  nativeProcessMetrics
 `.trim().split(/\s+/u).concat(['memoryStacks']));
 const SAFE_HEX = /^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64})$/u;
 const SAFE_SCENARIO = /^(?:draw-sequence|card-chosen|cards-and-choice|poxi|rescue-normal|rescue-battle|delta|hidden|cp|pair|gateway|reconnect|damage|native|bot|founding)[-a-z0-9]{0,80}$/u;
@@ -167,6 +181,8 @@ const SAFE_STRING_VALUES = new Set(['PASS', 'FAIL', 'incoming', 'outgoing', 'win
   'manual', 'main', 'deputy', 'normal', 'abort', 'allowed', 'blocked']);
 const STRING_FIELDS = new Set(['direction', 'command', 'lastIncoming', 'result', 'outcome',
   'scenario', 'mode', 'hiddenYijiMode', 'candidateId', 'nativeQaGateCommand', 'at',
+  'cardWireObserverMode', 'cardWirePlayerMode',
+  'cardWireEntropyFailureKind',
   'runtimeMD5', 'sourceRevision', 'packageSha256', 'sha256', 'hash',
   'distIndexSha256', 'catalogSha256', 'upstreamSha', 'commitSha',
   'smartAiSha256', 'roomLuaSha256', 'qaSmartAiOverlaySha256', 'manifestSha256',
@@ -185,10 +201,82 @@ const sanitizeString = (key: string, value: string): string | null => {
   if ((key === 'command' || key === 'lastIncoming' || key === 'nativeQaGateCommand')
     && SAFE_COMMAND.test(value)) return value;
   if (key === 'scenario' && SAFE_SCENARIO.test(value)) return value;
+  if (key === 'cardWireObserverMode' &&
+      /^(?:valid|missing|wrong-version|wrong-protocol|wrong-mode)$/u.test(value)) return value;
+  if (key === 'cardWirePlayerMode' && /^(?:valid|missing)$/u.test(value)) return value;
+  if (key === 'cardWireEntropyFailureKind' && /^(?:open|short-read|close)$/u.test(value)) return value;
   return null;
 };
 const count = (value: unknown): number | null =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+const boundedMetric = (value: unknown, maximum = 64 * 1024 * 1024): number | null => {
+  const result = count(value);
+  return result !== null && result <= maximum ? result : null;
+};
+function sanitizePacketBytes(value: unknown): Record<string, number | null> {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown> : {};
+  return {
+    total: boundedMetric(source.total),
+    min: boundedMetric(source.min, 4 * 1024 * 1024),
+    max: boundedMetric(source.max, 4 * 1024 * 1024),
+    le256: boundedMetric(source.le256, 100_000),
+    le1024: boundedMetric(source.le1024, 100_000),
+    le4096: boundedMetric(source.le4096, 100_000),
+    gt4096: boundedMetric(source.gt4096, 100_000),
+  };
+}
+function boundedDuration(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 86_400) {
+    return null;
+  }
+  return Math.round(value * 1000) / 1000;
+}
+function sanitizeNativeProcessMetrics(value: unknown): Record<string, number | string | null> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  return {
+    schemaVersion: source.schemaVersion === 1 ? 1 : null,
+    sampleCount: boundedMetric(source.sampleCount, 1_000_000),
+    firstRssKb: boundedMetric(source.firstRssKb, 4 * 1024 * 1024),
+    minRssKb: boundedMetric(source.minRssKb, 4 * 1024 * 1024),
+    maxRssKb: boundedMetric(source.maxRssKb, 4 * 1024 * 1024),
+    lastRssKb: boundedMetric(source.lastRssKb, 4 * 1024 * 1024),
+    maxCpuSeconds: boundedDuration(source.maxCpuSeconds),
+    elapsedSeconds: boundedDuration(source.elapsedSeconds),
+    sampling: source.sampling === 'ps-rss-cputime' ? 'ps-rss-cputime' : null,
+  };
+}
+function sanitizeNativeSemanticCapture(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  const bounded = (key: string, maximum = 1_000_000) => boundedMetric(source[key], maximum);
+  const counters = (key: 'audiences' | 'channels' | 'scopes', names: readonly string[]) => {
+    const item = source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])
+      ? source[key] as Record<string, unknown> : {};
+    return Object.fromEntries(names.map((name) => [name, boundedMetric(item[name], 1_000_000)]));
+  };
+  return {
+    schemaVersion: source.schemaVersion === 1 ? 1 : null,
+    requested: source.requested === true,
+    records: bounded('records'),
+    semanticPassRecords: bounded('semanticPassRecords'),
+    semanticFailures: bounded('semanticFailures'),
+    outerDecodedRecords: bounded('outerDecodedRecords'),
+    innerDecodedRecords: bounded('innerDecodedRecords'),
+    inboundRecords: bounded('inboundRecords'),
+    outboundRecords: bounded('outboundRecords'),
+    opaqueReferences: bounded('opaqueReferences'),
+    numericReferences: bounded('numericReferences'),
+    invalidReferences: bounded('invalidReferences'),
+    forbiddenFields: bounded('forbiddenFields'),
+    nestedDecoded: bounded('nestedDecoded'),
+    maxDepth: bounded('maxDepth', 64),
+    audiences: counters('audiences', ['owner', 'opponent', 'observer', 'unknown']),
+    channels: counters('channels', ['metadata', 'public', 'request', 'deck', 'negotiation', 'reply']),
+    scopes: counters('scopes', ['outbound', 'inbound-reply', 'inbound-notify', 'inbound-request']),
+  };
+}
 
 function sanitizeObservations(value: unknown): unknown[] {
   if (!Array.isArray(value)) return [];
@@ -280,6 +368,79 @@ export function sanitizeQaEvidence<T>(value: T): T {
               [category, count(entry.categoryCounts?.[category])])),
           };
         }) : null;
+      } else if (key === 'nativeWireCapture') {
+        const commands = ['PrepareDrawPile', 'ShuffleDrawPile', 'SyncDrawPile',
+          'ChangeCardArea', 'Reconnect', 'Observe', 'MoveCards', 'SetPlayerPile'];
+        safe[key] = Array.isArray(item) ? item.slice(0, 3).map((raw) => {
+          const entry = raw && typeof raw === 'object' ? raw : {};
+          return {
+            beforePacketDecode: entry.beforePacketDecode === true,
+            frames: count(entry.frames), packets: count(entry.packets),
+            failures: count(entry.failures),
+            packetBytes: sanitizePacketBytes(entry.packetBytes),
+            hiddenReferenceAudited: entry.hiddenReferenceAudited === true,
+            hiddenReferenceCollisions: count(entry.hiddenReferenceCollisions),
+            commands: Object.fromEntries(commands.map((command) =>
+              [command, count(entry.commands?.[command])])),
+            categoryCounts: Object.fromEntries(PRIVACY_CATEGORIES.map((category) =>
+              [category, count(entry.categoryCounts?.[category])])),
+          };
+        }) : null;
+      } else if (key === 'nativeSupplementalCapture') {
+        const commands = ['CardWireNegotiated', 'PropertyUpdate', 'SetPlayerMark',
+          'SetCardMark', 'SetCardFootnote', 'SetCardVirtName', 'FilterCard', 'FillAG',
+          'TakeAG', 'SetPlayerHandCards', 'AddVirtualEquip', 'RemoveVirtualEquip',
+          'ShowVirtualCard', 'GameLog', 'ShowCard', 'GameOver',
+          'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
+          'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
+          'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
+          'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+          'EmptyRequest'];
+        const replies = commands.filter((command) => command.startsWith('AskFor') ||
+          command === 'PlayCard' || command === 'CustomDialog' || command === 'EmptyRequest');
+        safe[key] = Array.isArray(item) ? item.slice(0, 3).map((raw) => {
+          const entry = raw && typeof raw === 'object' ? raw : {};
+          return {
+            beforePacketDecode: entry.beforePacketDecode === true,
+            frames: count(entry.frames), packets: count(entry.packets),
+            incomingPackets: count(entry.incomingPackets), replyPackets: count(entry.replyPackets),
+            failures: count(entry.failures),
+            packetBytes: sanitizePacketBytes(entry.packetBytes),
+            commands: Object.fromEntries(commands.map((command) =>
+              [command, count(entry.commands?.[command])])),
+            replies: Object.fromEntries(replies.map((command) =>
+              [command, count(entry.replies?.[command])])),
+            channels: Object.fromEntries(SUPPLEMENTAL_CHANNELS.map((channel) =>
+              [channel, count(entry.channels?.[channel])])),
+          };
+        }) : null;
+      } else if (key === 'nativePacketSizeCapture') {
+        safe[key] = Array.isArray(item) ? item.slice(0, 3).map((raw) => {
+          const entry = raw && typeof raw === 'object' ? raw : {};
+          return {
+            beforePacketDecode: entry.beforePacketDecode === true,
+            frames: count(entry.frames), packets: count(entry.packets),
+            incomingPackets: count(entry.incomingPackets),
+            outgoingPackets: count(entry.outgoingPackets),
+            failures: count(entry.failures),
+            packetBytes: sanitizePacketBytes(entry.packetBytes),
+          };
+        }) : null;
+      } else if (key === 'nativeProcessMetrics') {
+        safe[key] = sanitizeNativeProcessMetrics(item);
+      } else if (key === 'nativeSemanticCapture') {
+        safe[key] = sanitizeNativeSemanticCapture(item);
+      } else if (key === 'cardWirePlayerIndex') {
+        safe[key] = boundedMetric(item, 1);
+      } else if (key === 'cardWirePlayerCapabilityDrops' || key === 'cardWirePlayerErrorPackets' ||
+        key === 'cardWirePlayerNegotiatedPackets') {
+        safe[key] = boundedMetric(item, 100);
+      } else if (key === 'cardWireEntropyNegotiatedPackets' || key === 'cardWireEntropyCardBearingPackets' ||
+        key === 'cardWireEntropyBatchAborts' || key === 'cardWireEntropyBatchCommits' ||
+        key === 'cardWireEntropyLastAbortActiveReferences' || key === 'cardWireEntropyLastAbortActiveRequests') {
+        safe[key] = boundedMetric(item, 1000000);
+      } else if (key === 'cardWireReplayRejectCount') {
+        safe[key] = boundedMetric(item, 100);
       } else if (key === 'luaTelemetry') {
         safe[key] = Array.isArray(item) ? item.map(sanitizeTelemetry) : null;
       } else if (key === 'card') {

@@ -56,11 +56,20 @@ try {
       disabledPack = {}, disabledGenerals = {}, _game = {}, _mode = {}}
   }))`);
   runtime.receive('EnterRoom', enterRoomHex, false);
+  const startGameHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode({}))`);
+  runtime.receive('StartGame', startGameHex, false);
   const addPlayerHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode({
     2, 'opponent', 'avatar', false, 0
   }))`);
   runtime.receive('AddPlayer', addPlayerHex, false);
-
+  const arrangeSeatsHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode({17, 2}))`);
+  runtime.receive('ArrangeSeats', arrangeSeatsHex, false);
+  const capabilityPacket = sentPackets.find((packet) =>
+    packet.kind === 'notify' && packet.command === 'PushRequest');
+  assert(capabilityPacket, 'candidate client did not advertise card-wire capability');
+  assert.equal(runtime.eval<string>(
+    `return cbor.decode(__host_hex2bin('${capabilityPacket.hex}'))`,
+  ), 'card_wire_capability,1,TQS_HEG_CARD_WIRE,new_heg_mode');
   const envelopeHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode({
     protocol = 'TQS_HEG_CARD_WIRE', cardWireVersion = 1, mode = 'new_heg_mode'
   }))`);
@@ -81,6 +90,30 @@ try {
   });
   assert.equal(uiEvents.some((event) => event.command === 'CardWireNegotiated'), false,
     'negotiation must not reach the browser UI callback');
+
+  // A negotiated session may not silently switch protocol when a malformed,
+  // unsupported or differently-modeled envelope arrives later.  Exercise the
+  // real ClientCallback boundary with each negative variant and verify that
+  // the already-negotiated session remains v1 after every rejection.
+  const rejectedNegotiation = (expression: string, expected: RegExp) => {
+    const packetHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode(${expression}))`);
+    assert.throws(() => runtime.receive('CardWireNegotiated', packetHex, false), expected);
+    assert.deepEqual(runtime.eval(`return {
+      version = ClientInstance.card_wire_version,
+      protocol = ClientInstance.card_wire_protocol,
+      negotiated = ClientInstance.card_wire_negotiated,
+    }`), {
+      version: 1,
+      protocol: 'TQS_HEG_CARD_WIRE',
+      negotiated: true,
+    });
+  };
+  rejectedNegotiation("{ protocol = 'TQS_HEG_CARD_WIRE', cardWireVersion = 2, mode = 'new_heg_mode' }",
+    /unsupported card wire negotiation version/u);
+  rejectedNegotiation("{ protocol = 'OTHER_CARD_WIRE', cardWireVersion = 1, mode = 'new_heg_mode' }",
+    /unsupported card wire negotiation protocol/u);
+  rejectedNegotiation("{ protocol = 'TQS_HEG_CARD_WIRE', cardWireVersion = 1, mode = 'classic_mode' }",
+    /restricted to Hegemony/u);
 
   const malformedHex = runtime.eval<string>(`return __host_bin2hex(cbor.encode({
     protocol = 'TQS_HEG_CARD_WIRE', cardWireVersion = 1,
@@ -390,14 +423,17 @@ try {
     'ordinary room entry must not carry the previous room snapshot capability');
 
   console.log(
-    'PASS browser Lua card-wire candidate: Wasmoon boot, negotiation/UI isolation, malformed/request fail-closed, count-only deck replacement, MoveCards, ChangeCardArea, request/reply, Reconnect/Observe snapshots, public card descriptors and cold snapshot constructor preservation; 13 cases; native C++/browser network/two-account NOT RUN',
+    'PASS browser Lua card-wire candidate: Wasmoon boot, negotiation/UI isolation, wrong protocol/version/mode plus malformed/request fail-closed, count-only deck replacement, MoveCards, ChangeCardArea, request/reply, Reconnect/Observe snapshots, public card descriptors and cold snapshot constructor preservation; 16 cases; native C++/browser network/two-account NOT RUN',
   );
 } finally {
   runtime.close();
 }
 
-assert.equal(luaErrors.length, 3,
+assert.equal(luaErrors.length, 6,
   'only the intentionally rejected packets may reach the Lua error log');
+assert.ok(luaErrors.some((message) => message.includes('unsupported card wire negotiation version')));
+assert.ok(luaErrors.some((message) => message.includes('unsupported card wire negotiation protocol')));
+assert.ok(luaErrors.some((message) => message.includes('restricted to Hegemony')));
 assert.ok(luaErrors.some((message) => message.includes('unaudited field')));
 assert.ok(luaErrors.some((message) => message.includes('must be a notification')));
 assert.ok(luaErrors.some((message) => message.includes('expired or unrecognized local card identity')));

@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "status": "OBSERVED_COMPARISON_PASS",
+  "scope": "isolated native macOS QA packet-size capture: legacy-only draw/reconnect followed by negotiated v1 draw/reconnect on the same candidate runtime and frozen web bundle",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "identity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "manifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "binarySha256": "2e4e5850f6ab8897845becc3194bbf7955148ca7d67a9280f5b9fcefc8a2bc29"
+  },
+  "method": {
+    "evidenceField": "nativePacketSizeCapture",
+    "captureBoundary": "browser WebSocket outer-CBOR packet boundary before normal PacketStream data decoding",
+    "retained": "bounded frame/packet direction counters and packet-size buckets only",
+    "discarded": [
+      "raw packet bytes",
+      "decoded card payloads",
+      "physical card IDs",
+      "opaque references",
+      "account names and credentials",
+      "request/reply payloads"
+    ],
+    "luaRuntime": "Lua 5.4 executable named lua5.4",
+    "nativeRuntime": "isolated macOS arm64 candidate on QA port 19681; listener closed after each run"
+  },
+  "legacyRun": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794845873911.json",
+    "artifactSha256": "7a9f9b48254eff43055aa38c22fafdea92ce712947c824b3acbd9c23a42d7d15",
+    "result": "PASS",
+    "recovered": true,
+    "errors": [],
+    "cardWireVersion": 0,
+    "cardWireNegotiatedPackets": 0,
+    "qaPackageInstalledForRunnerProvenance": true,
+    "audiences": [
+      {
+        "audience": "player-0",
+        "frames": 1614,
+        "packets": 1629,
+        "incomingPackets": 1610,
+        "outgoingPackets": 19,
+        "packetBytes": {
+          "total": 83712,
+          "min": 13,
+          "max": 3880,
+          "le256": 1606,
+          "le1024": 22,
+          "le4096": 1,
+          "gt4096": 0
+        },
+        "failures": 0
+      },
+      {
+        "audience": "player-1",
+        "frames": 1589,
+        "packets": 1603,
+        "incomingPackets": 1591,
+        "outgoingPackets": 12,
+        "packetBytes": {
+          "total": 77197,
+          "min": 13,
+          "max": 671,
+          "le256": 1585,
+          "le1024": 18,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "failures": 0
+      }
+    ]
+  },
+  "v1Run": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794846004604.json",
+    "artifactSha256": "a65543ac5577fdfa7560205ad654cc0d10cf32b222f11d5e7bb9d6a645aa29c6",
+    "result": "PASS",
+    "recovered": true,
+    "errors": [],
+    "cardWireVersion": 1,
+    "cardWireNegotiatedPackets": 4,
+    "strictPrivacyCategories": 12,
+    "nativePrivacyFailures": 0,
+    "supplementalFailures": 0,
+    "audiences": [
+      {
+        "audience": "player-0",
+        "frames": 705,
+        "packets": 716,
+        "incomingPackets": 701,
+        "outgoingPackets": 15,
+        "packetBytes": {
+          "total": 40187,
+          "min": 8,
+          "max": 3699,
+          "le256": 701,
+          "le1024": 14,
+          "le4096": 1,
+          "gt4096": 0
+        },
+        "failures": 0
+      },
+      {
+        "audience": "player-1",
+        "frames": 684,
+        "packets": 695,
+        "incomingPackets": 686,
+        "outgoingPackets": 9,
+        "packetBytes": {
+          "total": 32742,
+          "min": 13,
+          "max": 454,
+          "le256": 688,
+          "le1024": 7,
+          "le4096": 0,
+          "gt4096": 0
+        },
+        "failures": 0
+      },
+      {
+        "audience": "observer",
+        "frames": 578,
+        "packets": 583,
+        "incomingPackets": 577,
+        "outgoingPackets": 6,
+        "packetBytes": {
+          "total": 31333,
+          "min": 16,
+          "max": 3286,
+          "le256": 578,
+          "le1024": 4,
+          "le4096": 1,
+          "gt4096": 0
+        },
+        "failures": 0
+      }
+    ]
+  },
+  "playerComparisons": [
+    {
+      "audience": "player-0",
+      "legacyPackets": 1629,
+      "v1Packets": 716,
+      "packetDelta": -913,
+      "packetDeltaPercent": -56.05,
+      "legacyIncomingPackets": 1610,
+      "v1IncomingPackets": 701,
+      "incomingPacketDelta": -909,
+      "legacyOutgoingPackets": 19,
+      "v1OutgoingPackets": 15,
+      "outgoingPacketDelta": -4,
+      "legacyBytes": 83712,
+      "v1Bytes": 40187,
+      "byteDelta": -43525,
+      "byteDeltaPercent": -51.99,
+      "legacyAverageBytesPerPacket": 51.389,
+      "v1AverageBytesPerPacket": 56.127,
+      "averageBytesPerPacketDeltaPercent": 9.22,
+      "maxPacketDelta": -181
+    },
+    {
+      "audience": "player-1",
+      "legacyPackets": 1603,
+      "v1Packets": 695,
+      "packetDelta": -908,
+      "packetDeltaPercent": -56.64,
+      "legacyIncomingPackets": 1591,
+      "v1IncomingPackets": 686,
+      "incomingPacketDelta": -905,
+      "legacyOutgoingPackets": 12,
+      "v1OutgoingPackets": 9,
+      "outgoingPacketDelta": -3,
+      "legacyBytes": 77197,
+      "v1Bytes": 32742,
+      "byteDelta": -44455,
+      "byteDeltaPercent": -57.59,
+      "legacyAverageBytesPerPacket": 48.158,
+      "v1AverageBytesPerPacket": 47.111,
+      "averageBytesPerPacketDeltaPercent": -2.17,
+      "maxPacketDelta": -217
+    }
+  ],
+  "interpretation": {
+    "observed": "On these two bounded QA runs, v1 emitted fewer packets and fewer total outer-CBOR bytes to each player than the legacy run; the separately observed v1 observer also completed with zero capture failures.",
+    "thresholdStatus": "OPEN",
+    "releaseUse": "regression evidence only; no approved packet-size or latency threshold is inferred",
+    "productionPromotion": false
+  },
+  "limitations": [
+    "The legacy comparison is a QA cardWireVersion=0 run with the QA package retained for runner admission/provenance; it is not a production deployment or a production device/network sign-off.",
+    "The two runs use the same scenario seed but are not a deterministic packet-for-packet replay: action timing, selected generals, GameOver duration and event counts can differ.",
+    "This browser boundary capture does not attribute bytes to native C++ mapping memory, and it does not replace the native CBOR timing, process-memory or mapping-lifecycle artifacts.",
+    "No canary, production rollback SLA or separate release approval was performed."
+  ]
+}

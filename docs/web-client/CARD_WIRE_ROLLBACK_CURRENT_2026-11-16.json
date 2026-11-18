@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "same fresh candidate package rollback drill: negotiated v1 run followed by legacy-only run",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "identity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "manifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "v1Run": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794835924635.json",
+    "result": "PASS",
+    "recovered": true,
+    "errors": [],
+    "audiences": 3,
+    "negotiationAndPrivacyCapture": true,
+    "strictPrivacyCategories": 12,
+    "nativeAndSupplementalFailures": 0,
+    "gameOverAudiences": 3
+  },
+  "legacyRun": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794836031790.json",
+    "result": "PASS",
+    "recovered": true,
+    "errors": [],
+    "audiences": 2,
+    "qaOverlayAbsentAtLauncher": true,
+    "cardWireNegotiatedInSanitizedTrace": false,
+    "nativeQaGateSeen": false,
+    "manualPlayCard": true,
+    "controlledReconnect": true,
+    "gameOverAudiences": 2,
+    "nativePrivacyCapture": "not-applicable in legacy-only mode; no v1 overlay was installed"
+  },
+  "sameRuntimeIdentity": true,
+  "rollbackObserved": true,
+  "cleanup": {
+    "listenersClosed": [19681, 9000],
+    "nativeQaProcessesClosed": true
+  },
+  "limitations": [
+    "Candidate-only rollback drill; no production or canary flag change occurred",
+    "This proves legacy gameplay remains playable after disabling the candidate overlay; it does not prove an in-flight v1 room can be downgraded mid-session",
+    "Production/canary rollback SLA and release approval remain OPEN-HOLD"
+  ]
+}

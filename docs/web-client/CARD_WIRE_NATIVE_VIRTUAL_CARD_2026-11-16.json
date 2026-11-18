@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate real native/browser ShowVirtualCard observation for hidden-reveal main/deputy",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "manifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "catalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "runtimeMD5": "a43770fedf82abb5ff082dfbb79e765f",
+    "distIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "catalogChange": {
+    "scenarios": ["hidden-reveal", "hidden-reveal-deputy"],
+    "cardWireOptIn": true,
+    "scope": "candidate QA catalog only"
+  },
+  "runs": [
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-reveal-multiplayer-live-1794825149269.json",
+      "scenario": "hidden-reveal",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "revealedSlot": "main",
+      "hiddenRevealGateReply": true,
+      "hiddenRevealReply": true,
+      "hiddenDuoshiInvoked": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeDeck": {
+        "negotiatedAudiences": 3,
+        "failures": 0,
+        "observerSnapshots": 1,
+        "prepareDrawPile": 2,
+        "moveCards": 10
+      },
+      "nativeSupplemental": {
+        "beforePacketDecodeByAudience": [true, true, true],
+        "packetsByAudience": [90, 76, 22],
+        "framesByAudience": [172, 147, 56],
+        "incomingPacketsByAudience": [85, 75, 22],
+        "replyPacketsByAudience": [5, 1, 0],
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 150,
+          "public": 23,
+          "request": 6,
+          "reply": 6
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 108,
+          "SetPlayerMark": 40,
+          "SetCardMark": 2,
+          "ShowVirtualCard": 3,
+          "GameLog": 17,
+          "AskForUseActiveSkill": 2,
+          "AskForSkillInvoke": 2,
+          "CustomDialog": 2,
+          "GameOver": 3
+        }
+      },
+      "nativeMarkers": [
+        "hidden-reveal duoshi_post use_after=1",
+        "hidden-reveal helper=reveal_skill& slot=main duoshi_virtual=true",
+        "ShowVirtualCard=1 on owner, opponent and observer"
+      ],
+      "processMetrics": {
+        "sampleCount": 71,
+        "firstRssKb": 14736,
+        "minRssKb": 9008,
+        "maxRssKb": 15120,
+        "lastRssKb": 11408,
+        "maxCpuSeconds": 0.26,
+        "elapsedSeconds": 18.61,
+        "sampling": "ps-rss-cputime"
+      }
+    },
+    {
+      "runEvidence": "scratch/evidence/cp08-hidden-reveal-deputy-multiplayer-live-1794825229090.json",
+      "scenario": "hidden-reveal-deputy",
+      "result": "PASS",
+      "errors": [],
+      "audiences": 3,
+      "revealedSlot": "deputy",
+      "hiddenRevealGateReply": true,
+      "hiddenRevealReply": true,
+      "hiddenDuoshiInvoked": true,
+      "gameOverCountsByAudience": [1, 1, 1],
+      "nativeDeck": {
+        "negotiatedAudiences": 3,
+        "failures": 0,
+        "observerSnapshots": 1,
+        "prepareDrawPile": 2,
+        "moveCards": 10
+      },
+      "nativeSupplemental": {
+        "beforePacketDecodeByAudience": [true, true, true],
+        "packetsByAudience": [89, 75, 21],
+        "framesByAudience": [166, 144, 55],
+        "incomingPacketsByAudience": [84, 74, 21],
+        "replyPacketsByAudience": [5, 1, 0],
+        "failures": 0,
+        "channels": {
+          "negotiation": 3,
+          "metadata": 147,
+          "public": 23,
+          "request": 6,
+          "reply": 6
+        },
+        "commandsObserved": {
+          "CardWireNegotiated": 3,
+          "PropertyUpdate": 108,
+          "SetPlayerMark": 37,
+          "SetCardMark": 2,
+          "ShowVirtualCard": 3,
+          "GameLog": 17,
+          "AskForUseActiveSkill": 2,
+          "AskForSkillInvoke": 2,
+          "CustomDialog": 2,
+          "GameOver": 3
+        }
+      },
+      "nativeMarkers": [
+        "hidden-reveal duoshi_post use_after=1",
+        "hidden-reveal helper=reveal_skill& slot=deputy duoshi_virtual=true",
+        "ShowVirtualCard=1 on owner, opponent and observer"
+      ],
+      "processMetrics": {
+        "sampleCount": 74,
+        "firstRssKb": 14064,
+        "minRssKb": 11776,
+        "maxRssKb": 15120,
+        "lastRssKb": 11904,
+        "maxCpuSeconds": 0.22,
+        "elapsedSeconds": 19.365,
+        "sampling": "ps-rss-cputime"
+      }
+    }
+  ],
+  "aggregate": {
+    "runs": 2,
+    "allRunsPass": true,
+    "audiencesPerRun": 3,
+    "mainAndDeputySlotsObserved": true,
+    "nativeSupplementalFrames": 740,
+    "nativeSupplementalPackets": 373,
+    "nativeSupplementalIncomingPackets": 361,
+    "nativeSupplementalReplyPackets": 12,
+    "nativeSupplementalFailures": 0,
+    "channels": {
+      "negotiation": 6,
+      "metadata": 297,
+      "public": 46,
+      "request": 12,
+      "reply": 12
+    },
+    "commandsObserved": {
+      "CardWireNegotiated": 6,
+      "PropertyUpdate": 216,
+      "SetPlayerMark": 77,
+      "SetCardMark": 4,
+      "ShowVirtualCard": 6,
+      "GameLog": 34,
+      "AskForUseActiveSkill": 4,
+      "AskForSkillInvoke": 4,
+      "CustomDialog": 4,
+      "GameOver": 6
+    },
+    "showVirtualCardObservedOnEveryAudience": true,
+    "processesClosedAfterEachRun": true,
+    "listenersClosedAfterEachRun": ["19681", "9000"]
+  },
+  "limitations": [
+    "This is bounded candidate coverage for the real Lục Tốn Duoshi zero-subcard virtual-card path in main and deputy slots; it does not close the full v1 privacy or release matrix.",
+    "The supplemental native auditor observed ShowVirtualCard before browser PacketStream decoding; strict twelve-group raw-wire privacy remains covered by the separate draw-sequence mapping aggregate.",
+    "Neither run exercises reconnect; draw-sequence remains the current reconnect evidence.",
+    "Approved performance/memory thresholds, browser-network/device verification, production/canary rollback and release approval remain open."
+  ],
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "productionMutation": false
+  },
+  "result": "PASS-current-candidate-ShowVirtualCard-main-and-deputy; release-gates-remain-OPEN"
+}

@@ -15,11 +15,11 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
+import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot } from './upstream-packages';
 import { LuaRuntime } from '../src/engine/luaRuntime';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const UPSTREAM_ROOT = path.join(REPO_ROOT, 'scratch/upstream');
+const UPSTREAM_ROOT = resolveUpstreamRoot(path.join(REPO_ROOT, 'scratch/upstream'));
 
 type SourcePair = { skill: string; event: string; delay?: boolean };
 type LuaReport = { activeGenerals: number; rows: SourcePair[] };
@@ -54,7 +54,7 @@ const NATIVE_LOCAL_EFFECT_EVIDENCE: readonly EvidenceMap[] = [
   { scenario: 'hidden-dufu (+ deputy)', skill: 'heg__dufu', events: ['fk.DamageCaused'] },
   { scenario: 'hidden-jianzhi (+ deputy)', skill: 'heg__jianzhi', events: ['fk.DamageCaused'] },
   { scenario: 'hidden-zhiman (+ deputy)', skill: 'ld__zhiman', events: ['fk.DamageCaused'] },
-  { scenario: 'hidden-jilix (+ deputy)', skill: 'ld__jilix', events: ['fk.TargetConfirmed', 'fk.DamageInflicted'] },
+  { scenario: 'hidden-jilix (+ deputy)', skill: 'ld__jilix', events: ['fk.TargetConfirmed'] },
 ];
 
 const LUA_EFFECT_AUDIT = String.raw`

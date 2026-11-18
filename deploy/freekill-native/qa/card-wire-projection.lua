@@ -546,6 +546,8 @@ local stringTableMarks = {
   -- string-only state; admitting it explicitly keeps the projector fail-closed
   -- for arbitrary tables while allowing the real Hegemony skill to continue.
   ["@hs__luanji-turn"] = true,
+  -- Jilei stores the declared card category as a string-only table mark.
+  ["@jilei-turn"] = true,
 }
 
 local function playerReference(room, value, label)
@@ -574,6 +576,47 @@ local function playerIdArray(room, value, label)
   return result
 end
 
+-- Yi Gui stores the current UseExtraData while it is asking the player for a
+-- virtual card. This is public metadata, not a generic Lua table: target
+-- lists contain player IDs and the remaining admitted fields are booleans.
+-- Card-bearing or function-bearing extensions stay fail-closed instead of
+-- being mistaken for harmless numeric metadata.
+local useExtraDataPlayerArrays = {
+  must_targets = true,
+  include_targets = true,
+  exclusive_targets = true,
+  fix_targets = true,
+}
+local useExtraDataBooleans = {
+  bypass_distances = true,
+  bypass_times = true,
+  extraUse = true,
+  not_passive = true,
+  playing = true,
+}
+
+local function projectYiguiExtraData(room, value)
+  fields(value, {
+    must_targets = true, include_targets = true, exclusive_targets = true,
+    fix_targets = true, fix_user = true, bypass_distances = true,
+    bypass_times = true, extraUse = true, not_passive = true, playing = true,
+  }, "ld__yigui_extra_data")
+  local result = {}
+  for key, item in pairs(value) do
+    if useExtraDataPlayerArrays[key] then
+      result[key] = playerIdArray(room, item, key .. " player ID list")
+    elseif key == "fix_user" then
+      assert(type(item) == "number" and item % 1 == 0 and room:getPlayerById(item),
+        "fix_user must contain a live player ID")
+      result[key] = item
+    else
+      assert(useExtraDataBooleans[key], "ld__yigui_extra_data field is not scalar")
+      result[key] = scalar(item, key)
+    end
+  end
+  return result
+end
+
 local function projectNamedTableMark(room, mark, value)
   if playerObjectMarks[mark] then
     return playerObjectArray(room, value, mark .. " player list")
@@ -583,6 +626,9 @@ local function projectNamedTableMark(room, mark, value)
   end
   if stringTableMarks[mark] then
     return stringArray(value, mark .. " string list")
+  end
+  if mark == "ld__yigui_extra_data" then
+    return projectYiguiExtraData(room, value)
   end
   if mark == "xiongsuan-turn" then
     assert(denseCount(value, "xiongsuan-turn") == 2,
@@ -914,14 +960,17 @@ local function metadataEnvelope(payload)
 end
 
 -- Amazing Grace is an intentional public reveal, even when the physical
--- cards are still located in the draw pile. Keep that visibility decision
--- explicit instead of reusing the concealed-area projector.
+-- cards are still located in the draw pile. The display packet is metadata,
+-- however: keep the audience's standing source reference unchanged until the
+-- matching MoveCards packet carries the explicit retired reference.
 local function projectPublicCardIds(ids, batch, audience, label)
   denseCount(ids, label)
-  for _, id in ipairs(ids) do cardId(id) end
-  return batch:project(audience, ids, function()
-    return true
-  end)
+  local refs = {}
+  for i, id in ipairs(ids) do
+    cardId(id)
+    refs[i] = batch:standing(audience, id, true)
+  end
+  return refs
 end
 
 local function projectFillAG(data, batch, audience)
@@ -941,7 +990,7 @@ local function projectTakeAG(room, data, batch, audience)
   local taker = integerValue(data[1], "TakeAG taker ID")
   assert(room:getPlayerById(taker), "TakeAG taker is missing")
   cardId(data[2])
-  return metadataEnvelope({ taker, batch:reference(audience, data[2], true) })
+  return metadataEnvelope({ taker, batch:standing(audience, data[2], true) })
 end
 
 local function projectGameOver(room, data)

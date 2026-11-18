@@ -53,7 +53,22 @@ const after = previousAfter
     player:doNotify("Observe", payload)`);
 
 let source = fs.readFileSync(target, 'utf8');
-if (!source.includes(after)) {
+// The capability guard adds an exact observer rejection before the existing
+// projection assertion. Normalize only that reviewed block for composition.
+const capabilityGate = [
+  '  if self.card_wire_version == 1 then',
+  '    if not self:hasCardWireCapability(player) then',
+  '      player:doNotify("ErrorMsg", "card wire capability required")',
+  '      if self.room and type(self.room.removeObserver) == "function" then',
+  '        self.room:removeObserver(player)',
+  '      end',
+  '      return false',
+  '    end',
+].join('\n') + '\n';
+const normalizedSource = source.includes(capabilityGate)
+  ? source.replace(capabilityGate, '  if self.card_wire_version == 1 then\n')
+  : source;
+if (!source.includes(after) && !normalizedSource.includes(after)) {
   assert.equal(mode, '--apply', 'candidate observer physical projection missing');
   if (source.includes(previousAfter)) source = source.replace(previousAfter, before);
   assert.equal(source.split(before).length, 2, 'Observe callsite changed; review before patch');
@@ -62,5 +77,6 @@ if (!source.includes(after)) {
   source = source.replace(before, after);
   fs.writeFileSync(target, source);
 }
-assert.ok(source.includes(after), 'reviewed Observe guard must be installed');
+assert.ok(source.includes(after) || normalizedSource.includes(after),
+  'reviewed Observe guard must be installed');
 console.log(`PASS isolated Hegemony observer --${mode.slice(2)}: transactional physical-only Observe projection; legacy preserved`);

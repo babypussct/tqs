@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "CP24-safe-release",
+  "generatedAt": "2026-11-18T13:43:17.000Z",
+  "status": "HOLD",
+  "publishEligible": false,
+  "git": {
+    "branch": "main",
+    "commit": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "dirty": true,
+    "changedFileCount": 134
+  },
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "sourceSnapshot": {
+    "artifact": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-17.json",
+    "archiveSha256": "365b90c8f0f8d30c85e34a88fd72d5e63ddc559c8d387ead77c062b632ad72ec",
+    "status": "LOCALLY_REVIEWED_PENDING_P6_AND_RELEASE_APPROVAL"
+  },
+  "artifact": {
+    "releaseRoot": "/private/tmp/tqs-cardwire-release-e0f37-20261117-clean",
+    "manifestSha256": "f4c8acf316149bac115c8524c5629b9b52ab2b5491a4395b707d3ecfe6d07eb4",
+    "releaseFileCount": 17317,
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "packages": [
+      "freekill-core",
+      "gamemode",
+      "hegemony",
+      "jsrg",
+      "maneuvering",
+      "mobile",
+      "mougong",
+      "ol",
+      "overseas",
+      "shzl",
+      "sp",
+      "standard_cards",
+      "standard_ex",
+      "tenyear",
+      "utility",
+      "yj"
+    ],
+    "runtimeFileCount": 14993,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "bundleEntrySha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "createdAt": "2026-11-16T23:38:25.000Z",
+    "releaseDirectoryFileCount": 17318
+  },
+  "evidence": {
+    "staticGates": {
+      "upstreamPreparation": "3/3 PASS",
+      "upstreamBaseline": "PASS; 14/14 package pins, 3/3 native patches, 1/1 native source patch digest",
+      "typecheckAll": "PASS",
+      "typecheckTools": "PASS",
+      "cardWireCoverage": "6/6 PASS",
+      "cardWireRawCapture": "4/4 PASS",
+      "evidenceSanitizer": "22/22 PASS",
+      "buildSafety": "7/7 PASS",
+      "shopBuildCheck": "PASS",
+      "realLuaE2E": "72/72 PASS; exact current e0 package tree",
+      "realLuaQaScenarioMode": "4/4 PASS",
+      "upstreamFirstSource": "41/41 PASS; current e0 candidate source tree; Lua 5.4.9",
+      "qaServerContract": "66/66 PASS",
+      "gitDiffCheck": "PASS"
+    },
+    "rollbackAndDrain": {
+      "semantic": "docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_SEMANTIC_CURRENT_2026-11-17.json",
+      "newRoomSmoke": "docs/web-client/CARD_WIRE_ROLLBACK_NEW_ROOM_SMOKE_CURRENT_2026-11-17.json",
+      "status": "PASS-sequential-PARTIAL-in-flight",
+      "limitation": "Bounded same-process two-room smoke only; production/canary SLA, scale/exhaustive drain stress and broader mixed-version admission remain open."
+    },
+    "nativeCardsAndChoice": {
+      "metadata": "docs/web-client/CARD_WIRE_NATIVE_CARDS_AND_CHOICE_SEMANTIC_CURRENT_2026-11-18.json",
+      "artifact": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794999959891.json",
+      "status": "PASS-bounded",
+      "semanticRecords": 1065,
+      "semanticFailures": 0,
+      "manualCardReply": true,
+      "cardsAndChoiceReply": true,
+      "gameOverOnBothClients": true,
+      "limitation": "One bounded two-player emitter run; mapping/timing capture was empty and exhaustive emitter, observer, reconnect and stale/replay stress remain open."
+    },
+    "nativeReconnectSemantic": {
+      "metadata": "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+      "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1795001015499.json",
+      "status": "PASS-bounded",
+      "runnerExitCode": 0,
+      "semanticRecords": 895,
+      "semanticFailures": 0,
+      "audiences": {
+        "owner": 323,
+        "opponent": 316,
+        "observer": 256
+      },
+      "controlledReconnect": true,
+      "observerObserve": true,
+      "gameOverOnBothPlayers": true,
+      "mappingMarkerRecords": 176,
+      "timingMarkerRecords": 8,
+      "mappingFinalActiveReferences": 0,
+      "limitation": "One bounded identity-aligned three-client run; dedicated mapping/timing files were empty but sanitized runtime marker aggregates were observed. Exhaustive emitter, stale/replay/drain stress, approved P6 thresholds/attribution and approved release gates remain open."
+    },
+    "nativeReplay": {
+      "metadata": "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+      "artifact": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1795007855791.json",
+      "status": "PASS-bounded-native-replay",
+      "runnerExitCode": 0,
+      "semanticRecords": 1136,
+      "semanticFailures": 0,
+      "replayRequested": true,
+      "replayInjected": true,
+      "replaySentAfterSubsequentRequest": true,
+      "choiceRejectCount": 1,
+      "originalGameplayRemainedActive": true,
+      "gameOverOnBothClients": true,
+      "mappingMarkerRecords": 147,
+      "mappingFinalActiveReferences": 0,
+      "limitation": "One bounded two-client native run; exhaustive emitter/stale/concurrency stress, strict observer/reconnect matrix, P6 thresholds/attribution, rollback SLA and release approval remain open."
+    },
+    "nativeCSPRNG": {
+      "metadata": "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json",
+      "artifacts": [
+        "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009289427.json",
+        "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009366511.json",
+        "scratch/evidence/cp08-card-wire-entropy-failure-live-1795009422160.json"
+      ],
+      "status": "PASS-bounded-native-csprng",
+      "runnerExitCodes": [0, 0, 0],
+      "failureShapes": ["open", "short-read", "close"],
+      "negotiatedPackets": [2, 2, 2],
+      "cardBearingPackets": [0, 0, 0],
+      "batchAborts": [2, 3, 3],
+      "lastAbortActiveReferences": [0, 0, 0],
+      "lastAbortActiveRequests": [0, 0, 0],
+      "limitation": "Bounded two-client fail-closed lane only; no gameplay/GameOver claim and exhaustive emitter/stale/concurrency, P6 and release gates remain open."
+    },
+    "realLuaE2E": {
+      "metadata": "docs/web-client/CARD_WIRE_REAL_LUA_E2E_CURRENT_2026-11-18.json",
+      "status": "PASS-local-fixture",
+      "scenarioRecords": 72,
+      "failedRecords": 0,
+      "limitation": "Browser/Wasmoon fixture only; this does not replace native C++/CBOR, physical device or release approval."
+    },
+    "upstreamFirstSource": {
+      "metadata": "docs/web-client/CARD_WIRE_UPSTREAM_FIRST_SOURCE_CURRENT_2026-11-18.json",
+      "status": "PASS-source-level",
+      "tests": 41,
+      "failures": 0,
+      "lua": "5.4.9",
+      "limitation": "Source-level candidate evidence only; this does not replace native C++ packet capture, device acceptance or release approval."
+    },
+    "p6": {
+      "packetSize": "docs/web-client/CARD_WIRE_PACKET_SIZE_COMPARISON_CURRENT_2026-11-16.json",
+      "memory": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+      "timing": "docs/web-client/CARD_WIRE_NATIVE_CBOR_TIMING_2026-11-16.json",
+      "thresholdStatus": "OPEN",
+      "limitation": "Bounded observations pass, but no approved numeric performance/mapping-memory threshold or attribution exists."
+    }
+  },
+  "gates": {
+    "sourceProvenance": "HOLD",
+    "gitDiffCheck": "PASS",
+    "releasePackageAndManifest": "PASS",
+    "requiredRuntimePackages": "PASS",
+    "sensitiveFilesAndSymlinks": "PASS",
+    "nodeForgeAdvisory": "RISK_ACCEPTED_WITH_SCOPE",
+    "liveGameplayAndNativeRules": "PENDING",
+    "coldStartQuotaRollbackSla": "PENDING",
+    "physicalDeviceAndNetwork": "WAIVED_BY_USER",
+    "officialRelease": "PENDING"
+  },
+  "holdReasons": [
+    "source checkout is dirty; create a reviewed commit or immutable source snapshot before publishing",
+    "no approved numeric P6 performance/mapping-memory threshold or attribution is recorded",
+    "production/canary rollback SLA, independent release approval and official CI/installer sign-off are not recorded",
+    "physical device/network acceptance is WAIVED_BY_USER and is not a PASS"
+  ],
+  "safety": {
+    "deployed": false,
+    "changesProductionBundle": false,
+    "credentialsIncluded": false,
+    "note": "This report is a local release-candidate checkpoint. It does not authorize deployment or official release."
+  }
+}

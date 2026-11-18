@@ -47,6 +47,15 @@ native_listener_ready() {
     return $?
   fi
 
+  # macOS does not provide procfs.  lsof is already part of the host
+  # toolchain used for native verification, so use it only to observe the
+  # listener before exposing the server-only QA package symlink.
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -a -iTCP:"$FREEKILL_PORT" -sTCP:LISTEN 2>/dev/null |
+      awk 'NR > 1 { found = 1 } END { exit found ? 0 : 1 }'
+    return $?
+  fi
+
   # Minimal native QA images may intentionally omit iproute2/net-tools.  The
   # server still exposes procfs, so detect LISTEN by port/state without
   # adding a runtime dependency or touching the public package tree.
@@ -74,7 +83,10 @@ if [[ -f "$RUNTIME_DIR/qa_packages/tqs_qa/init.lua" ]]; then
         ready_link="${QA_LINK}.ready.$$"
         rm -f -- "$ready_link"
         ln -s -- "$QA_TARGET_REL" "$ready_link"
-        mv -Tf -- "$ready_link" "$QA_LINK"
+        # QA_LINK is guarded above to be a symlink or absent.  BSD mv on
+        # macOS has no GNU -T; replacing that known symlink with -f retains
+        # the same non-directory target semantics on both host families.
+        mv -f -- "$ready_link" "$QA_LINK"
         exit 0
       fi
       sleep 0.1

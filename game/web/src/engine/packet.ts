@@ -38,6 +38,14 @@ export interface Packet {
   timestamp?: number;
 }
 
+/** A packet boundary captured before the normal data decoder runs. */
+export interface RawWirePacket {
+  requestId: number;
+  type: number;
+  command: string;
+  bytes: Uint8Array;
+}
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const MAX_PACKET_BYTES = 4 * 1024 * 1024;
@@ -236,6 +244,124 @@ export class PacketStream {
       } catch (e) {
         if (e instanceof NeedMore) break;
         throw e;
+      }
+    }
+    this.pending = this.pending.slice(consumed);
+    return out;
+  }
+}
+
+// ------------------------------------------------------- raw boundary audit --
+
+class RawNeedMore extends Error {}
+
+type RawHead = { major: number; value: number; next: number };
+
+function rawHead(bytes: Uint8Array, start: number): RawHead {
+  if (start >= bytes.length) throw new RawNeedMore();
+  const initial = bytes[start];
+  const major = initial >> 5;
+  const additional = initial & 31;
+  if (additional < 24) return { major, value: additional, next: start + 1 };
+  const width = additional === 24 ? 1 : additional === 25 ? 2 :
+    additional === 26 ? 4 : additional === 27 ? 8 : 0;
+  if (width === 0) throw new Error('unsupported raw CBOR additional info');
+  if (start + 1 + width > bytes.length) throw new RawNeedMore();
+  let value = 0;
+  for (let index = 0; index < width; index++) {
+    value = value * 256 + bytes[start + 1 + index];
+    if (!Number.isSafeInteger(value)) throw new Error('raw CBOR integer exceeds JS safe range');
+  }
+  return { major, value, next: start + 1 + width };
+}
+
+function rawInteger(bytes: Uint8Array, start: number): number {
+  const head = rawHead(bytes, start);
+  if (head.major === 0) return head.value;
+  if (head.major === 1) return -1 - head.value;
+  throw new Error('raw packet field is not an integer');
+}
+
+function rawBytes(bytes: Uint8Array, start: number): { value: Uint8Array; next: number } {
+  const head = rawHead(bytes, start);
+  if (head.major !== 2 && head.major !== 3) throw new Error('raw packet field is not a byte/text string');
+  if (head.value > MAX_PACKET_BYTES) throw new Error('raw packet byte string exceeds size limit');
+  const end = head.next + head.value;
+  if (end > bytes.length) throw new RawNeedMore();
+  return { value: bytes.subarray(head.next, end), next: end };
+}
+
+function readRawWirePacket(bytes: Uint8Array): {
+  requestId: number; type: number; command: string; end: number;
+} {
+  const array = rawHead(bytes, 0);
+  if (array.major !== 4 || (array.value !== 4 && array.value !== 6)) {
+    throw new Error('raw packet header is not a four/six-element CBOR array');
+  }
+  let cursor = array.next;
+  const requestIdHead = rawHead(bytes, cursor);
+  if (requestIdHead.major !== 0 && requestIdHead.major !== 1) {
+    throw new Error('raw packet request id is not an integer');
+  }
+  cursor = requestIdHead.next;
+  const requestId = requestIdHead.major === 0 ? requestIdHead.value : -1 - requestIdHead.value;
+  const typeHead = rawHead(bytes, cursor);
+  if (typeHead.major !== 0 && typeHead.major !== 1) {
+    throw new Error('raw packet type is not an integer');
+  }
+  const type = typeHead.major === 0 ? typeHead.value : -1 - typeHead.value;
+  cursor = typeHead.next;
+  const command = rawBytes(bytes, cursor);
+  cursor = command.next;
+  if ((command.value.length === 0 && (type & PacketType.REPLY) === 0) ||
+      command.value.length > MAX_COMMAND_BYTES) {
+    throw new Error('raw packet command exceeds size limit');
+  }
+  const data = rawBytes(bytes, cursor);
+  cursor = data.next;
+  if (array.value === 6) {
+    rawInteger(bytes, cursor); cursor = rawHead(bytes, cursor).next;
+    rawInteger(bytes, cursor); cursor = rawHead(bytes, cursor).next;
+  }
+  return { requestId, type, command: dec.decode(command.value), end: cursor };
+}
+
+/**
+ * Incrementally extracts complete outer CBOR packets without decoding their
+ * data field. QA can hand the returned bytes to an independent native/Lua
+ * auditor before PacketStream or the browser Lua client sees the payload.
+ */
+export class RawPacketStream {
+  private pending = new Uint8Array(0);
+
+  push(chunk: Uint8Array): RawWirePacket[] {
+    if (chunk.length + this.pending.length > MAX_PACKET_BYTES) {
+      throw new Error('raw CBOR stream exceeds size limit');
+    }
+    if (this.pending.length === 0) {
+      this.pending = chunk;
+    } else {
+      const merged = new Uint8Array(this.pending.length + chunk.length);
+      merged.set(this.pending);
+      merged.set(chunk, this.pending.length);
+      this.pending = merged;
+    }
+
+    const out: RawWirePacket[] = [];
+    let consumed = 0;
+    for (;;) {
+      try {
+        const parsed = readRawWirePacket(this.pending.subarray(consumed));
+        out.push({
+          requestId: parsed.requestId,
+          type: parsed.type,
+          command: parsed.command,
+          bytes: this.pending.subarray(consumed, consumed + parsed.end).slice(),
+        });
+        consumed += parsed.end;
+      } catch (error) {
+        if (error instanceof RawNeedMore) break;
+        throw error;
       }
     }
     this.pending = this.pending.slice(consumed);

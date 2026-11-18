@@ -10,7 +10,7 @@ const [mode, rootInput] = process.argv.slice(2);
 assert.ok(['--apply', '--check'].includes(mode) && rootInput,
   'expected --apply|--check <candidate-core>');
 const root = fs.realpathSync(rootInput);
-assert.match(root, /\/scratch\/evidence\/[^/]+\/candidate-runtime\/packages\/freekill-core$/u,
+assert.match(root, /(?:\/scratch\/evidence\/[^/]+\/candidate-runtime|\/private\/tmp\/tqs-cardwire-qa-20261103-[^/]+)\/packages\/freekill-core$/u,
   'card-wire projector restricted to isolated candidate');
 const serverRoot = path.join(root, 'lua/server');
 assert.equal(fs.realpathSync(serverRoot), serverRoot, 'lua/server must not be a symlink');
@@ -55,6 +55,9 @@ if (fs.existsSync(target)) {
       // Candidate baseline after the standing-reference transition; this
       // delta admits the real string-only Luanji turn mark explicitly.
       '5160279749fa14c9c1ec8ae5dfc1bcbcd7338c13d4f1d627a5587e02dd5e1dd1',
+      // Candidate baseline after the Yigui/lifecycle source merge; it is
+      // replaced by the exact reviewed projector below.
+      '061ed5c4ec16840048e299bf4fd5b8effdfdf7488fcdf9df5bee666d03699350',
     ]);
     assert.ok(reviewedPriorRevisions.has(createHash('sha256').update(installed).digest('hex')),
       'candidate projector differs from reviewed previous revisions');

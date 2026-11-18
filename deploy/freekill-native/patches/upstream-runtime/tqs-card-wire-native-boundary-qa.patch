@@ -1,0 +1,543 @@
+--- a/src/network/client_socket.cpp
++++ b/src/network/client_socket.cpp
+@@ -10,6 +10,123 @@
+ using asio::use_awaitable;
+ using asio::redirect_error;
+ 
++namespace {
++
++struct NativeWireBoundaryMetrics {
++  std::string path;
++  std::mutex mutex;
++};
++
++NativeWireBoundaryMetrics &nativeWireBoundaryMetrics() {
++  static NativeWireBoundaryMetrics metrics {
++    [] {
++      const auto *value = std::getenv("TQS_NATIVE_WIRE_METRICS_FILE");
++      return value == nullptr ? std::string {} : std::string { value };
++    }(),
++  };
++  return metrics;
++}
++
++std::string nativeWireChannel(std::string_view command, bool &cardWireCommand) {
++  static const std::unordered_set<std::string_view> metadataCommands {
++    "PropertyUpdate", "SetPlayerMark", "SetCardMark", "SetCardFootnote",
++    "SetCardVirtName", "FilterCard", "FillAG", "TakeAG", "SetPlayerHandCards",
++    "AddVirtualEquip", "RemoveVirtualEquip",
++  };
++  static const std::unordered_set<std::string_view> publicCommands {
++    "ShowVirtualCard", "GameLog", "ShowCard", "GameOver",
++  };
++  static const std::unordered_set<std::string_view> requestCommands {
++    "AskForCardChosen", "AskForPoxi", "AskForAG", "AskForCardsAndChoice",
++    "AskForArrangeCards", "AskForMoveCardInBoard", "PlayCard",
++    "AskForUseActiveSkill", "AskForUseCard", "AskForResponseCard",
++    "AskForChoices", "AskForOptions", "AskForSkillInvoke", "CustomDialog",
++    "EmptyRequest",
++  };
++  static const std::unordered_set<std::string_view> deckCommands {
++    "PrepareDrawPile", "ShuffleDrawPile", "SyncDrawPile", "ChangeCardArea",
++    "MoveCards", "SetPlayerPile", "Reconnect", "Observe",
++  };
++
++  cardWireCommand = command == "CardWireNegotiated" ||
++    metadataCommands.contains(command) || publicCommands.contains(command) ||
++    requestCommands.contains(command) || deckCommands.contains(command);
++  if (command == "CardWireNegotiated") return "negotiation";
++  if (metadataCommands.contains(command)) return "metadata";
++  if (publicCommands.contains(command)) return "public";
++  if (requestCommands.contains(command)) return "request";
++  if (deckCommands.contains(command)) return "deck";
++  return "other";
++}
++
++void appendNativeWireRecord(
++  std::string_view direction,
++  std::string_view boundary,
++  bool outerDecoded,
++  bool cardWireCommand,
++  std::string_view channel,
++  size_t packetBytes,
++  size_t inputBytes,
++  size_t bufferedBytes) {
++  auto &metrics = nativeWireBoundaryMetrics();
++  if (metrics.path.empty()) return;
++
++  std::lock_guard lock(metrics.mutex);
++  std::ofstream output(metrics.path, std::ios::app);
++  if (!output) return;
++  output << "{\"schemaVersion\":1,\"direction\":\"" << direction
++         << "\",\"boundary\":\"" << boundary
++         << "\",\"outerDecoded\":" << (outerDecoded ? "true" : "false")
++         << ",\"cardWireCommand\":" << (cardWireCommand ? "true" : "false")
++         << ",\"channel\":\"" << channel
++         << "\",\"packetBytes\":" << packetBytes
++         << ",\"inputBytes\":" << inputBytes
++         << ",\"bufferedBytes\":" << bufferedBytes << "}\n";
++}
++
++void recordNativeWireBoundary(std::string_view message) {
++  bool decoded = false;
++  bool cardWireCommand = false;
++  std::string channel = "other";
++  cbor_load_result result {};
++  auto *item = cbor_load(
++    reinterpret_cast<const cbor_data>(message.data()), message.size(), &result);
++  if (item != nullptr && cbor_isa_array(item) && cbor_array_size(item) >= 4) {
++    decoded = true;
++    auto *commandItem = cbor_array_get(item, 2);
++    if (commandItem != nullptr && cbor_isa_bytestring(commandItem)) {
++      const auto length = cbor_bytestring_length(commandItem);
++      const auto *bytes = cbor_bytestring_handle(commandItem);
++      channel = nativeWireChannel(
++        std::string_view { reinterpret_cast<const char *>(bytes), length },
++        cardWireCommand);
++    }
++  }
++  if (item != nullptr) cbor_decref(&item);
++
++  appendNativeWireRecord(
++    "outbound", "pre-tcp-write", decoded, cardWireCommand, channel,
++    message.size(), 0, 0);
++}
++
++void recordNativeInboundPredecode(size_t inputBytes, size_t bufferedBytes) {
++  // This marker is deliberately emitted without parsing the buffer. It records
++  // the exact point immediately before the native CBOR stream decoder runs.
++  appendNativeWireRecord(
++    "inbound", "pre-cbor-decode", false, false, "other", 0,
++    inputBytes, bufferedBytes);
++}
++
++void recordNativeInboundDecoded(const Packet &packet) {
++  bool cardWireCommand = false;
++  const auto channel = nativeWireChannel(packet.command, cardWireCommand);
++  appendNativeWireRecord(
++    "inbound", "post-cbor-decode", true, cardWireCommand, channel,
++    packet.cborData.size(), 0, 0);
++}
++
++} // namespace
++
+ ClientSocket::ClientSocket(tcp::socket socket) : m_socket(std::move(socket)) {
+   m_peer_address = m_socket.remote_endpoint().address().to_string();
+   disconnected_callback = [this] {
+@@ -104,6 +221,10 @@
+ }
+ 
+ void ClientSocket::send(const std::shared_ptr<std::string> msg) {
++  // QA-only native transport boundary.  This runs before the bytes enter the
++  // TCP write queue and records only decoded-shape/channel/size metadata.  It
++  // is inert unless the isolated launcher supplies an explicit output path.
++  recordNativeWireBoundary(*msg);
+   send_queue.push_back(msg);
+   if (send_queue.size() == 1) send_loop();
+ }
+@@ -213,6 +334,7 @@
+   void nextField() {
+     current_field++;
+     if (current_field == pkt._len) {
++      recordNativeInboundDecoded(pkt);
+       message_got_callback(pkt);
+       handled++;
+       reset();
+@@ -264,6 +386,7 @@
+ 
+ cbor_decoder_status ClientSocket::handleBuffer(size_t length) {
+   cborBuffer.insert(cborBuffer.end(), m_data, m_data + length);
++  recordNativeInboundPredecode(length, cborBuffer.size());
+ 
+   auto cbuf = (unsigned char *)cborBuffer.data();
+   auto len = cborBuffer.size();
+--- a/src/network/router.cpp
++++ b/src/network/router.cpp
+@@ -8,8 +8,329 @@
+ #include "core/c-wrapper.h"
+ #include "core/util.h"
+ 
++#include <chrono>
++#include <algorithm>
++#include <cstdlib>
++#include <fstream>
++#include <mutex>
++#include <unordered_set>
++#include <cbor.h>
++#include "server/room/room.h"
++
+ namespace asio = boost::asio;
+ 
++namespace {
++
++struct NativeWireSemanticMetrics {
++  std::string path;
++  std::mutex mutex;
++  size_t records = 0;
++};
++
++NativeWireSemanticMetrics &nativeWireSemanticMetrics() {
++  static NativeWireSemanticMetrics metrics {
++    [] {
++      const auto *value = std::getenv("TQS_NATIVE_WIRE_SEMANTIC_FILE");
++      return value == nullptr ? std::string {} : std::string { value };
++    }(),
++  };
++  return metrics;
++}
++
++struct NativeWireSemanticAudit {
++  bool innerDecoded = false;
++  bool budgetExceeded = false;
++  size_t nodes = 0;
++  size_t maps = 0;
++  size_t arrays = 0;
++  size_t opaqueReferences = 0;
++  size_t numericReferences = 0;
++  size_t invalidReferences = 0;
++  size_t forbiddenFields = 0;
++  size_t nestedDecoded = 0;
++  size_t maxDepth = 0;
++};
++
++std::string nativeWireSerializationChannel(std::string_view command);
++
++bool nativeWireOpaqueReference(std::string_view value) {
++  if (value.size() < 18 || value.size() > 128 || value.substr(0, 2) != "h:") return false;
++  for (const auto byte : value.substr(2)) {
++    if (!((byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') ||
++          (byte >= '0' && byte <= '9') || byte == '_' || byte == '-')) return false;
++  }
++  return true;
++}
++
++bool nativeWireReferenceField(std::string_view key) {
++  static const std::unordered_set<std::string_view> fields {
++    "ref", "cardId", "card_id", "effectCardId", "subcards", "card_ids",
++    "areaRefs", "retiredRefs", "player_cards", "special_cards", "draw_pile",
++    "discard_pile", "processing_area", "void", "visible_pile", "expand_pile",
++    "disabled",
++  };
++  return fields.contains(key);
++}
++
++bool nativeWireForbiddenField(std::string_view key) {
++  static const std::unordered_set<std::string_view> fields {
++    "physicalId", "physical_id", "rawCardId", "raw_card_id",
++    "canonicalCardId", "canonical_card_id", "privateHand", "private_hand",
++    "privateCards", "private_cards",
++  };
++  return fields.contains(key);
++}
++
++void auditNativeWireSemanticNode(
++  const cbor_item_t *item,
++  bool referenceContext,
++  bool referenceMapKeyContext,
++  bool nestedCbor,
++  size_t depth,
++  NativeWireSemanticAudit &audit) {
++  if (item == nullptr || audit.budgetExceeded) return;
++  if (++audit.nodes > 50000 || depth > 64) {
++    audit.budgetExceeded = true;
++    return;
++  }
++  audit.maxDepth = std::max(audit.maxDepth, depth);
++
++  if (cbor_isa_bytestring(item) || cbor_isa_string(item)) {
++    const auto length = cbor_isa_bytestring(item)
++      ? cbor_bytestring_length(item) : cbor_string_length(item);
++    const auto *data = cbor_isa_bytestring(item)
++      ? cbor_bytestring_handle(item) : cbor_string_handle(item);
++    const std::string_view value = data == nullptr
++      ? std::string_view {} : std::string_view {
++        reinterpret_cast<const char *>(data), length };
++    if (nestedCbor) {
++      cbor_load_result result {};
++      auto *nested = cbor_load(
++        reinterpret_cast<const cbor_data>(value.data()), value.size(), &result);
++      if (nested == nullptr) {
++        audit.invalidReferences++;
++      } else {
++        audit.nestedDecoded++;
++        auditNativeWireSemanticNode(nested, false, true, false, depth + 1, audit);
++        cbor_decref(&nested);
++      }
++      return;
++    }
++    if (referenceContext || referenceMapKeyContext) {
++      if (nativeWireOpaqueReference(value)) audit.opaqueReferences++;
++      else audit.invalidReferences++;
++    }
++    return;
++  }
++  if (cbor_is_int(item)) {
++    if (referenceContext || referenceMapKeyContext) audit.numericReferences++;
++    return;
++  }
++  if (cbor_isa_tag(item)) {
++    auditNativeWireSemanticNode(cbor_tag_item(item), referenceContext,
++      referenceMapKeyContext, nestedCbor, depth + 1, audit);
++    return;
++  }
++  if (cbor_isa_array(item)) {
++    audit.arrays++;
++    const auto size = cbor_array_size(item);
++    if (size > 8192) { audit.budgetExceeded = true; return; }
++    for (size_t index = 0; index < size; ++index) {
++      auditNativeWireSemanticNode(cbor_array_handle(item)[index], referenceContext,
++        false, false, depth + 1, audit);
++    }
++    return;
++  }
++  if (cbor_isa_map(item)) {
++    audit.maps++;
++    const auto size = cbor_map_size(item);
++    if (size > 8192) { audit.budgetExceeded = true; return; }
++    const auto *pairs = cbor_map_handle(item);
++    for (size_t index = 0; index < size; ++index) {
++      const auto &pair = pairs[index];
++      bool childReferenceContext = referenceContext;
++      bool childReferenceMapKeyContext = false;
++      bool childNestedCbor = false;
++      if (cbor_isa_bytestring(pair.key) || cbor_isa_string(pair.key)) {
++        const auto length = cbor_isa_bytestring(pair.key)
++          ? cbor_bytestring_length(pair.key) : cbor_string_length(pair.key);
++        const auto *data = cbor_isa_bytestring(pair.key)
++          ? cbor_bytestring_handle(pair.key) : cbor_string_handle(pair.key);
++        const std::string_view key = data == nullptr
++          ? std::string_view {} : std::string_view {
++            reinterpret_cast<const char *>(data), length };
++        if (referenceMapKeyContext) {
++          if (nativeWireOpaqueReference(key)) audit.opaqueReferences++;
++          else audit.invalidReferences++;
++        }
++        childReferenceContext = childReferenceContext || nativeWireReferenceField(key);
++        childReferenceMapKeyContext = key == "card_marks" || key == "visible_data";
++        childNestedCbor = key == "card_marks";
++        if (nativeWireForbiddenField(key)) audit.forbiddenFields++;
++      } else if (referenceMapKeyContext && cbor_is_int(pair.key)) {
++        audit.numericReferences++;
++      }
++      auditNativeWireSemanticNode(pair.value, childReferenceContext,
++        childReferenceMapKeyContext, childNestedCbor, depth + 1, audit);
++    }
++  }
++}
++
++std::string nativeWireSemanticAudience(ServerPlayer *player) {
++  if (player == nullptr) return "unknown";
++  const auto roomBase = player->getRoom().lock();
++  const auto room = std::dynamic_pointer_cast<Room>(roomBase);
++  if (!room) return "unknown";
++  if (room->hasObserver(*player)) return "observer";
++  const auto owner = room->getOwner().lock();
++  return owner && owner.get() == player ? "owner" : "opponent";
++}
++
++void appendNativeWireSemanticRecord(
++  std::string_view scope,
++  std::string_view command,
++  std::string_view payload,
++  ServerPlayer *player,
++  bool outerPacket) {
++  const std::string channel = scope == "inbound-reply"
++    ? "reply" : nativeWireSerializationChannel(command);
++  if (channel == "other") return;
++  auto &metrics = nativeWireSemanticMetrics();
++  if (metrics.path.empty()) return;
++  // Client replies do not carry a trusted command label in every native
++  // packet shape.  Retain only the bounded reply class, never that label.
++  const std::string_view safeCommand = scope == "inbound-reply" ? "Reply" : command;
++
++  NativeWireSemanticAudit audit;
++  bool outerDecoded = !outerPacket;
++  std::string_view innerPayload = payload;
++  cbor_item_t *outer = nullptr;
++  if (outerPacket) {
++    cbor_load_result result {};
++    outer = cbor_load(
++      reinterpret_cast<const cbor_data>(payload.data()), payload.size(), &result);
++    outerDecoded = outer != nullptr && cbor_isa_array(outer) && cbor_array_size(outer) >= 4;
++    if (outerDecoded) {
++      const auto *data = cbor_array_get(outer, 3);
++      if (data != nullptr && cbor_isa_bytestring(data)) {
++        const auto length = cbor_bytestring_length(data);
++        const auto *bytes = cbor_bytestring_handle(data);
++        if (bytes == nullptr && length != 0) {
++          outerDecoded = false;
++        } else if (length == 0) {
++          innerPayload = std::string_view {};
++        } else {
++          innerPayload = std::string_view {
++            reinterpret_cast<const char *>(bytes), length };
++        }
++      } else {
++        outerDecoded = false;
++      }
++    }
++  }
++  cbor_load_result innerResult {};
++  auto *inner = cbor_load(
++    reinterpret_cast<const cbor_data>(innerPayload.data()), innerPayload.size(), &innerResult);
++  audit.innerDecoded = inner != nullptr;
++  if (inner != nullptr) {
++    auditNativeWireSemanticNode(inner, false, false, false, 0, audit);
++    cbor_decref(&inner);
++  }
++  if (outer != nullptr) cbor_decref(&outer);
++
++  std::lock_guard lock(metrics.mutex);
++  if (metrics.records >= 8192) return;
++  std::ofstream output(metrics.path, std::ios::app);
++  if (!output) return;
++  output << "{\"schemaVersion\":1,\"scope\":\"" << scope
++         << "\",\"command\":\"" << safeCommand
++         << "\",\"channel\":\"" << channel
++         << "\",\"audience\":\"" << nativeWireSemanticAudience(player)
++         << "\",\"outerDecoded\":" << (outerDecoded ? "true" : "false")
++         << ",\"innerDecoded\":" << (audit.innerDecoded ? "true" : "false")
++         << ",\"semanticPass\":" <<
++            (outerDecoded && audit.innerDecoded && !audit.budgetExceeded &&
++             audit.invalidReferences == 0 && audit.forbiddenFields == 0 ? "true" : "false")
++         << ",\"nodes\":" << audit.nodes
++         << ",\"maps\":" << audit.maps
++         << ",\"arrays\":" << audit.arrays
++         << ",\"opaqueReferences\":" << audit.opaqueReferences
++         << ",\"numericReferences\":" << audit.numericReferences
++         << ",\"invalidReferences\":" << audit.invalidReferences
++         << ",\"forbiddenFields\":" << audit.forbiddenFields
++         << ",\"nestedDecoded\":" << audit.nestedDecoded
++         << ",\"maxDepth\":" << audit.maxDepth << "}\n";
++  metrics.records++;
++}
++
++struct NativeWireSerializationMetrics {
++  std::string path;
++  std::mutex mutex;
++  size_t records = 0;
++};
++
++NativeWireSerializationMetrics &nativeWireSerializationMetrics() {
++  static NativeWireSerializationMetrics metrics {
++    [] {
++      const auto *value = std::getenv("TQS_NATIVE_WIRE_SERIALIZATION_FILE");
++      return value == nullptr ? std::string {} : std::string { value };
++    }(),
++  };
++  return metrics;
++}
++
++std::string nativeWireSerializationChannel(std::string_view command) {
++  static const std::unordered_set<std::string_view> metadataCommands {
++    "PropertyUpdate", "SetPlayerMark", "SetCardMark", "SetCardFootnote",
++    "SetCardVirtName", "FilterCard", "FillAG", "TakeAG", "SetPlayerHandCards",
++    "AddVirtualEquip", "RemoveVirtualEquip",
++  };
++  static const std::unordered_set<std::string_view> publicCommands {
++    "ShowVirtualCard", "GameLog", "ShowCard", "GameOver",
++  };
++  static const std::unordered_set<std::string_view> requestCommands {
++    "AskForCardChosen", "AskForPoxi", "AskForAG", "AskForCardsAndChoice",
++    "AskForArrangeCards", "AskForMoveCardInBoard", "PlayCard",
++    "AskForUseActiveSkill", "AskForUseCard", "AskForResponseCard",
++    "AskForChoices", "AskForOptions", "AskForSkillInvoke", "CustomDialog",
++    "EmptyRequest",
++  };
++  static const std::unordered_set<std::string_view> deckCommands {
++    "PrepareDrawPile", "ShuffleDrawPile", "SyncDrawPile", "ChangeCardArea",
++    "MoveCards", "SetPlayerPile", "Reconnect", "Observe",
++  };
++
++  if (command == "CardWireNegotiated") return "negotiation";
++  if (metadataCommands.contains(command)) return "metadata";
++  if (publicCommands.contains(command)) return "public";
++  if (requestCommands.contains(command)) return "request";
++  if (deckCommands.contains(command)) return "deck";
++  return "other";
++}
++
++void appendNativeWireSerializationTiming(
++  std::string_view scope,
++  std::string_view channel,
++  long long elapsedNanoseconds,
++  size_t wireBytes) {
++  auto &metrics = nativeWireSerializationMetrics();
++  if (metrics.path.empty() || channel == "other") return;
++
++  std::lock_guard lock(metrics.mutex);
++  // A bounded sample is enough for QA distribution checks and prevents an
++  // accidentally long room from turning the hook into an unbounded log sink.
++  if (metrics.records >= 4096) return;
++  std::ofstream output(metrics.path, std::ios::app);
++  if (!output) return;
++  output << "{\"schemaVersion\":1,\"scope\":\"" << scope
++         << "\",\"channel\":\"" << channel
++         << "\",\"elapsedNs\":" << std::max(0LL, elapsedNanoseconds)
++         << ",\"wireBytes\":" << wireBytes << "}\n";
++  metrics.records++;
++}
++
++} // namespace
++
+ Router::Router(ServerPlayer *player, std::shared_ptr<ClientSocket> socket, RouterType type) {
+   this->type = type;
+   this->player = player;
+@@ -69,24 +145,37 @@
+   m_reply = "__notready";
+   replyMutex.unlock();
+ 
+-  sendMessage(Cbor::encodeArray({
++  const auto started = std::chrono::steady_clock::now();
++  auto message = Cbor::encodeArray({
+     requestId,
+     type,
+     command,
+     cborData,
+     timeout,
+     (timestamp <= 0 ? requestStartTime : timestamp)
+-  }));
++  });
++  appendNativeWireSerializationTiming(
++    "request", nativeWireSerializationChannel(command),
++    std::chrono::duration_cast<std::chrono::nanoseconds>(
++      std::chrono::steady_clock::now() - started).count(), message.size());
++  appendNativeWireSemanticRecord("outbound", command, message, player, true);
++  sendMessage(message);
+ }
+ 
+ void Router::notify(int type, const std::string_view &command, const std::string_view &data) {
+   if (!socket) return;
++  const auto started = std::chrono::steady_clock::now();
+   auto buf = Cbor::encodeArray({
+     -2,
+     Router::TYPE_NOTIFICATION | Router::SRC_SERVER | Router::DEST_CLIENT,
+     command,
+     data,
+   });
++  appendNativeWireSerializationTiming(
++    "notify", nativeWireSerializationChannel(command),
++    std::chrono::duration_cast<std::chrono::nanoseconds>(
++      std::chrono::steady_clock::now() - started).count(), buf.size());
++  appendNativeWireSemanticRecord("outbound", command, buf, player, true);
+   sendMessage(buf);
+ }
+
+@@ -105,13 +105,17 @@
+ void Router::handlePacket(const Packet &packet) {
+   int requestId = packet.requestId;
+   int type = packet.type;
+   auto cborData = packet.cborData;
+ 
+   std::string unCompressed;
+ 
+   if (type & COMPRESSED) {
+     unCompressed = qUncompress_std(cborData);
+     cborData = unCompressed;
+   }
++  appendNativeWireSemanticRecord(
++    (type & TYPE_REPLY) ? "inbound-reply" :
++      ((type & TYPE_NOTIFICATION) ? "inbound-notify" : "inbound-request"),
++    packet.command, cborData, player, false);
+ 
+   if (type & TYPE_NOTIFICATION) {

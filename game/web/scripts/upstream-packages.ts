@@ -1,15 +1,39 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+export const UPSTREAM_BASELINE_PATH = path.join(repositoryRoot, 'deploy/freekill-native/upstream-baseline.env');
+
+function readBaselineEnv(file: string): Readonly<Record<string, string>> {
+  const values: Record<string, string> = {};
+  for (const rawLine of fs.readFileSync(file, 'utf8').split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = /^([A-Z0-9_]+)="([^"\\]*)"$/u.exec(line);
+    if (!match) throw new Error(`Invalid upstream baseline assignment: ${line}`);
+    values[match[1]] = match[2];
+  }
+  return values;
+}
+
+const baselineEnv = readBaselineEnv(UPSTREAM_BASELINE_PATH);
+
+function baselineValue(key: string): string {
+  const value = baselineEnv[key];
+  if (!value) throw new Error(`Missing upstream baseline value: ${key}`);
+  return value;
+}
 
 /**
  * Package contract used by the browser Lua fixtures and the native release
- * scripts.  Hegemony declarations refer to skills owned by these extension
+ * scripts. Hegemony declarations refer to skills owned by these extension
  * repositories; mounting only freekill-core/utility/hegemony silently drops
  * those strings from General:getSkillNameList().
  *
- * The commits are the last revisions at or before the pinned Hegemony commit
- * (2026-09-16).  They are intentionally explicit: taking the moving master
- * branch here would make the skill inventory and native package MD5 unstable.
+ * The exact revisions are loaded from the same checked-in manifest consumed
+ * by deploy/freekill-native/versions.env. Keeping one source prevents CI's
+ * sparse browser checkout and the native installer from drifting apart.
  */
 export interface UpstreamPackageSpec {
   name: string;
@@ -19,78 +43,53 @@ export interface UpstreamPackageSpec {
   role: 'core' | 'extension' | 'skill-dependency';
 }
 
-export const UPSTREAM_PACKAGES: readonly UpstreamPackageSpec[] = [
-  {
-    name: 'freekill-core', sourceDirectory: 'freekill-core',
-    url: 'https://gitee.com/qsgs-fans/freekill-core.git',
-    commit: 'ade837d74c616dbd2d169934b0bec4a5a5dc0a85', role: 'core',
-  },
-  {
-    name: 'utility', sourceDirectory: 'utility',
-    url: 'https://gitee.com/qsgs-fans/utility.git',
-    commit: 'f86d3d05b5a6835584323e56ab85db1fd87ddacf', role: 'extension',
-  },
-  {
-    name: 'hegemony', sourceDirectory: 'hegemony',
-    url: 'https://gitee.com/qsgs-fans/hegemony.git',
-    commit: 'd616978ad2a53055f5815f3ae19f2d2b239862e0', role: 'extension',
-  },
-  {
-    name: 'gamemode', sourceDirectory: 'gamemode',
-    url: 'https://gitee.com/qsgs-fans/gamemode.git',
-    commit: 'cf168265c56dd262ae79497cf71d55285bca4bb8', role: 'skill-dependency',
-  },
-  {
-    name: 'standard_ex', sourceDirectory: 'standard_ex',
-    url: 'https://gitee.com/qsgs-fans/standard_ex.git',
-    commit: 'b041d9d4151d436bb6c357f7b772fa2f1a040df0', role: 'skill-dependency',
-  },
-  {
-    name: 'shzl', sourceDirectory: 'shzl',
-    url: 'https://gitee.com/qsgs-fans/shzl.git',
-    commit: 'a6743be11ac36db4efb57c5c2546102e2be805a0', role: 'skill-dependency',
-  },
-  {
-    name: 'yj', sourceDirectory: 'yj',
-    url: 'https://gitee.com/qsgs-fans/yj.git',
-    commit: '10edd0f42f492eaeece5de14a6ef19aa14560cd0', role: 'skill-dependency',
-  },
-  {
-    name: 'mobile', sourceDirectory: 'mobile',
-    url: 'https://gitee.com/qsgs-fans/mobile.git',
-    commit: 'dcd523cc887e5bd010b26b7450486ab26f54d5ac', role: 'skill-dependency',
-  },
-  {
-    name: 'sp', sourceDirectory: 'SP',
-    url: 'https://gitee.com/qsgs-fans/SP.git',
-    commit: 'ab42a3fbba1e15e424b942e29ac8e0157c7086fc', role: 'skill-dependency',
-  },
-  {
-    name: 'tenyear', sourceDirectory: 'tenyear',
-    url: 'https://gitee.com/qsgs-fans/tenyear.git',
-    commit: '91a769c87f48006cce3e1ded90e4a1beb028f7ad', role: 'skill-dependency',
-  },
-  {
-    name: 'overseas', sourceDirectory: 'overseas',
-    url: 'https://gitee.com/qsgs-fans/overseas.git',
-    commit: '6780626a34f9fdafa25e15772b9f0609c62c7999', role: 'skill-dependency',
-  },
-  {
-    name: 'mougong', sourceDirectory: 'mougong',
-    url: 'https://gitee.com/qsgs-fans/mougong.git',
-    commit: '2ce058ec5aaceda4ebe3517278612a3d41e26045', role: 'skill-dependency',
-  },
-  {
-    name: 'jsrg', sourceDirectory: 'jsrg',
-    url: 'https://gitee.com/qsgs-fans/jsrg.git',
-    commit: '36201e75a6afc2a6f35a96bb07f4cd9a8a983193', role: 'skill-dependency',
-  },
-  {
-    name: 'ol', sourceDirectory: 'OL',
-    url: 'https://gitee.com/qsgs-fans/OL.git',
-    commit: 'ceee01b97dfc0b01eae27e6d5f2fabf6ead46413', role: 'skill-dependency',
-  },
+interface PackageManifestEntry {
+  name: string;
+  sourceDirectory: string;
+  urlKey: string;
+  commitKey: string;
+  role: UpstreamPackageSpec['role'];
+}
+
+const PACKAGE_MANIFEST: readonly PackageManifestEntry[] = [
+  { name: 'freekill-core', sourceDirectory: 'freekill-core', urlKey: 'TQS_UPSTREAM_FREEKILL_CORE_URL', commitKey: 'TQS_UPSTREAM_FREEKILL_CORE_COMMIT', role: 'core' },
+  { name: 'utility', sourceDirectory: 'utility', urlKey: 'TQS_UPSTREAM_UTILITY_URL', commitKey: 'TQS_UPSTREAM_UTILITY_COMMIT', role: 'extension' },
+  { name: 'hegemony', sourceDirectory: 'hegemony', urlKey: 'TQS_UPSTREAM_HEGEMONY_URL', commitKey: 'TQS_UPSTREAM_HEGEMONY_COMMIT', role: 'extension' },
+  { name: 'gamemode', sourceDirectory: 'gamemode', urlKey: 'TQS_UPSTREAM_GAMEMODE_URL', commitKey: 'TQS_UPSTREAM_GAMEMODE_COMMIT', role: 'skill-dependency' },
+  { name: 'standard_ex', sourceDirectory: 'standard_ex', urlKey: 'TQS_UPSTREAM_STANDARD_EX_URL', commitKey: 'TQS_UPSTREAM_STANDARD_EX_COMMIT', role: 'skill-dependency' },
+  { name: 'shzl', sourceDirectory: 'shzl', urlKey: 'TQS_UPSTREAM_SHZL_URL', commitKey: 'TQS_UPSTREAM_SHZL_COMMIT', role: 'skill-dependency' },
+  { name: 'yj', sourceDirectory: 'yj', urlKey: 'TQS_UPSTREAM_YJ_URL', commitKey: 'TQS_UPSTREAM_YJ_COMMIT', role: 'skill-dependency' },
+  { name: 'mobile', sourceDirectory: 'mobile', urlKey: 'TQS_UPSTREAM_MOBILE_URL', commitKey: 'TQS_UPSTREAM_MOBILE_COMMIT', role: 'skill-dependency' },
+  { name: 'sp', sourceDirectory: 'SP', urlKey: 'TQS_UPSTREAM_SP_URL', commitKey: 'TQS_UPSTREAM_SP_COMMIT', role: 'skill-dependency' },
+  { name: 'tenyear', sourceDirectory: 'tenyear', urlKey: 'TQS_UPSTREAM_TENYEAR_URL', commitKey: 'TQS_UPSTREAM_TENYEAR_COMMIT', role: 'skill-dependency' },
+  { name: 'overseas', sourceDirectory: 'overseas', urlKey: 'TQS_UPSTREAM_OVERSEAS_URL', commitKey: 'TQS_UPSTREAM_OVERSEAS_COMMIT', role: 'skill-dependency' },
+  { name: 'mougong', sourceDirectory: 'mougong', urlKey: 'TQS_UPSTREAM_MOUGONG_URL', commitKey: 'TQS_UPSTREAM_MOUGONG_COMMIT', role: 'skill-dependency' },
+  { name: 'jsrg', sourceDirectory: 'jsrg', urlKey: 'TQS_UPSTREAM_JSRG_URL', commitKey: 'TQS_UPSTREAM_JSRG_COMMIT', role: 'skill-dependency' },
+  { name: 'ol', sourceDirectory: 'OL', urlKey: 'TQS_UPSTREAM_OL_URL', commitKey: 'TQS_UPSTREAM_OL_COMMIT', role: 'skill-dependency' },
 ];
+
+export const UPSTREAM_BASELINE_ID = baselineValue('TQS_UPSTREAM_BASELINE_ID');
+export const UPSTREAM_RUNTIME_OVERLAY_ID = baselineValue('TQS_UPSTREAM_RUNTIME_OVERLAY_ID');
+export const UPSTREAM_RUNTIME_OVERLAY_URL = baselineValue('TQS_UPSTREAM_RUNTIME_OVERLAY_URL');
+export const UPSTREAM_RUNTIME_OVERLAY_SHA256 = baselineValue('TQS_UPSTREAM_RUNTIME_OVERLAY_SHA256');
+export const UPSTREAM_RUNTIME_OVERLAY_BUNDLE_HASH = baselineValue('TQS_UPSTREAM_RUNTIME_OVERLAY_BUNDLE_HASH');
+export const UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT = baselineValue('TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT');
+export const UPSTREAM_RUNTIME_SOURCE_PATCH_ID = baselineValue('TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_ID');
+export const UPSTREAM_RUNTIME_SOURCE_PATCH_PATH = baselineValue('TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH');
+export const UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256 = baselineValue('TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256');
+export const UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT = baselineValue('TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT');
+export const UPSTREAM_PACKAGES: readonly UpstreamPackageSpec[] = PACKAGE_MANIFEST.map((entry) => ({
+  name: entry.name,
+  sourceDirectory: entry.sourceDirectory,
+  url: baselineValue(entry.urlKey),
+  commit: baselineValue(entry.commitKey),
+  role: entry.role,
+}));
+
+/** Allow an isolated, caller-owned checkout to exercise the same audits. */
+export function resolveUpstreamRoot(defaultRoot: string): string {
+  return path.resolve(process.env.TQS_UPSTREAM_ROOT ?? defaultRoot);
+}
 
 export const UPSTREAM_PACKAGE_NAMES = UPSTREAM_PACKAGES.map(({ name }) => name);
 
@@ -134,10 +133,13 @@ function patchDeclaration(packageName: string, relative: string, bytes: Uint8Arr
   // without its required prefix. The exact source owner is
   // tenyear/pkg/tenyear_huicui/skills/langmie.lua (ty__langmie), so repair
   // only this one declaration rather than inventing a second ruleset.
-  const repaired = source.replace(
-    /General:new\(extension, "os_heg__duanwei", "qun", 4\):addSkills \{ "langmie" \}/u,
-    'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }',
-  );
+  const stale = /General:new\(extension, "os_heg__duanwei", "qun", 4\):addSkills \{ "langmie" \}/u;
+  const repairedDeclaration = 'General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }';
+  // Prepared candidate runtimes may already contain this exact reviewed
+  // declaration repair. Loading them must be idempotent; an unrelated or
+  // partially edited declaration still fails closed below.
+  if (source.includes(repairedDeclaration)) return bytes;
+  const repaired = source.replace(stale, repairedDeclaration);
   if (repaired === source) throw new Error('Expected stale langmie declaration was not found in pinned hegemony/pkg/overseas_heg/init.lua');
   return Buffer.from(repaired, 'utf8');
 }

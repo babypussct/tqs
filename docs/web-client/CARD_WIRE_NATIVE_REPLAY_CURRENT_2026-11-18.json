@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-18T13:17:35.791Z",
+  "status": "PASS-bounded-native-replay",
+  "scope": "isolated local native C++ QA only; two real clients; draw-sequence; v1 opt-in; duplicate reply injection; no observer, reconnect, physical device, hosted deployment or production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaPackageManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "qaPackageManifestEntrySha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "lua": "5.4.9"
+  },
+  "run": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1795007855791.json",
+    "artifactSha256": "10e3a315bc35e807b79f716cf779b1e340e11f7ae3938bdce0905f274f29e9eb",
+    "runnerExitCode": 0,
+    "result": "PASS",
+    "errors": 0,
+    "manualCardReply": true,
+    "gameOverOnBothClients": true,
+    "replay": {
+      "requested": true,
+      "injected": true,
+      "sent": true,
+      "rejectObserved": true,
+      "rejectCount": 1,
+      "originalGameplayRemainedActive": true
+    },
+    "semantic": {
+      "records": 1136,
+      "semanticPassRecords": 1136,
+      "semanticFailures": 0,
+      "outerDecodedRecords": 1136,
+      "innerDecodedRecords": 1136,
+      "inboundRecords": 12,
+      "nestedDecoded": 2,
+      "maxDepth": 6,
+      "invalidReferences": 0,
+      "forbiddenFields": 0,
+      "audiences": {
+        "owner": 577,
+        "opponent": 559,
+        "observer": 0,
+        "unknown": 0
+      },
+      "channels": {
+        "metadata": 741,
+        "public": 200,
+        "request": 15,
+        "deck": 164,
+        "negotiation": 4,
+        "reply": 12
+      },
+      "scopes": {
+        "outbound": 1124,
+        "inbound-reply": 12,
+        "inbound-notify": 0,
+        "inbound-request": 0
+      }
+    },
+    "privacyAudits": [
+      {
+        "audience": "owner",
+        "negotiated": true,
+        "failures": 0,
+        "commands": {
+          "PrepareDrawPile": 1,
+          "ShuffleDrawPile": 1,
+          "SyncDrawPile": 4,
+          "ChangeCardArea": 2,
+          "MoveCards": 35,
+          "SetPlayerPile": 1,
+          "Reconnect": 0,
+          "Observe": 0
+        },
+        "categoryCounts": {
+          "prepare_order": 1,
+          "shuffle_order": 1,
+          "sync_order": 4,
+          "change_area_order": 1,
+          "hidden_move_id": 10,
+          "observe_hidden_move_id": 0,
+          "special_pile_id": 1,
+          "reconnect_deck": 0,
+          "reconnect_hand": 0,
+          "reconnect_special": 0,
+          "observe_deck": 0,
+          "observe_hand": 0
+        }
+      },
+      {
+        "audience": "opponent",
+        "negotiated": true,
+        "failures": 0,
+        "commands": {
+          "PrepareDrawPile": 1,
+          "ShuffleDrawPile": 1,
+          "SyncDrawPile": 4,
+          "ChangeCardArea": 2,
+          "MoveCards": 35,
+          "SetPlayerPile": 1,
+          "Reconnect": 0,
+          "Observe": 0
+        },
+        "categoryCounts": {
+          "prepare_order": 1,
+          "shuffle_order": 1,
+          "sync_order": 4,
+          "change_area_order": 1,
+          "hidden_move_id": 8,
+          "observe_hidden_move_id": 0,
+          "special_pile_id": 0,
+          "reconnect_deck": 0,
+          "reconnect_hand": 0,
+          "reconnect_special": 0,
+          "observe_deck": 0,
+          "observe_hand": 0
+        }
+      }
+    ],
+    "packetSize": {
+      "owner": {
+        "frames": 642,
+        "packets": 648,
+        "incomingPackets": 637,
+        "outgoingPackets": 11,
+        "failures": 0,
+        "packetBytes": {
+          "total": 34149,
+          "min": 13,
+          "max": 567,
+          "le256": 638,
+          "le1024": 10,
+          "le4096": 0,
+          "gt4096": 0
+        }
+      },
+      "opponent": {
+        "frames": 635,
+        "packets": 642,
+        "incomingPackets": 633,
+        "outgoingPackets": 9,
+        "failures": 0,
+        "packetBytes": {
+          "total": 31973,
+          "min": 13,
+          "max": 454,
+          "le256": 636,
+          "le1024": 6,
+          "le4096": 0,
+          "gt4096": 0
+        }
+      }
+    },
+    "mapping": {
+      "records": 147,
+      "protocolCreated": 1,
+      "batchCommits": 143,
+      "batchAborts": 0,
+      "choiceRejects": 1,
+      "disconnects": 2,
+      "maxActiveReferences": 48,
+      "finalActiveReferences": 0,
+      "finalActiveRequests": 0,
+      "finalCleanupActiveReferences": 0,
+      "rawPayloadRetained": false
+    }
+  },
+  "limitations": [
+    "This is one bounded two-client native replay run; it does not close exhaustive emitter, stale-reference, reveal/rehide, observer or reconnect stress.",
+    "The 12-category strict privacy matrix is not claimed by this two-client non-observer/non-reconnect run; the separate reconnect/observer evidence remains the relevant bounded matrix.",
+    "P6 numeric thresholds and attribution, production/canary rollback SLA, physical device/network acceptance, immutable reviewed artifact and independent release approval remain open.",
+    "Legacy wire remains enabled in production/current configuration; v1 remains disabled-by-default and isolated-QA-only."
+  ],
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "mappingSidecarClosed": true,
+    "productionMutation": false,
+    "credentialsIncluded": false,
+    "rawMetricsPublished": false
+  }
+}

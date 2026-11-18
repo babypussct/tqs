@@ -278,10 +278,36 @@ export class GameAdapter {
     this.notify('EnterRoom', [roomId, password]);
   }
 
-  async observeRoom(roomId: number, password = '') {
+  async observeRoom(roomId: number, password = '', mode = '') {
     if (!Number.isInteger(roomId) || roomId <= 0) throw new Error('ID phòng không hợp lệ');
     await this.beforeEntry?.();
-    this.notify('ObserveRoom', [roomId, password]);
+    const request: unknown[] = [roomId, password];
+    // Candidate QA v1 proves the observer capability before native server
+    // admission. The marker is deliberately card-free and is omitted from
+    // production/legacy sessions unless the isolated runner explicitly opts
+    // into cardWireVersion 1.
+    const testGlobals = globalThis as typeof globalThis & {
+      __tqsCardWireVersion?: unknown;
+      __tqsCardWireObserverMode?: unknown;
+    };
+    const cardWireVersion = testGlobals.__tqsCardWireVersion;
+    const observerMode = testGlobals.__tqsCardWireObserverMode;
+    if (mode === 'new_heg_mode' && cardWireVersion === 1) {
+      // The negative modes are an isolated native-compatibility probe. They
+      // are inert unless the QA runner explicitly installs the corresponding
+      // init-script value; the ordinary path remains the fixed v1 marker.
+      const capability = observerMode === 'wrong-version'
+        ? 'card_wire_capability,2,TQS_HEG_CARD_WIRE,new_heg_mode'
+        : observerMode === 'wrong-protocol'
+        ? 'card_wire_capability,1,OTHER_CARD_WIRE,new_heg_mode'
+        : observerMode === 'wrong-mode'
+        ? 'card_wire_capability,1,TQS_HEG_CARD_WIRE,classic_mode'
+        : observerMode === 'missing'
+        ? null
+        : 'card_wire_capability,1,TQS_HEG_CARD_WIRE,new_heg_mode';
+      if (capability) request.push(capability);
+    }
+    this.notify('ObserveRoom', request);
   }
 
   ready() { this.notify('Ready', ''); }

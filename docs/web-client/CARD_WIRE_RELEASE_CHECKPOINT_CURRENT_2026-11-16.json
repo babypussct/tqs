@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "CP24-safe-release",
+  "generatedAt": "2026-11-16T18:10:24.000Z",
+  "status": "HOLD",
+  "publishEligible": false,
+  "git": {
+    "branch": "main",
+    "commit": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "dirty": true,
+    "changedFileCount": 113
+  },
+  "sourceSnapshot": {
+    "artifact": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-16.json",
+    "archiveSha256": "04b0d321c5c731fba45738df33072f7ca1b25b83a9b6bf0d94023a20fb6192eb",
+    "status": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL"
+  },
+  "artifact": {
+    "releaseRoot": "/private/tmp/tqs-cardwire-release-e0f37-20261116",
+    "manifestSha256": "6429a148d1eddf2e8f4c2b620ea81ce1868c07dd117277c5ff71207b02ddc6f7",
+    "releaseFileCount": 17317,
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "packages": [
+      "freekill-core",
+      "gamemode",
+      "hegemony",
+      "jsrg",
+      "maneuvering",
+      "mobile",
+      "mougong",
+      "ol",
+      "overseas",
+      "shzl",
+      "sp",
+      "standard_cards",
+      "standard_ex",
+      "tenyear",
+      "utility",
+      "yj"
+    ],
+    "runtimeFileCount": 14993,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "bundleEntrySha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "createdAt": "2026-11-16T13:25:00.000Z",
+    "releaseDirectoryFileCount": 17318
+  },
+  "gates": {
+    "sourceProvenance": "HOLD",
+    "gitDiffCheck": "PASS",
+    "releasePackageAndManifest": "PASS",
+    "requiredRuntimePackages": "PASS",
+    "sensitiveFilesAndSymlinks": "PASS",
+    "nodeForgeAdvisory": "RISK_ACCEPTED_WITH_SCOPE",
+    "liveGameplayAndNativeRules": "PENDING",
+    "coldStartQuotaRollbackSla": "PENDING",
+    "physicalDeviceAndNetwork": "WAIVED_BY_USER",
+    "officialRelease": "PENDING"
+  },
+  "holdReasons": [
+    "source checkout is dirty; create a reviewed commit or immutable source snapshot before publishing"
+  ],
+  "safety": {
+    "deployed": false,
+    "changesProductionBundle": false,
+    "credentialsIncluded": false,
+    "note": "This report is a local release-candidate checkpoint. It does not authorize deployment or official release."
+  }
+}

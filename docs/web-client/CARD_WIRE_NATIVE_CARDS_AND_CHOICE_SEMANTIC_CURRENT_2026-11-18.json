@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T11:05:59.891Z",
+  "scope": "bounded isolated native QA cards-and-choice scenario on the current candidate; two real browser clients, native outer/inner CBOR semantic capture, manual PlayCard, AskForCardsAndChoice and bounded GameOver; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "smartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e",
+    "lua": "5.4.9"
+  },
+  "runnerEvidence": {
+    "artifact": "scratch/evidence/cp08-cards-and-choice-multiplayer-live-1794999959891.json",
+    "artifactSha256": "d94f3c183cb90031a4738d919fe836c0eeeb0744777f600bd58802a379838465",
+    "result": "PASS",
+    "errors": 0,
+    "recovered": false,
+    "scenario": "cards-and-choice",
+    "twoPlayerClients": true,
+    "manualCardReply": true,
+    "scenarioCardsAndChoiceReply": true,
+    "scenarioObservations": {
+      "AskForChoices": 2,
+      "PlayCard": 1,
+      "AskForCardsAndChoice": 1,
+      "successfulReplies": 4
+    },
+    "boundedGameOver": {
+      "clients": 2,
+      "gameOverPacketsPerClient": [1, 1],
+      "runnerStatus": "completed on both clients"
+    }
+  },
+  "nativeSemanticCapture": {
+    "records": 1065,
+    "semanticPassRecords": 1065,
+    "semanticFailures": 0,
+    "outerDecodedRecords": 1065,
+    "innerDecodedRecords": 1065,
+    "inboundRecords": 6,
+    "outboundRecords": 1059,
+    "opaqueReferences": 39,
+    "numericReferences": 201,
+    "invalidReferences": 0,
+    "forbiddenFields": 0,
+    "maxDepth": 6,
+    "audiences": {
+      "owner": 537,
+      "opponent": 528,
+      "observer": 0,
+      "unknown": 0
+    },
+    "channels": {
+      "metadata": 696,
+      "public": 186,
+      "request": 7,
+      "deck": 168,
+      "negotiation": 2,
+      "reply": 6
+    },
+    "scopes": {
+      "outbound": 1059,
+      "inbound-reply": 6,
+      "inbound-notify": 0,
+      "inbound-request": 0
+    },
+    "rawPayloadRetained": false
+  },
+  "nativeBoundaryCapture": {
+    "totalRecords": 2880,
+    "cardWireRecords": 1059,
+    "cardWireOuterDecodedRecords": 1059,
+    "cardWireDecodeFailures": 0,
+    "nonCardWireBoundaryRecords": 1821,
+    "cardWireDirections": {
+      "outbound": 1059,
+      "inbound": 0
+    },
+    "cardWireChannels": {
+      "metadata": 696,
+      "public": 186,
+      "request": 7,
+      "deck": 168,
+      "negotiation": 2
+    },
+    "maxPacketBytes": 564,
+    "rawPayloadRetained": false
+  },
+  "nativeSerializationCapture": {
+    "records": 1059,
+    "wireBytes": {
+      "min": 17,
+      "max": 564,
+      "p95": 173
+    },
+    "elapsedNs": {
+      "min": 84,
+      "max": 26541,
+      "p95": 5375
+    },
+    "rawPayloadRetained": false
+  },
+  "nativeDeckPrivacy": {
+    "negotiatedClients": 2,
+    "negotiationFailures": 0,
+    "ownerOpponentAudiencesObserved": true,
+    "observerAudienceObserved": false,
+    "strictTwelveCategoryRequirement": false
+  },
+  "temporaryCaptureFiles": {
+    "semantic": {
+      "records": 1065,
+      "bytes": 330539,
+      "sha256": "c4ab309cf30b55fe493fad9da8d5d9d62aac7b75e6bb92042b67f8338435f94f"
+    },
+    "boundary": {
+      "records": 2880,
+      "bytes": 525532,
+      "sha256": "0eb267cc5b51f2730ef0dc1e31db4855662de4029f9cb4df65b5544459d1c715"
+    },
+    "serialization": {
+      "records": 1059,
+      "bytes": 93947,
+      "sha256": "ab31f6b6c1babdb79733ca824729f64fc68e7dc9d79808b495e637117af79088"
+    },
+    "rawPayloadRetained": false
+  },
+  "temporaryMetrics": {
+    "mappingRecords": 0,
+    "timingRecords": 0,
+    "mappingAndTimingFilesEmpty": true
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "luaWorkerClosed": true,
+    "screenClosed": true,
+    "qaPackageOverlaySymlinkAbsent": true,
+    "qaPackageRestored": true,
+    "productionMutation": false,
+    "credentialsOrPrivateIdentityRetained": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "productionPromotionAllowed": false,
+    "v1Default": "disabled-by-default; isolated-QA-only",
+    "legacyWire": "enabled"
+  },
+  "limitations": [
+    "This is one bounded two-player cards-and-choice run. It proves actual native outer/inner CBOR decoding for the observed owner/opponent traffic and the exercised PlayCard/AskForCardsAndChoice lifecycle, not exhaustive every-emitter semantic coverage.",
+    "The lane did not include an observer, reconnect, stale/duplicate rejection, reveal/rehide matrix or the full twelve-category strict privacy requirement; those remain covered only by separate bounded evidence where present.",
+    "This run emitted no mapping or timing records, so it does not close the approved P6 performance, serialization, mapping-memory or attribution threshold.",
+    "Production/canary rollback SLA, exhaustive drain/replay/concurrency stress, physical device/network acceptance (WAIVED_BY_USER, not PASS), immutable reviewed artifact and independent release approval remain open."
+  ]
+}

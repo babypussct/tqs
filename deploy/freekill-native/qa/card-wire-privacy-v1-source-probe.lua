@@ -238,6 +238,7 @@ setmetatable(owner, { __index = serverMethods })
 setmetatable(opponent, { __index = serverMethods })
 owner.room, opponent.room = room, room
 function room:getSettings(key) return self.settings[key] end
+function room:hasCardWireCapability() return true end
 function room:cardWireAudience(physical) return physical.audience end
 function room:beginCardWireBatch() return protocol:beginBatch() end
 function room:projectCardWire(seat, physical, command, data, batch)

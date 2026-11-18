@@ -11,12 +11,15 @@ import path from 'node:path';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { preview } from 'vite';
-import { chromium, type Page } from 'playwright-core';
-import { PacketStream, CLIENT_REPLY } from '../../src/engine/packet';
+import { chromium, type Page, type WebSocketRoute } from 'playwright-core';
+import { PacketStream, RawPacketStream, CLIENT_REPLY, PacketType } from '../../src/engine/packet';
 import { P1_QA_SOURCE_BASELINE, verifyCandidateIdentity, verifyQaPackageManifest, verifyQaSourceIdentity } from './identity';
 import { assertTqs1Ticket, createTqs1Ticket } from './qa-ticket';
 import { sanitizeQaEvidence } from './evidence-sanitize';
-import { PRIVACY_CATEGORIES, parsePrivacyCoverage } from './native-privacy';
+import {
+  PRIVACY_CATEGORIES, SUPPLEMENTAL_CHANNELS, parsePrivacyCoverage,
+  parsePrivacyAudit, parseSupplementalCoverage,
+} from './native-privacy';
 
 type LiveScenario =
   | ''
@@ -159,6 +162,11 @@ assert.ok(!testScenario || experimentalScenariosEnabled,
   'Experimental live scenarios are temporarily locked; set TQS_LIVE_ENABLE_EXPERIMENTAL_SCENARIOS=1 only after broad deployment');
 const nativeQa = process.env.TQS_LIVE_NATIVE_QA === '1';
 assert.ok(!nativeQa || !!testScenario, 'TQS_LIVE_NATIVE_QA=1 requires TQS_LIVE_SCENARIO');
+const cardWireRollbackDrainRequested = process.env.TQS_LIVE_CARD_WIRE_ROLLBACK_DRAIN === '1';
+assert.ok(!cardWireRollbackDrainRequested ||
+  (nativeQa && testScenario === 'draw-sequence' && process.argv.includes('--reconnect') &&
+    !process.argv.includes('--restart-gateway') && process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1'),
+  'TQS_LIVE_CARD_WIRE_ROLLBACK_DRAIN=1 requires isolated v1 draw-sequence privacy QA with controlled reconnect');
 assert.ok(testScenario !== 'fazheng-enyuan' || (nativeQa && process.argv.includes('--manual')),
   'fazheng-enyuan requires native QA and --manual to select both optional reactions');
 assert.ok(!['hidden-yiji', 'hidden-yiji-deputy'].includes(testScenario) || (nativeQa && process.argv.includes('--manual')),
@@ -262,6 +270,17 @@ const repo = path.resolve(web,'../..');
 const config = process.env.TQS_LIVE_CONFIG ?? path.join(os.homedir(),'.codex/secrets/tqs-live-test.env');
 assert.equal(statSync(config).mode & 0o077,0,'Private test configuration required');
 loadEnvFile(config);
+const luaExecutable = process.env.TQS_LUA_BIN ?? 'lua5.4';
+assert.match(path.basename(luaExecutable), /^lua5\.4$/u,
+  'TQS_LUA_BIN must point to a Lua 5.4 executable named lua5.4');
+if (process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1') {
+  const luaPreflight = spawnSync(luaExecutable, ['-e', 'assert(_VERSION == "Lua 5.4")'], {
+    stdio: 'ignore',
+    timeout: 5_000,
+  });
+  assert.equal(luaPreflight.status, 0,
+    'TQS_LUA_BIN must resolve to an executable Lua 5.4 runtime; pass an explicit lua5.4 path when PATH has no lua5.4');
+}
 const nativeQaTicketSecret = process.env.TQS_LIVE_TICKET_SECRET ?? '';
 const nativeQaTicketHelper = process.env.TQS_LIVE_TICKET_HELPER ?? '';
 assert.ok(!nativeQa || nativeQaTicketSecret.length >= 32 || nativeQaTicketHelper,
@@ -291,6 +310,117 @@ function nativeQaTicket(nativeName: string): string {
 }
 const host=process.env.TQS_LIVE_HOST; assert.ok(host && /^[a-zA-Z0-9.:-]+$/.test(host),'TQS_LIVE_HOST required');
 const runtime=process.env.TQS_LIVE_ROOT; assert.ok(runtime && existsSync(path.join(runtime,'flist.txt')));
+const nativeProcessMetricsFile = process.env.TQS_LIVE_NATIVE_PROCESS_METRICS_FILE;
+function readNativeProcessMetrics(): unknown {
+  if (!nativeProcessMetricsFile || !existsSync(nativeProcessMetricsFile)) return null;
+  try {
+    return JSON.parse(readFileSync(nativeProcessMetricsFile, 'utf8')) as unknown;
+  } catch {
+    return null;
+  }
+}
+const nativeMappingMetricsFile = process.env.TQS_LIVE_NATIVE_MAPPING_METRICS_FILE;
+const nativeEntropyFailureFile = process.env.TQS_LIVE_NATIVE_ENTROPY_FAILURE_FILE;
+type NativeEntropyFailure = { schemaVersion: 1; event: 'entropy_rejected'; mode: 'controlled'; kind: 'open' | 'short-read' | 'close' };
+function readNativeEntropyFailure(): NativeEntropyFailure | null {
+  if (!nativeEntropyFailureFile || !existsSync(nativeEntropyFailureFile)) return null;
+  try {
+    const value = JSON.parse(readFileSync(nativeEntropyFailureFile, 'utf8')) as Record<string, unknown>;
+    if (value.schemaVersion !== 1 || value.event !== 'entropy_rejected' || value.mode !== 'controlled' ||
+      !['open', 'short-read', 'close'].includes(value.kind as string)) return null;
+    return { schemaVersion: 1, event: 'entropy_rejected', mode: 'controlled', kind: value.kind as NativeEntropyFailure['kind'] };
+  } catch {
+    return null;
+  }
+}
+type NativeMappingSummary = {
+  rowCount: number; protocolCreated: number; batchAborts: number; batchCommits: number;
+  choiceRejects: number;
+  lastAbortActiveReferences: number | null; lastAbortActiveRequests: number | null;
+};
+function readNativeMappingSummary(): NativeMappingSummary {
+  const summary: NativeMappingSummary = {
+    rowCount: 0, protocolCreated: 0, batchAborts: 0, batchCommits: 0,
+    choiceRejects: 0,
+    lastAbortActiveReferences: null, lastAbortActiveRequests: null,
+  };
+  if (!nativeMappingMetricsFile || !existsSync(nativeMappingMetricsFile)) return summary;
+  let lines: string[];
+  try { lines = readFileSync(nativeMappingMetricsFile, 'utf8').split('\n').slice(-4096); } catch { return summary; }
+  for (const line of lines) {
+    if (!line) continue;
+    try {
+      // The QA package emits the allowlisted row through native qInfo.  Some
+      // launchers persist one JSON object per line, while the interactive
+      // freekill-asio CLI persists the same row inside a decorated log line.
+      // Accept both forms, but parse only the marker's bounded JSON object.
+      const encoded = line.match(/\[TQS_QA_CARD_WIRE_MAPPING\]\s+(\{[^\r\n]*\})/u)?.[1] ?? line;
+      const row = JSON.parse(encoded) as Record<string, unknown>;
+      const event = row.event;
+      const activeReferences = row.activeReferences;
+      const activeRequests = row.activeRequests;
+      if (row.schemaVersion !== 1 || !['protocol_created', 'batch_abort', 'batch_commit', 'choice_reject', 'disconnect'].includes(event as string) ||
+        !Number.isSafeInteger(activeReferences) || (activeReferences as number) < 0 ||
+        !Number.isSafeInteger(activeRequests) || (activeRequests as number) < 0) continue;
+      summary.rowCount++;
+      if (event === 'protocol_created') summary.protocolCreated++;
+      if (event === 'batch_abort') {
+        summary.batchAborts++;
+        summary.lastAbortActiveReferences = activeReferences as number;
+        summary.lastAbortActiveRequests = activeRequests as number;
+      }
+      if (event === 'batch_commit') summary.batchCommits++;
+      if (event === 'choice_reject') summary.choiceRejects++;
+    } catch { /* launch.py already filters the file; ignore a partial final line */ }
+  }
+  return summary;
+}
+function readNativeMappingDisconnectCount(): number {
+  if (!nativeMappingMetricsFile || !existsSync(nativeMappingMetricsFile)) return 0;
+  let lines: string[];
+  try { lines = readFileSync(nativeMappingMetricsFile, 'utf8').split('\n').slice(-4096); } catch { return 0; }
+  let count = 0;
+  for (const line of lines) {
+    if (!line) continue;
+    try {
+      const encoded = line.match(/\[TQS_QA_CARD_WIRE_MAPPING\]\s+(\{[^\r\n]*\})/u)?.[1] ?? line;
+      const row = JSON.parse(encoded) as Record<string, unknown>;
+      if (row.schemaVersion === 1 && row.event === 'disconnect' &&
+          Number.isSafeInteger(row.activeReferences) && (row.activeReferences as number) >= 0 &&
+          Number.isSafeInteger(row.activeRequests) && (row.activeRequests as number) >= 0) count++;
+    } catch { /* launch.py may leave a partial final line while flushing */ }
+  }
+  return count;
+}
+type NativeCardWireRollbackSummary = {
+  schemaVersion: 1; drainApplied: number; activeRoomProtocolV1: number;
+  newRoomAdmissionLegacy: number; reconnectProtocolV1: number;
+};
+function readNativeCardWireRollbackSummary(): NativeCardWireRollbackSummary {
+  const summary: NativeCardWireRollbackSummary = {
+    schemaVersion: 1, drainApplied: 0, activeRoomProtocolV1: 0,
+    newRoomAdmissionLegacy: 0, reconnectProtocolV1: 0,
+  };
+  if (!nativeMappingMetricsFile || !existsSync(nativeMappingMetricsFile)) return summary;
+  let lines: string[];
+  try { lines = readFileSync(nativeMappingMetricsFile, 'utf8').split('\n').slice(-4096); } catch { return summary; }
+  for (const line of lines) {
+    const encoded = line.match(/\[TQS_QA_CARD_WIRE_ROLLBACK\]\s+(\{[^\r\n]*\})/u)?.[1];
+    if (!encoded) continue;
+    try {
+      const row = JSON.parse(encoded) as Record<string, unknown>;
+      if (row.schemaVersion !== 1 || row.event !== 'drain_applied' ||
+          row.activeRoomProtocol !== 1 || row.newRoomAdmission !== 'legacy' ||
+          row.reconnectProtocol !== 1) continue;
+      summary.drainApplied++;
+      summary.activeRoomProtocolV1++;
+      summary.newRoomAdmissionLegacy++;
+      summary.reconnectProtocolV1++;
+    } catch { /* the launcher may expose a partial final qInfo line */ }
+  }
+  return summary;
+}
+const cardWireRollbackMarkerBaseline = readNativeCardWireRollbackSummary().drainApplied;
 const first={username:process.env.FK_TEST_USERNAME!,password:process.env.FK_TEST_PASSWORD!};assert.ok(first.username && first.password);
 const secondFile=process.env.TQS_LIVE_SECOND_ACCOUNT_FILE ?? path.join(os.homedir(),'.codex/secrets/tqs-multiplayer-second.json');
 if(!existsSync(secondFile)) writeFileSync(secondFile,JSON.stringify({username:`tqsqa${randomBytes(6).toString('hex')}`,
@@ -299,9 +429,41 @@ assert.equal(statSync(secondFile).mode & 0o077,0);
 const second=JSON.parse(readFileSync(secondFile,'utf8')) as typeof first;
 assert.notEqual(first.username,second.username);
 const observeNativePrivacy = process.env.TQS_LIVE_CARD_WIRE_OBSERVER === '1';
+const cardWireObserverMode = process.env.TQS_LIVE_CARD_WIRE_OBSERVER_MODE ?? 'valid';
+assert.ok(['valid', 'missing', 'wrong-version', 'wrong-protocol', 'wrong-mode'].includes(cardWireObserverMode),
+  'TQS_LIVE_CARD_WIRE_OBSERVER_MODE must be valid, missing, wrong-version, wrong-protocol or wrong-mode');
+const observerLeaveRequested = process.env.TQS_LIVE_CARD_WIRE_OBSERVER_LEAVE === '1';
+assert.ok(!observerLeaveRequested ||
+  (nativeQa && observeNativePrivacy && cardWireObserverMode === 'valid' && testScenario === 'draw-sequence'),
+  'TQS_LIVE_CARD_WIRE_OBSERVER_LEAVE=1 requires valid isolated native draw-sequence observer QA');
+const cardWireReplayRequested = process.env.TQS_LIVE_CARD_WIRE_REPLAY === '1';
+assert.ok(!cardWireReplayRequested ||
+  (nativeQa && testScenario === 'draw-sequence' && !observeNativePrivacy &&
+    !observerLeaveRequested && process.env.TQS_LIVE_LEGACY_ONLY !== '1' &&
+    process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1' && nativeMappingMetricsFile),
+  'TQS_LIVE_CARD_WIRE_REPLAY=1 requires isolated v1 draw-sequence privacy QA with mapping telemetry and no observer/reconnect lane');
 const observerFile = process.env.TQS_LIVE_OBSERVER_ACCOUNT_FILE;
-assert.ok(!observeNativePrivacy || (nativeQa && process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1' && observerFile),
-  'Observer privacy requires native privacy QA and a private third-account file');
+const cardWireObserverNegative = cardWireObserverMode !== 'valid';
+const cardWirePlayerMode = process.env.TQS_LIVE_CARD_WIRE_PLAYER_MODE ?? 'valid';
+assert.ok(['valid', 'missing'].includes(cardWirePlayerMode),
+  'TQS_LIVE_CARD_WIRE_PLAYER_MODE must be valid or missing');
+const cardWirePlayerIndex = Number(process.env.TQS_LIVE_CARD_WIRE_PLAYER_INDEX ?? '0');
+assert.ok(Number.isSafeInteger(cardWirePlayerIndex) && cardWirePlayerIndex >= 0 && cardWirePlayerIndex < 2,
+  'TQS_LIVE_CARD_WIRE_PLAYER_INDEX must select one of the two real players');
+const cardWirePlayerNegative = cardWirePlayerMode !== 'valid';
+const cardWireEntropyFailure = process.env.TQS_LIVE_CARD_WIRE_ENTROPY_FAILURE === '1';
+assert.ok(!cardWireEntropyFailure || (nativeQa && testScenario === 'draw-sequence' &&
+  !cardWireObserverNegative && !cardWirePlayerNegative && !observeNativePrivacy && nativeEntropyFailureFile),
+  'Native card-wire entropy failure requires the isolated two-player draw-sequence QA path');
+assert.ok(!cardWirePlayerNegative || nativeQa,
+  'Native card-wire player mismatch requires native QA');
+assert.ok(!(cardWirePlayerNegative && cardWireObserverNegative),
+  'Player and observer card-wire mismatch probes must run separately');
+assert.ok(!cardWireObserverNegative || (nativeQa && observeNativePrivacy && observerFile),
+  'Native card-wire observer mismatch requires native QA, a third account and observer mode');
+assert.ok(!observeNativePrivacy || (nativeQa && observerFile &&
+  (process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1' || cardWireObserverNegative)),
+  'Observer privacy requires native QA, a private third-account file and either audited v1 or an explicit negative mode');
 if (observeNativePrivacy) assert.equal(statSync(observerFile!).mode & 0o077, 0);
 const observerAccount = observeNativePrivacy
   ? JSON.parse(readFileSync(observerFile!, 'utf8')) as typeof first : null;
@@ -321,9 +483,21 @@ const deploymentUrl = process.env.TQS_LIVE_URL;
 // the matching remote runtime instead of silently bundling a different local
 // flist and receiving a native md5-mismatch disconnect.
 const gatewayTarget = process.env.TQS_LIVE_GATEWAY_TARGET?.replace(/\/$/,'') ?? null;
-const auditNativeDeck = process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1';
+const auditNativeDeck = process.env.TQS_LIVE_CARD_WIRE_PRIVACY === '1' && !cardWireObserverNegative;
+const capturePacketBytes = process.env.TQS_LIVE_CARD_WIRE_PACKET_SIZE === '1';
+const captureNativePackets = auditNativeDeck || capturePacketBytes;
+const nativeSemanticRequested = process.env.TQS_LIVE_CARD_WIRE_NATIVE_SEMANTIC === '1';
+const nativeSemanticMetricsFile = process.env.TQS_LIVE_NATIVE_SEMANTIC_METRICS_FILE;
+assert.ok(!nativeSemanticRequested || (nativeQa && !deploymentUrl && !gatewayTarget &&
+  nativeSemanticMetricsFile),
+  'Native semantic CBOR proof requires an isolated local QA runtime and an explicit metrics file');
+// Only the live isolated QA auditor receives this salt. It never enters the
+// evidence object, log, browser, or production runtime.
+const privacyAuditSalt = auditNativeDeck ? randomBytes(32).toString('hex') : null;
 assert.ok(!auditNativeDeck || (nativeQa && !deploymentUrl && !gatewayTarget),
   'Native privacy audit requires an isolated local QA runtime');
+assert.ok(!capturePacketBytes || (nativeQa && !deploymentUrl && !gatewayTarget),
+  'Native packet-size capture requires an isolated local QA runtime');
 const requireAllNativePrivacy = process.env.TQS_LIVE_CARD_WIRE_REQUIRE_ALL === '1';
 assert.ok(!requireAllNativePrivacy || (auditNativeDeck && observeNativePrivacy),
   'Full native privacy requires raw CBOR audit and a separate observer');
@@ -388,6 +562,95 @@ const traces:{direction:string;command:string;requestId:number;type:number}[][]=
 // No payload, raw exception, card ID or token is retained in the evidence.
 const nativeDeckCommands = new Set(['PrepareDrawPile', 'ShuffleDrawPile', 'SyncDrawPile',
   'ChangeCardArea', 'Reconnect', 'Observe', 'MoveCards', 'SetPlayerPile']);
+const nativeSupplementalCommands = new Set([
+  'CardWireNegotiated', 'PropertyUpdate', 'SetPlayerMark', 'SetCardMark',
+  'SetCardFootnote', 'SetCardVirtName', 'FilterCard', 'FillAG', 'TakeAG',
+  'SetPlayerHandCards', 'AddVirtualEquip', 'RemoveVirtualEquip',
+  'ShowVirtualCard', 'GameLog', 'ShowCard', 'GameOver',
+  'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
+  'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
+  'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
+  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+  'EmptyRequest',
+]);
+const nativeSemanticCommands = new Set([...nativeSupplementalCommands, ...nativeDeckCommands]);
+const nativeRequestCommands = new Set([
+  'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
+  'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
+  'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
+  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+  'EmptyRequest',
+]);
+const nativeSemanticChannels = ['metadata', 'public', 'request', 'deck', 'negotiation', 'reply'] as const;
+const nativeSemanticAudiences = ['owner', 'opponent', 'observer', 'unknown'] as const;
+const nativeSemanticScopes = ['outbound', 'inbound-reply', 'inbound-notify', 'inbound-request'] as const;
+type NativeSemanticSummary = {
+  schemaVersion: 1;
+  requested: boolean;
+  records: number;
+  semanticPassRecords: number;
+  semanticFailures: number;
+  outerDecodedRecords: number;
+  innerDecodedRecords: number;
+  inboundRecords: number;
+  outboundRecords: number;
+  opaqueReferences: number;
+  numericReferences: number;
+  invalidReferences: number;
+  forbiddenFields: number;
+  nestedDecoded: number;
+  maxDepth: number;
+  audiences: Record<(typeof nativeSemanticAudiences)[number], number>;
+  channels: Record<(typeof nativeSemanticChannels)[number], number>;
+  scopes: Record<(typeof nativeSemanticScopes)[number], number>;
+};
+function readNativeSemanticSummary(): NativeSemanticSummary {
+  const summary: NativeSemanticSummary = {
+    schemaVersion: 1, requested: nativeSemanticRequested, records: 0,
+    semanticPassRecords: 0, semanticFailures: 0, outerDecodedRecords: 0,
+    innerDecodedRecords: 0, inboundRecords: 0, outboundRecords: 0,
+    opaqueReferences: 0, numericReferences: 0, invalidReferences: 0,
+    forbiddenFields: 0, nestedDecoded: 0, maxDepth: 0,
+    audiences: Object.fromEntries(nativeSemanticAudiences.map((key) => [key, 0])) as NativeSemanticSummary['audiences'],
+    channels: Object.fromEntries(nativeSemanticChannels.map((key) => [key, 0])) as NativeSemanticSummary['channels'],
+    scopes: Object.fromEntries(nativeSemanticScopes.map((key) => [key, 0])) as NativeSemanticSummary['scopes'],
+  };
+  if (!nativeSemanticMetricsFile || !existsSync(nativeSemanticMetricsFile)) return summary;
+  let lines: string[];
+  try { lines = readFileSync(nativeSemanticMetricsFile, 'utf8').split('\n').slice(-8192); } catch { return summary; }
+  const add = (value: unknown, maximum = 1_000_000): number =>
+    typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+      ? Math.min(value, maximum) : 0;
+  for (const line of lines) {
+    if (!line) continue;
+    try {
+      const row = JSON.parse(line) as Record<string, unknown>;
+      const inboundReply = row.scope === 'inbound-reply' && row.command === 'Reply' && row.channel === 'reply';
+      if (row.schemaVersion !== 1 || typeof row.command !== 'string' ||
+          (!nativeSemanticCommands.has(row.command) && !inboundReply) ||
+          typeof row.channel !== 'string' || !nativeSemanticChannels.includes(row.channel as typeof nativeSemanticChannels[number]) ||
+          typeof row.scope !== 'string' || !nativeSemanticScopes.includes(row.scope as typeof nativeSemanticScopes[number]) ||
+          typeof row.audience !== 'string' || !nativeSemanticAudiences.includes(row.audience as typeof nativeSemanticAudiences[number])) continue;
+      summary.records++;
+      if (row.semanticPass === true) summary.semanticPassRecords++;
+      else summary.semanticFailures++;
+      if (row.outerDecoded === true) summary.outerDecodedRecords++;
+      if (row.innerDecoded === true) summary.innerDecodedRecords++;
+      if (row.scope === 'outbound') summary.outboundRecords++;
+      else summary.inboundRecords++;
+      summary.opaqueReferences += add(row.opaqueReferences);
+      summary.numericReferences += add(row.numericReferences);
+      summary.invalidReferences += add(row.invalidReferences);
+      summary.forbiddenFields += add(row.forbiddenFields);
+      summary.nestedDecoded += add(row.nestedDecoded);
+      summary.maxDepth = Math.max(summary.maxDepth, add(row.maxDepth, 64));
+      summary.audiences[row.audience as typeof nativeSemanticAudiences[number]]++;
+      summary.channels[row.channel as typeof nativeSemanticChannels[number]]++;
+      summary.scopes[row.scope as typeof nativeSemanticScopes[number]]++;
+    } catch { /* ignore a partial final line or an untrusted malformed row */ }
+  }
+  return summary;
+}
 const nativeDeckPrivacy = traces.map(() => ({
   negotiated: false, failures: 0,
   projectorSha256: auditNativeDeck ? createHash('sha256').update(readFileSync(
@@ -395,7 +658,128 @@ const nativeDeckPrivacy = traces.map(() => ({
   commands: Object.fromEntries([...nativeDeckCommands].map((command) => [command, 0])),
   categoryCounts: Object.fromEntries(PRIVACY_CATEGORIES.map((category) => [category, 0])),
 }));
+const nativeWireCapture = traces.map(() => ({
+  beforePacketDecode: true,
+  frames: 0,
+  packets: 0,
+  failures: 0,
+  packetBytes: { total: 0, min: 0, max: 0, le256: 0, le1024: 0, le4096: 0, gt4096: 0 },
+  commands: Object.fromEntries([...nativeDeckCommands].map((command) => [command, 0])),
+  categoryCounts: Object.fromEntries(PRIVACY_CATEGORIES.map((category) => [category, 0])),
+  hiddenReferenceAudited: auditNativeDeck,
+  hiddenReferenceCollisions: 0,
+}));
+const hiddenReferenceFingerprints = traces.map(() => new Set<string>());
+const nativeSupplementalCapture = traces.map(() => ({
+  beforePacketDecode: true,
+  frames: 0,
+  packets: 0,
+  incomingPackets: 0,
+  replyPackets: 0,
+  failures: 0,
+  packetBytes: { total: 0, min: 0, max: 0, le256: 0, le1024: 0, le4096: 0, gt4096: 0 },
+  commands: Object.fromEntries([...nativeSupplementalCommands].map((command) => [command, 0])),
+  replies: Object.fromEntries([...nativeRequestCommands].map((command) => [command, 0])),
+  channels: Object.fromEntries(SUPPLEMENTAL_CHANNELS.map((channel) => [channel, 0])),
+}));
+// This lane intentionally captures only bounded packet counters and size
+// buckets. Raw outer-CBOR bytes are parsed in memory and discarded before any
+// evidence object is built, so it can compare legacy and v1 without exporting
+// physical card identities, opaque references, or request payloads.
+const nativePacketSizeCapture = traces.map(() => ({
+  beforePacketDecode: true,
+  frames: 0,
+  packets: 0,
+  incomingPackets: 0,
+  outgoingPackets: 0,
+  failures: 0,
+  packetBytes: { total: 0, min: 0, max: 0, le256: 0, le1024: 0, le4096: 0, gt4096: 0 },
+}));
 const errors:string[]=[];let gameStarted=false;let finished=false;
+let cardWireObserverRejected = false;
+let cardWireObserverObservePackets = 0;
+let cardWireObserverLeaveObserved = false;
+let cardWireObserverLeaveNativeDisconnect = false;
+let cardWireObserverEvidenceWritten = false;
+let cardWireReplayInjected = false;
+let cardWireReplaySent = false;
+let cardWireReplayRejectObserved = false;
+let cardWireReplayRejectsBefore = 0;
+let cardWireReplayRejectsAfter = 0;
+type CardWireReplayRouteState = {
+  page: Page;
+  server: WebSocketRoute | null;
+  lastReply: Buffer | null;
+  pendingReplay: Buffer | null;
+  replaySent: boolean;
+  replayRequestIdRewritten: boolean;
+  sendCalls: number;
+  binaryFrames: number;
+  replyCandidates: number;
+};
+const cardWireReplayRoutes: CardWireReplayRouteState[] = [];
+let cardWirePlayerRejected = false;
+let cardWirePlayerCapabilityDrops = 0;
+let cardWirePlayerErrorPackets = 0;
+let cardWirePlayerEvidenceWritten = false;
+let cardWireEntropyFailureObserved = false;
+let cardWireEntropyFailureKind: NativeEntropyFailure['kind'] | null = null;
+let cardWireEntropyNegotiatedPackets = 0;
+let cardWireEntropyCardBearingPackets = 0;
+let cardWireEntropyBatchAborts = 0;
+let cardWireEntropyBatchCommits = 0;
+let cardWireEntropyLastAbortActiveReferences: number | null = null;
+let cardWireEntropyLastAbortActiveRequests: number | null = null;
+let cardWireEntropyEvidenceWritten = false;
+const writeCardWireObserverEvidence = () => {
+  if (!cardWireObserverNegative || cardWireObserverEvidenceWritten) return;
+  const evidenceDir = path.join(repo, 'scratch/evidence');
+  mkdirSync(evidenceDir, { recursive: true });
+  writeFileSync(path.join(evidenceDir,
+    `${candidateId}-card-wire-observer-${cardWireObserverMode}-live-${Date.now()}.json`),
+  JSON.stringify(sanitizeQaEvidence({
+    at: new Date().toISOString(), candidateId, scenario: testScenario || null,
+    cardWireObserverMode, cardWireObserverRejected, cardWireObserverObservePackets,
+    result: 'PASS', scope: 'native C++ observer mismatch; no Observe snapshot or private card payload',
+  }), null, 2));
+  cardWireObserverEvidenceWritten = true;
+};
+const writeCardWirePlayerEvidence = () => {
+  if (!cardWirePlayerNegative || cardWirePlayerEvidenceWritten) return;
+  const evidenceDir = path.join(repo, 'scratch/evidence');
+  mkdirSync(evidenceDir, { recursive: true });
+  writeFileSync(path.join(evidenceDir,
+    `${candidateId}-card-wire-player-${cardWirePlayerMode}-live-${Date.now()}.json`),
+  JSON.stringify(sanitizeQaEvidence({
+    at: new Date().toISOString(), candidateId, scenario: testScenario || null,
+    cardWirePlayerMode, cardWirePlayerIndex, cardWirePlayerRejected,
+    cardWirePlayerCapabilityDrops,
+    cardWirePlayerErrorPackets,
+    cardWirePlayerNegotiatedPackets: traces.flat().filter((packet) =>
+      packet.direction === 'incoming' && packet.command === 'CardWireNegotiated').length,
+    result: 'PASS', scope: 'native C++ v1 room with one non-negotiating player; explicit legacy session; no mixed protocol',
+  }), null, 2));
+  cardWirePlayerEvidenceWritten = true;
+};
+const writeCardWireEntropyEvidence = () => {
+  if (!cardWireEntropyFailure || cardWireEntropyEvidenceWritten) return;
+  const evidenceDir = path.join(repo, 'scratch/evidence');
+  mkdirSync(evidenceDir, { recursive: true });
+  const evidencePath = path.join(evidenceDir,
+    `${candidateId}-card-wire-entropy-failure-live-${Date.now()}.json`);
+  writeFileSync(evidencePath, JSON.stringify(sanitizeQaEvidence({
+    at: new Date().toISOString(), candidateId, scenario: testScenario,
+    cardWireEntropyFailure: true, cardWireEntropyFailureObserved,
+    cardWireEntropyFailureKind: cardWireEntropyFailureKind ?? null,
+    cardWireEntropyNegotiatedPackets, cardWireEntropyCardBearingPackets,
+    cardWireEntropyBatchAborts, cardWireEntropyBatchCommits,
+    cardWireEntropyLastAbortActiveReferences,
+    cardWireEntropyLastAbortActiveRequests,
+    nativeProcessMetrics: readNativeProcessMetrics(), result: 'PASS',
+  }), null, 2));
+  cardWireEntropyEvidenceWritten = true;
+  console.log(`PASS native card-wire entropy failure: kind=${cardWireEntropyFailureKind}, negotiatedPackets=${cardWireEntropyNegotiatedPackets}, cardBearingPackets=0, batchAborts=${cardWireEntropyBatchAborts}, batchCommits=${cardWireEntropyBatchCommits}`);
+};
 const testRecovery = process.argv.includes('--reconnect') || testGatewayRestart;
 const testManual = process.argv.includes('--manual');
 const testBotAudit = process.argv.includes('--audit-bots');
@@ -406,6 +790,73 @@ const generalPairMatchScenario = testScenario.startsWith('general-pair-match-');
 const boundedAiTraceScenario = aiTraceScenario || chooserTraceScenario || generalPairTraceScenario;
 assert.ok(!(boundedAiTraceScenario || generalPairMatchScenario) || (nativeQa && testBotAudit),
   'ai-trace/chooser-trace/general-pair-trace/general-pair-match require the isolated native QA package and --audit-bots');
+class CardWirePlayerProbeComplete extends Error {
+  constructor() {
+    super('card-wire player mismatch probe completed');
+    this.name = 'CardWirePlayerProbeComplete';
+  }
+}
+class CardWireEntropyProbeComplete extends Error {
+  constructor() {
+    super('card-wire entropy failure probe completed');
+    this.name = 'CardWireEntropyProbeComplete';
+  }
+}
+async function waitForNativeEntropyFailure(timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (readNativeEntropyFailure()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return readNativeEntropyFailure() !== null;
+}
+async function waitForNativeEntropyNegotiation(timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const negotiatedPackets = traces.flat().filter((packet) =>
+      packet.direction === 'incoming' && packet.command === 'CardWireNegotiated').length;
+    if (negotiatedPackets >= 2) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return traces.flat().filter((packet) =>
+    packet.direction === 'incoming' && packet.command === 'CardWireNegotiated').length >= 2;
+}
+function completeCardWireEntropyProbe(): never {
+  const failure = readNativeEntropyFailure();
+  assert.ok(failure, 'native candidate did not emit the bounded CSPRNG rejection marker');
+  const mapping = readNativeMappingSummary();
+  const incoming = traces.flat().filter((packet) => packet.direction === 'incoming');
+  const cardBearingCommands = new Set([
+    'PrepareDrawPile', 'ShuffleDrawPile', 'SyncDrawPile', 'ChangeCardArea',
+    'MoveCards', 'SetPlayerPile', 'SetPlayerHandCards', 'AddVirtualEquip',
+    'RemoveVirtualEquip', 'ShowCard', 'ShowVirtualCard', 'GameLog',
+    'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
+    'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard', 'AskForUseCard',
+    'AskForResponseCard', 'AskForUseActiveSkill',
+  ]);
+  cardWireEntropyFailureObserved = true;
+  cardWireEntropyFailureKind = failure.kind;
+  cardWireEntropyNegotiatedPackets = incoming.filter((packet) => packet.command === 'CardWireNegotiated').length;
+  cardWireEntropyCardBearingPackets = incoming.filter((packet) => cardBearingCommands.has(packet.command)).length;
+  cardWireEntropyBatchAborts = mapping.batchAborts;
+  cardWireEntropyBatchCommits = mapping.batchCommits;
+  cardWireEntropyLastAbortActiveReferences = mapping.lastAbortActiveReferences;
+  cardWireEntropyLastAbortActiveRequests = mapping.lastAbortActiveRequests;
+  assert.ok(cardWireEntropyNegotiatedPackets >= 2,
+    'native entropy probe must fail after both real clients receive v1 negotiation');
+  assert.equal(cardWireEntropyCardBearingPackets, 0,
+    'CSPRNG failure must prevent every card-bearing packet from leaving the native room');
+  assert.ok(cardWireEntropyBatchAborts > 0,
+    'CSPRNG failure must abort the staged native card-wire batch');
+  assert.equal(cardWireEntropyLastAbortActiveReferences, 0,
+    'aborted native card-wire batch must publish no partial audience references');
+  assert.equal(cardWireEntropyLastAbortActiveRequests, 0,
+    'aborted native card-wire batch must publish no partial request state');
+  gameStarted = false;
+  finished = true;
+  writeCardWireEntropyEvidence();
+  throw new CardWireEntropyProbeComplete();
+}
 let manualCardReply = false;
 const manualDeadlineMs = Number(process.env.TQS_LIVE_DEADLINE_MS ?? '180000');
 assert.ok(Number.isSafeInteger(manualDeadlineMs) && manualDeadlineMs >= 30000 && manualDeadlineMs <= 900000,
@@ -419,10 +870,37 @@ const winrateRunId = process.env.TQS_WINRATE_RUN_ID ?? null;
 if (winrateRunId) assert.match(winrateRunId, /^[A-Za-z0-9_.-]{1,100}$/, 'TQS_WINRATE_RUN_ID is not metadata-safe');
 const errorContexts: unknown[] = [];
 let recovered = false;
+let cardWireRollbackDrainObserved = false;
 const pages:Page[]=[];
 let observerPage: Page | undefined;
 const currentSockets: unknown[] = [];
 const transportOpen = [false,false];
+async function performObserverLeaveProbe(): Promise<void> {
+  if (!observerLeaveRequested) return;
+  const observer = observerPage;
+  if (!observer) throw new Error('observer leave probe has no live observer page');
+  assert.ok(currentSockets[2], 'observer leave probe must have an active observer WebSocket');
+  const observerLeaveDisconnectBaseline = readNativeMappingDisconnectCount();
+  // Close the application WebSocket itself so the native transport boundary
+  // is exercised. Context close remains a safety net because Chromium/macOS
+  // does not always surface the close event to Playwright.
+  await observer.evaluate(() =>
+    (window as unknown as { __tqsTestDisconnect?: () => void }).__tqsTestDisconnect?.());
+  await observer.context().close();
+  const observerLeaveDeadline = Date.now() + 10000;
+  while (transportOpen[2] !== false &&
+      readNativeMappingDisconnectCount() <= observerLeaveDisconnectBaseline &&
+      Date.now() < observerLeaveDeadline) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  cardWireObserverLeaveNativeDisconnect = readNativeMappingDisconnectCount() > observerLeaveDisconnectBaseline;
+  assert.ok(transportOpen[2] === false || cardWireObserverLeaveNativeDisconnect,
+    'observer leave probe must observe a native observer transport close or bounded mapping disconnect');
+  cardWireObserverLeaveObserved = transportOpen[2] === false || cardWireObserverLeaveNativeDisconnect;
+  observerPage = undefined;
+  console.log(`PASS native observer leave: transportClosed=${transportOpen[2] === false}, ` +
+    `nativeDisconnect=${cardWireObserverLeaveNativeDisconnect}; player room remained active`);
+}
 // The native QA director binds its actor to the first allowlisted user
 // (`allowedUsers[1]` in Lua). The runner logs that account into page 0, so keep
 // page 0 as the default until a later roster/prelight probe discovers a more
@@ -439,7 +917,7 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   qaMode?: 'battle-royal-new' | 'battle-royal-old'; sameKingdom?: boolean; capacity?: 2 | 3 | 4; requiresGeneral?: boolean;
 }> = {
   'draw-sequence': { general: /$^/, generalId: '', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'PlayCard', requiresGeneral: false },
-  'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
+  'card-chosen': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: /jianchu|鞬出|Kiền xuất|Kiên xuất|Lấy ra/i, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForCardChosen' },
   'cards-and-choice': { general: /Tưởng Khâm|蒋钦|Jiang\s*Qin/i, generalId: 'ld__jiangqin', skill: /shangyi|尚义|Thượng nghĩa/i, pack: /^formation$/i, packId: 'formation', requiredCommand: 'AskForCardsAndChoice' },
   'poxi': { general: /Đặng Chi|邓芝|Deng\s*Zhi/i, generalId: 'ty_heg__dengzhi', skill: /weimeng|危盟|Nguy minh/i, pack: /^tenyear_heg$/i, packId: 'tenyear_heg', requiredCommand: 'AskForPoxi' },
   'rescue-normal': { general: /Bàng Đức|庞德|Pang\s*De/i, generalId: 'hs__pangde', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'AskForUseCard', sameKingdom: true, capacity: 2, requiresGeneral: false },
@@ -731,11 +1209,16 @@ const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJ
 // GameOver after the skill branch, so routing them through the ordinary lobby
 // cleanup would turn a completed native assertion into a false failure.
 const nativeQaGameOverCompletion = nativeQa &&
-  (testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || hiddenScenario);
+  (testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || hiddenScenario);
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
-const qaCleanupTimeoutMs = Number(process.env.TQS_LIVE_QA_CLEANUP_TIMEOUT_MS ?? '30000');
+// A native bounded match may continue through a few AI turns after the
+// browser has recovered from transport loss.  Keep this bounded at the
+// contract maximum by default so a normal 57-second QA match cannot be
+// mistaken for a missing GameOver; callers may still lower it explicitly for
+// a deliberately short diagnostic.
+const qaCleanupTimeoutMs = Number(process.env.TQS_LIVE_QA_CLEANUP_TIMEOUT_MS ?? '120000');
 assert.ok(Number.isSafeInteger(qaCleanupTimeoutMs) && qaCleanupTimeoutMs >= 5000 && qaCleanupTimeoutMs <= 120000,
   'TQS_LIVE_QA_CLEANUP_TIMEOUT_MS must be a bounded integer between 5000 and 120000');
 const nativeQaCatalog = nativeQa
@@ -918,6 +1401,7 @@ let hiddenFankuiDamageReply = false;
 let hiddenFankuiChoiceReply = false;
 let hiddenRevealGateReply = false;
 let hiddenRevealReply = false;
+let hiddenDuoshiInvoked: boolean = false;
 let hiddenActiveGateReply = false;
 let hiddenActiveReply = false;
 let hiddenFanjianGateReply = false;
@@ -933,6 +1417,7 @@ let hiddenDualUseReply = false;
 let hiddenLuoshenGateReply = false;
 let hiddenLuoshenInvoked = false;
 let hiddenLuoshenInvokeCount = 0;
+let hiddenLuoshenAgReply = false;
 let hiddenTianduGateReply = false;
 let hiddenJizhiGateReply = false;
 let hiddenJizhiCardReply = false;
@@ -1164,6 +1649,38 @@ async function completeActiveSkill(page: Page, client: number, requestId: number
   const activePrompt = await promptNode.count()
     ? await promptNode.innerText().catch(() => '')
     : await controls.innerText().catch(() => '');
+  const hiddenDuoshiDiscard = hiddenRevealScenario && hiddenDuoshiInvoked &&
+    !/Mở tướng|亮将|reveal_skill&/i.test(activePrompt);
+
+  // Lục Tốn's standard Duoshi source skill calls the real
+  // Room:useVirtualCard("await_exhausted", {}, ...) path. Its card effect
+  // then asks the actor to discard two cards through this same production
+  // AskForUseActiveSkill/discard_skill scene. This branch is candidate-QA
+  // only: it is scoped to hidden-reveal and never changes the production
+  // default runner behavior.
+  if (hiddenRevealScenario &&
+      (/#AskForDiscard|Hãy bỏ|弃置|bỏ.*lá|discard/i.test(activePrompt) || hiddenDuoshiDiscard)) {
+    console.log(`hidden-reveal duoshi discard request client=${client + 1} request=${requestId} ` +
+      `hand=${await controls.locator('.gameplay-hand button').count()} ` +
+      `enabled=${await controls.locator('.gameplay-hand button:enabled').count()} ` +
+      `cardItems=${await controls.locator('[data-card-id]').count()} ` +
+      `confirm=${await controls.getByRole('button', { name: 'Xác nhận', exact: true }).count()}`);
+    const hand = controls.locator('.gameplay-hand button:enabled:not([aria-pressed="true"])');
+    for (let n = 0; n < 2; n++) {
+      const card = hand.first();
+      assert.ok(await card.count(), 'hidden-reveal Duoshi must expose two discardable hand cards');
+      await card.click();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const ok = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+    assert.ok(await ok.count() && await ok.isEnabled(),
+      'hidden-reveal Duoshi discard must enable confirmation after two cards');
+    await ok.click();
+    const replied = await waitForReply(client, requestId);
+    scenarioObservations.push({ command: 'AskForUseActiveSkill', requestId, reply: replied,
+      detail: 'hidden-reveal-duoshi-discard' });
+    return replied;
+  }
 
   if (deltaLordWenjiScenario) {
     // The two #ld__wenji-give prompts have the same translation, but
@@ -1663,6 +2180,12 @@ try{
     const account=i===0?first:i===1?second:observerAccount!;
     const context=await browser.newContext({viewport:{width:390,height:844}});const p=await context.newPage();
     if (i < 2) pages.push(p); else observerPage = p;
+    // tsx keeps function names when it serializes this runner. Playwright
+    // evaluates addInitScript callbacks in the browser, but that transform's
+    // __name helper is otherwise only present in the Node runner. Define the
+    // identity helper in the test page before any callback is evaluated; this
+    // is test-only and never enters the frozen production bundle.
+    await p.addInitScript({content: 'globalThis.__name ??= (value) => value;'});
     await p.addInitScript(() => {
       // Opt in to numeric-only WASM/Lua and callback telemetry.
       (window as unknown as { __tqsEnableLuaTelemetry: boolean }).__tqsEnableLuaTelemetry = true;
@@ -1674,14 +2197,185 @@ try{
         original(...args);
       };
     });
-    if (testRecovery) await p.addInitScript((peerUrl:string|null) => {
-      let active: WebSocket;
+    // Install the transport harness on every live QA page. It is test-only,
+    // does not enter the frozen production bundle, and keeping installation
+    // unconditional avoids browser init-script ordering differences between
+    // the reconnect, observer-leave and replay lanes.
+    await p.addInitScript((rawOptions: {
+      peerUrl: string | null; replayEnabled: boolean;
+    } | undefined) => {
+      // Playwright normally supplies the second argument, but keep the
+      // test-only harness fail-closed if a browser-side init-script bridge
+      // drops it: replay stays disabled and the normal gateway remains the
+      // only transport target.
+      const options = rawOptions ?? { peerUrl: null, replayEnabled: false };
+      if (!options.replayEnabled) {
+        // Reconnect and observer-leave lanes need only a transparent socket
+        // tracker. Keeping this path deliberately small avoids touching
+        // send() or parsing frames when no replay probe was requested.
+        let active: WebSocket | undefined;
+        const sockets: WebSocket[] = [];
+        (window as unknown as { __tqsTestDisconnect(): {
+          socketCount: number; openSocketCount: number; activeReadyState: number;
+          candidateReadyState: number; candidateAfterReadyState: number; closed: boolean;
+        } }).__tqsTestDisconnect = () => {
+          const candidates = active ? [
+            active,
+            ...[...sockets].reverse().filter((socket) => socket !== active),
+          ] : [...sockets].reverse();
+          const candidate = candidates.find((socket) =>
+            socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING);
+          const result = {
+            socketCount: sockets.length,
+            openSocketCount: sockets.filter((socket) => socket.readyState === WebSocket.OPEN).length,
+            activeReadyState: active?.readyState ?? -1,
+            candidateReadyState: candidate?.readyState ?? -1,
+            candidateAfterReadyState: -1,
+            closed: false,
+          };
+          if (candidate) {
+            candidate.close();
+            result.candidateAfterReadyState = candidate.readyState;
+            result.closed = true;
+          }
+          return result;
+        };
+        window.WebSocket = new Proxy(window.WebSocket, { construct(Target, args) {
+          const socket = Reflect.construct(Target,
+            options.peerUrl ? [options.peerUrl, ...args.slice(1)] : args) as WebSocket;
+          sockets.push(socket);
+          active = socket;
+          return socket;
+        } });
+        return;
+      }
+      let active: WebSocket | undefined;
+      const sockets: Array<{ socket: WebSocket; lastReply: ArrayBuffer | null }> = [];
+      let replaying = false;
+      let sendCalls = 0;
+      let binarySendCalls = 0;
+      let replyCandidateFrames = 0;
+      let lastBinaryLength = 0;
+      let lastReplyLength = 0;
+      const readHead = (bytes: Uint8Array, start: number) => {
+        if (start >= bytes.length) return null;
+        const initial = bytes[start];
+        const major = initial >> 5;
+        const additional = initial & 31;
+        if (additional < 24) return { major, value: additional, next: start + 1 };
+        const width = additional === 24 ? 1 : additional === 25 ? 2 :
+          additional === 26 ? 4 : additional === 27 ? 8 : 0;
+        if (!width || start + 1 + width > bytes.length) return null;
+        let value = 0;
+        for (let index = 0; index < width; index++) {
+          value = value * 256 + bytes[start + 1 + index];
+          if (!Number.isSafeInteger(value)) return null;
+        }
+        return { major, value, next: start + 1 + width };
+      };
+      const isReplyFrame = (bytes: Uint8Array) => {
+        try {
+          const array = readHead(bytes, 0);
+          if (!array || array.major !== 4 || (array.value !== 4 && array.value !== 6)) return false;
+          const request = readHead(bytes, array.next);
+          const type = request && readHead(bytes, request.next);
+          if (!request || !type || (type.major !== 0 && type.major !== 1)) return false;
+          const command = readHead(bytes, type.next);
+          return !!command && (command.major === 2 || command.major === 3) &&
+            command.value === 0 && type.major === 0 && (type.value & 0x200) !== 0;
+        } catch {
+          return false;
+        }
+      };
+      const toBytes = (data: unknown): Uint8Array | null => {
+        if (data instanceof ArrayBuffer) return new Uint8Array(data);
+        if (ArrayBuffer.isView(data)) {
+          return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+        }
+        return null;
+      };
       window.WebSocket = new Proxy(window.WebSocket, { construct(Target, args) {
-        active = Reflect.construct(Target, peerUrl ? [peerUrl,...args.slice(1)] : args) as WebSocket; return active;
+        const socket = Reflect.construct(Target, options.peerUrl ? [options.peerUrl,...args.slice(1)] : args) as WebSocket;
+        const record = { socket, lastReply: null as ArrayBuffer | null };
+        sockets.push(record);
+        active = socket;
+        if (options.replayEnabled) {
+          const originalSend = socket.send.bind(socket);
+          Object.defineProperty(socket, 'send', {
+            configurable: true,
+            writable: true,
+            value: (data: unknown) => {
+              sendCalls++;
+              const bytes = toBytes(data);
+              if (bytes) {
+                binarySendCalls++;
+                lastBinaryLength = bytes.byteLength;
+              }
+              if (!replaying && bytes && isReplyFrame(bytes)) {
+                replyCandidateFrames++;
+                record.lastReply = bytes.slice().buffer;
+                lastReplyLength = bytes.byteLength;
+              }
+              return originalSend(data as string | ArrayBufferLike | ArrayBufferView);
+            },
+          });
+        }
+        return socket;
       } });
-      (window as unknown as { __tqsTestDisconnect(): void }).__tqsTestDisconnect = () => active.close();
-    }, testGatewayRestart && i===1 ? `ws://127.0.0.1:${peerGatewayPort}/ws` : null);
-    p.setDefaultTimeout(15000);p.on('pageerror',()=>{errors.push(`client-${i+1}: JavaScript error`);});
+      if (options.replayEnabled) {
+        (window as unknown as { __tqsTestReplayLastReply(): boolean }).__tqsTestReplayLastReply = () => {
+          for (const candidate of [...sockets].reverse()) {
+            if (candidate.socket.readyState !== WebSocket.OPEN || !candidate.lastReply) continue;
+            const replay = candidate.lastReply.slice(0);
+            candidate.lastReply = null;
+            replaying = true;
+            try {
+              candidate.socket.send(replay);
+            } finally {
+              replaying = false;
+            }
+            return true;
+          }
+          return false;
+        };
+      }
+      (window as unknown as { __tqsTestReplayDebug(): unknown }).__tqsTestReplayDebug = () => ({
+        enabled: options.replayEnabled,
+        sendCalls, binarySendCalls, replyCandidateFrames, lastBinaryLength, lastReplyLength,
+        socketCount: sockets.length,
+        openSocketCount: sockets.filter((candidate) => candidate.socket.readyState === WebSocket.OPEN).length,
+      });
+    }, {
+      peerUrl: testGatewayRestart && i===1 ? `ws://127.0.0.1:${peerGatewayPort}/ws` : null,
+      replayEnabled: cardWireReplayRequested,
+    });
+    p.setDefaultTimeout(15000);p.on('pageerror',(error)=>{
+      errors.push(`client-${i+1}: JavaScript error`);
+      // Keep page-error evidence as bounded categories only.  A replayed
+      // native reply can surface a browser exception without a console row;
+      // retain enough signal to classify that lane without persisting raw
+      // exception text, stack paths, cards or request payloads.
+      const message = String(error?.message ?? error);
+      const categories = [
+        'Lua dispatch failed', 'Lua callback failed', 'Error invoking Lua',
+        'TypeError', 'ReferenceError', 'SyntaxError', 'Error: ',
+        'AskForUseActiveSkill', 'CardItem', 'MoveCards', 'SetCardMark',
+        'Cannot enlarge memory', 'invalid', 'unknown', 'stale', 'area',
+        'assert', 'card', 'CBOR', 'throw', 'WebSocket',
+      ].filter((token) => message.includes(token));
+      const context = {client:i+1,
+        lastIncoming:traces[i].filter(t=>t.direction==='incoming').at(-1)?.command ?? null,
+        diagnosticCode:categories.length ? 2 : 1};
+      errorContexts.push(context);
+      if (auditNativeDeck) {
+        const stackLine = String(error?.stack ?? '').split('\n')
+          .find((line) => /(?:assets|index)[^\s]*\.js(?::\d+:\d+)?/u.test(line));
+        const location = stackLine?.match(/((?:assets|index)[^\s]*\.js(?::\d+:\d+)?)/u)?.[1] ?? 'unknown';
+        const fingerprint = createHash('sha256').update(message).digest('hex').slice(0, 12);
+        console.warn(`client-${i+1}: page diagnostic name=${error?.name ?? 'Error'} length=${message.length} ` +
+          `fingerprint=${fingerprint} location=${location} categories=${categories.join(',') || 'unmatched'}`);
+      }
+    });
     p.on('console',m=>{if(m.type()==='error'){
       // The console message and source URL may contain private cards, generals,
       // credentials or filesystem paths. Persist only a bounded error signal.
@@ -1736,13 +2430,144 @@ try{
       let socketNegotiated = false;
       ws.on('close', () => { if (currentSockets[i] === ws) transportOpen[i] = false; });
       const streams={incoming:new PacketStream(),outgoing:new PacketStream()};
+      const rawStreams={incoming:new RawPacketStream(),outgoing:new RawPacketStream()};
+      const requestCommands = new Map<number, string>();
+      const nativeDeckAuditPath = path.join(repo, 'deploy/freekill-native/qa/card-wire-native-deck-audit.lua');
+      const nativeSupplementalAuditPath = path.join(repo,
+        'deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua');
+      const recordPacketBytes = (capture: {
+        packetBytes: { total: number; min: number; max: number; le256: number;
+          le1024: number; le4096: number; gt4096: number };
+      }, bytes: Uint8Array) => {
+        const size = bytes.byteLength;
+        const metrics = capture.packetBytes;
+        metrics.total += size;
+        metrics.min = metrics.min === 0 ? size : Math.min(metrics.min, size);
+        metrics.max = Math.max(metrics.max, size);
+        if (size <= 256) metrics.le256++;
+        else if (size <= 1024) metrics.le1024++;
+        else if (size <= 4096) metrics.le4096++;
+        else metrics.gt4096++;
+      };
+      const captureRawPacket = (direction: 'incoming' | 'outgoing', rawPacket: {
+        bytes: Uint8Array;
+      }) => {
+        nativePacketSizeCapture[i].packets++;
+        if (direction === 'incoming') nativePacketSizeCapture[i].incomingPackets++;
+        else nativePacketSizeCapture[i].outgoingPackets++;
+        recordPacketBytes(nativePacketSizeCapture[i], rawPacket.bytes);
+      };
+      const auditRawPacket = (rawPacket: { command: string; bytes: Uint8Array }) => {
+        nativeWireCapture[i].packets++;
+        recordPacketBytes(nativeWireCapture[i], rawPacket.bytes);
+        const isSetup = rawPacket.command === 'Setup';
+        const audit = spawnSync(luaExecutable, [nativeDeckAuditPath,
+          path.join(runtime, 'packages/freekill-core'), '--raw-packet',
+          isSetup ? 'identity' : i === 2 ? 'observer' : 'player', String(boundSeat ?? '')], {
+          input: Buffer.from(rawPacket.bytes).toString('hex'), encoding: 'utf8',
+          timeout: 10_000, maxBuffer: 64 * 1024,
+          env: {
+            ...process.env,
+            ...(privacyAuditSalt ? { TQS_PRIVACY_AUDIT_SALT: privacyAuditSalt } : {}),
+            ...(isSetup ? { TQS_PRIVACY_EXPECTED_ACCOUNT: account.username } : {}),
+          },
+        });
+        if (isSetup) {
+          const match = audit.status === 0 && !audit.error
+            ? /^IDENTITY=([1-9]\d*)\s*$/u.exec(audit.stdout) : null;
+          const seat = match ? Number(match[1]) : null;
+          if (seat === null || !Number.isSafeInteger(seat)) {
+            nativeWireCapture[i].failures++;
+            errors.push(`client-${i+1}: native-raw-identity-rejected`);
+          } else {
+            boundSeat = seat;
+          }
+          return;
+        }
+        const privacyAudit = audit.status === 0 ? parsePrivacyAudit(audit.stdout) : null;
+        if (audit.error || !privacyAudit) {
+          nativeWireCapture[i].failures++;
+          console.warn(`client-${i+1}: native-raw-wire-rejected command=${rawPacket.command} reason=${audit.error ? 'audit-process-error' : 'coverage-parse'}`);
+          errors.push(`client-${i+1}: native-raw-wire-rejected`);
+          return;
+        }
+        nativeWireCapture[i].commands[rawPacket.command]++;
+        for (const category of PRIVACY_CATEGORIES) {
+          nativeWireCapture[i].categoryCounts[category] += privacyAudit.coverage[category];
+        }
+        for (const fingerprint of privacyAudit.hiddenFingerprints) {
+          for (let audience = 0; audience < hiddenReferenceFingerprints.length; audience++) {
+            if (audience !== i && hiddenReferenceFingerprints[audience].has(fingerprint)) {
+              nativeWireCapture[i].hiddenReferenceCollisions++;
+              nativeWireCapture[audience].hiddenReferenceCollisions++;
+              errors.push(`client-${i + 1}: native-hidden-reference-audience-collision`);
+            }
+          }
+          hiddenReferenceFingerprints[i].add(fingerprint);
+        }
+      };
+      const auditSupplementalPacket = (rawPacket: {
+        command: string; requestId: number; type: number; bytes: Uint8Array;
+      }, packetDirection: 'incoming' | 'outgoing', replyCommand?: string) => {
+        const command = packetDirection === 'incoming' ? rawPacket.command : replyCommand;
+        if (!command || !nativeSupplementalCommands.has(command)) return;
+        nativeSupplementalCapture[i].packets++;
+        recordPacketBytes(nativeSupplementalCapture[i], rawPacket.bytes);
+        if (packetDirection === 'incoming') nativeSupplementalCapture[i].incomingPackets++;
+        else nativeSupplementalCapture[i].replyPackets++;
+        const audit = spawnSync(luaExecutable, [nativeSupplementalAuditPath,
+          path.join(runtime, 'packages/freekill-core'), '--raw-packet',
+          i === 2 ? 'observer' : 'player', String(boundSeat ?? ''), packetDirection, command], {
+          input: Buffer.from(rawPacket.bytes).toString('hex'), encoding: 'utf8',
+          timeout: 10_000, maxBuffer: 1024,
+        });
+        const coverage = audit.status === 0 && !audit.error
+          ? parseSupplementalCoverage(audit.stdout) : null;
+        if (!coverage) {
+          nativeSupplementalCapture[i].failures++;
+          // The Lua auditor intentionally emits only a numeric source line on
+          // rejection. Preserve that bounded diagnostic without exporting the
+          // packet, decoded payload, or raw exception text.
+          const failureLine = /failureLine=(\d+)/u.exec(audit.stderr ?? '')?.[1] ?? 'unknown';
+          console.warn(`client-${i+1}: native-supplemental-wire-rejected command=${command} direction=${packetDirection} failureLine=${failureLine}`);
+          errors.push(`client-${i+1}: native-supplemental-wire-rejected`);
+          return;
+        }
+        nativeSupplementalCapture[i].channels[coverage.channel]++;
+        if (packetDirection === 'incoming') nativeSupplementalCapture[i].commands[command]++;
+        else nativeSupplementalCapture[i].replies[command]++;
+      };
       const record = (direction: 'incoming' | 'outgoing', payload: string | Buffer) => {
         if(typeof payload==='string')return;
+        if (captureNativePackets) {
+          if (auditNativeDeck) nativeSupplementalCapture[i].frames++;
+          nativePacketSizeCapture[i].frames++;
+          for (const rawPacket of rawStreams[direction].push(payload)) {
+            captureRawPacket(direction, rawPacket);
+            if (auditNativeDeck && direction === 'incoming') {
+              nativeWireCapture[i].frames++;
+              if (rawPacket.command === 'Setup' || nativeDeckCommands.has(rawPacket.command)) {
+                auditRawPacket(rawPacket);
+              }
+              if (nativeSupplementalCommands.has(rawPacket.command)) {
+                auditSupplementalPacket(rawPacket, 'incoming');
+              }
+            } else if (auditNativeDeck && rawPacket.command === '' &&
+                (rawPacket.type & PacketType.REPLY) !== 0) {
+              const command = requestCommands.get(rawPacket.requestId);
+              auditSupplementalPacket(rawPacket, 'outgoing', command);
+              if (command) requestCommands.delete(rawPacket.requestId);
+            }
+          }
+        }
         for(const packet of streams[direction].push(payload)) {
           traces[i].push({direction,command:packet.command,requestId:packet.requestId,type:packet.type});
           if (auditNativeDeck && direction === 'incoming') {
+            if (packet.requestId >= 0 && nativeRequestCommands.has(packet.command)) {
+              requestCommands.set(packet.requestId, packet.command);
+            }
             if (packet.command === 'Setup') {
-              const identity = spawnSync('lua', [path.join(repo,
+              const identity = spawnSync(luaExecutable, [path.join(repo,
                 'deploy/freekill-native/qa/card-wire-native-deck-audit.lua'),
               path.join(runtime, 'packages/freekill-core'), 'Setup', 'identity'], {
                 input: Buffer.from(packet.data).toString('hex'), encoding: 'utf8',
@@ -1765,7 +2590,7 @@ try{
               nativeDeckPrivacy[i].negotiated = true;
             }
             if (nativeDeckCommands.has(packet.command)) {
-              const audit = spawnSync('lua', [path.join(repo,
+              const audit = spawnSync(luaExecutable, [path.join(repo,
                 'deploy/freekill-native/qa/card-wire-native-deck-audit.lua'),
               path.join(runtime, 'packages/freekill-core'), packet.command,
               i === 2 ? 'observer' : 'player', String(boundSeat ?? '')], {
@@ -1775,6 +2600,9 @@ try{
               const coverage = audit.status === 0 ? parsePrivacyCoverage(audit.stdout) : null;
               if (!socketNegotiated || boundSeat === null || audit.error || !coverage) {
                 nativeDeckPrivacy[i].failures++;
+                const reason = !socketNegotiated ? 'not-negotiated' : boundSeat === null ? 'unbound-seat' :
+                  audit.error ? 'audit-process-error' : !coverage ? 'coverage-parse' : 'unknown';
+                console.warn(`client-${i+1}: native-deck-privacy-rejected command=${packet.command} reason=${reason}`);
                 errors.push(`client-${i+1}: native-deck-privacy-rejected`);
               } else {
                 nativeDeckPrivacy[i].commands[packet.command]++;
@@ -1803,6 +2631,128 @@ try{
       poolPolicy: { schemaVersion: 1, mode: 'new_heg_mode', revision: 0, generalNum: initialGeneralCount,
         disabledPacks: { generals: [], cards: [] }, appliesTo: 'new_rooms' },
     });
+    await p.addInitScript((args: {
+      version: number; observerMode: string; playerMode: string; playerIndex: number; index: number;
+    }) => {
+      const target = window as Window & {
+        __tqsCardWireVersion?: number;
+        __tqsCardWireObserverMode?: string;
+        __tqsCardWireCapabilityDrops?: number;
+        __tqsCardWireDropperInstalled?: boolean;
+      };
+      target.__tqsCardWireVersion = args.version === 1 ? 1 : 0;
+      if (args.observerMode !== 'valid') target.__tqsCardWireObserverMode = args.observerMode;
+      if (args.playerMode === 'missing' && args.playerIndex === args.index &&
+          !target.__tqsCardWireDropperInstalled) {
+        target.__tqsCardWireDropperInstalled = true;
+        target.__tqsCardWireCapabilityDrops = 0;
+        const capability = 'card_wire_capability,1,TQS_HEG_CARD_WIRE,new_heg_mode';
+        const originalSend = WebSocket.prototype.send;
+        WebSocket.prototype.send = function(data: Parameters<WebSocket['send']>[0]) {
+          let encoded = typeof data === 'string' ? data : '';
+          if (!encoded && data instanceof ArrayBuffer) encoded = new TextDecoder().decode(new Uint8Array(data));
+          if (!encoded && ArrayBuffer.isView(data)) {
+            encoded = new TextDecoder().decode(new Uint8Array(
+              data.buffer as ArrayBuffer, data.byteOffset, data.byteLength));
+          }
+          if (encoded.includes(capability)) {
+            target.__tqsCardWireCapabilityDrops = (target.__tqsCardWireCapabilityDrops ?? 0) + 1;
+            return;
+          }
+          return originalSend.call(this, data);
+        };
+      }
+    }, {
+      version: nativeQa && process.env.TQS_LIVE_LEGACY_ONLY !== '1' ? 1 : 0,
+      observerMode: i === 2 ? cardWireObserverMode : 'valid',
+      playerMode: i < 2 ? cardWirePlayerMode : 'valid',
+      playerIndex: cardWirePlayerIndex,
+      index: i,
+    });
+    if (cardWireReplayRequested && i < 2) {
+      const replayRouteState: CardWireReplayRouteState = {
+        page: p, server: null, lastReply: null, pendingReplay: null, replaySent: false,
+        replayRequestIdRewritten: false,
+        sendCalls: 0, binaryFrames: 0, replyCandidates: 0,
+      };
+      cardWireReplayRoutes.push(replayRouteState);
+      const readFrameHead = (bytes: Buffer, start: number) => {
+        if (start >= bytes.length) return null;
+        const initial = bytes[start];
+        const major = initial >> 5;
+        const additional = initial & 31;
+        if (additional < 24) return { major, value: additional, next: start + 1 };
+        const width = additional === 24 ? 1 : additional === 25 ? 2 :
+          additional === 26 ? 4 : additional === 27 ? 8 : 0;
+        if (!width || start + 1 + width > bytes.length) return null;
+        let value = 0;
+        for (let index = 0; index < width; index++) {
+          value = value * 256 + bytes[start + 1 + index];
+          if (!Number.isSafeInteger(value)) return null;
+        }
+        return { major, value, next: start + 1 + width };
+      };
+      const encodeFrameUnsigned = (value: number) => {
+        if (!Number.isSafeInteger(value) || value < 0) return null;
+        if (value < 24) return Buffer.from([value]);
+        if (value < 0x100) return Buffer.from([0x18, value]);
+        if (value < 0x10000) return Buffer.from([0x19, value >> 8, value & 0xff]);
+        if (value < 0x100000000) return Buffer.from([0x1a,
+          (value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff]);
+        return null;
+      };
+      const rewriteReplayRequestId = (frame: Buffer, requestId: number) => {
+        const array = readFrameHead(frame, 0);
+        const oldId = array && array.major === 4 && (array.value === 4 || array.value === 6)
+          ? readFrameHead(frame, array.next) : null;
+        const encoded = encodeFrameUnsigned(requestId);
+        if (!array || !oldId || !encoded || oldId.major !== 0) return null;
+        return Buffer.concat([frame.subarray(0, array.next), encoded, frame.subarray(oldId.next)]);
+      };
+      await p.routeWebSocket((url) => url.pathname.endsWith('/ws'), (route) => {
+        const server = route.connectToServer();
+        replayRouteState.server = server;
+        route.onMessage((message) => {
+          replayRouteState.sendCalls++;
+          if (typeof message !== 'string') {
+            replayRouteState.binaryFrames++;
+            const bytes = Buffer.from(message);
+            try {
+              const packet = new RawPacketStream().push(bytes).at(0);
+              if (packet && packet.command === '' && (packet.type & PacketType.REPLY) !== 0) {
+                replayRouteState.replyCandidates++;
+                replayRouteState.lastReply = Buffer.from(bytes);
+              }
+            } catch { /* keep forwarding; the normal browser/native audits own decode errors */ }
+          }
+          server.send(message);
+        });
+        server.onMessage((message) => {
+          route.send(message);
+          if (!replayRouteState.pendingReplay) return;
+          let nextRequestId: number | null = null;
+          if (typeof message !== 'string') {
+            try {
+              nextRequestId = new RawPacketStream().push(Buffer.from(message))
+                .find((packet) => packet.requestId >= 0 && (packet.type & PacketType.REQUEST) !== 0)?.requestId ?? null;
+            } catch { /* leave the pending replay until a complete request frame arrives */ }
+          }
+          if (nextRequestId === null) return;
+          const replay = rewriteReplayRequestId(Buffer.from(replayRouteState.pendingReplay), nextRequestId);
+          if (!replay) {
+            replayRouteState.pendingReplay = null;
+            return;
+          }
+          replayRouteState.pendingReplay = null;
+          replayRouteState.replayRequestIdRewritten = true;
+          setTimeout(() => {
+            if (!replayRouteState.server) return;
+            replayRouteState.server.send(replay);
+            replayRouteState.replaySent = true;
+          }, 50);
+        });
+      });
+    }
     const loginUrl = new URL(pageUrl);
     loginUrl.searchParams.set('tqs-e2e-preauth', '1');
     await p.goto(loginUrl.toString());
@@ -1877,7 +2827,12 @@ try{
   const generalChoiceCounts = await Promise.all(pages.map((page, index) => selectPair(page,
     !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
   for (const p of pages) {
-    await p.locator('.game-board').waitFor({ timeout: 90000 });
+    try {
+      await p.locator('.game-board').waitFor({ timeout: cardWireEntropyFailure ? 30000 : 90000 });
+    } catch (error) {
+      if (!cardWireEntropyFailure || !readNativeEntropyFailure()) throw error;
+      break;
+    }
     await p.waitForFunction((expected) => document.querySelectorAll('.board-player').length === expected,
       playerCapacity, { timeout: 30000 });
     await p.locator('.board-self').waitFor({ state: 'attached', timeout: 30000 });
@@ -1888,17 +2843,81 @@ try{
         'opponent hand IDs must not render');
     }
   }
+  if (cardWireEntropyFailure) {
+    if (await waitForNativeEntropyFailure(15000)) {
+      // The native rejection marker can arrive before the second browser's
+      // notification callback has appended its trace. Give both real clients
+      // a bounded drain window before evaluating the two-client contract.
+      await waitForNativeEntropyNegotiation(5000);
+      completeCardWireEntropyProbe();
+    }
+    throw new Error('native card-wire entropy failure marker did not arrive within the bounded probe window');
+  }
+  if (cardWirePlayerNegative) {
+    cardWirePlayerCapabilityDrops = await pages[cardWirePlayerIndex].evaluate(() =>
+      (window as Window & { __tqsCardWireCapabilityDrops?: number }).__tqsCardWireCapabilityDrops ?? 0);
+    const negotiatedPackets = traces.flat().filter((packet) =>
+      packet.direction === 'incoming' && packet.command === 'CardWireNegotiated').length;
+    assert.ok(cardWirePlayerCapabilityDrops > 0,
+      'non-negotiating player probe must suppress one capability packet');
+    assert.equal(negotiatedPackets, 0,
+      'a v1 room with one non-negotiating player must not emit CardWireNegotiated');
+    cardWirePlayerRejected = true;
+    cardWirePlayerErrorPackets = traces[cardWirePlayerIndex].filter((packet) =>
+      packet.direction === 'incoming' && (packet.command === 'ErrorMsg' || packet.command === 'ErrorDlg')).length;
+    gameStarted = false;
+    finished = true;
+    console.log(`PASS native player mismatch: index=${cardWirePlayerIndex}, mode=${cardWirePlayerMode}, capabilityDrops=${cardWirePlayerCapabilityDrops}, negotiatedPackets=0`);
+    writeCardWirePlayerEvidence();
+    throw new CardWirePlayerProbeComplete();
+  }
   if (observerPage) {
     await observerPage.getByRole('button', { name: 'Làm mới', exact: true }).click();
     await observerPage.locator('.room-item').filter({ hasText: roomName })
       .getByRole('button', { name: 'Quan sát', exact: true }).click();
-    await observerPage.locator('.game-board').waitFor({ timeout: 30000 });
-    await observerPage.waitForFunction((expected) =>
-      document.querySelectorAll('.board-player').length === expected,
-    playerCapacity, { timeout: 30000 });
-    assert.ok(nativeDeckPrivacy[2].negotiated && nativeDeckPrivacy[2].commands.Observe > 0,
-      'A fresh observer must negotiate and receive an audited native snapshot');
-    console.log('PASS fresh native observer: separate account, negotiation and audited Observe snapshot');
+    if (cardWireObserverNegative) {
+      // A v1 room must not leak an Observe snapshot to an observer that did
+      // not negotiate or presented an invalid marker.  Missing capability is
+      // rejected by the Lua v1 audience gate; malformed/wrong-version
+      // admission is rejected by native Lobby::joinRoom before room attach.
+      const observerDeadline = Date.now() + 15000;
+      while (Date.now() < observerDeadline &&
+        !traces[2].some((packet) => packet.direction === 'incoming' &&
+          (packet.command === 'ErrorMsg' || packet.command === 'Observe'))) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      cardWireObserverObservePackets = traces[2].filter((packet) =>
+        packet.direction === 'incoming' && packet.command === 'Observe').length;
+      const errorPackets = traces[2].filter((packet) =>
+        packet.direction === 'incoming' && (packet.command === 'ErrorMsg' || packet.command === 'ErrorDlg')).length;
+      assert.equal(cardWireObserverObservePackets, 0,
+        `observer mismatch mode ${cardWireObserverMode} must not receive an Observe snapshot`);
+      assert.equal(await observerPage.locator('.game-board').count(), 0,
+        `observer mismatch mode ${cardWireObserverMode} must remain outside the game board`);
+      // `missing` is attached by native first and therefore must produce the
+      // Lua audience error. Invalid three-element markers are rejected by the
+      // native CBOR admission parser before a room error is sent.
+      if (cardWireObserverMode === 'missing') assert.ok(errorPackets > 0,
+        'missing observer capability must produce a bounded native/Lua rejection');
+      cardWireObserverRejected = true;
+      console.log(`PASS native observer mismatch: mode=${cardWireObserverMode}, observePackets=0, errorPackets=${errorPackets}`);
+      writeCardWireObserverEvidence();
+    } else {
+      await observerPage.locator('.game-board').waitFor({ timeout: 30000 });
+      await observerPage.waitForFunction((expected) =>
+        document.querySelectorAll('.board-player').length === expected,
+      playerCapacity, { timeout: 30000 });
+      assert.ok(nativeDeckPrivacy[2].negotiated && nativeDeckPrivacy[2].commands.Observe > 0,
+        'A fresh observer must negotiate and receive an audited native snapshot');
+      console.log('PASS fresh native observer: separate account, negotiation and audited Observe snapshot');
+      if (observerLeaveRequested) {
+        // Keep the observer attached through the draw and controlled reconnect
+        // so the native privacy audit can observe the full post-Observe move
+        // sequence, including the hidden move-id exposure group. The actual
+        // leave probe runs immediately after player recovery, before GameOver.
+        console.log('PASS native observer join: observer leave deferred until post-draw/reconnect privacy coverage');
+      }
+    }
   }
   if (nativeQa && selectedScenario?.skill && !hiddenScenario &&
     !deltaBaweiScenario && !deltaFengshiScenario && !deltaXisheScenario && !deltaZhenteScenario && !deltaHalberdScenario && !deltaSijianScenario) {
@@ -2436,6 +3455,10 @@ try{
         const nativeCommands = new Set(['PlayCard', 'AskForChoices', 'AskForSkillInvoke', 'AskForUseActiveSkill',
           'AskForUseCard', 'AskForResponseCard', 'AskForCardChosen', 'AskForPoxi', 'AskForCardsAndChoice',
           'AskForArrangeCards', 'CustomDialog']);
+        if (testScenario === 'card-chosen') {
+          const scenarioRequest = pendingRequest(scenarioClient);
+          if (scenarioRequest && nativeCommands.has(scenarioRequest.command ?? '')) return scenarioClient;
+        }
         for (const client of [0, 1]) {
           const request = pendingRequest(client);
           if (request && nativeCommands.has(request.command ?? '')) return client;
@@ -2738,7 +3761,22 @@ try{
         const isHiddenGate = (hiddenYijiScenario || hiddenRehideYijiScenario) && /TQS QA|prelight|tqs_qa_hidden_(?:re)?yiji_gate/i.test(invokeText);
         const isHiddenJianxiongGate = hiddenJianxiongScenario && /TQS QA|prelight|tqs_qa_hidden_jianxiong_gate/i.test(invokeText);
         const isHiddenFankuiGate = hiddenFankuiScenario && /TQS QA|prelight|tqs_qa_hidden_fankui_gate/i.test(invokeText);
-        const isHiddenRevealGate = hiddenRevealScenario && /TQS QA|Mở tướng|reveal_skill&|hidden_reveal_gate/i.test(invokeText);
+        const isHiddenRevealGate = hiddenRevealScenario && !hiddenRevealReply &&
+          /TQS QA|Mở tướng|reveal_skill&|hidden_reveal_gate/i.test(invokeText);
+        const isHiddenDuoshiInvoke: boolean = hiddenRevealScenario && !isHiddenRevealGate &&
+          (/Độ Thế|度势|duoshi|đo tiềm năng/i.test(invokeText) ||
+            // The native source skill uses the production AskForSkillInvoke
+            // path, but this build's localized prompt can omit the skill
+            // label. Once the hidden reveal active request has completed,
+            // the only optional trigger in this candidate scenario is the
+            // real Lục Tốn Duoshi cost; keep the fallback scoped to that
+            // state instead of matching arbitrary optional skills.
+            (hiddenRevealGateReply && hiddenRevealReply && !hiddenDuoshiInvoked));
+        if (hiddenRevealScenario) {
+          console.log(`hidden-reveal invoke request client=${activeClient + 1} request=${latest.requestId} ` +
+            `gateReply=${hiddenRevealGateReply} revealReply=${hiddenRevealReply} duoshiInvoked=${hiddenDuoshiInvoked} ` +
+            `gateMatch=${isHiddenRevealGate} duoshiMatch=${isHiddenDuoshiInvoke}`);
+        }
         const isHiddenActiveGate = hiddenActiveScenario && /TQS QA|Chế Hành|zhiheng|hidden_active_gate/i.test(invokeText);
         const isHiddenFanjianGate = hiddenFanjianScenario && /TQS QA|Phản Gián|反间|fanjian|hidden_fanjian_gate/i.test(invokeText);
         const isHiddenViewAsGate = hiddenViewAsScenario && /TQS QA|Long Đảm|longdan|hidden_view_as_gate/i.test(invokeText);
@@ -3022,7 +4060,7 @@ try{
         // A manual run may encounter unrelated optional skills while the
         // target prompt is still pending. Only invoke the requested caller
         // skill; cancel everything else so it cannot starve a native choice.
-        const shouldInvoke = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate || isDeltaXiongsuanGate || isDeltaWenjiGate || isDeltaLordWenjiGate || isDeltaQianceGate || isDeltaJianchuGate || isDeltaChujueGate || isDeltaZhenteGate || isDeltaBaweiGate || isDeltaFengshiGate || isDeltaXisheGate
+        const shouldInvoke: boolean = isHiddenGate || isHiddenJianxiongGate || isHiddenFankuiGate || isHiddenRevealGate || isHiddenDuoshiInvoke || isHiddenActiveGate || isHiddenFanjianGate || isHiddenViewAsGate || isHiddenDualGate || isHiddenLuoshenGate || isHiddenTianduGate || isHiddenJizhiGate || isHiddenMingshiGate || isHiddenGongqingGate || isHiddenEnyuanGate || isHiddenFuyinGate || isHiddenQianxunGate || isHiddenKongchengGate || isHiddenWeimuGate || isHiddenXiaojiGate || isHiddenGuanxingGate || isHiddenYingziGate || isHiddenTianxiangGate || isHiddenDuanchangGate || isHiddenLiegongGate || isHiddenKuangguGate || isHiddenJueqingGate || isHiddenEjueGate || isHiddenDufuGate || isHiddenJianzhiGate || isHiddenZhimanGate || isHiddenJilixGate || isDeltaXiongsuanGate || isDeltaWenjiGate || isDeltaLordWenjiGate || isDeltaQianceGate || isDeltaJianchuGate || isDeltaChujueGate || isDeltaZhenteGate || isDeltaBaweiGate || isDeltaFengshiGate || isDeltaXisheGate
           ? true
           : isHiddenYijiInvoke
           ? hiddenRehideYijiScenario || hiddenYijiMode === 'positive'
@@ -3061,6 +4099,7 @@ try{
         if (hiddenJianxiongScenario && isHiddenJianxiongGate && replied) hiddenJianxiongGateReply = true;
         if (hiddenFankuiScenario && isHiddenFankuiGate && replied) hiddenFankuiGateReply = true;
         if (hiddenRevealScenario && isHiddenRevealGate && replied) hiddenRevealGateReply = true;
+        if (hiddenRevealScenario && isHiddenDuoshiInvoke && replied) hiddenDuoshiInvoked = shouldInvoke;
         if (hiddenActiveScenario && isHiddenActiveGate && replied) hiddenActiveGateReply = true;
         if (hiddenFanjianScenario && isHiddenFanjianGate && replied) hiddenFanjianGateReply = true;
         if (hiddenViewAsScenario && isHiddenViewAsGate && replied) hiddenViewAsGateReply = true;
@@ -3122,6 +4161,7 @@ try{
         if (deltaHalberdScenario && isDeltaHalberdInvoke && replied) scenarioHalberdExtraTargetReply = shouldInvoke;
         scenarioObservations.push({command: latest.command, requestId: latest.requestId, reply: replied,
           detail: isHiddenRevealGate ? 'hidden-reveal-readiness-gate' :
+            isHiddenDuoshiInvoke ? 'invoke-hidden-duoshi' :
             isHiddenActiveGate ? 'hidden-active-readiness-gate' :
             isHiddenFanjianGate ? 'hidden-fanjian-readiness-gate' :
             isHiddenViewAsGate ? 'hidden-view-as-readiness-gate' :
@@ -3169,6 +4209,30 @@ try{
             shouldInvoke ? (isCardChosenInvoke ? 'invoke-jianchu' : 'invoke-scenario-skill') : 'cancel-other-skill'});
       } else if(latest?.command==='AskForUseActiveSkill') {
         const activePrompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+        if (testScenario === 'card-chosen' && activeClient === scenarioClient && !scenarioCardChosenHidden) {
+          // The native adapter can expose Jianchu's askToUseRealCard path as
+          // AskForUseActiveSkill instead of AskForSkillInvoke.  It is still
+          // the real production hand/target request; cancelling it here
+          // prevents the server from reaching the hidden AskForCardChosen
+          // source-card request that this scenario is meant to verify.
+          const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
+          const slash = controls.locator('.gameplay-hand button[data-card-id]:enabled')
+            .filter({ hasText: /Sát|Slash|杀/i }).first();
+          if (await slash.count()) {
+            await slash.click();
+            await chooseTargetIfNeeded(actor);
+            const confirm = controls.getByRole('button', { name: 'Xác nhận', exact: true });
+            await confirm.waitFor({ state: 'visible', timeout: 10000 });
+            assert.ok(await confirm.isEnabled(),
+              'card-chosen AskForUseActiveSkill must enable Slash/target confirmation');
+            await confirm.click();
+            const replied = await waitForReply(activeClient, latest.requestId);
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: replied, detail: 'card-chosen-jianchu-slash-active-skill' });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+          }
+        }
         if (deltaSijianScenario) {
           const controls = actor.getByRole('region', { name: 'Điều khiển lượt chơi' });
           if (!scenarioSijianGateReply) {
@@ -3875,6 +4939,9 @@ try{
           continue;
         } else if (damageExchangeScenario || hiddenYijiActive || hiddenRevealActive) {
           const prompt = await actor.getByRole('region', { name: 'Điều khiển lượt chơi' }).innerText().catch(() => '');
+          if (hiddenRevealActive) {
+            console.log(`hidden-reveal active request client=${activeClient + 1} request=${latest.requestId} matched=true`);
+          }
           const replied = hiddenRevealActive
             ? await completeActiveSkill(actor, activeClient, latest.requestId, /Mở tướng|亮将|reveal_skill&/i)
             : await completeDamageExchangeActiveSkill(actor, activeClient, latest.requestId);
@@ -4225,6 +5292,9 @@ try{
           if (hiddenGuanxingScenario && latest.command === 'AskForArrangeCards' && replied) {
             hiddenGuanxingArrangeReply = true;
           }
+          if (hiddenLuoshenScenario && latest.command === 'AskForAG' && replied) {
+            hiddenLuoshenAgReply = true;
+          }
         }
       } else if(latest?.command==='PlayCard') {
         const controls=actor.getByRole('region',{name:'Điều khiển lượt chơi'});
@@ -4234,6 +5304,40 @@ try{
         if (selectedScenario && !printedScenarioSkills) {
           printedScenarioSkills = true;
           console.log(`Scenario ${testScenario} first PlayCard skill-control count: ${await skillButtons.count()}`);
+        }
+        if (testScenario === 'card-chosen' && activeClient !== scenarioClient) {
+          // The other real client can have a normal-turn PlayCard request in
+          // flight while the native director is preparing Jianchu.  Do not
+          // assert that this unrelated seat has the caller's SkillButton or
+          // consume its card as the scenario input.
+          const end = controls.getByRole('button', { name: 'Kết thúc lượt', exact: true });
+          const cancel = controls.getByRole('button', { name: /^(Hủy|Bỏ qua)$/ });
+          const endReady = (await end.count().catch(() => 0)) > 0 &&
+            await end.first().isEnabled().catch(() => false);
+          const cancelReady = (await cancel.count().catch(() => 0)) > 0 &&
+            await cancel.first().isEnabled().catch(() => false);
+          if (endReady) await end.first().click().catch(() => undefined);
+          else if (cancelReady) await cancel.first().click().catch(() => undefined);
+          await waitForReply(activeClient, latest.requestId);
+          scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+            reply: true, detail: 'card-chosen-close-other-seat-play-card' });
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          continue;
+        }
+        if (testScenario === 'card-chosen' && activeClient === scenarioClient && !scenarioCardChosenHidden) {
+          // Jianchu is selected inside the same native PlayCard scene before
+          // the source Slash is confirmed.  Counting the rail proves only
+          // that the skill was projected; without this state update the
+          // server quite correctly resolves an ordinary Slash and never
+          // emits the hidden AskForCardChosen follow-up.
+          const jianchu = skillButtons.filter({ hasText: /jianchu|鞬出|Kiền Xuất|Kiên Xuất|Lấy ra/i }).first();
+          assert.ok(await jianchu.count(), 'card-chosen must expose the native Jianchu SkillButton in PlayCard');
+          if (await jianchu.isEnabled() && await jianchu.getAttribute('aria-pressed') !== 'true') {
+            await jianchu.click();
+            scenarioObservations.push({ command: latest.command, requestId: latest.requestId,
+              reply: false, detail: 'select-jianchu-before-slash' });
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
         }
         if (deltaFengshiScenario) {
           const prompt = await controls.innerText().catch(() => '');
@@ -4726,6 +5830,46 @@ try{
           const end=actor.getByRole('region',{name:'Điều khiển lượt chơi'}).getByRole('button',{name:'Kết thúc lượt',exact:true});
           if(await end.count() && await end.isEnabled())await end.click();
         }
+        if (manualCardReply && cardWireReplayRequested && !cardWireReplayInjected) {
+          cardWireReplayRejectsBefore = readNativeMappingSummary().choiceRejects;
+          const replayRoute = cardWireReplayRoutes.find((candidate) => candidate.page === actor);
+          let injected = false;
+          if (replayRoute?.server && replayRoute.lastReply) {
+            const replay = Buffer.from(replayRoute.lastReply);
+            replayRoute.lastReply = null;
+            replayRoute.pendingReplay = replay;
+            injected = true;
+          }
+          const replayDebug = replayRoute ? {
+            sendCalls: replayRoute.sendCalls,
+            binaryFrames: replayRoute.binaryFrames,
+            replyCandidates: replayRoute.replyCandidates,
+            serverConnected: replayRoute.server !== null,
+            replaySent: replayRoute.replaySent,
+          } : null;
+          if (!injected) {
+            // This diagnostic is deliberately numeric-only and exists only to
+            // distinguish a closed socket, a non-binary send, or a header
+            // classifier miss in the isolated QA lane.
+            console.error(`FAIL native replay capture diagnostics: ${JSON.stringify(replayDebug)}`);
+          }
+          assert.ok(injected,
+            `native replay probe must capture the completed client reply in memory; debug=${JSON.stringify(replayDebug)}`);
+          cardWireReplayInjected = true;
+          const rejectDeadline = Date.now() + 5000;
+          while (Date.now() < rejectDeadline) {
+            cardWireReplaySent = replayRoute?.replaySent === true;
+            cardWireReplayRejectsAfter = readNativeMappingSummary().choiceRejects;
+            if (cardWireReplaySent && cardWireReplayRejectsAfter > cardWireReplayRejectsBefore) break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          cardWireReplaySent = replayRoute?.replaySent === true;
+          cardWireReplayRejectsAfter = readNativeMappingSummary().choiceRejects;
+          cardWireReplayRejectObserved = cardWireReplayRejectsAfter > cardWireReplayRejectsBefore;
+          assert.ok(cardWireReplaySent && cardWireReplayRejectObserved,
+            'native replay probe must send the deferred duplicate after a subsequent native request and observe its rejection');
+          console.log(`PASS native card-wire replay rejection: choiceRejects=${cardWireReplayRejectsAfter - cardWireReplayRejectsBefore}; original gameplay remained active`);
+        }
       }
       await new Promise(r=>setTimeout(r,250));
     }
@@ -4936,7 +6080,9 @@ try{
       assert.ok(hiddenLuoshenInvoked, 'hidden-luoshen must invoke the prelighted phase-start trigger');
       assert.ok(hiddenLuoshenInvokeCount >= 2,
         'hidden-luoshen must expose the readiness gate and the real trigger/continuation invoke');
-      console.log('PASS hidden-luoshen: native hidden EventPhaseStart trigger revealed Zhen Ji and completed judgment continuation');
+      assert.ok(hiddenLuoshenAgReply,
+        'hidden-luoshen must complete a real AskForAG request after the native AG display path');
+      console.log('PASS hidden-luoshen: native hidden EventPhaseStart trigger revealed Zhen Ji, completed judgment continuation and resolved AskForAG');
     } else if (hiddenJizhiScenario) {
       assert.ok(hiddenJizhiGateReply, 'hidden-jizhi must complete the native prelight gate');
       assert.ok(hiddenJizhiCardReply, 'hidden-jizhi must complete the native Duel/CardUsing request');
@@ -4993,7 +6139,9 @@ try{
     } else if (hiddenRevealScenario) {
       assert.ok(hiddenRevealReply,
         'hidden-reveal must complete the native reveal_skill& active request and reveal Lục Tốn');
-      console.log('PASS hidden-reveal: native reveal_skill& request opened Lục Tốn and activated hidden Qianxun');
+      assert.ok(hiddenDuoshiInvoked,
+        'hidden-reveal must invoke the optional native Độ Thế trigger after reveal');
+      console.log('PASS hidden-reveal: native reveal_skill& request opened Lục Tốn, activated hidden Qianxun and invoked Độ Thế');
     } else if (hiddenActiveScenario) {
       assert.ok(hiddenActiveGateReply,
         'hidden-active must complete the native readiness gate before PlayCard');
@@ -5068,13 +6216,56 @@ try{
       gateway=startGateway();
       assert.equal(transportOpen[1],true,'Independent peer must remain connected during restart');
       console.log('Restarted first client gateway process; second peer keeps its separate gateway connection');
-    } else await a.evaluate(() => (window as unknown as { __tqsTestDisconnect(): void }).__tqsTestDisconnect());
+    } else {
+      const disconnectState = await a.evaluate(() => {
+        const target = window as unknown as {
+          __tqsTestDisconnect?: () => {
+            socketCount: number; openSocketCount: number; activeReadyState: number;
+            candidateReadyState: number; candidateAfterReadyState: number; closed: boolean;
+          };
+        };
+        const hook = target.__tqsTestDisconnect;
+        return hook ? { available: true, ...hook() } : {
+          available: false,
+          socketCount: -1,
+          openSocketCount: -1,
+          activeReadyState: -1,
+          candidateReadyState: -1,
+          candidateAfterReadyState: -1,
+          closed: false,
+        };
+      });
+      console.log(`Disconnect probe: available=${disconnectState.available}, sockets=${disconnectState.socketCount}, ` +
+        `open=${disconnectState.openSocketCount}, activeState=${disconnectState.activeReadyState}, ` +
+        `candidateState=${disconnectState.candidateReadyState}, afterState=${disconnectState.candidateAfterReadyState}, ` +
+        `closed=${disconnectState.closed}`);
+      assert.ok(disconnectState.available,
+        'test-only transport disconnect hook must be installed before reconnect verification');
+    }
     for (const p of recovering) {
       const client=pages.indexOf(p);
       await p.waitForFunction(() => document.querySelector('.status')?.textContent === 'Đã kết nối', null, { timeout: 120000 });
       for (let n=0;n<120 && !traces[client].some(t=>t.direction==='incoming' && t.command==='Reconnect');n++)
         await new Promise(resolve=>setTimeout(resolve,500));
       assert.ok(traces[client].some(t=>t.direction==='incoming' && t.command==='Reconnect'),'server must send native Reconnect after transport loss');
+      if (cardWireRollbackDrainRequested) {
+        const rollbackDeadline = Date.now() + 10000;
+        let rollbackSummary = readNativeCardWireRollbackSummary();
+        while (rollbackSummary.drainApplied <= cardWireRollbackMarkerBaseline && Date.now() < rollbackDeadline) {
+          await new Promise(resolve=>setTimeout(resolve,100));
+          rollbackSummary = readNativeCardWireRollbackSummary();
+        }
+        assert.ok(rollbackSummary.drainApplied > cardWireRollbackMarkerBaseline,
+          'QA rollback drain must emit a bounded drain marker after negotiation');
+        assert.ok(rollbackSummary.activeRoomProtocolV1 > cardWireRollbackMarkerBaseline &&
+          rollbackSummary.newRoomAdmissionLegacy > cardWireRollbackMarkerBaseline &&
+          rollbackSummary.reconnectProtocolV1 > cardWireRollbackMarkerBaseline,
+        'QA rollback drain marker must retain v1 for the active/reconnect room and legacy for new admission');
+        assert.ok(traces[client].filter((packet) =>
+          packet.direction === 'incoming' && packet.command === 'CardWireNegotiated').length >= 2,
+        'QA rollback drain reconnect must receive a fresh v1 negotiation marker');
+        cardWireRollbackDrainObserved = true;
+      }
       await p.locator('.board-self').waitFor({timeout:30000});
       await p.waitForFunction((expected)=>document.querySelectorAll('.board-player').length===expected, playerCapacity,{timeout:30000});
       assert.equal(await p.locator('.board-player').count(),playerCapacity);
@@ -5085,6 +6276,7 @@ try{
     recovered=true;
     console.log(testGatewayRestart ? 'PASS gateway restart: first account reauthenticates/native Reconnect/private board, independent peer stays connected' : 'PASS controlled transport loss: same account automatically authenticates, receives native Reconnect and restores the two-seat board');
   }
+  if (observerLeaveRequested) await performObserverLeaveProbe();
   // Founding acceptance ends when the native GeneralShown kingdom choice is
   // answered; that source path intentionally does not end the whole match.
   // Waiting for a result screen here would leave the QA runner playing an
@@ -5101,15 +6293,19 @@ try{
     // These are bounded native AI probes, not full matches. The QA director
     // calls GameOver after the fixed-seat makeReply calls, so the runner must
     // not wait for the ordinary result/lobby DOM.
+    // An explicit observer-leave probe closes that audience before GameOver;
+    // only the two still-live player transports can satisfy the post-leave
+    // GameOver boundary.
+    const gameOverTraces = observerLeaveRequested ? traces.slice(0, 2) : traces;
     const gameOverDeadline = Date.now() + qaCleanupTimeoutMs;
-    while (!traces.every((trace) => trace.some((packet) =>
+    while (!gameOverTraces.every((trace) => trace.some((packet) =>
       packet.direction === 'incoming' && packet.command === 'GameOver')) &&
       Date.now() < gameOverDeadline) {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    assert.ok(traces.every((trace) => trace.some((packet) =>
+    assert.ok(gameOverTraces.every((trace) => trace.some((packet) =>
       packet.direction === 'incoming' && packet.command === 'GameOver')),
-      'bounded native QA scenario must observe native GameOver on every live client');
+      'bounded native QA scenario must observe native GameOver on every still-live client');
     finished = true;
   } else {
     await Promise.all(pages.map(p=>p.getByRole('button',{name:'Về sảnh',exact:true}).waitFor({timeout:900000})));
@@ -5831,14 +7027,68 @@ try{
     assert.ok(nativeDeckPrivacy.every((audit) => audit.negotiated && audit.failures === 0) &&
       nativeDeckPrivacy.slice(0, 2).every((audit) => audit.commands.PrepareDrawPile > 0),
     'Native deck privacy requires negotiation and audited PrepareDrawPile on both clients');
+    assert.ok(nativeWireCapture.every((capture) => capture.beforePacketDecode &&
+      capture.packets > 0 && capture.failures === 0),
+    'Native raw-wire capture must audit complete packets before PacketStream decoding');
+    assert.ok(nativeWireCapture.every((capture) => capture.hiddenReferenceAudited &&
+      capture.hiddenReferenceCollisions === 0),
+    'Native raw-wire audit must prove hidden references are not reused across physical audiences');
+    assert.ok(nativeSupplementalCapture.every((capture) => capture.beforePacketDecode &&
+      capture.packets > 0 && capture.failures === 0 && capture.channels.negotiation > 0),
+    'Native supplemental wire capture must audit metadata/public/request channels before PacketStream decoding');
     assert.ok(!testRecovery || nativeDeckPrivacy.some((audit) => audit.commands.Reconnect > 0),
       'Native reconnect privacy requires an audited Reconnect snapshot');
-    assert.ok(!requireAllNativePrivacy || PRIVACY_CATEGORIES.every((category) =>
-      nativeDeckPrivacy.some((audit) => audit.categoryCounts[category] > 0)),
-    'Strict native privacy requires nonempty actual coverage of all twelve exposure groups');
+    const missingNativePrivacyCategories = PRIVACY_CATEGORIES.filter((category) =>
+      !nativeDeckPrivacy.some((audit) => audit.categoryCounts[category] > 0));
+    if (requireAllNativePrivacy && missingNativePrivacyCategories.length > 0) {
+      console.error(`Native privacy coverage missing categories=${missingNativePrivacyCategories.join(',')}`);
+    }
+    assert.ok(!requireAllNativePrivacy || missingNativePrivacyCategories.length === 0,
+      `Strict native privacy requires nonempty actual coverage of all twelve exposure groups; missing=${missingNativePrivacyCategories.join(',')}`);
+    const missingRawPrivacyCategories = PRIVACY_CATEGORIES.filter((category) =>
+      !nativeWireCapture.some((capture) => capture.categoryCounts[category] > 0));
+    if (requireAllNativePrivacy && missingRawPrivacyCategories.length > 0) {
+      console.error(`Native raw-wire privacy coverage missing categories=${missingRawPrivacyCategories.join(',')}`);
+    }
+    assert.ok(!requireAllNativePrivacy || missingRawPrivacyCategories.length === 0,
+      `Strict native privacy requires nonempty raw-wire coverage of all twelve exposure groups; missing=${missingRawPrivacyCategories.join(',')}`);
+  }
+  if (capturePacketBytes) {
+    assert.ok(nativePacketSizeCapture.every((capture) => capture.beforePacketDecode &&
+      capture.packets > 0 && capture.incomingPackets > 0 && capture.outgoingPackets > 0 &&
+      capture.failures === 0 && capture.packetBytes.total > 0),
+    'Native packet-size capture requires complete inbound and outbound outer-CBOR packets');
+  }
+  const nativeSemanticCapture = readNativeSemanticSummary();
+  if (nativeSemanticRequested) {
+    assert.ok(nativeSemanticCapture.records > 0 &&
+      nativeSemanticCapture.semanticPassRecords === nativeSemanticCapture.records &&
+      nativeSemanticCapture.semanticFailures === 0 &&
+      nativeSemanticCapture.outerDecodedRecords === nativeSemanticCapture.records &&
+      nativeSemanticCapture.innerDecodedRecords === nativeSemanticCapture.records,
+    'Native semantic CBOR proof requires every retained card-wire record to decode and pass the bounded shape audit');
+    assert.ok(nativeSemanticCapture.audiences.owner > 0 && nativeSemanticCapture.audiences.opponent > 0,
+      'Native semantic CBOR proof requires owner and opponent audience observations');
+    assert.ok(nativeSemanticCapture.inboundRecords > 0 && nativeSemanticCapture.scopes['inbound-reply'] > 0 &&
+      nativeSemanticCapture.channels.reply > 0,
+      'Native semantic CBOR proof requires an actual native inbound client-reply observation');
+    assert.ok(nativeSemanticCapture.channels.deck > 0,
+      'Native semantic CBOR proof requires an actual native deck-channel observation');
+    if (observeNativePrivacy) assert.ok(nativeSemanticCapture.audiences.observer > 0,
+      'Native semantic CBOR proof requires an observer audience observation when observer QA is enabled');
+  }
+  if (cardWireReplayRequested) {
+    assert.ok(cardWireReplayInjected && cardWireReplaySent && cardWireReplayRejectObserved &&
+      cardWireReplayRejectsAfter > cardWireReplayRejectsBefore,
+    'Native card-wire replay probe requires a sent duplicate reply and a bounded native choice rejection');
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
   writeFileSync(path.join(out,`${candidateId}-${testScenario ? `${testScenario}-` : ''}${testGatewayRestart?'gateway-restart':testRecovery?'reconnect':'multiplayer'}-live-${Date.now()}.json`),JSON.stringify(sanitizeQaEvidence({at:new Date().toISOString(),manualCardReply,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,hiddenYijiMode:hiddenYijiScenario ? hiddenYijiMode : null,hiddenGateReply,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,hiddenYijiAsked,hiddenYijiInvoked,hiddenYijiReply,hiddenJianxiongGateReply,hiddenJianxiongDamageReply,hiddenJianxiongInvoked,hiddenJianxiongChoiceReply,hiddenFankuiGateReply,hiddenFankuiDamageReply,hiddenFankuiChoiceReply,hiddenLuoshenGateReply,hiddenLuoshenInvoked,hiddenLuoshenInvokeCount,hiddenTianduGateReply,hiddenJizhiGateReply,hiddenJizhiCardReply,hiddenJizhiInvoked,hiddenMingshiGateReply,hiddenMingshiCardReply,hiddenGongqingGateReply,hiddenEnyuanGateReply,hiddenEnyuanCardReply,hiddenFuyinGateReply,hiddenFuyinCardReply,hiddenQianxunGateReply,hiddenQianxunCardReply,hiddenKongchengGateReply,hiddenKongchengCardReply,hiddenWeimuGateReply,hiddenWeimuCardReply,hiddenXiaojiGateReply,hiddenXiaojiCardReply,hiddenGuanxingGateReply,hiddenGuanxingInvoked,hiddenGuanxingArrangeReply,hiddenTianxiangGateReply,hiddenTianxiangCardReply,hiddenTianxiangInvoked,hiddenTianxiangChoiceReply,hiddenDuanchangGateReply,hiddenDuanchangChoiceReply,hiddenRevealGateReply,hiddenRevealReply,hiddenActiveGateReply,hiddenActiveReply,hiddenFanjianGateReply,hiddenFanjianReply,hiddenFanjianChoiceReply,hiddenDualGateReply,hiddenDualChooseReply,hiddenDualDiscardReply,hiddenDualDiscardAuto,hiddenDualUseReply,hiddenJianzhiGateReply,hiddenJianzhiDamageReply,hiddenJianzhiInvoked,hiddenZhimanGateReply,hiddenZhimanDamageReply,hiddenZhimanInvoked,hiddenZhimanCardReply,hiddenJilixGateReply,hiddenJilixCardReply,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioBattleRoyalObserved,scenarioFoundingReply,scenarioBoardStates,scenarioSlashReplies,scenarioLongdanDefenseReply,scenarioLongdanAttackReply,scenarioEnyuanReply,scenarioYijiInvoked,scenarioYijiReply,scenarioFankuiInvoked,scenarioFankuiReply,scenarioObservations,damageExchange:damageExchangeScenario ? {public:publicBotAudit,trace:botAuditTrace} : null,hiddenYiji:hiddenYijiScenario ? {mode:hiddenYijiMode,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJianxiong:hiddenJianxiongScenario ? {deputy:hiddenJianxiongDeputyScenario,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFankui:hiddenFankuiScenario ? {deputy:hiddenFankuiDeputyScenario,gate:hiddenFankuiGateReply,damage:hiddenFankuiDamageReply,cardChosen:hiddenFankuiChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenLuoshen:hiddenLuoshenScenario ? {deputy:hiddenLuoshenDeputyScenario,gate:hiddenLuoshenGateReply,invoked:hiddenLuoshenInvoked,invokeCount:hiddenLuoshenInvokeCount,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTiandu:hiddenTianduScenario ? {deputy:hiddenTianduDeputyScenario,gate:hiddenTianduGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJizhi:hiddenJizhiScenario ? {deputy:hiddenJizhiDeputyScenario,gate:hiddenJizhiGateReply,card:hiddenJizhiCardReply,invoked:hiddenJizhiInvoked,public:publicBotAudit,trace:botAuditTrace} : null,hiddenMingshi:hiddenMingshiScenario ? {deputy:hiddenMingshiDeputyScenario,gate:hiddenMingshiGateReply,card:hiddenMingshiCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGongqing:hiddenGongqingScenario ? {deputy:hiddenGongqingDeputyScenario,gate:hiddenGongqingGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenEnyuan:hiddenEnyuanScenario ? {deputy:hiddenEnyuanDeputyScenario,gate:hiddenEnyuanGateReply,card:hiddenEnyuanCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFuyin:hiddenFuyinScenario ? {deputy:hiddenFuyinDeputyScenario,gate:hiddenFuyinGateReply,card:hiddenFuyinCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenJilix:hiddenJilixScenario ? {deputy:hiddenJilixDeputyScenario,gate:hiddenJilixGateReply,card:hiddenJilixCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenQianxun:hiddenQianxunScenario ? {indulgence:hiddenQianxunIndulgenceScenario,deputy:hiddenQianxunDeputyScenario,gate:hiddenQianxunGateReply,card:hiddenQianxunCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenKongcheng:hiddenKongchengScenario ? {deputy:hiddenKongchengDeputyScenario,gate:hiddenKongchengGateReply,card:hiddenKongchengCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenWeimu:hiddenWeimuScenario ? {deputy:hiddenWeimuDeputyScenario,gate:hiddenWeimuGateReply,card:hiddenWeimuCardReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenXiaoji:hiddenXiaojiScenario ? {deputy:hiddenXiaojiDeputyScenario,gate:hiddenXiaojiGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenGuanxing:hiddenGuanxingScenario ? {deputy:hiddenGuanxingDeputyScenario,gate:hiddenGuanxingGateReply,invoked:hiddenGuanxingInvoked,arrange:hiddenGuanxingArrangeReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenTianxiang:hiddenTianxiangScenario ? {deputy:hiddenTianxiangDeputyScenario,gate:hiddenTianxiangGateReply,card:hiddenTianxiangCardReply,invoked:hiddenTianxiangInvoked,choice:hiddenTianxiangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDuanchang:hiddenDuanchangScenario ? {deputy:hiddenDuanchangDeputyScenario,gate:hiddenDuanchangGateReply,choice:hiddenDuanchangChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenReveal:hiddenRevealScenario ? {gate: hiddenRevealGateReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenActive:hiddenActiveScenario ? {gate:hiddenActiveGateReply,reply:hiddenActiveReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenFanjian:hiddenFanjianScenario ? {deputy:hiddenFanjianDeputyScenario,gate:hiddenFanjianGateReply,reply:hiddenFanjianReply,choice:hiddenFanjianChoiceReply,public:publicBotAudit,trace:botAuditTrace} : null,hiddenDual:hiddenDualScenario ? {gate:hiddenDualGateReply,choose:hiddenDualChooseReply,discard:hiddenDualDiscardReply || hiddenDualDiscardAuto,discardAuto:hiddenDualDiscardAuto,viewAs:hiddenDualUseReply,public:publicBotAudit,trace:botAuditTrace} : null,botAudit:testBotAudit ? {seatCapacity:playerCapacity,realClientSeats:pages.length,nativeBotSeats:playerCapacity-pages.length,trace:botAuditTrace,public:publicBotAudit} : null,scope:testGatewayRestart ? 'two real accounts / first client isolated gateway process restart / independent second gateway peer / Chrome mobile viewports / Trust; no physical device or hosted restart' : testRecovery ? 'two real accounts / controlled WebSocket close / native server Reconnect / Chrome mobile viewports / no physical network or device' : testBotAudit ? 'four seats / two real accounts / two native bots / public GameLog and skill-history audit / no physical device' : damageExchangeScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / manual replies for both seats; no Trust or physical device' : hiddenYijiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-yiji ${hiddenYijiMode} branch / manual prelight gate; no physical device` : hiddenJianxiongScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden-jianxiong prelight, invoke and obtain-card choice / no physical device' : hiddenFankuiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fankui ${hiddenFankuiDeputyScenario ? 'deputy' : 'main'} prelight, real damage and source-card choice / no physical device` : hiddenFanjianScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fanjian ${hiddenFanjianDeputyScenario ? 'deputy' : 'main'} active reveal, Peach gift and target lose-HP choice / no physical device` : hiddenLuoshenScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-luoshen ${hiddenLuoshenDeputyScenario ? 'deputy' : 'main'} prelight, EventPhaseStart and judgment obtain / no physical device` : hiddenTianduScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tiandu ${hiddenTianduDeputyScenario ? 'deputy' : 'main'} prelight, FinishJudge and judged-card obtain / no physical device` : hiddenJizhiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jizhi ${hiddenJizhiDeputyScenario ? 'deputy' : 'main'} prelight, Duel CardUsing and draw / no physical device` : hiddenMingshiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-mingshi ${hiddenMingshiDeputyScenario ? 'deputy' : 'main'} prelight, hidden-source Slash and zero damage / no physical device` : hiddenGongqingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-gongqing ${hiddenGongqingDeputyScenario ? 'deputy' : 'main'} prelight, low/high attack-range damage branches and Pan Jun reveal / no physical device` : hiddenEnyuanScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-enyuan TargetConfirmed Peach draw and Fa Zheng reveal ${hiddenEnyuanDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenFuyinScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-fuyin TargetConfirmed Slash nullification and Zhuge Zhan reveal ${hiddenFuyinDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenJilixScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-jilix TargetConfirmed repeat, second DamageInflicted prevention and correct-slot removal ${hiddenJilixDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenQianxunScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-qianxun ${hiddenQianxunIndulgenceScenario ? 'BeforeCardsMove Indulgence discard mirror' : 'TargetConfirming Snatch cancellation'} ${hiddenQianxunDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenWeimuScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-weimu TargetConfirming black Duel cancellation ${hiddenWeimuDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenXiaojiScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-xiaoji AfterCardsMove equipment loss and draw ${hiddenXiaojiDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenGuanxingScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-guanxing EventPhaseStart reveal and AskForArrangeCards ${hiddenGuanxingDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenTianxiangScenario ? `two real accounts / two Chrome mobile viewports / native C++ / hidden-tianxiang DetermineDamageInflicted heart-card/target choice, lose-HP branch and reveal ${hiddenTianxiangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenDuanchangScenario ? `two real accounts + two native bots / four-seat C++ / hidden-duanchang fk.Death, killer main-general choice and slot skill loss ${hiddenDuanchangDeputyScenario ? 'deputy' : 'main'} prelight / no physical device` : hiddenRevealScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden reveal_skill& active helper; no physical device' : hiddenActiveScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden active Chế Hành PlayCard / no physical device' : hiddenDualScenario ? 'two real accounts / two Chrome mobile viewports / native C++ / hidden Song Hùng trigger, auto-discard color source and Duel ViewAs; no physical device' : 'two real accounts / two Chrome mobile viewports / native Trust; no physical device', recovered,gatewayRestart:testGatewayRestart,
+    hiddenLuoshenAgReply,
+    cardWireReplayRequested, cardWireReplayInjected, cardWireReplaySent, cardWireReplayRejectObserved,
+    cardWireRollbackDrainRequested, cardWireRollbackDrainObserved,
+    cardWireReplayRejectCount: Math.max(0, cardWireReplayRejectsAfter - cardWireReplayRejectsBefore),
+    hiddenDuoshiInvoked,
     scenarioWenji: deltaWenjiScenario ? {
       playerReply: scenarioWenjiPlayerReply,
       cardReply: scenarioWenjiCardReply,
@@ -6043,7 +7293,27 @@ try{
       : null,
     memoryAllocationDiagnosticCounts:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryFaultCount:number}).__tqsMemoryFaultCount))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
-    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts}),null,2));
+    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,nativeSupplementalCapture:auditNativeDeck ? nativeSupplementalCapture : null,nativePacketSizeCapture:captureNativePackets ? nativePacketSizeCapture : null,nativeSemanticCapture:nativeSemanticCapture,nativeProcessMetrics:readNativeProcessMetrics(),result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts}),null,2));
+  if (observerLeaveRequested) {
+    const observerEvidenceFiles = readdirSync(out)
+      .filter((name) => name.startsWith(`${candidateId}-${testScenario}-`) && name.includes('-live-'))
+      .sort();
+    const observerEvidencePath = observerEvidenceFiles.at(-1);
+    assert.ok(observerEvidencePath, 'observer leave evidence must exist before lifecycle enrichment');
+    const observerEvidence = JSON.parse(readFileSync(
+      path.join(out, observerEvidencePath), 'utf8')) as Record<string, unknown>;
+    observerEvidence.cardWireObserverLeaveRequested = observerLeaveRequested;
+    observerEvidence.cardWireObserverLeaveObserved = cardWireObserverLeaveObserved;
+    observerEvidence.cardWireObserverLeaveNativeDisconnect = cardWireObserverLeaveNativeDisconnect;
+    writeFileSync(path.join(out, observerEvidencePath), JSON.stringify(
+      sanitizeQaEvidence(observerEvidence), null, 2));
+  }
+  if (cardWireObserverNegative) {
+    // Keep the mismatch proof separate from the ordinary privacy artifact so
+    // a negative observer never gets mistaken for an audited v1 audience.
+    writeCardWireObserverEvidence();
+  }
+  if (cardWirePlayerNegative) writeCardWirePlayerEvidence();
   if (generalPairMatchScenario) {
     const evidenceFiles = readdirSync(out)
       // Full-match evidence can be written as multiplayer, reconnect, or
@@ -6399,6 +7669,11 @@ try{
       ? `PASS ${testScenario}: full native match reached GameOver/result; sanitized browser trace saved; winner seats are collected from native QA logs`
     : 'PASS both clients: real GameOver / result / lobby / clean disconnect; sanitized trace saved');
 }catch(e){
+  if (e instanceof CardWirePlayerProbeComplete) {
+    console.log('PASS native player mismatch probe completed after bounded capability proof; no gameplay/GameOver claim');
+  } else if (e instanceof CardWireEntropyProbeComplete) {
+    console.log('PASS native CSPRNG failure probe completed after bounded fail-closed rejection; no gameplay/GameOver claim');
+  } else {
   console.error('FAIL two-client candidate verification:', (e as Error).name === 'AssertionError' ? 'assertion failed' : 'runner or browser error');
   const runnerLocation = (e as Error).stack?.match(/multiplayer-e2e\/run\.ts:(\d+):(\d+)/u);
   if (runnerLocation) console.error(`Runner source location: run.ts:${runnerLocation[1]}:${runnerLocation[2]}`);
@@ -6418,7 +7693,9 @@ try{
     }
   }
   const out=path.join(repo,'scratch/evidence');mkdirSync(out,{recursive:true});
-  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify(sanitizeQaEvidence({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
+  writeFileSync(path.join(out,`reconnect-failure-${Date.now()}.json`),JSON.stringify(sanitizeQaEvidence({at:new Date().toISOString(),result:'FAIL',candidateId,deploymentUrl:deploymentUrl ?? null,feedback,distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,nativeSupplementalCapture:auditNativeDeck ? nativeSupplementalCapture : null,recovered,scenario:testScenario || null,scenarioClient:testScenario ? scenarioClient : null,nativeQaGateSeen,nativeQaGateCommand,nativeQaGateTimeoutMs,nativeQaGateFailureObserved,cardWireReplayRequested,cardWireReplayInjected,cardWireReplaySent,cardWireReplayRejectObserved,cardWireReplayRejectCount:Math.max(0,cardWireReplayRejectsAfter-cardWireReplayRejectsBefore),cardWireRollbackDrainRequested,cardWireRollbackDrainObserved,scenarioCardChosenReply,scenarioCardChosenHidden,scenarioPoxiReply,scenarioPoxiMultiple,scenarioCardsAndChoiceReply,scenarioActiveSkillReply,scenarioRescueReply,scenarioRescuePeach,scenarioRescueBlocked,scenarioViewAsReply,scenarioFoundingReply,scenarioObservations,traces,errors,
+    hiddenLuoshenAgReply,
+    nativeWireCapture:auditNativeDeck ? nativeWireCapture : null,nativePacketSizeCapture:captureNativePackets ? nativePacketSizeCapture : null,nativeSemanticCapture:nativeSemanticRequested ? readNativeSemanticSummary() : null,nativeProcessMetrics:readNativeProcessMetrics(),
     memoryAllocationDiagnosticCounts:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryFaultCount?:number}).__tqsMemoryFaultCount ?? 0).catch(()=>0))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null).catch(()=>null))),
     errorContexts,scope:'metadata and numeric heap/callback telemetry only; pending safe GameOver cleanup'}),null,2));
@@ -6443,6 +7720,7 @@ try{
     }
   }
   process.exitCode=1;
+  }
 }finally{
   clearInterval(progressTimer);
   await browser?.close();await new Promise<void>(resolve=>server?server.httpServer.close(()=>resolve()):resolve());

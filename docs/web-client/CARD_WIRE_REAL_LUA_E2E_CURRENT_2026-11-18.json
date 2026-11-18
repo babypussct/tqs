@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T12:05:54.000Z",
+  "scope": "isolated browser/real-Lua (Wasmoon) fixture using the current e0 candidate package tree and exact upstream baseline manifest; no native C++ server, production gateway or physical device",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "upstreamBaselineId": "tqsvn-production-2026-11-15",
+    "upstreamBaselineManifestByteMatch": true,
+    "upstreamPackageCount": 14,
+    "lua": "5.4.9"
+  },
+  "runner": {
+    "command": "npm --prefix game/web run test:e2e:lua",
+    "result": "PASS",
+    "scenarioRecords": 72,
+    "passedRecords": 72,
+    "failedRecords": 0,
+    "qaScenarioModeRecords": 4,
+    "qaScenarioModePassed": 4,
+    "browserErrors": 0,
+    "rawPayloadRetained": false,
+    "browserAndViteCleanupObserved": true
+  },
+  "provenanceCorrection": {
+    "excludedObservation": "A prior default-root run was 69/72 because scratch/upstream was clean but held stale freekill-core and hegemony revisions; it is not acceptance evidence.",
+    "exactRootRerunRequired": true
+  },
+  "limitations": [
+    "This closes the browser/real-Lua fixture matrix for the exact local candidate package tree; it does not replace native C++/CBOR capture or live production evidence.",
+    "Native exhaustive every-emitter/replay/drain/concurrency stress, approved P6 thresholds/attribution, production/canary rollback SLA, physical device/network acceptance, immutable reviewed release and independent approval remain open."
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18",
+  "status": "PROPOSAL_PENDING_APPROVAL",
+  "scope": "Candidate-only P6 review packet for card-wire v1; this is not an acceptance PASS, production approval or canary authorization.",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageArchiveSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaPackageManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "lua": "5.4.9",
+    "luaExecutableBasename": "lua5.4"
+  },
+  "observedEvidence": {
+    "packetSize": {
+      "source": "docs/web-client/CARD_WIRE_PACKET_SIZE_COMPARISON_CURRENT_2026-11-16.json",
+      "v1MaxOuterPacketBytes": 3699,
+      "v1Audiences": 3,
+      "v1CaptureFailures": 0,
+      "legacyComparisonAvailable": true,
+      "interpretation": "Bounded comparison only; the runs are not deterministic packet-for-packet replays."
+    },
+    "nativeCborSerialization": {
+      "source": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+      "records": 4233,
+      "p95ElapsedNs": 4708,
+      "maxElapsedNs": 823000,
+      "maxWireBytes": 3460,
+      "forbiddenMetadataKeysObserved": false
+    },
+    "serverProjectionAndSerialize": {
+      "source": "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+      "latestObservedRecords": 8,
+      "latestObservedP95Ms": 204,
+      "latestObservedMaxMs": 204,
+      "historicalObservedMaxMs": 505,
+      "interpretation": "The current native timing file is bounded and sparse; it is not a statistically sufficient performance sample."
+    },
+    "mappingLifecycle": {
+      "source": "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+      "maxActiveReferences": 78,
+      "maxActiveRequests": 1,
+      "maxActiveTokenRefs": 24,
+      "finalActiveReferences": 0,
+      "finalActiveRequests": 0,
+      "finalActiveTokenRefs": 0,
+      "disconnectCleanupActiveReferences": [52, 26, 0],
+      "approvedThresholdStatus": "OPEN"
+    },
+    "repeatedProcessObservation": {
+      "source": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_CURRENT_2026-11-16.json",
+      "runCount": 3,
+      "allRunsPass": true,
+      "allRunsProcessesClosed": true,
+      "allRunsListenersClosed": true,
+      "observedRssKbRange": [8944, 15040],
+      "observedMaxCpuSeconds": 1.29,
+      "mappingMemoryAttribution": "not available from process RSS alone"
+    },
+    "semanticAndFailureCounters": {
+      "sources": [
+        "docs/web-client/CARD_WIRE_NATIVE_RECONNECT_SEMANTIC_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_REPLAY_CURRENT_2026-11-18.json",
+        "docs/web-client/CARD_WIRE_NATIVE_CSPRNG_FAILURE_CURRENT_2026-11-18.json"
+      ],
+      "semanticFailures": 0,
+      "invalidReferences": 0,
+      "forbiddenFields": 0,
+      "nativeWireFailures": 0,
+      "supplementalFailures": 0,
+      "boundedCsprngFailureShapes": ["open", "short-read", "close"]
+    }
+  },
+  "proposedThresholds": {
+    "status": "CANDIDATE_VALUES_FOR_REVIEW_ONLY",
+    "rationale": "Values are intentionally above the observed bounded envelope with explicit headroom; they are not repository-authoritative until an independent owner approves them.",
+    "wire": {
+      "maxOuterPacketBytes": 4096,
+      "semanticFailures": 0,
+      "invalidReferences": 0,
+      "forbiddenFields": 0
+    },
+    "nativeCborSerialization": {
+      "p95ElapsedNsAtOrBelow": 10000,
+      "maxElapsedNsAtOrBelow": 2000000,
+      "requiredAttribution": "native Cbor::encodeArray boundary; raw bytes excluded"
+    },
+    "serverProjectionAndSerialize": {
+      "p95ElapsedMsAtOrBelow": 250,
+      "maxElapsedMsAtOrBelow": 750,
+      "requiredAttribution": "separate project/request-project/serialize scopes; sample count and workload must be reviewed"
+    },
+    "mappingLifecycle": {
+      "maxActiveReferencesPerRoom": 256,
+      "maxActiveRequestsPerRoom": 4,
+      "finalActiveReferences": 0,
+      "finalActiveRequests": 0,
+      "finalActiveTokenRefs": 0,
+      "disconnectCleanupActiveReferences": 0,
+      "requiredAttribution": "native mapping counters, not total process RSS"
+    },
+    "processObservation": {
+      "status": "INFORMATIONAL_UNTIL_ATTRIBUTION_EXISTS",
+      "required": "Do not convert whole-process RSS into a mapping-memory PASS without a reviewed attribution method."
+    }
+  },
+  "requiredReviewDecisions": [
+    "Approve or replace the numeric wire, timing and mapping thresholds.",
+    "Approve workload/sample-size and confidence rules for repeated native runs.",
+    "Approve attribution method separating mapping memory from native process baseline RSS.",
+    "Record the accountable reviewer and date; no self-approval by the implementation agent.",
+    "Keep production/canary rollback SLA and independent release approval as separate gates."
+  ],
+  "limitations": [
+    "The proposal does not close P6.",
+    "It does not claim exhaustive emitter, stale, replay, concurrency or long-lived room-churn coverage.",
+    "Physical device/network acceptance remains WAIVED_BY_USER and is not PASS.",
+    "No production or canary mutation occurred."
+  ]
+}

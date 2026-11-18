@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES } from './upstream-packages';
+import { loadUpstreamFiles, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot } from './upstream-packages';
 
 const PACKAGE_FILE = /\.(lua|json|md|qml|js)$/iu;
 const GROUP_SKILLS = [
@@ -539,7 +539,7 @@ function merge(candidate: Prompt4TelemetryReport, baseline: Prompt4TelemetryRepo
 
 export async function runPrompt4Telemetry(): Promise<Prompt4TelemetryReport> {
   const baseline = await runOne(loadUpstreamFiles(
-    path.resolve(process.cwd(), '../../scratch/upstream'), UPSTREAM_PACKAGE_NAMES,
+    resolveUpstreamRoot(path.resolve(process.cwd(), '../../scratch/upstream')), UPSTREAM_PACKAGE_NAMES,
   ));
   const candidate = await runOne(mountLocalRuntime());
   return merge(candidate, baseline);

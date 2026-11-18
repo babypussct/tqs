@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated candidate native card-wire v1 mapping telemetry; QA-only metadata, not production approval",
+  "protocol": "TQS_HEG_CARD_WIRE",
+  "mode": "new_heg_mode",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "candidate": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMd5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78",
+    "luaRuntime": "Lua 5.4.9; executable contract basename lua5.4"
+  },
+  "observedCommand": "TQS_LUA_BIN=/opt/homebrew/opt/lua@5.4/bin/lua5.4 TQS_LIVE_CARD_WIRE_REQUIRE_ALL=1 TQS_PRIVACY_SCENARIO=draw-sequence npx tsx scratch/evidence/card-wire-native-macos-20261103/run.mjs",
+  "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794783100735.json",
+  "runner": {
+    "result": "PASS",
+    "errors": [],
+    "recovered": true,
+    "audiences": 3,
+    "strictPrivacyCategoriesObserved": 12,
+    "strictPrivacyCounts": {
+      "prepare_order": 2,
+      "shuffle_order": 2,
+      "sync_order": 8,
+      "change_area_order": 2,
+      "hidden_move_id": 26,
+      "observe_hidden_move_id": 19,
+      "special_pile_id": 1,
+      "reconnect_deck": 1,
+      "reconnect_hand": 1,
+      "reconnect_special": 1,
+      "observe_deck": 1,
+      "observe_hand": 2
+    },
+    "reconnectObserved": true,
+    "observerSnapshotObserved": true,
+    "manualPlayCardObserved": true,
+    "gameOverObservedOnAllAudiences": true,
+    "nativePrivacyFailures": 0,
+    "supplementalFailures": 0
+  },
+  "mappingTelemetry": {
+    "source": "QA-only tqs_qa wrapper around card_handle_protocol; launcher retains allowlisted counters only",
+    "artifact": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4/native-card-wire-mapping.jsonl",
+    "schemaVersion": 1,
+    "records": 271,
+    "sampling": "protocol_created is retained; batch_commit is sampled every eighth commit; choice_reject and disconnect are retained",
+    "eventCounts": {
+      "protocol_created": 1,
+      "batch_commit": 267,
+      "batch_abort": 0,
+      "choice_reject": 0,
+      "disconnect": 3
+    },
+    "reasonCounts": {
+      "none": 271
+    },
+    "maximums": {
+      "audiences": 3,
+      "activeReferences": 98,
+      "activeRequests": 2,
+      "activeTokenRefs": 23,
+      "retiredTombstones": 261
+    },
+    "disconnectCleanup": [
+      {
+        "beforeAudiences": 3,
+        "beforeActiveReferences": 98,
+        "beforeActiveRequests": 0,
+        "beforeActiveTokenRefs": 11,
+        "beforeRetiredTombstones": 250,
+        "audiences": 2,
+        "activeReferences": 66,
+        "activeRequests": 0,
+        "activeTokenRefs": 7,
+        "retiredTombstones": 254,
+        "cleanupActiveReferences": 66,
+        "reason": "none"
+      },
+      {
+        "beforeAudiences": 2,
+        "beforeActiveReferences": 66,
+        "beforeActiveRequests": 0,
+        "beforeActiveTokenRefs": 7,
+        "beforeRetiredTombstones": 254,
+        "audiences": 1,
+        "activeReferences": 33,
+        "activeRequests": 0,
+        "activeTokenRefs": 1,
+        "retiredTombstones": 260,
+        "cleanupActiveReferences": 33,
+        "reason": "none"
+      },
+      {
+        "beforeAudiences": 1,
+        "beforeActiveReferences": 33,
+        "beforeActiveRequests": 0,
+        "beforeActiveTokenRefs": 1,
+        "beforeRetiredTombstones": 260,
+        "audiences": 0,
+        "activeReferences": 0,
+        "activeRequests": 0,
+        "activeTokenRefs": 0,
+        "retiredTombstones": 261,
+        "cleanupActiveReferences": 0,
+        "reason": "none"
+      }
+    ],
+    "final": {
+      "audiences": 0,
+      "activeReferences": 0,
+      "activeRequests": 0,
+      "activeTokenRefs": 0,
+      "cleanupActiveReferences": 0,
+      "cleanupObserved": true
+    },
+    "forbiddenMetadataKeysObserved": false,
+    "rawIdentityTokenOrPayloadRetained": false,
+    "productionMutation": false
+  },
+  "nativeWireBoundary": {
+    "artifact": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4/native-wire-metrics.json",
+    "records": 3335,
+    "outboundRecords": 3281,
+    "inboundRecords": 54,
+    "outboundOuterDecodedRecords": 3281,
+    "outerDecodedRecords": 3308,
+    "cardWireClassifiedRecords": 1220,
+    "inboundPredecodeRecords": 27,
+    "inboundPostdecodeRecords": 27,
+    "forbiddenMetadataKeysObserved": false,
+    "productionMutation": false
+  },
+  "supplementalWireCapture": {
+    "audiences": 3,
+    "packets": 1055,
+    "incomingPackets": 1051,
+    "replyPackets": 4,
+    "failures": 0,
+    "packetBytesTotal": 52835,
+    "channels": {
+      "negotiation": 4,
+      "metadata": 855,
+      "public": 187,
+      "request": 5,
+      "reply": 4
+    }
+  },
+  "nativeCborTiming": {
+    "artifact": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4/native-cbor-serialization-timing.json",
+    "records": 1220,
+    "scopes": {
+      "notify": 1215,
+      "request": 5
+    },
+    "channels": {
+      "metadata": 855,
+      "request": 5,
+      "negotiation": 4,
+      "deck": 169,
+      "public": 187
+    },
+    "elapsedNs": {
+      "min": 83,
+      "p50": 833,
+      "p95": 4125,
+      "max": 66958,
+      "average": 1446.5901639344263
+    },
+    "wireBytes": {
+      "min": 17,
+      "max": 3582,
+      "total": 81173
+    },
+    "forbiddenMetadataKeysObserved": false,
+    "productionMutation": false
+  },
+  "serverTiming": {
+    "artifact": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4/native-wire-timing.json",
+    "records": 8,
+    "scopes": {
+      "project": 3,
+      "request-project": 1,
+      "serialize": 4
+    },
+    "channels": {
+      "deck": 2,
+      "metadata": 2,
+      "public": 2,
+      "request": 2
+    },
+    "elapsedMs": {
+      "min": 6,
+      "p50": 21,
+      "p95": 33,
+      "max": 387,
+      "average": 65
+    },
+    "forbiddenMetadataKeysObserved": false,
+    "productionMutation": false
+  },
+  "processMetrics": {
+    "artifact": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4/native-process-metrics.json",
+    "sampling": "ps-rss-cputime",
+    "sampleCount": 944,
+    "firstRssKb": 14704,
+    "minRssKb": 14704,
+    "maxRssKb": 15568,
+    "lastRssKb": 15568,
+    "maxCpuSeconds": 0.85,
+    "elapsedSeconds": 249.706314,
+    "productionMutation": false
+  },
+  "cleanup": {
+    "qaPort": 19681,
+    "adminPort": 9000,
+    "qaListenerAfterRun": "closed",
+    "qaRuntimeAfterRun": "moved to recoverable temporary trash",
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D",
+    "productionListenerTouched": false,
+    "productionConfigChanged": false,
+    "productionMutation": false
+  },
+  "releaseStatus": "OPEN-HOLD",
+  "limitations": [
+    "Mapping telemetry is QA-only and candidate-only; it proves bounded counter transitions and cleanup attribution for this run, not release-grade memory thresholds or all-room/session behavior.",
+    "The first telemetry run filled its 512-record cap before disconnect events and is excluded from mapping acceptance; the second run reached GameOver but failed the runner manual-card assertion and is excluded from gameplay acceptance. The current PASS is the acceptance run.",
+    "Native choice/deputy coverage, browser/device acceptance, repeated mapping-memory thresholds, production/canary rollback and release approval remain open."
+  ]
+}

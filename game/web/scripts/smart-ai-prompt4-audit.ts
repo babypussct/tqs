@@ -11,11 +11,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES, type UpstreamPackageSpec } from './upstream-packages';
+import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot, type UpstreamPackageSpec } from './upstream-packages';
 import { buildPrompt4Backlog, buildPrompt4Priority, type Prompt4BacklogRecord, type Prompt4PriorityRecord } from './smart-ai-prompt4-priority';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const UPSTREAM_ROOT = path.join(REPO_ROOT, 'scratch/upstream');
+const UPSTREAM_ROOT = resolveUpstreamRoot(path.join(REPO_ROOT, 'scratch/upstream'));
 const LOCAL_CORE_ROOT = path.join(REPO_ROOT, 'runtime/packages/freekill-core');
 const LOCAL_PACKAGE_ROOT = path.join(REPO_ROOT, 'runtime/packages');
 const RUNTIME_EXTENSIONS = /\.(lua|json|md|qml|js)$/iu;

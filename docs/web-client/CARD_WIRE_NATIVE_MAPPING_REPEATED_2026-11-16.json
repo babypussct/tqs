@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated candidate native card-wire v1 mapping telemetry repeated observation; QA-only metadata, not production approval",
+  "protocol": "TQS_HEG_CARD_WIRE",
+  "mode": "new_heg_mode",
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "releaseDecision": "OPEN-HOLD",
+    "productionMutation": false
+  },
+  "candidate": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMd5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78",
+    "luaRuntime": "Lua 5.4.9; executable contract basename lua5.4"
+  },
+  "runs": [
+    {
+      "id": "run-1",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794783100735.json",
+      "rawArtifactRoot": "/private/tmp/tqs-cardwire-trash-20261116-RJz41D/tqs-cardwire-qa-20261103-9mW7K4",
+      "result": "PASS",
+      "recovered": true,
+      "mapping": {
+        "records": 271,
+        "eventCounts": {
+          "protocol_created": 1,
+          "batch_commit": 267,
+          "batch_abort": 0,
+          "choice_reject": 0,
+          "disconnect": 3
+        },
+        "maximums": {
+          "audiences": 3,
+          "activeReferences": 98,
+          "activeRequests": 2,
+          "activeTokenRefs": 23,
+          "retiredTombstones": 261
+        },
+        "final": {
+          "audiences": 0,
+          "activeReferences": 0,
+          "activeRequests": 0,
+          "activeTokenRefs": 0,
+          "cleanupActiveReferences": 0,
+          "cleanupObserved": true
+        }
+      },
+      "nativeWireBoundary": {
+        "records": 3335,
+        "outboundRecords": 3281,
+        "inboundRecords": 54,
+        "outboundOuterDecodedRecords": 3281,
+        "outerDecodedRecords": 3308,
+        "cardWireClassifiedRecords": 1220,
+        "inboundPredecodeRecords": 27,
+        "inboundPostdecodeRecords": 27,
+        "forbiddenMetadataKeysObserved": false
+      },
+      "nativeCborTiming": {
+        "records": 1220,
+        "scopes": {
+          "notify": 1215,
+          "request": 5
+        },
+        "elapsedNs": {
+          "min": 83,
+          "p50": 833,
+          "p95": 4125,
+          "max": 66958,
+          "average": 1446.5901639344263
+        }
+      },
+      "serverTiming": {
+        "records": 8,
+        "scopes": {
+          "project": 3,
+          "request-project": 1,
+          "serialize": 4
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 944,
+        "firstRssKb": 14704,
+        "minRssKb": 14704,
+        "maxRssKb": 15568,
+        "lastRssKb": 15568,
+        "maxCpuSeconds": 0.85,
+        "elapsedSeconds": 249.706314
+      },
+      "cleanup": {
+        "processesClosed": true,
+        "listenersClosed": ["19681", "9000"],
+        "runtimeMovedToRecoverableTrash": true,
+        "pointerMovedToRecoverableTrash": true
+      }
+    },
+    {
+      "id": "run-2",
+      "rawSanitizedEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794784727745.json",
+      "rawArtifactRoot": "/private/tmp/tqs-cardwire-trash-20261116-CVLIZV/tqs-cardwire-qa-20261103-ZUK1kh",
+      "result": "PASS",
+      "recovered": true,
+      "mapping": {
+        "records": 478,
+        "eventCounts": {
+          "protocol_created": 1,
+          "batch_commit": 474,
+          "batch_abort": 0,
+          "choice_reject": 0,
+          "disconnect": 3
+        },
+        "maximums": {
+          "audiences": 3,
+          "activeReferences": 150,
+          "activeRequests": 1,
+          "activeTokenRefs": 27,
+          "retiredTombstones": 412
+        },
+        "final": {
+          "audiences": 0,
+          "activeReferences": 0,
+          "activeRequests": 0,
+          "activeTokenRefs": 0,
+          "cleanupActiveReferences": 0,
+          "cleanupObserved": true
+        }
+      },
+      "nativeWireBoundary": {
+        "records": 5810,
+        "outboundRecords": 5750,
+        "inboundRecords": 60,
+        "outboundOuterDecodedRecords": 5750,
+        "outerDecodedRecords": 5780,
+        "cardWireClassifiedRecords": 1935,
+        "inboundPredecodeRecords": 30,
+        "inboundPostdecodeRecords": 30,
+        "forbiddenMetadataKeysObserved": false
+      },
+      "nativeCborTiming": {
+        "records": 1935,
+        "scopes": {
+          "notify": 1930,
+          "request": 5
+        },
+        "elapsedNs": {
+          "min": 83,
+          "p50": 625,
+          "p95": 3792,
+          "max": 69041,
+          "average": 1269.5994832041345
+        }
+      },
+      "serverTiming": {
+        "records": 8,
+        "scopes": {
+          "project": 3,
+          "request-project": 1,
+          "serialize": 4
+        }
+      },
+      "processMetrics": {
+        "sampleCount": 797,
+        "firstRssKb": 14352,
+        "minRssKb": 14352,
+        "maxRssKb": 15840,
+        "lastRssKb": 15840,
+        "maxCpuSeconds": 1.29,
+        "elapsedSeconds": 210.948085417
+      },
+      "cleanup": {
+        "processesClosed": true,
+        "listenersClosed": ["19681", "9000"],
+        "runtimeMovedToRecoverableTrash": true,
+        "pointerMovedToRecoverableTrash": true
+      }
+    }
+  ],
+  "aggregateObservation": {
+    "runCount": 2,
+    "mappingRecords": 749,
+    "mappingEventCounts": {
+      "protocol_created": 2,
+      "batch_commit": 741,
+      "batch_abort": 0,
+      "choice_reject": 0,
+      "disconnect": 6
+    },
+    "maximumObserved": {
+      "audiences": 3,
+      "activeReferences": 150,
+      "activeRequests": 2,
+      "activeTokenRefs": 27,
+      "retiredTombstones": 412
+    },
+    "allRunsFinalCleanup": {
+      "audiences": 0,
+      "activeReferences": 0,
+      "activeRequests": 0,
+      "activeTokenRefs": 0,
+      "cleanupActiveReferences": 0,
+      "allRunsObserved": true
+    },
+    "nativeWireBoundary": {
+      "records": 9145,
+      "outboundRecords": 9031,
+      "inboundRecords": 114,
+      "outboundOuterDecodedRecords": 9031,
+      "outerDecodedRecords": 9088,
+      "cardWireClassifiedRecords": 3155,
+      "inboundPredecodeRecords": 57,
+      "inboundPostdecodeRecords": 57,
+      "forbiddenMetadataKeysObserved": false
+    },
+    "nativeCborTimingRecords": 3155,
+    "serverTimingRecords": 16,
+    "processMetrics": {
+      "totalSamples": 1741,
+      "observedMinimumRssKb": 14352,
+      "observedMaximumRssKb": 15840,
+      "maximumRunCpuSeconds": 1.29,
+      "totalObservedElapsedSeconds": 460.654399417
+    },
+    "allRunsProcessesClosed": true,
+    "allRunsListenersClosed": true,
+    "allRawArtifactsRetainedInRecoverableTrash": true,
+    "productionMutation": false
+  },
+  "limitations": [
+    "This is repeated bounded telemetry from one draw-sequence scenario; it proves candidate-only counter transitions and GameOver cleanup for these two runs, not all room/session lifetimes or a release-grade memory threshold.",
+    "Process RSS and sampled active-reference counters are observations, not an approved numeric memory budget; mapping-memory attribution, stale-reference stress, full choice/deputy matrix and long-lived room churn remain open.",
+    "The strict legacy exposure diagnostic remains open with 12 exposure groups; card-wire v1 remains disabled by default and isolated-QA-only.",
+    "Browser/device-network acceptance, production/canary rollback SLA and release approval remain open."
+  ],
+  "result": "PASS-repeated-bounded-native-mapping-and-cleanup-observation; mapping-memory attribution, approved thresholds and release gates remain OPEN"
+}

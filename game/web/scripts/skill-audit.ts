@@ -18,12 +18,13 @@ import {
   packageSpec,
   DECLARATION_REPAIRS,
   UPSTREAM_PACKAGE_NAMES,
+  resolveUpstreamRoot,
   type UpstreamPackageSpec,
 } from './upstream-packages';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const UPSTREAM_ROOT = path.join(REPO_ROOT, 'scratch/upstream');
+const UPSTREAM_ROOT = resolveUpstreamRoot(path.join(REPO_ROOT, 'scratch/upstream'));
 const CJK = /[\u3400-\u9fff]/u;
 
 type GeneralRecord = {
@@ -881,7 +882,8 @@ function renderMarkdown(report: AuditReport): string {
 }
 
 async function main(): Promise<AuditReport> {
-  const reportOnly = process.argv.includes('--report-only');
+  const inventoryOnly = process.argv.includes('--inventory-only');
+  const reportOnly = process.argv.includes('--report-only') || inventoryOnly;
   ensureUpstream();
   const baseline = await capture(BASELINE_PACKAGE_NAMES, undefined, false);
   const baselineNames = new Set(baseline.generals.map((general) => general.name));
@@ -892,10 +894,12 @@ async function main(): Promise<AuditReport> {
   const baselineSummary = summarize(baseline);
   const completeSummary = summarize(complete, baselineNames);
   const completeVisibleSummary = summarize(complete, baselineVisibleNames);
-  assert.equal(baselineSummary.missingIds.length, 203,
-    `Pinned baseline missing-ID inventory drifted: expected 203, got ${baselineSummary.missingIds.length}`);
-  assert.equal(baselineSummary.missingOccurrences, 205,
-    `Pinned baseline missing occurrence inventory drifted: expected 205, got ${baselineSummary.missingOccurrences}`);
+  if (!inventoryOnly) {
+    assert.equal(baselineSummary.missingIds.length, 203,
+      `Pinned baseline missing-ID inventory drifted: expected 203, got ${baselineSummary.missingIds.length}`);
+    assert.equal(baselineSummary.missingOccurrences, 205,
+      `Pinned baseline missing occurrence inventory drifted: expected 205, got ${baselineSummary.missingOccurrences}`);
+  }
   const source = sourceIndex(loadUpstreamFiles(UPSTREAM_ROOT, UPSTREAM_PACKAGE_NAMES, { patchDeclarations: false }));
   const mapping = mappingFor(baseline, complete, source, baselineNames, new Set(baselineSummary.missingIds));
   const translation = auditTranslations(complete, baselineVisibleNames, VI_ADDITIONS);

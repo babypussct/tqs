@@ -1,0 +1,222 @@
+diff --git a/freekill-core/Fk/Base/CppUtil.qml b/freekill-core/Fk/Base/CppUtil.qml
+index 3d5d04b..20cb4d8 100644
+--- a/freekill-core/Fk/Base/CppUtil.qml
++++ b/freekill-core/Fk/Base/CppUtil.qml
+@@ -21 +21 @@ QtObject {
+-    ClientInstance.replyToServer("", data);
++    Lua.replyToServer( data);
+diff --git a/freekill-core/Fk/Base/LuaUtil.qml b/freekill-core/Fk/Base/LuaUtil.qml
+index 01a12f5..7ef2039 100644
+--- a/freekill-core/Fk/Base/LuaUtil.qml
++++ b/freekill-core/Fk/Base/LuaUtil.qml
+@@ -236,0 +237,4 @@ QtObject {
++  function replyToServer(data) {
++    return call("ReplyToServer", data);
++  }
++
+diff --git a/freekill-core/Fk/Pages/Common/RoomPage.qml b/freekill-core/Fk/Pages/Common/RoomPage.qml
+index c6a0d19..c295b62 100644
+--- a/freekill-core/Fk/Pages/Common/RoomPage.qml
++++ b/freekill-core/Fk/Pages/Common/RoomPage.qml
+@@ -949 +949 @@ Item {
+-    ClientInstance.replyToServer("", data);
++    Lua.replyToServer( data);
+diff --git a/freekill-core/LunarLtk/Models/RoomModel.qml b/freekill-core/LunarLtk/Models/RoomModel.qml
+index 019c129..5c7a589 100644
+--- a/freekill-core/LunarLtk/Models/RoomModel.qml
++++ b/freekill-core/LunarLtk/Models/RoomModel.qml
+@@ -103 +103 @@ QtObject {
+-    ClientInstance.replyToServer("", jsonData);
++    Lua.replyToServer( jsonData);
+diff --git a/utility/qml/ChooseCardsAndChoiceBox.qml b/utility/qml/ChooseCardsAndChoiceBox.qml
+index 1817317..b85ef98 100644
+--- a/utility/qml/ChooseCardsAndChoiceBox.qml
++++ b/utility/qml/ChooseCardsAndChoiceBox.qml
+@@ -119 +119 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", {
++            Lua.replyToServer( {
+@@ -139 +139 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", {
++            Lua.replyToServer( {
+diff --git a/gamemode/qml/1v1.qml b/gamemode/qml/1v1.qml
+index 847f0fd..75bd13e 100644
+--- a/gamemode/qml/1v1.qml
++++ b/gamemode/qml/1v1.qml
+@@ -125 +125 @@ GraphicsBox {
+-          ClientInstance.replyToServer("",
++          Lua.replyToServer(
+diff --git a/gamemode/qml/2v2.qml b/gamemode/qml/2v2.qml
+index cda280e..df4d056 100644
+--- a/gamemode/qml/2v2.qml
++++ b/gamemode/qml/2v2.qml
+@@ -236 +236 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", root.my_cards[root.selected]);
++          Lua.replyToServer( root.my_cards[root.selected]);
+diff --git a/gamemode/qml/2v2_bp.qml b/gamemode/qml/2v2_bp.qml
+index dee9eec..f320183 100644
+--- a/gamemode/qml/2v2_bp.qml
++++ b/gamemode/qml/2v2_bp.qml
+@@ -396 +396 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "");
++      Lua.replyToServer( "");
+diff --git a/gamemode/qml/2v2_reserve.qml b/gamemode/qml/2v2_reserve.qml
+index f3ae674..5abf9f2 100644
+--- a/gamemode/qml/2v2_reserve.qml
++++ b/gamemode/qml/2v2_reserve.qml
+@@ -631 +631 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "");
++      Lua.replyToServer( "");
+diff --git a/mobile/qml/DaoShuBox.qml b/mobile/qml/DaoShuBox.qml
+index 7c5b8fd..10708a9 100644
+--- a/mobile/qml/DaoShuBox.qml
++++ b/mobile/qml/DaoShuBox.qml
+@@ -132 +132 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", root.selected_ids[0]);
++          Lua.replyToServer( root.selected_ids[0]);
+diff --git a/mobile/qml/FlappyBird.qml b/mobile/qml/FlappyBird.qml
+index a1599a3..006350a 100644
+--- a/mobile/qml/FlappyBird.qml
++++ b/mobile/qml/FlappyBird.qml
+@@ -370 +370 @@ GraphicsBox {
+-    ClientInstance.replyToServer("", resultStr)
++    Lua.replyToServer( resultStr)
+@@ -584 +584 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "__cancel")
++      Lua.replyToServer( "__cancel")
+diff --git a/mobile/qml/JieDangBox.qml b/mobile/qml/JieDangBox.qml
+index d10c063..4e4a209 100644
+--- a/mobile/qml/JieDangBox.qml
++++ b/mobile/qml/JieDangBox.qml
+@@ -197 +197 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", reply);
++          Lua.replyToServer( reply);
+diff --git a/mobile/qml/TaMoBox.qml b/mobile/qml/TaMoBox.qml
+index e705cb3..4d6e487 100644
+--- a/mobile/qml/TaMoBox.qml
++++ b/mobile/qml/TaMoBox.qml
+@@ -158 +158 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", playerIds);
++          Lua.replyToServer( playerIds);
+@@ -185 +185 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", "");
++          Lua.replyToServer( "");
+diff --git a/mobile/qml/WuLingBox.qml b/mobile/qml/WuLingBox.qml
+index a85618e..9c472bc 100644
+--- a/mobile/qml/WuLingBox.qml
++++ b/mobile/qml/WuLingBox.qml
+@@ -81 +81 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", reply);
++        Lua.replyToServer( reply);
+diff --git a/tenyear/qml/LiSaoBox.qml b/tenyear/qml/LiSaoBox.qml
+index 503977e..23113a0 100644
+--- a/tenyear/qml/LiSaoBox.qml
++++ b/tenyear/qml/LiSaoBox.qml
+@@ -75 +75 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", reply);
++            Lua.replyToServer( reply);
+@@ -77 +77 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", "__cancel");
++            Lua.replyToServer( "__cancel");
+@@ -92 +92 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", reply);
++            Lua.replyToServer( reply);
+@@ -94 +94 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", "__cancel");
++            Lua.replyToServer( "__cancel");
+@@ -105 +105 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "__cancel");
++      Lua.replyToServer( "__cancel");
+@@ -118 +118 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "__cancel");
++      Lua.replyToServer( "__cancel");
+diff --git a/tenyear/qml/TuoyuBox.qml b/tenyear/qml/TuoyuBox.qml
+index 49b4bae..904b7dc 100644
+--- a/tenyear/qml/TuoyuBox.qml
++++ b/tenyear/qml/TuoyuBox.qml
+@@ -123 +123 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", reply);
++        Lua.replyToServer( reply);
+diff --git a/tenyear/qml/YanjiaoBox.qml b/tenyear/qml/YanjiaoBox.qml
+index 8032610..3303f27 100644
+--- a/tenyear/qml/YanjiaoBox.qml
++++ b/tenyear/qml/YanjiaoBox.qml
+@@ -103 +103 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", reply);
++          Lua.replyToServer( reply);
+@@ -118 +118 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", "");
++          Lua.replyToServer( "");
+@@ -217 +217 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "");
++      Lua.replyToServer( "");
+@@ -228 +228 @@ GraphicsBox {
+-      ClientInstance.replyToServer("", "");
++      Lua.replyToServer( "");
+diff --git a/mougong/qml/ZhuiSiBox.qml b/mougong/qml/ZhuiSiBox.qml
+index 23c0526..cfb8209 100644
+--- a/mougong/qml/ZhuiSiBox.qml
++++ b/mougong/qml/ZhuiSiBox.qml
+@@ -98 +98 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", reply);
++          Lua.replyToServer( reply);
+diff --git a/ol/pkg/ol_gamemode/rougelike1v1/RougeShop.qml b/ol/pkg/ol_gamemode/rougelike1v1/RougeShop.qml
+index 857eaf5..b7239a9 100644
+--- a/ol/pkg/ol_gamemode/rougelike1v1/RougeShop.qml
++++ b/ol/pkg/ol_gamemode/rougelike1v1/RougeShop.qml
+@@ -141 +141 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", result);
++        Lua.replyToServer( result);
+@@ -157 +157 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", result);
++        Lua.replyToServer( result);
+diff --git a/ol/qml/Guangu.qml b/ol/qml/Guangu.qml
+index 73fbb60..00b89f2 100644
+--- a/ol/qml/Guangu.qml
++++ b/ol/qml/Guangu.qml
+@@ -65 +65 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", result);
++        Lua.replyToServer( result);
+diff --git a/ol/qml/JiangwuRougeShop.qml b/ol/qml/JiangwuRougeShop.qml
+index 4a93b44..5f38ab8 100644
+--- a/ol/qml/JiangwuRougeShop.qml
++++ b/ol/qml/JiangwuRougeShop.qml
+@@ -124 +124 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", result);
++        Lua.replyToServer( result);
+diff --git a/ol/qml/JiangwuStart.qml b/ol/qml/JiangwuStart.qml
+index 73f981f..2ce8a89 100644
+--- a/ol/qml/JiangwuStart.qml
++++ b/ol/qml/JiangwuStart.qml
+@@ -115 +115 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", result);
++        Lua.replyToServer( result);
+diff --git a/ol/qml/JingJinBox.qml b/ol/qml/JingJinBox.qml
+index 8230a30..a81861c 100644
+--- a/ol/qml/JingJinBox.qml
++++ b/ol/qml/JingJinBox.qml
+@@ -256 +256 @@ GraphicsBox {
+-      MetroButton { Layout.preferredWidth: 100; text: Lua.tr("Cancel"); onClicked: { close(); Ltk.roomModel.deActivate(); ClientInstance.replyToServer("", "__cancel"); } }
++      MetroButton { Layout.preferredWidth: 100; text: Lua.tr("Cancel"); onClicked: { close(); Ltk.roomModel.deActivate(); Lua.replyToServer( "__cancel"); } }
+@@ -266 +266 @@ GraphicsBox {
+-          ClientInstance.replyToServer("", ret);
++          Lua.replyToServer( ret);
+@@ -375 +375 @@ GraphicsBox {
+-    if (data === "closeFrame") { close(); Ltk.roomModel.deActivate(); ClientInstance.replyToServer("", "__cancel"); }
++    if (data === "closeFrame") { close(); Ltk.roomModel.deActivate(); Lua.replyToServer( "__cancel"); }
+diff --git a/ol/qml/LingrenBox.qml b/ol/qml/LingrenBox.qml
+index 0bb2e6a..2b2960b 100644
+--- a/ol/qml/LingrenBox.qml
++++ b/ol/qml/LingrenBox.qml
+@@ -245 +245 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", root.selectedTypes);
++        Lua.replyToServer( root.selectedTypes);
+diff --git a/ol/qml/ShiLunxBox.qml b/ol/qml/ShiLunxBox.qml
+index 3b41ef1..0c7d302 100644
+--- a/ol/qml/ShiLunxBox.qml
++++ b/ol/qml/ShiLunxBox.qml
+@@ -240 +240 @@ GraphicsBox {
+-            ClientInstance.replyToServer("", "__cancel")
++            Lua.replyToServer( "__cancel")
+@@ -249 +249 @@ GraphicsBox {
+-        ClientInstance.replyToServer("", resultStr)
++        Lua.replyToServer( resultStr)

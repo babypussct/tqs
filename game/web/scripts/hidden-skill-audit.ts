@@ -15,10 +15,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
 import { initialSnapshot, reduceUiEvent } from '../src/store/gameStore';
-import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES, type UpstreamPackageSpec } from './upstream-packages';
+import { loadUpstreamFiles, packageSpec, UPSTREAM_PACKAGE_NAMES, resolveUpstreamRoot, type UpstreamPackageSpec } from './upstream-packages';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const UPSTREAM_ROOT = path.join(REPO_ROOT, 'scratch/upstream');
+const UPSTREAM_ROOT = resolveUpstreamRoot(path.join(REPO_ROOT, 'scratch/upstream'));
 
 type HiddenSkillReport = {
   generatedAt: string;

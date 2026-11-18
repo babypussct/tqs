@@ -38,6 +38,7 @@ local env = setmetatable({
     return copy(data)
   end},
 }, { __index = _G })
+env.ServerRoomBase.hasCardWireCapability = function() return true end
 assert(load(source:sub(first, last + 4), "=candidate/observe", "t", env))()
 
 local function socket(audience, state)

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-17T05:00:26+07:00",
+  "scope": "bounded isolated native QA stale/duplicate card-wire reply probe with semantic CBOR capture; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "qaManifestSha256": "0b7efb89116d76e139f5318442ab934d86cfc221df82b30f30703271428a54de",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "lua": "5.4.9"
+  },
+  "runnerEvidence": {
+    "path": "scratch/evidence/cp08-draw-sequence-multiplayer-live-1794866425823.json",
+    "sha256": "56f544cc136acebcd10923151744ccfbf996f483138cae16a1a26f1e634c1994",
+    "result": "PASS",
+    "recovered": false,
+    "errors": 0,
+    "errorContexts": 0,
+    "manualCardReply": true
+  },
+  "replayProbe": {
+    "requested": true,
+    "injected": true,
+    "sentAfterSubsequentRequest": true,
+    "requestIdRewrittenForNativeRouting": true,
+    "rejectionObserved": true,
+    "choiceRejectCount": 1,
+    "originalGameplayRemainedActive": true,
+    "gameOverObserved": true
+  },
+  "observedBoundaries": {
+    "audiences": 2,
+    "semanticRecords": 1496,
+    "semanticPassRecords": 1496,
+    "semanticFailures": 0,
+    "outerDecodedRecords": 1496,
+    "innerDecodedRecords": 1496,
+    "semanticInvalidReferences": 0,
+    "semanticForbiddenFields": 0,
+    "semanticAudiences": {"owner": 753, "opponent": 743, "observer": 0, "unknown": 0},
+    "semanticChannels": {"metadata": 1011, "public": 248, "request": 11, "deck": 212, "negotiation": 4, "reply": 10},
+    "semanticScopes": {"outbound": 1486, "inbound-reply": 10, "inbound-notify": 0, "inbound-request": 0},
+    "nativeFailures": 0,
+    "rawWireFailures": 0,
+    "supplementalFailures": 0,
+    "browserErrors": 0,
+    "rawCredentialMarker": false,
+    "rawPayloadRetained": false,
+    "mappingLogRetained": false
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "screenClosed": true,
+    "qaPackageSymlinkAbsent": true,
+    "productionMutation": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default; isolated-QA-only",
+    "productionPromotionAllowed": false
+  },
+  "limitations": [
+    "This is one bounded real native stale/duplicate rejection observation, not exhaustive replay or concurrency stress.",
+    "The retained QA hook proves bounded rejection counters and forbidden-key checks, not semantic native payload proof for every emitter.",
+    "P6 threshold/attribution, in-flight drain/reconnect rollback, device/network acceptance and separate release approval remain open."
+  ]
+}

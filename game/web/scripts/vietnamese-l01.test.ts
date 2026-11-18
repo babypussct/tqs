@@ -11,10 +11,10 @@ import { createServer } from 'vite';
 import { validChoiceReply, parseChoicePrompt } from '../src/engine/choiceSelection';
 import { displayText, localizedGameLog } from '../src/engine/displayText';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
-import { loadUpstreamFiles } from './upstream-packages';
+import { loadUpstreamFiles, resolveUpstreamRoot } from './upstream-packages';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
-const pinnedPackages = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
+const pinnedPackages = resolveUpstreamRoot(fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url)));
 const readPinned = (file: string) => readFileSync(path.join(pinnedPackages, 'hegemony', file), 'utf8');
 
 test('C01 exact package-pin skills and variants, including conditional choice rules', () => {

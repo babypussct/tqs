@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16T19:41:16+07:00",
+  "scope": "isolated Cloudflare Pages preview verification for the current card-wire web candidate; no production promotion",
+  "deployment": {
+    "provider": "Cloudflare Pages",
+    "project": "tqsvn",
+    "environment": "Preview",
+    "branch": "card-wire-qa-20261116",
+    "deploymentId": "e1dd5f0b-90f0-4520-8472-79c6ef7c2867",
+    "immutableUrl": "https://e1dd5f0b.tqsvn.pages.dev",
+    "aliasUrl": "https://card-wire-qa-20261116.tqsvn.pages.dev",
+    "wranglerSourceLabel": "d285c89",
+    "sourceCheckoutWasDirty": true,
+    "uploadCommandScope": "wrangler pages deploy from game/web so Pages Functions were compiled and uploaded",
+    "supersededStaticOnlyDeployment": {
+      "deploymentId": "079097e1-3ea2-4323-a5b2-65316c05c7a5",
+      "reason": "Initial upload from repository root omitted Pages Functions; /gateway routes returned SPA fallback HTML and it was not accepted."
+    }
+  },
+  "candidateWebIdentity": {
+    "distIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "distFileCount": 2312,
+    "version": "0.5.25",
+    "buildId": "4bb56f1a5c60e4c0e82b816e6c217c3ee7d96d86dee13ffd8af749dfcc50c2d7",
+    "swVersion": "4bb56f1a5c60e4c0e82b816e6c217c3ee7d96d86dee13ffd8af749dfcc50c2d7",
+    "builtAt": "2026-11-16T04:48:57.748Z"
+  },
+  "sourceCodeSnapshot": {
+    "artifact": "docs/web-client/CARD_WIRE_SOURCE_CODE_SNAPSHOT_CURRENT_2026-11-16.json",
+    "sha256": "04b0d321c5c731fba45738df33072f7ca1b25b83a9b6bf0d94023a20fb6192eb",
+    "status": "LOCALLY_REVIEWED_PENDING_RELEASE_APPROVAL"
+  },
+  "previewChecks": {
+    "immutableHealthz": "HTTP 200; body ok",
+    "aliasHealthz": "HTTP 200; body ok",
+    "immutableManifest": "HTTP 200; application/json",
+    "aliasManifest": "HTTP 200; application/json",
+    "immutableManifestRuntimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+    "aliasManifestRuntimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+    "immutableManifestBundleHash": "cd3581d00549f8f8",
+    "aliasManifestBundleHash": "cd3581d00549f8f8",
+    "immutableManifestFileCount": 5338,
+    "aliasManifestFileCount": 5338,
+    "immutableManifestPackageCount": 16,
+    "aliasManifestPackageCount": 16,
+    "remoteVersionMatchesCandidate": true,
+    "remoteIndexSha256MatchesCandidate": true,
+    "pagesFunctionsActive": true,
+    "productionMutation": false
+  },
+  "browserSmoke": {
+    "surface": "ChatGPT in-app browser",
+    "url": "https://card-wire-qa-20261116.tqsvn.pages.dev/",
+    "result": "PASS-preview-login-and-connection-surface",
+    "loginTitleVisible": "Cổng Doanh Trại",
+    "googleLoginActionVisible": true,
+    "versionPanel": {
+      "version": "0.5.25",
+      "buildId": "4bb56f1a5c60e4c0e82b816e6c217c3ee7d96d86dee13ffd8af749dfcc50c2d7",
+      "serverDataBundle": "cd3581d00549f8f8",
+      "buildIdMatchesCandidate": true
+    },
+    "connectionPanel": {
+      "network": "online",
+      "gatewayLatencyMsObserved": 358,
+      "gameServer": "not-connected-before-auth",
+      "verifiedDataFileCount": 5338,
+      "verifiedRuntimeMd5": "a21b6d26b4e350276266d79a94d41d54"
+    },
+    "authenticatedGameplayAttempted": false,
+    "nativeCardWireV1Inferred": false
+  },
+  "productionComparison": {
+    "productionAlias": "https://tqsvn.pages.dev",
+    "immutableProductionDeployment": "https://dda30ae9.tqsvn.pages.dev",
+    "productionRuntimeMd5": "a21b6d26b4e350276266d79a94d41d54",
+    "productionBundleHash": "cd3581d00549f8f8",
+    "productionFileCount": 5338,
+    "productionPackageCount": 16,
+    "productionDeploymentSource": "a48d9ad",
+    "previewIsProduction": false,
+    "candidateWasPromotedToProduction": false
+  },
+  "limits": [
+    "This is a web preview deployment only; it does not deploy the isolated native card-wire QA runtime or enable card-wire v1 in production.",
+    "The preview gateway currently exposes the public upstream-first runtime identity; native card-wire v1 gameplay and production/canary rollback are not inferred from HTTP 200/manifest checks.",
+    "The source checkout was dirty when Wrangler uploaded the already-built dist. Release checkpoint remains HOLD until an immutable reviewed snapshot and separate release approval exist."
+  ],
+  "result": "PASS-preview-deployment-with-pages-functions-and-identity-checks; production-release-gates-remain-open"
+}

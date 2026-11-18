@@ -1,6 +1,15 @@
--- Audit decoded bytes captured at the native WebSocket boundary. Never print
--- the payload, identifiers, decoder errors, or arbitrary fields on failure.
+-- Audit decoded packet data, or (with --raw-packet) the outer CBOR packet
+-- captured before the browser PacketStream decoder. Never print the payload,
+-- identifiers, decoder errors, or arbitrary fields on failure.
 local core, command, audience, physicalSeat = ...
+local rawPacketMode = command == "--raw-packet"
+-- The runner supplies this only for live QA.  Fingerprints are ephemeral,
+-- salted, and used in memory to detect reuse of a hidden reference across
+-- physical audiences; the token itself is never printed or persisted.
+local auditSalt = os.getenv("TQS_PRIVACY_AUDIT_SALT")
+if auditSalt ~= nil then
+  assert(#auditSalt >= 32 and #auditSalt <= 128 and auditSalt:match("^[a-f0-9]+$"))
+end
 local categoryNames = {
   "prepare_order", "shuffle_order", "sync_order", "change_area_order",
   "hidden_move_id", "observe_hidden_move_id", "special_pile_id",
@@ -44,14 +53,36 @@ local function refs(value)
   end
   assert(size == #value and size <= 8192)
 end
-local function hiddenRefs(value)
+local function hiddenFingerprint(value)
+  assert(auditSalt ~= nil)
+  local left, right = 2166136261, 2654435769
+  local text = auditSalt .. "\0" .. value
+  for index = 1, #text do
+    local byte = string.byte(text, index)
+    left = ((left ~ byte) * 16777619) & 0xffffffff
+    right = ((right ~ (byte ~ 0xa5)) * 16777619) & 0xffffffff
+  end
+  return string.format("%08x%08x", left, right)
+end
+local function rememberHidden(fingerprints, value)
+  if fingerprints == nil then return end
+  assert(type(value) == "string")
+  fingerprints[hiddenFingerprint(value)] = true
+  local count = 0
+  for _ in pairs(fingerprints) do count = count + 1 end
+  assert(count <= 256)
+end
+local function hiddenRefs(value, fingerprints)
   refs(value)
-  for _, ref in ipairs(value) do assert(type(ref) == "string") end
+  for _, ref in ipairs(value) do
+    assert(type(ref) == "string")
+    rememberHidden(fingerprints, ref)
+  end
 end
 local function validSeat(id)
   return type(id) == "number" and id % 1 == 0 and id >= 1 and id <= 2147483647
 end
-local function audit(name, value, viewer)
+local function audit(name, value, viewer, fingerprints)
   assert(viewer == "observer" or validSeat(viewer))
   local observer = viewer == "observer"
   local coverage = {}
@@ -96,13 +127,13 @@ local function audit(name, value, viewer)
         local owned = not observer and id == viewer
         if owned then refs(player.player_cards[1])
         else
-          hiddenRefs(player.player_cards[1])
+          hiddenRefs(player.player_cards[1], fingerprints)
           credit(name == "Observe" and "observe_hand" or "reconnect_hand", #player.player_cards[1])
         end
         for pile, ids in pairs(player.special_cards) do
           assert(type(pile) == "string")
           if pile:sub(1, 1) == "$" and not owned then
-            hiddenRefs(ids)
+            hiddenRefs(ids, fingerprints)
             if name == "Reconnect" then credit("reconnect_special", #ids) end
           end
         end
@@ -116,7 +147,7 @@ local function audit(name, value, viewer)
     refs(value[3])
     if value[2]:sub(1, 1) == "$" then
       if viewer ~= value[1] then
-        hiddenRefs(value[3]); credit("special_pile_id", #value[3])
+        hiddenRefs(value[3], fingerprints); credit("special_pile_id", #value[3])
       end
     end
   elseif name == "MoveCards" then
@@ -165,7 +196,7 @@ local function audit(name, value, viewer)
         assert(info.fromSpecialName == nil or type(info.fromSpecialName) == "string")
         refs({info.cardId})
         if not (shown or authorized) then
-          hiddenRefs({info.cardId})
+          hiddenRefs({info.cardId}, fingerprints)
           credit(observer and "observe_hidden_move_id" or "hidden_move_id", 1)
         end
         if info.cardWireRetiredRefs then refs(info.cardWireRetiredRefs) end
@@ -182,6 +213,25 @@ local ok, coverage = pcall(function()
   local hex = io.read("*a")
   assert(#hex <= 16 * 1024 * 1024 and #hex % 2 == 0 and not hex:find("[^a-f0-9]"))
   local raw = hex:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  if rawPacketMode then
+    local packet = cbor.decode(raw)
+    assert(type(packet) == "table" and (#packet == 4 or #packet == 6))
+    assert(type(packet[1]) == "number" and type(packet[2]) == "number")
+    -- The candidate deck notifications are not compressed. Rejecting a
+    -- compressed raw packet is safer than auditing bytes that have not been
+    -- decompressed by the native transport boundary.
+    assert(math.floor(packet[2] / 4096) % 2 == 0)
+    assert(type(packet[3]) == "string" and #packet[3] > 0 and #packet[3] <= 256)
+    assert(type(packet[4]) == "string")
+    command, raw = packet[3], packet[4]
+    local audited = command == "Setup" or command == "PrepareDrawPile" or
+      command == "ShuffleDrawPile" or command == "SyncDrawPile" or
+      command == "ChangeCardArea" or command == "Reconnect" or
+      command == "Observe" or command == "MoveCards" or command == "SetPlayerPile"
+    if not audited then
+      return { skipped = true }
+    end
+  end
   local decoded = cbor.decode(raw)
   if command == "Setup" and audience == "identity" then
     assert(type(decoded) == "table" and (#decoded == 3 or #decoded == 4))
@@ -193,10 +243,20 @@ local ok, coverage = pcall(function()
     return { identity = decoded[1] }
   end
   local viewer = audience == "observer" and "observer" or tonumber(physicalSeat)
-  return audit(command, decoded, viewer)
+  local fingerprints = auditSalt and {} or nil
+  local result = audit(command, decoded, viewer, fingerprints)
+  if fingerprints ~= nil then result.hiddenFingerprints = fingerprints end
+  return result
 end)
 if not ok then io.stderr:write("native deck privacy audit rejected packet\n"); os.exit(2) end
+if coverage.skipped then print("SKIP"); return end
 if coverage.identity then print("IDENTITY=" .. coverage.identity); return end
 local metadata = { "PASS" }
 for _, name in ipairs(categoryNames) do metadata[#metadata + 1] = name .. "=" .. (coverage[name] or 0) end
+if auditSalt ~= nil then
+  local fingerprints = {}
+  for value in pairs(coverage.hiddenFingerprints or {}) do fingerprints[#fingerprints + 1] = value end
+  table.sort(fingerprints)
+  metadata[#metadata + 1] = "hiddenFingerprints=" .. table.concat(fingerprints, ",")
+end
 print(table.concat(metadata, ";"))

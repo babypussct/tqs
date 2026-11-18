@@ -140,7 +140,15 @@ end
 local function resolveRetired(room, reference)
   if type(reference) == "string" then
     local id = room.card_wire_refs.byToken[reference]
-    assert(id ~= nil, "MoveCards retired opaque reference is unknown or stale")
+    if id == nil then
+      -- Keep the rejection fail-closed, but distinguish a token which was
+      -- already retired locally from one which never crossed this physical
+      -- connection.  The distinction is bounded diagnostic metadata only;
+      -- never include the opaque token or its card identity in an exception.
+      local state = room.card_wire_refs.retiredTokens[reference] and
+        "already-retired" or "unseen"
+      error("MoveCards retired opaque reference is unknown or stale (" .. state .. ")", 0)
+    end
     return id
   end
   return reference
@@ -294,6 +302,70 @@ local function normalize(data)
   return moves, data[2]
 end
 
+local function copyMap(value)
+  local result = {}
+  for key, item in pairs(value or {}) do result[key] = item end
+  return result
+end
+
+local function copyList(value)
+  local result = {}
+  for index, item in ipairs(value or {}) do result[index] = item end
+  return result
+end
+
+local function clonePlayer(player)
+  local result = {}
+  for key, value in pairs(player or {}) do
+    if key == "player_cards" or key == "special_cards" then
+      result[key] = {}
+      for area, cards in pairs(value or {}) do
+        result[key][area] = copyList(cards)
+      end
+    else
+      result[key] = value
+    end
+  end
+  return result
+end
+
+-- A MoveCards packet may contain a chain in which a later entry retires the
+-- opaque reference minted by an earlier entry in the same packet.  Validate
+-- that chain against a private state clone first, then apply it sequentially
+-- to the real room.  This preserves the old all-or-nothing behavior for
+-- malformed packets without rejecting valid intra-packet dependencies.
+local function cloneForPreflight(room)
+  local shadow = {
+    card_place = copyMap(room.card_place),
+    owner_map = copyMap(room.owner_map),
+    draw_pile = copyList(room.draw_pile),
+    discard_pile = copyList(room.discard_pile),
+    processing_area = copyList(room.processing_area),
+    void = copyList(room.void),
+    players = {},
+  }
+  for index, player in ipairs(room.players or {}) do
+    shadow.players[index] = clonePlayer(player)
+  end
+
+  local refs = room.card_wire_refs
+  local shadowRefs = {}
+  for key, value in pairs(refs) do
+    if type(value) == "table" then
+      shadowRefs[key] = copyMap(value)
+    else
+      shadowRefs[key] = value
+    end
+  end
+  shadowRefs.isOccupied = function(id)
+    return shadow.card_place[id] ~= nil
+  end
+  shadow.card_wire_refs = setmetatable(shadowRefs, getmetatable(refs))
+
+  setmetatable(shadow, { __index = function(_, key) return room[key] end })
+  return shadow
+end
+
 local function preflightEntry(room, entry)
   local move, info = entry.move, entry.info
   local oldIds = {}
@@ -343,6 +415,17 @@ local function applyEntry(room, entry, reservedDrawPositions)
   end
 
   local newId = applyStage("TO_LOCAL", function()
+    -- A card entering the concealed draw pile has no stable client-visible
+    -- identity.  The server may send a fresh opaque reference for the
+    -- source-to-draw rekey, but retaining that alias in draw_pile would let
+    -- later MoveCards link the card to its prior hand/equipment location.
+    -- Mint a positional anonymous slot instead; the legacy CardManager can
+    -- still move that local ID through the source and destination atomically.
+    if move.toArea == Card.DrawPile then
+      assert(type(refs.mintAnonymous) == "function",
+        "anonymous draw slot allocator is unavailable")
+      return refs:mintAnonymous()
+    end
     return refs:toLocal(entry.wireId)
   end)
   local oldIds = {}
@@ -372,6 +455,44 @@ local function applyEntry(room, entry, reservedDrawPositions)
     end)
   end
   entry.output.cardId = newId
+end
+
+local function applyLegacyMoveInfo(room, move, info)
+  local id = info.cardId
+  local fromArea = room.card_place[id]
+  local fromOwner = room.owner_map[id]
+  local source = fromArea and listFor(room, fromArea, fromOwner,
+    info.fromSpecialName) or nil
+  if not source then return false end
+  local sourceIndex = indexOf(source, id)
+  if not sourceIndex then return false end
+  table.remove(source, sourceIndex)
+
+  local destination = listFor(room, move.toArea, move.to, move.specialName)
+  if move.toArea == Card.DrawPile then
+    local position = move.drawPilePosition or 1
+    if position == -1 then
+      position = #destination + 1
+    elseif position < 1 or position > #destination + 1 then
+      position = 1
+    end
+    table.insert(destination, position, id)
+  else
+    table.insert(destination, id)
+  end
+  room:setCardArea(id, move.toArea, move.to)
+  return true
+end
+
+local function localizedMove(move, entry)
+  local result = {}
+  for key, value in pairs(move.output) do
+    if key ~= "moveInfo" then
+      result[key] = type(value) == "table" and copyArray(value) or value
+    end
+  end
+  result.moveInfo = { entry.output }
+  return result
 end
 
 local function trackerPile(tracker, owner, pile)
@@ -414,19 +535,27 @@ function Moves.receive(room, data)
   assert(room.card_wire_refs and room.card_wire_refs.toLocal,
     "v1 client-local card references are unavailable")
   local moves, eventId = normalize(data)
+  local shadow = cloneForPreflight(room)
+  local shadowReservedDrawPositions = {}
   for _, move in ipairs(moves) do
-    for _, entry in ipairs(move.entries) do preflightEntry(room, entry) end
+    for _, entry in ipairs(move.entries) do
+      preflightEntry(shadow, entry)
+      applyEntry(shadow, entry, shadowReservedDrawPositions)
+      assert(applyLegacyMoveInfo(shadow, move.output, entry.output),
+        "MoveCards preflight could not apply projected legacy transition")
+    end
   end
   local reservedDrawPositions = {}
   for _, move in ipairs(moves) do
     for _, entry in ipairs(move.entries) do
+      -- The clone above has validated the whole packet.  Keep a per-entry
+      -- preflight on the real room as a final invariant check, now that
+      -- dependencies from earlier entries are present in the live mapping.
+      preflightEntry(room, entry)
       applyEntry(room, entry, reservedDrawPositions)
+      room:moveCardsLegacy({ { localizedMove(move, entry) }, eventId })
     end
   end
-
-  local localized = {}
-  for i, move in ipairs(moves) do localized[i] = move.output end
-  return room:moveCardsLegacy({ localized, eventId })
 end
 
 local function validatePile(data)

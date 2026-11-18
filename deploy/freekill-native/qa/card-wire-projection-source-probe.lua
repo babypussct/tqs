@@ -441,6 +441,14 @@ check("public marks fail closed on nested physical card identities", function()
   local luanji = {"spade", "heart"}
   local luanjiOut = emit(seat, spectator, "SetPlayerMark", {11, "@hs__luanji-turn", luanji})[3]
   assert(luanjiOut[1] == "spade" and luanjiOut[2] == "heart" and luanjiOut ~= luanji)
+  local yigui = {bypass_times = true, bypass_distances = false,
+    fix_targets = {11, 12}, include_targets = {12}, fix_user = 11}
+  local yiguiOut = emit(seat, spectator, "SetPlayerMark",
+    {11, "ld__yigui_extra_data", yigui})[3]
+  assert(yiguiOut.fix_targets[1] == 11 and yiguiOut.include_targets[1] == 12 and
+    yiguiOut.fix_user == 11 and yiguiOut ~= yigui)
+  fails(seat, spectator, "SetPlayerMark",
+    {11, "ld__yigui_extra_data", {cardIds = {100}}}, "unaudited field")
   fails(seat, spectator, "SetPlayerMark", {11, "@cardList", {100, 101}}, "finite scalar")
   fails(seat, spectator, "SetPlayerMark", {11, "@cardList", {id = 100}}, "finite scalar")
   fails(seat, spectator, "SetPlayerMark", {11, "mark", 0, "junk"}, "expects [player,mark,value]")

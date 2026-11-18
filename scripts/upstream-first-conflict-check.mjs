@@ -45,7 +45,7 @@ const checks = [
   check('core serverplayer', 'freekill-core/ltk/server/serverplayer.lua', [
     { label: 'reconnect status pairs', test: (s) => s.includes('for _, skills in pairs(self.room.status_skills) do') },
     { label: 'prelight dedupe', test: (s) => s.includes('table.insertIfNeed(self.prelighted_skills, skill)') },
-    { label: 'fake-skill prelight notify', test: (s) => s.includes('self:doNotify("PrelightSkill", { skill.name, true })') },
+    { label: 'fake-skill prelight notify', test: (s) => s.includes('self:doNotify("PrelightSkill", { skill.name, true })') || s.includes('self:notifyConcealedSkillOwner("PrelightSkill", { skill.name, true })') },
   ]),
   check('core roombase', 'freekill-core/lua/server/roombase.lua', [
     { label: 'played_time serialization', test: (s) => s.includes('o.played_time = self.start_time') },

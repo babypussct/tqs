@@ -20,6 +20,27 @@ PACKAGE_SEED_DIR="${FREEKILL_PACKAGE_SEED_DIR:-$FREEKILL_INSTALL_ROOT/releases/f
 [[ -f "$PACKAGES_DIR/init.sql" ]] || die "Missing package schema: $PACKAGES_DIR/init.sql"
 command -v git >/dev/null 2>&1 || die "git is required"
 command -v sqlite3 >/dev/null 2>&1 || die "sqlite3 is required"
+command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required"
+command -v curl >/dev/null 2>&1 || die "curl is required"
+command -v unzip >/dev/null 2>&1 || die "unzip is required"
+command -v patch >/dev/null 2>&1 || die "patch is required"
+
+verify_patch_input() {
+  local relative_path="$1"
+  local expected_sha256="$2"
+  local patch_path="$DEPLOY_DIR/$relative_path"
+  [[ -f "$patch_path" ]] || die "Missing pinned native patch input: $patch_path"
+  local actual_sha256
+  actual_sha256="$(sha256sum "$patch_path" | awk '{print $1}')"
+  [[ "$actual_sha256" == "$expected_sha256" ]] ||
+    die "Native patch digest mismatch for $relative_path: $actual_sha256 (expected $expected_sha256)"
+}
+
+verify_patch_input "$TQS_UPSTREAM_PATCH_RECONNECT_PATH" "$TQS_UPSTREAM_PATCH_RECONNECT_SHA256"
+verify_patch_input "$TQS_UPSTREAM_PATCH_COMPILER_PATH" "$TQS_UPSTREAM_PATCH_COMPILER_SHA256"
+verify_patch_input "$TQS_UPSTREAM_PATCH_GAME_ACCESS_PATH" "$TQS_UPSTREAM_PATCH_GAME_ACCESS_SHA256"
+verify_patch_input "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH" "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256"
+printf '%s\n' 'Upstream baseline patch inputs: 4/4 SHA-256 digests verified'
 
 mkdir -p "$PACKAGES_DIR"
 
@@ -86,6 +107,141 @@ clone_at_commit "mougong" "$MOUGONG_URL" "$MOUGONG_COMMIT"
 clone_at_commit "jsrg" "$JSRG_URL" "$JSRG_COMMIT"
 clone_at_commit "ol" "$OL_URL" "$OL_COMMIT"
 
+# The public release bundle contains the source overlay that was actually
+# served on 15/11, including the two core subpackages that are promoted to
+# top-level public packages.  Apply it only after all 14 Git checkouts have
+# resolved to their exact commits.  The archive is content-addressed and the
+# target is checked on every rerun; an unexpected dirty checkout or modified
+# overlay file is never overwritten silently.
+OVERLAY_MARKER="$RUNTIME_DIR/.tqs-upstream-runtime-overlay"
+OVERLAY_ARCHIVE="${FREEKILL_RUNTIME_OVERLAY_ARCHIVE:-$RUNTIME_DIR/.cache/$TQS_UPSTREAM_RUNTIME_OVERLAY_ID.zip}"
+SOURCE_OVERLAY_MARKER="$RUNTIME_DIR/.tqs-upstream-runtime-source-overlay"
+SOURCE_OVERLAY_PATCH="$DEPLOY_DIR/$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH"
+OVERLAY_ALREADY_APPLIED=0
+if [[ -f "$OVERLAY_MARKER" ]] &&
+    grep -Fxq "overlay_id=$TQS_UPSTREAM_RUNTIME_OVERLAY_ID" "$OVERLAY_MARKER" &&
+    grep -Fxq "archive_sha256=$TQS_UPSTREAM_RUNTIME_OVERLAY_SHA256" "$OVERLAY_MARKER" &&
+    grep -Fxq "bundle_hash=$TQS_UPSTREAM_RUNTIME_OVERLAY_BUNDLE_HASH" "$OVERLAY_MARKER" &&
+    grep -Fxq "file_count=$TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT" "$OVERLAY_MARKER"; then
+  OVERLAY_ALREADY_APPLIED=1
+fi
+
+SOURCE_OVERLAY_ALREADY_APPLIED=0
+if [[ -f "$SOURCE_OVERLAY_MARKER" ]]; then
+  if grep -Fxq "patch_id=$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_ID" "$SOURCE_OVERLAY_MARKER" &&
+      grep -Fxq "patch_sha256=$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256" "$SOURCE_OVERLAY_MARKER" &&
+      grep -Fxq "file_count=$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT" "$SOURCE_OVERLAY_MARKER"; then
+    SOURCE_OVERLAY_ALREADY_APPLIED=1
+  else
+    die "Native runtime source overlay marker does not match the production baseline"
+  fi
+fi
+
+if [[ ! -f "$OVERLAY_ARCHIVE" ]]; then
+  mkdir -p "$(dirname "$OVERLAY_ARCHIVE")"
+  curl --fail --location --retry 3 --output "$OVERLAY_ARCHIVE.tmp" "$TQS_UPSTREAM_RUNTIME_OVERLAY_URL"
+  mv -f -- "$OVERLAY_ARCHIVE.tmp" "$OVERLAY_ARCHIVE"
+fi
+printf '%s  %s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_SHA256" "$OVERLAY_ARCHIVE" | sha256sum -c - >/dev/null ||
+  die "Runtime overlay archive SHA-256 does not match the production baseline"
+
+OVERLAY_TEMP="$(mktemp -d "${TMPDIR:-/tmp}/tqs-runtime-overlay.XXXXXX")"
+unzip -q "$OVERLAY_ARCHIVE" -d "$OVERLAY_TEMP"
+OVERLAY_MEMBERS="$(unzip -Z1 "$OVERLAY_ARCHIVE")"
+OVERLAY_MEMBER_COUNT="$(printf '%s\n' "$OVERLAY_MEMBERS" | awk 'NF { count++ } END { print count + 0 }')"
+[[ "$OVERLAY_MEMBER_COUNT" == "$TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT" ]] ||
+  die "Runtime overlay file count $OVERLAY_MEMBER_COUNT does not match $TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT"
+OVERLAY_MEMBERS_FILE="$OVERLAY_TEMP/members.txt"
+printf '%s\n' "$OVERLAY_MEMBERS" > "$OVERLAY_MEMBERS_FILE"
+
+if [[ "$OVERLAY_ALREADY_APPLIED" -eq 0 ]]; then
+  for package in freekill-core utility hegemony gamemode standard_ex shzl yj mobile sp tenyear overseas mougong jsrg ol; do
+    [[ -z "$(git -C "$PACKAGES_DIR/$package" status --porcelain)" ]] ||
+      die "Package checkout is dirty before applying the pinned runtime overlay: $PACKAGES_DIR/$package"
+  done
+fi
+
+while IFS= read -r member; do
+  [[ "$member" == packages/*/* ]] || die "Runtime overlay contains an unexpected path: $member"
+  [[ "$member" != *".."* && "$member" != *"/._"* && "$member" != "._"* ]] ||
+    die "Runtime overlay contains an unsafe or AppleDouble path: $member"
+  overlay_package="${member#packages/}"
+  overlay_package="${overlay_package%%/*}"
+  case "$overlay_package" in
+    freekill-core|utility|hegemony|gamemode|standard_ex|shzl|yj|mobile|sp|tenyear|overseas|mougong|jsrg|ol|maneuvering|standard_cards) ;;
+    *) die "Runtime overlay contains an unexpected package: $overlay_package" ;;
+  esac
+  source_file="$OVERLAY_TEMP/$member"
+  target_file="$RUNTIME_DIR/$member"
+  [[ -f "$source_file" && ! -L "$source_file" ]] || die "Runtime overlay member is not a regular file: $member"
+  [[ ! -L "$target_file" ]] || die "Refusing to replace symlink in runtime overlay target: $target_file"
+  if [[ "$OVERLAY_ALREADY_APPLIED" -eq 1 && -f "$target_file" ]]; then
+    expected_file_sha256="$(sha256sum "$source_file" | awk '{print $1}')"
+    actual_file_sha256="$(sha256sum "$target_file" | awk '{print $1}')"
+    [[ "$actual_file_sha256" == "$expected_file_sha256" ]] ||
+      die "Runtime overlay target drifted after installation: $member"
+    continue
+  fi
+  mkdir -p "$(dirname "$target_file")"
+  cp -p "$source_file" "$target_file"
+done <<< "$OVERLAY_MEMBERS"
+
+# The ZIP is the complete public Lua/JSON/Markdown inventory.  A sparse or
+# full upstream checkout can retain a text file that was intentionally absent
+# from the release (the pinned Hegemony checkout has one such README).  Remove
+# only those files from a clean checkout; a later rerun fails closed instead of
+# deleting a local change behind an existing overlay marker.
+while IFS= read -r existing_file; do
+  existing_member="${existing_file#"$RUNTIME_DIR/"}"
+  if ! grep -Fqx "$existing_member" "$OVERLAY_MEMBERS_FILE"; then
+    if [[ "$OVERLAY_ALREADY_APPLIED" -eq 1 ]]; then
+      die "Runtime overlay target contains an unexpected public text file: $existing_member"
+    fi
+    rm -f -- "$existing_file"
+  fi
+done < <(find "$PACKAGES_DIR" -type d -name .git -prune -o -type f \( -iname '*.lua' -o -iname '*.json' -o -iname '*.md' \) -print)
+
+# These two core subpackages are media-only at the public package root.  Keep
+# their directories present so gateway package discovery has the same 16-name
+# inventory as production; their Lua sources remain under freekill-core.
+mkdir -p "$PACKAGES_DIR/maneuvering" "$PACKAGES_DIR/standard_cards"
+
+# The public gateway ZIP deliberately omits QML, but native flist.txt includes
+# it. Apply the separately pinned production QML patch after the public source
+# overlay. Forward and reverse dry-runs make this idempotent while refusing to
+# overwrite a target that has drifted from either the upstream checkout or the
+# already applied production result.
+SOURCE_OVERLAY_FILE_COUNT="$(grep -c '^diff --git ' "$SOURCE_OVERLAY_PATCH")"
+[[ "$SOURCE_OVERLAY_FILE_COUNT" == "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT" ]] ||
+  die "Native runtime source patch file count $SOURCE_OVERLAY_FILE_COUNT does not match $TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT"
+if [[ "$SOURCE_OVERLAY_ALREADY_APPLIED" -eq 1 ]]; then
+  patch --dry-run --reverse --batch -p1 -d "$PACKAGES_DIR" < "$SOURCE_OVERLAY_PATCH" >/dev/null 2>&1 ||
+    die "Native runtime source overlay target drifted after installation"
+else
+  if patch --dry-run --forward --batch -p1 -d "$PACKAGES_DIR" < "$SOURCE_OVERLAY_PATCH" >/dev/null 2>&1; then
+    patch --forward --batch -p1 -d "$PACKAGES_DIR" < "$SOURCE_OVERLAY_PATCH" >/dev/null
+  elif ! patch --dry-run --reverse --batch -p1 -d "$PACKAGES_DIR" < "$SOURCE_OVERLAY_PATCH" >/dev/null 2>&1; then
+    die "Native runtime source overlay does not match the pinned upstream checkout"
+  fi
+  {
+    printf 'patch_id=%s\n' "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_ID"
+    printf 'patch_sha256=%s\n' "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256"
+    printf 'file_count=%s\n' "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT"
+  } > "$SOURCE_OVERLAY_MARKER"
+fi
+
+if [[ "$OVERLAY_ALREADY_APPLIED" -eq 0 ]]; then
+  {
+    printf 'overlay_id=%s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_ID"
+    printf 'archive_sha256=%s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_SHA256"
+    printf 'bundle_hash=%s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_BUNDLE_HASH"
+    printf 'file_count=%s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT"
+  } > "$OVERLAY_MARKER"
+fi
+rm -rf -- "$OVERLAY_TEMP"
+printf '%s\n' "Production runtime overlay: $TQS_UPSTREAM_RUNTIME_OVERLAY_FILE_COUNT files, archive SHA-256 verified"
+printf '%s\n' "Native source overlay: $TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_FILE_COUNT QML files, patch SHA-256 verified"
+
 # Evidence-backed compatibility repair.  The pinned Hegemony declaration for
 # overseas Duan Wei uses the unqualified `langmie`, while the exact upstream
 # implementation is tenyear's `ty__langmie`.  Keep the package commit pin
@@ -117,11 +273,15 @@ grep -Fq 'table.insertIfNeed(self.prelighted_skills, s)' "$CORE_SERVERPLAYER" ||
 # fake skill. Re-emit the retained prelight state after AddSkill so the live
 # dashboard agrees with syncFakeSkills() on reconnect and with server hasSkill.
 if grep -Fq 'self:doNotify("AddSkill", { self.id, skill.name, true })' "$CORE_SERVERPLAYER" &&
-    ! grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER"; then
+    ! grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER" &&
+    ! grep -Fq 'self:notifyConcealedSkillOwner("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER"; then
   perl -0pi -e 's{  self:doNotify\("AddSkill", \{ self\.id, skill\.name, true \}\)\nend}{  self:doNotify("AddSkill", { self.id, skill.name, true })\n  -- A hidden/replaced general can retain a prelighted skill when it becomes fake again.\n  if table.contains(self.prelighted_skills, skill) then\n    self:doNotify("PrelightSkill", { skill.name, true })\n  end\nend}s' "$CORE_SERVERPLAYER"
 fi
-grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' "$CORE_SERVERPLAYER" ||
+fake_skill_source="$(sed -n '/^function ServerPlayer:addFakeSkill(skill)/,/^---@param skill string | Skill/p' "$CORE_SERVERPLAYER")"
+if ! grep -Fq 'self:doNotify("PrelightSkill", { skill.name, true })' <<<"$fake_skill_source" &&
+    ! grep -Fq 'self:notifyConcealedSkillOwner("PrelightSkill", { skill.name, true })' <<<"$fake_skill_source"; then
   die "Native ServerPlayer retained prelight notification hardening did not apply"
+fi
 
 # The browser/native dashboard is not an authority for skill ownership. Only
 # accept a true prelight request for a fake skill currently attached to the

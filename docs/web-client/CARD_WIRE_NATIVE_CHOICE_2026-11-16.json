@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only current-candidate opaque card-choice native/browser observation",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseDecision": "OPEN-HOLD"
+  },
+  "run": {
+    "runEvidence": "scratch/evidence/cp08-card-chosen-multiplayer-live-1794793068564.json",
+    "observedAt": "2026-11-16T01:37:48.564Z",
+    "scenario": "card-chosen",
+    "result": "PASS",
+    "errors": [],
+    "recovered": false,
+    "recoveredExpected": false,
+    "audiences": 3,
+    "manualCardReply": true,
+    "hiddenAskForCardChosenObserved": true,
+    "opaqueCardChosenReplyObserved": true,
+    "gameOverCountsByAudience": [1, 1, 1],
+    "nativeWire": {
+      "packetsByAudience": [40, 40, 31],
+      "framesByAudience": [707, 697, 553],
+      "packetBytesTotal": null,
+      "failures": 0
+    },
+    "nativeSupplemental": {
+      "packets": 628,
+      "incomingPackets": 623,
+      "replyPackets": 5,
+      "failures": 0,
+      "channels": {
+        "negotiation": 3,
+        "metadata": 481,
+        "public": 134,
+        "request": 5,
+        "reply": 5
+      },
+      "commands": {
+        "CardWireNegotiated": 3,
+        "AskForSkillInvoke": 1,
+        "AskForCardChosen": 1,
+        "PlayCard": 1,
+        "GameOver": 3
+      },
+      "replies": {
+        "AskForSkillInvoke": 1,
+        "AskForCardChosen": 1,
+        "PlayCard": 1,
+        "CustomDialog": 2
+      }
+    },
+    "nativeOuterCborTimingRecords": null,
+    "serverTimingRecords": null,
+    "processMetrics": {
+      "sampleCount": 168,
+      "firstRssKb": 14736,
+      "minRssKb": 11824,
+      "maxRssKb": 15200,
+      "lastRssKb": 12208,
+      "maxCpuSeconds": 0.55,
+      "elapsedSeconds": 44.156,
+      "sampling": "ps-rss-cputime"
+    }
+  },
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-fjYOcx",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-fjYOcx/tqs-cardwire-qa-20261103-ot2V4P"
+  },
+  "limitations": [
+    "This is one current-candidate card-chosen scenario and does not close every request/reply family or strict release privacy gate.",
+    "An earlier current-package attempt was not counted because the supplemental SetPlayerMark auditor had the wrong Player-reference schema; the retained PASS is a fresh rerun after the exact upstream semantic-tag contract was installed, with zero auditor failures.",
+    "No reconnect is exercised by this scenario; draw-sequence remains the reconnect/strict-12 category evidence. Production/canary rollback, browser-network/device verification and release approval remain open."
+  ],
+  "result": "PASS-current-candidate-card-chosen-opaque-request-reply; release-gates-remain-OPEN"
+}

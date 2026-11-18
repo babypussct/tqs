@@ -9,11 +9,11 @@ import { zipSync } from 'fflate';
 import { chromium, type Page } from 'playwright-core';
 import { createServer } from 'vite';
 import { CLIENT_NOTIFY } from '../../src/engine/packet';
-import { loadUpstreamFiles } from '../upstream-packages';
+import { loadUpstreamFiles, resolveUpstreamRoot } from '../upstream-packages';
 import { QA_SCENARIOS, type QaScenarioId } from './qa-scenarios';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const upstream = fileURLToPath(new URL('../../../../scratch/upstream/', import.meta.url));
+const upstream = resolveUpstreamRoot(fileURLToPath(new URL('../../../../scratch/upstream/', import.meta.url)));
 const executablePath = [process.env.TQS_CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
@@ -774,9 +774,12 @@ try {
       await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((packet) =>
         packet.command === 'PushRequest'));
       const beforeAck = await snapshot(p);
-      const push = beforeAck.sent.find((packet) => packet.command === 'PushRequest');
-      assert.ok(push);
       const expectedHex = await p.evaluate(() => window.__tqsRealLuaE2e.prelightWireHex());
+      // Candidate Lua may advertise card-wire capability through the same
+      // PushRequest command after ArrangeSeats. Select the exact prelight
+      // payload instead of assuming it is the first PushRequest on a socket.
+      const push = beforeAck.sent.find((packet) => packet.command === 'PushRequest' && packet.hex === expectedHex);
+      assert.ok(push, 'prelight PushRequest must carry the exact native payload');
       assert.equal(push.hex, expectedHex);
       await p.evaluate(() => window.__tqsRealLuaE2e.acknowledgePrelight(true));
       await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().fakeSkills.some((skill) =>
@@ -1881,7 +1884,11 @@ try {
       assert.doesNotMatch(notice, /hegemony_nos|m_lord_cards|missing_pack|policy|Lua|ID/i);
       const displayedLobby = await p.locator('.sg-lobby-screen').innerText();
       assert.doesNotMatch(displayedLobby, /hegemony_nos|m_lord_cards|missing_pack|Policy quản trị/);
-      assert.match(await p.locator('.pool-summary').innerText(), /196 tướng.*109 lá/);
+      // The exact 15/11 baseline has 146 distinct general trueNames and 111
+      // playable cards after new_heg_mode's derived-card filtering. Keep this
+      // assertion tied to the canonical pin so a stale package checkout cannot
+      // silently turn the lobby test green.
+      assert.match(await p.locator('.pool-summary').innerText(), /146 tướng.*111 lá/);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
       await p.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click();
       await p.waitForFunction(() => window.__tqsRealLuaE2e.snapshot().sent.some((item) => item.command === 'CreateRoom'));

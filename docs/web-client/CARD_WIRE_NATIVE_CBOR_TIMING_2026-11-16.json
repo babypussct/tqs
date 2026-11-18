@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated candidate native C++/CBOR card-wire v1 QA; metadata-only and not production approval",
+  "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794777405481.json",
+  "sourcePatch": "deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch",
+  "productionMutation": false,
+  "nativeCborSerialization": {
+    "rawArtifact": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-cbor-serialization-timing.json",
+    "schemaVersion": 1,
+    "sampleCap": 4096,
+    "records": 740,
+    "scopes": {
+      "notify": 735,
+      "request": 5
+    },
+    "channels": {
+      "deck": 97,
+      "metadata": 509,
+      "negotiation": 4,
+      "public": 125,
+      "request": 5
+    },
+    "keys": ["schemaVersion", "scope", "channel", "elapsedNs", "wireBytes"],
+    "elapsedNs": {
+      "min": 83,
+      "p50": 625,
+      "p95": 4333,
+      "max": 77625,
+      "average": 1365.708108108108
+    },
+    "wireBytes": {
+      "min": 17,
+      "max": 3459,
+      "total": 51799
+    },
+    "measurement": "Cbor::encodeArray outer packet construction in Router::notify/request; inner Lua payload projection and serialization are measured separately",
+    "forbiddenMetadataKeysObserved": false,
+    "productionMutation": false
+  },
+  "nativeBoundary": {
+    "rawArtifact": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-wire-metrics.json",
+    "records": 1806,
+    "outboundRecords": 1758,
+    "outboundOuterDecodedRecords": 1758,
+    "outboundCardWireRecords": 740,
+    "inboundPredecodeRecords": 24,
+    "inboundPostDecodeRecords": 24,
+    "outboundBytes": {
+      "total": 92330,
+      "min": 17,
+      "max": 3459
+    },
+    "inboundBytes": {
+      "total": 2311,
+      "bufferedMax": 371
+    },
+    "forbiddenMetadataKeysObserved": false
+  },
+  "serverProjectTiming": {
+    "rawArtifact": "/private/tmp/tqs-cardwire-trash-20261116-8Yhg6H/tqs-cardwire-qa-20261103-s8m5KX/native-wire-timing.json",
+    "records": 8,
+    "samplePolicy": "one bounded sample per observed scope/channel pair; project and request-project markers wrap candidate projection while serialize markers wrap one QA-only server.rpc.cbor.encode call",
+    "scopes": {
+      "project": 3,
+      "request-project": 1,
+      "serialize": 4
+    },
+    "channels": {
+      "deck": 2,
+      "metadata": 2,
+      "public": 2,
+      "request": 2
+    },
+    "keys": ["schemaVersion", "scope", "channel", "elapsedMs"],
+    "elapsedMs": {
+      "min": 6,
+      "max": 500,
+      "average": 74.75
+    },
+    "cborSerializationIncluded": true,
+    "productionMutation": false
+  },
+  "nativeProcessMetrics": {
+    "source": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794777405481.json",
+    "sampling": "ps-rss-cputime",
+    "sampleCount": 198,
+    "firstRssKb": 14688,
+    "minRssKb": 12000,
+    "maxRssKb": 15184,
+    "lastRssKb": 12256,
+    "maxCpuSeconds": 0.53,
+    "elapsedSeconds": 52.248525375,
+    "scope": "post-server-ready isolated native process observation; no PID, command line, account or path retained"
+  },
+  "repeatedProcessMetrics": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_2026-11-16.json",
+    "runCount": 3,
+    "totalProcessSamples": 812,
+    "observedMinimumRssKb": 11776,
+    "observedMaximumRssKb": 15456,
+    "maximumRunCpuSeconds": 0.96,
+    "totalObservedElapsedSeconds": 214.101492833,
+    "nativeWireRecords": 10274,
+    "nativeCborSerializationTimingRecords": 3773,
+    "serverTimingRecords": 24,
+    "mappingMemoryStatus": "OPEN",
+    "thresholdStatus": "OPEN",
+    "releaseApproval": "not-granted",
+    "productionMutation": false,
+    "allRunsProcessesClosed": true,
+    "allRunsListenersClosed": true
+  },
+  "logicalMappingSourceObservation": {
+    "artifact": "docs/web-client/CARD_WIRE_NATIVE_MEMORY_REPEATED_2026-11-16.json#logicalMappingSourceObservation",
+    "maxActiveReferences": 124,
+    "cleanupActiveReferences": 0,
+    "retiredTombstones": 320,
+    "foreignRejections": 1,
+    "replayRejections": 1,
+    "staleRejections": 1,
+    "syntheticOnly": true,
+    "nativeBrowserRun": false,
+    "status": "context-only; native mapping attribution remains OPEN"
+  },
+  "cleanup": {
+    "qaPort": 19681,
+    "listenerAfterRun": "closed",
+    "processAfterRun": "closed",
+    "pointerAfterRun": "moved to recoverable temporary trash"
+  }
+}

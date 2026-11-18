@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T11:23:35.499Z",
+  "scope": "bounded isolated native QA draw-sequence with two real players, a fresh observer, controlled reconnect, native outer/inner CBOR semantic capture, packet-size capture and bounded GameOver on the current candidate; no production promotion",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaManifestSha256": "a909d9fe8c48f8d509e0b9219ab735edca1977a848594a9c05a2f4238c74b6c7",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "webDistIndexSha256": "352f5a2172fe47a2a8538c4d6956577ffa224aa57aca6095570040ae5fbb6abc",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "smartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e",
+    "lua": "5.4.9"
+  },
+  "runnerEvidence": {
+    "artifact": "scratch/evidence/cp08-draw-sequence-reconnect-live-1795001015499.json",
+    "artifactSha256": "c1183696fc8e01d720a9290ed6f7b6ba2d50a192a8eb54ac47f65f2d496aa3bf",
+    "result": "PASS",
+    "runnerExitCode": 0,
+    "errors": 0,
+    "recovered": true,
+    "scenario": "draw-sequence",
+    "twoPlayerClients": true,
+    "freshObserver": true,
+    "manualCardReply": true,
+    "controlledReconnect": true,
+    "boundedGameOver": {
+      "clients": 2,
+      "gameOverPacketsPerClient": [1, 1, 1],
+      "runnerStatus": "completed on both players with observer disconnected after coverage"
+    },
+    "nativeLifecycle": {
+      "cardWireNegotiatedPacketsPerClient": [2, 1, 1],
+      "reconnectObserved": true,
+      "observeObserved": true,
+      "playCardObserved": true
+    }
+  },
+  "nativeSemanticCapture": {
+    "records": 895,
+    "semanticPassRecords": 895,
+    "semanticFailures": 0,
+    "outerDecodedRecords": 895,
+    "innerDecodedRecords": 895,
+    "inboundRecords": 4,
+    "outboundRecords": 891,
+    "opaqueReferences": 46,
+    "numericReferences": 166,
+    "invalidReferences": 0,
+    "forbiddenFields": 0,
+    "nestedDecoded": 2,
+    "maxDepth": 6,
+    "audiences": {
+      "owner": 323,
+      "opponent": 316,
+      "observer": 256,
+      "unknown": 0
+    },
+    "channels": {
+      "metadata": 611,
+      "public": 143,
+      "request": 6,
+      "deck": 127,
+      "negotiation": 4,
+      "reply": 4
+    },
+    "scopes": {
+      "outbound": 891,
+      "inbound-reply": 4,
+      "inbound-notify": 0,
+      "inbound-request": 0
+    },
+    "rawPayloadRetained": false
+  },
+  "nativeBoundaryCapture": {
+    "totalRecords": 2210,
+    "cardWireRecords": 891,
+    "cardWireOuterDecodedRecords": 891,
+    "cardWireDecodeFailures": 0,
+    "nonCardWireBoundaryRecords": 1319,
+    "cardWireDirections": {
+      "outbound": 891,
+      "inbound": 0
+    },
+    "cardWireChannels": {
+      "metadata": 611,
+      "public": 143,
+      "request": 6,
+      "deck": 127,
+      "negotiation": 4
+    },
+    "maxPacketBytes": 3581,
+    "rawPayloadRetained": false
+  },
+  "nativeSerializationCapture": {
+    "records": 891,
+    "wireBytes": {
+      "min": 17,
+      "max": 3581,
+      "p95": 176
+    },
+    "elapsedNs": {
+      "min": 83,
+      "max": 221375,
+      "p95": 4500
+    },
+    "rawPayloadRetained": false
+  },
+  "nativePacketSizeCapture": [
+    {
+      "client": "player-1",
+      "frames": 773,
+      "packets": 778,
+      "incomingPackets": 765,
+      "outgoingPackets": 13,
+      "failures": 0,
+      "packetBytes": {
+        "total": 43619,
+        "min": 13,
+        "max": 3581,
+        "le256": 765,
+        "le1024": 12,
+        "le4096": 1,
+        "gt4096": 0
+      }
+    },
+    {
+      "client": "player-2",
+      "frames": 749,
+      "packets": 755,
+      "incomingPackets": 746,
+      "outgoingPackets": 9,
+      "failures": 0,
+      "packetBytes": {
+        "total": 36220,
+        "min": 13,
+        "max": 454,
+        "le256": 749,
+        "le1024": 6,
+        "le4096": 0,
+        "gt4096": 0
+      }
+    },
+    {
+      "client": "observer",
+      "frames": 639,
+      "packets": 642,
+      "incomingPackets": 636,
+      "outgoingPackets": 6,
+      "failures": 0,
+      "packetBytes": {
+        "total": 35168,
+        "min": 16,
+        "max": 3276,
+        "le256": 637,
+        "le1024": 4,
+        "le4096": 1,
+        "gt4096": 0
+      }
+    }
+  ],
+  "nativeDeckPrivacy": {
+    "negotiatedClients": 3,
+    "negotiationFailures": 0,
+    "allTwelveCategoriesObservedAcrossAudiences": true,
+    "strictTwelveCategoryAssertionRequested": false,
+    "ownerOpponentObserverAudiencesObserved": true,
+    "reconnectDeckHandSpecialObserved": true,
+    "observerDeckAndHandObserved": true
+  },
+  "temporaryCaptureFiles": {
+    "semantic": {
+      "records": 895,
+      "bytes": 278477,
+      "sha256": "7874cfc87b97f195ee9c15d77ff4d907e2a5d684f3fbcd8406c6b10d38899394"
+    },
+    "boundary": {
+      "records": 2210,
+      "bytes": 403501,
+      "sha256": "7014001c92a36b0def3cc1a7ab0055a6ee1ccb5708e0b52dce5c67e0a24c8bc3"
+    },
+    "serialization": {
+      "records": 891,
+      "bytes": 79005,
+      "sha256": "d8cbc023809de27a880be5fdd2ad8c5fc56048c9ab12a01cd1d4b18e595e8d0c"
+    },
+    "mappingRecords": 0,
+    "timingRecords": 0,
+    "rawPayloadRetained": false
+  },
+  "nativeMappingTelemetry": {
+    "schemaVersion": 1,
+    "source": "sanitized TQS_QA_CARD_WIRE_MAPPING marker aggregate from the isolated runtime log; metadata stores aggregate counters only",
+    "windowUtc": {
+      "start": "2026-11-18T11:22:41.858Z",
+      "end": "2026-11-18T11:23:36.200Z"
+    },
+    "records": 176,
+    "eventCounts": {
+      "batch_commit": 172,
+      "disconnect": 3,
+      "protocol_created": 1
+    },
+    "maxAudiences": 3,
+    "maxActiveReferences": 78,
+    "maxActiveRequests": 1,
+    "maxActiveTokenRefs": 24,
+    "maxRetiredTombstones": 176,
+    "disconnectEvents": 3,
+    "disconnectCleanupActiveReferences": [52, 26, 0],
+    "finalActiveReferences": 0,
+    "finalActiveRequests": 0,
+    "finalActiveTokenRefs": 0,
+    "reasonCounts": {
+      "none": 3
+    },
+    "rawPayloadRetained": false,
+    "approvedThresholdStatus": "OPEN"
+  },
+  "nativeTimingTelemetry": {
+    "schemaVersion": 1,
+    "source": "sanitized TQS_QA_NATIVE_TIMING marker aggregate from the isolated runtime log; metadata stores aggregate counters only",
+    "windowUtc": {
+      "start": "2026-11-18T11:22:41.858Z",
+      "end": "2026-11-18T11:23:36.200Z"
+    },
+    "records": 8,
+    "byScopeChannel": {
+      "project:deck": {"records": 1, "elapsedMs": {"min": 204, "max": 204, "p95": 204}},
+      "project:metadata": {"records": 1, "elapsedMs": {"min": 21, "max": 21, "p95": 21}},
+      "project:public": {"records": 1, "elapsedMs": {"min": 14, "max": 14, "p95": 14}},
+      "request-project:request": {"records": 1, "elapsedMs": {"min": 9, "max": 9, "p95": 9}},
+      "serialize:deck": {"records": 1, "elapsedMs": {"min": 3, "max": 3, "p95": 3}},
+      "serialize:metadata": {"records": 1, "elapsedMs": {"min": 4, "max": 4, "p95": 4}},
+      "serialize:public": {"records": 1, "elapsedMs": {"min": 12, "max": 12, "p95": 12}},
+      "serialize:request": {"records": 1, "elapsedMs": {"min": 18, "max": 18, "p95": 18}}
+    },
+    "elapsedMs": {
+      "min": 3,
+      "max": 204,
+      "p95": 204
+    },
+    "rawPayloadRetained": false,
+    "approvedThresholdStatus": "OPEN"
+  },
+  "cleanup": {
+    "portsClosed": [19681, 9000, 9527],
+    "nativeQaProcessClosed": true,
+    "luaWorkerClosed": true,
+    "screenClosed": true,
+    "qaPackageOverlaySymlinkAbsent": true,
+    "qaPackageRestored": true,
+    "restoredQaPackageSha256": "dd64ca6c5031d32dd287b8f2a638541abe061569d75edd5770e20f591ba357d7",
+    "productionMutation": false,
+    "credentialsOrPrivateIdentityRetained": false
+  },
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "productionPromotionAllowed": false,
+    "v1Default": "disabled-by-default; isolated-QA-only",
+    "legacyWire": "enabled"
+  },
+  "limitations": [
+    "This is one bounded two-player plus observer draw/reconnect run. It proves actual native outer/inner CBOR decoding for the observed owner/opponent/observer traffic and the exercised reconnect/Observe lifecycle, not exhaustive every-emitter semantic coverage.",
+    "The run did not exercise cards-and-choice, stale/duplicate rejection, in-flight drain, or every reveal/rehide/choice path; those remain separate bounded evidence lanes.",
+    "Dedicated mapping/timing capture files were empty, but the isolated runtime emitted 176 sanitized mapping markers and 8 sanitized timing markers; these bounded observations do not infer an approved P6 performance, mapping-memory or attribution threshold.",
+    "Production/canary rollback SLA, exhaustive replay/drain/concurrency stress, physical device/network acceptance (WAIVED_BY_USER, not PASS), immutable reviewed artifact and independent release approval remain open."
+  ]
+}

@@ -27,7 +27,7 @@ command -v apt-get >/dev/null 2>&1 || die "This bootstrap currently expects Debi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  ca-certificates curl git sqlite3 tar tmux \
+  ca-certificates curl git patch sqlite3 tar tmux unzip \
   lua5.4 lua-socket lua-filesystem
 
 ROOT="$FREEKILL_INSTALL_ROOT"

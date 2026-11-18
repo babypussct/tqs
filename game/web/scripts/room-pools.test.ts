@@ -11,9 +11,9 @@ import { GameAdapter, type RoomGeneral, type RoomPack, type RoomPacks, type Pool
 import type { GameSession } from '../src/gameAuth';
 import { reduceUiEvent, initialSnapshot } from '../src/store/gameStore';
 import { GAME_POOL_PACKS } from '../../../src/game/gamePoolPacks';
-import { loadUpstreamFiles } from './upstream-packages';
+import { loadUpstreamFiles, resolveUpstreamRoot } from './upstream-packages';
 
-const upstream = fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url));
+const upstream = resolveUpstreamRoot(fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url)));
 const files = loadUpstreamFiles(upstream);
 
 const notifications: { kind: string; command: string; hex: string }[] = [];

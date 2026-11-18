@@ -158,6 +158,16 @@ const transactedAfter = after
 assert.notEqual(transactedAfter, after, 'transaction hunk must change candidate source');
 
 const source = fs.readFileSync(target, 'utf8');
+// The capability guard is layered after this dispatcher guard. Normalize its
+// exact fail-closed assertion for the baseline comparison without accepting
+// arbitrary source drift.
+const capabilityGate = `      assert(type(room.hasCardWireCapability) == "function" and
+        room:hasCardWireCapability(physical),
+        "card wire v1 refuses an unnegotiated physical connection")
+`;
+const normalizedSource = source.includes(capabilityGate)
+  ? source.replace(capabilityGate, '')
+  : source;
 const stagedBeforeReconnectGuard = after.replace(`    assert(command ~= "Reconnect",
       "card wire v1 Reconnect must target the actual physical socket")
 `, '');
@@ -178,11 +188,11 @@ const previous = stagedBeforeReconnectGuard.replace(`  -- Preflight every physic
   end
 `, '');
 
-if (source.includes(transactedAfter)) {
+if (source.includes(transactedAfter) || normalizedSource.includes(transactedAfter)) {
   console.log(`PASS isolated Hegemony wire dispatch ${mode}: already projected`);
 } else {
   const baseline = [after, stagedBeforeReconnectGuard, previous, before]
-    .find((candidate) => source.includes(candidate));
+    .find((candidate) => normalizedSource.includes(candidate));
   assert.ok(baseline, 'expected reviewed candidate source baseline');
   assert.equal(source.split(baseline).length, 2,
     'source divergence: existing doNotify must match the reviewed candidate or previous guard');

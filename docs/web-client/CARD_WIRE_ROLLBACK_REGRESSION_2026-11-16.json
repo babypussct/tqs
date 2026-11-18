@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-16",
+  "scope": "isolated-QA-only same-runtime card-wire v1 to legacy regression",
+  "candidateIdentity": {
+    "sourceRevision": "d285c893b08fa3d9137af2f7a81f112da2cd212b",
+    "qaPackageSha256": "63a4b426bf1ed6e0e724be0ca361d093251a7ac61373b4a9880f34735447e3f9",
+    "catalogSha256": "1d1830487f5ac6e078c98931e93e1a592d8580aea34867b623823e404142034a",
+    "runtimeMD5": "e40c8df7631c4907459ebb8321a7a921",
+    "distIndexSha256": "0a666b40d9d24f159d4bdbf4e4d31762b91c5fdd7124773a79c79c5b6cd2ed78"
+  },
+  "productionPolicy": {
+    "legacyWire": "enabled",
+    "cardWireVersion1": "disabled-by-default",
+    "candidateOptIn": "isolated-QA-only",
+    "productionMutation": false,
+    "releaseApproval": "OPEN-HOLD"
+  },
+  "v1Run": {
+    "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794793976922.json",
+    "observedAt": "2026-11-16T01:52:56.922Z",
+    "result": "PASS",
+    "errors": [],
+    "recovered": true,
+    "qaOverlay": "active",
+    "cardWireVersion": 1,
+    "audiences": 3,
+    "negotiationCountsByAudience": [2, 1, 1],
+    "negotiationPackets": 4,
+    "rawNativeWirePackets": 112,
+    "rawNativeWireFailures": 0,
+    "supplementalPackets": 594,
+    "supplementalFailures": 0,
+    "gameOverCountsByAudience": [1, 1, 1],
+    "reconnectCountsByAudience": [1, 0, 0],
+    "manualCardReply": true
+  },
+  "legacyRun": {
+    "runEvidence": "scratch/evidence/cp08-draw-sequence-reconnect-live-1794794083939.json",
+    "observedAt": "2026-11-16T01:54:43.939Z",
+    "result": "PASS",
+    "errors": [],
+    "recovered": true,
+    "qaOverlay": "absent",
+    "cardWireVersion": "absent",
+    "tqsQaEnabled": false,
+    "qaPackagesSymlink": false,
+    "audiences": 2,
+    "negotiationCountsByAudience": [0, 0],
+    "negotiationPackets": 0,
+    "gameOverCountsByAudience": [1, 1],
+    "reconnectCountsByAudience": [1, 0],
+    "manualCardReply": true,
+    "nativeWireCapture": "disabled-for-legacy-regression"
+  },
+  "sameRuntimeIdentity": true,
+  "cleanup": {
+    "processGroupCleanup": true,
+    "processesClosed": true,
+    "listenersClosed": ["19681", "9000"],
+    "runtimeMovedToRecoverableTrash": true,
+    "pointerMovedToRecoverableTrash": true,
+    "trashRoot": "/private/tmp/tqs-cardwire-trash-20261116-TAAXED",
+    "rawRuntimePath": "/private/tmp/tqs-cardwire-trash-20261116-TAAXED/tqs-cardwire-qa-20261103-zsyacS"
+  },
+  "rollbackObservation": {
+    "candidateRollbackObserved": true,
+    "v1ToLegacyTransitionObserved": true,
+    "legacyNegotiationAbsentAfterRollback": true,
+    "legacyPathReachedGameOver": true,
+    "productionCanaryRollback": "OPEN",
+    "drainAndEndCurrentV1Rooms": "not-tested-in-production",
+    "reconnectRenegotiationAfterProductionRollback": "not-tested-in-production"
+  },
+  "limitations": [
+    "This proves an isolated same-runtime candidate rollback drill only; it does not authorize production or canary cutover.",
+    "The legacy capture intentionally disables v1 raw-wire auditing, so it proves no CardWireNegotiated trace plus successful legacy gameplay, not a full legacy semantic packet audit.",
+    "Production drain, current-v1-room handling, hosted rollback SLA, browser-network/device verification and release approval remain open."
+  ],
+  "result": "PASS-candidate-same-runtime-v1-to-legacy-regression; production-canary-rollback-and-release-approval-OPEN"
+}

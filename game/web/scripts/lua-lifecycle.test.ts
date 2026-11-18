@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { LuaRuntime } from '../src/engine/luaRuntime';
-import { loadUpstreamFiles } from './upstream-packages';
+import { loadUpstreamFiles, resolveUpstreamRoot } from './upstream-packages';
 
-const files = loadUpstreamFiles(fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url)));
+const files = loadUpstreamFiles(resolveUpstreamRoot(fileURLToPath(new URL('../../../scratch/upstream/', import.meta.url))));
 test('protected Lua bridge balances stacks across repeated calls, nested UI callbacks and errors', async () => {
   let nested=0;let runtime:LuaRuntime;
   runtime=new LuaRuntime({files,telemetry:true,callbacks:{send:()=>{},setup:()=>{},log:()=>{},ui:command=>{

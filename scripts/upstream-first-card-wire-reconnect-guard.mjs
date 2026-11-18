@@ -75,7 +75,20 @@ const after = `  if room.card_wire_version == 1 then
   end`;
 
 let source = fs.readFileSync(target, 'utf8');
-const methodInstalled = source.includes(transactedPhysicalMethod);
+// The capability guard adds one exact assertion before the transaction. Keep
+// this guard composable by normalizing only that reviewed assertion for the
+// existing reconnect hunk comparison.
+const capabilityGate = [
+  '  assert(type(room.hasCardWireCapability) == "function" and',
+  '    room:hasCardWireCapability(physical),',
+  '    "card wire v1 Reconnect refuses an unnegotiated physical connection")',
+  '',
+].join('\n');
+const normalizedSource = source.includes(capabilityGate)
+  ? source.replace(capabilityGate, '')
+  : source;
+const methodInstalled = source.includes(transactedPhysicalMethod) ||
+  normalizedSource.includes(transactedPhysicalMethod);
 const callInstalled = source.includes(after);
 if (!methodInstalled || !callInstalled) {
   assert.equal(mode, '--apply', 'candidate v1 physical reconnect routing missing');
@@ -99,5 +112,6 @@ if (!methodInstalled || !callInstalled) {
   }
   fs.writeFileSync(target, source);
 }
-assert.ok(source.includes(transactedPhysicalMethod) && source.includes(after));
+assert.ok((source.includes(transactedPhysicalMethod) ||
+  normalizedSource.includes(transactedPhysicalMethod)) && source.includes(after));
 console.log(`PASS isolated Hegemony reconnect --${mode.slice(2)}: atomic physical-only v1; legacy preserved`);
