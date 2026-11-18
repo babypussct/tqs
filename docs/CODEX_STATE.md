@@ -4,7 +4,7 @@
 
 - **Fail-closed fix:** commit `5df51e08` sửa `deploy/mobile/release-checkpoint.mjs` để `publishEligible` không thể thành `true` chỉ vì checkout sạch; checkpoint luôn giữ `HOLD` khi P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, native acceptance, independent approval hoặc official CI/installer còn pending. Physical device/network hiện là `OUT_OF_SCOPE_BY_USER`, không còn là release blocker theo quyết định phạm vi mới. Test mới chứng minh cả dirty-source và clean-source đều không vượt gate.
 - **Fresh local verification:** build hiện hành không tạo diff; `npm run typecheck:all`, `npm run test:build-safety`, `npm run check:build`, card-wire coverage `6/6`, raw capture `4/4`, evidence sanitizer `22/22`, upstream preparation `3/3`, upstream baseline, `test:release` `6/6` và QA server contract với literal `/opt/homebrew/opt/lua@5.4/bin/lua5.4` `66/66` đều PASS trong phiên này.
-- **Immutable candidate:** metadata tại [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json) khóa source commit `dd3db236…` (code guard từ `5df51e08…`), clean tree, runtime `e0f37eff…`, release manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index SHA `224ba87d…`; package/manifest/sensitive-file/symlink/server-only-QA exclusion và diff-check đều PASS.
+- **Immutable candidate:** metadata tại [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json) khóa source commit `1a6a1eba…` (code guard từ `5df51e08…` và scope decision device/network), clean tree, runtime `e0f37eff…`, release manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index SHA `224ba87d…`; package/manifest/sensitive-file/symlink/server-only-QA exclusion và diff-check đều PASS.
 - **Observed release decision:** fresh checkpoint report là `status=HOLD`, `publishEligible=false`; P6, rollback SLA/cold-start, live native acceptance as release gate, independent release approval và official CI/installer vẫn OPEN. Physical device/network đã được người dùng loại khỏi phạm vi pre-release (`OUT_OF_SCOPE_BY_USER`); phản hồi người chơi sẽ là input monitoring hậu phát hành, không được gắn nhãn device PASS. Không native production mutation, không bật v1.
 - **Remote identity recheck:** SSH read-only tới `tqs-native-qa-replacement` cho thấy `current -> /opt/freekill-hegemony/releases/upstream-first-20261115`, `flist.md5=a21b6d26b4e350276266d79a94d41d54`, service/listeners baseline vẫn active; đây không phải candidate runtime `e0f37eff…`. Vì vậy không dùng target này làm v1 acceptance evidence, không upload/đổi runtime từ xa, và không claim rollback/live gate đã đóng. Local QA ports `19681/9000/9527` đều đã đóng sau kiểm tra.
 - **Bước tiếp theo có thể chạy ngay:** reviewer độc lập phải duyệt artifact/threshold/attribution và rollback SLA; physical device/network không còn là pre-release blocker theo quyết định phạm vi mới. Sau khi đủ evidence/approval còn lại, chạy lại checkpoint từ đúng artifact; cho đến lúc đó giữ legacy wire ON và v1 disabled-by-default/isolated-QA-only.
@@ -2267,20 +2267,21 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-18T16:10:24.050Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `eed203c16c99`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-18T16:36:24.076Z (UTC).
+- Nhánh: `codex/card-wire-production-20261118` · HEAD: `1a6a1eba7616`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
+ M docs/web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json
 ```
 
 Ba commit gần nhất:
 
 ```text
+1a6a1eba docs: record device network scope waiver
+665667ad docs: finalize remote identity checkpoint
 eed203c1 docs: record remote candidate identity hold
-32c6f54d docs: refresh corrected card-wire checkpoint
-5e875cf7 docs: correct card-wire branch handoff
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
