@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-18T15:54:17.393Z",
+  "status": "LOCALLY_VERIFIED_IMMUTABLE_CANDIDATE_PENDING_REVIEW",
+  "scope": "Native card-wire v1 release candidate package and fail-closed release checkpoint; not a production promotion or release approval.",
+  "source": {
+    "branch": "codex/card-wire-production-20261118",
+    "commit": "5df51e08462f2ca397ed952926056d0a8ac7fdd5",
+    "tree": "848b9b7f553709d3165c48ee61016f849888c9d4",
+    "dirty": false
+  },
+  "artifact": {
+    "releaseRoot": "/private/tmp/tqs-cardwire-reviewed-20261118-AzRANS/release",
+    "manifestSha256": "8112708bd3c1373684f6eff39a5832a685fd7e5a9bbf6e9044186bf203f8aac1",
+    "releaseFileCount": 17317,
+    "releaseDirectoryFileCount": 17318,
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "runtimeFileCount": 14993,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "webIndexSha256": "224ba87de3343ca6d4092754084d40fb57974436ea9228556c6b93452382037d",
+    "packages": [
+      "freekill-core",
+      "gamemode",
+      "hegemony",
+      "jsrg",
+      "maneuvering",
+      "mobile",
+      "mougong",
+      "ol",
+      "overseas",
+      "shzl",
+      "sp",
+      "standard_cards",
+      "standard_ex",
+      "tenyear",
+      "utility",
+      "yj"
+    ]
+  },
+  "verification": {
+    "releaseCheckpoint": "/private/tmp/tqs-cardwire-reviewed-20261118-AzRANS/release-checkpoint.json",
+    "generatedAt": "2026-11-18T15:54:17.393Z",
+    "sourceProvenance": "PASS",
+    "gitDiffCheck": "PASS",
+    "releasePackageAndManifest": "PASS",
+    "requiredRuntimePackages": "PASS",
+    "sensitiveFilesAndSymlinks": "PASS",
+    "serverOnlyQaExcluded": "PASS",
+    "productionMutation": false
+  },
+  "releaseGates": {
+    "p6ThresholdAndAttribution": "PENDING",
+    "liveGameplayAndNativeRules": "PENDING",
+    "coldStartQuotaRollbackSla": "PENDING",
+    "physicalDeviceAndNetwork": "WAIVED_BY_USER_NOT_PASS",
+    "independentReleaseApproval": "PENDING",
+    "officialCiInstaller": "PENDING",
+    "overall": "HOLD",
+    "publishEligible": false
+  },
+  "limitations": [
+    "The package is immutable and locally verifiable, but no independent reviewer has approved it.",
+    "P6 numeric thresholds, workload/sample rules and mapping-memory attribution remain unapproved.",
+    "Production/canary rollback SLA and cold-start/quota evidence remain unapproved.",
+    "Physical device/network acceptance is waived and is not claimed as PASS.",
+    "No production native service or v1 flag was mutated."
+  ]
+}

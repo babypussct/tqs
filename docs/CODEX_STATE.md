@@ -1,5 +1,13 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## CARD-WIRE-RELEASE-GUARD-HARDENING-20261118 — clean immutable candidate / release remains HOLD
+
+- **Fail-closed fix:** commit `5df51e08` sửa `deploy/mobile/release-checkpoint.mjs` để `publishEligible` không thể thành `true` chỉ vì checkout sạch; checkpoint luôn giữ `HOLD` khi P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, native acceptance, device/network, independent approval hoặc official CI/installer còn pending/waived. Test mới chứng minh cả dirty-source và clean-source đều không vượt gate.
+- **Fresh local verification:** build hiện hành không tạo diff; `npm run typecheck:all`, `npm run test:build-safety`, `npm run check:build`, card-wire coverage `6/6`, raw capture `4/4`, evidence sanitizer `22/22`, upstream preparation `3/3`, upstream baseline, `test:release` `6/6` và QA server contract với literal `/opt/homebrew/opt/lua@5.4/bin/lua5.4` `66/66` đều PASS trong phiên này.
+- **Immutable candidate:** metadata tại [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json) khóa source commit `5df51e08…`, clean tree, runtime `e0f37eff…`, release manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index SHA `224ba87d…`; package/manifest/sensitive-file/symlink/server-only-QA exclusion và diff-check đều PASS.
+- **Observed release decision:** fresh checkpoint report là `status=HOLD`, `publishEligible=false`; P6, rollback SLA/cold-start, live native acceptance as release gate, physical device/network (`WAIVED_BY_USER_NOT_PASS`), independent release approval và official CI/installer vẫn OPEN. Không native production mutation, không bật v1.
+- **Bước tiếp theo có thể chạy ngay:** reviewer độc lập phải duyệt artifact/threshold/attribution và rollback SLA; device/network chỉ đóng khi có nghiệm thu thật (waiver không phải PASS). Sau khi đủ evidence/approval, chạy lại checkpoint từ đúng artifact; cho đến lúc đó giữ legacy wire ON và v1 disabled-by-default/isolated-QA-only.
+
 ## CARD-WIRE-PRODUCTION-WEB-DEPLOY-20261118 — Pages production healthy / native legacy unchanged
 
 - **Production web rollout:** đã build `game/web` và deploy từ đúng thư mục `/Users/otada/Documents/GitHub/tqs/game/web` bằng `npx --yes wrangler@4 pages deploy dist --project-name tqsvn --branch main`, để bundle Functions (`/gateway`, auth, session, tunnel) cùng static assets. Deployment Production hiện hành là [`478a02b2-1d9e-403f-b08e-9884c571070c`](https://478a02b2.tqsvn.pages.dev), source `bde50d0`.
@@ -2258,20 +2266,21 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-18T15:10:08.747Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `53c23eea68f3`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-18T15:55:22.802Z (UTC).
+- Nhánh: `codex/card-wire-production-20261118` · HEAD: `5df51e08462f`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+?? docs/web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json
 ```
 
 Ba commit gần nhất:
 
 ```text
+5df51e08 fix(release): fail closed while approval gates remain open
+41f527b6 docs: keep handoff refs current
 53c23eea docs: finalize production deployment provenance
-bde50d06 docs: record production web deployment
-ddb39817 chore(card-wire): normalize candidate patch whitespace
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
