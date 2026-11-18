@@ -106,7 +106,6 @@ export function createReleaseEvidence({
     'approved P6 performance/mapping-memory thresholds and attribution are not recorded',
     'production/canary rollback SLA and cold-start/quota evidence are not approved',
     'live gameplay/native-rule acceptance is not an approved release gate',
-    'physical device/network acceptance is WAIVED_BY_USER and is not a PASS',
     'independent release approval and official CI/installer sign-off are not recorded',
   ];
   holdReasons.push(...unresolvedReleaseGates);
@@ -140,7 +139,7 @@ export function createReleaseEvidence({
       p6ThresholdAndAttribution: 'PENDING',
       liveGameplayAndNativeRules: 'PENDING',
       coldStartQuotaRollbackSla: 'PENDING',
-      physicalDeviceAndNetwork: 'WAIVED_BY_USER',
+      physicalDeviceAndNetwork: 'OUT_OF_SCOPE_BY_USER',
       independentReleaseApproval: 'PENDING',
       officialCiInstaller: 'PENDING',
       officialRelease: 'PENDING',

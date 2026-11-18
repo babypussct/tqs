@@ -53,7 +53,7 @@
     "p6ThresholdAndAttribution": "PENDING",
     "liveGameplayAndNativeRules": "PENDING",
     "coldStartQuotaRollbackSla": "PENDING",
-    "physicalDeviceAndNetwork": "WAIVED_BY_USER_NOT_PASS",
+    "physicalDeviceAndNetwork": "OUT_OF_SCOPE_BY_USER",
     "independentReleaseApproval": "PENDING",
     "officialCiInstaller": "PENDING",
     "overall": "HOLD",
@@ -63,7 +63,7 @@
     "The package is immutable and locally verifiable, but no independent reviewer has approved it.",
     "P6 numeric thresholds, workload/sample rules and mapping-memory attribution remain unapproved.",
     "Production/canary rollback SLA and cold-start/quota evidence remain unapproved.",
-    "Physical device/network acceptance is waived and is not claimed as PASS.",
+    "Physical device/network acceptance is intentionally out of scope by user decision; player feedback is retained as post-release monitoring input, not claimed as a pre-release PASS.",
     "No production native service or v1 flag was mutated."
   ]
 }

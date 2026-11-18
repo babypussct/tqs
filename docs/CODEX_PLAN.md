@@ -2,12 +2,13 @@
 
 ## CARD-WIRE-RELEASE-GUARD-HARDENING-20261118 — clean immutable candidate / release remains HOLD
 
-- [x] Commit `5df51e08` sửa release checkpoint để fail-closed: source sạch chỉ đóng provenance, không tự đóng P6/rollback/device/approval; test `game/web` release hiện **6/6 PASS** với cả dirty và clean provenance fixture.
+- [x] Commit `5df51e08` sửa release checkpoint để fail-closed: source sạch chỉ đóng provenance, không tự đóng P6/rollback/native/approval; physical device/network đã được tách thành `OUT_OF_SCOPE_BY_USER`; test `game/web` release hiện **6/6 PASS** với cả dirty và clean provenance fixture.
 - [x] Local rerun trên HEAD: `typecheck:all`, build-safety, shop build check, card-wire coverage **6/6**, raw capture **4/4**, sanitizer **22/22**, upstream preparation **3/3**, upstream baseline và QA server contract với literal Lua 5.4.9 **66/66** đều PASS. Build production hoàn tất và protected output không đổi.
 - [x] Tạo candidate artifact bất biến và tự kiểm tra reproducible: [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json), source commit hiện hành `dd3db236…` (code guard từ `5df51e08…`), runtime MD5 `e0f37eff…`, manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index `224ba87d…`; server-only QA, sensitive files và symlink đều bị loại. Independent review vẫn chưa có.
-- [ ] Checkpoint sạch vẫn trả `HOLD` / `publishEligible=false` vì P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, live native release gate, physical device/network (`WAIVED_BY_USER_NOT_PASS`), immutable reviewed artifact/independent approval và official CI/installer sign-off chưa đủ. Không bật native v1 production.
+- [ ] Checkpoint sạch vẫn trả `HOLD` / `publishEligible=false` vì P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, live native release gate, immutable reviewed artifact/independent approval và official CI/installer sign-off chưa đủ. Physical device/network đã `OUT_OF_SCOPE_BY_USER`; phản hồi người chơi sẽ được theo dõi hậu phát hành. Không bật native v1 production.
 - [x] Recheck target từ xa ở chế độ read-only: `tqs-native-qa-replacement` đang trỏ baseline `/opt/freekill-hegemony/releases/upstream-first-20261115` với `flist.md5=a21b6d26…`, không khớp candidate `e0f37eff…`; không dùng target này làm v1 evidence và không mutate remote runtime. Local QA ports `19681/9000/9527` đã đóng.
-- [ ] Bước tiếp theo: lấy independent review/approval thật cho artifact, P6 và rollback SLA; nếu muốn đóng device/network thì phải có evidence thiết bị/mạng thật. Sau đó regenerate checkpoint từ cùng identity và chỉ promotion khi mọi gate là PASS.
+- [x] Ghi quyết định phạm vi của người dùng: không yêu cầu thiết bị/mạng thật trước release; phản hồi người chơi là post-release monitoring input, không phải PASS giả cho device gate.
+- [ ] Bước tiếp theo: lấy independent review/approval thật cho artifact, P6 và rollback SLA. Sau đó regenerate checkpoint từ cùng identity và chỉ promotion khi mọi gate còn lại là PASS.
 
 ## CARD-WIRE-PRODUCTION-WEB-DEPLOY-20261118 — Pages production healthy / native legacy unchanged
 

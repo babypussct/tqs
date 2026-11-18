@@ -124,7 +124,7 @@
   "limitations": [
     "The proposal does not close P6.",
     "It does not claim exhaustive emitter, stale, replay, concurrency or long-lived room-churn coverage.",
-    "Physical device/network acceptance remains WAIVED_BY_USER and is not PASS.",
+    "Physical device/network acceptance is OUT_OF_SCOPE_BY_USER; player feedback is a post-release monitoring input, not a pre-release PASS.",
     "No production or canary mutation occurred."
   ]
 }

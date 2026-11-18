@@ -125,7 +125,7 @@ test('release checkpoint holds dirty source and never implies official release',
     assert.equal(report.publishEligible, false);
     assert.equal(report.safety.deployed, false);
     assert.equal(report.gates.officialRelease, 'PENDING');
-    assert.equal(report.gates.physicalDeviceAndNetwork, 'WAIVED_BY_USER');
+    assert.equal(report.gates.physicalDeviceAndNetwork, 'OUT_OF_SCOPE_BY_USER');
     assert.equal(report.gates.nodeForgeAdvisory, 'RISK_ACCEPTED_WITH_SCOPE');
     assert.match(report.holdReasons.join('\n'), /source checkout is dirty/);
     assert.match(report.holdReasons.join('\n'), /P6 performance\/mapping-memory/);
@@ -163,7 +163,8 @@ test('release checkpoint stays HOLD even when provenance is clean until release 
     assert.equal(report.gates.sourceProvenance, 'PASS');
     assert.equal(report.gates.p6ThresholdAndAttribution, 'PENDING');
     assert.equal(report.gates.independentReleaseApproval, 'PENDING');
-    assert.match(report.holdReasons.join('\n'), /physical device\/network acceptance/);
+    assert.equal(report.gates.physicalDeviceAndNetwork, 'OUT_OF_SCOPE_BY_USER');
+    assert.equal(report.holdReasons.some((reason) => /physical device\/network acceptance/.test(reason)), false);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
