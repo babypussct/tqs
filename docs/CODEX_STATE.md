@@ -2266,20 +2266,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-18T16:08:37.047Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `4332ce0dc658`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-18T16:08:50.917Z (UTC).
+- Nhánh: `codex/card-wire-production-20261118` · HEAD: `5e875cf74c7d`.
+- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M docs/CODEX_PLAN.md
+(không có thay đổi ngoài CODEX_STATE.md)
 ```
 
 Ba commit gần nhất:
 
 ```text
+5e875cf7 docs: correct card-wire branch handoff
 4332ce0d docs: refresh final release handoff snapshot
 c9300603 docs: pin final card-wire artifact identity
-dd3db236 docs: refresh card-wire handoff snapshot
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
