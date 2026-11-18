@@ -2,11 +2,12 @@
 
 ## CARD-WIRE-PRODUCTION-WEB-DEPLOY-20261118 — Pages production healthy / native legacy unchanged
 
-- [x] Đã build `game/web` và deploy từ đúng thư mục `/Users/otada/Documents/GitHub/tqs/game/web`, nên Pages Functions đi cùng static bundle. Production deployment [`26282bfd-d5f3-4cac-9ed6-68e635f7bce3`](https://26282bfd.tqsvn.pages.dev) đang ở branch `main`, source `ddb3981`.
+- [x] Đã build `game/web` và deploy từ đúng thư mục `/Users/otada/Documents/GitHub/tqs/game/web`, nên Pages Functions đi cùng static bundle. Production deployment [`478a02b2-1d9e-403f-b08e-9884c571070c`](https://478a02b2.tqsvn.pages.dev) đang ở branch `main`, source `bde50d0`.
 - [x] Smoke sau deploy quan sát được `/gateway/healthz=ok`; manifest upstream-first giữ MD5 `a21b6d26b4e350276266d79a94d41d54`, bundle `cd3581d00549f8f8`, `5338` files. HTML/JS/CSS production khớp hash build hiện hành; build ID/service-worker hash `ebd16dd8c1c96b8d807325b3b9309379eaf263cf3fd06efea867a14e74a55e7a`, version `0.5.25`.
 - [x] Đã loại trừ marker QA/secret khỏi bundle; upload đầu chỉ có static assets nên bị thay ngay bằng upload đúng từ `game/web` có Functions. Không có credential hay raw gameplay data trong evidence.
 - [ ] Native production không bị restart/mutate: legacy wire vẫn ON, `tqsQa.enabled=false`, card-wire v1 vẫn disabled-by-default/isolated-QA-only. P6, rollback SLA, device/network, immutable reviewed artifact và independent release approval còn `OPEN-HOLD`; web production deploy không phải v1 promotion.
-- [ ] Bước hành động ngay: commit checkpoint, push branch và fast-forward `origin/main`; sau đó tiếp tục các gate release còn mở mà không bật v1 production.
+- [x] Git handoff hoàn tất: branch `codex/card-wire-production-20261118` và `origin/main` đã cùng trỏ tới `bde50d06`; checkpoint ghi nhận worktree sạch trước lần cập nhật tài liệu này.
+- [ ] Tiếp tục các gate release còn mở mà không bật v1 production; native production baseline vẫn giữ nguyên.
 
 ## CARD-WIRE-P6-THRESHOLD-PROPOSAL-20261118 — review packet prepared / P6 remains OPEN
 

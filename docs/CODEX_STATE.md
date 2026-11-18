@@ -2,11 +2,11 @@
 
 ## CARD-WIRE-PRODUCTION-WEB-DEPLOY-20261118 — Pages production healthy / native legacy unchanged
 
-- **Production web rollout:** đã build `game/web` và deploy từ đúng thư mục `/Users/otada/Documents/GitHub/tqs/game/web` bằng `npx --yes wrangler@4 pages deploy dist --project-name tqsvn --branch main`, để bundle Functions (`/gateway`, auth, session, tunnel) cùng static assets. Deployment Production hiện hành là [`26282bfd-d5f3-4cac-9ed6-68e635f7bce3`](https://26282bfd.tqsvn.pages.dev), source `ddb3981`.
+- **Production web rollout:** đã build `game/web` và deploy từ đúng thư mục `/Users/otada/Documents/GitHub/tqs/game/web` bằng `npx --yes wrangler@4 pages deploy dist --project-name tqsvn --branch main`, để bundle Functions (`/gateway`, auth, session, tunnel) cùng static assets. Deployment Production hiện hành là [`478a02b2-1d9e-403f-b08e-9884c571070c`](https://478a02b2.tqsvn.pages.dev), source `bde50d0`.
 - **Post-deploy smoke observed:** `https://tqsvn.pages.dev/gateway/healthz` trả `ok`; `/gateway/manifest.json` giữ upstream-first runtime MD5 `a21b6d26b4e350276266d79a94d41d54`, bundle `cd3581d00549f8f8`, `5338` files. Root HTML SHA-256 `7801d9a46b414a843edf5c4c912daae74da645d52fe489aa6ccb60653858ea0a`, JS `de02be33fe16ca7e3498ebb378e7d63c4026998f133e09aba9842fdebd588177`, CSS `29a913d28a3c3f2e59459750b53621f05082ccf7f3e67b6eaf3a154eee089c8e`; build ID/service-worker hash `ebd16dd8c1c96b8d807325b3b9309379eaf263cf3fd06efea867a14e74a55e7a`, version `0.5.25`.
 - **Boundary/security check:** deployed bundle contains no `tqs_qa`, `qa_packages` or `TQS_GAME_TICKET_SECRET` marker. The first static-only upload was immediately superseded because Functions were absent; the final deployment above was uploaded from `game/web` and passed the route smoke. No credentials or raw gameplay data were recorded.
 - **Native/feature boundary:** native production services were not restarted or mutated; production remains legacy wire ON, `tqsQa.enabled=false`, and card-wire v1 disabled-by-default/isolated-QA-only. This web deployment is not a v1 promotion or release approval; P6, rollback SLA, device/network, immutable-artifact and independent approval gates remain `OPEN-HOLD`.
-- **Next step:** commit this checkpoint, push the final branch and fast-forward `origin/main`; keep the production native baseline unchanged until the remaining release approvals are explicit.
+- **Git handoff:** implementation and checkpoint commits đã được push lên branch `codex/card-wire-production-20261118` và fast-forward `origin/main` tới `bde50d06`; worktree sạch sau checkpoint này. Giữ production native baseline unchanged cho đến khi các release approval còn thiếu được cấp rõ ràng.
 
 ## CARD-WIRE-P6-THRESHOLD-PROPOSAL-20261118 — review packet prepared / P6 remains OPEN
 
@@ -2258,8 +2258,8 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-18T15:07:14.180Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `ddb39817a98a`.
+- Ghi lúc: 2026-11-18T15:09:06.293Z (UTC).
+- Nhánh: `codex/card-wire-production-20261118` · HEAD: `bde50d06f4d5`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -2269,9 +2269,9 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 Ba commit gần nhất:
 
 ```text
+bde50d06 docs: record production web deployment
 ddb39817 chore(card-wire): normalize candidate patch whitespace
 13165d1a feat(card-wire): add isolated v1 privacy bridge and release gates
-d285c893 docs: record final Pages deployment
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
