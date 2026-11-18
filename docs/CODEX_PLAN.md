@@ -4,7 +4,7 @@
 
 - [x] Commit `5df51e08` sửa release checkpoint để fail-closed: source sạch chỉ đóng provenance, không tự đóng P6/rollback/device/approval; test `game/web` release hiện **6/6 PASS** với cả dirty và clean provenance fixture.
 - [x] Local rerun trên HEAD: `typecheck:all`, build-safety, shop build check, card-wire coverage **6/6**, raw capture **4/4**, sanitizer **22/22**, upstream preparation **3/3**, upstream baseline và QA server contract với literal Lua 5.4.9 **66/66** đều PASS. Build production hoàn tất và protected output không đổi.
-- [x] Tạo candidate artifact bất biến và verify độc lập: [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json), source commit hiện hành `dd3db236…` (code guard từ `5df51e08…`), runtime MD5 `e0f37eff…`, manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index `224ba87d…`; server-only QA, sensitive files và symlink đều bị loại.
+- [x] Tạo candidate artifact bất biến và tự kiểm tra reproducible: [`CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json`](web-client/CARD_WIRE_IMMUTABLE_ARTIFACT_CURRENT_2026-11-18.json), source commit hiện hành `dd3db236…` (code guard từ `5df51e08…`), runtime MD5 `e0f37eff…`, manifest SHA `8112708b…`, `17.317` manifest files / `17.318` release files, web index `224ba87d…`; server-only QA, sensitive files và symlink đều bị loại. Independent review vẫn chưa có.
 - [ ] Checkpoint sạch vẫn trả `HOLD` / `publishEligible=false` vì P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, live native release gate, physical device/network (`WAIVED_BY_USER_NOT_PASS`), immutable reviewed artifact/independent approval và official CI/installer sign-off chưa đủ. Không bật native v1 production.
 - [ ] Bước tiếp theo: lấy independent review/approval thật cho artifact, P6 và rollback SLA; nếu muốn đóng device/network thì phải có evidence thiết bị/mạng thật. Sau đó regenerate checkpoint từ cùng identity và chỉ promotion khi mọi gate là PASS.
 
@@ -14,7 +14,7 @@
 - [x] Smoke sau deploy quan sát được `/gateway/healthz=ok`; manifest upstream-first giữ MD5 `a21b6d26b4e350276266d79a94d41d54`, bundle `cd3581d00549f8f8`, `5338` files. HTML/JS/CSS production khớp hash build hiện hành; build ID/service-worker hash `ebd16dd8c1c96b8d807325b3b9309379eaf263cf3fd06efea867a14e74a55e7a`, version `0.5.25`.
 - [x] Đã loại trừ marker QA/secret khỏi bundle; upload đầu chỉ có static assets nên bị thay ngay bằng upload đúng từ `game/web` có Functions. Không có credential hay raw gameplay data trong evidence.
 - [ ] Native production không bị restart/mutate: legacy wire vẫn ON, `tqsQa.enabled=false`, card-wire v1 vẫn disabled-by-default/isolated-QA-only. P6, rollback SLA, device/network, immutable reviewed artifact và independent release approval còn `OPEN-HOLD`; web production deploy không phải v1 promotion.
-- [x] Git handoff hoàn tất: branch `codex/card-wire-production-20261118` và `origin/main` đã cùng trỏ checkpoint mới nhất; checkpoint ghi nhận worktree sạch trước lần cập nhật tài liệu này.
+- [x] Git handoff hoàn tất trong phạm vi branch: `codex/card-wire-production-20261118` đã push lên origin; `origin/main` vẫn ở `41f527b6` và chưa merge/promote; checkpoint ghi nhận worktree sạch trước lần cập nhật tài liệu này.
 - [ ] Tiếp tục các gate release còn mở mà không bật v1 production; native production baseline vẫn giữ nguyên.
 
 ## CARD-WIRE-P6-THRESHOLD-PROPOSAL-20261118 — review packet prepared / P6 remains OPEN

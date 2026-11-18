@@ -14,7 +14,7 @@
 - **Post-deploy smoke observed:** `https://tqsvn.pages.dev/gateway/healthz` trả `ok`; `/gateway/manifest.json` giữ upstream-first runtime MD5 `a21b6d26b4e350276266d79a94d41d54`, bundle `cd3581d00549f8f8`, `5338` files. Root HTML SHA-256 `7801d9a46b414a843edf5c4c912daae74da645d52fe489aa6ccb60653858ea0a`, JS `de02be33fe16ca7e3498ebb378e7d63c4026998f133e09aba9842fdebd588177`, CSS `29a913d28a3c3f2e59459750b53621f05082ccf7f3e67b6eaf3a154eee089c8e`; build ID/service-worker hash `ebd16dd8c1c96b8d807325b3b9309379eaf263cf3fd06efea867a14e74a55e7a`, version `0.5.25`.
 - **Boundary/security check:** deployed bundle contains no `tqs_qa`, `qa_packages` or `TQS_GAME_TICKET_SECRET` marker. The first static-only upload was immediately superseded because Functions were absent; the final deployment above was uploaded from `game/web` and passed the route smoke. No credentials or raw gameplay data were recorded.
 - **Native/feature boundary:** native production services were not restarted or mutated; production remains legacy wire ON, `tqsQa.enabled=false`, and card-wire v1 disabled-by-default/isolated-QA-only. This web deployment is not a v1 promotion or release approval; P6, rollback SLA, device/network, immutable-artifact and independent approval gates remain `OPEN-HOLD`.
-- **Git handoff:** implementation và các checkpoint commits đã được push lên branch `codex/card-wire-production-20261118`; `origin/main` đã fast-forward và hai refs đang cùng trỏ checkpoint mới nhất. Worktree sạch sau checkpoint này. Giữ production native baseline unchanged cho đến khi các release approval còn thiếu được cấp rõ ràng.
+- **Git handoff:** implementation và các checkpoint commits đã được push lên branch `codex/card-wire-production-20261118`; `origin/main` vẫn ở `41f527b6` và chưa được merge/promote. Worktree sạch sau checkpoint này. Giữ production native baseline unchanged cho đến khi các release approval còn thiếu được cấp rõ ràng.
 
 ## CARD-WIRE-P6-THRESHOLD-PROPOSAL-20261118 — review packet prepared / P6 remains OPEN
 
@@ -2266,20 +2266,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-18T15:58:19.552Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `c93006032454`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-18T16:08:37.047Z (UTC).
+- Nhánh: `codex/card-wire-production-20261118` · HEAD: `4332ce0dc658`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
+4332ce0d docs: refresh final release handoff snapshot
 c9300603 docs: pin final card-wire artifact identity
 dd3db236 docs: refresh card-wire handoff snapshot
-4bb4b286 docs: record clean card-wire candidate hold
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
