@@ -57,6 +57,7 @@ if (requireWsAdmission && wsAdmissionSecret.length < 32)
   throw new Error('REQUIRE_WS_ADMISSION requires TQS_GATEWAY_ADMISSION_SECRET');
 
 const PACKAGES_DIR = path.join(FK_ROOT, 'packages');
+const CONFIG_PATH = path.join(FK_ROOT, 'freekill.server.config.json');
 // QA orchestration is native-server-only. Even when a QA runtime is mounted
 // beside this gateway, its package source and media must never be sent to a
 // browser bundle or exposed through /assets/.
@@ -105,6 +106,21 @@ function listPackages() {
 
 let cache = null;
 
+function readCardWireVersion() {
+  try {
+    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    return config?.tqsCardWire?.enabled === true && config.tqsCardWire.version === 1 ? 1 : 0;
+  } catch {
+    // A malformed or missing config must never make the gateway advertise a
+    // capability that the native runtime cannot honor.
+    return 0;
+  }
+}
+
+function fileMtime(file) {
+  try { return fs.statSync(file).mtimeMs; } catch { return 0; }
+}
+
 function buildCache() {
   const files = {};
   const packages = listPackages();
@@ -138,9 +154,11 @@ function buildCache() {
       bundle: `bundle.zip?v=${bundleHash}`,
       bundleHash,
       fileCount: Object.keys(files).length,
+      cardWireVersion: readCardWireVersion(),
       builtAt: new Date().toISOString(),
     },
     flistMtime: fs.existsSync(flist) ? fs.statSync(flist).mtimeMs : 0,
+    configMtime: fileMtime(CONFIG_PATH),
   };
   log(`bundle built: ${cache.manifest.fileCount} files, ${zip.length} bytes, md5=${md5}`);
   return cache;
@@ -149,8 +167,11 @@ function buildCache() {
 function getCache() {
   const flist = path.join(FK_ROOT, 'flist.txt');
   const mtime = fs.existsSync(flist) ? fs.statSync(flist).mtimeMs : 0;
-  // flist.txt is rewritten by the server whenever packages change.
-  if (!cache || cache.flistMtime !== mtime) buildCache();
+  const configMtime = fileMtime(CONFIG_PATH);
+  // flist.txt is rewritten by the server whenever packages change. The
+  // production card-wire flag is part of the same manifest contract, so a
+  // config change must also invalidate the cached capability advertisement.
+  if (!cache || cache.flistMtime !== mtime || cache.configMtime !== configMtime) buildCache();
   return cache;
 }
 
