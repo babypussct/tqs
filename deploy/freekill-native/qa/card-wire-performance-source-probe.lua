@@ -254,3 +254,33 @@ print(string.format(
   caseCount, iterations, percentile(projectSamples, 0.95),
   percentile(serializeSamples, 0.95), maxWireBytes, maxActiveRefs, cleanupUs,
   tombstones))
+
+-- Keep the same fixture inputs alive through each sample. Measure Lua heap
+-- deltas after collection so transient projection and CBOR buffers are gone.
+local function heapBytes()
+  collectgarbage("collect")
+  collectgarbage("collect")
+  return math.floor(collectgarbage("count") * 1024)
+end
+
+local choices = {}
+for index = 1, 16 do choices[index] = { id = hand[index], public = false } end
+local function privateCard() return false end
+local baselineHeap = heapBytes()
+local mapping = Protocol.new(Mint.next)
+for _, physical in ipairs(audiences) do
+  mapping:project(physical.audience, hand, privateCard)
+  mapping:issueChoice(physical.audience, "heap-probe", choices, 1, 2)
+end
+local activeHeap = heapBytes()
+for _, physical in ipairs(audiences) do mapping:disconnect(physical.audience) end
+assert(next(mapping.audiences) == nil, "disconnect must release active audience mappings")
+local retainedTombstones = countMap(mapping.issued)
+local disconnectedHeap = heapBytes()
+mapping = nil
+local releasedHeap = heapBytes()
+
+print(string.format(
+  "CARD_WIRE_MAPPING_HEAP=OBSERVED;active_delta_bytes=%d;disconnect_delta_bytes=%d;release_delta_bytes=%d;retired_tombstones=%d",
+  activeHeap - baselineHeap, disconnectedHeap - baselineHeap, releasedHeap - baselineHeap,
+  retainedTombstones))

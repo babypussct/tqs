@@ -73,7 +73,29 @@ jobs:
       - run: npm --prefix game/gateway ci
       - run: npm --prefix game/web run test:upstream-preparation
       - run: npm --prefix game/web run check:upstream-baseline
+      - name: Prepare pinned native installer source
+        shell: bash
+        run: |
+          source deploy/freekill-native/upstream-baseline.env
+          native_source=scratch/upstream/freekill-asio
+          test ! -e "$native_source"
+          test ! -L "$native_source"
+          git init -q "$native_source"
+          git -C "$native_source" fetch --depth=1 "$TQS_UPSTREAM_ASIO_SOURCE_URL" "$TQS_UPSTREAM_ASIO_SOURCE_COMMIT"
+          git -C "$native_source" checkout --detach FETCH_HEAD
+          test "$(git -C "$native_source" rev-parse HEAD)" = "$TQS_UPSTREAM_ASIO_SOURCE_COMMIT"
+      - name: Verify native source and installer contracts
+        shell: bash
+        run: |
+          for script in deploy/freekill-native/scripts/*.sh; do bash -n "$script"; done
+          node --check deploy/freekill-native/scripts/promote-card-wire-v1.mjs
+          node --test deploy/freekill-native/qa/{card-wire-native-source,tqs_qa-installer}.test.mjs
+          rm -rf -- scratch/upstream/freekill-asio
+      - run: npm --prefix game/web run test:release
+      - run: node --test game/web/scripts/pages-gateway.test.mjs deploy/mobile/oracle-gateway-watch.test.mjs
       - run: npm --prefix game/web run test:card-wire-coverage
+        env:
+          TQS_CARD_WIRE_CHECKOUT_ONLY: '1'
       - run: npm --prefix game/web run test:card-wire-raw-capture
       - run: npm --prefix game/web run test:card-wire-evidence-sanitize
       - uses: actions/cache@v4

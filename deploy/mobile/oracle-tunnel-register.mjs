@@ -32,8 +32,6 @@ async function main() {
 
   const current = await fetch('http://127.0.0.1:8080/healthz', { signal: AbortSignal.timeout(4000) });
   if (!current.ok || (await current.text()).trim() !== 'ok') throw new Error('Local gateway not healthy');
-  const remote = await fetch(`https://${hostname}/healthz`, { signal: AbortSignal.timeout(8000) });
-  if (!remote.ok || (await remote.text()).trim() !== 'ok') throw new Error('Tunnel gateway not healthy');
 
   const state = loadState();
   const now = Date.now();
@@ -44,10 +42,13 @@ async function main() {
   }
   const secret = readFileSync(secretFile, 'utf8').trim();
   if (secret.length < 32) throw new Error('Missing registration secret');
+  // Pages verifies tunnel HTTPS health before writing KV. Oracle's resolver
+  // can keep a negative record for a newly assigned Quick Tunnel hostname.
   const registered = await fetch(registerUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ hostname }),
+    redirect: 'error',
     signal: AbortSignal.timeout(15000),
   });
   if (!registered.ok) throw new Error(`Tunnel registration HTTP ${registered.status}`);

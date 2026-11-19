@@ -323,6 +323,16 @@ type CoverageRow = {
   status: string;
 };
 
+function assertLocalTrace(relative: string, label: string) {
+  assert.match(relative, /^scratch\/evidence\/[a-z0-9][a-z0-9-]*\.json$/u,
+    `${label} must reference a sanitized local trace`);
+  // GitHub runners receive the checked-in aggregates. Local native QA keeps
+  // the trace files outside Git and verifies their existence by default.
+  if (process.env.TQS_CARD_WIRE_CHECKOUT_ONLY !== '1') {
+    assert.ok(existsSync(path.join(repo, relative)), `${label} references missing trace ${relative}`);
+  }
+}
+
 function assertRow(row: CoverageRow, label: string) {
   for (const field of ['id', 'component', 'emitter', 'projector', 'clientHandler', 'status'] as const) {
     assert.equal(typeof row[field], 'string', `${label}.${field} must be a string`);
@@ -332,8 +342,12 @@ function assertRow(row: CoverageRow, label: string) {
   assert.ok(row.audiences.length > 0, `${label}.audiences must not be empty`);
   assert.ok(row.tests.length > 0, `${label}.tests must not be empty`);
   assert.ok(row.evidence.length > 0, `${label}.evidence must not be empty`);
-  for (const relative of [...row.tests, ...row.evidence]) {
+  for (const relative of row.tests) {
     assert.ok(existsSync(path.join(repo, relative)), `${label} references missing path ${relative}`);
+  }
+  for (const relative of row.evidence) {
+    if (relative.startsWith('scratch/')) assertLocalTrace(relative, label);
+    else assert.ok(existsSync(path.join(repo, relative)), `${label} references missing path ${relative}`);
   }
 }
 
@@ -472,8 +486,7 @@ test('card-wire P0 matrix is a complete, fail-closed coverage contract', () => {
   assert.deepEqual(nativeEvidence.result.errors, []);
   assert.equal(nativeEvidence.result.nativePrivacyFailures, 0);
   assert.equal(nativeEvidence.result.negotiatedForAllAudiences, true);
-  assert.ok(existsSync(path.join(repo, nativeEvidence.rawSanitizedEvidence)),
-    'native evidence must point at an existing sanitized trace');
+  assertLocalTrace(nativeEvidence.rawSanitizedEvidence, 'native evidence');
   assert.equal(nativeEvidence.result.rawWireCapture.failures, 0);
   assert.ok(nativeEvidence.result.rawWireCapture.packets > 0 &&
     nativeEvidence.result.rawWireCapture.frames > 0 &&
@@ -487,8 +500,7 @@ test('card-wire P0 matrix is a complete, fail-closed coverage contract', () => {
   const nativeTransportBoundary = nativeEvidence.performanceEvidence.nativeTransportBoundary;
   assert.ok(existsSync(path.join(repo, nativeTransportBoundary.sourcePatch)),
     'native transport evidence must reference the QA patch');
-  assert.ok(existsSync(path.join(repo, nativeTransportBoundary.runEvidence)),
-    'native transport evidence must reference an existing sanitized run');
+  assertLocalTrace(nativeTransportBoundary.runEvidence, 'native transport evidence');
   assert.equal(nativeTransportBoundary.outboundRecords +
     nativeTransportBoundary.inboundPredecodeRecords +
     nativeTransportBoundary.inboundPostDecodeRecords, nativeTransportBoundary.records);
@@ -510,8 +522,7 @@ test('card-wire P0 matrix is a complete, fail-closed coverage contract', () => {
     nativeProcessMetrics.firstRssKb > 0 && nativeProcessMetrics.minRssKb > 0 &&
     nativeProcessMetrics.lastRssKb > 0 &&
     nativeProcessMetrics.maxCpuSeconds >= 0 && nativeProcessMetrics.elapsedSeconds > 0);
-  assert.ok(existsSync(path.join(repo, nativeProcessMetrics.source)),
-    'native process metrics must point at an existing sanitized trace');
+  assertLocalTrace(nativeProcessMetrics.source, 'native process metrics');
   const nativeRepeatedProcessMetrics = nativeEvidence.performanceEvidence.nativeRepeatedProcessMetrics;
   assert.ok(existsSync(path.join(repo, nativeRepeatedProcessMetrics.artifact)),
     'repeated native process metrics must reference a checked-in aggregate');
@@ -581,8 +592,7 @@ test('card-wire P0 matrix is a complete, fail-closed coverage contract', () => {
   assert.equal(matrix.latestNativeEvidence.productionMutation, false);
   assert.ok(existsSync(path.join(repo, matrix.currentDrawReconnectEvidence.aggregate)),
     'coverage matrix must reference the current draw/reconnect aggregate');
-  assert.ok(existsSync(path.join(repo, matrix.currentDrawReconnectEvidence.artifact)),
-    'coverage matrix must reference the current draw/reconnect trace');
+  assertLocalTrace(matrix.currentDrawReconnectEvidence.artifact, 'current draw/reconnect evidence');
   assert.equal(matrix.currentDrawReconnectEvidence.result, 'PASS');
   assert.equal(matrix.currentDrawReconnectEvidence.strictPrivacyCategoriesObserved, 12);
   assert.equal(matrix.currentDrawReconnectEvidence.nativeAndSupplementalFailures, 0);

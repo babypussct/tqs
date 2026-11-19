@@ -305,6 +305,7 @@ test('candidate card-wire P6 measures bounded projection, CBOR, mapping and clea
   const output = runLua('card-wire-performance-source-probe.lua',
     [coreRoot, path.join(here, 'card-handle-protocol.lua')]);
   assert.match(output, /CARD_WIRE_PERFORMANCE=PASS;cases=\d+;audiences=3;iterations=12;project_p95_us=\d+;serialize_p95_us=\d+;max_wire_bytes=\d+;max_active_refs=\d+;cleanup_us=\d+;cleanup_active_refs=0;foreign_rejects=1;replay_rejects=1;stale_rejects=1;retired_tombstones=\d+;synthetic-only;native\/browser NOT RUN/u);
+  assert.match(output, /^CARD_WIRE_MAPPING_HEAP=OBSERVED;active_delta_bytes=-?\d+;disconnect_delta_bytes=-?\d+;release_delta_bytes=-?\d+;retired_tombstones=240$/mu);
 });
 
 test('human Request packets and replies use physical, request-scoped card references', () => {

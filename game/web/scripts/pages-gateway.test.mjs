@@ -112,16 +112,19 @@ test('registration rejects unauthorized and invalid updates', async () => {
 test('registration verifies healthy target before changing KV', async () => {
   const original = globalThis.fetch;
   const token = env.TQS_TUNNEL_REGISTRATION_TOKEN;
-  const request = new Request('https://tqsvn.pages.dev/api/tunnel/register', {
+  const request = () => new Request('https://tqsvn.pages.dev/api/tunnel/register', {
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ hostname: 'new-rotated-tunnel.trycloudflare.com' }),
   });
   try {
+    globalThis.fetch = async () => new Response('unavailable', { status: 503 });
+    assert.equal((await register({ request: request(), env })).status, 422);
+    assert.equal(kv.value, host);
     globalThis.fetch = async url => {
       assert.equal(url, 'https://new-rotated-tunnel.trycloudflare.com/healthz');
       return new Response('ok');
     };
-    const response = await register({ request, env });
+    const response = await register({ request: request(), env });
     assert.equal(response.status, 200);
     assert.equal(kv.value, 'new-rotated-tunnel.trycloudflare.com');
   } finally { globalThis.fetch = original; kv.value = host; }
