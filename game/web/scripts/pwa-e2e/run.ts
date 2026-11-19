@@ -6,6 +6,11 @@ import {fileURLToPath} from 'node:url';
 import {preview} from 'vite';
 import {chromium} from 'playwright-core';
 const web=fileURLToPath(new URL('../../',import.meta.url));
+const executablePath = [process.env.TQS_CHROME_PATH,
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
+].find((candidate): candidate is string => !!candidate && fs.existsSync(candidate));
+if (!executablePath) throw new Error('Chrome missing: set TQS_CHROME_PATH');
 const server=await preview({configFile:false,root:web,
  plugins:[{name:'pages-canonical-html-fixture',configurePreviewServer(server){
   server.middlewares.use((request,response,next)=>{
@@ -40,7 +45,7 @@ assert.ok(files.some(file=>file.endsWith('.js') && fs.readFileSync(file,'utf8').
 assert.ok(!workerFiles.some(file=>file.url==='/version.json'));
 assert.ok(!files.some(file=>file.endsWith('.tqs-build-stamp.json')));
 assert.ok(files.some(file=>file.endsWith('.js') && fs.readFileSync(file,'utf8').includes(build.builtAt)), 'timestamp included before Vite hashes the entry filename');
-const browser=await chromium.launch({executablePath:process.env.TQS_CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+const browser=await chromium.launch({executablePath,headless:true});
 try {
  const context=await browser.newContext({viewport:{width:390,height:844}});const page=await context.newPage();
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.name));
