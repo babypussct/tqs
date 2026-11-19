@@ -159,6 +159,7 @@ test('workflow scopes jobs individually and keeps an always-running aggregate st
   assert.match(source, /fetch-depth: 0/);
   assert.match(source, /if: needs.changes.outputs.shop == 'true'/);
   assert.match(source, /if: needs.changes.outputs.game == 'true'/);
+  assert.match(source, /npm --prefix game\/web run build[\s\S]*npm --prefix game\/web run test:release/);
   assert.match(source, /name: Pipeline gate[\s\S]*if: always\(\)/);
   assert.doesNotMatch(source, /pull_request_target:|paths-ignore:|\n\s+paths:/);
   const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));

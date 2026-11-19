@@ -91,7 +91,6 @@ jobs:
           node --check deploy/freekill-native/scripts/promote-card-wire-v1.mjs
           node --test deploy/freekill-native/qa/{card-wire-native-source,tqs_qa-installer}.test.mjs
           rm -rf -- scratch/upstream/freekill-asio
-      - run: npm --prefix game/web run test:release
       - run: node --test game/web/scripts/pages-gateway.test.mjs deploy/mobile/oracle-gateway-watch.test.mjs
       - run: npm --prefix game/web run test:card-wire-coverage
         env:
@@ -106,6 +105,7 @@ jobs:
       - run: npm --prefix game/web run typecheck
       - run: npm --prefix game/web run typecheck:tools
       - run: npm --prefix game/web run build
+      - run: npm --prefix game/web run test:release
       - run: npm --prefix game/web run test:store
       - run: npm --prefix game/web run test:connection
       - run: npm --prefix game/web run test:messages
