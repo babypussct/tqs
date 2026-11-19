@@ -7,16 +7,29 @@ import path from 'node:path';
 export const SHOP_OUTPUT = 'dist-shop';
 
 // Run before Vite can empty its destination, including direct `vite build` calls.
-export function assertShopOutput(root, outDir) {
+export function assertShopOutput(root, outDir, env = process.env) {
   const destination = path.resolve(root, outDir);
   assert.equal(destination, path.join(root, SHOP_OUTPUT), 'Shop output must be dist-shop; legacy dist is protected');
   // lstat also detects a dangling symlink, which existsSync cannot detect.
-  try { assert.ok(!lstatSync(destination).isSymbolicLink(), 'Shop output must not be a symlink'); }
+  let present = false;
+  try {
+    assert.ok(!lstatSync(destination).isSymbolicLink(), 'Shop output must not be a symlink');
+    present = true;
+  }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (existsSync(path.join(root, '.git'))) {
-    const tracked = execFileSync('git', ['ls-files', '-z', '--', SHOP_OUTPUT], { cwd: root, encoding: 'utf8' });
-    assert.equal(tracked, '', 'Generated shop output must not contain Git-tracked files');
+    try {
+      const tracked = execFileSync('git', ['ls-files', '-z', '--', SHOP_OUTPUT], {
+        cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      assert.equal(tracked, '', 'Generated shop output must not contain Git-tracked files');
+      return destination;
+    } catch (error) {
+      // Vercel may leave a .git placeholder in its source snapshot.
+      if (env.VERCEL !== '1' || error.status !== 128 || !String(error.stderr).includes('not a git repository')) throw error;
+    }
   }
+  if (env.VERCEL === '1') assert.ok(!present, 'Vercel Shop output must be absent when Git metadata is unavailable');
   return destination;
 }
 

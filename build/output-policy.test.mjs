@@ -59,6 +59,23 @@ test('rejects tracked files in generated shop output', (t) => {
   writeFileSync(path.join(root, 'dist-shop/index.html'), 'tracked');
   execFileSync('git', ['add', 'dist-shop/index.html'], { cwd: root });
   assert.throws(() => assertShopOutput(root, 'dist-shop'), /Git-tracked/);
+  assert.throws(() => assertShopOutput(root, 'dist-shop', { VERCEL: '1' }), /Git-tracked/);
+});
+
+test('Vercel source snapshots without usable Git metadata require a fresh shop output', (t) => {
+  const root = fixture(t);
+  const env = { VERCEL: '1' };
+  const before = protectedOutputs(root);
+  const destination = path.join(root, 'dist-shop');
+  assert.equal(assertShopOutput(root, 'dist-shop', env), destination);
+
+  mkdirSync(path.join(root, '.git'));
+  assert.throws(() => assertShopOutput(root, 'dist-shop', {}), /not a git repository/);
+  assert.equal(assertShopOutput(root, 'dist-shop', env), destination);
+  mkdirSync(destination);
+  writeFileSync(path.join(destination, 'index.html'), 'preexisting output');
+  assert.throws(() => assertShopOutput(root, 'dist-shop', env), /must be absent/);
+  assertProtectedOutputs(root, before);
 });
 
 test('detects changed, deleted and added protected assets by content', (t) => {
