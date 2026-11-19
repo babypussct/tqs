@@ -671,8 +671,8 @@ function sourceLocationsForVariant(id: string, index: Map<string, SourceLocation
 }
 
 function declarationVersions(declarations: SkillMapping['declarations']): Array<{ name: string; commit: string }> {
-  // Every one of the 203 baseline misses is declared by an internal Hegemony
-  // package (standard, online_heg, overseas_heg, ...).  Record that owning
+  // The baseline misses are declared by an internal Hegemony package
+  // (standard, online_heg, overseas_heg, ...). Record that owning
   // upstream pin explicitly; the exact implementation owner is listed
   // separately in exactImplementations.
   void declarations;
@@ -858,7 +858,7 @@ function renderMarkdown(report: AuditReport): string {
     '| --- | --- | --- |',
     ...report.packages.map((spec) => `| \`${spec.name}\` | \`${spec.commit}\` | ${spec.role} |`),
     '',
-    '## 203-ID mapping',
+    `## ${report.baseline.missingIds.length}-ID mapping`,
     '',
     'The declaration column is the internal package that exposed the missing string. The implementation column records the first exact pinned source location (and all exact owners when more than one exists). A `declaration-repaired` row is an evidence-backed rename to an exact owner; no variant rules are copied or aliased.',
     '',
@@ -881,6 +881,10 @@ function renderMarkdown(report: AuditReport): string {
   return lines.join('\n');
 }
 
+// Inventory with only the three packages pinned in upstream-baseline.env.
+const BASELINE_MISSING_IDS = 78;
+const BASELINE_MISSING_OCCURRENCES = 80;
+
 async function main(): Promise<AuditReport> {
   const inventoryOnly = process.argv.includes('--inventory-only');
   const reportOnly = process.argv.includes('--report-only') || inventoryOnly;
@@ -895,10 +899,10 @@ async function main(): Promise<AuditReport> {
   const completeSummary = summarize(complete, baselineNames);
   const completeVisibleSummary = summarize(complete, baselineVisibleNames);
   if (!inventoryOnly) {
-    assert.equal(baselineSummary.missingIds.length, 203,
-      `Pinned baseline missing-ID inventory drifted: expected 203, got ${baselineSummary.missingIds.length}`);
-    assert.equal(baselineSummary.missingOccurrences, 205,
-      `Pinned baseline missing occurrence inventory drifted: expected 205, got ${baselineSummary.missingOccurrences}`);
+    assert.equal(baselineSummary.missingIds.length, BASELINE_MISSING_IDS,
+      'Pinned baseline missing-ID inventory drifted');
+    assert.equal(baselineSummary.missingOccurrences, BASELINE_MISSING_OCCURRENCES,
+      'Pinned baseline missing occurrence inventory drifted');
   }
   const source = sourceIndex(loadUpstreamFiles(UPSTREAM_ROOT, UPSTREAM_PACKAGE_NAMES, { patchDeclarations: false }));
   const mapping = mappingFor(baseline, complete, source, baselineNames, new Set(baselineSummary.missingIds));
@@ -946,7 +950,7 @@ async function main(): Promise<AuditReport> {
     mapping,
     translation,
     invariant: {
-      baselineMissingIdsExpected: 203,
+      baselineMissingIdsExpected: BASELINE_MISSING_IDS,
       baselineMissingIdsActual: baselineSummary.missingIds.length,
       unresolvedVisibleIds,
       pass: unresolvedVisibleIds.length === 0 && invalidContractCount === 0,

@@ -40,11 +40,11 @@ type TriggerGateRow = {
 const STATEFUL_FOLLOW_UP_MARKERS: Readonly<Record<string, string>> = {
   'm_heg__yaowu|fk.Deathed': 'm_heg__yaowu-noclear',
   'guixiu|HegUtil.GeneralRemoved': 'data.origName',
-  'os__chuhai|fk.TurnEnd': 'getQuestSkillState',
   'fangquan|fk.TurnEnd': 'usedSkillTimes',
+  'ld__juejue|fk.EventPhaseEnd': 'usedSkillTimes(juejue.name, Player.HistoryPhase) > 0',
 };
 
-const EXPECTED_NON_DELAY_TRIGGER_PAIRS = 607;
+const EXPECTED_NON_DELAY_TRIGGER_PAIRS = 454;
 
 const LUA_HIDDEN_TRIGGER_GATE_AUDIT = String.raw`
 local result = { rows = {}, seen = {} }
