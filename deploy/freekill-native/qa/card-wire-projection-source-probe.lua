@@ -447,6 +447,14 @@ check("public marks fail closed on nested physical card identities", function()
     {11, "ld__yigui_extra_data", yigui})[3]
   assert(yiguiOut.fix_targets[1] == 11 and yiguiOut.include_targets[1] == 12 and
     yiguiOut.fix_user == 11 and yiguiOut ~= yigui)
+  local naxiangTargets = {12}
+  local naxiangOut = emit(seat, spectator, "SetPlayerMark", {11, "naxiang", naxiangTargets})[3]
+  assert(#naxiangOut == 1 and naxiangOut[1] == 12 and naxiangOut ~= naxiangTargets)
+  assert(emit(seat, spectator, "SetPlayerMark", {11, "naxiang", 0})[3] == 0)
+  fails(seat, spectator, "SetPlayerMark", {11, "naxiang", {100}}, "must contain player IDs")
+  fails(seat, spectator, "SetPlayerMark", {11, "naxiang", {{id = 12}}}, "must contain player IDs")
+  assert(emit(seat, spectator, "SetPlayerMark", {11, "ld__zhidao-phase", otherSeat})[3] == otherSeat)
+  fails(seat, spectator, "SetPlayerMark", {11, "ld__zhidao-phase", {id = 12}}, "live player references")
   fails(seat, spectator, "SetPlayerMark",
     {11, "ld__yigui_extra_data", {cardIds = {100}}}, "unaudited field")
   fails(seat, spectator, "SetPlayerMark", {11, "@cardList", {100, 101}}, "finite scalar")

@@ -538,6 +538,7 @@ local playerObjectMarks = {
 local playerIdMarks = {
   ["fenxun-turn"] = true,
   ["sanchen-turn"] = true,
+  ["naxiang"] = true,
   ["@@ofl_heg__dianhu"] = true,
   ["ofl_heg__dianhu"] = true,
 }
@@ -629,6 +630,9 @@ local function projectNamedTableMark(room, mark, value)
   end
   if mark == "ld__yigui_extra_data" then
     return projectYiguiExtraData(room, value)
+  end
+  if mark == "ld__zhidao-phase" then
+    return playerReference(room, value, mark .. " target")
   end
   if mark == "xiongsuan-turn" then
     assert(denseCount(value, "xiongsuan-turn") == 2,
