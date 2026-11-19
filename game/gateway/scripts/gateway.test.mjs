@@ -58,6 +58,9 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
   writeFileSync(path.join(root, 'packages', 'hegemony', 'description.md'), 'loaded by dofile');
   writeFileSync(path.join(root, 'packages', 'tqs_qa', 'qa.json'), '{"serverOnly":true}');
   writeFileSync(path.join(root, 'flist.txt'), 'test-only flist\n');
+  writeFileSync(path.join(root, 'freekill.server.config.json'), JSON.stringify({
+    tqsCardWire: { enabled: true, version: 1, admission: 'v1' },
+  }));
   const secret = path.join(root, 'outside.png');
   writeFileSync(secret, 'NOT_PUBLIC');
   symlinkSync(secret, path.join(root, 'packages', 'hegemony', 'escape.png'));
@@ -122,6 +125,7 @@ test('local gateway serves verified versioned bundle and bridges binary WebSocke
     const manifest = await manifestResponse.json();
     assert.equal(manifest.md5, createHash('md5').update('test-only flist\n').digest('hex'));
     assert.equal(manifest.fileCount, 4);
+    assert.equal(manifest.cardWireVersion, 1);
     assert.deepEqual(manifest.packages, ['freekill-core', 'hegemony', 'utility']);
 
     const versioned = await fetch(new URL(manifest.bundle, `${baseUrl}/`));

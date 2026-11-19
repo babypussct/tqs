@@ -38,6 +38,7 @@ RELEASE_DIR="$ROOT/releases/freekill-asio-source-$FREEKILL_ASIO_RELEASE"
 PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/reconnect-safe-tempban.patch"
 COMPILER_COMPAT_PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/tqs-compiler-compat.patch"
 GAME_ACCESS_PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/tqs-game-access.patch"
+CARD_WIRE_BRIDGE_PATCH_FILE="$DEPLOY_DIR/patches/freekill-asio/tqs-card-wire-candidate-native-bridge.patch"
 TOOL_ROOT="${FREEKILL_TOOL_ROOT:-/opt/tqs-toolchain}"
 CMAKE_VERSION="4.1.1"
 CMAKE_ARCHIVE="$TOOL_ROOT/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
@@ -48,6 +49,7 @@ CMAKE_SHA256="5a6c61cb62b38e153148a2c8d4af7b3d387f0c8c32b6dbceb5eb4af113efd65a"
 [[ -f "$PATCH_FILE" ]] || die "Missing native reconnect/temp-ban patch: $PATCH_FILE"
 [[ -f "$COMPILER_COMPAT_PATCH_FILE" ]] || die "Missing compiler compatibility patch: $COMPILER_COMPAT_PATCH_FILE"
 [[ -f "$GAME_ACCESS_PATCH_FILE" ]] || die "Missing TQS game access patch: $GAME_ACCESS_PATCH_FILE"
+[[ -f "$CARD_WIRE_BRIDGE_PATCH_FILE" ]] || die "Missing production card-wire bridge patch: $CARD_WIRE_BRIDGE_PATCH_FILE"
 
 install -d -m 0755 "$TOOL_ROOT"
 if [[ ! -x "$CMAKE_DIR/bin/cmake" ]]; then
@@ -91,6 +93,14 @@ game_access_patch_applied() {
   grep -Fq 'verifyTqsTicket' "$SOURCE_DIR/src/server/user/auth.cpp" &&
     grep -Fq 'tqsAuthRequired' "$SOURCE_DIR/src/server/server.h" &&
     grep -Fq 'FK_TQS_LOCKED_PACKS' "$SOURCE_DIR/src/server/rpc-lua/rpc-lua.cpp"
+}
+
+card_wire_bridge_patch_applied() {
+  grep -Fq 'cardWireCapability' "$SOURCE_DIR/src/server/room/lobby.cpp" &&
+    grep -Fq 'addObserver(ServerPlayer &player, std::string_view cardWireCapability' \
+      "$SOURCE_DIR/src/server/room/room.h" &&
+    grep -Fq 'return ::kill(child_pid, 0) == 0 || errno == EPERM' \
+      "$SOURCE_DIR/src/server/rpc-lua/rpc-lua.cpp"
 }
 
 compiler_compat_patch_applied() {
@@ -145,6 +155,13 @@ if ! game_access_patch_applied; then
   patch --batch -p1 -d "$SOURCE_DIR" < "$GAME_ACCESS_PATCH_FILE" >/dev/null
 fi
 printf 'TQS game access and forced-pack patch: %s\n' "$(basename "$GAME_ACCESS_PATCH_FILE")"
+
+if ! card_wire_bridge_patch_applied; then
+  patch --dry-run --batch -p1 -d "$SOURCE_DIR" < "$CARD_WIRE_BRIDGE_PATCH_FILE" >/dev/null ||
+    die "Production card-wire bridge patch does not apply cleanly to $actual_source"
+  patch --batch -p1 -d "$SOURCE_DIR" < "$CARD_WIRE_BRIDGE_PATCH_FILE" >/dev/null
+fi
+printf 'Production card-wire bridge patch: %s\n' "$(basename "$CARD_WIRE_BRIDGE_PATCH_FILE")"
 
 export CC="${CC:-gcc-14}"
 export CXX="${CXX:-g++-14}"

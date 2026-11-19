@@ -282,15 +282,15 @@ export class GameAdapter {
     if (!Number.isInteger(roomId) || roomId <= 0) throw new Error('ID phòng không hợp lệ');
     await this.beforeEntry?.();
     const request: unknown[] = [roomId, password];
-    // Candidate QA v1 proves the observer capability before native server
-    // admission. The marker is deliberately card-free and is omitted from
-    // production/legacy sessions unless the isolated runner explicitly opts
-    // into cardWireVersion 1.
+    // The exact gateway manifest is the production capability source. The
+    // test globals remain available for isolated negative probes, but cannot
+    // make a legacy gateway send a v1 observer packet by accident.
     const testGlobals = globalThis as typeof globalThis & {
       __tqsCardWireVersion?: unknown;
       __tqsCardWireObserverMode?: unknown;
     };
-    const cardWireVersion = testGlobals.__tqsCardWireVersion;
+    const cardWireVersion = testGlobals.__tqsCardWireVersion === 1 ||
+      this.loaded?.manifest.cardWireVersion === 1 ? 1 : 0;
     const observerMode = testGlobals.__tqsCardWireObserverMode;
     if (mode === 'new_heg_mode' && cardWireVersion === 1) {
       // The negative modes are an isolated native-compatibility probe. They

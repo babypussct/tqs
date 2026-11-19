@@ -6,6 +6,8 @@ export interface GatewayManifest {
   fileCount: number;
   bundle: string;
   bundleHash: string;
+  /** Native/runtime capability advertised by the exact gateway artifact. */
+  cardWireVersion?: 0 | 1;
 }
 
 export interface LoadedBundle {
@@ -26,6 +28,9 @@ export function assertManifest(raw: unknown): asserts raw is GatewayManifest {
   }
   if (!Number.isSafeInteger(m.fileCount) || (m.fileCount ?? 0) < 1 || (m.fileCount ?? 0) > 10000) {
     throw new Error('Số lượng tệp không hợp lệ');
+  }
+  if (m.cardWireVersion !== undefined && m.cardWireVersion !== 0 && m.cardWireVersion !== 1) {
+    throw new Error('Gateway công bố card-wire version không hợp lệ');
   }
   if (typeof m.bundle !== 'string' || !/^bundle\.zip\?v=[a-f\d]{16}$/i.test(m.bundle) || m.bundle.split('=')[1].toLowerCase() !== m.bundleHash?.toLowerCase()) {
     throw new Error('Đường dẫn bundle không khớp phiên bản');

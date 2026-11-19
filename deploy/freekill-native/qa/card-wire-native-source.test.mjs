@@ -28,7 +28,7 @@ function applyPatch(source, patchFile, dryRun = false) {
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-test('candidate native bridge patch is isolated from production and applies after pinned production patches', (t) => {
+test('production native bridge patch is pinned and applies after the other native patches', (t) => {
   const patchText = readFileSync(candidatePatch, 'utf8');
   assert.match(patchText, /#if defined\(__linux__\)/u);
   assert.match(patchText, /::kill\(child_pid, 0\)/u);
@@ -38,10 +38,10 @@ test('candidate native bridge patch is isolated from production and applies afte
   const bootstrap = readFileSync(
     path.join(repo, 'deploy/freekill-native/scripts/bootstrap-source.sh'), 'utf8');
   const baseline = readFileSync(path.join(repo, 'deploy/freekill-native/upstream-baseline.env'), 'utf8');
-  assert.doesNotMatch(bootstrap, /tqs-card-wire-candidate-native-bridge/u,
-    'candidate bridge must not enter the production source bootstrap');
-  assert.doesNotMatch(baseline, /tqs-card-wire-candidate-native-bridge/u,
-    'candidate bridge must not become a production upstream pin');
+  assert.match(bootstrap, /tqs-card-wire-candidate-native-bridge/u,
+    'production bootstrap must apply the card-wire bridge');
+  assert.match(baseline, /TQS_UPSTREAM_PATCH_CARD_WIRE_PATH/u,
+    'production baseline must pin the card-wire bridge');
 
   if (!existsSync(path.join(upstream, '.git'))) {
     t.skip('pinned native source checkout is not prepared');
