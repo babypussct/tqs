@@ -396,6 +396,59 @@ try {
     unknown: -1, arg2Id: 101, toast: true,
   });
 
+  // A native rematch constructs a fresh server room but reuses the same client
+  // object. An earlier v1 negotiation must expire at GameOver so a legacy
+  // fallback can accept its old numeric draw pile, and the next round can
+  // advertise and negotiate v1 again on the same connection.
+  const gameOverHex = runtime.eval<string>(
+    `return __host_bin2hex(cbor.encode(''))`,
+  );
+  runtime.eval('ClientInstance.recording = false; return true');
+  runtime.receive('GameOver', gameOverHex, false);
+  assert.deepEqual(runtime.eval(`return {
+    inactive = not ClientInstance.gameStarted,
+    versionCleared = ClientInstance.card_wire_version == nil,
+    protocolCleared = ClientInstance.card_wire_protocol == nil,
+    negotiatedCleared = ClientInstance.card_wire_negotiated == nil,
+    capabilityCleared = ClientInstance.card_wire_capability_sent == nil,
+    requestCleared = ClientInstance.card_wire_request == nil,
+    aliasRetired = ClientInstance.card_wire_refs.byLocal[${observeState.hidden}] == nil,
+    aliasReserved = ClientInstance.card_wire_refs:isHiddenLocal(${observeState.hidden}),
+  }`), {
+    inactive: true, versionCleared: true, protocolCleared: true,
+    negotiatedCleared: true, capabilityCleared: true,
+    requestCleared: true, aliasRetired: true, aliasReserved: true,
+  });
+  assert.throws(() => runtime.eval(
+    `return ClientInstance.card_wire_refs:toWire(${observeState.hidden})`,
+  ), /expired or unrecognized local card identity/u);
+  const capabilityCount = () => sentPackets.filter((packet) =>
+    packet.kind === 'notify' && packet.command === 'PushRequest').length;
+  assert.equal(capabilityCount(), 1);
+  runtime.receive('StartGame', startGameHex, false);
+  runtime.receive('ArrangeSeats', arrangeSeatsHex, false);
+  assert.equal(capabilityCount(), 2, 'same-room rematch must advertise again');
+  const legacyDeckHex = runtime.eval<string>(
+    `return __host_bin2hex(cbor.encode({201, 202}))`,
+  );
+  runtime.receive('PrepareDrawPile', legacyDeckHex, false);
+  assert.deepEqual(runtime.eval('return ClientInstance.draw_pile'), [201, 202],
+    'a rematch without v1 negotiation must use the legacy deck path');
+
+  runtime.eval('ClientInstance.recording = false; return true');
+  runtime.receive('GameOver', gameOverHex, false);
+  runtime.receive('StartGame', startGameHex, false);
+  runtime.receive('ArrangeSeats', arrangeSeatsHex, false);
+  assert.equal(capabilityCount(), 3, 'a third match must advertise separately');
+  runtime.receive('CardWireNegotiated', envelopeHex, false);
+  runtime.receive('PrepareDrawPile', prepareHex, false);
+  assert.equal(runtime.eval<number>('return ClientInstance.card_wire_version'), 1);
+  assert.equal(runtime.eval<number>('return #ClientInstance.draw_pile'), 3);
+  assert.equal(runtime.eval<boolean>(
+    'return ClientInstance.card_wire_refs:isAnonymous(ClientInstance.draw_pile[1])'), true);
+  assert.throws(() => runtime.receive('PrepareDrawPile', legacyDeckHex, false),
+    /unaudited field/u, 'v1 must still reject legacy deck IDs');
+
   // Exercise the real enterRoom constructor that the legacy summary path
   // invokes. A cold lobby has neither the incoming mode nor an alias tracker.
   runtime.eval(`ClientInstance.settings = {}
@@ -423,13 +476,13 @@ try {
     'ordinary room entry must not carry the previous room snapshot capability');
 
   console.log(
-    'PASS browser Lua card-wire candidate: Wasmoon boot, negotiation/UI isolation, wrong protocol/version/mode plus malformed/request fail-closed, count-only deck replacement, MoveCards, ChangeCardArea, request/reply, Reconnect/Observe snapshots, public card descriptors and cold snapshot constructor preservation; 16 cases; native C++/browser network/two-account NOT RUN',
+    'PASS browser Lua card-wire candidate: Wasmoon boot, negotiation/UI isolation, wrong protocol/version/mode plus malformed/request fail-closed, count-only deck replacement, MoveCards, ChangeCardArea, request/reply, Reconnect/Observe snapshots, public card descriptors, same-room v1 GameOver to legacy and v1 rematches, and cold snapshot constructor preservation; 19 cases; native C++/browser network/two-account NOT RUN',
   );
 } finally {
   runtime.close();
 }
 
-assert.equal(luaErrors.length, 6,
+assert.equal(luaErrors.length, 8,
   'only the intentionally rejected packets may reach the Lua error log');
 assert.ok(luaErrors.some((message) => message.includes('unsupported card wire negotiation version')));
 assert.ok(luaErrors.some((message) => message.includes('unsupported card wire negotiation protocol')));

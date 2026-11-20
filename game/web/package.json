@@ -65,7 +65,7 @@
     "test:e2e:public:unit": "tsx --test scripts/public-oauth-e2e/contract.test.ts",
     "test:auth-routing": "tsx --test scripts/google-auth-routing.test.ts && node --test scripts/google-auth-helper.test.mjs",
     "test:lua-lifecycle": "tsx --test scripts/lua-lifecycle.test.ts",
-    "test:smart-ai": "tsx --test scripts/smart-ai-response.test.ts scripts/smart-ai-general-pair.test.ts",
+    "test:smart-ai": "tsx --test scripts/smart-ai-response.test.ts scripts/smart-ai-general-pair.test.ts scripts/smart-ai-analeptic.test.ts",
     "test:prompt4": "tsx --test scripts/smart-ai-prompt4.test.ts",
     "test:prompt4:telemetry": "tsx --test scripts/smart-ai-prompt4-telemetry.test.ts",
     "test:prompt4:match-metrics": "tsx --test scripts/smart-ai-prompt4-match-metrics.test.ts",

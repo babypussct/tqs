@@ -91,7 +91,9 @@ local broadcasts = {}
 local room = setmetatable({
   draw_pile = clone(deck), discard_pile = {}, void = {},
   logic = { trigger = function() end },
-}, { __index = roomMethods })
+}, { __index = function(_, key)
+  return roomMethods[key] or serverMethods[key]
+end })
 function room:prepareDrawPile() self.draw_pile = clone(deck) end
 function room:shuffleTable() end -- Preserve a known fixture sequence.
 function room:doBroadcastNotify(cmd, payload)

@@ -63,4 +63,17 @@ function Negotiation.receive(client, data)
   return true
 end
 
+-- Each completed match has a new server-side room and capability ledger,
+-- even when the physical clients stay connected to the same lobby.
+function Negotiation.endMatch(client)
+  client.card_wire_version = nil
+  client.card_wire_protocol = nil
+  client.card_wire_negotiated = nil
+  client.card_wire_capability_sent = nil
+  client.card_wire_request = nil
+  if client.card_wire_refs then
+    client.card_wire_refs:resetSession()
+  end
+end
+
 return Negotiation

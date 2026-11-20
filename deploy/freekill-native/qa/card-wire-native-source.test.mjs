@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,16 @@ function applyPatch(source, patchFile, dryRun = false) {
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
+function extractPinnedNativeSource(destination) {
+  // QA users may have local patches in scratch/upstream. Verify the pinned
+  // committed source rather than copying their modified working tree.
+  const archive = execFileSync('git', ['-C', upstream, 'archive', 'HEAD'], {
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  mkdirSync(destination, { recursive: true });
+  execFileSync('tar', ['-xf', '-', '-C', destination], { input: archive });
+}
+
 test('production native bridge patch is pinned and applies after the other native patches', (t) => {
   const patchText = readFileSync(candidatePatch, 'utf8');
   assert.match(patchText, /#if defined\(__linux__\)/u);
@@ -51,7 +61,7 @@ test('production native bridge patch is pinned and applies after the other nativ
   const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-card-wire-native-source-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const source = path.join(root, 'freekill-asio');
-  cpSync(upstream, source, { recursive: true });
+  extractPinnedNativeSource(source);
   for (const patchFile of productionPatches) applyPatch(source, patchFile);
   assert.doesNotThrow(() => applyPatch(source, candidatePatch, true),
     'candidate bridge must apply cleanly after production source patches');
@@ -89,7 +99,7 @@ test('QA native boundary patch parses semantic CBOR with bounded metadata only',
   const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-card-wire-native-boundary-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const source = path.join(root, 'freekill-asio');
-  cpSync(upstream, source, { recursive: true });
+  extractPinnedNativeSource(source);
   for (const patchFile of productionPatches) {
     try { applyPatch(source, patchFile); } catch { /* source may already carry the production patch */ }
   }

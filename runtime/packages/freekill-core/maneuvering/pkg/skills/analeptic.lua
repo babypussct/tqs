@@ -64,12 +64,12 @@ analepticSkill:addEffect(fk.TurnEnd, {
   end,
 })
 
-analepticSkill:addAI(Fk.Ltk.AI.newCardSkillStrategy {
+local analepticAI = Fk.Ltk.AI.newCardSkillStrategy {
   keep_value = 4.1,
   use_value = 5.98,
   use_priority = 3.0,
 
-  on_effect = function (self, logic, effect)
+  on_effect = function(self, logic, effect)
     if effect.extra_data and effect.extra_data.analepticRecover then
       logic:recover({
         who = effect.to,
@@ -77,8 +77,53 @@ analepticSkill:addAI(Fk.Ltk.AI.newCardSkillStrategy {
         recoverBy = effect.from,
         card = effect.card,
       })
+    elseif logic.ai.command == "PlayCard" then
+      -- Drinking is worth the additional damage only when the dashboard has
+      -- already confirmed a profitable, legal Slash follow-up.
+      logic.benefit = logic.benefit + (logic.ai.mem.analeptic_followup_bonus or 0)
     end
   end
-})
+}
+
+local defaultThink = Fk.Ltk.AI.CardSkillStrategy.think
+
+function analepticAI:think(ai)
+  if ai.command ~= "PlayCard" then
+    return defaultThink(self, ai)
+  end
+
+  -- The buff expires at TurnEnd. Probe the same dashboard used by PlayCard so
+  -- Slash usage limits, distance, prohibitions and legal targets are respected.
+  if (ai.player.drank or 0) > 0 then
+    return nil, -100000
+  end
+
+  local bestSlashBenefit = 0
+  for _, id in ipairs(ai:getEnabledCards()) do
+    local card = Fk:getCardById(id)
+    if card and card.trueName == "slash" and card.skill then
+      ai:selectCard(id, true)
+      local slashAI = ai:findStrategyOfSkill(Fk.Ltk.AI.CardSkillStrategy, card.skill.name)
+      if slashAI then
+        local targets, benefit = slashAI:chooseTargets(ai)
+        if targets and #targets > 0 and benefit and benefit > bestSlashBenefit then
+          bestSlashBenefit = benefit
+        end
+      end
+      ai:unSelectAll()
+    end
+  end
+
+  -- Ignore near-zero estimates produced by the generic card-use heuristic.
+  -- A genuine attack is worth much more than this threshold.
+  if bestSlashBenefit <= 25 then
+    return nil, -100000
+  end
+
+  ai.mem.analeptic_followup_bonus = bestSlashBenefit + 80
+  return defaultThink(self, ai)
+end
+
+analepticSkill:addAI(analepticAI)
 
 return analepticSkill

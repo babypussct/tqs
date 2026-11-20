@@ -95,16 +95,16 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
     if (existsSync(path.join(upstreamNativeSource, '.git'))) {
       const fixture = path.join(root, 'native-source-fixture');
       mkdirSync(path.join(fixture, 'src/server/user'), { recursive: true });
-      cpSync(path.join(upstreamNativeSource, 'src/server/server.h'),
-        path.join(fixture, 'src/server/server.h'));
-      cpSync(path.join(upstreamNativeSource, 'src/server/server.cpp'),
-        path.join(fixture, 'src/server/server.cpp'));
-      cpSync(path.join(upstreamNativeSource, 'src/server/user/auth.cpp'),
-        path.join(fixture, 'src/server/user/auth.cpp'));
-      cpSync(path.join(upstreamNativeSource, 'src/server/user/user_manager.h'),
-        path.join(fixture, 'src/server/user/user_manager.h'));
-      cpSync(path.join(upstreamNativeSource, 'src/server/user/user_manager.cpp'),
-        path.join(fixture, 'src/server/user/user_manager.cpp'));
+      for (const sourcePath of [
+        'src/server/server.h',
+        'src/server/server.cpp',
+        'src/server/user/auth.cpp',
+        'src/server/user/user_manager.h',
+        'src/server/user/user_manager.cpp',
+      ]) {
+        writeFileSync(path.join(fixture, sourcePath),
+          execFileSync('git', ['-C', upstreamNativeSource, 'show', `HEAD:${sourcePath}`]));
+      }
       assert.doesNotThrow(() => runWithInput('patch', [
         '--batch', '-p1', '-d', fixture,
       ], patchText, repo), 'production reconnect patch must apply cleanly to the pinned native source');

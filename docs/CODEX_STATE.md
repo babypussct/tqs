@@ -1,5 +1,29 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 21/11/2026 — Kiểm chứng trước commit/push: CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC
+
+- **Phạm vi source:** thay đổi sửa reset thương lượng v1 sau `GameOver` cho trận tiếp theo cùng phòng, sửa SmartAI đánh giá Tửu → Sát thường/hỏa/lôi và hai fixture test native dùng đúng `git HEAD` upstream khi checkout tham khảo bị dirty. Giữ toàn bộ thay đổi đồng thời của hai nhiệm vụ.
+- **Bằng chứng quan sát trực tiếp:** `test:qa-server-contract` **67/67 PASS** sau khi cô lập source fixture, `test:upstream-first-source` với 3 root candidate và Lua 5.4.9 **42/42 PASS**, browser Wasmoon rematch **19 ca PASS**, `test:smart-ai` **14/14 PASS**, `test:gameplay` **16/16 PASS**, `test:release` **6/6 PASS**, `typecheck:all` **PASS**, `test:build-safety` **8/8 PASS**, `check:build` **PASS** (protected outputs), `test:pipelines` **14/14 PASS** và `git diff --check` **PASS**. Nguồn candidate Lua từ `scratch/evidence/card-wire-rematch-20261120/candidate-runtime`; kết quả là test source/candidate, chưa phải native gameplay acceptance.
+- **Source pin và build mới:** `prepare:upstream -- --check` trên `scratch/upstream` dừng do checkout `freekill-core` ở `ade837d7…`, khác pin `3c40e0f8…`. Giữ nguyên checkout cũ và tạo `scratch/evidence/commit-release-20261121/upstream` cô lập: `prepare:upstream` tải đủ **14 pin**, `prepare:upstream -- --check` **14/14 PASS**, `TQS_UPSTREAM_ROOT=... npm --prefix game/web run build` **PASS** (audit/TypeScript/Vite/service worker). Build source local chưa thay artifact phát hành Pages.
+- **Shop build/check bảo toàn:** `npm run build → npm run clean → npm run build → npm run check:build` đều **PASS**; `git diff --exit-code -- dist` **PASS**. Output Shop nằm trong `dist-shop/`, game build ở `game/web/dist/`, không phát sinh thay đổi tracked vào root `dist/`.
+- **Phát hành runtime:** chưa có live native hai browser clients chơi nhiều ván liên tiếp trên cùng phòng, chưa có native SmartAI Tửu → Sát với đối chứng và chưa xác minh rollback/immutable release cho thay đổi mới. Native production cutover và Cloudflare deployment vẫn **chưa thực hiện**. Commit/push source là bước riêng và không được ghi thành production PASS.
+
+## 20/11/2026 — CARD-WIRE-REMATCH: PrepareDrawPile sau GameOver (local PASS, native rematch pending)
+
+- **Hiện tượng:** browser production báo `PrepareDrawPile contains an unaudited field` khi vào ván tiếp theo cùng phòng. Quan sát native log đã xác nhận ván đầu thương lượng v1 thành công, sau `GameOver` server tạo room/capability ledger mới nhưng ván sau `all=false` và rơi về legacy; Lua client giữ `card_wire_version=1` và `card_wire_capability_sent=true` nên không quảng bá lại capability, sau đó chuyển bộ bài legacy dạng danh sách ID vào decoder v1 chỉ nhận `{count}`.
+- **Sửa local:** thêm `Negotiation.endMatch(client)` tại `deploy/freekill-native/qa/card-wire-client-negotiation.lua`, đặt lại protocol/version/negotiated/capability/request và retire aliases theo `card_wire_refs:resetSession()` nhưng giữ tombstones/issued local IDs. `scripts/upstream-first-card-wire-capability-guard.mjs` chèn lệnh này vào `ClientBase:gameOver` của runtime candidate `new_heg_mode`, sau khi hoàn tất recording và `notifyUI("GameOver")`. Không nới lỏng kiểm tra strict v1; không thay code production trực tiếp.
+- **Bằng chứng mới trong phiên:** `game/web/scripts/card-wire-browser-negotiation-probe.ts` chạy ClientCallback thật trên Wasmoon cho chuỗi v1 → GameOver → rematch legacy → GameOver → rematch v1, capability quảng bá lại, bộ bài legacy/v1 đều decode đúng nhánh, alias cũ vô hiệu và payload legacy bị từ chối khi đang v1: **19 cases PASS**. Guard candidate `--apply`/`--check` PASS. Source suite Lua với candidate từ snapshot release production **42/42 PASS** sau khi sửa fixture `card-wire-exposure-source-probe.lua` để mô phỏng kế thừa `ServerRoomBase:publicHegemonyRole`; `typecheck:tools`, `git diff --check` PASS. Diagnostic legacy strict vẫn cố ý xác nhận 12 nhóm phơi lộ ở fixture legacy, trong khi kiểm tra v1 physical privacy độc lập PASS.
+- **Giới hạn và lỗi kiểm thử độc lập:** `test:qa-server-contract` **65/67 PASS**, hai bài không đạt về áp dụng `reconnect-safe-tempban.patch` vào checkout native hiện có và khẳng định auth trước account temp-ban của installer. Các lỗi này nằm ngoài đường rematch. Chưa chạy native hai client trên cùng phòng qua hai ván với server C++ và chưa xác nhận sửa lỗi trên production; các thay đổi vẫn local, không commit/push/deploy.
+- **Bước tiếp theo:** áp candidate lên bản QA cô lập khớp pin, chạy hai browser clients cùng physical room qua `GameOver → StartGame → ArrangeSeats`, kiểm quảng bá capability mỗi ván, nhánh legacy/v1 `PrepareDrawPile`, private card wire, GameOver và cleanup. Chỉ đề nghị phát hành sau khi QA native thực tế PASS và có phép duyệt phát hành phù hợp.
+
+## 20/11/2026 — SMARTAI-ANALEPTIC-FOLLOWUP: Tửu → Sát (local test PASS, native QA pending)
+
+- **Hiện tượng và nguyên nhân:** AI cũ định giá Tửu riêng lẻ, không kiểm tra có Sát hợp lệ để nối đòn; mô phỏng sát thương Sát cũng luôn tính `1` và bỏ qua trạng thái `drank`. Vì vậy bot có thể uống Tửu rồi kết thúc lượt.
+- **Sửa ở candidate local:** `runtime/packages/freekill-core/maneuvering/pkg/skills/analeptic.lua` chỉ cân nhắc Tửu trong `PlayCard` nếu có Sát vật lý (thường/hỏa/lôi) với mục tiêu hợp lệ và lợi ích ước lượng đáng kể. Thêm giá trị nối đòn vào mô phỏng Tửu; giữ nhánh Tửu cứu người. AI mô phỏng Sát ở `standard_cards/pkg/skills/slash.lua` và `maneuvering/pkg/skills/{fire__slash,thunder__slash}.lua` cộng sát thương `drank` của người tấn công. Không thay luật gameplay thực tế.
+- **Bằng chứng đã chạy trong phiên này:** `npm --prefix game/web run test:smart-ai` **14/14 PASS** (gồm hai bài test Tửu mới ở `game/web/scripts/smart-ai-analeptic.test.ts`: ma trận điều kiện + hai quyết định liên tiếp Tửu → Sát); `npm --prefix game/web run test:gameplay` **16/16 PASS**; `npm --prefix game/web run typecheck` **PASS**; `luac -p` trên bốn file Lua **PASS**; `git diff --check` **PASS**.
+- **Giới hạn:** test mới dùng Lua runtime thực và bảng lựa chọn mô phỏng. Chưa có trận native `new_heg_mode` chứng minh bot tự chơi Tửu → Sát với dashboard/server thật, và chưa có kiểm chứng production. Các file card-wire hiện đang modified là thay đổi đồng thời ngoài phạm vi sửa Tửu; giữ nguyên.
+- **Bước tiếp theo:** chạy QA native cô lập với tình huống có Tửu + Sát hợp lệ và đối chứng không có Sát/mục tiêu, quan sát reply/PlayCard và sát thương, ghi evidence đã ẩn danh trước khi cân nhắc phát hành. Không tự commit/push/deploy từ checkpoint này.
+
 ## 20/11/2026 — mở rộng sửa giao thức v1 cho yêu cầu Quốc Chiến
 
 - Dùng cùng quy tắc mặt bài ở server, client và bộ đọc CBOR cho `AskForArrangeCards`, `AskForCardChosen` dạng nhóm, `AskForPoxi`, `AskForCardsAndChoice`, `AskForUseActiveSkill`, `AskForUseCard` và `AskForResponseCard`. Áp dụng cho cả Quan Tinh/Ngạo Tài cùng các luồng Tuần Tuần/Di Kế. Mặt bài chỉ đến socket nhận yêu cầu, ưu tiên `visible_data=false/0`, giữ bí danh đang dùng trên bàn và giữ mẫu lọc ID dưới dạng token trên wire. Lua client dựng Card tạm để dùng luật lọc gốc. Mặt bài được thu hồi cùng request.
@@ -2387,20 +2411,32 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T15:42:01.528Z (UTC).
-- Nhánh: `main` · HEAD: `9584d3c157a8`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-20T17:28:58.417Z (UTC).
+- Nhánh: `main` · HEAD: `818b8bc57439`.
+- File thay đổi hiển thị: 13 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/card-wire-client-negotiation.lua
+ M deploy/freekill-native/qa/card-wire-exposure-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-native-source.test.mjs
+ M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
  M docs/CODEX_PLAN.md
+ M game/web/package.json
+ M game/web/scripts/card-wire-browser-negotiation-probe.ts
+ M runtime/packages/freekill-core/maneuvering/pkg/skills/analeptic.lua
+ M runtime/packages/freekill-core/maneuvering/pkg/skills/fire__slash.lua
+ M runtime/packages/freekill-core/maneuvering/pkg/skills/thunder__slash.lua
+ M runtime/packages/freekill-core/standard_cards/pkg/skills/slash.lua
+ M scripts/upstream-first-card-wire-capability-guard.mjs
+?? game/web/scripts/smart-ai-analeptic.test.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+818b8bc5 Record TQSVN v1 protocol production release
 9584d3c1 Fix Hegemony v1 request visibility and dialog replies
 fa746ac2 Record production verification for Hegemony general reveals
-ce89caa1 Publish revealed Hegemony generals before faction disclosure
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

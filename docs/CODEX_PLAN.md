@@ -1,5 +1,28 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 21/11/2026 — Đưa source CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC lên origin
+
+- [x] Cô lập native fixture từ upstream `git HEAD` thay vì dùng checkout đã sửa: `test:qa-server-contract` **67/67 PASS**, khắc phục hai failure **65/67** ở checkpoint trước.
+- [x] Xác minh source candidate **42/42**, browser Wasmoon rematch **19 ca**, SmartAI **14/14**, gameplay **16/16**, release contract **6/6**, typecheck, build-safety **8/8**, check:build, pipeline **14/14** và diff check đều PASS.
+- [x] Chuẩn bị lại toàn bộ **14 upstream pin** trong root cô lập, xác minh `prepare:upstream -- --check` **14/14 PASS** và web production build từ root đó **PASS**; giữ checkout tham khảo đã dirty nguyên vẹn.
+- [x] Build → clean → rebuild Shop, `check:build` và kiểm root `dist` **PASS**, giữ output build cách ly.
+- [ ] Native real-room rematch hai browser clients qua nhiều ván, kiểm cả nhánh v1/legacy, reconnect và bí mật bài; SmartAI Tửu → Sát trên native gameplay với đối chứng.
+- [ ] Chốt artifact/runtime immutable, kiểm trạng thái phòng thực tế, rollback và hosted smoke trước khi đổi production. Cloudflare Pages chỉ cần build/redeploy khi có thay đổi artifact web tương ứng.
+
+## 20/11/2026 — CARD-WIRE-REMATCH: sửa lỗi PrepareDrawPile khi chơi ván tiếp theo
+
+- [x] Xác định lệch vòng đời capability giữa server room mới và Lua client tái sử dụng sau `GameOver`; client giữ v1 cũ, server ván sau có thể dùng legacy.
+- [x] Đặt lại trạng thái thương lượng và retired aliases khi kết thúc ván `new_heg_mode`, giữ strict decoder riêng cho v1. Guard áp candidate PASS; browser Wasmoon **19 cases PASS**, source **42/42 PASS**, typecheck và diff check PASS.
+- [ ] Native QA cùng phòng, hai client chơi liên tiếp ít nhất hai ván, kiểm `CardWireNegotiated` và cả fallback legacy, `PrepareDrawPile`, GameOver và reconnect. Hiện local only, chưa phát hành.
+- [x] Rà soát hai lỗi nguồn native trong `test:qa-server-contract`: fixture test nay đọc source pristine từ Git HEAD, suite **67/67 PASS** trên checkout upstream tham khảo đã dirty.
+
+## 20/11/2026 — SMARTAI-ANALEPTIC-FOLLOWUP: AI kết hợp Tửu với Sát
+
+- [x] Khoanh vùng bot uống Tửu rồi qua lượt: định giá Tửu không xét Sát nối tiếp, mô phỏng Sát bỏ qua `drank`.
+- [x] Sửa chiến lược Tửu theo Sát vật lý có thể dùng và mục tiêu có lợi; sửa mô phỏng Sát thường/hỏa/lôi có cộng sát thương Tửu, giữ cơ chế cứu người.
+- [x] Test Lua trong WASM/SmartAI quyết định Tửu rồi Sát, các trường hợp thiếu Sát/thiếu mục tiêu, đồng minh, đã uống, Sát hỏa và cứu người. `test:smart-ai` **14/14**, `test:gameplay` **16/16**, `typecheck`, `luac -p`, `git diff --check` đều **PASS**.
+- [ ] QA native cô lập bằng dashboard và luật `new_heg_mode` thật, ghi kết quả có kiểm tra tính hợp lệ, sát thương và đối chứng. Hiện chưa có bằng chứng native/production cho sửa đổi này; giữ candidate local.
+
 ## 20/11/2026 — sửa mở rộng giao thức v1
 
 - [x] Gom quy tắc hiển thị mặt bài theo yêu cầu gốc và sửa mapping v1 cho nhóm bài, sắp xếp, pattern dùng/đáp, bài in, dialog và tên nước Dã tâm gia. Source **8/8** gồm **20** ca request và **12** kênh strict privacy. Browser/WASM **73/73** và build nguyên pin PASS.

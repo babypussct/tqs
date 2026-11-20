@@ -44,7 +44,7 @@ skill:addAI(Fk.Ltk.AI.newCardSkillStrategy {
       from = effect.from,
       to = effect.to,
       card = effect.card,
-      damage = 1,
+      damage = 1 + ((effect.from == logic.ai.player and logic.ai.player.drank) or 0),
       damageType = fk.ThunderDamage,
       skillName = skill.name
     })

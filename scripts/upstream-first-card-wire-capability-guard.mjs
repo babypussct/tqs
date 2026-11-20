@@ -99,6 +99,17 @@ replaceAfter('lua/client/clientbase.lua',
   `  self.players = players\n\n${clientStartCapability}`,
   'candidate client capability advertisement after ArrangeSeats');
 
+// The native game room is recreated for a rematch in the same physical room.
+// Reset only after recording and the final GameOver UI callback have completed.
+const clientGameOverBefore = `  self.gameStarted = false\n  self:notifyUI("GameOver", jsonData)\nend\n`;
+const clientGameOverAfter = `  self.gameStarted = false\n  self:notifyUI("GameOver", jsonData)\n` +
+  `  if self:getSettings("gameMode") == "new_heg_mode" then\n` +
+  `    require("ltk.client.card_wire_negotiation").endMatch(self)\n` +
+  `  end\nend\n`;
+replaceAfter('lua/client/clientbase.lua', 'function ClientBase:gameOver(jsonData)',
+  clientGameOverBefore, clientGameOverAfter,
+  'candidate match-end card-wire capability lifecycle reset');
+
 const callbackBefore = `  self:addCallback("Chat", self.handleChat)\n`;
 const callbackAfter = `${callbackBefore}  self:addCallback("card_wire_capability", self.handleCardWireCapability)\n`;
 replaceOnce('lua/server/roombase.lua', callbackBefore, callbackAfter,
@@ -211,8 +222,10 @@ replaceOnce('lua/server/serverplayer_base.lua', reconnectBefore, reconnectAfter,
 // source rather than a loose substring, so future candidate drift fails shut.
 const finalRoom = read('lua/server/roombase.lua').source;
 const finalPlayer = read('lua/server/serverplayer_base.lua').source;
+const finalClient = read('lua/client/clientbase.lua').source;
 assert.equal(finalRoom.split('function ServerRoomBase:handleCardWireCapability').length, 2);
 assert.equal(finalRoom.split('function ServerRoomBase:hasAllCardWireCapabilities').length, 2);
 assert.match(finalRoom, /card wire negotiation requires every physical client capability/u);
 assert.match(finalPlayer, /unnegotiated physical connection/u);
-console.log(`PASS isolated Hegemony card-wire capability guard ${mode}: per-physical advertise, all-client gate, observer/reconnect fail-closed`);
+assert.equal(finalClient.split('card_wire_negotiation").endMatch(self)').length, 2);
+console.log(`PASS isolated Hegemony card-wire capability guard ${mode}: per-match advertise/reset, all-client gate, observer/reconnect fail-closed`);
