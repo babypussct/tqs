@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-20T07:13:18+00:00",
+  "status": "PASS_POST_RELEASE_OPERATIONAL_SCOPE",
+  "production": {
+    "runtimeSourceRevision": "998643f79df2e696588b11e7511fe277add4a94d",
+    "binarySha256": "f6012bad7bf0c40beea4a2c5b87c27f356cac798b9c95d5f5dd3b6cacf160655",
+    "runtimeMD5": "f7db727839b09febc310688791bfa653",
+    "publicHealthHttp": 200,
+    "shopHomeHttp": 200
+  },
+  "diskRecovery": {
+    "freeBeforeMiB": 1395,
+    "freeAfterMiB": 2713,
+    "recoveredMiB": 1318,
+    "generatedPchFilesArchived": 4,
+    "archivedInputBytes": 1382008879,
+    "archiveSha256": "461e61527776ec3e25feebcb6ffd0828b9f283e799e5b924bd60a5d29711931c",
+    "archiveRepositoryPath": "scratch/evidence/tqs-post-release.ds1zeV/oracle-generated-pch.tar.gz",
+    "sourceAndArchiveHashesVerified": true
+  },
+  "nativeSustainedLoad": {
+    "status": "PASS",
+    "scope": "isolated exact native binary; two four-seat Hegemony rooms and two lobby sockets",
+    "runtimeMD5": "f7db727839b09febc310688791bfa653",
+    "joinedClients": 10,
+    "peakAdmitted": 10,
+    "minimumConnectedDuringHold": 10,
+    "requestedHoldSeconds": 600,
+    "continuousHoldMs": 600472,
+    "totalSinceAdmissionMs": 619315,
+    "cap11RejectedBeforeAndAfterHold": true,
+    "disconnectedSlotReused": true,
+    "lobbyPollsPerClient": 40,
+    "heartbeatsPerClient": [
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21
+    ],
+    "rooms": [
+      {
+        "turns": 18,
+        "rounds": 5,
+        "negotiated": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "gameOver": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "turns": 23,
+        "rounds": 7,
+        "negotiated": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "gameOver": [
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    ],
+    "outerPackets": 28318,
+    "maxOuterBytes": 676,
+    "outerPacketsAbove4096": 0,
+    "rawPayloadRetained": false,
+    "unexpectedDisconnects": 0,
+    "nativeClientErrors": 0
+  },
+  "cleanInstaller": {
+    "sourceFixCommits": [
+      "a6805a4a4c2da598cd79d1cc69e6b12f82841fa4",
+      "c04fdd68aaef3a5b274724ad9f290c8fcec5f9ab"
+    ],
+    "distribution": "Ubuntu 24.04 x86_64 container",
+    "pinnedNativeUpstream": "b8a2ad48305aea7b55ccca325fcbeb100cb8a01a",
+    "initialMissingDependency": "python3",
+    "historicalOverlayUrlObservedHttp": 404,
+    "overlaySha256": "43789124da4878723ba770dbcf29037a2554292bacf875f9244f0e69d32a1543",
+    "overlayFilesVerified": 5338,
+    "qmlFilesVerified": 25,
+    "packagePinsVerified": 14,
+    "packageSeedSupplied": false,
+    "cleanBootstrapAndVerifier": "PASS",
+    "initialConfigMode": "legacy",
+    "boot": {
+      "launcher": "run-server.sh",
+      "lua": "5.4",
+      "sourceBuiltBinarySha256": "f255deab97397760d12ee967f3a8e3302e7c8c95fa0ad6899731cb0bee341042",
+      "authenticatedLobby": {
+        "status": "PASS",
+        "nativeEnterLobby": true,
+        "runtimeMD5": "a21b6d26b4e350276266d79a94d41d54",
+        "elapsedMs": 133,
+        "syntheticAccount": true
+      }
+    },
+    "hostedRun": 44692422462,
+    "jobs": [
+      {
+        "name": "Detect affected applications",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "TQSVN checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "TQSShop checks",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Pipeline gate",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  }
+}

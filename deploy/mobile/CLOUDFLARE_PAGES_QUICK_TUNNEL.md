@@ -1,5 +1,32 @@
 # CP33 candidate: Cloudflare Pages + Oracle Quick Tunnel
 
+## 20/11/2026 — chuyển bản native trên tuyến Free
+
+Khi release chỉ đổi native binary hoặc runtime package, chờ phòng trống và dừng riêng `freekill-native.service`. Chép state đã quiesce, đổi symlink `current` nguyên tử rồi khởi động lại native. Gateway đọc `FK_ROOT` qua `current` và nạp lại bundle khi `flist.txt` đổi. Đối chiếu invocation của gateway và Quick Tunnel trước/sau, rồi kiểm health, manifest và WebSocket từ URL Pages.
+
+`tqs-quick-tunnel.service` có `Requires=tqs-gateway.service`. Dừng gateway làm systemd dừng cả connector. Nếu công việc cần dừng gateway, tính bước khởi động Quick Tunnel và kích hoạt lại `tqs-tunnel-register.service` vào quy trình. Kiểm tra hostname theo invocation mới và thử lại registrar khi tunnel vừa khởi động. Xác minh health từ hai vị trí vì KV có thể đang phục vụ hostname cũ ở một số vị trí.
+
+## 19/11/2026 — gói Free đang chạy native v1
+
+Người chơi dùng `https://tqsvn.pages.dev`. Pages Functions lấy hostname Quick Tunnel hiện hành từ Workers KV. `tqs-tunnel-register.timer` đã được bật trên Oracle và tự chạy lại khoảng mỗi phút. Registrar kiểm tra gateway local và lấy hostname từ invocation Quick Tunnel đang chạy. Pages kiểm tra HTTPS của hostname mới trước khi ghi KV. Khi hostname giữ nguyên, registrar làm mới bản ghi mỗi giờ. Lần đăng ký thật với state tạm đã thành công trên bản registrar đang cài.
+
+Rehearsal cô lập cho thấy resolver của Oracle có thể báo `ENOTFOUND` cho hostname mới dù DNS công khai đã có bản ghi A. Nếu Pages trả `422` hoặc `503`, giữ giá trị KV trước đó và để timer thử lại. Kiểm tra khả năng phân giải công khai và sức khỏe tunnel trước khi sửa KV thủ công.
+
+Khi Quick Tunnel đổi hostname tự nhiên, kiểm tra nhật ký registrar và xác minh tuyến công khai. `/gateway/healthz` phải trả `ok`, manifest phải khớp runtime đang chạy và gateway WebSocket phải trả `101` khi upgrade.
+
+```bash
+ssh tqs-native-qa-replacement 'systemctl list-timers tqs-tunnel-register.timer tqs-gateway-watch.timer'
+ssh tqs-native-qa-replacement 'sudo journalctl -u tqs-tunnel-register.service --since "10 minutes ago" --no-pager'
+curl -fsS https://tqsvn.pages.dev/gateway/healthz
+curl -fsS https://tqsvn.pages.dev/gateway/manifest.json
+```
+
+Nếu registrar báo lỗi, kiểm tra `tqs-quick-tunnel.service`, `tqs-gateway.service` và binding của Pages trước khi chạy lại `sudo systemctl start tqs-tunnel-register.service`. Khi cần tạm dừng registrar, dùng `sudo systemctl disable --now tqs-tunnel-register.timer`. Tuyến Pages tiếp tục dùng giá trị KV đã ghi gần nhất. Nếu cần sửa tay, dùng quy trình cập nhật KV bên dưới sau khi kiểm tra hostname thực tế.
+
+Quick Tunnel dùng hostname tạm và có giới hạn 200 yêu cầu đang xử lý đồng thời. Thời gian hồi phục còn phụ thuộc vào lần chạy timer và thời gian KV phân phối giá trị mới. Ghi kết quả lần xoay hostname thật tiếp theo để đo thời gian này. [Giới hạn Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/#limitations) · [Hạn mức Workers KV](https://developers.cloudflare.com/kv/platform/pricing/)
+
+## Lịch sử triển khai
+
 > **Cập nhật 26/10/2026:** gateway public `/gateway/healthz` và manifest đã phục hồi **200**, WebSocket upgrade **101** sau khi KV được cập nhật theo Quick Tunnel hostname mới. Pages production secret `TQS_TUNNEL_REGISTRATION_TOKEN` và Oracle file mode `0600` đã provision, registrar script được cài tại `/usr/local/libexec/tqs-tunnel-register.mjs`. Tuy nhiên manual registration **HTTP 401**, timer vẫn **disabled**. Secret được thêm sau Pages live deployment `f17c76ac`: cần production redeploy đúng artifact đã kiểm chứng để binding có hiệu lực, sau đó mới xác minh đăng ký thành công và bật timer. API retry thử trong lượt này bị lớp kiểm tra an toàn chặn trước khi thực thi; **không có redeploy**. Cloudflare account chưa có owned DNS zone để chuyển sang Named Tunnel. Nội dung ngày 17/10 bên dưới là lịch sử, kể cả trạng thái secret cũ.
 
 > **2026-10-23:** Named Tunnel `tqsvn-gateway` has been created, and Oracle gateway monitoring is now enabled. The production route still uses Quick Tunnel pending a controllable DNS zone and cutover tests. See [CLOUDFLARE_NAMED_TUNNEL.md](CLOUDFLARE_NAMED_TUNNEL.md) for current status and the cutover/rollback runbook. The historical snapshot below describes the earlier CP33 state.

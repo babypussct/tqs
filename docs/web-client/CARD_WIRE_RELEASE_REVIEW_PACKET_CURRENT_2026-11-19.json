@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "status": "MINIMUM_GATE_PASS_WITH_OPERATIONS_CAVEATS",
+  "createdAt": "2026-11-19T20:05:51+07:00",
+  "scope": "native v1 official-release gate review; exact-candidate independent confirmation, production-native canary, public manifest, rollback and recut",
+  "candidateIdentity": {
+    "sourceRevision": "dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+    "releaseManifestSha256": "01db2506df7b5b2164e66a11b1d51fc8e12437cebea0b25b38b1664d15965d37",
+    "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+    "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+    "webDistIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef",
+    "publicBundleHash": "501fd81e5e38aa71",
+    "publicBundleFileCount": 5338,
+    "releaseManifestSchemaVersion": 2,
+    "runtimeFileCount": 14993,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "configSha256": "9b2df9151f4de4fbcf7b00f9bca31fb26ce28baaa281c1dbd61805815e3725ad"
+  },
+  "evidence": [
+    {
+      "kind": "exactCandidateIndependentCanaryRollback",
+      "path": "docs/web-client/CARD_WIRE_NATIVE_V1_CANARY_ROLLBACK_CURRENT_2026-11-19.json",
+      "sha256": "bad0bede8a7d9ca0bb71770e77e8fa52e52f78a94d9ca3cdbd6a352add3c2e2e",
+      "result": "PASS",
+      "identityMatched": true
+    }
+  ],
+  "remotePreflight": {
+    "observedAt": "2026-11-19T20:05:51+07:00",
+    "target": "tqs-native-qa-replacement",
+    "currentRelease": "/opt/freekill-hegemony/releases/tqsvn-native-v1-dd390ea8-b1d7ab60-187879c2-clean",
+    "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+    "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+    "service": "active",
+    "listeners": [
+      "*:9527",
+      "0.0.0.0:9000",
+      "127.0.0.1:8080"
+    ],
+    "candidateIdentityMatch": true,
+    "usedAsCanary": true,
+    "mutationPerformed": true,
+    "conclusion": "exact candidate is active after controlled baseline rollback and atomic recut"
+  },
+  "independentReview": {
+    "reviewer": "automated-independent-clean-checkout",
+    "reviewerRole": "independent reproducibility verifier",
+    "decision": "PASS_TECHNICAL_SCOPE",
+    "reviewedCandidateIdentity": {
+      "sourceRevision": "dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+      "releaseManifestSha256": "01db2506df7b5b2164e66a11b1d51fc8e12437cebea0b25b38b1664d15965d37",
+      "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+      "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+      "webDistIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef"
+    },
+    "reviewedEvidence": "docs/web-client/CARD_WIRE_NATIVE_V1_CANARY_ROLLBACK_CURRENT_2026-11-19.json",
+    "approvedAt": "2026-11-19T13:05:51Z",
+    "humanApproval": "NOT_CLAIMED",
+    "notes": "Automated clean checkout independently reproduced the release verifier, native source contract, and syntax gates. This is the independent technical confirmation requested; it is not a human owner signature."
+  },
+  "authorizedCanary": {
+    "environment": "production native :9527 + exact release gateway/runtime canary; two distinct authenticated browser clients",
+    "deploymentRef": "https://1a5d376d.tqsvn.pages.dev; remote current=/opt/freekill-hegemony/releases/tqsvn-native-v1-dd390ea8-b1d7ab60-187879c2-clean",
+    "deployedIdentity": {
+      "sourceRevision": "dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+      "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+      "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+      "webDistIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef",
+      "publicBundleHash": "501fd81e5e38aa71",
+      "cardWireVersion": 1
+    },
+    "identityMatch": "PASS",
+    "rollbackSlaObserved": "PASS_BOUNDED_CONTROLLED_ROLLBACK_AND_RECUT",
+    "coldStartAndQuotaObserved": "PARTIAL_NOT_CLAIMED",
+    "operator": "Codex authorized execution",
+    "approvedAt": "2026-11-19T13:05:51Z",
+    "stableDomainOrSla": "NOT_CLAIMED; quick tunnel is ephemeral"
+  },
+  "releaseDecision": {
+    "status": "GO_TECHNICAL_MINIMUM_GATE",
+    "minimumGate": "PASS",
+    "publishEligible": true,
+    "legacyWire": "enabled",
+    "v1Default": "enabled by exact production config; legacy fallback remains available for compatibility",
+    "productionMutation": true,
+    "completedMinimumRequirements": [
+      "independent automated clean-checkout confirmation is recorded",
+      "exact-candidate native canary reached v1 negotiation and GameOver on two clients",
+      "baseline legacy rollback was observed publicly and the exact candidate was atomically recut"
+    ],
+    "operationalCaveats": [
+      "human owner signature is not claimed",
+      "quick tunnel has no stable-domain/SLA claim",
+      "cold-start/quota and broader P6 attribution remain follow-up operational gates",
+      "physical device/network acceptance is OUT_OF_SCOPE_BY_USER"
+    ]
+  }
+}

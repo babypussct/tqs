@@ -1,0 +1,335 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-20T01:26:15+00:00",
+  "result": "PASS_FREE_OPERATIONAL_SCOPE",
+  "scope": {
+    "providerPlan": "Free",
+    "customDomain": false,
+    "physicalDeviceNetwork": "OUT_OF_SCOPE_BY_USER",
+    "quickTunnelUptimeGuarantee": false
+  },
+  "identity": {
+    "sourceRevision": "998643f79df2e696588b11e7511fe277add4a94d",
+    "nativeBinarySha256": "f6012bad7bf0c40beea4a2c5b87c27f356cac798b9c95d5f5dd3b6cacf160655",
+    "runtimeMD5": "f7db727839b09febc310688791bfa653",
+    "gatewayBundleHash": "7c7c3c9b01d53c28",
+    "cardWireVersion": 1,
+    "bundleFiles": 5338,
+    "releaseFiles": 17317,
+    "releaseManifestSha256": "67cb8f003a38acf56b827bd61a5df972da93eca930bde3dfa027e92b40a52d50",
+    "webIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef",
+    "oracleCurrent": "/opt/freekill-hegemony/releases/tqsvn-native-v1-998643f7-f7db7278-f6012bad-clean",
+    "rollbackRelease": "tqsvn-native-v1-791aa8fb-f7db7278-187879c2-clean"
+  },
+  "publicActivation": {
+    "durationMs": 20221,
+    "gatewayAndTunnelInvocationUnchanged": true,
+    "canonicalOrigin": "https://tqsvn.pages.dev",
+    "secondaryOrigin": "https://1a5d376d.tqsvn.pages.dev",
+    "healthStatus": 200,
+    "manifests": [
+      {
+        "md5": "f7db727839b09febc310688791bfa653",
+        "bundleHash": "7c7c3c9b01d53c28",
+        "cardWireVersion": 1,
+        "fileCount": 5338
+      },
+      {
+        "md5": "f7db727839b09febc310688791bfa653",
+        "bundleHash": "7c7c3c9b01d53c28",
+        "cardWireVersion": 1,
+        "fileCount": 5338
+      }
+    ],
+    "websocket": {
+      "websocketUpgrade": 101,
+      "closeCode": 1000
+    }
+  },
+  "p6": {
+    "exactReleaseMatchCanary": {
+      "status": "PASS",
+      "lane": "exact Ubuntu native compression release canary",
+      "runtimeMD5": "f7db727839b09febc310688791bfa653",
+      "seats": 2,
+      "connectedAudiences": 2,
+      "negotiatedV1": 2,
+      "gameOver": 2,
+      "returnedToLobby": 2,
+      "decoderOrErrorPackets": 0,
+      "turns": 8,
+      "rounds": 4,
+      "naxiangMarks": 0,
+      "zhidaoMarks": 0,
+      "outerPackets": 2318,
+      "bytes": {
+        "p95": 111,
+        "max": 3182,
+        "gt4096": 0
+      },
+      "startToInitialDrawMs": 10771,
+      "gameplayMs": 61912,
+      "reconnect": {
+        "v1": true,
+        "outerBytes": 3182,
+        "compressed": false,
+        "elapsedMs": 44
+      },
+      "rawPayloadRetained": false
+    },
+    "exactReleaseX86AcceptanceTiming": {
+      "status": "OBSERVED",
+      "seats": 4,
+      "runtimeMD5": "f7db727839b09febc310688791bfa653",
+      "workloadDurationMs": 55000,
+      "turns": 7,
+      "rounds": 2,
+      "naxiangMarks": 0,
+      "zhidaoMarks": 0,
+      "v1Audiences": 2,
+      "reconnectBytes": 2042,
+      "reconnectCompressed": true,
+      "maxOuterBytes": 2042,
+      "above4096": 0,
+      "outerPackets": 2716,
+      "gameOverPackets": 0,
+      "rawPayloadRetained": false,
+      "cplusplusEncodeSamples": 2771,
+      "p95BucketNs": [
+        9000,
+        9250
+      ],
+      "absoluteMaxNs": 198365,
+      "p95ThresholdNs": 10000,
+      "maxThresholdNs": 2000000,
+      "passingTiming": true,
+      "timingIncludesProbeOverhead": true,
+      "isolatedNativeOnOracle": true
+    },
+    "earlierExactReleaseX86RecordWithLowerCpuWeight": {
+      "status": "OBSERVED",
+      "seats": 4,
+      "runtimeMD5": "f7db727839b09febc310688791bfa653",
+      "workloadDurationMs": 55000,
+      "turns": 11,
+      "rounds": 3,
+      "naxiangMarks": 0,
+      "zhidaoMarks": 3,
+      "v1Audiences": 2,
+      "reconnectBytes": 2057,
+      "reconnectCompressed": true,
+      "maxOuterBytes": 2057,
+      "above4096": 0,
+      "outerPackets": 3612,
+      "gameOverPackets": 0,
+      "rawPayloadRetained": false,
+      "cplusplusEncodeSamples": 3666,
+      "p95BucketNs": [
+        9000,
+        9250
+      ],
+      "absoluteMaxNs": 4141588,
+      "p95ThresholdNs": 10000,
+      "maxThresholdNs": 2000000,
+      "passingTiming": false,
+      "timingIncludesProbeOverhead": true,
+      "isolatedNativeOnOracle": true
+    },
+    "snapshotCasesExactRelease": {
+      "eightSeats": [
+        {
+          "seats": 8,
+          "observerSnapshot": true,
+          "bytes": 2762,
+          "compressed": true,
+          "decodedPayloadBytes": 7173,
+          "rawPayloadRetained": false
+        },
+        {
+          "snapshotMetadataOnly": true,
+          "rootMajor": 5,
+          "rootAdditional": 2,
+          "markerFound": true,
+          "markerKeyMajor": 2,
+          "versionFollowsMarker": true,
+          "decodedBytes": 7151,
+          "rawSnapshotBytes": 2746,
+          "nativeCompressionFlag": true
+        },
+        {
+          "seats": 8,
+          "negotiatedCardWireV1": true,
+          "originalWireBytes": 2746,
+          "nativeCompressionFlag": true,
+          "qtCompressedOuterBytes": 2729,
+          "level": 1,
+          "roundTripByteMatch": true,
+          "rawPayloadRetained": false
+        }
+      ],
+      "twoSeats": [
+        {
+          "snapshotMetadataOnly": true,
+          "rootMajor": 5,
+          "rootAdditional": 2,
+          "markerFound": true,
+          "markerKeyMajor": 2,
+          "versionFollowsMarker": true,
+          "decodedBytes": 3238,
+          "rawSnapshotBytes": 3256,
+          "nativeCompressionFlag": false
+        },
+        {
+          "seats": 2,
+          "negotiatedCardWireV1": true,
+          "originalWireBytes": 3256,
+          "nativeCompressionFlag": false,
+          "qtCompressedOuterBytes": 1755,
+          "level": 1,
+          "roundTripByteMatch": true,
+          "rawPayloadRetained": false
+        }
+      ],
+      "legacyFourSeats": [
+        {
+          "snapshotMetadataOnly": true,
+          "rootMajor": 5,
+          "rootAdditional": 11,
+          "markerFound": false,
+          "markerKeyMajor": null,
+          "versionFollowsMarker": false,
+          "decodedBytes": 4404,
+          "rawSnapshotBytes": 4422,
+          "nativeCompressionFlag": false
+        },
+        {
+          "seats": 4,
+          "negotiatedCardWireV1": false,
+          "originalWireBytes": 4422,
+          "nativeCompressionFlag": false,
+          "qtCompressedOuterBytes": 2087,
+          "level": 1,
+          "roundTripByteMatch": true,
+          "rawPayloadRetained": false
+        }
+      ],
+      "thresholdBytesForV1": 4096
+    },
+    "mappingAndLuaOnSameRuntimeWithIsolatedInstrumentation": {
+      "runtimeProjectorRevision": "791aa8fb5e172bbc54e620c553eb33dfe8a3c51e",
+      "fourSeatCleanHotfixCanary": {
+        "status": "PASS",
+        "lane": "clean hotfix four seats, exact production binary",
+        "runtimeMD5": "f7db727839b09febc310688791bfa653",
+        "seats": 4,
+        "connectedAudiences": 2,
+        "negotiatedV1": 2,
+        "gameOver": 2,
+        "returnedToLobby": 2,
+        "decoderOrErrorPackets": 0,
+        "turns": 12,
+        "rounds": 4,
+        "naxiangMarks": 0,
+        "zhidaoMarks": 0,
+        "outerPackets": 4335,
+        "bytes": {
+          "p95": 96,
+          "max": 4450,
+          "gt4096": 1
+        },
+        "startToInitialDrawMs": 8611,
+        "gameplayMs": 110186,
+        "reconnect": {
+          "v1": true,
+          "outerBytes": 4450,
+          "elapsedMs": 47
+        },
+        "rawPayloadRetained": false
+      },
+      "luaTimingMs": {
+        "project": {
+          "count": 121,
+          "p95": 1.649,
+          "max": 73.715
+        },
+        "request-project": {
+          "count": 14,
+          "p95": 3.001,
+          "max": 3.001
+        },
+        "serialize": {
+          "count": 135,
+          "p95": 0.619,
+          "max": 1.006
+        }
+      },
+      "mapping": {
+        "samples": 1351,
+        "peakActiveReferences": 150,
+        "peakActiveRequests": 1,
+        "peakRetiredTombstones": 491,
+        "finalDisconnect": {
+          "audiences": 0,
+          "activeReferences": 0,
+          "activeRequests": 0,
+          "activeTokenRefs": 0,
+          "retiredTombstones": 491,
+          "cleanupActiveReferences": 0
+        },
+        "isolatedGcAtRoomTeardown": {
+          "schemaVersion": 1,
+          "available": true,
+          "mappingObjectReclaimed": true,
+          "reclaimedBytes": 54481
+        }
+      },
+      "semanticSamples": 1747,
+      "semanticFailures": 0,
+      "invalidReferences": 0,
+      "forbiddenFields": 0
+    }
+  },
+  "shop": {
+    "fixRevision": "b1f3c0dd816c64d1769b22526b2fc0931b094278",
+    "productionDeployment": "dpl_CNCNMSgMguxcWBvk3pJtYnnV37HH",
+    "origin": "https://tqsshop.vercel.app",
+    "homepageAndAssetsHttp": 200,
+    "ordersWithoutSessionHttp": 401,
+    "actionRun": 44594967127,
+    "actionJobsPassed": 4
+  },
+  "tunnel": {
+    "controlledActiveConnectorFault": {
+      "event": "result",
+      "date": "2026-11-19T19:07:01.033Z",
+      "status": "PASS",
+      "routeRestored": true,
+      "activeSpareConfirmed": true,
+      "failedStatus": 530,
+      "faultToFailureMs": 82,
+      "restoreWriteMs": 527,
+      "faultToRecoveryMs": 692,
+      "observedOutageMs": 610,
+      "sameIncumbentInvocation": true
+    },
+    "cutoverIncident": {
+      "dependency": "tqs-quick-tunnel.service Requires=tqs-gateway.service",
+      "connectorStoppedAt": "2026-11-20T00:47:37Z",
+      "oracleFirstConfirmedHealthyAt": "2026-11-20T00:49:40Z",
+      "singaporeFirstConfirmedHealthyAt": "2026-11-20T00:50:35Z",
+      "rollbackObserved": true,
+      "correctedProcedure": "Keep gateway and tunnel running for native-only cutover"
+    }
+  },
+  "ci": {
+    "hotfixRun": 44649510361,
+    "snapshotReleaseRun": 44651447315,
+    "snapshotRelevantJobsPassed": 3,
+    "shopJobSkippedByPathScope": true
+  },
+  "checks": {
+    "releaseTestsPassed": 6,
+    "webProtocolTestsPassed": 5,
+    "rawGamePayloadRetained": false
+  }
+}

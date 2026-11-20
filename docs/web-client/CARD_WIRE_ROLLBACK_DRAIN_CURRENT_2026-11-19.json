@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-19T02:04:04+07:00",
+  "scope": "isolated native QA; exact release-candidate identity; bounded v1 drain and reconnect verification",
+  "candidateIdentity": {
+    "sourceRevision": "5d2b1d628384fbc60b3df1cccef613fbbe3c33b4",
+    "releaseManifestSha256": "8112708bd3c1373684f6eff39a5832a685fd7e5a9bbf6e9044186bf203f8aac1",
+    "runtimeMD5": "e0f37effc5a5d72d850b0ece7f29c4ef",
+    "nativeBinarySha256": "cf2391cd3d71dadcf7a137ac31a8490434d1c326e1e07961035cb3af3886896f",
+    "webDistIndexSha256": "224ba87de3343ca6d4092754084d40fb57974436ea9228556c6b93452382037d",
+    "qaManifestSha256": "352c69e00e0e4b7f836e9eb7e8d189ce3648000395ad2e5e4d81b9222f61b2fd",
+    "qaPackageSha256": "b5b29883e9c93afd23a42e8150fdc722c59b1dc2a8635620812fdbeaa4a4ea0b",
+    "qaCatalogSha256": "d5aa843b7e6ec6295f7f2025797b54ed2171207249f79194d2d7ff00525aeb88",
+    "roomLuaSha256": "2bae110f4eff0e94087110ce8bee932e66c62705aa29273794f6b4dda04c472e",
+    "smartAiSha256": "b76f87a8a79bd6f619d26935c85208e64db2ebd8b07dc858d5c89212309d46a9",
+    "qaSmartAiOverlaySha256": "867db4232f69ccadb48df618b8be38a2626ddf7d19db3db99c3d9645c1bf565e",
+    "lua": "5.4.9"
+  },
+  "rollbackObservation": {
+    "schemaVersion": 1,
+    "event": "drain_applied",
+    "activeRoomProtocol": 1,
+    "newRoomAdmission": "legacy",
+    "reconnectProtocol": 1,
+    "requested": true,
+    "observed": true,
+    "source": "sanitized fixed-schema native QA log marker consumed by the runner"
+  },
+  "runnerEvidence": {
+    "path": "scratch/evidence/cp08-draw-sequence-reconnect-live-1795028640688.json",
+    "sha256": "a66b1ebc0426cc958205616dd2e0d515f9e77d5f9043f192e0f6c01be817fd53",
+    "observedAtUtc": "2026-11-18T19:04:00.688Z",
+    "result": "PASS",
+    "recovered": true,
+    "errors": 0,
+    "identityMatched": true,
+    "gameplay": {
+      "twoClientsAuthenticated": true,
+      "nativePairSelection": true,
+      "manualPlayCard": true,
+      "controlledTransportLoss": true,
+      "boundedGameOver": true
+    },
+    "nativeSemantic": {
+      "records": 985,
+      "outerDecodedRecords": 985,
+      "innerDecodedRecords": 985,
+      "semanticPassRecords": 985,
+      "semanticFailures": 0,
+      "invalidReferences": 0,
+      "forbiddenFields": 0,
+      "inboundRecords": 6,
+      "outboundRecords": 979,
+      "opaqueReferences": 37,
+      "numericReferences": 171,
+      "maxDepth": 6
+    },
+    "packetSize": {
+      "clientCount": 2,
+      "failures": 0,
+      "maxBytes": [
+        3609,
+        454
+      ],
+      "gt4096": 0
+    },
+    "privacy": {
+      "negotiatedClients": 2,
+      "failures": 0,
+      "observerHiddenHandViolations": 0,
+      "observerHiddenDeckViolations": 0
+    }
+  },
+  "cleanup": {
+    "productionMutation": false,
+    "qaServerStoppedAfterCapture": true,
+    "qaPort9527Closed": true,
+    "qaAdminPort9000Closed": true,
+    "manualGatewayPort60384Closed": true,
+    "rawCredentialsOrPrivateGameplayDataPublished": false
+  },
+  "limitations": [
+    "This is isolated QA evidence; no production or public canary deployment was performed.",
+    "It proves exact-candidate drain behavior, not an approved production rollback SLA, cold-start, quota, or operator runbook.",
+    "Physical-device verification remains outside the user-approved scope."
+  ],
+  "releaseDecision": {
+    "status": "OPEN-HOLD",
+    "productionPromotionAllowed": false,
+    "v1Default": "disabled-by-default; isolated-QA-only",
+    "legacyWire": "enabled",
+    "independentApproval": "PENDING",
+    "productionCanaryRollbackSla": "PENDING",
+    "officialCiInstaller": "PENDING",
+    "p6PerformanceAndMemory": "PENDING"
+  }
+}

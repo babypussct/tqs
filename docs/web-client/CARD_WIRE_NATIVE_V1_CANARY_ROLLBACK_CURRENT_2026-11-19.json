@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_MINIMUM_NATIVE_V1_RELEASE_GATE",
+  "observedAt": "2026-11-19T13:05:51Z",
+  "scope": "Exact native v1 candidate: independent clean-checkout confirmation, two-client production-native canary, public manifest verification, controlled legacy rollback, and atomic recut to the same candidate.",
+  "candidateIdentity": {
+    "sourceRevision": "dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+    "releaseManifestSha256": "01db2506df7b5b2164e66a11b1d51fc8e12437cebea0b25b38b1664d15965d37",
+    "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+    "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+    "webDistIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef",
+    "publicBundleHash": "501fd81e5e38aa71",
+    "publicBundleFileCount": 5338,
+    "releaseManifestSchemaVersion": 2,
+    "runtimeFileCount": 14993,
+    "webFileCount": 2312,
+    "gatewayFileCount": 6,
+    "gatewaySourceSha256": {
+      "server.mjs": "b27fc988e4299e82bd5699ab0ce613f7c70a0fa3fccd94e21ec6e7fcf8b196a3",
+      "security.mjs": "cfdc7707e050032b16ce1ee220eca814ba3648b1b36d2846241c5c4b9a4131fd",
+      "render.mjs": "7cc962db9ab7178f96015f52235f285f05b6c808676339ae5ed6e6b12dc371d1",
+      "static.mjs": "510c7b47917587871b73c9fa68be0f70f81e4ad54a8f780290082abe35cda217"
+    }
+  },
+  "independentReview": {
+    "type": "automated-independent-clean-checkout",
+    "checkout": "detached clean checkout at dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+    "worktreeDirty": false,
+    "result": "PASS",
+    "identityMatched": true,
+    "checks": {
+      "releasePackagingTests": "6/6 PASS",
+      "releaseVerifier": "PASS; 17317 files",
+      "nativeSourceContract": "2/2 PASS",
+      "promotionAndGatewayNodeSyntax": "PASS",
+      "nativeBootstrapAndInstallBashSyntax": "PASS"
+    },
+    "reviewedIdentity": {
+      "sourceRevision": "dd390ea81bdb5a8849bc611dffdbd6ec465e24b9",
+      "releaseManifestSha256": "01db2506df7b5b2164e66a11b1d51fc8e12437cebea0b25b38b1664d15965d37",
+      "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+      "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+      "webDistIndexSha256": "7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef"
+    },
+    "humanApproval": "NOT_CLAIMED",
+    "notes": "The independent confirmation is an automated clean-checkout reproduction. It is intentionally not represented as a human owner signature."
+  },
+  "nativeCanary": {
+    "result": "PASS",
+    "target": "tqs-native-qa-replacement production native endpoint :9527",
+    "gatewayPath": "release gateway source build served the exact candidate runtime and connected directly to the production native endpoint; no production auth-admission bypass was enabled",
+    "authenticatedClients": 2,
+    "nativeLobbySmoke": "2/2 PASS with the exact candidate flist MD5",
+    "roomLifecycle": [
+      "create room",
+      "join room",
+      "ready",
+      "StartGame",
+      "legal two-slot general selection",
+      "two-client v1 capability negotiation",
+      "bounded bot match",
+      "GameOver",
+      "return to lobby"
+    ],
+    "gatewayManifestObserved": {
+      "md5": "09dbb3c1cd225d7bd1422ac763be4605",
+      "cardWireVersion": 1,
+      "bundleHash": "501fd81e5e38aa71",
+      "fileCount": 5338
+    },
+    "wireCounters": [
+      {
+        "client": 1,
+        "sentCapability": 1,
+        "receivedNegotiated": 1,
+        "receivedGameOver": 1,
+        "receivedError": 0,
+        "framesIn": 202,
+        "framesOut": 9
+      },
+      {
+        "client": 2,
+        "sentCapability": 1,
+        "receivedNegotiated": 1,
+        "receivedGameOver": 1,
+        "receivedError": 0,
+        "framesIn": 195,
+        "framesOut": 10
+      }
+    ],
+    "rawPayloadRetained": false,
+    "identityMatched": true
+  },
+  "publicDeployment": {
+    "pagesDeployment": "https://1a5d376d.tqsvn.pages.dev",
+    "canonicalUrl": "https://tqsvn.pages.dev",
+    "publicManifestChecks": [
+      {
+        "url": "https://tqsvn.pages.dev/gateway/manifest.json",
+        "result": "PASS",
+        "md5": "09dbb3c1cd225d7bd1422ac763be4605",
+        "cardWireVersion": 1,
+        "bundleHash": "501fd81e5e38aa71",
+        "fileCount": 5338
+      },
+      {
+        "url": "https://1a5d376d.tqsvn.pages.dev/gateway/manifest.json",
+        "result": "PASS",
+        "md5": "09dbb3c1cd225d7bd1422ac763be4605",
+        "cardWireVersion": 1,
+        "bundleHash": "501fd81e5e38aa71",
+        "fileCount": 5338
+      }
+    ],
+    "ephemeralQuickTunnel": {
+      "kvBinding": "TQS_GATEWAY_CONFIG",
+      "key": "quick-tunnel-url",
+      "reboundAfterServiceRestart": true,
+      "stableDomainOrSla": "NOT_CLAIMED"
+    }
+  },
+  "rollbackAndRecut": {
+    "result": "PASS",
+    "method": "atomic symlink replacement followed by native and gateway service restart; candidate was restored before handoff",
+    "baselinePhase": {
+      "release": "/opt/freekill-hegemony/releases/upstream-first-20261115",
+      "runtimeMD5": "a21b6d26b4e350276266d79a94d41d54",
+      "nativeBinarySha256": "315b10cc3f76cf0e7743ef5274bfced3f1cbb9a2eede88109103e8b78ba2405d",
+      "configSha256": "2a03775cfc8cc9fbbdbdc64542cd377b4a84c4759ea0573ba00da6d5154172f9",
+      "gatewayManifest": {
+        "md5": "a21b6d26b4e350276266d79a94d41d54",
+        "cardWireVersion": 0,
+        "bundleHash": "cd3581d00549f8f8",
+        "fileCount": 5338
+      },
+      "publicManifestObserved": true,
+      "servicesActive": true
+    },
+    "recutPhase": {
+      "release": "/opt/freekill-hegemony/releases/tqsvn-native-v1-dd390ea8-b1d7ab60-187879c2-clean",
+      "runtimeMD5": "09dbb3c1cd225d7bd1422ac763be4605",
+      "nativeBinarySha256": "187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2",
+      "configSha256": "9b2df9151f4de4fbcf7b00f9bca31fb26ce28baaa281c1dbd61805815e3725ad",
+      "gatewayManifest": {
+        "md5": "09dbb3c1cd225d7bd1422ac763be4605",
+        "cardWireVersion": 1,
+        "bundleHash": "501fd81e5e38aa71",
+        "fileCount": 5338
+      },
+      "publicManifestObserved": true,
+      "servicesActive": true
+    },
+    "publicRollbackObservation": {
+      "baseline": {
+        "md5": "a21b6d26b4e350276266d79a94d41d54",
+        "cardWireVersion": 0,
+        "bundleHash": "cd3581d00549f8f8",
+        "fileCount": 5338
+      },
+      "recut": {
+        "md5": "09dbb3c1cd225d7bd1422ac763be4605",
+        "cardWireVersion": 1,
+        "bundleHash": "501fd81e5e38aa71",
+        "fileCount": 5338
+      }
+    }
+  },
+  "cleanup": {
+    "candidateCurrentAtHandoff": true,
+    "nativeServiceActive": true,
+    "gatewayServiceActive": true,
+    "quickTunnelServiceActive": true,
+    "listeners": ["*:9527", "0.0.0.0:9000", "127.0.0.1:8080"],
+    "qaPackagePathsInCandidate": 0,
+    "appleDoubleFilesInCandidate": 0,
+    "temporarySshTunnelClosed": true,
+    "preexistingBackupsPreserved": true,
+    "rawCredentialsOrPrivateGameplayDataPublished": false
+  },
+  "limitations": [
+    "Independent confirmation is automated clean-checkout evidence, not a human signature.",
+    "The quick tunnel is ephemeral and has no stable-domain/SLA claim; the Pages/KV route was rebound to the currently active hostname after service restart.",
+    "Physical device/network acceptance remains OUT_OF_SCOPE_BY_USER.",
+    "This packet closes the user's minimum identity/independent/canary/rollback gate; broader P6 attribution, official CI/installer governance and operational SLA remain separate follow-up gates."
+  ],
+  "minimumGate": {
+    "independentConfirmation": "PASS",
+    "exactCandidateCanary": "PASS",
+    "exactCandidateRollbackAndRecut": "PASS",
+    "status": "PASS"
+  }
+}

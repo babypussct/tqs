@@ -1,5 +1,77 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 20/11/2026 — ba mục xác minh sau phát hành
+
+- [x] Thu hồi cache build Oracle có bản sao đã kiểm hash. Đĩa trống `1395 → 2713 MiB` và production healthy.
+- [x] Giữ `10` phiên native trong `600 s` trên đúng `f6012bad`, có hai phòng Quốc Chiến hoạt động, kiểm quota và tái sử dụng slot.
+- [x] Installer source `a6805a4a` và template legacy của `c04fdd68` đã qua Ubuntu sạch, `14/14` pin, `verify-install.sh`, cold boot và auth/lobby. CI áp dụng `3/3` PASS. [Hồ sơ nghiệm thu](web-client/TQS_OPERATIONS_VERIFICATION_CURRENT_2026-11-20.json)
+
+## 20/11/2026 — kết quả đóng các mục vận hành
+
+- [x] TQSShop Vercel production xây dựng và phục vụ đúng `b1f3c0dd`. Smoke HTML/JS/API PASS và GitHub Actions `4/4` PASS. Giữ cấu hình Free và alias hiện có.
+- [x] Diễn tập mất Quick Tunnel đang phục vụ. Quan sát lỗi `530`, khôi phục health/manifest sau `610 ms` tại vị trí đo. Đã kiểm thêm việc đăng ký hostname sau khi systemd khởi động Quick Tunnel mới và lưu thời gian thực tế theo vị trí kiểm tra. Quick Tunnel Free có URL tạm và giới hạn uptime theo Cloudflare.
+- [x] Sửa hai mark kích hoạt lỗi trong trận native dài. Xác minh release, chạy trận 2 và 4 ghế qua exact binary, cutover sang `791aa8fb` với gateway và tunnel giữ nguyên invocation.
+- [x] P6 projection Lua, semantic audit và vòng đời mapping đã có bằng chứng từ trận native dài bốn ghế. Đã đo thu hồi graph tại teardown.
+- [x] P6 encode C++ trên Oracle cô lập với exact binary `f6012bad`. Phép nghiệm thu cuối có `2771` mẫu, p95 dưới `9.250 ns`, max `198.365 ns`. Lượt dùng CPU weight thấp trước đó có max `4.141.588 ns` và được giữ trong hồ sơ.
+- [x] P6 wire đã đạt ngưỡng `4096 B` với exact binary. Ca bốn ghế `2042 B`, ca tám ghế `Reconnect 2746 B`, `Observe 2762 B`. Canary hai client qua GameOver và về sảnh. `998643f7` đã lên `main`, CI áp dụng `3/3` PASS và public manifest/WebSocket xác minh sau cutover. Physical device/network vẫn `OUT_OF_SCOPE_BY_USER`. [Packet vận hành](web-client/CARD_WIRE_FREE_OPERATIONS_CURRENT_2026-11-20.json)
+
+## 20/11/2026 — owner duyệt vận hành Free và ủy quyền kiểm chứng
+
+- [x] Ghi nhận xác nhận trực tiếp của owner đối với vận hành Free của `dd390ea8` và ủy quyền tiếp tục kiểm chứng kỹ thuật.
+- [x] Fast-forward `main` lên `ede667c3` sau khi owner duyệt tác động Vercel. [CI `main`](https://github.com/babypussct/tqs/actions/runs/44582050736) **4/4 PASS**. Build Vercel mới lỗi Git metadata, alias Shop của deployment READY trước đó trả `200`.
+- [x] Quota native exact candidate **PASS**. Nhận 10, từ chối 11, nhận lại khi còn chỗ. Giới hạn đăng ký hai tài khoản cùng thiết bị cũng PASS. Quan sát `3090` request Pages production/24h, `0` lỗi thực thi.
+- [x] P6 phạm vi wire opening/reconnect trên exact native. Ba phòng x hai client v1, 271 gói opening dưới 4096 B, ba snapshot reconnect lớn nhất 3284 B. Handoff ghi rõ phạm vi và tổng hợp.
+- [ ] P6 còn phép đo thời gian encode/project và attribution mapping dưới workload native dài. Tải cực đại production và ngưỡng performance tổng thể cần dữ liệu bổ sung.
+- [x] Rollover production có kiểm soát sang Quick Tunnel thứ hai và ghi KV về tunnel chính. Canonical đã route qua tunnel mới sau `613 ms`, health/manifest/WebSocket PASS. Đã đọc lại KV và dọn tunnel phụ.
+- [ ] Thời gian phục hồi sau sự cố thật và SLA vẫn chưa có phép đo. Physical device/network vẫn `OUT_OF_SCOPE_BY_USER`.
+
+## 19/11/2026 — hoàn thiện vận hành Free sau minimum gate
+
+- [x] Cài registrar đã sửa lỗi phụ thuộc DNS của Oracle. Đăng ký lại hostname hiện hành với state tạm qua Pages thật thành công. Native/Gateway/Quick Tunnel giữ cùng invocation.
+- [x] Cold-start đúng binary và runtime, ba container với DB mới **3/3 PASS**. Gateway quota unit **9/9 PASS**. Ghi snapshot quota cấu hình và dung lượng VM.
+- [x] Đo heap Lua P6 trên code exact candidate qua 30 lượt. Ghi và giữ phạm vi synthetic trong kết quả.
+- [x] Build, release **6/6**, browser **44/44**, Lua **72/72** và PWA PASS ở worktree cô lập dùng đúng 14 pin. Cập nhật inventory audit theo Lua của `new_heg_mode`.
+- [x] [Hosted CI r5](https://github.com/babypussct/tqs/actions/runs/44566901090) **4/4 job success**, gồm native installer contract, build, release packaging, browser, Lua, PWA và `Pipeline gate`.
+- [ ] Chốt quản trị installer sau khi chủ repo duyệt cách đưa CI vào nhánh chính và phạm vi xác minh cài đặt trên host sạch.
+- [ ] Đo rollover production khi hostname đổi thật và ghi thời gian phục hồi. Gói Quick Tunnel không có cam kết uptime. Kiểm thử cô lập gặp lỗi phân giải hoặc `503` nên giữ mục này mở.
+- [ ] Owner/reviewer chốt workload, ngưỡng và bằng chứng P6 native; ký hồ sơ phát hành. Capacity cực đại và usage quota theo ngày cần số đo vận hành. Physical device/network giữ `OUT_OF_SCOPE_BY_USER`.
+
+## 19/11/2026 — triển khai gói Free qua Pages và Quick Tunnel
+
+- [x] Giữ `https://tqsvn.pages.dev` làm URL người chơi. Đăng ký hostname Quick Tunnel hiện hành vào Pages KV thành công và bật `tqs-tunnel-register.timer` trên Oracle.
+- [x] Xác minh timer đã chạy thành công, watchdog báo `up`, manifest công khai đúng candidate v1 `dd390ea8`, WebSocket canonical `101` và đóng sạch.
+- [ ] Ghi thời gian phục hồi và kết quả smoke ở lần Quick Tunnel đổi hostname tự nhiên. Giới hạn và lệnh xử lý sự cố nằm trong [runbook](../deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md).
+
+## CARD-WIRE-NATIVE-V1-MINIMUM-GATE-20261119 — technical release gate PASS / operational caveats remain
+
+- [x] Exact candidate is locked to source `dd390ea81bdb5a8849bc611dffdbd6ec465e24b9`, release manifest SHA-256 `01db2506df7b5b2164e66a11b1d51fc8e12437cebea0b25b38b1664d15965d37`, runtime MD5 `09dbb3c1cd225d7bd1422ac763be4605`, native binary SHA-256 `187879c2438f346357c5b4096e8430af76926cd82353bfa9a80fcde1b8e2a0d2`, web index SHA-256 `7d21a2647e14baba0ac8eda6475f58821f244fc3a6eb3d8da09b0e23310a69ef`, gateway bundle `501fd81e5e38aa71` / `5338` files.
+- [x] Independent automated clean-checkout confirmation PASS: release tests `6/6`, release verifier `17,317` files, native source contract `2/2`, Node/bash syntax PASS; clean checkout is detached at the exact source revision. Human approval is deliberately not claimed.
+- [x] Exact-candidate canary PASS: two authenticated clients against the production native endpoint completed create/join/ready/StartGame, legal pair selection, v1 negotiation (`1/1` per client), bounded match, GameOver (`1/1` per client) and lobby return; no error packets or raw payload retention.
+- [x] Exact rollback/recut PASS: public baseline observed `a21b6d26… / cardWireVersion=0 / bundle=cd3581d00549f8f8`, then candidate recut observed `09dbb3c1… / cardWireVersion=1 / bundle=501fd81e5e38aa71`; local/native binary and service checks matched both phases.
+- [x] Public Pages manifest PASS at both `https://tqsvn.pages.dev` and deployment `https://1a5d376d.tqsvn.pages.dev`; sanitized aggregate [`CARD_WIRE_NATIVE_V1_CANARY_ROLLBACK_CURRENT_2026-11-19.json`](web-client/CARD_WIRE_NATIVE_V1_CANARY_ROLLBACK_CURRENT_2026-11-19.json), review packet [`CARD_WIRE_RELEASE_REVIEW_PACKET_CURRENT_2026-11-19.json`](web-client/CARD_WIRE_RELEASE_REVIEW_PACKET_CURRENT_2026-11-19.json).
+- [x] Handoff state: technical minimum release decision `GO_TECHNICAL_MINIMUM_GATE`, `minimumGate=PASS`, `publishEligible=true`; native current, gateway and public route are on the exact v1 identity. Legacy fallback remains available for compatibility.
+- [ ] Operational follow-up: stable tunnel/domain/SLA, cold-start/quota, broader P6 attribution, official CI/installer governance and human owner sign-off are not claimed by this minimum gate. Physical device/network remains `OUT_OF_SCOPE_BY_USER`.
+
+## CARD-WIRE-ROLLBACK-DRAIN-CURRENT-20261119 — historical QA record superseded by minimum-gate PASS above
+
+- [x] Fresh isolated native QA runner exit `0`, `result=PASS`, `errors=0`, `recovered=true`; sanitized aggregate [`CARD_WIRE_ROLLBACK_DRAIN_CURRENT_2026-11-19.json`](web-client/CARD_WIRE_ROLLBACK_DRAIN_CURRENT_2026-11-19.json) is backed by [`cp08-draw-sequence-reconnect-live-1795028640688.json`](../scratch/evidence/cp08-draw-sequence-reconnect-live-1795028640688.json), SHA-256 `a66b1ebc0426cc958205616dd2e0d515f9e77d5f9043f192e0f6c01be817fd53`.
+- [x] Tạo review handoff [`CARD_WIRE_RELEASE_REVIEW_PACKET_CURRENT_2026-11-19.json`](web-client/CARD_WIRE_RELEASE_REVIEW_PACKET_CURRENT_2026-11-19.json), trong đó gameplay/reconnect và rollback evidence cùng bind vào identity này; reviewer độc lập và canary được ủy quyền vẫn để `PENDING`.
+- [x] Read-only recheck target `tqs-native-qa-replacement` lúc `2026-11-19T02:13:22+07:00`: current release `upstream-first-20261115`, runtime `a21b6d26…`, native binary `315b10cc…`, service/listeners healthy nhưng identity không khớp; không dùng hoặc mutate target này.
+- [x] Candidate identity matched before gameplay: source `5d2b1d62…`, release manifest `8112708b…`, runtime `e0f37eff…`, native binary `cf2391cd…`, web index `224ba87d…`, QA manifest `352c69e0…`, QA package `b5b29883…`, catalog `d5aa843b…`, room Lua `2bae110f…`, smart-AI `b76f87a8…`, QA overlay `867db423…`, Lua `5.4.9`.
+- [x] Requested/observed rollback drain marker: active room protocol `1`, new-room admission `legacy`, reconnect protocol `1`. Two-client native gameplay/reconnect/GameOver passed; semantic capture `985/985`, semantic/invalid/forbidden `0/0/0`, packet maxima `3609/454`, `gt4096=0`, privacy failures `0`.
+- [x] Cleanup: QA server/gateway stopped, listeners `9527/9000/60384` closed, temporary drain config restored, production mutation `false`, and no credential/raw private gameplay data was published.
+- [ ] This is exact-candidate bounded QA evidence, not production/canary approval. Production/canary rollback SLA, cold-start/quota, P6 threshold/attribution, official CI/installer, immutable reviewed release and independent release approval remain `PENDING`; status remains `HOLD`, `publishEligible=false`, legacy ON, v1 isolated-QA-only. Physical device/network is `OUT_OF_SCOPE_BY_USER`.
+- [ ] Next step: obtain independent reviewer approval and an authorized production/canary execution whose deployed hashes equal the candidate above; regenerate the checkpoint from that same identity only after both are recorded. Do not enable native v1 production.
+
+## CARD-WIRE-NATIVE-RECONNECT-20261119 — current HEAD bounded native PASS / release remains HOLD
+
+- [x] Chạy isolated native QA trên đúng HEAD hiện tại với hai browser client thật: room/StartGame, manual PlayCard, controlled transport loss, native Reconnect và bounded GameOver đều PASS; runner exit `0`, `errors=[]`, `recovered=true`. Evidence [`cp08-draw-sequence-reconnect-live-1795021550839.json`](../scratch/evidence/cp08-draw-sequence-reconnect-live-1795021550839.json), SHA-256 `023539fabe9a9fbdae8311d354857070ad0217aa9a23d9ef345d95934757c47d`.
+- [x] Identity khớp current candidate: source `5d2b1d62…`, release manifest `8112708b…`, runtime `e0f37eff…`, web index `224ba87d…`, QA package `b5b29883…`, catalog `d5aa843b…`, room Lua `2bae110f…`, Lua `5.4.9`; aggregate sanitized ở [`CARD_WIRE_NATIVE_RECONNECT_CURRENT_2026-11-19.json`](web-client/CARD_WIRE_NATIVE_RECONNECT_CURRENT_2026-11-19.json).
+- [x] Native semantic audit `948/948` PASS, outer/inner decode `948/948`, semantic/invalid/forbidden `0/0/0`, owner/opponent `478/470`, inbound reply `4`; packet-size failures `0/0`, max `3412/454`, không giữ raw payload.
+- [x] Mapping/cleanup bounded telemetry current run: `protocol_created=1`, `batch_commit=293`, `batch_abort=0`, `choice_reject=0`, `disconnect=2`, final active/cleanup refs `0`; QA server dừng sạch, listeners `9000/9527` đóng, production mutation `false`.
+- [ ] Đây chỉ là bounded technical QA PASS, không phải release approval. P6 threshold/attribution, production/canary rollback SLA + cold-start/quota, official CI/installer, immutable reviewed artifact và independent release approval vẫn `PENDING/HOLD`. Physical device/network đã `OUT_OF_SCOPE_BY_USER`; feedback người chơi chỉ là post-release monitoring.
+- [ ] Bước tiếp theo: chuyển packet đã sanitize cho independent reviewer/owner ký rõ ràng; chỉ regenerate checkpoint và cân nhắc promotion khi có đủ phê duyệt + canary evidence khớp identity. Giữ legacy ON, v1 isolated-QA-only.
+
 ## CARD-WIRE-RELEASE-GUARD-HARDENING-20261118 — clean immutable candidate / release remains HOLD
 
 - [x] Commit `5df51e08` sửa release checkpoint để fail-closed: source sạch chỉ đóng provenance, không tự đóng P6/rollback/native/approval; physical device/network đã được tách thành `OUT_OF_SCOPE_BY_USER`; test `game/web` release hiện **6/6 PASS** với cả dirty và clean provenance fixture.
