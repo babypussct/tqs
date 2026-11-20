@@ -49,6 +49,10 @@ local function reproduce(version, firstDeputy)
     General = {Agender = 4}, cbor = {encode = function(v) return v end},
     PropertyChangeData = {new = function(_, data) data.results = {}; return data end},
     Util = {DummyTable = {}}, resetPlayerHp = empty,
+    require = function(name)
+      assert(name == "packages.hegemony.util")
+      return {wildKingdoms = {"heg_qin", "heg_chu"}}
+    end,
     table = setmetatable({
       contains = contains, filter = empty, every = function() return false end,
       map = empty, insertTableIfNeed = empty,
@@ -59,7 +63,7 @@ local function reproduce(version, firstDeputy)
   function change:create(data)
     return {exec = function() change.main({room = room, data = data}) end}
   end
-  for _, method in ipairs({"broadcastProperty", "setPlayerProperty", "notifyPrivatePhysical", "notifyProperty", "serialize"}) do
+  for _, method in ipairs({"broadcastProperty", "setPlayerProperty", "notifyPrivatePhysical", "publicHegemonyRole", "notifyProperty", "serialize"}) do
     assert(load(definition(roomSource, "function ServerRoomBase:" .. method .. "("), method, "t", env))()
   end
   assert(load(definition(heroSource, "function MiscEventWrappers:changeHero("), "changeHero", "t", env))()
@@ -169,6 +173,9 @@ local function reproduce(version, firstDeputy)
   assertPublicPair(first, firstName, second)
 
   setPrivateRole(room, owner, "wei")
+  for _, peer in ipairs({ownerSocket, opponentSocket, watcher}) do
+    assert(lastProperty(peer, "kingdom") == "wei", "published faction missing after first reveal")
+  end
   owner:revealGeneral(not firstDeputy, true)
   for _, peer in ipairs({opponentSocket, watcher}) do
     assert(lastProperty(peer, first) == firstName)
@@ -185,6 +192,17 @@ local function reproduce(version, firstDeputy)
   room:setPlayerProperty(owner, first, firstName)
   assert(lastProperty(opponentSocket, first) == "anjiang")
   assertPublicPair(second, secondName, first)
+  owner.role = "heg_qin"
+  room:broadcastProperty(owner, "role")
+  assert(lastProperty(opponentSocket, "role") == "hidden")
+  assert(snapshot(opponent, opponentSocket, false).role == "hidden")
+  room:setPlayerProperty(owner, "role_shown", true)
+  room:setPlayerProperty(owner, "role", "heg_qin")
+  room:setPlayerProperty(owner, "kingdom", "wild")
+  assert(lastProperty(opponentSocket, "role") == "heg_qin")
+  assert(lastProperty(watcher, "role") == "heg_qin")
+  assert(snapshot(opponent, opponentSocket, false).role == "heg_qin")
+  assert(snapshot(owner, watcher, true).role == "heg_qin")
   print(("PASS wire=%s first=%s owner/opponent/observer/reconnect; concealed pair, second reveal, rehide"):
     format(version or "legacy", first))
 

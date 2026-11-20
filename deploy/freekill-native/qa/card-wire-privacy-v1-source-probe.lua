@@ -107,6 +107,10 @@ local env = setmetatable({
 loadMethod("lua/server/roombase.lua",
   "function ServerRoomBase:doBroadcastNotify(command, jsonData, players)",
   baseMethods, "doBroadcastNotify", env)
+if read("lua/server/roombase.lua"):find("function ServerRoomBase:publicHegemonyRole(role, shown)", 1, true) then
+  loadMethod("lua/server/roombase.lua", "function ServerRoomBase:publicHegemonyRole(role, shown)",
+    baseMethods, "publicHegemonyRole", env)
+end
 loadMethod("lua/server/roombase.lua",
   "function ServerRoomBase:serialize(player, observer)",
   baseMethods, "serialize", env)

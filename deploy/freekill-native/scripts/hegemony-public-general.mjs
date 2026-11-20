@@ -7,6 +7,31 @@ const playerFile = 'ltk/server/serverplayer.lua';
 const edits = [
   {
     file: roomFile,
+    before: 'function ServerRoomBase:notifyProperty(p, player, property)',
+    after: `function ServerRoomBase:publicHegemonyRole(role, shown)
+  if shown and type(role) == "string" and role:sub(1, 4) == "heg_" and
+      table.contains(require("packages.hegemony.util").wildKingdoms, role) then
+    return role
+  end
+  return "hidden"
+end
+
+function ServerRoomBase:notifyProperty(p, player, property)`,
+  },
+  {
+    file: roomFile,
+    before: '    if property == "role" and not self.game_finished then',
+    after: `    if property == "role" and not self.game_finished and
+        self:publicHegemonyRole(player.role, player.role_shown) == "hidden" then`,
+  },
+  {
+    file: roomFile,
+    before: '          record.properties.role = "hidden"\n          if not record.properties.role_shown then',
+    after: `          record.properties.role = self:publicHegemonyRole(record.properties.role, record.properties.role_shown)
+          if not record.properties.role_shown then`,
+  },
+  {
+    file: roomFile,
     before: 'function ServerRoomBase:setPlayerProperty(player, property, value)\n  player[property] = value',
     after: `function ServerRoomBase:setPlayerProperty(player, property, value)
   local publicGenerals = player._tqs_public_generals
@@ -22,6 +47,22 @@ const edits = [
     local published = publicGenerals and publicGenerals[property]
     if concealed and (not published or published ~= player[property]) then
       local privateValue =`,
+  },
+  {
+    file: roomFile,
+    before: `  player[property] = value
+  self:broadcastProperty(player, property)
+end`,
+    after: `  player[property] = value
+  self:broadcastProperty(player, property)
+  if property == "role_shown" and value == true and publicGenerals and
+      self:getSettings("gameMode") == "new_heg_mode" and
+      ((publicGenerals.general and publicGenerals.general == player.general) or
+        (publicGenerals.deputyGeneral and publicGenerals.deputyGeneral == player.deputyGeneral)) then
+    -- revealGeneral broadcasts kingdom before the faction is public.
+    self:broadcastProperty(player, "kingdom")
+  end
+end`,
   },
   {
     file: roomFile,
@@ -64,7 +105,7 @@ const edits = [
 
 // Keep the earlier privacy guard able to check its own exact hunks.
 export function withoutPublicGeneralEdits(file, source) {
-  for (const edit of edits) {
+  for (const edit of edits.toReversed()) {
     if (edit.file === file) source = source.replace(edit.after, edit.before);
   }
   return source;

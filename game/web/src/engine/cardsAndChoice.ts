@@ -1,4 +1,4 @@
-import { boundedPrivateRecord, visibleCardFace, type CardChoice } from './cardSelection';
+import { boundedPrivateRecord, validCardId, visibleCardFace, type CardChoice } from './cardSelection';
 
 /** This native dialog explicitly reveals its cards to the addressed player.
  * IDs, disabled IDs and filter arguments remain private to GameConnection. */
@@ -21,7 +21,7 @@ export interface CardsAndChoiceSelection {
 const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v);
 const cardIds = (v: unknown): v is number[] => Array.isArray(v) && v.length <= 512 &&
-  v.every((id) => Number.isSafeInteger(id) && id >= 0 && id <= 2147483647) && new Set(v).size === v.length;
+  v.every(validCardId) && new Set(v).size === v.length;
 const choices = (v: unknown): v is string[] => Array.isArray(v) && v.length <= 256 &&
   v.every((s) => typeof s === 'string' && s.length > 0 && s.length <= 1000) && new Set(v).size === v.length;
 
@@ -57,7 +57,9 @@ export function parseCardsAndChoice(payload: unknown,
     const token = tokenFactory();
     if (typeof token !== 'string' || !token || token.length > 160 || ids.has(token)) throw new Error('Invalid card token');
     ids.set(token, id);
-    return { token, hidden: false, ...visibleCardFace(face(id)) };
+    const visibility = record(extra.visible_data) ? extra.visible_data[String(id)] : undefined;
+    const hidden = visibility === false || visibility === 0;
+    return { token, hidden, ...(hidden ? {} : visibleCardFace(face(id))) };
   });
   return { publicPrompt: { title, cards: publicCards, choices: [...options], cancelChoices: [...cancel],
     min: min as number, max: max as number }, ids, disabled: new Set(disabled), filter, extra };

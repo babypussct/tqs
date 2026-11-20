@@ -28,6 +28,7 @@ local function loadMethod(signature)
   assert(load(source:sub(first, last + 4), "=candidate/owner-notify", "t", env))()
 end
 loadMethod("function ServerRoomBase:notifyPrivatePhysical(seat, physical, command, data)")
+loadMethod("function ServerRoomBase:publicHegemonyRole(role, shown)")
 loadMethod("function ServerRoomBase:notifyProperty(p, player, property)")
 loadMethod("function ServerRoomBase:setPlayerMark(player, mark, value)")
 

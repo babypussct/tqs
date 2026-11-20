@@ -62,6 +62,9 @@ define("ltk/server/room.lua", "function Room:syncDrawPile()")
 define("ltk/server/room.lua", "function Room:changeCardArea (cards, area, areaCards)")
 define("ltk/server/room.lua", "function Room:setPlayerPile(player, pile, ids)")
 define("ltk/server/events/movecard.lua", "function MoveEventWrappers:notifyMoveCards(players, moveDatas, event_id)")
+if read("lua/server/roombase.lua"):find("function ServerRoomBase:publicHegemonyRole(role, shown)", 1, true) then
+  define("lua/server/roombase.lua", "function ServerRoomBase:publicHegemonyRole(role, shown)")
+end
 define("lua/server/roombase.lua", "function ServerRoomBase:serialize(player, observer)")
 define("lua/server/serverplayer_base.lua", "function ServerPlayerBase:doNotify(command, data)")
 

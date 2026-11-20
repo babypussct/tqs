@@ -29,6 +29,9 @@ local function define(relative, signature)
 end
 define("ltk/server/room.lua", "function Room:setCardMark(card, mark, value)")
 define("lua/server/roombase.lua", "function ServerRoomBase:notifyPrivatePhysical(seat, physical, command, data)")
+if read("lua/server/roombase.lua"):find("function ServerRoomBase:publicHegemonyRole(role, shown)", 1, true) then
+  define("lua/server/roombase.lua", "function ServerRoomBase:publicHegemonyRole(role, shown)")
+end
 define("lua/server/roombase.lua", "function ServerRoomBase:serialize(player, observer)")
 -- Room includes ServerRoomBase in the candidate runtime; the legacy fixture
 -- must preserve that inheritance when exercising the real SetCardMark body.

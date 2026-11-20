@@ -14,8 +14,20 @@ test('native arrangement keeps each card once and swaps full groups without expo
   assert.deepEqual(movedRows(dialog,a,1,1),[[2],[3,1]]);
   for(const card of dialog.prompt.cards) assert.equal('id' in card,false);
   assert.equal(movedRows(dialog,b,9,0),null);assert.equal(movedRows(dialog,'forged',1,0),null);
-  for(const patch of [{cards:[[1],[1]]},{capacities:[0],limits:[1]},{cards:[[1,-2]]}])
+  for(const patch of [{cards:[[1],[1]]},{capacities:[0],limits:[1]},{cards:[[1,-1]]}])
     assert.equal(parseNativeDialog('AskForArrangeCards',{...payload,...patch},()=>null),null);
+});
+
+test('native card dialogs preserve printed cards through an opaque UI token', () => {
+  const dialog = parseNativeDialog('AskForAG', [[-2], false, ''], id => {
+    assert.equal(id, -2);
+    return {name: 'duel', suit: 1, number: 7};
+  })!;
+  const [card] = dialog.prompt.cards;
+  assert.equal(card.name, 'duel');
+  assert.equal(dialog.ids.get(card.token), -2);
+  assert.equal('id' in card, false);
+  assert.equal(parseNativeDialog('AskForAG', [[-1], false, ''], () => null), null);
 });
 test('native dialog reply never survives reentrant request replacement or disconnect',()=>{
   for(const replacement of ['disconnect','same-id']) {

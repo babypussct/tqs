@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { updateRequestVisibility } from '../deploy/freekill-native/scripts/card-wire-request-runtime.mjs';
 
 const [mode, input] = process.argv.slice(2);
 assert.ok(['--apply', '--check'].includes(mode) && input,
@@ -13,6 +14,7 @@ const root = fs.realpathSync(input);
 assert.match(root, /(?:\/scratch\/evidence\/[^/]+\/candidate-runtime|\/private\/tmp\/tqs-cardwire-qa-20261103-[^/]+)\/packages\/freekill-core$/u,
   'request projector is restricted to the isolated candidate');
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+updateRequestVisibility(root, mode);
 
 const moduleRel = 'lua/server/card_wire_request.lua';
 const moduleTarget = path.join(root, moduleRel);

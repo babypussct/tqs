@@ -1,4 +1,6 @@
 /** Public Lua events plus a restricted snapshot of the local player's generals. */
+import { validCardId } from '../engine/cardSelection';
+
 export type BoardCardSubtype =
   | 'weapon'
   | 'armor'
@@ -299,7 +301,7 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
       if (!item || typeof item !== 'object') return null;
       const card = publicCard(item);
       const id = (item as any).id;
-      return card && typeof id === 'number' && Number.isSafeInteger(id) && id >= 0
+      return card && validCardId(id)
         ? { ...card, id }
         : null;
     }).filter(Boolean) as (BoardEquipment & { id: number })[];

@@ -1,5 +1,22 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 20/11/2026 — mở rộng sửa giao thức v1 cho yêu cầu Quốc Chiến
+
+- Dùng cùng quy tắc mặt bài ở server, client và bộ đọc CBOR cho `AskForArrangeCards`, `AskForCardChosen` dạng nhóm, `AskForPoxi`, `AskForCardsAndChoice`, `AskForUseActiveSkill`, `AskForUseCard` và `AskForResponseCard`. Áp dụng cho cả Quan Tinh/Ngạo Tài cùng các luồng Tuần Tuần/Di Kế. Mặt bài chỉ đến socket nhận yêu cầu, ưu tiên `visible_data=false/0`, giữ bí danh đang dùng trên bàn và giữ mẫu lọc ID dưới dạng token trên wire. Lua client dựng Card tạm để dùng luật lọc gốc. Mặt bài được thu hồi cùng request.
+- Mở đúng schema `AskForGeneral` và các hộp Utility chọn kỹ năng, tên bài không lặp, tướng kèm phương án. Kiểm phản hồi theo số lượng, lựa chọn cho phép, lá bị khóa, thứ tự nhóm và vị trí chuyển bài. Web hỗ trợ ID bài do game in và tiếp tục loại sentinel `-1`. Role phe thường vẫn đi theo đường riêng tư. Tên nước trong danh sách Dã tâm gia chính thức được gửi công khai khi `role_shown=true`, kể cả trong Observe/Reconnect.
+- **Kiểm thử candidate:** Node source **8/8**, request projector **20 ca**, projector notification **36 ca**, strict v1 CBOR privacy **12 kênh**, raw supplemental kiểm chấp nhận mặt bài hợp lệ và loại mặt bài bị che hoặc gói request tới observer. Browser/WASM **73/73**, unit web liên quan **66/66**, capture **4/4**, sanitize **22/22**, build 14 pin và app/tools typecheck PASS. [Source](../scratch/evidence/tqs-v1-request-final.4CdAXb/source-tests.log) · [Browser](../scratch/evidence/tqs-v1-request-final.4CdAXb/real-lua.log)
+- **Artifact phát hành:** web `a012fd4e85194469e6625ec00fb9872a4312f2b6883955e1780ef8e62345c019` dùng Google auth cùng origin và `/gateway`. Verifier PASS `17.318` tệp, manifest SHA-256 `8b317e9ff6ac893d7e543b4a23ae75e93cc37a22c9dd688ee6f086b68826e860`. Runtime MD5 `cfcfe6aeb7cfb6f95640e0d2b48fab78`, bundle `02c2fc739d723e1d` với `5339` tệp.
+- **Native exact candidate cô lập:** v1 lật chủ và phó, hai ghế và observer đang xem nhận tướng và phe, Observe và Reconnect giữ đúng ô đã lật và phe, tiếp tục che ô còn úp. Probe xử lý lựa chọn phụ khi lật tướng. Một ván hai ghế v1 chạy 7 lượt qua 4 vòng, reconnect, hai GameOver và về sảnh. Ghi nhận `1.807` gói, tối đa `3.183 B`, không có gói lỗi. Browser/WASM đã kiểm riêng các dialog. Vẫn còn ca native cùng hai client browser cho cả Tuần Tuần và Di Kế có reconnect giữa yêu cầu.
+- **Bước kế tiếp:** push commit nguồn lên `main`, xuất bản Web Pages bằng artifact đã đóng gói, kiểm web mới trên runtime cũ, sau đó chuyển Oracle khi phòng trống và kiểm lại cả hai mã build qua public.
+
+## 20/11/2026 — phe sau lật tướng và mặt bài chỉ chủ kỹ năng được xem
+
+- Production kiểm tra tại đầu lượt vẫn là runtime `859aa436662f…`, bundle `57b3a4632e3cf58a`, card-wire v1. Lần lật đầu gửi `kingdom` trước `role_shown`, khiến bộ lọc gửi `unknown` cho người khác. Candidate gửi lại `kingdom` khi cờ công khai bật cho ghế đã lật, giữ role ẩn theo đường hiện tại. Web dùng `wild` khi native đã công khai trạng thái Dã tâm gia nhưng role nhận được là `hidden` hoặc không có.
+- `hs__xunxun` đưa bốn lá đỉnh chồng bài vào `AskForArrangeCards`, hai lá phải ở nhóm đầu chồng bài khi xác nhận. `hs__yiji` đưa hai lá vào `AskForUseActiveSkill`, phân cho người được chọn hoặc giữ phần còn lại khi hủy. Các lá vẫn ở vùng DrawPile lúc hỏi. v1 đã gửi token chọn bài nhưng bí danh client không có mặt bài. Candidate gửi `name/suit/number` đúng các lá được đề nghị, chỉ đến socket thật của người nhận yêu cầu. Không có ID bài thật trong dữ liệu mặt bài. Web dùng mặt bài gắn với request cho dialog và CardItem kỹ năng. Quy tắc chọn và reply token giữ theo Lua.
+- Artifact production cũ thất bại đúng tại kiểm tra phe sau lật và hai mặt bài Di Kế. Bản candidate vượt **4/4 Node** gồm lật chủ/phó, legacy/v1, đối thủ/observer, projector **13 ca** và client reply. Lua privacy probe PASS. WASM/Chrome Tuần Tuần **1/1** với bí danh request, đủ bốn mặt bài và phải chọn hai lá vào nhóm Top trước khi xác nhận. Scenario browser cũ Di Kế/Fankui và caller suite **4/4**, store **50/50**, connection **34/34**, native dialog **7/7**, typecheck app/tools PASS.
+- Build mặc định với thư mục upstream cục bộ dừng ở inventory `203` thay vì `78`. Đã trích các file text của đúng **14/14 pin** từ object Git sang thư mục cô lập và chạy `TQS_UPSTREAM_ROOT=… npm --prefix game/web run build` **PASS**, gồm audit, typecheck, Vite và service worker `532` tệp. Giữ nguyên checkout/pin cũ. [Build log](../scratch/evidence/tqs-hegemony-faction-card.leqcQI/pinned-web-build.log)
+- Phạm vi tích hợp tiếp theo là native v1 với hai client browser cho *cả* Tuần Tuần và Di Kế, gồm chọn lá/lặp Di Kế và reconnect. Quy tắc hiển thị tên nước Dã tâm gia sau lập hoặc gia nhập nước cần xác minh riêng. Lượt này sửa và kiểm thử cục bộ, chưa đổi production.
+
 ## 20/11/2026 — chẩn đoán tướng đầu tiên đã lật nhưng vẫn hiện ẩn
 
 - Production `tqsvn.pages.dev/gateway/healthz` trả `200 ok`. Manifest công bố `cardWireVersion=1`, MD5 `f7db727839b09febc310688791bfa653`, bundle `7c7c3c9b01d53c28`. Oracle chạy release `998643f7`. SHA-256 của năm tệp Lua liên quan trên Oracle khớp bản lưu `scratch/evidence/tqs-ops-close.SQcZNi/release-compression/runtime/packages`.
@@ -2367,20 +2384,49 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T11:10:20.276Z (UTC).
-- Nhánh: `main` · HEAD: `ce89caa18956`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-20T15:32:27.070Z (UTC).
+- Nhánh: `main` · HEAD: `fa746ac22c28`.
+- File thay đổi hiển thị: 30 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/card-mark-privacy-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-client-request-probe.lua
+ M deploy/freekill-native/qa/card-wire-client-requests.lua
+ M deploy/freekill-native/qa/card-wire-exposure-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
+ M deploy/freekill-native/qa/card-wire-privacy-v1-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-private-physical-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-request-projector-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-request.lua
+ M deploy/freekill-native/qa/hegemony-public-general-source-probe.lua
+ M deploy/freekill-native/qa/hidden-wire-privacy-source-probe.lua
+ M deploy/freekill-native/qa/upstream-first-source.test.mjs
+ M deploy/freekill-native/scripts/hegemony-public-general.mjs
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
+ M game/web/scripts/cards-and-choice.test.ts
+ M game/web/scripts/multiplayer-e2e/evidence-sanitize.ts
+ M game/web/scripts/multiplayer-e2e/run.ts
+ M game/web/scripts/native-dialogs.test.ts
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/engine/cardSelection.ts
+ M game/web/src/engine/cardsAndChoice.ts
+ M game/web/src/engine/hostLua.ts
+ M game/web/src/engine/nativeDialogs.ts
+ M game/web/src/store/boardState.ts
+ M scripts/upstream-first-card-wire-client-request-guard.mjs
+ M scripts/upstream-first-card-wire-request-projector-guard.mjs
+?? deploy/freekill-native/qa/card-wire-request-visibility.lua
+?? deploy/freekill-native/scripts/card-wire-request-runtime.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+fa746ac2 Record production verification for Hegemony general reveals
 ce89caa1 Publish revealed Hegemony generals before faction disclosure
 be3f9b4b Record native v1 release and operations verification
-c04fdd68 Advertise legacy card wire for fresh baseline installs
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

@@ -2216,6 +2216,24 @@ try {
         [[data.cardIds[1], data.cardIds[2]], [data.cardIds[0]]]);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
     }],
+    ['Private request faces reach the Tuần Tuần dialog', async (p) => {
+      const faces = await p.evaluate(() => window.__tqsRealLuaE2e.beginPrivateArrange());
+      const panel = p.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' });
+      await panel.locator('.gameplay-choice').first().waitFor();
+      assert.deepEqual(faces?.map(({name, suit, number}) => [name, suit, number]),
+        [['slash', 1, 7], ['jink', 2, 8], ['peach', 3, 9], ['duel', 4, 10]]);
+      assert.equal(await panel.locator('.gameplay-choice').count(), 4);
+      assert.equal(await panel.getByRole('button', { name: 'Xác nhận' }).isDisabled(), true);
+      for (const count of [1, 2]) {
+        await panel.locator('.gameplay-choice').first().click();
+        await panel.getByRole('button', { name: 'Đặt cuối nhóm 2' }).click();
+        assert.equal(await panel.getByRole('button', { name: 'Xác nhận' }).isEnabled(), count === 2);
+      }
+      await panel.getByRole('button', { name: 'Xác nhận' }).click();
+      await reply(p);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()),
+        [[1000000002, 1000000003], [1000000000, 1000000001]]);
+    }],
     ['KnownBoth custom dialog reveals only the addressed generals and replies with native cards/choice', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginNative('generals'));
       const panel = p.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' });
@@ -2828,6 +2846,8 @@ try {
       || name.startsWith('New battle royal converts') || name.startsWith('Companion virtual Peach'))
     : process.argv.includes('--table-piles')
     ? tests.filter(([name]) => name.startsWith('Native Lua MoveCards keeps draw/discard'))
+    : process.argv.includes('--private-card-faces')
+    ? tests.filter(([name]) => name.startsWith('Private request faces'))
     : process.argv.includes('--room-pools')
     ? tests.filter(([name]) => name.startsWith('UI-02'))
     : tests;

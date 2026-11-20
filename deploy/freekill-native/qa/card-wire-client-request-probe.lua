@@ -14,6 +14,17 @@ local room = {
   card_wire_version = 1,
   card_wire_refs = Refs.new(),
 }
+local engine = {cards = {}, printed_cards = {}, filtered_cards = {}}
+function engine:cloneCard(name, suit, number)
+  return {name = name, suit = suit, number = number}
+end
+local engineFile = assert(io.open(root .. "/ltk/core/engine.lua", "rb"))
+local engineSource = engineFile:read("a")
+engineFile:close()
+local lookupStart = assert(engineSource:find("function Engine:getCardById(id, ignoreFilter)", 1, true))
+local lookupEnd = assert(engineSource:find("\nend\n", lookupStart, true))
+assert(load(engineSource:sub(lookupStart, lookupEnd + 4), "=native/card lookup", "t",
+  setmetatable({Engine = engine, ClientInstance = room}, {__index = _G})))()
 local target = { id = 2, class = "ClientPlayer", player = {} }
 
 local function rejects(fn, text)
@@ -86,16 +97,39 @@ local yiji = Requests.receive(room, "AskForUseActiveSkill", {
     min_t_num = 1, max_t_num = 1, min_c_num = 1, max_c_num = 2,
   } },
   choices = {
-    { token = yijiFirst, standing = yijiStandingFirst },
-    { token = yijiSecond, standing = yijiStandingSecond },
+    { token = yijiFirst, standing = yijiStandingFirst, face = { name = "slash", suit = 1, number = 7 } },
+    { token = yijiSecond, standing = yijiStandingSecond, face = { name = "jink", suit = 2, number = 9 } },
   },
 })
 local firstLocal, secondLocal = yiji[4].expand_pile[1], yiji[4].expand_pile[2]
 assert(type(firstLocal) == "number" and type(secondLocal) == "number")
+assert(room.card_wire_request.faces[firstLocal].name == "slash")
+assert(room.card_wire_request.faces[secondLocal].number == 9)
+local temporaryCard = assert(engine:getCardById(firstLocal))
+assert(temporaryCard.id == firstLocal and temporaryCard.name == "slash" and temporaryCard.number == 7)
+assert(engine:getCardById(firstLocal) == temporaryCard and next(engine.cards) == nil)
 assert(yiji[4].pattern == ".|.|.|.|.|.|" .. firstLocal .. "," .. secondLocal)
 assert(Requests.encodeReply(room, {
   card = { skill = "ex__choose_skill", subcards = { firstLocal } }, targets = { target.id },
 }).card.subcards[1] == yijiFirst)
+assert(room.card_wire_request == nil, "reply must retire access to both card faces")
+assert(engine:getCardById(firstLocal) == nil and engine:getCardById(secondLocal) == nil)
+
+local response = Requests.receive(room, "AskForResponseCard", {
+  cardWireVersion = 1, payload = {"peek", ".|.|.|.|.|.|" .. yijiFirst, "", true,
+    {expand_pile = {yijiFirst}}, {}},
+  choices = {{token = yijiFirst, standing = yijiStandingFirst, face = {name = "jink", suit = 2, number = 8}}},
+})
+assert(response[2] == ".|.|.|.|.|.|" .. response[5].expand_pile[1])
+assert(engine:getCardById(response[5].expand_pile[1]).name == "jink")
+assert(Requests.encodeReply(room, {card = response[5].expand_pile[1]}).card == yijiFirst)
+rejects(function()
+  Requests.receive(room, "AskForPoxi", {
+    cardWireVersion = 1,
+    payload = {type = "probe", data = {{"$Hand", {yijiFirst}}}, extra_data = {visible_data = {[yijiFirst] = false}}},
+    choices = {{token = yijiFirst, standing = yijiStandingFirst, face = {name = "jink", suit = 2, number = 8}}},
+  })
+end, "request-visible card face")
 
 rejects(function()
   Requests.receive(room, "AskForUseActiveSkill", {

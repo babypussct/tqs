@@ -6,6 +6,8 @@
 -- bounded channel metadata; it never prints payloads, card references,
 -- account names, or decoder errors.
 local core, mode, audience, physicalSeat, direction, replyCommand = ...
+local scriptDir = debug.getinfo(1, "S").source:sub(2):match("^(.*[/\\])") or ""
+local Visibility
 local supplementalCommands = {
   CardWireNegotiated = "negotiation",
   PropertyUpdate = "metadata", SetPlayerMark = "metadata", SetCardMark = "metadata",
@@ -18,7 +20,7 @@ local supplementalCommands = {
   AskForMoveCardInBoard = "request", PlayCard = "request",
   AskForUseActiveSkill = "request", AskForUseCard = "request",
   AskForResponseCard = "request", AskForChoices = "request", AskForOptions = "request",
-  AskForSkillInvoke = "request", CustomDialog = "request", EmptyRequest = "request",
+  AskForSkillInvoke = "request", AskForGeneral = "request", CustomDialog = "request", EmptyRequest = "request",
 }
 local replyCommands = {
   AskForCardChosen = true, AskForPoxi = true, AskForAG = true,
@@ -26,7 +28,7 @@ local replyCommands = {
   AskForMoveCardInBoard = true, PlayCard = true,
   AskForUseActiveSkill = true, AskForUseCard = true,
   AskForResponseCard = true, AskForChoices = true, AskForOptions = true,
-  AskForSkillInvoke = true, CustomDialog = true, EmptyRequest = true,
+  AskForSkillInvoke = true, AskForGeneral = true, CustomDialog = true, EmptyRequest = true,
 }
 
 local function fields(value, allowed)
@@ -309,12 +311,23 @@ local function public(command, value)
   else error("unknown public channel") end
 end
 
-local function choices(value)
+local function choices(value, command, payload)
+  local offered, hidden = Visibility.offered(command, payload)
   local count = dense(value or {})
   for i = 1, count do
     local entry = value[i]
-    fields(entry, { token = true, standing = true })
+    fields(entry, { token = true, standing = true, face = true })
     opaque(entry.token); wireRef(entry.standing, false)
+    if hidden[entry.token] then opaque(entry.standing) end
+    if entry.face ~= nil then
+      assert(offered[entry.token])
+      opaque(entry.standing)
+      local face = entry.face
+      fields(face, { name = true, suit = true, number = true })
+      assert(type(face.name) == "string" and #face.name > 0 and #face.name <= 120)
+      assert(integer(face.suit) >= 0 and face.suit <= 5)
+      assert(integer(face.number) >= 0 and face.number <= 13)
+    end
   end
 end
 
@@ -423,7 +436,8 @@ local function customDialog(value)
     end
     return
   end
-  if component.url == "packages/hegemony/qml/KnownBothBox.qml" then
+  if component.url == "packages/hegemony/qml/KnownBothBox.qml" or
+      component.url == "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml" then
     fields(component, { url = true, model = true })
     assert(type(component.model) == "table")
     local model = component.model
@@ -441,16 +455,37 @@ local function customDialog(value)
     stringArray(prop.ok_options); stringArray(prop.cancel_options)
     return
   end
+  local skill = component.url == "packages/utility/qml/ChooseSkillBox.qml"
+  local name = component.url == "packages/utility/qml/ChooseCardNamesBox.qml"
+  if skill or name then
+    fields(component, { url = true, model = true })
+    local model = component.model
+    fields(model, { url = true, prop = true })
+    assert(model.url == (skill and "packages/utility/qml/models/ChooseSkillModel.qml" or
+      "packages/utility/qml/models/ChooseCardNamesModel.qml"))
+    local prop = model.prop
+    if skill then
+      fields(prop, { skills = true, generals = true, min = true, max = true, prompt = true, cancelable = true })
+      stringArray(prop.skills); if prop.generals then stringArray(prop.generals) end
+    else
+      fields(prop, { choices = true, allChoices = true, minNum = true, maxNum = true,
+        prompt = true, cancelable = true, repeatable = true })
+      assert(prop.repeatable == false)
+      stringArray(prop.choices)
+      for i = 1, dense(prop.allChoices) do stringArray(prop.allChoices[i]) end
+    end
+    local min, max = integer(prop.min or prop.minNum), integer(prop.max or prop.maxNum)
+    assert(min >= 0 and min <= max)
+    assert(prop.cancelable == nil or type(prop.cancelable) == "boolean")
+    assert(prop.prompt == nil or type(prop.prompt) == "string")
+    return
+  end
   error("unaudited CustomDialog component")
 end
 
 local function customDialogReply(value)
   assert(type(value) == "table")
-  if value[1] ~= nil then
-    assert(dense(value) == 2)
-    assert(type(value[1]) == "string" and type(value[2]) == "string")
-    return
-  end
+  if value.cards == nil and value.choice == nil then stringArray(value); return end
   fields(value, { cards = true, choice = true })
   stringArray(value.cards)
   assert(type(value.choice) == "string")
@@ -485,7 +520,7 @@ local function request(command, value)
   local hasEnvelope = type(value) == "table" and value.cardWireVersion ~= nil
   if hasEnvelope then
     payload = envelope(value, true)
-    choices(value.choices)
+    choices(value.choices, command, payload)
   else
     assert(command == "AskForChoices" or command == "AskForOptions" or
       command == "AskForSkillInvoke" or command == "CustomDialog" or command == "EmptyRequest")
@@ -522,9 +557,17 @@ local function request(command, value)
     if payload.pattern then pattern(payload.pattern) end
   elseif command == "AskForMoveCardInBoard" then
     tokenArray(payload.cards)
+  elseif command == "AskForGeneral" then
+    assert(dense(payload) == 7)
+    stringArray(payload[1]); assert(integer(payload[2]) >= 1 and payload[2] <= #payload[1])
+    assert(type(payload[3]) == "boolean" and type(payload[4]) == "boolean")
+    assert(type(payload[5]) == "string" and type(payload[6]) == "string")
+    fields(payload[7], { n = true, skill_name = true }); integer(payload[7].n)
+    assert(payload[7].skill_name == nil or type(payload[7].skill_name) == "string")
   elseif command == "PlayCard" or command == "AskForUseActiveSkill" or
       command == "AskForUseCard" or command == "AskForResponseCard" then
     local index = command == "AskForUseActiveSkill" and 4 or 5
+    if index == 5 and payload[2] ~= nil then pattern(payload[2]) end
     requestExtra(payload[index], "extra_data")
   elseif command == "AskForChoices" or command == "AskForOptions" or
       command == "AskForSkillInvoke" or command == "CustomDialog" or command == "EmptyRequest" then
@@ -550,7 +593,10 @@ local function reply(command, value)
   elseif command == "AskForArrangeCards" then
     local n = dense(value); for i = 1, n do tokenArray(value[i]) end
   elseif command == "AskForMoveCardInBoard" then
-    fields(value, { cardId = true }); assert(type(value.cardId) == "string"); opaque(value.cardId)
+    fields(value, { cardId = true, pos = true }); opaque(value.cardId)
+    assert(value.pos == 0 or value.pos == 1)
+  elseif command == "AskForGeneral" then
+    stringArray(value)
   elseif command == "PlayCard" or command == "AskForUseActiveSkill" or
       command == "AskForUseCard" or command == "AskForResponseCard" then
     assert(type(value) == "table"); assert(value.card_objs == nil)
@@ -594,6 +640,7 @@ local ok, channel = pcall(function()
     (audience == "player" or audience == "observer") and
     (direction == "incoming" or direction == "outgoing"))
   local cbor = assert(dofile(core .. "/lua/server/rpc/cbor.lua"))
+  Visibility = dofile(scriptDir .. "card-wire-request-visibility.lua")
   local command, encoded = rawPacket(cbor, io.read("*a"))
   local decoded = cbor.decode(encoded)
   if direction == "outgoing" then reply(command, decoded)
@@ -608,7 +655,9 @@ local ok, channel = pcall(function()
     }
     metadata(command, metadataEnvelopeCommands[command] and envelope(decoded, false) or decoded)
   elseif supplementalCommands[command] == "public" then public(command, decoded)
-  elseif supplementalCommands[command] == "request" then request(command, decoded)
+  elseif supplementalCommands[command] == "request" then
+    assert(audience == "player")
+    request(command, decoded)
   else error("unsupported supplemental channel") end
   return direction == "outgoing" and "reply" or supplementalCommands[command]
 end)

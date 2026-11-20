@@ -321,6 +321,11 @@ local function project_card(value)
   return next(card) and card or nil
 end
 
+local function request_card_face(id)
+  local request = ClientInstance and ClientInstance.card_wire_request
+  return request and request.faces and request.faces[id]
+end
+
 -- CardItem:toData() is used both when a request scene is created (_new) and
 -- when an existing item changes (CardItem).  Keep both paths identical: the
 -- native QML client always has the CardModel/cardId available for artwork,
@@ -333,6 +338,7 @@ local function project_card_item(value)
   if not card and math.type(value.id) == 'integer' then
     local ok, native_card = pcall(Fk.getCardById, Fk, value.id)
     if ok then card = project_card(native_card) end
+    card = card or request_card_face(value.id)
   end
   value.card = card
 end
@@ -718,6 +724,7 @@ local function emit_web_request_snapshot()
 end
 
 function __host_recv(command, hex, is_request)
+  if command == 'CancelRequest' and ClientInstance then ClientInstance.card_wire_request = nil end
   local ok, err = xpcall(ClientCallback, report, nil, command, hex2bin(hex), is_request)
   if not ok then error(tostring(err), 0) end
   -- The native RoomModel.qml derives these prompts from the first request
@@ -805,7 +812,12 @@ function __host_recv(command, hex, is_request)
       local H = require 'packages.hegemony.util'
       for _, player in ipairs(ClientInstance.players) do
         local kingdom = ''
-        if player == Self or player.role_shown then kingdom = H.getKingdom(player) end
+        if player == Self or player.role_shown then
+          kingdom = H.getKingdom(player)
+          if player.kingdom == 'wild' and (not kingdom or kingdom == '' or kingdom == 'hidden' or kingdom == 'unknown') then
+            kingdom = 'wild'
+          end
+        end
         J.ui('VisibleKingdom', to_json({player.id, type(kingdom) == 'string' and kingdom or ''}))
       end
     end
@@ -880,9 +892,12 @@ end
 -- what translates a local card alias into the one-shot request token before
 -- the bytes reach Request:_checkReply; sending directly through __host_client
 -- would leak the local numeric alias and fail the server resolver.
+local function valid_card_id(id)
+  return math.type(id) == 'integer' and id ~= -1 and id >= -2147483648 and id <= 2147483647
+end
+
 function __web_reply(data)
-  if type(data) ~= 'string' and type(data) ~= 'table' and
-     not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
+  if type(data) ~= 'string' and type(data) ~= 'table' and not valid_card_id(data) then
     error('invalid reply value')
   end
   ReplyToServer(data)
@@ -893,8 +908,7 @@ end
 -- authorizes any reply. Preview the translated value without consuming the
 -- request context; __web_reply then consumes it exactly once.
 function __web_reply_hex(data)
-  if type(data) ~= 'string' and type(data) ~= 'table' and
-     not (type(data) == 'number' and math.type(data) == 'integer' and data >= 0) then
+  if type(data) ~= 'string' and type(data) ~= 'table' and not valid_card_id(data) then
     error('invalid reply value')
   end
   local wire = data
@@ -907,9 +921,9 @@ end
 -- Query public card faces only for IDs which the bridge has already checked
 -- against the request's visible_data. Hidden cards never cross to React.
 function __web_visible_card(id)
-  if type(id) ~= 'number' or math.type(id) ~= 'integer' or id < 0 then return nil end
+  if not valid_card_id(id) then return nil end
   local card = Fk:getCardById(id)
-  if not card then return nil end
+  if not card then return request_card_face(id) end
   return { name = card.name, suit = card.suit, number = card.number }
 end
 

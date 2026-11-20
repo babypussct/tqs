@@ -1,4 +1,4 @@
-import { boundedPrivateRecord, visibleCardFace, type CardChoice } from './cardSelection';
+import { boundedPrivateRecord, validCardId, visibleCardFace, type CardChoice } from './cardSelection';
 
 export interface NativeDialogPrompt {
   kind: 'ag' | 'arrange' | 'generals' | 'generalChoice' | 'boardMove' | 'skills' | 'generalsAndChoice' | 'cardNames'; title: string; cards: CardChoice[];
@@ -15,7 +15,7 @@ export interface NativeDialog {
 const object = (x: unknown): Record<string, unknown> | null =>
   x !== null && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : null;
 const ids = (x: unknown): x is number[] => Array.isArray(x) && x.length <= 1024 &&
-  x.every(v => Number.isSafeInteger(v) && v >= 0) && new Set(x).size === x.length;
+  x.every(validCardId) && new Set(x).size === x.length;
 const numbers = (x: unknown): x is number[] => Array.isArray(x) && x.length <= 16 &&
   x.every(v => Number.isSafeInteger(v) && v >= 0 && v <= 1024);
 let serial = 0;

@@ -68,6 +68,7 @@ executeDefinition("function ServerRoomBase:doBroadcastNotify(command, jsonData, 
 -- The existing legacy probe extracts individual real methods. Once owner-only
 -- sends use a helper, load that helper too to keep exercising the same source.
 executeDefinition("function ServerRoomBase:notifyPrivatePhysical(seat, physical, command, data)")
+executeDefinition("function ServerRoomBase:publicHegemonyRole(role, shown)")
 executeDefinition("function ServerRoomBase:notifyProperty(p, player, property)")
 executeDefinition("function ServerRoomBase:setPlayerMark(player, mark, value)")
 executeDefinition(lua:find("function ServerRoomBase:serialize(player, observer)", 1, true)

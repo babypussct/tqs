@@ -394,7 +394,7 @@ export function sanitizeQaEvidence<T>(value: T): T {
           'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
           'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
           'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
-          'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+          'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'AskForGeneral', 'CustomDialog',
           'EmptyRequest'];
         const replies = commands.filter((command) => command.startsWith('AskFor') ||
           command === 'PlayCard' || command === 'CustomDialog' || command === 'EmptyRequest');

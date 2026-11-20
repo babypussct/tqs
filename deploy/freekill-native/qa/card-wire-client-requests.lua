@@ -3,6 +3,7 @@
 -- standing per-physical reference.  UI sees only the standing local alias;
 -- the reply path turns that alias back into the one-shot token.
 local Requests = {}
+local Visibility = require "ltk.core.card_wire_request_visibility"
 
 local function dense(value, label)
   assert(type(value) == "table", label .. " must be a table")
@@ -202,6 +203,7 @@ local function localizePayload(command, payload, maps)
     local result = copy(payload)
     local index = command == "AskForUseActiveSkill" and 4 or 5
     result[index] = mapExtra(result[index], "extra_data", maps)
+    if index == 5 and result[2] ~= nil then result[2] = localizePattern(result[2], maps) end
     return result
   end
   return copy(payload)
@@ -258,6 +260,8 @@ function Requests.receive(room, command, envelope)
   local entries = envelope.choices or {}
   local count = dense(entries, "request choices")
   local maps = { byToken = {}, byLocal = {} }
+  local faces = {}
+  local offered = Visibility.offered(command, envelope.payload)
   for i = 1, count do
     local entry = entries[i]
     assert(type(entry) == "table" and type(entry.token) == "string" and
@@ -269,13 +273,24 @@ function Requests.receive(room, command, envelope)
       "duplicate card-wire request choice")
     maps.byToken[entry.token] = localId
     maps.byLocal[localId] = entry.token
+    local face = entry.face
+    if face ~= nil then
+      assert(offered[entry.token] and type(entry.standing) == "string" and type(face) == "table" and
+        type(face.name) == "string" and #face.name > 0 and #face.name <= 120 and
+        type(face.suit) == "number" and face.suit % 1 == 0 and face.suit >= 0 and face.suit <= 5 and
+        type(face.number) == "number" and face.number % 1 == 0 and face.number >= 0 and face.number <= 13,
+        "invalid request-visible card face")
+      faces[localId] = { name = face.name, suit = face.suit, number = face.number }
+    end
   end
+  local payload = localizePayload(command, envelope.payload, maps)
   room.card_wire_request = {
     command = command,
     byToken = maps.byToken,
     byLocal = maps.byLocal,
+    faces = faces,
   }
-  return localizePayload(command, envelope.payload, maps)
+  return payload
 end
 
 -- A newly drawn, request-visible card may have a local alias without a

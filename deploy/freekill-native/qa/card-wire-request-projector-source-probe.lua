@@ -88,7 +88,9 @@ local areas = {
   [101] = Card.PlayerHand, [102] = Card.PlayerHand, [201] = Card.PlayerEquip,
   [202] = Card.PlayerSpecial, [301] = Card.PlayerHand, [302] = Card.PlayerEquip,
   [303] = Card.PlayerSpecial,
+  [401] = Card.DrawPile, [402] = Card.DrawPile, [403] = Card.DrawPile, [404] = Card.DrawPile,
 }
+Fk = { getCardById = function(_, id) return { name = "slash", suit = 1, number = id % 13 + 1 } end }
 local owners = {
   [101] = target, [102] = target, [201] = target, [202] = target,
   [301] = owner, [302] = owner, [303] = owner,
@@ -105,8 +107,7 @@ function room:getPlayerById(id)
   for _, item in ipairs(self.players) do if item.id == id then return item end end
 end
 function room:cardWireAudience(socket)
-  assert(socket == physical)
-  return "aud:physical-owner"
+  return socket == physical and "aud:physical-owner" or "aud:other-socket"
 end
 function room:getCardArea(id) return areas[id] end
 function room:getCardOwner(id) return owners[id] end
@@ -161,6 +162,8 @@ local poxi = project(owner, "AskForPoxi", poxiData)
 assert(type(poxi.payload.data[1][2][1]) == "string" and
   poxi.payload.data[1][2][1]:sub(1, 2) == "h:")
 assert(next(poxi.payload.extra_data.visible_data) ~= nil)
+assert(poxi.choices[1].face == nil and poxi.choices[2].face.name == "slash",
+  "Poxi must display only the unmasked face from the same hand")
 local poxiReply = { poxi.choices[1].token, poxi.choices[2].token }
 local poxiResolved = Projection.resolve(room, owner, physical, "AskForPoxi", poxiReply,
   "req/2", poxiData)
@@ -332,8 +335,8 @@ local yijiData = {
   "ex__choose_skill", "#yiji-give", true,
   { targets = { owner.id, target.id }, min_t_num = 1, max_t_num = 1,
     min_c_num = 1, max_c_num = 2, equal = false,
-    pattern = ".|.|.|.|.|.|301,303",
-    skillName = "hs__yiji", expand_pile = { 301, 303 } },
+    pattern = ".|.|.|.|.|.|401,402",
+    skillName = "hs__yiji", expand_pile = { 401, 402 } },
 }
 local yiji = project(owner, "AskForUseActiveSkill", yijiData)
 assert(yiji.payload[4].min_t_num == 1 and yiji.payload[4].max_t_num == 1 and
@@ -341,8 +344,111 @@ assert(yiji.payload[4].min_t_num == 1 and yiji.payload[4].max_t_num == 1 and
   yiji.payload[4].targets[1] == owner.id and yiji.payload[4].targets[2] == target.id and
   type(yiji.payload[4].expand_pile[1]) == "string" and
   yiji.payload[4].expand_pile[1]:sub(1, 2) == "h:" and
-  not yiji.payload[4].pattern:find("301", 1, true) and
-  not yiji.payload[4].pattern:find("303", 1, true) and
+  not yiji.payload[4].pattern:find("401", 1, true) and
+  not yiji.payload[4].pattern:find("402", 1, true) and
   yiji.payload[4].pattern:find("h:", 1, true))
+
+local function faceCount(request)
+  local count = 0
+  for _, choice in ipairs(request.choices) do
+    if choice.face then
+      assert(type(choice.standing) == "string" and choice.face.id == nil)
+      assert(choice.face.name == "slash" and choice.face.suit == 1 and choice.face.number >= 1)
+      count = count + 1
+    end
+  end
+  return count
+end
+assert(faceCount(yiji) == 2, "Yiji must show its two draw-pile offers only")
+local processingAlias = protocol:reference("aud:physical-owner", 403, false)
+areas[403] = Card.Processing
+local arrangeData = {
+  cards = {{401, 402, 403, 404}, {}}, names = {"Bottom", "Top"},
+  capacities = {4, 2}, limits = {0, 2}, is_free = true, pattern = ".", poxi_type = "", cancelable = false,
+}
+local arrange = project(owner, "AskForArrangeCards", arrangeData)
+assert(faceCount(arrange) == 4, "Xunxun must show all four offered cards")
+assert(arrange.choices[3].standing == processingAlias, "a private processing card keeps its standing alias")
+local arrangeKey = "req/" .. cases
+local tokens = arrange.payload.cards[1]
+rejects(function()
+  Projection.resolve(room, owner, physical, "AskForArrangeCards", {tokens, {}}, arrangeKey, arrangeData)
+end, "row bounds")
+local arranged = Projection.resolve(room, owner, physical, "AskForArrangeCards",
+  {{tokens[3], tokens[4]}, {tokens[2], tokens[1]}}, arrangeKey, arrangeData)
+assert(arranged[1][1] == 403 and arranged[2][1] == 402 and arranged[2][2] == 401)
+local batch = protocol:beginBatch()
+local outsider = Projection.project(room, owner, {}, "AskForUseActiveSkill", yijiData, batch, "other-socket")
+assert(faceCount(outsider) == 0, "nonowner must never get request-only card faces")
+batch:abort()
+
+local response = project(owner, "AskForResponseCard", {
+  "view_as", ".|.|.|.|.|.|401,404", "peek", true, { expand_pile = {401}, visible_pile = {402} }, {},
+})
+assert(not response.payload[2]:find("401", 1, true) and response.payload[2]:find("h:", 1, true))
+assert(faceCount(response) == 2, "expanded and explicitly visible cards can be read; pattern-only IDs stay hidden")
+
+local mixedData = {
+  cards = {401, 201}, choices = {"OK"}, cancel_choices = {"Cancel"}, disabled = {201}, min = 1, max = 1,
+  extra_data = {visible_data = {["201"] = 0}},
+}
+protocol:reference("aud:physical-owner", 201, true)
+local mixed = project(owner, "AskForCardsAndChoice", mixedData)
+local mixedKey = "req/" .. cases
+assert(faceCount(mixed) == 1 and type(mixed.choices[2].standing) == "string")
+assert(mixed.payload.extra_data.visible_data[mixed.choices[2].token] == false)
+local standingBatch = protocol:beginBatch()
+assert(standingBatch:currentReference("aud:physical-owner", 201) == 201, "mask must preserve the public board identity")
+standingBatch:abort()
+rejects(function()
+  Projection.resolve(room, owner, physical, "AskForCardsAndChoice", { cards = {}, choice = "unoffered" }, mixedKey, mixedData)
+end, "value is invalid")
+rejects(function()
+  Projection.resolve(room, owner, physical, "AskForCardsAndChoice",
+    { cards = {mixed.choices[2].token}, choice = "OK" }, mixedKey, mixedData)
+end, "disabled card")
+local cancelledChoice = project(owner, "AskForCardsAndChoice", mixedData)
+assert(#cancelledChoice.choices == 2)
+assert(Projection.resolve(room, owner, physical, "AskForCardsAndChoice", { cards = {}, choice = "Cancel" },
+  "req/" .. cases, mixedData).choice == "Cancel")
+
+local general = { {"probe_a", "probe_b"}, 1, true, false, "askForGeneralsChosen", "", {n = 1} }
+local generalRequest = project(owner, "AskForGeneral", general)
+assert(generalRequest.payload[1][1] == "probe_a" and #generalRequest.choices == 0)
+local generalKey = "req/" .. cases
+assert(Projection.resolve(room, owner, physical, "AskForGeneral", {"probe_b"}, generalKey, general)[1] == "probe_b")
+rejects(function()
+  Projection.resolve(room, owner, physical, "AskForGeneral", {"unoffered"}, generalKey, general)
+end, "unaudited value")
+
+local function utilityDialog(name, prop)
+  return { component = { url = "packages/utility/qml/Choose" .. name .. "Box.qml",
+    model = { url = "packages/utility/qml/models/Choose" .. name .. "Model.qml", prop = prop } } }
+end
+for _, item in ipairs({
+  {"Skill", {skills = {"inherited_skill"}, min = 1, max = 1, generals = {"probe_a"}}, "inherited_skill"},
+  {"CardNames", {choices = {"jink"}, minNum = 1, maxNum = 1, allChoices = {{"jink"}}, repeatable = false}, "jink"},
+}) do
+  local data = utilityDialog(item[1], item[2])
+  local request = project(owner, "CustomDialog", data)
+  assert(request.payload.component.url == data.component.url and #request.choices == 0)
+  local key = "req/" .. cases
+  assert(Projection.resolve(room, owner, physical, "CustomDialog", {item[3]}, key, data)[1] == item[3])
+  rejects(function()
+    Projection.resolve(room, owner, physical, "CustomDialog", {"unoffered"}, key, data)
+  end, "unaudited value")
+end
+local generalOptions = utilityDialog("GeneralsAndChoice", {
+  cards = {"probe_a", "probe_b"}, all_cards = {"probe_a", "probe_b"}, disable_cards = {"probe_b"},
+  min = 1, max = 1, ok_options = {"OK"}, cancel_options = {"Cancel"},
+})
+project(owner, "CustomDialog", generalOptions)
+local generalOptionsKey = "req/" .. cases
+assert(Projection.resolve(room, owner, physical, "CustomDialog", {cards = {}, choice = "Cancel"},
+  generalOptionsKey, generalOptions).choice == "Cancel")
+rejects(function()
+  Projection.resolve(room, owner, physical, "CustomDialog", {cards = {"probe_b"}, choice = "OK"},
+    generalOptionsKey, generalOptions)
+end, "unoffered card")
 
 print(string.format("PASS candidate physical request projector: card-chosen opaque scope, Poxi/AG/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed/unaudited fail-close; %d cases; synthetic-only; native/browser NOT RUN", cases))

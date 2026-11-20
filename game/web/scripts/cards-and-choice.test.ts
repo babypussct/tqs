@@ -47,6 +47,20 @@ test('card-and-choice public projection excludes private Lua face fields', () =>
   assert.equal(cardsAndChoiceIds(selection, ['safe-token-1', 'safe-token-1']), null);
 });
 
+test('card-and-choice renders masked cards face down without querying a known face', () => {
+  const seen: number[] = [];
+  let serial = 0;
+  const result = parseCardsAndChoice({ cards: [11, 12, 13], choices: ['OK'], min: 1, max: 1,
+    extra_data: { visible_data: { 11: false, 12: 0, 13: true } } },
+  id => { seen.push(id); return { name: 'slash' }; }, () => `card-${++serial}`);
+  assert.deepEqual(seen, [13]);
+  assert.deepEqual(result?.publicPrompt.cards, [
+    { token: 'card-1', hidden: true }, { token: 'card-2', hidden: true },
+    { token: 'card-3', hidden: false, name: 'slash' },
+  ]);
+  assert.deepEqual(cardsAndChoiceIds(result!, ['card-1']), [11]);
+});
+
 test('view confirmation cannot send after cleanup replaces the same request ID or disconnects', () => {
   for (const action of ['disconnect', 'replace']) {
     let handlers!: SocketHandlers;

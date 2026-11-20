@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { updatePublicGeneralSource } from './hegemony-public-general.mjs';
+import { updateRequestVisibility } from './card-wire-request-runtime.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
   const separator = arg.indexOf('=');
@@ -107,16 +108,25 @@ const productionHook = [
 editOnce(modeFile, qaHook, productionHook, 'production pre-draw negotiation boundary');
 
 updatePublicGeneralSource(core, '--apply');
-const projectorPath = path.join(core, 'lua/server/card_wire_projection.lua');
-assert.equal(fs.realpathSync(projectorPath), projectorPath, 'Symlinked projector is not promotable');
-const projector = fs.readFileSync(projectorPath);
-const reviewedProjector = fs.readFileSync(path.join(repositoryRoot,
-  'deploy/freekill-native/qa/card-wire-projection.lua'));
-if (!projector.equals(reviewedProjector)) {
-  assert.equal(createHash('sha256').update(projector).digest('hex'),
-    'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe',
-    'Previous production projector bytes drifted');
-  fs.writeFileSync(projectorPath, reviewedProjector);
+updateRequestVisibility(core, '--apply');
+const wireModules = [
+  ['lua/server/card_wire_projection.lua', 'card-wire-projection.lua',
+    'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe'],
+  ['lua/server/card_wire_request.lua', 'card-wire-request.lua',
+    '779b3bc22a99e737005a89170bca3d7bb2f7acbc9828b34258edf6bce4e931e1'],
+  ['ltk/client/card_wire_requests.lua', 'card-wire-client-requests.lua',
+    '63c412fefb35eb3d3c344543dd787375e406bc782d69da322379faab3fa04e71'],
+];
+for (const [relative, reviewedFile, previousHash] of wireModules) {
+  const target = path.join(core, relative);
+  assert.equal(fs.realpathSync(target), target, `Symlinked module is not promotable: ${relative}`);
+  const installed = fs.readFileSync(target);
+  const reviewed = fs.readFileSync(path.join(repositoryRoot, 'deploy/freekill-native/qa', reviewedFile));
+  if (!installed.equals(reviewed)) {
+    assert.equal(createHash('sha256').update(installed).digest('hex'), previousHash,
+      `Previous production module bytes drifted: ${relative}`);
+    fs.writeFileSync(target, reviewed);
+  }
 }
 
 const configFile = path.join(root, 'freekill.server.config.json');
@@ -135,7 +145,9 @@ console.log(JSON.stringify({
   production: { cardWireVersion: 1, admission: 'v1' },
   changed: [
     'packages/freekill-core/lua/server/roombase.lua',
-    'packages/freekill-core/lua/server/card_wire_projection.lua',
+    ...wireModules.map(([relative]) => `packages/freekill-core/${relative}`),
+    'packages/freekill-core/ltk/core/card_wire_request_visibility.lua',
+    'packages/freekill-core/ltk/core/engine.lua',
     'packages/freekill-core/ltk/server/serverplayer.lua',
     'packages/hegemony/pkg/gamemodes/new_hegemony_mode.lua',
     'freekill.server.config.json',

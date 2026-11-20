@@ -570,7 +570,7 @@ const nativeSupplementalCommands = new Set([
   'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
   'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
   'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
-  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'AskForGeneral', 'CustomDialog',
   'EmptyRequest',
 ]);
 const nativeSemanticCommands = new Set([...nativeSupplementalCommands, ...nativeDeckCommands]);
@@ -578,7 +578,7 @@ const nativeRequestCommands = new Set([
   'AskForCardChosen', 'AskForPoxi', 'AskForAG', 'AskForCardsAndChoice',
   'AskForArrangeCards', 'AskForMoveCardInBoard', 'PlayCard',
   'AskForUseActiveSkill', 'AskForUseCard', 'AskForResponseCard',
-  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'CustomDialog',
+  'AskForChoices', 'AskForOptions', 'AskForSkillInvoke', 'AskForGeneral', 'CustomDialog',
   'EmptyRequest',
 ]);
 const nativeSemanticChannels = ['metadata', 'public', 'request', 'deck', 'negotiation', 'reply'] as const;

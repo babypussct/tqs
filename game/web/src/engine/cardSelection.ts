@@ -39,8 +39,9 @@ export function visibleCardFace(face: { name?: string; suit?: string | number; n
   return result;
 }
 
-const validId = (id: unknown): id is number => Number.isSafeInteger(id) &&
-  (id as number) >= 0 && (id as number) <= 2147483647;
+/** Native printed cards use IDs below -1. The -1 sentinel has no face. */
+export const validCardId = (id: unknown): id is number => typeof id === 'number' &&
+  Number.isSafeInteger(id) && id >= -2147483648 && id <= 2147483647 && id !== -1;
 const record = (x: unknown): x is Record<string, unknown> =>
   !!x && typeof x === 'object' && !Array.isArray(x);
 
@@ -121,7 +122,7 @@ export function parseCardSelection(command: string, payload: unknown,
   for (const group of data) {
     if (!Array.isArray(group) || group.length !== 2 || typeof group[0] !== 'string' ||
         group[0].length > 256 || !Array.isArray(group[1]) || group[1].length > 256 ||
-        !group[1].every(validId)) return null;
+        !group[1].every(validCardId)) return null;
     total += group[1].length;
     if (total > 512) return null;
     for (const id of group[1] as number[]) {

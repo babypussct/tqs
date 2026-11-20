@@ -1,5 +1,17 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 20/11/2026 — sửa mở rộng giao thức v1
+
+- [x] Gom quy tắc hiển thị mặt bài theo yêu cầu gốc và sửa mapping v1 cho nhóm bài, sắp xếp, pattern dùng/đáp, bài in, dialog và tên nước Dã tâm gia. Source **8/8** gồm **20** ca request và **12** kênh strict privacy. Browser/WASM **73/73** và build nguyên pin PASS.
+- [x] Exact native `cfcfe6ae…` qua kiểm lật chủ/phó, phe và bí mật tướng, Observe/Reconnect và ván v1 hai ghế đến GameOver/về sảnh. Build web production `a012fd4e8519…` và verifier `17.318` tệp PASS.
+- [ ] Chuyển cả web và Oracle lên production. Đối chiếu build web, manifest, bundle và kết nối public.
+- [ ] Chạy native với hai client browser cho cả Tuần Tuần và Di Kế, gồm reconnect giữa yêu cầu riêng.
+
+## 20/11/2026 — phe lật tướng và mặt bài trong yêu cầu riêng
+
+- [x] Sửa resend phe khi công khai và cấp mặt bài request-scoped cho Tuần Tuần/Di Kế. Kiểm hồi quy projector, v1 alias, bí mật đối thủ và WASM/Chrome Tuần Tuần PASS.
+- [ ] Xác minh native v1 và browser cùng lúc cho hai kỹ năng, reconnect và hiển thị nước Dã tâm gia. Bản sửa mặt bài cần cả runtime và web build khi phát hành.
+
 ## 20/11/2026 — hiển thị tướng lật đầu tiên ở Quốc Chiến
 
 - [x] Đối chiếu đúng artifact production và tái hiện đường gửi `PropertyUpdate` trong Lua 5.4. Trạng thái từ bản đang chạy giữ tướng lật đầu tiên ở dạng `anjiang` đối với ghế khác dù đã có log lật tướng. Tái hiện cả chủ/phó và legacy/v1. Bộ test hiển thị web **21/21 PASS**.

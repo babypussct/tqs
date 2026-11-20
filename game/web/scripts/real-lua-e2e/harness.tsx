@@ -1040,6 +1040,22 @@ const api = {
     if (kind !== 'options' && !conn['pendingRequest']?.nativeDialogPrompt) throw new Error(`No parsed ${kind} dialog; raw ${JSON.stringify(conn['nativeDialogPayload'])}`);
     return { id, cardIds, tokens: conn['pendingRequest']?.nativeDialogPrompt?.cards.map(card => card.token) };
   },
+  beginPrivateArrange: () => {
+    api.beginPlay();
+    // Model the localized request state produced by the card-wire Lua decoder.
+    conn.lua.eval(`ClientInstance.card_wire_request = {faces = {
+      [1000000000] = {name='slash', suit=1, number=7},
+      [1000000001] = {name='jink', suit=2, number=8},
+      [1000000002] = {name='peach', suit=3, number=9},
+      [1000000003] = {name='duel', suit=4, number=10},
+    }}`);
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForArrangeCards', serverCbor(`{
+      cards={{1000000000,1000000001,1000000002,1000000003},{}},
+      names={'Bottom','Top'}, prompt='#xunxun', capacities={4,2}, limits={0,2},
+      is_free=true, pattern='.', poxi_type='', cancelable=false}`));
+    return useGameStore.getState().pendingRequest?.nativeDialogPrompt?.cards;
+  },
   attemptNative: (id: number, token?: string) => {
     try { conn.respondToNativeDialog(id, token); return null; } catch (e) { return (e as Error).message; }
   },

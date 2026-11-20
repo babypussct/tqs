@@ -7,6 +7,7 @@
 -- This module is intentionally inert until the guarded candidate runtime
 -- installs it and negotiates card_wire_version == 1.
 local RequestWire = {}
+local Visibility = require "ltk.core.card_wire_request_visibility"
 
 local function dense(value, label)
   assert(type(value) == "table", label .. " must be a table")
@@ -139,23 +140,31 @@ local function allSeatCards(seat, ids, seen)
   end
 end
 
-local function issue(room, seat, physical, batch, audience, requestKey, ids)
+local function issue(room, seat, physical, batch, audience, requestKey, ids, visibleCards, hiddenCards)
   local choices, standing = {}, {}
   for i, id in ipairs(ids) do
     local public = isPublic(room, seat, physical, id)
     local agDisplay = isAmazingGraceCard(room, id)
+    local current = batch:currentReference(audience, id)
     if agDisplay then
       -- FillAG/TakeAG are public display metadata. Keep the hidden source
       -- handle live until MoveCards explicitly retires it, while exposing the
       -- canonical ID as the AG model's standing display identity.
-      local current = batch:currentReference(audience, id)
       standing[i] = batch:standing(audience, id, true)
       -- The physical owner may already have a canonical public standing
       -- reference from the preceding public transition. Preserve that state;
       -- an outsider remains hidden until MoveCards carries the rekey.
       public = type(current) == "number"
+    elseif current ~= nil then
+      -- Request visibility may differ from the most recent movement. Preserve
+      -- its standing alias until a movement retires it explicitly.
+      standing[i] = current
+      public = type(current) == "number"
     else
       standing[i] = batch:reference(audience, id, public)
+    end
+    if hiddenCards and hiddenCards[id] and type(standing[i]) == "number" then
+      standing[i] = batch:standing(audience, id, false)
     end
     choices[i] = { id = id, public = public }
   end
@@ -167,6 +176,12 @@ local function issue(room, seat, physical, batch, audience, requestKey, ids)
       "request choice token must be opaque")
     byId[id] = token
     metadata[i] = { token = token, standing = standing[i] }
+    local visible = visibleCards and visibleCards[id]
+    if type(standing[i]) == "string" and physical == seat._splayer and visible and
+        (visible == true or room:getCardArea(id) == Card.DrawPile or room:getCardArea(id) == Card.Processing) then
+      local card = assert(Fk:getCardById(id, true), "request-visible card is missing")
+      metadata[i].face = { name = card.name, suit = card.suit, number = card.number }
+    end
   end
   return byId, metadata
 end
@@ -199,12 +214,12 @@ local function projectVisible(value, byId, label)
   assert(type(value) == "table", label .. " must be a map")
   local result = {}
   for key, visible in pairs(value) do
-    assert(type(key) == "string" and type(visible) == "boolean",
+    assert(type(key) == "string" and (type(visible) == "boolean" or visible == 0 or visible == 1),
       label .. " has an invalid entry")
     local id = tonumber(key)
     assert(id and id % 1 == 0 and byId[id],
       label .. " references a card outside the request allowlist")
-    result[tostring(byId[id])] = visible
+    result[tostring(byId[id])] = visible == true or visible == 1
   end
   return result
 end
@@ -522,7 +537,8 @@ local function projectCustomDialog(data)
   -- The Hegemony watch-next-deputy dialog is a second exact schema. It only
   -- contains public general names and scalar UI controls; arbitrary custom
   -- dialogs are intentionally not admitted by the v1 projector.
-  if component.url == "packages/hegemony/qml/KnownBothBox.qml" then
+  if component.url == "packages/hegemony/qml/KnownBothBox.qml" or
+      component.url == "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml" then
     fields(component, { url = true, model = true }, "KnownBothBox component")
     assert(type(component.model) == "table", "KnownBothBox model is required")
     local model = component.model
@@ -558,6 +574,39 @@ local function projectCustomDialog(data)
     }
   end
 
+  local skillBox = component.url == "packages/utility/qml/ChooseSkillBox.qml"
+  local namesBox = component.url == "packages/utility/qml/ChooseCardNamesBox.qml"
+  if skillBox or namesBox then
+    fields(component, { url = true, model = true }, "string choice component")
+    local model = component.model
+    fields(model, { url = true, prop = true }, "string choice model")
+    assert(model.url == (skillBox and "packages/utility/qml/models/ChooseSkillModel.qml" or
+      "packages/utility/qml/models/ChooseCardNamesModel.qml"), "string choice model is invalid")
+    local prop = model.prop
+    if skillBox then
+      fields(prop, { skills = true, generals = true, min = true, max = true,
+        prompt = true, cancelable = true }, "skill choice properties")
+      stringArray(prop.skills, "skill choices")
+      if prop.generals ~= nil then stringArray(prop.generals, "skill choice generals") end
+    else
+      fields(prop, { choices = true, allChoices = true, minNum = true, maxNum = true,
+        prompt = true, cancelable = true, repeatable = true }, "card-name choice properties")
+      stringArray(prop.choices, "card name choices")
+      assert(prop.repeatable == false, "repeatable card-name choices are unaudited")
+      for i = 1, dense(prop.allChoices, "card-name groups") do
+        stringArray(prop.allChoices[i], "card-name group")
+      end
+    end
+    local minimum = integer(skillBox and prop.min or prop.minNum, "choice minimum")
+    local maximum = integer(skillBox and prop.max or prop.maxNum, "choice maximum")
+    assert(minimum >= 0 and minimum <= maximum, "string choice limits are invalid")
+    optionalString(prop.prompt, "choice prompt")
+    optionalBoolean(prop.cancelable, "cancelable")
+    local result = copy(data)
+    if skillBox and prop.cancelable == nil then result.component.model.prop.cancelable = false end
+    return result
+  end
+
   error("unaudited CustomDialog component")
 end
 
@@ -580,7 +629,7 @@ local function splitComma(value, label)
   return result
 end
 
-local function containsString(values, value)
+local function contains(values, value)
   for _, item in ipairs(values) do
     if item == value then return true end
   end
@@ -596,12 +645,12 @@ local function resolveInitialGeneralDialog(originalData, reply)
   assert(#generals == prop.choiceNum and generals[1] ~= generals[2],
     "initial-general pair cardinality is invalid")
   for _, general in ipairs(generals) do
-    assert(containsString(prop.generals, general),
+    assert(contains(prop.generals, general),
       "initial-general reply contains an unoffered general")
   end
   local kingdom = splitComma(reply[2], "initial kingdom choice")
   assert(#kingdom == 2 and kingdom[1] == "kingdom" and
-    containsString(prop.enabledKingdoms, kingdom[2]),
+    contains(prop.enabledKingdoms, kingdom[2]),
     "initial kingdom choice is invalid")
   return { reply[1], reply[2] }
 end
@@ -612,19 +661,35 @@ local function resolveKnownBothDialog(originalData, reply)
   assert(type(reply) == "table", "KnownBothBox reply must be a table")
   fields(reply, { cards = true, choice = true }, "KnownBothBox reply")
   local cards = stringArray(reply.cards, "KnownBothBox selected cards")
+  if contains(prop.cancel_options, reply.choice) then
+    assert(#cards == 0, "cancelled general choice must be empty")
+    return { cards = cards, choice = reply.choice }
+  end
   assert(#cards >= prop.min and #cards <= prop.max,
     "KnownBothBox reply cardinality is invalid")
   local seen = {}
   for _, card in ipairs(cards) do
-    assert(containsString(prop.cards, card) and not seen[card],
+    assert(contains(prop.cards, card) and not contains(prop.disable_cards, card) and not seen[card],
       "KnownBothBox reply contains an unoffered card")
     seen[card] = true
   end
   assert(type(reply.choice) == "string", "KnownBothBox choice is invalid")
-  assert(containsString(prop.ok_options, reply.choice) or
-    containsString(prop.cancel_options, reply.choice),
+  assert(contains(prop.ok_options, reply.choice),
     "KnownBothBox choice is invalid")
   return { cards = cards, choice = reply.choice }
+end
+
+local function projectGeneralChoice(data)
+  assert(dense(data, "general choice") == 7, "general choice expects seven fields")
+  local names = stringArray(data[1], "offered generals")
+  local count = integer(data[2], "number of generals")
+  assert(count >= 1 and count <= #names and type(data[3]) == "boolean" and type(data[4]) == "boolean",
+    "general choice bounds or flags are invalid")
+  assert(type(data[5]) == "string" and type(data[6]) == "string", "general choice rule or prompt is invalid")
+  fields(data[7], { n = true, skill_name = true }, "general choice extra")
+  integer(data[7].n, "general choice extra count")
+  optionalString(data[7].skill_name, "general choice skill")
+  return copy(data)
 end
 
 local function prepare(room, seat, physical, command, data, batch, requestKey)
@@ -657,7 +722,7 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
       assert(type(flag.card_data) == "table", command .. " card_data required")
       for _, group in ipairs(flag.card_data) do addCards(ids, seen, group[2], command) end
     end
-    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids)
+    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids, Visibility.offered(command, data))
     local projectedFlag
     if type(flag) == "string" then
       projectedFlag = flag
@@ -675,7 +740,7 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
       command .. " type/data required")
     for _, group in ipairs(data.data) do addCards(ids, seen, group[2], command) end
     collectExtra(data.extra_data, "extra_data", ids, seen, room)
-    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids)
+    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids, Visibility.offered(command, data))
     local extra = data.extra_data and rewriteExtra(data.extra_data, "extra_data", byId, nil, room) or nil
     payload = {
       type = data.type,
@@ -697,7 +762,7 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
     addCards(ids, seen, data.cards, command)
     if data.disabled then addCards(ids, seen, data.disabled, command) end
     collectExtra(data.extra_data, "extra_data", ids, seen, room)
-    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids)
+    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids, Visibility.offered(command, data))
     payload = copy(data)
     payload.cards = projectCardArray(data.cards, byId, command)
     if data.disabled then payload.disabled = projectCardArray(data.disabled, byId, command) end
@@ -710,7 +775,7 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
     local cardRows = dense(data.cards, command .. " rows")
     for i = 1, cardRows do addCards(ids, seen, data.cards[i], command) end
     if data.pattern then collectExtra(data.pattern, "pattern", ids, seen, room) end
-    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids)
+    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids, Visibility.offered(command, data))
     payload = copy(data)
     if data.pattern then payload.pattern = rewriteExtra(data.pattern, "pattern", byId, nil, room) end
     payload.cards = {}
@@ -736,9 +801,11 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
     assert(dense(data, command) >= 4, command .. " payload is malformed")
     local extraIndex = command == "AskForUseActiveSkill" and 4 or 5
     collectExtra(data[extraIndex], "extra_data", ids, seen, room)
+    if extraIndex == 5 then collectExtra(data[2], "pattern", ids, seen, room) end
     allSeatCards(seat, ids, seen)
-    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids)
+    local byId, metadata = issue(room, seat, physical, batch, audience, requestKey, ids, Visibility.offered(command, data))
     payload = cloneAndRewrite(data, byId, room)
+    if extraIndex == 5 then payload[2] = rewriteExtra(data[2], "pattern", byId, nil, room) end
     return envelope(payload, metadata)
   elseif command == "AskForChoices" or command == "AskForOptions" or
       command == "AskForSkillInvoke" then
@@ -749,6 +816,8 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
     return envelope(payload, {})
   elseif command == "CustomDialog" then
     return envelope(projectCustomDialog(data), {})
+  elseif command == "AskForGeneral" then
+    return envelope(projectGeneralChoice(data), {})
   end
 
   error("unaudited Hegemony v1 request: " .. tostring(command))
@@ -851,23 +920,44 @@ function RequestWire.resolve(room, seat, physical, command, reply, requestKey, o
   elseif command == "AskForAG" then
     return resolveList(protocol, audience, requestKey, { reply }, true)[1]
   elseif command == "AskForCardsAndChoice" then
-    assert(type(reply) == "table", "cards-and-choice reply must be a table")
-    local result = copy(reply)
-    result.cards = resolveList(protocol, audience, requestKey, result.cards or {}, false)
-    assert(type(result.choice) == "string", "cards-and-choice value is invalid")
-    return result
+    fields(reply, { cards = true, choice = true }, "cards-and-choice reply")
+    local count = dense(reply.cards, "selected cards")
+    local cancelled = contains(originalData.cancel_choices or {}, reply.choice)
+    if cancelled then
+      assert(count == 0, "cancelled cards-and-choice reply must be empty")
+    else
+      assert(contains(originalData.choices, reply.choice), "cards-and-choice value is invalid")
+      assert(count >= originalData.min and count <= originalData.max, "selected card count is invalid")
+    end
+    local cards = resolveList(protocol, audience, requestKey, reply.cards, false)
+    for _, id in ipairs(cards) do
+      assert(contains(originalData.cards, id) and not contains(originalData.disabled or {}, id),
+        "cards-and-choice reply contains an unoffered or disabled card")
+    end
+    return { cards = cards, choice = reply.choice }
   elseif command == "AskForArrangeCards" then
-    assert(type(reply) == "table", "arrange reply must be an array")
+    local rows = dense(reply, "arrange reply")
+    assert(rows == dense(originalData.capacities, "arrange capacities"), "arrange reply row count is invalid")
+    local offered, expected = {}, 0
+    for _, row in ipairs(originalData.cards) do
+      for _, id in ipairs(row) do
+        offered[id] = true
+        expected = expected + 1
+      end
+    end
     local flat, slots = {}, {}
     for row, values in ipairs(reply) do
       local count = dense(values, "arrange reply row")
+      assert(count >= (originalData.limits[row] or 0) and count <= originalData.capacities[row],
+        "arrange reply row bounds are invalid")
       slots[row] = {}
       for column = 1, count do
         flat[#flat + 1] = wireToken(values[column], "arrange reply card")
         slots[row][column] = #flat
       end
     end
-    local resolved = protocol:resolveChoice(audience, requestKey, flat, function() return true end)
+    assert(#flat == expected, "arrange reply must contain all offered cards")
+    local resolved = protocol:resolveChoice(audience, requestKey, flat, function(id) return offered[id] == true end)
     assert(resolved, "arrange request reply was rejected")
     local result = {}
     for row, values in ipairs(slots) do
@@ -876,11 +966,14 @@ function RequestWire.resolve(room, seat, physical, command, reply, requestKey, o
     end
     return result
   elseif command == "AskForMoveCardInBoard" then
-    assert(type(reply) == "table" and type(reply.cardId) ~= "nil" and
-      type(reply.pos) == "number", "move-board reply is malformed")
-    local result = copy(reply)
-    result.cardId = resolveList(protocol, audience, requestKey, { result.cardId }, false)[1]
-    return result
+    fields(reply, { cardId = true, pos = true }, "move-board reply")
+    local cardId = resolveList(protocol, audience, requestKey, { reply.cardId }, false)[1]
+    for index, id in ipairs(originalData.cards) do
+      if id == cardId and reply.pos == originalData.cardsPosition[index] then
+        return { cardId = cardId, pos = reply.pos }
+      end
+    end
+    error("move-board reply position is invalid")
   elseif command == "PlayCard" or command == "AskForUseActiveSkill" or command == "AskForUseCard" or
       command == "AskForResponseCard" then
     return resolveUse(protocol, audience, requestKey, reply)
@@ -896,10 +989,19 @@ function RequestWire.resolve(room, seat, physical, command, reply, requestKey, o
     assert(type(component) == "table", "CustomDialog original payload is missing")
     if component.name == "ChooseInitialGeneralBox" then
       return resolveInitialGeneralDialog(originalData, reply)
-    elseif component.url == "packages/hegemony/qml/KnownBothBox.qml" then
+    elseif component.url == "packages/hegemony/qml/KnownBothBox.qml" or
+        component.url == "packages/utility/qml/ChooseGeneralsAndChoiceBox.qml" then
       return resolveKnownBothDialog(originalData, reply)
+    elseif component.url == "packages/utility/qml/ChooseSkillBox.qml" or
+        component.url == "packages/utility/qml/ChooseCardNamesBox.qml" then
+      local prop = projectCustomDialog(originalData).component.model.prop
+      return allowedStringReply({ prop.skills or prop.choices,
+        { prop.min or prop.minNum, prop.max or prop.maxNum } }, reply, 1, 2)
     end
     error("unaudited CustomDialog reply")
+  elseif command == "AskForGeneral" then
+    local data = projectGeneralChoice(originalData)
+    return allowedStringReply({ data[1], { data[2], data[2] } }, reply, 1, 2)
   end
   error("unaudited Hegemony v1 reply: " .. tostring(command))
 end
