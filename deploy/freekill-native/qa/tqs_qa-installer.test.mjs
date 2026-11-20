@@ -25,6 +25,11 @@ function runWithInput(command, args, input, cwd) {
   });
 }
 
+test('the source installer baseline advertises legacy card wire', () => {
+  const config = JSON.parse(readFileSync(defaultConfig, 'utf8'));
+  assert.deepEqual(config.tqsCardWire, { enabled: false, version: 0, admission: 'legacy' });
+});
+
 test('QA installer creates a verified server-only runtime and rejects a dirty source', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-qa-installer-test-'));
   try {

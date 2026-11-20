@@ -12,9 +12,9 @@
   "tqsAuthSecret": "",
   "tqsLockedPacks": [],
   "tqsCardWire": {
-    "enabled": true,
-    "version": 1,
-    "admission": "v1"
+    "enabled": false,
+    "version": 0,
+    "admission": "legacy"
   },
   "roomCountPerThread": 32,
   "maxPlayersPerDevice": 2,
