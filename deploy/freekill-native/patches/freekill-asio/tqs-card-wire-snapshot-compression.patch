@@ -1,0 +1,69 @@
+--- a/src/network/router.cpp
++++ b/src/network/router.cpp
+@@ -9,6 +9,42 @@
+ #include "core/util.h"
+
++#include <cbor.h>
++
+ namespace asio = boost::asio;
+
++namespace {
++
++constexpr size_t snapshotCompressionThreshold = 4096 - 24;
++constexpr size_t maxCompressedSnapshotInput = 8 * 1024 * 1024;
++constexpr std::string_view cardWireVersionKey = "cardWireVersion";
++
++bool isCardWireV1Snapshot(std::string_view payload) {
++  cbor_load_result result {};
++  auto *snapshot = cbor_load(
++    reinterpret_cast<const cbor_data>(payload.data()), payload.size(), &result);
++  if (!snapshot) return false;
++  bool v1 = false;
++  if (result.read == payload.size() && cbor_isa_map(snapshot) && cbor_map_size(snapshot) == 2) {
++    const auto *fields = cbor_map_handle(snapshot);
++    for (size_t i = 0; i < 2; ++i) {
++      const auto *key = fields[i].key;
++      const auto *value = fields[i].value;
++      // The native Lua CBOR codec encodes Lua string keys as byte strings.
++      if (cbor_isa_bytestring(key) && cbor_bytestring_is_definite(key) &&
++          cbor_bytestring_length(key) == cardWireVersionKey.size() &&
++          std::string_view(reinterpret_cast<const char *>(cbor_bytestring_handle(key)),
++                           cardWireVersionKey.size()) == cardWireVersionKey &&
++          cbor_isa_uint(value) && cbor_get_int(value) == 1) {
++        v1 = true;
++        break;
++      }
++    }
++  }
++  cbor_decref(&snapshot);
++  return v1;
++}
++
++} // namespace
++
+ Router::Router(ServerPlayer *player, std::shared_ptr<ClientSocket> socket, RouterType type) {
+   this->type = type;
+@@ -82,10 +118,17 @@
+ void Router::notify(int type, const std::string_view &command, const std::string_view &data) {
+   if (!socket) return;
+-  auto buf = Cbor::encodeArray({
+-    -2,
+-    Router::TYPE_NOTIFICATION | Router::SRC_SERVER | Router::DEST_CLIENT,
+-    command,
+-    data,
+-  });
++  const bool snapshotCommand = command == "Reconnect" || command == "Observe";
++  int flags = Router::TYPE_NOTIFICATION | Router::SRC_SERVER | Router::DEST_CLIENT;
++  std::string compressed;
++  std::string_view payload = data;
++  if (snapshotCommand && data.size() >= snapshotCompressionThreshold &&
++      data.size() <= maxCompressedSnapshotInput && isCardWireV1Snapshot(data)) {
++    compressed = qCompress_std(data, 1);
++    if (compressed.size() < data.size()) {
++      flags |= Router::COMPRESSED;
++      payload = compressed;
++    }
++  }
++  auto buf = Cbor::encodeArray({-2, flags, command, payload});
+   sendMessage(buf);
+ }
