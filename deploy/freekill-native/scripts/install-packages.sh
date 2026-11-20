@@ -21,7 +21,6 @@ PACKAGE_SEED_DIR="${FREEKILL_PACKAGE_SEED_DIR:-$FREEKILL_INSTALL_ROOT/releases/f
 command -v git >/dev/null 2>&1 || die "git is required"
 command -v sqlite3 >/dev/null 2>&1 || die "sqlite3 is required"
 command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required"
-command -v curl >/dev/null 2>&1 || die "curl is required"
 command -v unzip >/dev/null 2>&1 || die "unzip is required"
 command -v patch >/dev/null 2>&1 || die "patch is required"
 
@@ -114,7 +113,7 @@ clone_at_commit "ol" "$OL_URL" "$OL_COMMIT"
 # target is checked on every rerun; an unexpected dirty checkout or modified
 # overlay file is never overwritten silently.
 OVERLAY_MARKER="$RUNTIME_DIR/.tqs-upstream-runtime-overlay"
-OVERLAY_ARCHIVE="${FREEKILL_RUNTIME_OVERLAY_ARCHIVE:-$RUNTIME_DIR/.cache/$TQS_UPSTREAM_RUNTIME_OVERLAY_ID.zip}"
+OVERLAY_ARCHIVE="${FREEKILL_RUNTIME_OVERLAY_ARCHIVE:-$DEPLOY_DIR/$TQS_UPSTREAM_RUNTIME_OVERLAY_ARCHIVE_PATH}"
 SOURCE_OVERLAY_MARKER="$RUNTIME_DIR/.tqs-upstream-runtime-source-overlay"
 SOURCE_OVERLAY_PATCH="$DEPLOY_DIR/$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH"
 OVERLAY_ALREADY_APPLIED=0
@@ -137,11 +136,7 @@ if [[ -f "$SOURCE_OVERLAY_MARKER" ]]; then
   fi
 fi
 
-if [[ ! -f "$OVERLAY_ARCHIVE" ]]; then
-  mkdir -p "$(dirname "$OVERLAY_ARCHIVE")"
-  curl --fail --location --retry 3 --output "$OVERLAY_ARCHIVE.tmp" "$TQS_UPSTREAM_RUNTIME_OVERLAY_URL"
-  mv -f -- "$OVERLAY_ARCHIVE.tmp" "$OVERLAY_ARCHIVE"
-fi
+[[ -f "$OVERLAY_ARCHIVE" ]] || die "Missing pinned runtime overlay archive: $OVERLAY_ARCHIVE"
 printf '%s  %s\n' "$TQS_UPSTREAM_RUNTIME_OVERLAY_SHA256" "$OVERLAY_ARCHIVE" | sha256sum -c - >/dev/null ||
   die "Runtime overlay archive SHA-256 does not match the production baseline"
 
