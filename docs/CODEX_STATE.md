@@ -7,7 +7,9 @@
 - Tái hiện bằng Lua 5.4 với đúng hàm từ artifact đã đối chiếu SHA-256 và socket/event giả lập. Cả bốn tổ hợp chủ/phó lật trước với legacy/v1 tái hiện triệu chứng. Người xem sau đó nhận đúng tướng lật thứ hai, còn trạng thái tướng lật trước vẫn thiếu. `npm --prefix game/web run test:card-display` **21/21 PASS** khi web nhận dữ liệu công khai đúng. [Kết quả probe](../scratch/evidence/tqs-reveal-production.P9bexk/result.log)
 - Bản sửa native ghi nhận đúng ô vừa được lật và công bố ô đó ngay cả khi `role_shown` còn `false`. Cập nhật gia tăng và snapshot đều đối chiếu tên tướng với ô đã công bố. Khi úp lại, trạng thái công khai cũ được thu hồi. Giữ đường cài baseline legacy và dùng bước promote để chuẩn bị runtime production v1.
 - Hồi quy Lua chạy bốn tổ hợp chủ/phó và legacy/v1 **PASS** trên candidate, thất bại đúng tại cập nhật đối thủ trên artifact cũ. Probe projector **36/36**, privacy, store **50/50**, connection **34/34**, hiển thị **21/21**, release **6/6** PASS. Oracle native cô lập đã xác minh lật chủ tướng trước bằng v1, cập nhật ba socket, hai snapshot Observe và một Reconnect, vẫn giấu ô còn úp. Candidate MD5 `859aa436662f2a5af4b72e2ff9316061`, bundle `57b3a4632e3cf58a`, release verifier **17.317 tệp**.
-- Bước triển khai tiếp theo là kiểm ca phó tướng và legacy trên native cô lập, sau đó activate trên Oracle khi không còn ván đang chơi và xác minh manifest, bundle và WSS public.
+- Native cô lập đã chạy đủ **4/4** ca lật chủ/phó trước qua legacy/v1 trên binary production `f6012bad`. Mỗi ca có hai ghế, cập nhật đến ba socket, hai snapshot Observe và một Reconnect. Mỗi snapshot giữ kín ô còn úp và lựa chọn ban đầu. Process và thư mục QA đã được dọn, port `19527` đã đóng.
+- **Production:** source `ce89caa1` đã push lên `main`. Oracle đã active `tqsvn-native-v1-ce89caa1-859aa436-f6012bad-clean`, rollback về `998643f7`. Xác minh `14.993` tệp runtime staged và manifest release SHA-256 `b8fea6c2f6f0db2e0847bce7ad7412b040c7069ed7a528611384f92f1b5888d0`. Quy trình cutover `20.532 s`, không có GameStart chưa kết thúc trong log lúc dừng và có một kết nối native trước restart. Gateway và tunnel giữ cùng invocation.
+- **Smoke https://tqsvn.pages.dev:** health `200 ok`, bundle `57b3a4632e3cf58a` byte-match local với `5338` tệp, WebSocket `101/1000` và nhận `NetworkDelayTest` từ native. Chrome `390×844` mở cổng game và đọc đúng manifest, `0` page errors. Web JS tiếp tục phục vụ đúng hash trước cutover. Chưa chạy Google OAuth và trận thật trên production. [CI của commit phát hành](https://github.com/babypussct/tqs/actions/runs/44724480249)
 
 ## 20/11/2026 — xác minh sau phát hành và hoàn thiện installer
 
@@ -2365,27 +2367,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T11:03:12.365Z (UTC).
-- Nhánh: `main` · HEAD: `be3f9b4bd00a`.
-- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-20T11:10:20.276Z (UTC).
+- Nhánh: `main` · HEAD: `ce89caa18956`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-wire-projection.lua
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M scripts/upstream-first-card-wire-projection-guard.mjs
- M scripts/upstream-first-private-wire-guard.mjs
-?? deploy/freekill-native/qa/hegemony-public-general-source-probe.lua
-?? deploy/freekill-native/scripts/hegemony-public-general.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+ce89caa1 Publish revealed Hegemony generals before faction disclosure
 be3f9b4b Record native v1 release and operations verification
 c04fdd68 Advertise legacy card wire for fresh baseline installs
-a6805a4a Make clean native installs independent of the live gateway
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
