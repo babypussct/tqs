@@ -6,8 +6,11 @@
 - Mở đúng schema `AskForGeneral` và các hộp Utility chọn kỹ năng, tên bài không lặp, tướng kèm phương án. Kiểm phản hồi theo số lượng, lựa chọn cho phép, lá bị khóa, thứ tự nhóm và vị trí chuyển bài. Web hỗ trợ ID bài do game in và tiếp tục loại sentinel `-1`. Role phe thường vẫn đi theo đường riêng tư. Tên nước trong danh sách Dã tâm gia chính thức được gửi công khai khi `role_shown=true`, kể cả trong Observe/Reconnect.
 - **Kiểm thử candidate:** Node source **8/8**, request projector **20 ca**, projector notification **36 ca**, strict v1 CBOR privacy **12 kênh**, raw supplemental kiểm chấp nhận mặt bài hợp lệ và loại mặt bài bị che hoặc gói request tới observer. Browser/WASM **73/73**, unit web liên quan **66/66**, capture **4/4**, sanitize **22/22**, build 14 pin và app/tools typecheck PASS. [Source](../scratch/evidence/tqs-v1-request-final.4CdAXb/source-tests.log) · [Browser](../scratch/evidence/tqs-v1-request-final.4CdAXb/real-lua.log)
 - **Artifact phát hành:** web `a012fd4e85194469e6625ec00fb9872a4312f2b6883955e1780ef8e62345c019` dùng Google auth cùng origin và `/gateway`. Verifier PASS `17.318` tệp, manifest SHA-256 `8b317e9ff6ac893d7e543b4a23ae75e93cc37a22c9dd688ee6f086b68826e860`. Runtime MD5 `cfcfe6aeb7cfb6f95640e0d2b48fab78`, bundle `02c2fc739d723e1d` với `5339` tệp.
-- **Native exact candidate cô lập:** v1 lật chủ và phó, hai ghế và observer đang xem nhận tướng và phe, Observe và Reconnect giữ đúng ô đã lật và phe, tiếp tục che ô còn úp. Probe xử lý lựa chọn phụ khi lật tướng. Một ván hai ghế v1 chạy 7 lượt qua 4 vòng, reconnect, hai GameOver và về sảnh. Ghi nhận `1.807` gói, tối đa `3.183 B`, không có gói lỗi. Browser/WASM đã kiểm riêng các dialog. Vẫn còn ca native cùng hai client browser cho cả Tuần Tuần và Di Kế có reconnect giữa yêu cầu.
-- **Bước kế tiếp:** push commit nguồn lên `main`, xuất bản Web Pages bằng artifact đã đóng gói, kiểm web mới trên runtime cũ, sau đó chuyển Oracle khi phòng trống và kiểm lại cả hai mã build qua public.
+- **Native exact candidate cô lập:** đủ `4/4` tổ hợp lật chủ/phó với v1 và legacy. Hai ghế và observer đang xem nhận tướng và phe, Observe và Reconnect giữ đúng ô đã lật và phe, tiếp tục che ô còn úp. Probe ban đầu lệch một lần ở snapshot reconnect sau lật chủ. Probe bổ sung xử lý lựa chọn phụ sau lật và xác minh phe, đạt cả bốn tổ hợp và ba lần lặp lật chủ v1. Một ván hai ghế v1 chạy 7 lượt qua 4 vòng, reconnect, hai GameOver và về sảnh. Ghi nhận `1.807` gói, tối đa `3.183 B`, không có gói lỗi. Process, DB thử và port QA đã được dọn.
+- **Phát hành production:** source `9584d3c157a84183746277d4a5ba47f5c7d562ca` đã push lên `main`. [Cloudflare Pages production `ce015f22`](https://ce015f22.tqsvn.pages.dev) phục vụ web chính. Oracle chạy `tqsvn-native-v1-9584d3c1-cfcfe6ae-f6012bad-clean`, đối chiếu SHA-256 đủ `14.994` tệp runtime. Cutover `21,215 s` lúc không có ván hoặc kết nối native. Gateway và tunnel giữ cùng invocation. Điểm quay lui Pages `1a5d376d` và native `ce89caa1`.
+- **Smoke production:** canonical và deployment đều trả đúng HTML, JS `/assets/index-0xPAIuS6.js`, service worker, `version.json` và bundle SHA-256 `0be17a497a5b0dba317bb29ba1c0a5c647b5b81c20c3a7c32882822385bd19d3` khớp artifact cục bộ. Chrome `390×844` mở cổng và hiện đúng mã bản dựng/bundle, `0` page errors. WebSocket `101/1000` và nhận `NetworkDelayTest` từ native. OAuth helper trả `200`, endpoint cấp ticket trả `401` khi chưa đăng nhập. [Public smoke metadata](../scratch/evidence/tqs-v1-release.8Z4QH9/smoke-after-native.log)
+- **CI và PWA:** GitHub Actions của commit phát hành đạt `4/4` job. Chrome PWA trên build production đã kiểm worker chờ cùng build, phát hiện build khác, làm mới shell, reload offline và giữ IndexedDB. [GitHub Actions](https://github.com/babypussct/tqs/actions/runs/44764475592)
+- **Phạm vi còn mở:** chưa đăng nhập Google và chơi ván trên production. Browser/WASM kiểm riêng các dialog và kỹ năng. Bước kế tiếp nếu cần kiểm sâu là native với hai client browser cho cả Tuần Tuần và Di Kế, gồm reconnect giữa yêu cầu riêng.
 
 ## 20/11/2026 — phe sau lật tướng và mặt bài chỉ chủ kỹ năng được xem
 
@@ -2384,49 +2387,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T15:32:27.070Z (UTC).
-- Nhánh: `main` · HEAD: `fa746ac22c28`.
-- File thay đổi hiển thị: 30 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-20T15:42:01.528Z (UTC).
+- Nhánh: `main` · HEAD: `9584d3c157a8`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-mark-privacy-source-probe.lua
- M deploy/freekill-native/qa/card-wire-client-request-probe.lua
- M deploy/freekill-native/qa/card-wire-client-requests.lua
- M deploy/freekill-native/qa/card-wire-exposure-source-probe.lua
- M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
- M deploy/freekill-native/qa/card-wire-privacy-v1-source-probe.lua
- M deploy/freekill-native/qa/card-wire-private-physical-source-probe.lua
- M deploy/freekill-native/qa/card-wire-request-projector-source-probe.lua
- M deploy/freekill-native/qa/card-wire-request.lua
- M deploy/freekill-native/qa/hegemony-public-general-source-probe.lua
- M deploy/freekill-native/qa/hidden-wire-privacy-source-probe.lua
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/hegemony-public-general.mjs
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M game/web/scripts/cards-and-choice.test.ts
- M game/web/scripts/multiplayer-e2e/evidence-sanitize.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/native-dialogs.test.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/src/engine/cardSelection.ts
- M game/web/src/engine/cardsAndChoice.ts
- M game/web/src/engine/hostLua.ts
- M game/web/src/engine/nativeDialogs.ts
- M game/web/src/store/boardState.ts
- M scripts/upstream-first-card-wire-client-request-guard.mjs
- M scripts/upstream-first-card-wire-request-projector-guard.mjs
-?? deploy/freekill-native/qa/card-wire-request-visibility.lua
-?? deploy/freekill-native/scripts/card-wire-request-runtime.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+9584d3c1 Fix Hegemony v1 request visibility and dialog replies
 fa746ac2 Record production verification for Hegemony general reveals
 ce89caa1 Publish revealed Hegemony generals before faction disclosure
-be3f9b4b Record native v1 release and operations verification
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

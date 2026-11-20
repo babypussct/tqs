@@ -4,7 +4,7 @@
 
 - [x] Gom quy tắc hiển thị mặt bài theo yêu cầu gốc và sửa mapping v1 cho nhóm bài, sắp xếp, pattern dùng/đáp, bài in, dialog và tên nước Dã tâm gia. Source **8/8** gồm **20** ca request và **12** kênh strict privacy. Browser/WASM **73/73** và build nguyên pin PASS.
 - [x] Exact native `cfcfe6ae…` qua kiểm lật chủ/phó, phe và bí mật tướng, Observe/Reconnect và ván v1 hai ghế đến GameOver/về sảnh. Build web production `a012fd4e8519…` và verifier `17.318` tệp PASS.
-- [ ] Chuyển cả web và Oracle lên production. Đối chiếu build web, manifest, bundle và kết nối public.
+- [x] Phát hành `9584d3c1` lên `main`, Pages production `ce015f22` và Oracle `9584d3c1-cfcfe6ae`. Web/build, manifest/bundle, Chrome, PWA và kết nối public PASS. [CI phát hành](https://github.com/babypussct/tqs/actions/runs/44764475592) `4/4`.
 - [ ] Chạy native với hai client browser cho cả Tuần Tuần và Di Kế, gồm reconnect giữa yêu cầu riêng.
 
 ## 20/11/2026 — phe lật tướng và mặt bài trong yêu cầu riêng
