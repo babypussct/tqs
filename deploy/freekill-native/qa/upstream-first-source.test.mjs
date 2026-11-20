@@ -287,6 +287,15 @@ test('owner-only role, concealed general and marks use real physical socket proj
   assert.match(output, /PASS candidate direct owner-only physical: role\/general\/mark projected per socket, observer\/opponent isolation, projector\/CBOR abort, fail-closed opt-in, public and legacy paths; synthetic-only; native\/browser NOT RUN/u);
 });
 
+test('first reveal publishes only the revealed slot to opponents, observers and snapshots', () => {
+  const output = runLua('hegemony-public-general-source-probe.lua', [path.dirname(coreRoot)]);
+  for (const wire of ['1', 'legacy']) {
+    for (const slot of ['general', 'deputyGeneral']) {
+      assert.ok(output.includes(`PASS wire=${wire} first=${slot} owner/opponent/observer/reconnect`));
+    }
+  }
+});
+
 test('concealed physical SetCardMark is projected per owner and fails closed before CBOR delivery', () => {
   const output = runLua('card-wire-card-mark-physical-source-probe.lua', [coreRoot]);
   assert.match(output, /PASS candidate physical SetCardMark: owner\/private-pile projection, other socket and observer isolation, deck\/public separation, atomic projector\/CBOR rollback, fail-closed opt-in, robot\/legacy; synthetic-only; native\/browser NOT RUN/u);

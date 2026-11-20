@@ -60,6 +60,7 @@ if (fs.existsSync(target)) {
       '061ed5c4ec16840048e299bf4fd5b8effdfdf7488fcdf9df5bee666d03699350',
       // Projector shipped in the native v1 candidate dd390ea8.
       'ae7b4de425c34d50e5cafa233e33eec5d58ffa24ff40270a0040559122efe1d3',
+      'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe',
     ]);
     assert.ok(reviewedPriorRevisions.has(createHash('sha256').update(installed).digest('hex')),
       'candidate projector differs from reviewed previous revisions');

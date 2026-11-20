@@ -6,9 +6,11 @@
 // symlinked package trees.
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { updatePublicGeneralSource } from './hegemony-public-general.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
   const separator = arg.indexOf('=');
@@ -104,6 +106,19 @@ const productionHook = [
 ].join('\n');
 editOnce(modeFile, qaHook, productionHook, 'production pre-draw negotiation boundary');
 
+updatePublicGeneralSource(core, '--apply');
+const projectorPath = path.join(core, 'lua/server/card_wire_projection.lua');
+assert.equal(fs.realpathSync(projectorPath), projectorPath, 'Symlinked projector is not promotable');
+const projector = fs.readFileSync(projectorPath);
+const reviewedProjector = fs.readFileSync(path.join(repositoryRoot,
+  'deploy/freekill-native/qa/card-wire-projection.lua'));
+if (!projector.equals(reviewedProjector)) {
+  assert.equal(createHash('sha256').update(projector).digest('hex'),
+    'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe',
+    'Previous production projector bytes drifted');
+  fs.writeFileSync(projectorPath, reviewedProjector);
+}
+
 const configFile = path.join(root, 'freekill.server.config.json');
 let config = {};
 if (fs.existsSync(configFile)) {
@@ -120,6 +135,8 @@ console.log(JSON.stringify({
   production: { cardWireVersion: 1, admission: 'v1' },
   changed: [
     'packages/freekill-core/lua/server/roombase.lua',
+    'packages/freekill-core/lua/server/card_wire_projection.lua',
+    'packages/freekill-core/ltk/server/serverplayer.lua',
     'packages/hegemony/pkg/gamemodes/new_hegemony_mode.lua',
     'freekill.server.config.json',
   ],

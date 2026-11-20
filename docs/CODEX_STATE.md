@@ -1,5 +1,14 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 20/11/2026 — chẩn đoán tướng đầu tiên đã lật nhưng vẫn hiện ẩn
+
+- Production `tqsvn.pages.dev/gateway/healthz` trả `200 ok`. Manifest công bố `cardWireVersion=1`, MD5 `f7db727839b09febc310688791bfa653`, bundle `7c7c3c9b01d53c28`. Oracle chạy release `998643f7`. SHA-256 của năm tệp Lua liên quan trên Oracle khớp bản lưu `scratch/evidence/tqs-ops-close.SQcZNi/release-compression/runtime/packages`.
+- `revealGeneral()` gọi `changeHero()` và gửi `PropertyUpdate` trước `fk.GeneralShown`. Guard `notifyProperty` dựa vào `role_shown`, nên trong lượt lật đầu tiên chủ ghế nhận đúng tướng, ghế đối diện nhận `anjiang`, observer bám ghế không nhận cập nhật tướng. Nhật ký `#RevealGeneral` vẫn đến. Khi `GeneralShown` bật `role_shown` cho phe thường, guard không gửi lại tên của tướng vừa lật.
+- Tái hiện bằng Lua 5.4 với đúng hàm từ artifact đã đối chiếu SHA-256 và socket/event giả lập. Cả bốn tổ hợp chủ/phó lật trước với legacy/v1 tái hiện triệu chứng. Người xem sau đó nhận đúng tướng lật thứ hai, còn trạng thái tướng lật trước vẫn thiếu. `npm --prefix game/web run test:card-display` **21/21 PASS** khi web nhận dữ liệu công khai đúng. [Kết quả probe](../scratch/evidence/tqs-reveal-production.P9bexk/result.log)
+- Bản sửa native ghi nhận đúng ô vừa được lật và công bố ô đó ngay cả khi `role_shown` còn `false`. Cập nhật gia tăng và snapshot đều đối chiếu tên tướng với ô đã công bố. Khi úp lại, trạng thái công khai cũ được thu hồi. Giữ đường cài baseline legacy và dùng bước promote để chuẩn bị runtime production v1.
+- Hồi quy Lua chạy bốn tổ hợp chủ/phó và legacy/v1 **PASS** trên candidate, thất bại đúng tại cập nhật đối thủ trên artifact cũ. Probe projector **36/36**, privacy, store **50/50**, connection **34/34**, hiển thị **21/21**, release **6/6** PASS. Oracle native cô lập đã xác minh lật chủ tướng trước bằng v1, cập nhật ba socket, hai snapshot Observe và một Reconnect, vẫn giấu ô còn úp. Candidate MD5 `859aa436662f2a5af4b72e2ff9316061`, bundle `57b3a4632e3cf58a`, release verifier **17.317 tệp**.
+- Bước triển khai tiếp theo là kiểm ca phó tướng và legacy trên native cô lập, sau đó activate trên Oracle khi không còn ván đang chơi và xác minh manifest, bundle và WSS public.
+
 ## 20/11/2026 — xác minh sau phát hành và hoàn thiện installer
 
 - **Oracle:** thu hồi `1318 MiB` từ bốn tệp cache PCH của các build cũ. Đã sao lưu trong `scratch/evidence/tqs-post-release.ds1zeV/oracle-generated-pch.tar.gz`, kiểm SHA-256 từng tệp trong archive và đối chiếu bản gốc trước khi thu hồi. Đĩa trống `1395 → 2713 MiB`, sau thao tác khoảng `94%` sử dụng. Native/gateway/tunnel và hai timer active, `current` vẫn trỏ `998643f7`, health public `200`.
@@ -2356,44 +2365,27 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T07:14:35.161Z (UTC).
-- Nhánh: `codex/card-wire-production-20261118` · HEAD: `dd390ea81bdb`.
-- File thay đổi hiển thị: 25 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-20T11:03:12.365Z (UTC).
+- Nhánh: `main` · HEAD: `be3f9b4bd00a`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M .github/workflows/build-safety.yml
- M build/change-scopes.test.mjs
- M build/output-policy.mjs
- M build/output-policy.test.mjs
- M deploy/freekill-native/patches/upstream-runtime/tqs-card-wire-native-boundary-qa.patch
- M deploy/freekill-native/qa/card-wire-performance-source-probe.lua
- M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
  M deploy/freekill-native/qa/card-wire-projection.lua
  M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/mobile/CLOUDFLARE_PAGES_QUICK_TUNNEL.md
- M deploy/mobile/oracle-tunnel-register.mjs
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M game/web/scripts/card-wire-coverage.test.ts
- M game/web/scripts/hidden-rule-contract.test.ts
- M game/web/scripts/pages-gateway.test.mjs
- M game/web/scripts/pwa-e2e/run.ts
- M game/web/scripts/skill-audit.ts
- M gateway/src/server.mjs
  M scripts/upstream-first-card-wire-projection-guard.mjs
-?? docs/web-client/CARD_WIRE_FREE_OPERATIONS_CURRENT_2026-11-20.json
-?? docs/web-client/CARD_WIRE_NATIVE_RECONNECT_CURRENT_2026-11-19.json
-?? docs/web-client/CARD_WIRE_NATIVE_V1_CANARY_ROLLBACK_CURRENT_2026-11-19.json
-?? docs/web-client/CARD_WIRE_RELEASE_REVIEW_PACKET_CURRENT_2026-11-19.json
-?? docs/web-client/CARD_WIRE_ROLLBACK_DRAIN_CURRENT_2026-11-19.json
-?? docs/web-client/TQS_OPERATIONS_VERIFICATION_CURRENT_2026-11-20.json
+ M scripts/upstream-first-private-wire-guard.mjs
+?? deploy/freekill-native/qa/hegemony-public-general-source-probe.lua
+?? deploy/freekill-native/scripts/hegemony-public-general.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
-dd390ea8 feat: promote card-wire v1 native bridge
-5d2b1d62 docs: refresh card-wire scope artifact
-1a6a1eba docs: record device network scope waiver
+be3f9b4b Record native v1 release and operations verification
+c04fdd68 Advertise legacy card wire for fresh baseline installs
+a6805a4a Make clean native installs independent of the live gateway
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

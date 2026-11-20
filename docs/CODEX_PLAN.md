@@ -1,5 +1,11 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 20/11/2026 — hiển thị tướng lật đầu tiên ở Quốc Chiến
+
+- [x] Đối chiếu đúng artifact production và tái hiện đường gửi `PropertyUpdate` trong Lua 5.4. Trạng thái từ bản đang chạy giữ tướng lật đầu tiên ở dạng `anjiang` đối với ghế khác dù đã có log lật tướng. Tái hiện cả chủ/phó và legacy/v1. Bộ test hiển thị web **21/21 PASS**.
+- [x] Sửa cập nhật và snapshot theo từng ô tướng, xóa trạng thái công khai khi úp lại. Lua hồi quy bốn tổ hợp chủ/phó và legacy/v1 PASS. Native v1 cô lập đã xác minh lật chủ tướng trước, người xem đang kết nối, Reconnect/Observe và ô còn úp.
+- [ ] Hoàn tất kiểm tra phó tướng và legacy trên native cô lập, activate Oracle, so khớp manifest/bundle và smoke WSS public.
+
 ## 20/11/2026 — ba mục xác minh sau phát hành
 
 - [x] Thu hồi cache build Oracle có bản sao đã kiểm hash. Đĩa trống `1395 → 2713 MiB` và production healthy.

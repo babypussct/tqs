@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { updatePublicGeneralSource, withoutPublicGeneralEdits } from '../deploy/freekill-native/scripts/hegemony-public-general.mjs';
 
 const [mode, rootInput] = process.argv.slice(2);
 assert.ok(['--apply', '--check'].includes(mode) && rootInput,
@@ -488,7 +489,7 @@ for (const { file, before, after, legacy } of patches) {
     || relative.startsWith(`hegemony${path.sep}`), 'patch escapes isolated candidate packages');
   assert.equal(fs.realpathSync(target), target, 'refuse symlink outside isolated candidate');
   const data = grouped.get(target) ?? fs.readFileSync(target, 'utf8');
-  let canonicalCheck = data;
+  let canonicalCheck = withoutPublicGeneralEdits(file, data);
   if (file === 'lua/server/roombase.lua' &&
       data.includes('TQS_HEG_CARD_WIRE_PRIVATE_PHYSICAL')) {
     for (const [projected, original] of privatePhysicalCallsites) {
@@ -524,4 +525,5 @@ if (mode === '--apply') {
     fs.writeFileSync(file, data);
   }
 }
+updatePublicGeneralSource(root, mode);
 console.log(`PASS isolated Hegemony private wire guard ${mode}: ${patches.length} source hunks`);

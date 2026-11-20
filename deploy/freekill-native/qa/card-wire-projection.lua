@@ -437,8 +437,10 @@ local function projectProperty(room, seat, physical, data)
         assert(value == "hidden" or target.role_shown == true,
           "concealed role cannot be sent to a nonowner")
       elseif key == "general" or key == "deputyGeneral" then
+        local publicGenerals = target._tqs_public_generals
         assert(value == "anjiang" or
-          (target.role_shown == true and target[key] == value),
+          (target[key] == value and
+            (target.role_shown == true or (publicGenerals and publicGenerals[key] == value))),
           "concealed general cannot be sent to a nonowner")
       elseif key == "kingdom" then
         assert(value == "unknown" or value == "hidden" or
