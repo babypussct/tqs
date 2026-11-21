@@ -1,5 +1,22 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 22/11/2026 — Khảo sát Quốc Chiến 7 ghế production
+
+- [x] Trận 01 production: 7 ghế, sáu bot native + một Trust, tới màn hình kết quả.
+- [ ] Trận 02–10, reconnect và bằng chứng AI/native theo từng trận.
+
+- [ ] Anh Vũ Bôi: đã tái hiện lỗi preview Lua trong yêu cầu dùng Tửu. Cần sửa và kiểm thao tác nhấn kỹ năng, gửi phản hồi và xử lý lá đầu chồng ở native v1.
+
+## 22/11/2026 — Rà lỗi card-wire v1
+
+- [x] Sửa preview Anh Vũ Bôi trong gói candidate và kiểm hồi quy Lua trên slot ẩn danh, lá vật lý, chồng rỗng và giới hạn lượt.
+- [ ] Native v1 E2E Anh Vũ Bôi trong yêu cầu Tửu và trong lượt, đối chiếu legacy, reconnect và observer.
+- [ ] Rà các kênh packet và kỹ năng còn thiếu bằng chứng bằng ván thật, dựng ca tái hiện cho lỗi mới và chạy lại rematch.
+
+- [x] Loại bảng slot đã cấp và tránh chép toàn bộ tombstone khi preflight; probe nhiều vòng giữ nguyên chống trả lời bằng ID/token cũ.
+- [ ] Đo thời gian MoveCards và bộ nhớ trong nhiều ván native thật.
+- [ ] Kiểm lỗi dựng snapshot, khôi phục khi còn yêu cầu và các schema hiếm bằng native v1; xác nhận không lộ bài/tướng theo từng góc nhìn.
+
 ## 21/11/2026 — Phát hành đầy đủ AI Tửu và chơi ván kế tiếp
 
 - [x] Build và triển khai web cùng gói native chứa đủ sáu tệp Lua chức năng đang chờ phát hành, giữ hotfix mục tiêu/reconnect. Xác nhận production phục vụ đúng bundle bằng so byte sáu tệp.

@@ -1,5 +1,33 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 22/11/2026 — Khảo sát Quốc Chiến 7 ghế production
+
+Đã xác minh trên tqsvn.pages.dev bằng Chrome: phòng Quốc Chiến 7/7, sáu bot native và ghế chủ bật Ủy thác sau xác nhận chủ/phó. Trận 01 đổi lượt tự động và hiển thị “Bạn đã thua” cùng nút “Ở lại phòng chờ”. Chưa lấy seed, số liệu AI native hoặc kết quả các trận 02–10. Bước tiếp: dùng phòng 7 ghế để chạy các trận còn lại và thu metadata đã làm sạch.
+
+- Anh Vũ Bôi: tái hiện lỗi Lua khi mô phỏng bấm kỹ năng trong yêu cầu dùng Tửu bằng callback Hegemony và các hàm `Engine:getCardById`, `Card:addSubcard` của runtime phát hành. Slot rút v1 ẩn danh trả nil khi tính thuộc tính lá con; đối chứng có lá phân giải được PASS. Lua probe cô lập, chưa phát lại thao tác trên web production. Bước tiếp: preview Tửu không gắn slot ẩn danh, giữ lá vật lý do máy chủ xử lý và kiểm cả hai nhánh.
+
+## 22/11/2026 — Sửa Anh Vũ Bôi trên card-wire v1
+
+- `deploy/freekill-native/scripts/promote-card-wire-v1.mjs` sửa preview của Anh Vũ Bôi trên gói phát hành. Client v1 preview Tửu khi lá đầu chồng là slot ẩn danh. Native vẫn gắn lá vật lý khi xử lý reply; legacy giữ đường cũ. Chưa phát hành.
+- Dựng từ ZIP production ngày 21/11, chạy promoter hai lần và probe `turban-shell-cup-probe.lua` với Lua 5.4 PASS. Probe kiểm nhánh kích hoạt, bảo toàn gắn lá vật lý, chồng hết bài và giới hạn chín lần. Browser Lua trên đúng cây candidate 73/73 PASS (gồm `--table-piles` chạy riêng 1/1); native contract 67/67, coverage 6/6, raw capture 5/5, sanitizer 22/22, recovery 3/3 PASS.
+- Source guard trên gói client production và candidate cùng 40/42. Hai kiểm tra guard cần `Fk/Base` mà ZIP Lua phục vụ web không chứa. Bằng chứng tại `scratch/evidence/tqs-v1-{baseline.m5zTHq,candidate.Sk5DeB}/source.log`.
+- Bước tiếp: chạy lại trên cây native đầy đủ và xác minh ván v1 thực với Anh Vũ Bôi cả hai nhánh, kiểm reply, hiệu ứng Tửu, ẩn danh chồng bài và reconnect. Mở rộng theo các luồng chưa có bằng chứng, gồm observer và rematch.
+
+## 22/11/2026 — Audit rủi ro card-wire v1
+
+- Production manifest quan sát qua HTTPS: v1, MD5 `19a63d60aac2d9e19e6b63920c0f0cce`, bundle `3d44d78852cd903c`, 5.339 tệp. Audit read-only dựa trên ZIP phát hành tương ứng, overlay Anh Vũ Bôi ở candidate và coverage matrix lịch sử. Không thay đổi production.
+- P1 hiệu năng client dài phiên: `Refs:resetSession()` giữ `usedLocal` và `retiredTokens`; `Moves.receive` sao chép toàn bộ hai bảng khi preflight mỗi packet. Lua 5.4 synthetic 200 lần thay 211 slot và 10 reset còn 42.200 mục `usedLocal`. Chưa đo giật hoặc RSS trên ván thật. Cần tách dữ liệu bất biến của preflight và benchmark theo số ván, reconnect, packet và heap.
+- P1 tương thích schema: request, reply và notification ngoài danh sách kiểm toán bị chặn; lỗi dispatch Lua ngắt kết nối web. Quét lời gọi notify có tên literal trong Hegemony, utility và core gameplay server không thấy tên thiếu trong projector. Chưa xác minh phát sinh động, hình dạng theo nhánh kỹ năng, và CardMark/metadata hiếm. Giữ chính sách chặn mặc định khi thêm schema có kiểm thử.
+- P1 khôi phục sau lỗi snapshot: client reset alias/request trước mapping và callback dựng lại phòng; lỗi sau reset dẫn tới đóng kết nối ở bridge. Native reconnect thành công có bằng chứng lịch sử; đường lỗi, request đang mở, observer đổi ghế và rematch trên cùng bản phát hành vẫn cần ma trận chạy thật.
+- P1 gameplay: Anh Vũ Bôi được tái hiện và sửa ở candidate, chưa chạy production. Cần kiểm dùng Tửu trong lượt và hấp hối qua cả reply server và trạng thái card/HP. Browser 73/73 và contract 67/67 của lượt trước không chứng minh mọi kỹ năng.
+- Ưu tiên tiếp: đóng ca Anh Vũ Bôi native, đo đường MoveCards nhiều ván, rồi thu capture đã lọc snapshot/reconnect/Observe với lựa chọn mở và rematch; rà parity từng emitter theo coverage matrix.
+
+## 22/11/2026 — Ổn định card-wire v1 trước phát hành
+
+- Gói ứng viên sửa bốn tệp Lua: Anh Vũ Bôi preview Tửu trên slot ẩn danh, MoveCards preflight chia sẻ lịch sử chỉ đọc, cấp ID theo mốc tăng dần thay bảng toàn bộ slot đã cấp, và snapshot chỉ commit alias/request sau khi ánh xạ xong.
+- Browser Lua trên gói ứng viên 73/73, source 42/42, native contract 67/67, release contract 6/6 và probe Anh Vũ Bôi PASS. Hồi quy thử 42.200 slot ẩn và kiểm token cũ tiếp tục bị từ chối. Schema hiếm chưa có ca lỗi cụ thể; tiếp tục kiểm theo emitter và ván thực.
+- Ứng viên MD5 `75bab68725d603d59b0d062b67523df6`. Cold boot vòng đầu tìm ra bốn mục AppleDouble do tar macOS tạo trong cây staging, đã dọn bốn mục và chạy lại gate trước cutover. Gói web nhận Lua qua gateway; đối chiếu manifest và ZIP sau cutover.
+
 ## 21/11/2026 — Phát hành đầy đủ TQSVN sau hotfix reconnect
 
 - Đã push mã phát hành và quy ước triển khai đầy đủ ở `f5322586`. Đối chiếu nguồn và artifact: gói native hotfix trước thiếu bốn Lua AI Tửu/Sát và hai Lua vòng đời chơi lại cùng phòng. Đã áp cả sáu tệp lên release cô lập và giữ các thay đổi chọn mục tiêu/reconnect đã phát hành. TQSShop không có diff runtime từ bản phát hành `b1f3c0dd`.
@@ -2429,20 +2457,29 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T07:05:09.479Z (UTC).
-- Nhánh: `main` · HEAD: `f5322586f89a`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T17:28:48.825Z (UTC).
+- Nhánh: `main` · HEAD: `bf45d9b32788`.
+- File thay đổi hiển thị: 10 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/card-wire-client-moves.lua
+ M deploy/freekill-native/qa/card-wire-client-refs-probe.lua
+ M deploy/freekill-native/qa/card-wire-client-refs.lua
+ M deploy/freekill-native/qa/card-wire-client-snapshot-probe.lua
+ M deploy/freekill-native/qa/card-wire-client-snapshots.lua
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
+ M scripts/upstream-first-card-wire-client-moves-guard.mjs
+ M scripts/upstream-first-card-wire-client-refs-guard.mjs
+?? deploy/freekill-native/qa/turban-shell-cup-probe.lua
 ```
 
 Ba commit gần nhất:
 
 ```text
+bf45d9b3 Record complete TQSVN production release
 f5322586 Document complete TQS production releases
 ac8d534f Record TQSVN reconnect hotfix deployment
-2eafd43d Fix Hegemony target serialization and reconnect penalties
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

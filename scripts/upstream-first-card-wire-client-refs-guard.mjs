@@ -21,6 +21,7 @@ if (mode === '--apply' && !fs.existsSync(modulePath)) {
   fs.writeFileSync(modulePath, expectedModule);
 } else if (mode === '--apply' && fs.readFileSync(modulePath, 'utf8') !== expectedModule) {
   const reviewedPriorRevisions = new Set([
+    '924853d9f63f6dee5018a8c33d51c4d8fd474998d99895a06d95c6e46b36c709',
     'fb00ab4912d3187df0f21a99682001558170a773696cfeffc5f2af90c74d0390',
   ]);
   const installedHash = createHash('sha256').update(fs.readFileSync(modulePath)).digest('hex');

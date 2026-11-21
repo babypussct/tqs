@@ -160,32 +160,30 @@ function Snapshots.receive(room, envelope)
     envelope.payload.settings.gameMode == "new_heg_mode",
     "projected snapshot requires Hegemony settings")
   validateSnapshot(envelope.payload)
-  if not room.card_wire_refs then
-    room.card_wire_refs = require("ltk.client.card_wire_refs").new()
-  end
-  assert(type(room.card_wire_refs.resetSession) == "function",
-    "client card-wire aliases are unavailable")
+  local refs = room.card_wire_refs or require("ltk.client.card_wire_refs").new()
 
-  -- A snapshot is a new physical session. Retire all prior request/handle
-  -- state before mapping the new snapshot; local IDs are never recycled.
-  room.card_wire_refs:resetSession()
-  room.card_wire_request = nil
+  -- Stage the new physical session until every reference has localized.
+  local staged = { card_wire_refs = refs:fork() }
+  staged.card_wire_refs:resetSession()
   local result = copy(envelope.payload)
   local manager = result.card_manager
-  manager.draw_pile = localizeList(room, manager.draw_pile, "snapshot draw pile", true)
+  manager.draw_pile = localizeList(staged, manager.draw_pile, "snapshot draw pile", true)
   for _, name in ipairs({ "discard_pile", "processing_area", "void" }) do
-    manager[name] = localizeList(room, manager[name], "snapshot " .. name, false)
+    manager[name] = localizeList(staged, manager[name], "snapshot " .. name, false)
   end
-  manager.card_marks = localizeMarks(room, manager.card_marks)
+  manager.card_marks = localizeMarks(staged, manager.card_marks)
 
   for _, record in pairs(result.players) do
     for area, ids in pairs(record.player_cards) do
-      record.player_cards[area] = localizeList(room, ids, "snapshot player cards", false)
+      record.player_cards[area] = localizeList(staged, ids, "snapshot player cards", false)
     end
     for pile, ids in pairs(record.special_cards) do
-      record.special_cards[pile] = localizeList(room, ids, "snapshot special cards", false)
+      record.special_cards[pile] = localizeList(staged, ids, "snapshot special cards", false)
     end
   end
+  refs:commitDraft(staged.card_wire_refs)
+  room.card_wire_refs = refs
+  room.card_wire_request = nil
   return result
 end
 

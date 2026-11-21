@@ -78,5 +78,28 @@ rejects(function() a:toWire(renewedId) end, "expired or unrecognized")
 assert(a:isHiddenLocal(renewedId), "stale IDs must remain UI-hidden")
 assert(a:toLocal(token("d")) > renewedId)
 
+local repeated = Refs.new()
+local firstSlot
+for _ = 1, 10 do
+  local current = {}
+  for _ = 1, 20 do
+    current = repeated:replaceAnonymousDeck(211, current)
+    firstSlot = firstSlot or current[1]
+  end
+  repeated:resetSession()
+end
+assert(next(repeated.anonymous) == nil and next(repeated.occupiedLocal) == nil)
+assert(next(repeated.retiredTokens) == nil, "anonymous slots cannot create token history")
+assert(repeated:isHiddenLocal(firstSlot))
+rejects(function() repeated:toWire(firstSlot) end, "expired or unrecognized")
+local draft = repeated:fork()
+local draftId = draft:toLocal(token("e"))
+draft:retire(draftId)
+assert(not repeated:isHiddenLocal(draftId), "preflight cannot install a draft alias")
+assert(repeated.retiredTokens[token("e")] == nil)
+repeated:commitDraft(draft)
+assert(repeated:isHiddenLocal(draftId))
+rejects(function() repeated:toLocal(token("e")) end, "replayed or expired")
+
 print("PASS candidate client-local references: opaque/local/reverse, collision, visible fallback, " ..
   "unknown deck, stale/rekey/reconnect, no alias recycling; synthetic-only; native/browser NOT RUN")

@@ -24,6 +24,7 @@ if (!fs.existsSync(modulePath)) {
 } else if (fs.readFileSync(modulePath, 'utf8') !== expectedModule) {
   assert.equal(mode, '--apply', 'candidate client MoveCards module drifted');
   const reviewedPriorRevisions = new Set([
+    '87c85425074c010d1bd15c4ab31f55a0f317034e082a9050763a7413e0cdf7d7',
     '729b3f6bdebcbacca84001529bb38836dcfeb3ee5dbaa4cf2e923d73320a82a8',
     '84c89355558b2c8b834696f5d1628f46a122509f78570a888fe803ba9164c08e',
     'a99cf54a376dd6a3f9d8bf98d1ae906226d8effb9958d32dba860a4c94f36d6a',

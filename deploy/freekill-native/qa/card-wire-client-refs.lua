@@ -46,8 +46,32 @@ function Refs.new(isOccupied)
     nextLocal = MIN_LOCAL,
     isOccupied = isOccupied or function() return false end,
     byToken = {}, byLocal = {}, anonymous = {},
-    usedLocal = {}, retiredTokens = {},
+    occupiedLocal = {}, retiredTokens = {},
   }, Refs)
+end
+
+-- Histories are append-only. A draft may read older entries without copying
+-- them and can only add entries to its own tables.
+function Refs:fork(isOccupied)
+  local draft = Refs.new(isOccupied or self.isOccupied)
+  draft.nextLocal = self.nextLocal
+  for _, key in ipairs({ "byToken", "byLocal", "anonymous" }) do
+    for id, value in pairs(self[key]) do draft[key][id] = value end
+  end
+  for _, key in ipairs({ "occupiedLocal", "retiredTokens" }) do
+    setmetatable(draft[key], { __index = self[key] })
+  end
+  return draft
+end
+
+function Refs:commitDraft(draft)
+  for _, key in ipairs({ "occupiedLocal", "retiredTokens" }) do
+    for id, value in pairs(draft[key]) do self[key][id] = value end
+  end
+  self.nextLocal = draft.nextLocal
+  self.byToken = draft.byToken
+  self.byLocal = draft.byLocal
+  self.anonymous = draft.anonymous
 end
 
 function Refs:_allocate()
@@ -56,10 +80,8 @@ function Refs:_allocate()
     self.nextLocal = id + 1
     -- Never recycle an alias even after a reconnect or rekey. Another
     -- subsystem may still be holding the earlier ID in a UI queue.
-    if not self.usedLocal[id] and not self.isOccupied(id) then
-      self.usedLocal[id] = true
-      return id
-    end
+    if not self.isOccupied(id) then return id end
+    self.occupiedLocal[id] = true
   end
   error("local card-wire identity namespace exhausted")
 end
@@ -95,13 +117,14 @@ function Refs:toWire(id)
   assert(not self.anonymous[id], "anonymous deck position is not a card choice")
   local token = self.byLocal[id]
   if token then return token end
-  assert(not self.usedLocal[id], "expired or unrecognized local card identity")
+  assert(not self:isHiddenLocal(id), "expired or unrecognized local card identity")
   canonical(id)
   return id
 end
 
 function Refs:isHiddenLocal(id)
-  return type(id) == "number" and self.usedLocal[id] == true
+  return type(id) == "number" and id >= MIN_LOCAL and id < self.nextLocal and
+    id % 1 == 0 and not self.occupiedLocal[id]
 end
 
 function Refs:isAnonymous(id)
@@ -130,7 +153,7 @@ function Refs:replaceAnonymousDeck(count, previous)
       integer(id, "prior deck identity")
       -- A real card returned to the hidden deck is no longer addressable
       -- through a previously issued opaque token.
-      if self.usedLocal[id] then self:retire(id) end
+      if self:isHiddenLocal(id) then self:retire(id) end
     end
   end
   local result = {}

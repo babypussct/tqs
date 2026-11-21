@@ -107,9 +107,29 @@ const productionHook = [
 ].join('\n');
 editOnce(modeFile, qaHook, productionHook, 'production pre-draw negotiation boundary');
 
+const cupFile = path.join(hegemony, 'pkg/nine_variations/skills/turban_shell_cup.lua');
+assert.equal(fs.realpathSync(cupFile), cupFile, 'Symlinked Anh Vũ Bôi skill is not promotable');
+editOnce(cupFile, '    c:addSubcard(Fk:currentRoom().draw_pile[1])', [
+  '    local room = Fk:currentRoom()',
+  '    local top = room.draw_pile[1]',
+  '    if not top then return end',
+  '    -- A v1 client previews Tửu without knowing the physical deck card.',
+  '    -- Its reply contains the skill and selections; the server resolves the top card.',
+  '    local refs = room.card_wire_refs',
+  '    if room.card_wire_version ~= 1 or not refs or not refs:isAnonymous(top) then',
+  '      c:addSubcard(top)',
+  '    end',
+].join('\n'), 'Anh Vũ Bôi anonymous deck preview');
+
 updatePublicGeneralSource(core, '--apply');
 updateRequestVisibility(core, '--apply');
 const wireModules = [
+  ['ltk/client/card_wire_refs.lua', 'card-wire-client-refs.lua',
+    '924853d9f63f6dee5018a8c33d51c4d8fd474998d99895a06d95c6e46b36c709'],
+  ['ltk/client/card_wire_moves.lua', 'card-wire-client-moves.lua',
+    '87c85425074c010d1bd15c4ab31f55a0f317034e082a9050763a7413e0cdf7d7'],
+  ['ltk/client/card_wire_snapshots.lua', 'card-wire-client-snapshots.lua',
+    '9b57de0578abb488b892355c0fd33fa8b9acfd11986a248bfd31827961a1db71'],
   ['lua/server/card_wire_projection.lua', 'card-wire-projection.lua',
     'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe'],
   ['lua/server/card_wire_request.lua', 'card-wire-request.lua',
@@ -150,6 +170,7 @@ console.log(JSON.stringify({
     'packages/freekill-core/ltk/core/engine.lua',
     'packages/freekill-core/ltk/server/serverplayer.lua',
     'packages/hegemony/pkg/gamemodes/new_hegemony_mode.lua',
+    'packages/hegemony/pkg/nine_variations/skills/turban_shell_cup.lua',
     'freekill.server.config.json',
   ],
 }));

@@ -195,7 +195,7 @@ local function replaceAnonymousDrawSlot(room, move, newId, reservedPositions)
         kind = "NON_NUMERIC"
       elseif room.card_wire_refs.byLocal[oldId] ~= nil then
         kind = "KNOWN_LOCAL"
-      elseif room.card_wire_refs.usedLocal[oldId] == true then
+      elseif room.card_wire_refs:isHiddenLocal(oldId) then
         kind = "RETIRED_LOCAL"
       else
         kind = "CANONICAL_OR_OTHER"
@@ -348,19 +348,9 @@ local function cloneForPreflight(room)
     shadow.players[index] = clonePlayer(player)
   end
 
-  local refs = room.card_wire_refs
-  local shadowRefs = {}
-  for key, value in pairs(refs) do
-    if type(value) == "table" then
-      shadowRefs[key] = copyMap(value)
-    else
-      shadowRefs[key] = value
-    end
-  end
-  shadowRefs.isOccupied = function(id)
+  shadow.card_wire_refs = room.card_wire_refs:fork(function(id)
     return shadow.card_place[id] ~= nil
-  end
-  shadow.card_wire_refs = setmetatable(shadowRefs, getmetatable(refs))
+  end)
 
   setmetatable(shadow, { __index = function(_, key) return room[key] end })
   return shadow

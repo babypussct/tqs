@@ -95,6 +95,15 @@ assert(not pcall(function() Snapshots.receive(room, malformed) end),
 assert(refs:isAnonymous(oldDraw) and refs:isHiddenLocal(oldHand),
   "malformed snapshot must not mutate the installed local state")
 
+local activeRequest = {}
+room.card_wire_request = activeRequest
+local previousNextLocal = refs.nextLocal
+-- The preceding snapshot's references cannot be reused in a new session.
+-- Rejection during localization must preserve the installed request and aliases.
+assert(not pcall(Snapshots.receive, room, envelope))
+assert(room.card_wire_request == activeRequest and refs.nextLocal == previousNextLocal)
+assert(refs:isAnonymous(oldDraw) and refs:toWire(oldHand) == envelope.payload.players[1].player_cards[1][1])
+
 local refreshed = clone(envelope)
 refreshed.payload.card_manager.draw_pile = { count = 1 }
 local refreshedHand = opaque("hand_refresh")
