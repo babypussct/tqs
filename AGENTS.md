@@ -31,6 +31,9 @@ npm run codex:checkpoint   # Cập nhật ảnh chụp Git trong CODEX_STATE.md
 
 ## Cách ly build và gate phát hành
 
+- Khi người dùng yêu cầu “commit push deploy” hoặc “triển khai production” cho TQS, đưa **toàn bộ thay đổi của dự án đang chờ phát hành** lên production, gồm cả thay đổi đã push từ trước nhưng chưa có trong gói đang chạy. Coi đây là yêu cầu phát hành đầy đủ, trừ khi người dùng chỉ định phạm vi hẹp hơn trong yêu cầu hiện tại. Đối chiếu cả TQSVN và TQSShop để phát hành đủ ứng dụng bị ảnh hưởng.
+- So sánh phiên bản đang chạy của từng thành phần với source cần phát hành. Build và đóng gói mọi thành phần bị ảnh hưởng, gồm web, gateway, native và Lua/runtime nếu có thay đổi tương ứng. Chỉ tái sử dụng artifact hoặc gói từ production cũ sau khi xác minh nó khớp với source phát hành. Sau deploy, đối chiếu manifest/hash của từng thành phần đang phục vụ và chạy smoke phù hợp. Nếu có blocker hoặc một phần chưa lên, nêu rõ phần đó và lý do; chỉ báo phát hành đầy đủ khi đã xác minh đủ. Bản hotfix 21/11/2026 từng mang commit có sửa AI dùng Tửu nhưng gói Lua sao chép từ bản cũ, nên sửa đổi đó đã bị bỏ sót.
+
 - Shop build/clean qua `npm run build` / `npm run clean`, chỉ dùng `dist-shop/`.
   Giữ guard trong `build/` và không đặt output về root `dist/` đang tracked.
   Game build ở `game/web/`, ghi `game/web/dist/`. Chạy build tuần tự để đối chiếu
