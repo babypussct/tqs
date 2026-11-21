@@ -28,6 +28,12 @@
 - Browser Lua trên gói ứng viên 73/73, source 42/42, native contract 67/67, release contract 6/6 và probe Anh Vũ Bôi PASS. Hồi quy thử 42.200 slot ẩn và kiểm token cũ tiếp tục bị từ chối. Schema hiếm chưa có ca lỗi cụ thể; tiếp tục kiểm theo emitter và ván thực.
 - Ứng viên MD5 `75bab68725d603d59b0d062b67523df6`. Cold boot vòng đầu tìm ra bốn mục AppleDouble do tar macOS tạo trong cây staging, đã dọn bốn mục và chạy lại gate trước cutover. Gói web nhận Lua qua gateway; đối chiếu manifest và ZIP sau cutover.
 
+## 22/11/2026 — Đã phát hành gói ổn định card-wire v1
+
+- Source `6522b82e` đã push lên main. Native đã chuyển sang `tqsvn-native-v1-75bab687` khi 0 trận và 0 kết nối, rollback giữ `tqsvn-native-full-f5322586`. Cold boot Linux lần cuối PASS với DB thử mới, TCP và flist khớp. Gateway và tunnel liên tục.
+- Production manifest v1 MD5 `75bab68725d603d59b0d062b67523df6`, bundle `ecdbefc862f4debb`. So byte cả 5.339 mục ZIP với bản trước và candidate: đúng bốn Lua đổi. Chrome qua luồng cập nhật runtime và vào được Sảnh Quốc Chiến sau cutover. Probe WebSocket Node không có browser session hết thời gian chờ; smoke qua Chrome đã xác nhận đường thực.
+- Bằng chứng local `scratch/evidence/v1-release.vkifFH/`. Các bài test source 42/42, browser Lua 73/73, native contract 67/67 và release 6/6 đã quan sát PASS. Kiểm tra sức tải ván thật, Anh Vũ Bôi trong ván production, reconnect/observer khi có yêu cầu đang mở và các schema hiếm vẫn là việc tiếp theo.
+
 ## 21/11/2026 — Phát hành đầy đủ TQSVN sau hotfix reconnect
 
 - Đã push mã phát hành và quy ước triển khai đầy đủ ở `f5322586`. Đối chiếu nguồn và artifact: gói native hotfix trước thiếu bốn Lua AI Tửu/Sát và hai Lua vòng đời chơi lại cùng phòng. Đã áp cả sáu tệp lên release cô lập và giữ các thay đổi chọn mục tiêu/reconnect đã phát hành. TQSShop không có diff runtime từ bản phát hành `b1f3c0dd`.
@@ -2457,29 +2463,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T17:28:48.825Z (UTC).
-- Nhánh: `main` · HEAD: `bf45d9b32788`.
-- File thay đổi hiển thị: 10 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T17:31:21.571Z (UTC).
+- Nhánh: `main` · HEAD: `6522b82eb864`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-wire-client-moves.lua
- M deploy/freekill-native/qa/card-wire-client-refs-probe.lua
- M deploy/freekill-native/qa/card-wire-client-refs.lua
- M deploy/freekill-native/qa/card-wire-client-snapshot-probe.lua
- M deploy/freekill-native/qa/card-wire-client-snapshots.lua
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M scripts/upstream-first-card-wire-client-moves-guard.mjs
- M scripts/upstream-first-card-wire-client-refs-guard.mjs
-?? deploy/freekill-native/qa/turban-shell-cup-probe.lua
 ```
 
 Ba commit gần nhất:
 
 ```text
+6522b82e Fix Hegemony v1 Cup preview and reference lifecycle
 bf45d9b3 Record complete TQSVN production release
 f5322586 Document complete TQS production releases
-ac8d534f Record TQSVN reconnect hotfix deployment
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

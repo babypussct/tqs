@@ -10,6 +10,7 @@
 ## 22/11/2026 — Rà lỗi card-wire v1
 
 - [x] Sửa preview Anh Vũ Bôi trong gói candidate và kiểm hồi quy Lua trên slot ẩn danh, lá vật lý, chồng rỗng và giới hạn lượt.
+- [x] Phát hành bốn Lua v1 và kiểm cold boot, manifest, bundle byte parity và sảnh production.
 - [ ] Native v1 E2E Anh Vũ Bôi trong yêu cầu Tửu và trong lượt, đối chiếu legacy, reconnect và observer.
 - [ ] Rà các kênh packet và kỹ năng còn thiếu bằng chứng bằng ván thật, dựng ca tái hiện cho lỗi mới và chạy lại rematch.
 
