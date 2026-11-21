@@ -5,7 +5,8 @@
 - [x] Xác thực `orig_tos` theo danh sách người chơi trong projector và bộ kiểm wire. Giữ temp-ban cho hành vi chủ động rời trận, dọn người chơi Offline sau GameOver mà không khóa tài khoản do mất mạng.
 - [x] Chạy Quốc Chiến v1 bốn ghế với đúng Ngụy Diên Dã tâm chủ tướng, Tưởng Cán phó tướng. Xác minh reconnect trong trận, `Observe`, `PlayCard` và `GameOver` trên cả ba kết nối. Kiểm thử native contract, Lua, temp-ban, raw capture, release và build web PASS.
 - [x] Native v1 Phương Thiên Họa Kích chạy yêu cầu thật có `orig_tos`, chọn mục tiêu phụ và giải quyết Sát lên hai mục tiêu. Ba kết nối nhận GameOver, kiểm gói thô và supplemental 0 lỗi.
-- [ ] Xác minh binary Linux từ pin, chạy cold boot trong môi trường cô lập và kiểm rollback trước khi chuyển production. Đối chiếu artifact, public manifest, ZIP, Chrome và WebSocket sau chuyển.
+- [x] Build Linux x86-64 và cold boot trong namespace riêng trên máy đích. Push `2eafd43d`, CI 4/4. Kích hoạt production khi 0 trận và 0 kết nối, giữ runtime rollback và đối chiếu binary, manifest, ZIP, Chrome cùng WebSocket.
+- [ ] Ca E2E riêng cho tài khoản chủ động rời trận chưa xác nhận thao tác từ giao diện. Unit và test source vẫn PASS, còn reconnect giữa ván đã có evidence native v1 ở trên.
 
 ## 21/11/2026 — Đưa source CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC lên origin
 

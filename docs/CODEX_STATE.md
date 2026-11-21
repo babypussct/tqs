@@ -3,11 +3,13 @@
 ## 21/11/2026 — Quốc Chiến với Ngụy Diên Dã tâm, Tưởng Cán và reconnect
 
 - `orig_tos` trong yêu cầu kỹ năng là danh sách người chơi. Projector v1 và bộ kiểm CBOR xác thực danh sách này theo ghế. Kiểm thử Lua bao gồm tham chiếu ghế hợp lệ, ghế không tồn tại và ID không nguyên. Patch C++ giữ đường reconnect cho trạng thái `Offline`, đồng thời giữ temp-ban và tính tỷ lệ bỏ trận cho người chủ động rời trận.
-- Đã chạy native macOS cô lập với Lua 5.4 và hai Chrome mobile viewport, hai bot cùng một tài khoản quan sát. Chọn đúng Ngụy Diên Dã tâm chủ tướng và Tưởng Cán phó tướng, thương lượng v1, mất WebSocket sau `PrepareDrawPile`, nhận `Reconnect`, khôi phục bàn bốn ghế, trả lời `PlayCard` và nhận `GameOver` trên cả ba kết nối. Runner exit 0, lỗi 0, ba bộ đếm lỗi privacy và supplemental đều 0. [Evidence](../scratch/evidence/cp08-general-pair-wild-wei-reconnect-live-1795226806243.json)
+- Đã chạy lại native macOS cô lập với Lua 5.4 và hai Chrome mobile viewport, hai bot cùng một tài khoản quan sát. Chọn đúng Ngụy Diên Dã tâm chủ tướng và Tưởng Cán phó tướng, thương lượng v1, mất WebSocket sau `PrepareDrawPile`, nhận `Reconnect`, khôi phục bàn bốn ghế, trả lời `PlayCard` và nhận `GameOver` trên cả ba kết nối. Runner exit 0, 132 gói được kiểm ở ranh giới WebSocket, 876 gói supplemental, cả hai bộ đều ghi 0 lỗi. [Evidence](../scratch/evidence/cp08-general-pair-wild-wei-reconnect-live-1795227308154.json)
 - Ca native v1 riêng cho Phương Thiên Họa Kích đã chọn mục tiêu phụ trong yêu cầu có `orig_tos` và giải quyết Sát lên hai mục tiêu. Hai người chơi và observer đều nhận `GameOver`. Runner exit 0 và bộ kiểm gói thô, deck, supplemental đều ghi 0 lỗi. [Evidence](../scratch/evidence/cp08-delta-halberd-multiplayer-live-1795227165862.json)
 - QA phải chờ `PrepareDrawPile` trước khi ngắt kết nối hoặc mở phiên quan sát. Gói `Reconnect` và `Observe` bốn ghế có thể nén. Bộ kiểm ở ranh giới WebSocket giải nén riêng rồi xác thực lại CBOR, giữ nguyên số byte đo trên wire. Bài kiểm raw capture, sanitizer và hợp đồng native đã PASS.
 - Các lệnh đã quan sát PASS gồm `test:qa-tempban` 9/9, `test:qa-server-contract` 67/67, `test:upstream-first-source` 42/42 trên runtime tham chiếu, `test:card-wire-raw-capture` 5/5, `test:card-wire-evidence-sanitize` 22/22, `test:release` 6/6, `test:pipelines` 14/14, `typecheck:all`, web build và `git diff --check`.
-- Linux x86-64 đang biên dịch từ freekill-asio pin `b8a2ad48` và các patch trong repo, trong thư mục build riêng. Archive bàn giao trước chứa dòng gọi pthread dành cho macOS nên đã thay bằng archive từ Git pin. Production vẫn phục vụ runtime `cfcfe6ae…` ở checkpoint này. Bước kế tiếp là lấy kết quả build, khởi động cô lập, xác minh bản phát hành và smoke hosted.
+- Bản sửa mã `2eafd43d` đã lên `main`, CI ghi 4/4 job PASS. Build Ubuntu 24.04 x86-64 thành công từ freekill-asio pin `b8a2ad48` và các patch trong repo, bằng CMake 4.1.1 và GCC 14.2.0 trong Colima. Archive bàn giao chứa lời gọi pthread dành cho macOS nên dùng archive tạo lại từ Git pin. SHA-256 của binary `8db904f883e04c8e5e278b437ed13f0c1569cad57b10ec3e556f161412c1c440` khớp file đang chạy. Cold boot trong namespace mạng riêng trên máy đích khớp flist, tạo DB QA mới và nhận TCP bằng Lua 5.4. [CI](https://github.com/babypussct/tqs/actions/runs/44854904764)
+- Production đổi sang `tqsvn-native-hotfix-2eafd43d` khoảng 09:39 ICT, sau khi kiểm 0 trận và 0 kết nối, giữ bản rollback `tqsvn-native-v1-9584d3c1-cfcfe6ae-f6012bad-clean`. Gateway và Quick Tunnel tiếp tục cùng phiên. Public manifest MD5 `7bc3cbd3986534bcd8527ba12b72b112`, bundle `66b0d6e47ec426d8`, 5.339 tệp, v1. SHA-256 ZIP khớp candidate, WSS upgrade 101/close 1000 với native challenge, Chrome 390×844 mở và hiển thị identity đúng, 0 page error. Pages tiếp tục dùng build hiện tại vì asset runtime web trùng sau khi chuẩn hóa metadata build. [Smoke](../scratch/evidence/wild-reconnect-20261121/production-smoke.log) · [WebSocket](../scratch/evidence/wild-reconnect-20261121/production-wss.log)
+- Ca khóa khi chủ động rời trận đã qua unit và test source. Lượt E2E riêng cho thao tác rời trận dừng ở chọn tướng hoặc điều khiển giao diện và chưa xác nhận khóa trực tiếp. QA reconnect và gameplay dùng môi trường cô lập, hosted smoke kiểm khả năng truy cập bản mới. Các listener và overlay QA đã được dọn.
 
 ## 21/11/2026 — Kiểm chứng trước commit/push: CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC
 
@@ -2420,38 +2422,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T02:14:47.663Z (UTC).
-- Nhánh: `main` · HEAD: `c262ca1d480e`.
-- File thay đổi hiển thị: 19 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T02:41:36.669Z (UTC).
+- Nhánh: `main` · HEAD: `2eafd43d30b8`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch
- M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
- M deploy/freekill-native/qa/card-wire-request-projector-source-probe.lua
- M deploy/freekill-native/qa/card-wire-request.lua
- M deploy/freekill-native/qa/tqs-account-tempban-unit.test.mjs
- M deploy/freekill-native/qa/tqs-game-ticket.test.mjs
- M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
- M deploy/freekill-native/qa/tqs_qa/catalog.json
- M deploy/freekill-native/qa/tqs_qa/init.lua
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/bootstrap-source.sh
- M deploy/freekill-native/upstream-baseline.env
  M docs/CODEX_PLAN.md
- M game/web/scripts/card-wire-raw-capture.test.ts
- M game/web/scripts/multiplayer-e2e/evidence-sanitize.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/real-lua-e2e/qa-scenarios.ts
- M game/web/src/engine/packet.ts
- M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+2eafd43d Fix Hegemony target serialization and reconnect penalties
 c262ca1d Fix card-wire rematch negotiation and SmartAI Analeptic follow-up
 818b8bc5 Record TQSVN v1 protocol production release
-9584d3c1 Fix Hegemony v1 request visibility and dialog replies
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
