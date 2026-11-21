@@ -1,5 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 21/11/2026 — Phát hành đầy đủ TQSVN sau hotfix reconnect
+
+- Đã push mã phát hành và quy ước triển khai đầy đủ ở `f5322586`. Đối chiếu nguồn và artifact: gói native hotfix trước thiếu bốn Lua AI Tửu/Sát và hai Lua vòng đời chơi lại cùng phòng. Đã áp cả sáu tệp lên release cô lập và giữ các thay đổi chọn mục tiêu/reconnect đã phát hành. TQSShop không có diff runtime từ bản phát hành `b1f3c0dd`.
+- Web build với Google auth cùng origin và `/gateway` PASS, Pages `536e56cb` đã lên canonical. Native `tqsvn-native-full-f5322586` khởi động trong network namespace với flist khớp, chuyển production khi 0 trận/0 kết nối. Giữ rollback `tqsvn-native-hotfix-2eafd43d`. Gateway/tunnel liên tục.
+- Runtime MD5 `19a63d60aac2d9e19e6b63920c0f0cce`, bundle `3d44d78852cd903c`, 5.339 tệp. ZIP từ canonical khớp byte cả sáu tệp mới. HTML/JS/worker/version khớp build, Chrome 390×844 không page error, OAuth helper 200, WebSocket 101/1000 có native challenge. Bằng chứng tại `scratch/evidence/full-release-20261121/`.
+- SmartAI **14/14** và rematch Wasmoon **19 ca** PASS. Bước tiếp theo là quan sát bot Tửu → Sát và hai ván liên tiếp cùng phòng trong trận thật. Smoke production chưa bao gồm đăng nhập Google và chơi trận.
+
 ## 21/11/2026 — Quốc Chiến với Ngụy Diên Dã tâm, Tưởng Cán và reconnect
 
 - `orig_tos` trong yêu cầu kỹ năng là danh sách người chơi. Projector v1 và bộ kiểm CBOR xác thực danh sách này theo ghế. Kiểm thử Lua bao gồm tham chiếu ghế hợp lệ, ghế không tồn tại và ID không nguyên. Patch C++ giữ đường reconnect cho trạng thái `Offline`, đồng thời giữ temp-ban và tính tỷ lệ bỏ trận cho người chủ động rời trận.
@@ -2422,8 +2429,8 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T02:41:36.669Z (UTC).
-- Nhánh: `main` · HEAD: `2eafd43d30b8`.
+- Ghi lúc: 2026-11-21T07:05:09.479Z (UTC).
+- Nhánh: `main` · HEAD: `f5322586f89a`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -2433,9 +2440,9 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 Ba commit gần nhất:
 
 ```text
+f5322586 Document complete TQS production releases
+ac8d534f Record TQSVN reconnect hotfix deployment
 2eafd43d Fix Hegemony target serialization and reconnect penalties
-c262ca1d Fix card-wire rematch negotiation and SmartAI Analeptic follow-up
-818b8bc5 Record TQSVN v1 protocol production release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

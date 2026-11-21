@@ -1,5 +1,11 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 21/11/2026 — Phát hành đầy đủ AI Tửu và chơi ván kế tiếp
+
+- [x] Build và triển khai web cùng gói native chứa đủ sáu tệp Lua chức năng đang chờ phát hành, giữ hotfix mục tiêu/reconnect. Xác nhận production phục vụ đúng bundle bằng so byte sáu tệp.
+- [x] SmartAI 14/14, browser Wasmoon rematch 19 ca, cold boot Linux riêng, public smoke và native WebSocket PASS.
+- [ ] Quan sát AI Tửu → Sát và nhiều ván liên tiếp cùng phòng trong trận thật.
+
 ## 21/11/2026 — Sửa crash và reconnect Quốc Chiến
 
 - [x] Xác thực `orig_tos` theo danh sách người chơi trong projector và bộ kiểm wire. Giữ temp-ban cho hành vi chủ động rời trận, dọn người chơi Offline sau GameOver mà không khóa tài khoản do mất mạng.
