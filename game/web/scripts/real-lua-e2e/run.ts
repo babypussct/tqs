@@ -1353,6 +1353,18 @@ try {
       assert.equal(await p.getByText('Hấp hối', { exact: true }).count(), 0);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
     }],
+    ['Anh Vũ Bôi uses Wine with a concealed v1 deck in play and rescue', async (p) => {
+      for (const rescue of [true, false]) {
+        const id = await p.evaluate((isRescue) => window.__tqsRealLuaE2e.beginTurbanShellCup(isRescue), rescue);
+        await p.getByRole('button', { name: 'Anh Vũ Bôi', exact: true }).click();
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.rescueTargets()), [17]);
+        await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+        assert.equal((await reply(p)).replies[0].requestId, id);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()),
+          { card: { skill: 'turban_shell_cup_skill&', subcards: [] }, targets: [] });
+        assert.deepEqual((await snapshot(p)).luaErrors, []);
+      }
+    }],
     ['New battle royal converts Peach into Wine for self rescue through native view-as skill', async (p) => {
       const { id, peachId } = await p.evaluate(() => window.__tqsRealLuaE2e.beginRescue('self'));
       await p.getByRole('button', { name: 'Quyết chiến', exact: true }).click();
@@ -2837,7 +2849,9 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--transformation-skills')
+  const testsToRun = process.argv.includes('--turban-shell-cup')
+    ? tests.filter(([name]) => name.startsWith('Anh Vũ Bôi'))
+    : process.argv.includes('--transformation-skills')
     ? tests.filter(([name]) => name.startsWith('Transformation '))
     : process.argv.includes('--qa-scenarios')
     ? tests.filter(([name]) => name.startsWith('QA Scenario Mode'))
@@ -2850,7 +2864,7 @@ try {
     ? tests.filter(([name]) => name.startsWith('Private request faces'))
     : process.argv.includes('--room-pools')
     ? tests.filter(([name]) => name.startsWith('UI-02'))
-    : tests;
+    : tests.filter(([name]) => !name.startsWith('Anh Vũ Bôi'));
   let passed = 0;
   const failures: string[] = [];
   for (const [name, test] of testsToRun) {

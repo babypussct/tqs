@@ -1059,6 +1059,25 @@ const api = {
   attemptNative: (id: number, token?: string) => {
     try { conn.respondToNativeDialog(id, token); return null; } catch (e) { return (e as Error).message; }
   },
+  beginTurbanShellCup: (rescue: boolean) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cup = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)
+      return Fk:getCardById(id).name == 'turban_shell_cup' end)`);
+    serverNotify('MoveCards', serverCbor(`{{{to=17, toArea=Card.PlayerEquip, moveReason=fk.ReasonPut,
+      moveInfo={{cardId=${cup}, fromArea=Card.DrawPile}}, moveVisible=true}}, 1}`));
+    serverNotify('AddSkill', serverCbor("{17, 'turban_shell_cup_skill&'}"));
+    if (rescue) {
+      serverNotify('PropertyUpdate', serverCbor("{17, 'hp', 0}"));
+      serverNotify('PropertyUpdate', serverCbor("{17, 'phase', Player.NotActive}"));
+    }
+    serverNotify('CardWireNegotiated', serverCbor("{protocol='TQS_HEG_CARD_WIRE',cardWireVersion=1,mode='new_heg_mode'}"));
+    serverNotify('PrepareDrawPile', serverCbor("{count=6}"));
+    const command = rescue ? 'AskForUseCard' : 'PlayCard';
+    const payload = rescue ? "{'peach', 'peach,analeptic', '#AskForPeachesSelf:::1', true, {analepticRecover=true,must_targets={17},fix_targets={17}}, {}}" : '{}';
+    const id = ++nextId;
+    fixtureRequest(id, command, serverCbor(`{cardWireVersion=1,payload=${payload},choices={}}`));
+    return id;
+  },
   beginRescue: (mode: 'normal' | 'new' | 'old' | 'ignore' | 'self' | 'companion' = 'normal', hp = 0) => {
     api.beginPlay();
     const peachId = conn.lua.eval<number>(`return table.find(ClientInstance.draw_pile, function(id)

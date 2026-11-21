@@ -34,6 +34,25 @@
 - Production manifest v1 MD5 `75bab68725d603d59b0d062b67523df6`, bundle `ecdbefc862f4debb`. So byte cả 5.339 mục ZIP với bản trước và candidate: đúng bốn Lua đổi. Chrome qua luồng cập nhật runtime và vào được Sảnh Quốc Chiến sau cutover. Probe WebSocket Node không có browser session hết thời gian chờ; smoke qua Chrome đã xác nhận đường thực.
 - Bằng chứng local `scratch/evidence/v1-release.vkifFH/`. Các bài test source 42/42, browser Lua 73/73, native contract 67/67 và release 6/6 đã quan sát PASS. Kiểm tra sức tải ván thật, Anh Vũ Bôi trong ván production, reconnect/observer khi có yêu cầu đang mở và các schema hiếm vẫn là việc tiếp theo.
 
+## 22/11/2026 — Kiểm hồi quy Anh Vũ Bôi bằng byte production
+
+- Chrome + Wasmoon qua React với ZIP lấy từ gateway production `ecdbefc862f4debb`: `npm --prefix game/web run test:e2e:lua -- --turban-shell-cup` **PASS** ở cả hai nhánh hấp hối và trong lượt. Fixture trang bị bảo vật, bật v1, nạp deck count-only và gửi request v1. Click kỹ năng và xác nhận tạo đúng một reply với skill Anh Vũ Bôi, subcards rỗng, 0 lỗi Lua. Chạy lại cùng test với ZIP production trước cutover **FAIL đúng lỗi** `card.lua:335` khi tra lá ẩn danh.
+- Wasmoon lifecycle probe với ZIP production **19/19 PASS**, gồm Reconnect, Observe, chuyển v1 → legacy và ván v1 kế tiếp. Typecheck tools và diff check PASS. Log tại `scratch/evidence/v1-release.vkifFH/{cup-browser-live-bytes,cup-browser-before,negotiation-live-bytes}.log`.
+- Đo cô lập Lua 5.4 với 200 lần thay 211 slot qua 10 reset: bản cũ giữ 42.200 mục ID, bản mới 0 mục cho slot đã cấp. 500 lượt chỉ chép trạng thái alias mất khoảng 787 ms CPU ở bản cũ và 0,56 ms ở bản mới. Đây là phép đo phần alias, chưa phải thời gian MoveCards hoặc độ trễ trên ván thật.
+- Phần còn mở: native C++ trong trận production phải xác nhận phần xử lý lá vật lý và hiệu ứng Tửu, kiểm reconnect khi có request mở và observer, tải nhiều ván. Phiên này thêm test và tài liệu, không thay gói production.
+
+## 22/11/2026 — Reconnect production với một người thật và sáu bot
+
+- Chrome production v1: phòng Quốc Chiến đủ 7/7, sáu bot native, chọn chủ/phó và nhận xác nhận Trust. Tải lại tab trong ván rồi đăng nhập lại bằng phiên Google có sẵn. UI về sảnh và danh sách phòng trống. Native log ICT: GameStart 17:52:33; disconnect và GameOver 17:53:00; không thấy lỗi Lua trong đoạn log đã kiểm.
+- Đối chiếu đúng Lua từ ZIP đang phục vụ: `ServerRoomBase:resume` gọi `checkNoHuman`; cả Offline và Robot đều không giữ ván sống khi không còn Online/Trust. Probe Lua 5.4 trên hàm production PASS cho ba nhánh: Trust giữ ván, người thật duy nhất chuyển Offline kết thúc ván, còn người thứ hai Online giữ ván. Ca này không đóng reconnect snapshot và không tính là ván Trust chơi đến kết quả theo luật.
+- Cần kiểm reconnect production khi có người thật thứ hai còn online để phòng sống qua thời gian mất mạng. Nhánh một người thật + bot cần khoảng chờ reconnect có giới hạn và test native cho hết hạn, rời chủ động và phục hồi request trước khi phát hành sửa đổi. Chưa thấy Anh Vũ Bôi kích hoạt trong ca ngắn này.
+
+## 22/11/2026 — Chuẩn bị phát hành khoảng chờ reconnect Quốc Chiến
+
+- Gói candidate `f52cdb15a6bb8eb7314a3b5e0fd27cbe` thay đúng `freekill-core/lua/server/roombase.lua`: tạm dừng tối đa 30 giây nếu không còn Online/Trust nhưng có ghế Offline, gửi snapshot rồi tiếp tục khi reconnect, và kết thúc khi hết hạn hoặc chỉ còn Run/bot. Timer grace không làm kết thúc delay gameplay sớm.
+- Lua probe trên artifact đã promote PASS: pause, snapshot trước resume, hết hạn đúng mốc, rời chủ động, mode khác, thứ tự timer. Source 42/42, native contract 67/67, release 6/6, typecheck tools, cold boot Linux/flist PASS. ZIP production trước đó và candidate được đối chiếu chỉ một Lua đổi. Cold boot sau staging dùng hardlink cho package tĩnh do đĩa thiếu chỗ; file Lua cập nhật và DB tách inode.
+- Bước sau cutover: tải lại khi đang chơi thật, xác nhận native ghi reconnect trước GameOver; lặp lại bằng cách để Offline qua mốc 30 giây. Chưa xác nhận các ca production ở checkpoint trước cutover.
+
 ## 21/11/2026 — Phát hành đầy đủ TQSVN sau hotfix reconnect
 
 - Đã push mã phát hành và quy ước triển khai đầy đủ ở `f5322586`. Đối chiếu nguồn và artifact: gói native hotfix trước thiếu bốn Lua AI Tửu/Sát và hai Lua vòng đời chơi lại cùng phòng. Đã áp cả sáu tệp lên release cô lập và giữ các thay đổi chọn mục tiêu/reconnect đã phát hành. TQSShop không có diff runtime từ bản phát hành `b1f3c0dd`.
@@ -2463,20 +2482,24 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T17:31:21.571Z (UTC).
-- Nhánh: `main` · HEAD: `6522b82eb864`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T18:00:50.744Z (UTC).
+- Nhánh: `main` · HEAD: `10d7a62345f1`.
+- File thay đổi hiển thị: 5 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+?? deploy/freekill-native/qa/hegemony-reconnect-grace-probe.lua
 ```
 
 Ba commit gần nhất:
 
 ```text
+10d7a623 Record Hegemony v1 stability release
 6522b82e Fix Hegemony v1 Cup preview and reference lifecycle
 bf45d9b3 Record complete TQSVN production release
-f5322586 Document complete TQS production releases
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

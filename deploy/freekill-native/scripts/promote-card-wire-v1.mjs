@@ -77,6 +77,96 @@ roomSource = roomSource.replace(
 );
 fs.writeFileSync(roomFile, roomSource);
 
+editOnce(roomFile, 'function ServerRoomBase:resume(reason)\n', [
+  'function ServerRoomBase:resume(reason)',
+  '  if self.game_finished then return true end',
+  '',
+].join('\n'), 'ignore timer wakes after GameOver');
+
+editOnce(roomFile, [
+  '  if self:checkNoHuman() then',
+  '    goto GAME_OVER',
+  '  end',
+].join('\n'), [
+  '  local noHuman, waitingForReconnect = self:checkNoHuman()',
+  '  if waitingForReconnect then return false end',
+  '  if noHuman then goto GAME_OVER end',
+].join('\n'), 'pause an offline Hegemony room');
+
+editOnce(roomFile, [
+  '  for _, p in ipairs(self.players) do',
+  '    local state = p.serverplayer:getState()',
+  '    if state == fk.Player_Online or state == fk.Player_Trust then',
+  '      return',
+  '    end',
+  '  end',
+  '',
+  '  if not chkOnly then',
+].join('\n'), [
+  '  local hasOfflinePlayer = false',
+  '  for _, p in ipairs(self.players) do',
+  '    local state = p.serverplayer:getState()',
+  '    if state == fk.Player_Online or state == fk.Player_Trust then',
+  '      self._tqsReconnectUntil = nil',
+  '      return',
+  '    end',
+  '    hasOfflinePlayer = hasOfflinePlayer or state == fk.Player_Offline',
+  '  end',
+  '',
+  '  if hasOfflinePlayer and self.game_started and not self.game_finished and',
+  '      self:getSettings("gameMode") == "new_heg_mode" then',
+  '    local now = os.getms()',
+  '    if not self._tqsReconnectUntil then',
+  '      local graceMs = 30000',
+  '      self._tqsReconnectUntil = now + graceMs',
+  '      self.room:delay(graceMs)',
+  '    end',
+  '    if now < self._tqsReconnectUntil then return false, true end',
+  '  end',
+  '',
+  '  if not chkOnly then',
+].join('\n'), 'bounded reconnect for offline seats');
+
+editOnce(roomFile, [
+  '  self.room:delay(math.ceil(ms))',
+  '  if self._test_disable_delay then return end',
+  '  self:yield(function(r) return r == "delay_done" end, ms)',
+].join('\n'), [
+  '  local duration = math.ceil(ms)',
+  '  local untilMs = os.getms() + duration',
+  '  self.room:delay(duration)',
+  '  if self._test_disable_delay then return end',
+  '  if self:getSettings("gameMode") ~= "new_heg_mode" then',
+  '    self:yield(function(reason) return reason == "delay_done" end, ms)',
+  '    return',
+  '  end',
+  '  self:yield(function(reason)',
+  '    -- The reconnect timer also wakes the room with delay_done.',
+  '    if reason ~= "delay_done" and reason ~= "player_reconnect" then return false end',
+  '    local remaining = untilMs - os.getms()',
+  '    if remaining <= 0 then return true end',
+  '    if reason == "delay_done" then self.room:delay(remaining) end',
+  '    return false',
+  '  end, ms)',
+].join('\n'), 'preserve the game delay when a reconnect timer fires');
+
+editOnce(roomFile, [
+  'function ServerRoomBase:playerReconnect(id)',
+  '  local p = self:getPlayerById(id)',
+  '  if p then',
+  '    p:reconnect()',
+  '  end',
+  'end',
+].join('\n'), [
+  'function ServerRoomBase:playerReconnect(id)',
+  '  local p = self:getPlayerById(id)',
+  '  if p then',
+  '    p:reconnect()',
+  '    if self._tqsReconnectUntil then ResumeRoom(self.id, "player_reconnect") end',
+  '  end',
+  'end',
+].join('\n'), 'resume the paused room after the reconnect snapshot');
+
 const modeFile = path.join(hegemony, 'pkg/gamemodes/new_hegemony_mode.lua');
 const qaHook = [
   '  local preDrawHook = self.room.__tqs_qa_beforePrepareDrawPile',
