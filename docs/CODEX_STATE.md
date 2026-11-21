@@ -53,6 +53,13 @@
 - Lua probe trên artifact đã promote PASS: pause, snapshot trước resume, hết hạn đúng mốc, rời chủ động, mode khác, thứ tự timer. Source 42/42, native contract 67/67, release 6/6, typecheck tools, cold boot Linux/flist PASS. ZIP production trước đó và candidate được đối chiếu chỉ một Lua đổi. Cold boot sau staging dùng hardlink cho package tĩnh do đĩa thiếu chỗ; file Lua cập nhật và DB tách inode.
 - Bước sau cutover: tải lại khi đang chơi thật, xác nhận native ghi reconnect trước GameOver; lặp lại bằng cách để Offline qua mốc 30 giây. Chưa xác nhận các ca production ở checkpoint trước cutover.
 
+## 22/11/2026 — Đã phát hành khoảng chờ reconnect
+
+- Source `35dac526` đã push lên main. Native `tqsvn-native-v1-f52cdb15` kích hoạt khi 0 trận và 0 kết nối, giữ rollback `tqsvn-native-v1-75bab687`. Gateway và tunnel liên tục. Manifest production v1 MD5 `f52cdb15a6bb8eb7314a3b5e0fd27cbe`, bundle `1abde5498cc637d0`. Kiểm byte cả 5.339 mục chỉ đổi đúng roombase.lua và khớp candidate.
+- Cold boot Linux với DB mới, manifest và native TCP PASS. Source 42/42, native contract 67/67, browser Lua 73/73, ca Chrome Anh Vũ Bôi 1/1, release 6/6; probe khoảng chờ PASS. Staging lần đầu đầy đĩa; đã dọn cây ứng viên copy dở của phiên này và dựng bằng hardlink cho tệp package tĩnh, tách DB và tệp Lua sửa. Đĩa máy native quan sát còn khoảng 49 MB trước cutover.
+- Chrome cập nhật gói rồi quan sát lại yêu cầu chọn tướng trong ván đang chạy. Native ghi GameStart 01:02:37 và reconnect 01:02:43 ICT ngày 22/11, sau đó trình duyệt từ chọn tướng chuyển tới lựa chọn lật tướng. Đây là bằng chứng nhận lại yêu cầu và tiếp tục sau reconnect. Chưa xác nhận qua UI cả tình huống cố ý giữ duy nhất ghế thật Offline đủ 30 giây hoặc bấm rời trận trên bản production; hai nhánh đã chạy trên probe Lua.
+- Evidence tại `scratch/evidence/v1-grace-release.v3iZDe/`. Các ca observer nhiều người, tải nhiều ván và thực thi Anh Vũ Bôi end-to-end trong ván production vẫn cần bằng chứng riêng.
+
 ## 21/11/2026 — Phát hành đầy đủ TQSVN sau hotfix reconnect
 
 - Đã push mã phát hành và quy ước triển khai đầy đủ ở `f5322586`. Đối chiếu nguồn và artifact: gói native hotfix trước thiếu bốn Lua AI Tửu/Sát và hai Lua vòng đời chơi lại cùng phòng. Đã áp cả sáu tệp lên release cô lập và giữ các thay đổi chọn mục tiêu/reconnect đã phát hành. TQSShop không có diff runtime từ bản phát hành `b1f3c0dd`.
@@ -2482,24 +2489,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T18:00:50.744Z (UTC).
-- Nhánh: `main` · HEAD: `10d7a62345f1`.
-- File thay đổi hiển thị: 5 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T18:04:09.563Z (UTC).
+- Nhánh: `main` · HEAD: `35dac5266825`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
-?? deploy/freekill-native/qa/hegemony-reconnect-grace-probe.lua
 ```
 
 Ba commit gần nhất:
 
 ```text
+35dac526 Keep Hegemony rooms recoverable after the last client disconnects
 10d7a623 Record Hegemony v1 stability release
 6522b82e Fix Hegemony v1 Cup preview and reference lifecycle
-bf45d9b3 Record complete TQSVN production release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

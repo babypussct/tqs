@@ -14,7 +14,8 @@
 - [x] Chrome/Wasmoon chạy Anh Vũ Bôi từ ZIP production ở nhánh hấp hối và trong lượt; bản cũ tái hiện crash, bản mới gửi đúng reply.
 - [ ] Native v1 trong trận production xác minh lá vật lý và hiệu ứng Tửu thực tế; kiểm reconnect và observer. Ca một người thật + sáu bot đã tái hiện kết thúc ngay khi ghế thật mất mạng.
 - [x] Sửa và kiểm probe khoảng chờ 30 giây cho phòng một người thật, phân biệt Offline/Run và timer gameplay.
-- [ ] Kiểm reconnect và hết hạn trên production; observer và người thứ hai vẫn cần ca riêng.
+- [x] Phát hành khoảng chờ reconnect; xác minh manifest, ZIP và ván production nhận lại yêu cầu rồi tiếp tục.
+- [ ] Xác minh hết hạn 30 giây và chủ động rời trận trên native production; observer và người thứ hai vẫn cần ca riêng.
 - [ ] Rà các kênh packet và kỹ năng còn thiếu bằng chứng bằng ván thật, dựng ca tái hiện cho lỗi mới và chạy lại rematch.
 
 - [x] Loại bảng slot đã cấp và tránh chép toàn bộ tombstone khi preflight; probe nhiều vòng giữ nguyên chống trả lời bằng ID/token cũ.
