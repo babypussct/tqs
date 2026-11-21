@@ -326,7 +326,7 @@ test('human Request packets and replies use physical, request-scoped card refere
 test('candidate Request projector removes card IDs before transport and resolves opaque replies', () => {
   const output = runLua('card-wire-request-projector-source-probe.lua',
     [coreRoot, path.join(here, 'card-wire-request.lua'), path.join(here, 'card-handle-protocol.lua')]);
-  assert.match(output, /PASS candidate physical request projector: card-chosen opaque scope, Poxi\/AG\/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed\/unaudited fail-close; 20 cases; synthetic-only; native\/browser NOT RUN/u);
+  assert.match(output, /PASS candidate physical request projector: card-chosen opaque scope, Poxi\/AG\/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed\/unaudited fail-close; 21 cases; synthetic-only; native\/browser NOT RUN/u);
   const repoRoot = path.resolve(here, '../../..');
   const guard = execFileSync(process.execPath,
     [path.join(repoRoot, 'scripts/upstream-first-card-wire-request-projector-guard.mjs'),

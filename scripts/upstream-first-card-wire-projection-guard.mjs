@@ -24,6 +24,9 @@ if (fs.existsSync(target)) {
   if (installed !== expected) {
     assert.equal(mode, '--apply', 'candidate projector drifted');
     const reviewedPriorRevisions = new Set([
+      // The pinned package installer stages this earlier projector before
+      // the reviewed native QA overlay updates are applied.
+      '25e37d27d00038cb509ded1125632fee43ca8a21b7526d92f07b3703cfa37118',
       '4aab403222c7f3d3a1de4ad31fe1f390028f9cf490726c96da653719d9aa62c3',
       'd9119a2b63fdc9f9f8d706373131d50a7c58e45bf8cef90b75bc1ce0214c1af5',
       // Public descriptors/logs must preserve the source handle until MoveCards.

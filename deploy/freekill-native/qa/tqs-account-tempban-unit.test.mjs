@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,8 +19,8 @@ test('native account temp-ban store handles zero duration, renewal and stale exp
   const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-account-tempban-unit-'));
   try {
     const fixture = path.join(root, 'native-source');
-    mkdirSync(path.join(fixture, 'src/server/user'), { recursive: true });
     for (const relativePath of [
+      'src/server/room/room.cpp',
       'src/server/server.h',
       'src/server/server.cpp',
       'src/server/user/auth.cpp',
@@ -28,7 +28,12 @@ test('native account temp-ban store handles zero duration, renewal and stale exp
       'src/server/user/user_manager.cpp',
     ]) {
       const target = path.join(fixture, relativePath);
-      cpSync(path.join(upstreamNativeSource, relativePath), target);
+      mkdirSync(path.dirname(target), { recursive: true });
+      // The reference checkout may contain prior native patches. Always
+      // exercise this patch against exactly the pinned upstream Git version.
+      writeFileSync(target, run('git', [
+        '-C', upstreamNativeSource, 'show', `HEAD:${relativePath}`,
+      ]));
     }
 
     run('patch', ['--batch', '-p1', '-d', fixture], {

@@ -88,7 +88,11 @@ managed_patch_applied() {
     ! grep -Fq 'server.isTempBanned(addr)' \
       "$SOURCE_DIR/src/server/user/user_manager.cpp" &&
     ! grep -Fq 'online_players_map.size() >= (size_t)server.config().capacity' \
-      "$SOURCE_DIR/src/server/user/user_manager.cpp"
+      "$SOURCE_DIR/src/server/user/user_manager.cpp" &&
+    grep -Fq 'p->isRunned() && p->getState() == ServerPlayer::Run' \
+      "$SOURCE_DIR/src/server/room/room.cpp" &&
+    grep -Fq 'match must never turn that involuntary disconnect into a ban' \
+      "$SOURCE_DIR/src/server/room/room.cpp"
 }
 
 game_access_patch_applied() {

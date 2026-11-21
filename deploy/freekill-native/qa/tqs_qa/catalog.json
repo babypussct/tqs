@@ -976,6 +976,7 @@
       "expectedCommand": "AskForUseActiveSkill",
       "trigger": "delta-halberd",
       "playerCount": 3,
+      "cardWire": true,
       "players": {
         "actor": {
           "general": "hs__machao",
@@ -2884,6 +2885,23 @@
           "hs__guojia",
           "hs__simayi"
         ]
+      ],
+      "cards": []
+    },
+    {
+      "id": "general-pair-wild-wei",
+      "title": "Full Hegemony match with wild main Wei Yan and Wei deputy Jiang Gan",
+      "seed": 1780420133,
+      "expectedCommand": "CustomDialog",
+      "trigger": "general-pair-match",
+      "playerCount": 4,
+      "cardWire": true,
+      "enabledKingdoms": ["wei"],
+      "offeredGroups": [
+        ["ofl_heg__weiyan", "ty_heg__jianggan", "hs__caocao", "hs__simayi", "hs__guojia"],
+        ["hs__simayi", "hs__guojia", "hs__caocao", "hs__xuchu", "hs__zhangliao"],
+        ["hs__guojia", "hs__caocao", "hs__xuchu", "hs__simayi", "hs__zhangliao"],
+        ["hs__zhangliao", "hs__xuchu", "hs__caocao", "hs__guojia", "hs__simayi"]
       ],
       "cards": []
     },

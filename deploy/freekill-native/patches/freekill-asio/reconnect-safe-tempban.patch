@@ -269,3 +269,18 @@ index 7aab825..e4a9c31 100644
 +bool Server::isAccountTempBanned(int accountId) {
 +  return account_temp_bans.contains(accountId);
  }
+diff --git a/src/server/room/room.cpp b/src/server/room/room.cpp
+--- a/src/server/room/room.cpp
++++ b/src/server/room/room.cpp
+@@ -782 +782 @@
+-    if (p->isRunned()) {
++    if (p->isRunned() && p->getState() == ServerPlayer::Run) {
+@@ -794,5 +794,3 @@
+-        if (!isOutdated() && p->isRunned()) {
+-          server.temporarilyBan(p->getId());
+-        } else {
+-          p->emitKicked();
+-        }
++        // A lost transport is reconnectable until GameOver. Cleanup after the
++        // match must never turn that involuntary disconnect into a ban.
++        p->emitKicked();

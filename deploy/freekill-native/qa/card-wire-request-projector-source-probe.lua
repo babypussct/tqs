@@ -321,6 +321,30 @@ rejects(function()
     "probe_skill", "prompt", true, { targets = { 999 } },
   })
 end, "unknown player")
+-- Halberd's extra-target dialog passes the original target IDs in orig_tos.
+-- They are player identities and must never become opaque card handles.
+local halberd = project(owner, "AskForUseActiveSkill", {
+  "halberd_extra", "prompt", true,
+  { orig_tos = { target.id }, targets = { owner.id, target.id } },
+})
+assert(halberd.payload[4].orig_tos[1] == target.id)
+assert(halberd.payload[4].targets[1] == owner.id)
+assert(halberd.payload[4].targets[2] == target.id)
+-- Active-skill requests also offer the owner's existing hand, equip and
+-- private special-pile cards.
+-- orig_tos and targets must contribute no additional card choices.
+assert(#halberd.choices == 3 and halberd.choices[1].standing == 301 and
+  halberd.choices[2].standing == 302 and halberd.choices[3].standing == 303)
+rejects(function()
+  project(owner, "AskForUseActiveSkill", {
+    "halberd_extra", "prompt", true, { orig_tos = { 999 } },
+  })
+end, "unknown player")
+rejects(function()
+  project(owner, "AskForUseActiveSkill", {
+    "halberd_extra", "prompt", true, { orig_tos = { 101.5 } },
+  })
+end, "player IDs")
 rejects(function()
   project(owner, "AskForUseActiveSkill", {
     "probe_skill", "prompt", true, { unknown_card_number = 101 },

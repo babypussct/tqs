@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
+import { deflateSync } from 'node:zlib';
 import { test } from 'node:test';
 import {
   CLIENT_REPLY,
   CLIENT_NOTIFY,
+  PacketType,
   RawPacketStream,
   encodePacket,
+  qUncompress,
   type Packet,
 } from '../src/engine/packet';
 
@@ -43,6 +46,23 @@ test('raw packet stream separates multiple packets before normal data decoding',
   assert.deepEqual(result.map(({ requestId }) => requestId), [-2, 7]);
   assert.deepEqual(result.map(({ type }) => type), [CLIENT_NOTIFY, CLIENT_NOTIFY]);
   assert.deepEqual(result.map(({ bytes }) => bytes), [first, second]);
+});
+
+test('raw capture preserves compressed snapshot bytes for an independent payload audit', () => {
+  const payload = Uint8Array.of(0xa0);
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(payload.length);
+  const compressed = join(length, deflateSync(payload));
+  const bytes = encodePacket({
+    requestId: -2,
+    type: PacketType.NOTIFICATION | PacketType.SRC_SERVER | PacketType.DEST_CLIENT | PacketType.COMPRESSED,
+    command: 'Reconnect',
+    data: compressed,
+  });
+  const [snapshot] = new RawPacketStream().push(bytes);
+  assert.deepEqual(snapshot.bytes, bytes);
+  assert.deepEqual(snapshot.data, compressed);
+  assert.deepEqual(qUncompress(snapshot.data), payload);
 });
 
 test('raw packet stream accepts empty command only on replies', () => {

@@ -240,6 +240,7 @@ local cardArrayKeys = {
 local playerArrayKeys = {
   players = true,
   targets = true,
+  orig_tos = true,
   fix_targets = true,
   must_targets = true,
   exclusive_targets = true,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { test } from 'node:test';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const pinnedNative = path.join(repo, 'scratch/upstream/freekill-asio');
 const patches = path.join(repo, 'deploy/freekill-native/patches/freekill-asio');
-const files = ['src/server/rpc-lua/rpc-lua.cpp', 'src/server/server.cpp',
+const files = ['src/server/room/room.cpp', 'src/server/rpc-lua/rpc-lua.cpp', 'src/server/server.cpp',
   'src/server/server.h', 'src/server/user/auth.cpp', 'src/server/user/user_manager.h',
   'src/server/user/user_manager.cpp'];
 const secret = 'test-secret-with-at-least-32-characters';
@@ -28,7 +28,8 @@ test('pinned native verifies TQS1/TQS2 HMAC, names, expiry and malformed UTF-8',
     const source = path.join(temp, 'native');
     for (const filename of files) {
       mkdirSync(path.dirname(path.join(source, filename)), { recursive: true });
-      cpSync(path.join(pinnedNative, filename), path.join(source, filename));
+      writeFileSync(path.join(source, filename),
+        execFileSync('git', ['-C', pinnedNative, 'show', `HEAD:${filename}`]));
     }
     for (const patch of ['reconnect-safe-tempban.patch', 'tqs-game-access.patch']) {
       execFileSync('patch', ['--batch', '--forward', '-p1', '-d', source,
@@ -119,13 +120,25 @@ int main(int argc, char **argv) {
 });
 
 test('pinned native punishment triggers pass the authenticated player id, not a peer address', () => {
-  const room = readFileSync(path.join(pinnedNative, 'src/server/room/room.cpp'), 'utf8');
-  const serverPlayer = readFileSync(path.join(pinnedNative, 'src/server/user/serverplayer.cpp'), 'utf8');
+  const sourceRoom = execFileSync('git', ['-C', pinnedNative, 'show', 'HEAD:src/server/room/room.cpp'], { encoding: 'utf8' });
+  const serverPlayer = execFileSync('git', ['-C', pinnedNative, 'show', 'HEAD:src/server/user/serverplayer.cpp'], { encoding: 'utf8' });
+  const patchedDir = mkdtempSync(path.join(tmpdir(), 'tqs-game-room-patch-'));
+  let room;
+  try {
+    for (const filename of files) {
+      const target = path.join(patchedDir, filename);
+      mkdirSync(path.dirname(target), { recursive: true });
+      writeFileSync(target, execFileSync('git', ['-C', pinnedNative, 'show', `HEAD:${filename}`]));
+    }
+    execFileSync('patch', ['--batch', '-p1', '-d', patchedDir, '-i',
+      path.join(patches, 'reconnect-safe-tempban.patch')], { stdio: 'pipe' });
+    room = readFileSync(path.join(patchedDir, 'src/server/room/room.cpp'), 'utf8');
+  } finally {
+    rmSync(patchedDir, { recursive: true, force: true });
+  }
   const punishmentCalls = room.match(/temporarilyBan\((?:runner|p)->getId\(\)\)/g) ?? [];
-  assert.deepEqual(punishmentCalls, [
-    'temporarilyBan(runner->getId())',
-    'temporarilyBan(p->getId())',
-  ], 'native must have exactly the two audited account-id punishment triggers');
+  assert.deepEqual(punishmentCalls, ['temporarilyBan(runner->getId())'],
+    'only an explicit room leave should trigger account temp-ban');
   assert.match(room,
     /player\.setState\(Player::Run\);[\s\S]*?player\.setRunned\(true\);/,
     'explicit room removal must remain distinguishable as state Run');
@@ -135,9 +148,11 @@ test('pinned native punishment triggers pass the authenticated player id, not a 
   assert.match(room,
     /if \(!isOutdated\(\) && !player\.isDied\(\)\)[\s\S]*?temporarilyBan\(runner->getId\(\)\)/,
     'disconnect replacement must apply the penalty to the runner userinfo id');
-  assert.match(room,
-    /if \(!isOutdated\(\) && p->isRunned\(\)\)[\s\S]*?temporarilyBan\(p->getId\(\)\)/,
-    'GameOver cleanup must apply the penalty to the player userinfo id');
+  assert.match(room, /if \(p->isRunned\(\) && p->getState\(\) == ServerPlayer::Run\)/,
+    'GameOver run-rate must only count explicit player exits');
+  assert.doesNotMatch(room, /temporarilyBan\(p->getId\(\)\)/,
+    'GameOver must never temp-ban a player disconnected due to transport failure');
+  assert.match(sourceRoom, /setRunned\(true\)/, 'baseline must still contain the original abandon flag');
   assert.doesNotMatch(room, /temporarilyBan\([^)]*peerAddress\(\)/,
     'native punishment triggers must not pass a connection address');
 });

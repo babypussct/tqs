@@ -44,6 +44,7 @@ export interface RawWirePacket {
   type: number;
   command: string;
   bytes: Uint8Array;
+  data: Uint8Array;
 }
 
 const enc = new TextEncoder();
@@ -186,7 +187,7 @@ class Reader {
   }
 }
 
-function qUncompress(data: Uint8Array): Uint8Array {
+export function qUncompress(data: Uint8Array): Uint8Array {
   if (data.length < 4) throw new Error('truncated compressed packet');
   const expected = new DataView(data.buffer, data.byteOffset, 4).getUint32(0);
   if (expected > MAX_DECOMPRESSED_BYTES) throw new Error('decompressed packet too large');
@@ -292,7 +293,7 @@ function rawBytes(bytes: Uint8Array, start: number): { value: Uint8Array; next: 
 }
 
 function readRawWirePacket(bytes: Uint8Array): {
-  requestId: number; type: number; command: string; end: number;
+  requestId: number; type: number; command: string; data: Uint8Array; end: number;
 } {
   const array = rawHead(bytes, 0);
   if (array.major !== 4 || (array.value !== 4 && array.value !== 6)) {
@@ -323,7 +324,7 @@ function readRawWirePacket(bytes: Uint8Array): {
     rawInteger(bytes, cursor); cursor = rawHead(bytes, cursor).next;
     rawInteger(bytes, cursor); cursor = rawHead(bytes, cursor).next;
   }
-  return { requestId, type, command: dec.decode(command.value), end: cursor };
+  return { requestId, type, command: dec.decode(command.value), data: data.value, end: cursor };
 }
 
 /**
@@ -357,6 +358,7 @@ export class RawPacketStream {
           type: parsed.type,
           command: parsed.command,
           bytes: this.pending.subarray(consumed, consumed + parsed.end).slice(),
+          data: parsed.data,
         });
         consumed += parsed.end;
       } catch (error) {

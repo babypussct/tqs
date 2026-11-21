@@ -12,7 +12,7 @@ import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { preview } from 'vite';
 import { chromium, type Page, type WebSocketRoute } from 'playwright-core';
-import { PacketStream, RawPacketStream, CLIENT_REPLY, PacketType } from '../../src/engine/packet';
+import { PacketStream, RawPacketStream, CLIENT_REPLY, PacketType, qUncompress, type RawWirePacket } from '../../src/engine/packet';
 import { P1_QA_SOURCE_BASELINE, verifyCandidateIdentity, verifyQaPackageManifest, verifyQaSourceIdentity } from './identity';
 import { assertTqs1Ticket, createTqs1Ticket } from './qa-ticket';
 import { sanitizeQaEvidence } from './evidence-sanitize';
@@ -60,6 +60,7 @@ type LiveScenario =
   | 'ai-trace'
   | 'chooser-trace'
   | 'general-pair-trace'
+  | 'general-pair-wild-wei'
   | 'general-pair-match-a'
   | 'general-pair-match-b'
   | 'general-pair-match-c'
@@ -127,7 +128,7 @@ const testScenario = (process.env.TQS_LIVE_SCENARIO ?? (process.argv.includes('-
 assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' ||
   testScenario === 'rescue-normal' || testScenario === 'rescue-battle' || testScenario === 'founding' || testScenario === 'fazheng-enyuan' ||
   testScenario === 'hidden-yiji' || testScenario === 'hidden-yiji-deputy' || testScenario === 'hidden-rehide-yiji' || testScenario === 'hidden-rehide-yiji-deputy' || testScenario === 'hidden-reveal' ||
-  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'delta-xiongsuan' || testScenario === 'delta-wenji' || testScenario === 'delta-lord-wenji' || testScenario === 'delta-qiance' || testScenario === 'delta-jianchu' || testScenario === 'delta-tieqi' || testScenario === 'delta-xishe' || testScenario === 'delta-chujue' || testScenario === 'delta-zhente' || testScenario === 'delta-halberd' || testScenario === 'delta-sijian' || testScenario === 'delta-bawei' || testScenario === 'delta-fengshi-siege' || testScenario === 'delta-fengshi-no-siege' || testScenario === 'ai-trace' || testScenario === 'chooser-trace' || testScenario === 'general-pair-trace' || testScenario === 'general-pair-match-a' || testScenario === 'general-pair-match-b' || testScenario === 'general-pair-match-c' || testScenario === 'general-pair-match-d' || testScenario === 'general-pair-match-mixed-a' || testScenario === 'general-pair-match-mixed-b' || testScenario === 'general-pair-match-mixed-c' || testScenario === 'general-pair-match-mixed-d' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
+  testScenario === 'hidden-jianxiong' || testScenario === 'hidden-jianxiong-deputy' || testScenario === 'hidden-fankui' || testScenario === 'hidden-fankui-deputy' || testScenario === 'hidden-reveal-deputy' || testScenario === 'hidden-active' || testScenario === 'hidden-active-main' || testScenario === 'delta-xiongsuan' || testScenario === 'delta-wenji' || testScenario === 'delta-lord-wenji' || testScenario === 'delta-qiance' || testScenario === 'delta-jianchu' || testScenario === 'delta-tieqi' || testScenario === 'delta-xishe' || testScenario === 'delta-chujue' || testScenario === 'delta-zhente' || testScenario === 'delta-halberd' || testScenario === 'delta-sijian' || testScenario === 'delta-bawei' || testScenario === 'delta-fengshi-siege' || testScenario === 'delta-fengshi-no-siege' || testScenario === 'ai-trace' || testScenario === 'chooser-trace' || testScenario === 'general-pair-trace' || testScenario === 'general-pair-wild-wei' || testScenario === 'general-pair-match-a' || testScenario === 'general-pair-match-b' || testScenario === 'general-pair-match-c' || testScenario === 'general-pair-match-d' || testScenario === 'general-pair-match-mixed-a' || testScenario === 'general-pair-match-mixed-b' || testScenario === 'general-pair-match-mixed-c' || testScenario === 'general-pair-match-mixed-d' || testScenario === 'hidden-fanjian' || testScenario === 'hidden-fanjian-deputy' ||
   testScenario === 'hidden-view-as' || testScenario === 'hidden-view-as-main' || testScenario === 'hidden-dual' ||
   testScenario === 'hidden-luoshen' || testScenario === 'hidden-luoshen-deputy' ||
   testScenario === 'hidden-tiandu' || testScenario === 'hidden-tiandu-deputy' ||
@@ -152,7 +153,7 @@ assert.ok(testScenario === '' || testScenario === 'draw-sequence' || testScenari
   testScenario === 'hidden-ejue' || testScenario === 'hidden-ejue-deputy' ||
   testScenario === 'hidden-dufu' || testScenario === 'hidden-dufu-deputy' ||
   testScenario === 'hidden-jianzhi' || testScenario === 'hidden-jianzhi-deputy' || testScenario === 'hidden-zhiman' || testScenario === 'hidden-zhiman-deputy' || testScenario === 'hidden-jilix' || testScenario === 'hidden-jilix-deputy',
-  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, delta-xiongsuan, delta-wenji, delta-lord-wenji, delta-qiance, delta-jianchu, delta-tieqi, delta-xishe, delta-chujue, delta-zhente, delta-halberd, delta-sijian, delta-bawei, delta-fengshi-siege, delta-fengshi-no-siege, ai-trace, chooser-trace, general-pair-trace, general-pair-match-a, general-pair-match-b, general-pair-match-c, general-pair-match-d, general-pair-match-mixed-a, general-pair-match-mixed-b, general-pair-match-mixed-c, general-pair-match-mixed-d, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
+  'TQS_LIVE_SCENARIO must be empty, draw-sequence, card-chosen, cards-and-choice, poxi, rescue-normal, rescue-battle, founding, fazheng-enyuan, hidden-yiji, hidden-yiji-deputy, hidden-rehide-yiji, hidden-rehide-yiji-deputy, hidden-jianxiong, hidden-jianxiong-deputy, hidden-fankui, hidden-fankui-deputy, hidden-reveal, hidden-reveal-deputy, hidden-active, hidden-active-main, delta-xiongsuan, delta-wenji, delta-lord-wenji, delta-qiance, delta-jianchu, delta-tieqi, delta-xishe, delta-chujue, delta-zhente, delta-halberd, delta-sijian, delta-bawei, delta-fengshi-siege, delta-fengshi-no-siege, ai-trace, chooser-trace, general-pair-trace, general-pair-wild-wei, general-pair-match-a, general-pair-match-b, general-pair-match-c, general-pair-match-d, general-pair-match-mixed-a, general-pair-match-mixed-b, general-pair-match-mixed-c, general-pair-match-mixed-d, hidden-fanjian, hidden-fanjian-deputy, hidden-view-as, hidden-view-as-main, hidden-dual, hidden-luoshen, hidden-luoshen-deputy, hidden-tiandu, hidden-tiandu-deputy, hidden-jizhi, hidden-jizhi-deputy, hidden-mingshi, hidden-mingshi-deputy, hidden-gongqing, hidden-gongqing-deputy, hidden-enyuan, hidden-enyuan-deputy, hidden-fuyin, hidden-fuyin-deputy, hidden-qianxun, hidden-qianxun-deputy, hidden-qianxun-indulgence, hidden-qianxun-indulgence-deputy, hidden-kongcheng, hidden-kongcheng-deputy, hidden-weimu, hidden-weimu-deputy, hidden-weimu-indulgence, hidden-weimu-indulgence-deputy, hidden-xiaoji, hidden-xiaoji-deputy, hidden-guanxing, hidden-guanxing-deputy, hidden-yingzi, hidden-yingzi-deputy, hidden-tianxiang, hidden-tianxiang-deputy, hidden-duanchang, hidden-duanchang-deputy, hidden-liegong, hidden-liegong-deputy, hidden-kuanggu, hidden-kuanggu-deputy, hidden-jueqing, hidden-jueqing-deputy, hidden-ejue, hidden-ejue-deputy, hidden-dufu, hidden-dufu-deputy, hidden-jianzhi, hidden-jianzhi-deputy, hidden-zhiman, hidden-zhiman-deputy, hidden-jilix, hidden-jilix-deputy');
 // These scenarios deliberately require an explicit opt-in. An interrupted
 // active room exercises reconnect/cleanup and therefore must run only against
 // the isolated QA runtime, whose installer sets tempBanTime=0. Local fixtures
@@ -786,7 +787,8 @@ const testBotAudit = process.argv.includes('--audit-bots');
 const aiTraceScenario = testScenario === 'ai-trace';
 const chooserTraceScenario = testScenario === 'chooser-trace';
 const generalPairTraceScenario = testScenario === 'general-pair-trace';
-const generalPairMatchScenario = testScenario.startsWith('general-pair-match-');
+const wildWeiPairScenario = testScenario === 'general-pair-wild-wei';
+const generalPairMatchScenario = testScenario.startsWith('general-pair-match-') || wildWeiPairScenario;
 const boundedAiTraceScenario = aiTraceScenario || chooserTraceScenario || generalPairTraceScenario;
 assert.ok(!(boundedAiTraceScenario || generalPairMatchScenario) || (nativeQa && testBotAudit),
   'ai-trace/chooser-trace/general-pair-trace/general-pair-match require the isolated native QA package and --audit-bots');
@@ -995,6 +997,7 @@ const scenarioConfig: Record<Exclude<LiveScenario, ''>, {
   // the browser still completes the real CustomDialog for its two accounts,
   // while native bots exercise the candidate/base SmartAI implementation.
   'general-pair-trace': { general: /Tào Tháo|曹操|Cao\s*Cao/i, generalId: 'hs__caocao', skill: null, pack: /^hegemony_standard$/i, packId: 'hegemony_standard', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
+  'general-pair-wild-wei': { general: /Ngụy Diên|魏延|Wei\s*Yan/i, generalId: 'ofl_heg__weiyan', skill: null, pack: /^offline_heg$/i, packId: 'offline_heg', requiredCommand: 'CustomDialog', capacity: 4, requiresGeneral: false },
   // These four full-match scenarios use the same fixed Wei roster with a
   // different seat permutation, so baseline/candidate runs can be paired by
   // seed while reducing seat-order confounding across the matrix.
@@ -1209,7 +1212,7 @@ const hiddenScenario = hiddenYijiScenario || hiddenRehideYijiScenario || hiddenJ
 // GameOver after the skill branch, so routing them through the ordinary lobby
 // cleanup would turn a completed native assertion into a false failure.
 const nativeQaGameOverCompletion = nativeQa &&
-  (testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || hiddenScenario);
+  (wildWeiPairScenario || testScenario === 'draw-sequence' || testScenario === 'card-chosen' || testScenario === 'cards-and-choice' || testScenario === 'poxi' || deltaXiongsuanScenario || deltaWenjiScenario || deltaLordWenjiScenario || deltaQianceScenario || deltaJianchuScenario || deltaTieqiScenario || deltaChujueScenario || deltaZhenteScenario || deltaHalberdScenario || deltaSijianScenario || deltaBaweiScenario || deltaFengshiScenario || deltaXisheScenario || hiddenScenario);
 const nativeQaGateTimeoutMs = Number(process.env.TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS ?? '45000');
 assert.ok(Number.isSafeInteger(nativeQaGateTimeoutMs) && nativeQaGateTimeoutMs >= 10000 && nativeQaGateTimeoutMs <= 180000,
   'TQS_LIVE_NATIVE_QA_GATE_TIMEOUT_MS must be a bounded integer between 10000 and 180000');
@@ -2064,12 +2067,30 @@ async function completeNativeDialog(page: Page, client: number, requestId: numbe
   if (replied) scenarioObservations.push({ command: 'native-dialog', requestId, reply: true, detail: heading });
   return replied;
 }
-async function selectPair(page:Page, preferredLabel?:RegExp): Promise<number>{
+async function selectPair(page:Page, preferredLabel?:RegExp, forcedPair?: readonly [string, string]): Promise<number>{
   const group=page.getByRole('group',{name:'Danh sách võ tướng'});await group.waitFor({timeout:60000});
   // Each choice now has a separate “view skills” button.  Restrict the
   // deterministic pair search to actual choice buttons so an info sheet
   // cannot intercept the next selection click.
   const buttons=group.locator('button.general-choice');const n=await buttons.count();
+  if (forcedPair) {
+    const [mainId, deputyId] = forcedPair;
+    const main = group.locator(`.sg-general-choice-entry[data-general-id="${mainId}"] button.general-choice`);
+    const deputy = group.locator(`.sg-general-choice-entry[data-general-id="${deputyId}"] button.general-choice`);
+    assert.equal(await main.count(), 1, `QA wild main ${mainId} must be offered`);
+    assert.equal(await deputy.count(), 1, `QA deputy ${deputyId} must be offered`);
+    await main.click({ timeout: 60000 });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.sg-general-choice-entry'))
+      .every((entry) => entry.getAttribute('data-general-status') !== 'busy'), undefined,
+    { timeout: 60000 });
+    assert.ok(await deputy.isEnabled(), `QA deputy ${deputyId} must be legal with ${mainId}`);
+    await deputy.click({ timeout: 60000 });
+    const confirm = page.getByRole('button', { name: 'Xác nhận tướng' });
+    assert.ok(await confirm.isEnabled(), 'QA exact wild+Wei pair must be confirmable');
+    await confirm.click();
+    console.log('PASS native wild main + Wei deputy: exact pair accepted by the real initial-general UI');
+    return n;
+  }
   if (nativeQa && generalPairMatchScenario) {
     assert.equal(n, initialGeneralCount,
       `Native ${testScenario} UI must render exactly ${initialGeneralCount} general choices; observed ${n}`);
@@ -2457,14 +2478,26 @@ try{
         else nativePacketSizeCapture[i].outgoingPackets++;
         recordPacketBytes(nativePacketSizeCapture[i], rawPacket.bytes);
       };
-      const auditRawPacket = (rawPacket: { command: string; bytes: Uint8Array }) => {
+      const auditRawPacket = (rawPacket: RawWirePacket) => {
         nativeWireCapture[i].packets++;
         recordPacketBytes(nativeWireCapture[i], rawPacket.bytes);
         const isSetup = rawPacket.command === 'Setup';
+        const compressedSnapshot = (rawPacket.type & PacketType.COMPRESSED) !== 0 &&
+          (rawPacket.command === 'Reconnect' || rawPacket.command === 'Observe');
+        let auditBytes = rawPacket.bytes;
+        if (compressedSnapshot) {
+          try {
+            auditBytes = qUncompress(rawPacket.data);
+          } catch {
+            nativeWireCapture[i].failures++;
+            errors.push(`client-${i+1}: native-raw-snapshot-decompression-rejected`);
+            return;
+          }
+        }
         const audit = spawnSync(luaExecutable, [nativeDeckAuditPath,
-          path.join(runtime, 'packages/freekill-core'), '--raw-packet',
+          path.join(runtime, 'packages/freekill-core'), compressedSnapshot ? rawPacket.command : '--raw-packet',
           isSetup ? 'identity' : i === 2 ? 'observer' : 'player', String(boundSeat ?? '')], {
-          input: Buffer.from(rawPacket.bytes).toString('hex'), encoding: 'utf8',
+          input: Buffer.from(auditBytes).toString('hex'), encoding: 'utf8',
           timeout: 10_000, maxBuffer: 64 * 1024,
           env: {
             ...process.env,
@@ -2825,7 +2858,9 @@ try{
     }
   }
   const generalChoiceCounts = await Promise.all(pages.map((page, index) => selectPair(page,
-    !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined)));
+    !nativeQa && selectedScenario && selectedScenario.requiresGeneral !== false && index === scenarioClient ? selectedScenario.general : undefined,
+    wildWeiPairScenario && index === 0
+      ? ['ofl_heg__weiyan', 'ty_heg__jianggan'] : undefined)));
   for (const p of pages) {
     try {
       await p.locator('.game-board').waitFor({ timeout: cardWireEntropyFailure ? 30000 : 90000 });
@@ -2842,6 +2877,44 @@ try{
       assert.equal(await opponent.locator('[data-card-id], .gameplay-card').count(), 0,
         'opponent hand IDs must not render');
     }
+  }
+  if ((wildWeiPairScenario && testRecovery) || (observerPage && auditNativeDeck)) {
+    // The board mounts during general selection, before the native room
+    // negotiates v1 and prepares the deck. Snapshots need the active protocol.
+    const deckPrepared = () => traces.slice(0, 2).every((trace) => trace.some((packet) =>
+      packet.direction === 'incoming' && packet.command === 'PrepareDrawPile'));
+    const setupDeadline = Date.now() + 30000;
+    while (!deckPrepared() && Date.now() < setupDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(deckPrepared(), 'native QA must prepare the deck before requesting snapshots');
+    assert.ok(!auditNativeDeck || nativeDeckPrivacy.slice(0, 2).every((audit) => audit.negotiated),
+      'native QA must negotiate v1 for both players before requesting snapshots');
+  }
+  if (wildWeiPairScenario && testRecovery) {
+    const beforeDisconnect = traces[0].length;
+    assert.ok(pages.every((_, index) => !traces[index].some((packet) =>
+      packet.direction === 'incoming' && packet.command === 'GameOver')),
+    'wild-pair QA must lose transport before GameOver');
+    const disconnect = await a.evaluate(() => (window as Window & {
+      __tqsTestDisconnect?: () => { closed: boolean };
+    }).__tqsTestDisconnect?.());
+    assert.ok(disconnect?.closed, 'wild-pair QA must close its active transport');
+    const receivedReconnect = () => traces[0].slice(beforeDisconnect).some((packet) =>
+      packet.direction === 'incoming' && packet.command === 'Reconnect');
+    const reconnectDeadline = Date.now() + 120000;
+    while (!receivedReconnect() && Date.now() < reconnectDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    assert.ok(receivedReconnect(),
+      'the wild-pair account must receive native Reconnect while its game is active');
+    await a.waitForFunction(() => document.querySelector('.status')?.textContent === 'Đã kết nối',
+      null, { timeout: 30000 });
+    await a.locator('.board-self').waitFor({ timeout: 30000 });
+    assert.equal(await a.locator('.board-player').count(), playerCapacity);
+    assert.equal(await a.locator('.board-player:not(.board-self) [data-card-id]').count(), 0);
+    recovered = true;
+    console.log('PASS wild pair: native Reconnect restored the same active room and private board after forced transport loss');
   }
   if (cardWireEntropyFailure) {
     if (await waitForNativeEntropyFailure(15000)) {
@@ -3474,7 +3547,7 @@ try{
       return scenarioClient;
     };
     const scenarioDone = () => testScenario === '' ||
-      (testScenario === 'draw-sequence' && manualCardReply) ||
+      ((testScenario === 'draw-sequence' || wildWeiPairScenario) && manualCardReply) ||
       (testScenario === 'card-chosen' && scenarioCardChosenHidden) ||
       (testScenario === 'cards-and-choice' && scenarioCardsAndChoiceReply) ||
       (testScenario === 'poxi' && scenarioPoxiMultiple) ||
@@ -6208,7 +6281,7 @@ try{
   } else if (!boundedAiTraceScenario) {
     await Promise.all(pages.map((page) => clickTrustAction(page)));
   }
-  if (testRecovery) {
+  if (testRecovery && !wildWeiPairScenario) {
     const recovering = [a];
     if (testGatewayRestart) {
       assert.ok(gateway);
@@ -6342,10 +6415,12 @@ try{
       botSkillLogs: audit.skillLogs.filter((log) => !humanSkillActors.has(skillActor(log))),
     }));
   }
-  if (generalPairMatchScenario && !generalPairTelemetry) {
+  if (generalPairMatchScenario && !wildWeiPairScenario && !generalPairTelemetry) {
     generalPairTelemetry = parseGeneralPairTelemetry(publicBotAudit);
   }
-  if (generalPairMatchScenario) {
+  // The wild-pair crash regression deliberately runs a bounded live match.
+  // Its QA timeout produces GameOver/result, without a natural winner marker.
+  if (generalPairMatchScenario && !wildWeiPairScenario) {
     assert.ok(generalPairTelemetry?.matchResult,
       'general-pair-match must expose the metadata-only PairMatchResult marker');
     assert.ok(generalPairTelemetry?.decisionSummary,
@@ -6371,7 +6446,9 @@ try{
   });
   if (testBotAudit && !boundedAiTraceScenario) {
     assert.equal(playerCapacity, 4, 'Bot audit must be a four-seat room');
-    assert.ok(publicBotAudit.every((audit) => audit.logs.length > 0), 'Bot audit must observe public GameLog text');
+    assert.ok(wildWeiPairScenario
+      ? botAuditTrace.every((trace) => trace.gameLog > 0)
+      : publicBotAudit.every((audit) => audit.logs.length > 0), 'Bot audit must observe public GameLog');
     assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1), 'Every live client must observe exactly one GameOver');
     assert.ok(botAuditTrace.some((trace) => trace.addSkillUseHistory + trace.setSkillUseHistory > 0),
       'Bot audit must observe native skill-history state updates');
@@ -6391,7 +6468,7 @@ try{
       'general-pair-trace must observe exactly one GameOver per live client');
     console.log('PASS general-pair-trace live room: fixed four-seat initial CustomDialog reached GameOver; server trace is collected from QA logs');
   }
-  if (generalPairMatchScenario) {
+  if (generalPairMatchScenario && !wildWeiPairScenario) {
     assert.equal(playerCapacity, 4, `${testScenario} must run with four fixed seats`);
     assert.ok(botAuditTrace.every((trace) => trace.gameOver === 1),
       `${testScenario} must observe exactly one GameOver per live client`);
@@ -7293,7 +7370,10 @@ try{
       : null,
     memoryAllocationDiagnosticCounts:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsMemoryFaultCount:number}).__tqsMemoryFaultCount))),
     luaTelemetry:await Promise.all(pages.map(p=>p.evaluate(()=>(window as unknown as {__tqsLuaTelemetry?:unknown}).__tqsLuaTelemetry ?? null))),
-    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,nativeSupplementalCapture:auditNativeDeck ? nativeSupplementalCapture : null,nativePacketSizeCapture:captureNativePackets ? nativePacketSizeCapture : null,nativeSemanticCapture:nativeSemanticCapture,nativeProcessMetrics:readNativeProcessMetrics(),result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts}),null,2));
+    distIndexSha256,candidateIdentity,qaPackageIdentity,qaSourceIdentity,
+    nativeDeckPrivacy:auditNativeDeck ? nativeDeckPrivacy : null,
+    nativeWireCapture:auditNativeDeck ? nativeWireCapture : null,
+    nativeSupplementalCapture:auditNativeDeck ? nativeSupplementalCapture : null,nativePacketSizeCapture:captureNativePackets ? nativePacketSizeCapture : null,nativeSemanticCapture:nativeSemanticCapture,nativeProcessMetrics:readNativeProcessMetrics(),result:errors.length ? 'FAIL' : 'PASS',deploymentUrl:deploymentUrl ?? null,traces,errors,errorContexts}),null,2));
   if (observerLeaveRequested) {
     const observerEvidenceFiles = readdirSync(out)
       .filter((name) => name.startsWith(`${candidateId}-${testScenario}-`) && name.includes('-live-'))

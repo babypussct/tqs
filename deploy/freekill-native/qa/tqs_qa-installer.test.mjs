@@ -13,6 +13,7 @@ const installer = path.join(repo, 'deploy/freekill-native/scripts/install-qa-pac
 const verifier = path.join(repo, 'deploy/freekill-native/scripts/verify-qa-package.sh');
 const defaultConfig = path.join(repo, 'deploy/freekill-native/server/freekill.server.config.json');
 const reconnectPatch = path.join(repo, 'deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch');
+const bootstrap = path.join(repo, 'deploy/freekill-native/scripts/bootstrap-source.sh');
 const upstreamNativeSource = path.join(repo, 'scratch/upstream/freekill-asio');
 
 function run(command, args, cwd) {
@@ -62,6 +63,11 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
     const productionConfig = JSON.parse(readFileSync(defaultConfig, 'utf8'));
     assert.equal(productionConfig.tempBanTime, 5, 'production temp-ban policy must remain five minutes');
     const patchText = readFileSync(reconnectPatch, 'utf8');
+    const bootstrapText = readFileSync(bootstrap, 'utf8');
+    assert.match(bootstrapText, /grep -Fq 'p->isRunned\(\) && p->getState\(\) == ServerPlayer::Run'/,
+      'bootstrap must recognize the completed intentional-abandon guard');
+    assert.match(bootstrapText, /grep -Fq 'match must never turn that involuntary disconnect into a ban'/,
+      'bootstrap must recognize GameOver cleanup without a temporary ban');
     assert.match(patchText, /server\.isAccountTempBanned\(accountId\)/,
       'production source patch must check the authenticated account after authentication');
     assert.match(patchText, /class AccountTempBanStore/,
@@ -96,12 +102,14 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
       const fixture = path.join(root, 'native-source-fixture');
       mkdirSync(path.join(fixture, 'src/server/user'), { recursive: true });
       for (const sourcePath of [
+        'src/server/room/room.cpp',
         'src/server/server.h',
         'src/server/server.cpp',
         'src/server/user/auth.cpp',
         'src/server/user/user_manager.h',
         'src/server/user/user_manager.cpp',
       ]) {
+        mkdirSync(path.dirname(path.join(fixture, sourcePath)), { recursive: true });
         writeFileSync(path.join(fixture, sourcePath),
           execFileSync('git', ['-C', upstreamNativeSource, 'show', `HEAD:${sourcePath}`]));
       }
@@ -109,6 +117,13 @@ test('QA installer creates a verified server-only runtime and rejects a dirty so
         '--batch', '-p1', '-d', fixture,
       ], patchText, repo), 'production reconnect patch must apply cleanly to the pinned native source');
       const patchedAuth = readFileSync(path.join(fixture, 'src/server/user/auth.cpp'), 'utf8');
+      const patchedRoom = readFileSync(path.join(fixture, 'src/server/room/room.cpp'), 'utf8');
+      assert.match(patchedRoom, /if \(p->isRunned\(\) && p->getState\(\) == ServerPlayer::Run\)/,
+        'temporary transport loss must not count as an intentional abandon');
+      assert.match(patchedRoom, /if \(p->getState\(\) == ServerPlayer::Offline\) \{\s*\/\/ A lost transport is reconnectable/,
+        'unplanned offline disconnect must follow the normal end-of-game cleanup');
+      assert.doesNotMatch(patchedRoom, /temporarilyBan\(p->getId\(\)\)/,
+        'GameOver must not temp-ban disconnected accounts');
       const passwordCheck = patchedAuth.indexOf('passed = (passwordHash == obj["password"]);');
       const tempBanCheck = patchedAuth.indexOf('server.isAccountTempBanned(accountId)');
       assert.ok(passwordCheck >= 0 && tempBanCheck > passwordCheck,

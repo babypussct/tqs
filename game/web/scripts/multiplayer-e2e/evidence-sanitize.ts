@@ -200,7 +200,7 @@ const sanitizeString = (key: string, value: string): string | null => {
   if (SAFE_HEX.test(value)) return value;
   if ((key === 'command' || key === 'lastIncoming' || key === 'nativeQaGateCommand')
     && SAFE_COMMAND.test(value)) return value;
-  if (key === 'scenario' && SAFE_SCENARIO.test(value)) return value;
+  if (key === 'scenario' && (value === 'general-pair-wild-wei' || SAFE_SCENARIO.test(value))) return value;
   if (key === 'cardWireObserverMode' &&
       /^(?:valid|missing|wrong-version|wrong-protocol|wrong-mode)$/u.test(value)) return value;
   if (key === 'cardWirePlayerMode' && /^(?:valid|missing)$/u.test(value)) return value;

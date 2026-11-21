@@ -54,6 +54,7 @@ export type QaScenarioId =
   | 'ai-trace'
   | 'chooser-trace'
   | 'general-pair-trace'
+  | 'general-pair-wild-wei'
   | 'general-pair-match-a'
   | 'general-pair-match-b'
   | 'general-pair-match-c'
@@ -698,6 +699,16 @@ export const QA_SCENARIOS: Readonly<Record<QaScenarioId, QaScenarioPlan>> = {
     drawSequence: [],
     slots: [],
     trigger: 'general-pair-trace',
+    expectedCommand: 'CustomDialog',
+  },
+  'general-pair-wild-wei': {
+    version: 1,
+    id: 'general-pair-wild-wei',
+    title: 'Ngụy Diên Dã tâm chủ tướng và Tưởng Cán phó tướng',
+    seed: 0x6a1f0e25,
+    drawSequence: [],
+    slots: [],
+    trigger: 'general-pair-match',
     expectedCommand: 'CustomDialog',
   },
   'general-pair-match-a': {
@@ -1376,7 +1387,7 @@ export const QA_SCENARIO_IDS: readonly QaScenarioId[] = [
   'rescue-normal', 'rescue-battle', 'founding', 'fazheng-enyuan',
   'hidden-yiji', 'hidden-jianxiong', 'hidden-reveal', 'hidden-active',
   'hidden-yiji-deputy', 'hidden-jianxiong-deputy', 'hidden-reveal-deputy', 'hidden-active-main', 'delta-xiongsuan', 'delta-wenji', 'delta-lord-wenji', 'delta-qiance', 'delta-jianchu', 'delta-tieqi', 'delta-xishe', 'delta-chujue', 'delta-zhente', 'delta-halberd', 'delta-sijian', 'delta-bawei', 'delta-fengshi-siege', 'delta-fengshi-no-siege', 'ai-trace', 'chooser-trace', 'general-pair-trace',
-  'general-pair-match-a', 'general-pair-match-b', 'general-pair-match-c', 'general-pair-match-d',
+  'general-pair-wild-wei', 'general-pair-match-a', 'general-pair-match-b', 'general-pair-match-c', 'general-pair-match-d',
   'general-pair-match-mixed-a', 'general-pair-match-mixed-b', 'general-pair-match-mixed-c', 'general-pair-match-mixed-d',
   'hidden-fanjian', 'hidden-fanjian-deputy',
   'hidden-rehide-yiji', 'hidden-rehide-yiji-deputy',

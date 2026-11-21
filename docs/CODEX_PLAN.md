@@ -1,5 +1,12 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 21/11/2026 — Sửa crash và reconnect Quốc Chiến
+
+- [x] Xác thực `orig_tos` theo danh sách người chơi trong projector và bộ kiểm wire. Giữ temp-ban cho hành vi chủ động rời trận, dọn người chơi Offline sau GameOver mà không khóa tài khoản do mất mạng.
+- [x] Chạy Quốc Chiến v1 bốn ghế với đúng Ngụy Diên Dã tâm chủ tướng, Tưởng Cán phó tướng. Xác minh reconnect trong trận, `Observe`, `PlayCard` và `GameOver` trên cả ba kết nối. Kiểm thử native contract, Lua, temp-ban, raw capture, release và build web PASS.
+- [x] Native v1 Phương Thiên Họa Kích chạy yêu cầu thật có `orig_tos`, chọn mục tiêu phụ và giải quyết Sát lên hai mục tiêu. Ba kết nối nhận GameOver, kiểm gói thô và supplemental 0 lỗi.
+- [ ] Xác minh binary Linux từ pin, chạy cold boot trong môi trường cô lập và kiểm rollback trước khi chuyển production. Đối chiếu artifact, public manifest, ZIP, Chrome và WebSocket sau chuyển.
+
 ## 21/11/2026 — Đưa source CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC lên origin
 
 - [x] Cô lập native fixture từ upstream `git HEAD` thay vì dùng checkout đã sửa: `test:qa-server-contract` **67/67 PASS**, khắc phục hai failure **65/67** ở checkpoint trước.

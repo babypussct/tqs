@@ -1,5 +1,14 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 21/11/2026 — Quốc Chiến với Ngụy Diên Dã tâm, Tưởng Cán và reconnect
+
+- `orig_tos` trong yêu cầu kỹ năng là danh sách người chơi. Projector v1 và bộ kiểm CBOR xác thực danh sách này theo ghế. Kiểm thử Lua bao gồm tham chiếu ghế hợp lệ, ghế không tồn tại và ID không nguyên. Patch C++ giữ đường reconnect cho trạng thái `Offline`, đồng thời giữ temp-ban và tính tỷ lệ bỏ trận cho người chủ động rời trận.
+- Đã chạy native macOS cô lập với Lua 5.4 và hai Chrome mobile viewport, hai bot cùng một tài khoản quan sát. Chọn đúng Ngụy Diên Dã tâm chủ tướng và Tưởng Cán phó tướng, thương lượng v1, mất WebSocket sau `PrepareDrawPile`, nhận `Reconnect`, khôi phục bàn bốn ghế, trả lời `PlayCard` và nhận `GameOver` trên cả ba kết nối. Runner exit 0, lỗi 0, ba bộ đếm lỗi privacy và supplemental đều 0. [Evidence](../scratch/evidence/cp08-general-pair-wild-wei-reconnect-live-1795226806243.json)
+- Ca native v1 riêng cho Phương Thiên Họa Kích đã chọn mục tiêu phụ trong yêu cầu có `orig_tos` và giải quyết Sát lên hai mục tiêu. Hai người chơi và observer đều nhận `GameOver`. Runner exit 0 và bộ kiểm gói thô, deck, supplemental đều ghi 0 lỗi. [Evidence](../scratch/evidence/cp08-delta-halberd-multiplayer-live-1795227165862.json)
+- QA phải chờ `PrepareDrawPile` trước khi ngắt kết nối hoặc mở phiên quan sát. Gói `Reconnect` và `Observe` bốn ghế có thể nén. Bộ kiểm ở ranh giới WebSocket giải nén riêng rồi xác thực lại CBOR, giữ nguyên số byte đo trên wire. Bài kiểm raw capture, sanitizer và hợp đồng native đã PASS.
+- Các lệnh đã quan sát PASS gồm `test:qa-tempban` 9/9, `test:qa-server-contract` 67/67, `test:upstream-first-source` 42/42 trên runtime tham chiếu, `test:card-wire-raw-capture` 5/5, `test:card-wire-evidence-sanitize` 22/22, `test:release` 6/6, `test:pipelines` 14/14, `typecheck:all`, web build và `git diff --check`.
+- Linux x86-64 đang biên dịch từ freekill-asio pin `b8a2ad48` và các patch trong repo, trong thư mục build riêng. Archive bàn giao trước chứa dòng gọi pthread dành cho macOS nên đã thay bằng archive từ Git pin. Production vẫn phục vụ runtime `cfcfe6ae…` ở checkpoint này. Bước kế tiếp là lấy kết quả build, khởi động cô lập, xác minh bản phát hành và smoke hosted.
+
 ## 21/11/2026 — Kiểm chứng trước commit/push: CARD-WIRE-REMATCH và SMARTAI-ANALEPTIC
 
 - **Phạm vi source:** thay đổi sửa reset thương lượng v1 sau `GameOver` cho trận tiếp theo cùng phòng, sửa SmartAI đánh giá Tửu → Sát thường/hỏa/lôi và hai fixture test native dùng đúng `git HEAD` upstream khi checkout tham khảo bị dirty. Giữ toàn bộ thay đổi đồng thời của hai nhiệm vụ.
@@ -2411,32 +2420,38 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-20T17:28:58.417Z (UTC).
-- Nhánh: `main` · HEAD: `818b8bc57439`.
-- File thay đổi hiển thị: 13 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-21T02:14:47.663Z (UTC).
+- Nhánh: `main` · HEAD: `c262ca1d480e`.
+- File thay đổi hiển thị: 19 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-wire-client-negotiation.lua
- M deploy/freekill-native/qa/card-wire-exposure-source-probe.lua
- M deploy/freekill-native/qa/card-wire-native-source.test.mjs
+ M deploy/freekill-native/patches/freekill-asio/reconnect-safe-tempban.patch
+ M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
+ M deploy/freekill-native/qa/card-wire-request-projector-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-request.lua
+ M deploy/freekill-native/qa/tqs-account-tempban-unit.test.mjs
+ M deploy/freekill-native/qa/tqs-game-ticket.test.mjs
  M deploy/freekill-native/qa/tqs_qa-installer.test.mjs
+ M deploy/freekill-native/qa/tqs_qa/catalog.json
+ M deploy/freekill-native/qa/tqs_qa/init.lua
+ M deploy/freekill-native/qa/upstream-first-source.test.mjs
+ M deploy/freekill-native/scripts/bootstrap-source.sh
+ M deploy/freekill-native/upstream-baseline.env
  M docs/CODEX_PLAN.md
- M game/web/package.json
- M game/web/scripts/card-wire-browser-negotiation-probe.ts
- M runtime/packages/freekill-core/maneuvering/pkg/skills/analeptic.lua
- M runtime/packages/freekill-core/maneuvering/pkg/skills/fire__slash.lua
- M runtime/packages/freekill-core/maneuvering/pkg/skills/thunder__slash.lua
- M runtime/packages/freekill-core/standard_cards/pkg/skills/slash.lua
- M scripts/upstream-first-card-wire-capability-guard.mjs
-?? game/web/scripts/smart-ai-analeptic.test.ts
+ M game/web/scripts/card-wire-raw-capture.test.ts
+ M game/web/scripts/multiplayer-e2e/evidence-sanitize.ts
+ M game/web/scripts/multiplayer-e2e/run.ts
+ M game/web/scripts/real-lua-e2e/qa-scenarios.ts
+ M game/web/src/engine/packet.ts
+ M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+c262ca1d Fix card-wire rematch negotiation and SmartAI Analeptic follow-up
 818b8bc5 Record TQSVN v1 protocol production release
 9584d3c1 Fix Hegemony v1 request visibility and dialog replies
-fa746ac2 Record production verification for Hegemony general reveals
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

@@ -306,7 +306,12 @@ local function public(command, value)
   elseif command == "GameOver" then
     assert(type(value) == "string")
     if value ~= "" then
-      for id in value:gmatch("[^+]+") do assert(id:match("^[1-9][0-9]*$") ~= nil) end
+      local winners = {}
+      for id in value:gmatch("[^+]+") do
+        assert(id:match("^%-?[1-9][0-9]*$") ~= nil)
+        winners[#winners + 1] = id
+      end
+      assert(table.concat(winners, "+") == value)
     end
   else error("unknown public channel") end
 end
@@ -334,7 +339,7 @@ end
 local cardArrayKeys = { cards = true, card_ids = true, subcards = true,
   visible_pile = true, expand_pile = true, disabled = true }
 local playerArrayKeys = {
-  players = true, targets = true, fix_targets = true, must_targets = true,
+  players = true, targets = true, orig_tos = true, fix_targets = true, must_targets = true,
   exclusive_targets = true, include_targets = true,
 }
 local cardScalarKeys = { card = true, cardId = true, card_id = true, effectCardId = true }

@@ -2243,8 +2243,10 @@ local function validateGeneralPairTraceScenario(scenario)
       -- The standalone catalog loader intentionally supplies no engine. The
       -- native package performs the stronger Fk.generals/kingdom check once
       -- the pinned packages have loaded.
+      -- Wild main generals are legal with a deputy from an enabled kingdom.
+      -- The deputy compatibility check remains the native Hegemony rule.
       local invalidDefinition = type(Fk) == "table" and type(Fk.generals) == "table" and
-        (not general or not enabled[general.kingdom])
+        (not general or (not enabled[general.kingdom] and general.kingdom ~= "wild"))
       if type(name) ~= "string" or seen[name] or invalidDefinition then
         fail(label .. " has an invalid or duplicate general at seat " .. tostring(seat))
       end
@@ -4225,9 +4227,23 @@ local function installGeneralPairTraceHooks()
         if targetCount ~= scenario.playerCount or targetCount ~= #offer.offeredGroups then
           fail("QA initial-pair offer received an unexpected target count")
         end
+        local offeredGroups = table.simpleClone(offer.offeredGroups)
+        if scenario.id == "general-pair-wild-wei" then
+          -- Room seats may be rotated when native bots are added. Give the
+          -- exact wild/main fixture to the first real browser account.
+          local firstHumanSeat
+          for seat, target in ipairs(targets) do
+            if target.id > 0 and (not firstHumanSeat or target.id < targets[firstHumanSeat].id) then
+              firstHumanSeat = seat
+            end
+          end
+          if not firstHumanSeat then fail("wild pair QA requires a real browser seat") end
+          offeredGroups[1], offeredGroups[firstHumanSeat] =
+            offeredGroups[firstHumanSeat], offeredGroups[1]
+        end
         local offered = {}
         for seat = 1, targetCount do
-          for _, name in ipairs(offer.offeredGroups[seat]) do
+          for _, name in ipairs(offeredGroups[seat]) do
             table.insert(offered, name)
           end
         end
