@@ -1,5 +1,14 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Hồi quy vòng đời kết nối native
+
+- [x] Tái hiện callback packet ném exception làm bỏ qua cleanup và setup exception làm dừng TCP listener trên bản stream; candidate PASS.
+- [x] Final harness 9 ca lifecycle, stream regression và 3 ca listener PASS; xác minh pin/patch, build Linux.
+- [x] Cold boot QA cô lập, TCP/UDP 12/12, gameplay đầu trận và reconnect v1 hai client PASS, cleanup PASS.
+- [x] Commit/push `9ad5fb98`, cutover và kiểm độc lập production release `tqsvn-native-lifecycle-3493e019` PASS.
+- [ ] Kiểm PacketBuilder và tiếp tục khảo sát nguyên nhân sự cố listener lịch sử, luật Quốc Chiến và full-match 7 ghế; không đóng gate bằng transport smoke.
+
+
 ## 25/11/2026 — Hồi quy phân mảnh TCP native
 
 - [x] Tái hiện mất packet bằng decoder C++ pin thực trên Linux, tạo patch và kiểm tra áp dụng đủ chuỗi native patch, QA contract và pipeline.
