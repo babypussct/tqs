@@ -1,5 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 25/11/2026 — Phát hành watchdog phát hiện native treo cổng đăng nhập
+
+- Commit `8747c355` đã push main và triển khai watchdog trên Oracle lúc 00:50 ICT. SHA-256 script production `1524f4368c98b8df346dd1daaeac7e549524528c84453835beea26260b12a09a`, khớp source; giữ bản rollback. Không restart native/gateway/tunnel trong lần phát hành này.
+- Probe TCP 9527 kiểm challenge CBOR/RSA `NetworkDelayTest` trong 5 giây, tối đa 4 KiB; trạng thái down nếu native không gửi challenge dù HTTP khỏe. Reset gate 24h khi nâng cấp từ trạng thái cũ hoặc khi native/tunnel restart. Không tự restart trận đang chạy. Test watchdog + Pages 15/15, pipeline 14/14, syntax và diff check PASS.
+- One-shot production PASS `status=up`, `nativeChallenge=true`, native v1 MD5 `f52cdb15a6bb8eb7314a3b5e0fd27cbe`, bundle `1abde5498cc637d0`, 5.339 tệp. Public WSS có Origin canonical nhận challenge 454 byte; probe thiếu Origin bị từ chối đúng cấu hình. TCP Recv-Q=0, bốn service/timer active. Quick Tunnel nên `acceptance24h=false`.
+- Đối chiếu từ release web `f5322586` chỉ có thay đổi harness/test web và Lua promoter đã phát hành qua native v1; Shop không có diff runtime từ `b1f3c0dd`. Chưa xác minh lại login Google thật, CI hosted (máy local thiếu `gh`) hay nguyên nhân native listener ngừng accept. Source accept coroutine detached chỉ bắt `std::system_error` ở callback; chưa có bằng chứng exception đó gây sự cố. Bước kế: dựng ca native cô lập kiểm accept callback/reader cleanup và kiểm gameplay Quốc Chiến theo ticket đang mở.
+
 ## 22/11/2026 — Khảo sát Quốc Chiến 7 ghế production
 
 Đã xác minh trên tqsvn.pages.dev bằng Chrome: phòng Quốc Chiến 7/7, sáu bot native và ghế chủ bật Ủy thác sau xác nhận chủ/phó. Trận 01 đổi lượt tự động và hiển thị “Bạn đã thua” cùng nút “Ở lại phòng chờ”. Chưa lấy seed, số liệu AI native hoặc kết quả các trận 02–10. Bước tiếp: dùng phòng 7 ghế để chạy các trận còn lại và thu metadata đã làm sạch.

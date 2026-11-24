@@ -1,5 +1,10 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Watchdog native và hồi quy đăng nhập
+
+- [x] Tái hiện native TCP không gửi challenge khi HTTP còn khỏe bằng socket thật trong test; triển khai watchdog `8747c355`, kiểm hash, trạng thái và public WSS canonical.
+- [ ] Tái hiện nguyên nhân accept loop ngừng xử lý; kiểm native exception/cleanup trong runtime cô lập, chạy đăng nhập Google thực và tiếp tục ma trận gameplay Quốc Chiến.
+
 ## 22/11/2026 — Khảo sát Quốc Chiến 7 ghế production
 
 - [x] Trận 01 production: 7 ghế, sáu bot native + một Trust, tới màn hình kết quả.
