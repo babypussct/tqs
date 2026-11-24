@@ -5,7 +5,7 @@
 - [x] Tích hợp router/compression patch, kiểm pin và source, macOS router 14/14, Linux CMake build 100%.
 - [x] Cold boot Linux cô lập TCP/UDP 12/12, gameplay hai người và active-request takeover/reconnect v1, cleanup PASS (23254, 88372).
 - [x] Full Linux regression session 64190 exit 0, binary SHA khớp stage.
-- [ ] Phát hành và xác minh production.
+- [x] Commit/push `e3adaee3`, cutover và kiểm độc lập production `tqsvn-native-router-734a49c3` PASS.
 - [x] Tái hiện ghi đè method/tham số RPC khi hai packet cùng buffer bằng parser C++ thực; đối chứng sửa thứ tự xử lý PASS trên fixture scratch.
 - [ ] Sửa RPC thật, kiểm fragment/coalesce, ghi đủ pipe, ID concurrent và lifetime error payload; native QA/gameplay trước phát hành.
 
