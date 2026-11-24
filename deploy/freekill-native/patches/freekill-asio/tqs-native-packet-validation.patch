@@ -1,0 +1,227 @@
+--- a/src/network/client_socket.cpp
++++ b/src/network/client_socket.cpp
+@@ -3,6 +3,7 @@
+ #include "network/client_socket.h"
+
+ #include <openssl/aes.h>
++#include <limits>
+
+ namespace asio = boost::asio;
+ using asio::awaitable;
+@@ -150,11 +151,13 @@
+ // private methods
+
+ void Packet::describe() {
+-  spdlog::info("Item data: len={} reqId={} type={} command={} data={} bytes", _len, requestId, type, command, cborData.size());
+-  cbor_load_result sz;
+-  auto dat = cbor_load((cbor_data)cborData.data(), cborData.size(), &sz);
+-  cbor_describe(dat, stdout);
+-  cbor_decref(&dat);
++  spdlog::info("Packet metadata: len={} reqId={} type={} commandBytes={} dataBytes={}",
++    _len, requestId, type, command.size(), cborData.size());
++}
++
++namespace {
++constexpr size_t maxPacketBytes = 4 * 1024 * 1024;
++constexpr size_t maxCommandBytes = 256;
+ }
+
+ struct PacketBuilder {
+@@ -164,6 +167,8 @@
+
+   void handleInteger(int64_t value) {
+     if (!valid_packet) return;
++    if (current_field != 5 &&
++        (value < std::numeric_limits<int>::min() || value > std::numeric_limits<int>::max())) return;
+
+     switch (current_field) {
+       case 0: pkt.requestId = static_cast<int>(value); break;
+@@ -171,11 +176,16 @@
+       case 4: pkt.timeout = static_cast<int>(value); break;
+       case 5: pkt.timestamp = value; break;
+       default:
+-        valid_packet = false;
+         return;
+     }
+
+     nextField();
++  }
++
++  void handleUnsigned(uint64_t value, bool negative = false) {
++    if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) return;
++    const auto signedValue = static_cast<int64_t>(value);
++    handleInteger(negative ? -1 - signedValue : signedValue);
+   }
+
+   void handleBytes(const cbor_data data, size_t len) {
+@@ -184,13 +194,14 @@
+
+     switch (current_field) {
+       case 2:
++        if (len > maxCommandBytes) return;
+         pkt.command = sv;
+         break;
+       case 3:
++        if (len > maxPacketBytes) return;
+         pkt.cborData = sv;
+         break;
+       default:
+-        valid_packet = false;
+         return;
+     }
+
+@@ -198,14 +209,16 @@
+   }
+
+   void startArray(size_t size) {
+-    pkt._len = size;
++    if (valid_packet || (size != 4 && size != 6)) return;
++    pkt._len = static_cast<int>(size);
+     valid_packet = true;
+-    if (size != 4 && size != 6) {
+-      valid_packet = false;
+-    }
++    accepted = true;
+   }
+
+   void reset() {
++    pkt.requestId = 0;
++    pkt.timeout = 0;
++    pkt.timestamp = 0;
+     pkt.type = 0;
+     pkt._len = 0;
+     pkt.command = "";
+@@ -215,18 +228,21 @@
+   }
+
+   void nextField() {
++    accepted = true;
+     current_field++;
+-    if (current_field == pkt._len) {
+-      message_got_callback(pkt);
+-      handled++;
+-      reset();
+-    }
++  }
++
++  void dispatchCompleted() {
++    message_got_callback(pkt);
++    handled++;
++    reset();
+   }
+
+   Packet &pkt;
+   std::function<void(Packet &)> &message_got_callback;
+   int current_field = 0;
+   bool valid_packet = false;
++  bool accepted = false;
+   int handled = 0;
+ };
+
+@@ -235,28 +251,28 @@
+
+ static void init_callbacks() {
+   callbacks.uint8 = [](void* self, uint8_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value);
+   };
+   callbacks.uint16 = [](void* self, uint16_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value);
+   };
+   callbacks.uint32 = [](void* self, uint32_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value);
+   };
+   callbacks.uint64 = [](void* self, uint64_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value);
+   };
+   callbacks.negint8 = [](void* self, uint8_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(-1 - value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value, true);
+   };
+   callbacks.negint16 = [](void* self, uint16_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(-1 - value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value, true);
+   };
+   callbacks.negint32 = [](void* self, uint32_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(-1 - value);
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value, true);
+   };
+   callbacks.negint64 = [](void* self, uint64_t value) {
+-    static_cast<PacketBuilder*>(self)->handleInteger(-1 - static_cast<int64_t>(value));
++    static_cast<PacketBuilder*>(self)->handleUnsigned(value, true);
+   };
+   callbacks.byte_string = [](void* self, const cbor_data data, uint64_t len) {
+     static_cast<PacketBuilder*>(self)->handleBytes(data, len);
+@@ -267,6 +283,7 @@
+ }
+
+ cbor_decoder_status ClientSocket::handleBuffer(size_t length) {
++  if (length > sizeof(m_data) || cborBuffer.size() > maxPacketBytes) return CBOR_DECODER_ERROR;
+   cborBuffer.insert(cborBuffer.end(), m_data, m_data + length);
+
+   auto cbuf = (unsigned char *)cborBuffer.data();
+@@ -274,7 +291,6 @@
+   size_t total_consumed = 0;
+
+   size_t real_consumed = 0;
+-  // spdlog::debug("client socket buffer: {}", std::string_view{ (char*)cborBuffer.data(), cborBuffer.size() });
+
+   std::call_once(callbacks_flag, init_callbacks);
+
+@@ -289,28 +305,31 @@
+   PacketBuilder builder { pkt, dispatch };
+   int handled = 0;
+
+-  cbor_decoder_status lastStat;
+-
+-  while (true) {
+-    // 基于callbacks，边读缓冲区边构造packet并进一步调用回调处理packet
+-    // 下面这个函数一次只读一个item
++  cbor_decoder_status lastStat = CBOR_DECODER_FINISHED;
++
++  while (len != 0) {
++    // Exactly one expected field must be accepted for each decoded CBOR item.
++    builder.accepted = false;
+     decode_result = cbor_stream_decode(cbuf, len, &callbacks, &builder);
+     lastStat = decode_result.status;
+-    if (is_closing) return lastStat;
+     if (decode_result.status == CBOR_DECODER_ERROR) {
+       return lastStat;
+     } else if (decode_result.status == CBOR_DECODER_NEDATA) {
++      if (len > maxPacketBytes || decode_result.required > maxPacketBytes ||
++          total_consumed - real_consumed > maxPacketBytes - decode_result.required) return CBOR_DECODER_ERROR;
+       break;
+     }
+-
+-    if (decode_result.read != 0) {
+-      cbuf += decode_result.read;
+-      len -= decode_result.read;
+-      total_consumed += decode_result.read;
+-    } else {
+-      break;
+-    }
+-
++    if (!builder.accepted || decode_result.read == 0) return CBOR_DECODER_ERROR;
++
++    cbuf += decode_result.read;
++    len -= decode_result.read;
++    total_consumed += decode_result.read;
++
++    if (total_consumed - real_consumed > maxPacketBytes) return CBOR_DECODER_ERROR;
++    if (builder.valid_packet && builder.current_field == pkt._len) {
++      builder.dispatchCompleted();
++      if (is_closing) return lastStat;
++    }
+     if (builder.handled != handled) {
+       real_consumed = total_consumed;
+       handled = builder.handled;
+@@ -321,5 +340,6 @@
+   // partial packet must be decoded again when the next TCP read arrives.
+   cborBuffer.erase(cborBuffer.begin(), cborBuffer.begin() + real_consumed);
+
++  if (cborBuffer.size() > maxPacketBytes) return CBOR_DECODER_ERROR;
+   return lastStat;
+ }

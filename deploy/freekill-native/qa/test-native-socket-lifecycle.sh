@@ -9,7 +9,7 @@ trap 'rm -rf -- "$WORK"' EXIT
 CXX_FLAGS=(-std=c++23 -O1 -I"$SOURCE" -include "$SOURCE/pch.h")
 LIBS=(-lcbor -lspdlog -lfmt -lboost_system -pthread)
 "${CXX:-g++}" "${CXX_FLAGS[@]}" -c "$SOURCE/network/client_socket.cpp" -o "$WORK/client.o"
-for test in client-socket-lifecycle client-socket-stream; do
+for test in client-socket-lifecycle client-socket-stream client-socket-packet-validation; do
   "${CXX:-g++}" "${CXX_FLAGS[@]}" "$WORK/client.o" "$HERE/$test.cpp" -o "$WORK/$test" "${LIBS[@]}"
   "$WORK/$test"
 done

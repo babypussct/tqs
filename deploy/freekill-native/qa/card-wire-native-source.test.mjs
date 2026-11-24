@@ -133,4 +133,13 @@ test('native socket patches apply after the complete production patch sequence',
     execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
       '-i', path.join(patchDir, name)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   }
+  const validation = path.join(patchDir, 'tqs-native-packet-validation.patch');
+  applyPatch(source, validation, true);
+  applyPatch(source, validation);
+  const hardened = readFileSync(path.join(source, 'src/network/client_socket.cpp'), 'utf8');
+  assert.match(hardened, /maxPacketBytes = 4 \* 1024 \* 1024/u);
+  assert.match(hardened, /!builder.accepted/u);
+  assert.doesNotMatch(hardened, /cbor_describe/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', validation], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 });
