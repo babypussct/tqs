@@ -162,4 +162,19 @@ test('native socket patches apply after the complete production patch sequence',
   assert.match(rpc, /failTransport\(\)/u);
   execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
     '-i', rpcPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const shutdownPatch = path.join(patchDir, 'tqs-native-main-shutdown.patch');
+  applyPatch(source, shutdownPatch, true);
+  applyPatch(source, shutdownPatch);
+  const mainCall = readFileSync(path.join(source, 'src/server/main-context-call.h'), 'utf8');
+  const server = readFileSync(path.join(source, 'src/server/server.cpp'), 'utf8');
+  const shutdownRouter = readFileSync(path.join(source, 'src/network/router.cpp'), 'utf8');
+  assert.match(shutdownRouter, /dispatchMainAndWait\(main_ctx, \[weak = socket->weak_from_this\(\), msg\]/u);
+  assert.doesNotMatch(shutdownRouter, /asio::use_future|f\.wait\(\)/u);
+  assert.match(mainCall, /context\.stopped\(\)/u);
+  assert.match(mainCall, /state->cancelled = true/u);
+  assert.match(server, /thread->stopAndJoin\(\);\s*\}\s*m_threads\.clear\(\)/u);
+  for (const name of ['tqs-native-packet-validation.patch', 'tqs-native-router-request.patch', 'tqs-native-main-shutdown.patch']) {
+    execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+      '-i', path.join(patchDir, name)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  }
 });

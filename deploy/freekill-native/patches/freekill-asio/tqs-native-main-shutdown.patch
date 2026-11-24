@@ -1,0 +1,200 @@
+--- /dev/null
++++ b/src/server/main-context-call.h
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++
++#pragma once
++
++#include <boost/asio.hpp>
++#include <chrono>
++#include <future>
++#include <memory>
++#include <mutex>
++#include <utility>
++
++// The main context can be stopped by the shell while a room worker is
++// waiting for a synchronous dispatch. Cancel queued work on shutdown, but
++// let an already-running callback finish before releasing the waiting worker.
++template <class Callback>
++void dispatchMainAndWait(boost::asio::io_context &context, Callback callback) {
++  if (context.stopped()) return;
++
++  struct State {
++    std::mutex mutex;
++    bool cancelled = false;
++  };
++  auto state = std::make_shared<State>();
++  auto future = boost::asio::dispatch(context, boost::asio::use_future(
++    [state, callback = std::move(callback)]() mutable {
++      std::lock_guard lock(state->mutex);
++      if (!state->cancelled) callback();
++    }));
++
++  while (future.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready) {
++    if (context.stopped()) {
++      std::lock_guard lock(state->mutex);
++      state->cancelled = true;
++      return;
++    }
++  }
++}
+--- a/src/server/room/room.cpp
++++ b/src/server/room/room.cpp
+@@ -7,6 +7,7 @@
+ #include "network/client_socket.h"
+ #include "network/router.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "server/user/serverplayer.h"
+ #include "server/user/user_manager.h"
+ #include "core/c-wrapper.h"
+@@ -725,11 +726,10 @@
+ // 多线程非常麻烦 把GameOver交给主线程完成去
+ void Room::gameOver() {
+   auto &main_ctx = Server::instance().context();
+-  auto f = asio::dispatch(main_ctx, asio::use_future([weak = weak_from_this()] {
++  dispatchMainAndWait(main_ctx, [weak = weak_from_this()] {
+     auto c = weak.lock();
+     if (c) c->_gameOver();
+-  }));
+-  f.wait();
++  });
+ }
+
+
+--- a/src/server/user/serverplayer.cpp
++++ b/src/server/user/serverplayer.cpp
+@@ -4,6 +4,7 @@
+ #include "core/player.h"
+ #include "server/user/user_manager.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "server/gamelogic/roomthread.h"
+ #include "server/room/room_manager.h"
+ #include "server/room/roombase.h"
+@@ -216,17 +217,10 @@
+
+ void ServerPlayer::emitKicked() {
+   auto &main_ctx = Server::instance().context();
+-  if (main_ctx.stopped()) {
+-    // 此时应当是Server析构中 踢人那一段
+-    kick();
+-    return;
+-  }
+-
+-  auto f = asio::dispatch(main_ctx, asio::use_future([weak = weak_from_this()] {
++  dispatchMainAndWait(main_ctx, [weak = weak_from_this()] {
+     auto c = weak.lock();
+     if (c) c->kick();
+-  }));
+-  f.wait();
++  });
+ }
+
+ void ServerPlayer::reconnect(std::shared_ptr<ClientSocket> client) {
+--- a/src/server/user/serverplayer.h
++++ b/src/server/user/serverplayer.h
+@@ -81,6 +81,8 @@
+   void getGlobalSaveState(std::string_view key, std::function<void(std::string)> &&);
+
+ private:
++  friend class Server;
++
+   std::string screenName;   // screenName should not be same.
+   std::string avatar;
+   bool runned = false;
+--- a/src/server/gamelogic/roomthread.h
++++ b/src/server/gamelogic/roomthread.h
+@@ -13,6 +13,8 @@
+   RoomThread(RoomThread &) = delete;
+   RoomThread(RoomThread &&) = delete;
+   ~RoomThread();
++
++  void stopAndJoin();
+
+   int id() const;
+   io_context &context();
+--- a/src/server/gamelogic/roomthread.cpp
++++ b/src/server/gamelogic/roomthread.cpp
+@@ -88,8 +88,7 @@
+ }
+
+ RoomThread::~RoomThread() {
+-  io_ctx.stop();
+-  if (m_thread.joinable()) m_thread.join();
++  stopAndJoin();
+
+   auto &rm = Server::instance().room_manager();
+   for (auto roomId : m_rooms) {
+@@ -101,6 +100,11 @@
+   }
+
+   // spdlog::debug("[MEMORY] RoomThread {} destructed", m_id);
++}
++
++void RoomThread::stopAndJoin() {
++  io_ctx.stop();
++  if (m_thread.joinable()) m_thread.join();
+ }
+
+ int RoomThread::id() const {
+@@ -135,8 +139,7 @@
+   // Room registry, room destruction and lobby notifications belong to the
+   // main context. Stop the failed worker's callbacks before destroying timers.
+   md5 = "";
+-  io_ctx.stop();
+-  if (m_thread.joinable()) m_thread.join();
++  stopAndJoin();
+
+   auto &rm = Server::instance().room_manager();
+   const auto rooms = m_rooms;
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -123,6 +123,11 @@
+
+ // 提前析构掉Player啥的，防止instance复活
+ void Server::_clear() {
++  // Keep the registry's ownership until every worker has exited. Otherwise
++  // the last shared reference can be released by a worker on its own thread.
++  for (auto &[_, thread] : m_threads) {
++    thread->stopAndJoin();
++  }
+   m_threads.clear();
+
+   std::vector<std::shared_ptr<ServerPlayer>> players;
+@@ -131,7 +136,9 @@
+   }
+
+   for (auto &p : players) {
+-    p->emitKicked();
++    // The main context has stopped and the workers have joined. This is
++    // the main thread, so perform the final disconnect directly.
++    p->kick();
+   }
+
+   m_room_manager->destroy();
+--- a/src/network/router.cpp
++++ b/src/network/router.cpp
+@@ -5,6 +5,7 @@
+ #include "server/user/serverplayer.h"
+ #include "server/user/user_manager.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "core/c-wrapper.h"
+ #include "core/util.h"
+
+@@ -205,11 +206,9 @@
+
+ void Router::sendMessage(const std::string &msg) {
+   if (!socket) return;
+-  // 将send任务交给主进程（如同Qt）并等待
+   auto &main_ctx = Server::instance().context();
+-  auto f = asio::dispatch(main_ctx, asio::use_future([&, weak = socket->weak_from_this()] {
++  dispatchMainAndWait(main_ctx, [weak = socket->weak_from_this(), msg] {
+     auto c = weak.lock();
+     if (c) c->send(std::make_shared<std::string>(msg));
+-  }));
+-  f.wait();
+-}
++  });
++}

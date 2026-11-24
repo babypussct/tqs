@@ -39,3 +39,7 @@ if [[ -n "${2:-}" ]]; then
 else
   "$WORK/rpc-wire-contract"
 fi
+
+"${CXX:-g++}" -std=c++23 -O1 -I"$SOURCE" "$HERE/main-context-call.cpp" \
+  -o "$WORK/main-context-call" -lboost_system -pthread
+"$WORK/main-context-call"

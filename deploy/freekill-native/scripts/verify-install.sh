@@ -47,8 +47,9 @@ verify_patch_input "$TQS_UPSTREAM_PATCH_SOCKET_LIFECYCLE_PATH" "$TQS_UPSTREAM_PA
 verify_patch_input "$TQS_UPSTREAM_PATCH_PACKET_VALIDATION_PATH" "$TQS_UPSTREAM_PATCH_PACKET_VALIDATION_SHA256"
 verify_patch_input "$TQS_UPSTREAM_PATCH_ROUTER_REQUEST_PATH" "$TQS_UPSTREAM_PATCH_ROUTER_REQUEST_SHA256"
 verify_patch_input "$TQS_UPSTREAM_PATCH_RPC_WIRE_PATH" "$TQS_UPSTREAM_PATCH_RPC_WIRE_SHA256"
+verify_patch_input "$TQS_UPSTREAM_PATCH_MAIN_SHUTDOWN_PATH" "$TQS_UPSTREAM_PATCH_MAIN_SHUTDOWN_SHA256"
 verify_patch_input "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH" "$TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256"
-printf '%s\n' 'Upstream baseline patch inputs: 9/9 SHA-256 digests verified'
+printf '%s\n' 'Upstream baseline patch inputs: 12/12 SHA-256 digests verified'
 
 OVERLAY_MARKER="$RUNTIME_DIR/.tqs-upstream-runtime-overlay"
 [[ -f "$OVERLAY_MARKER" ]] || die 'Production runtime overlay marker is missing'
