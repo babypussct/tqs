@@ -108,7 +108,7 @@ test('QA native boundary patch parses semantic CBOR with bounded metadata only',
 });
 
 
-test('native stream patch applies after the complete production patch sequence', (t) => {
+test('native socket patches apply after the complete production patch sequence', (t) => {
   if (!existsSync(path.join(upstream, '.git'))) {
     t.skip('pinned native source checkout is not prepared');
     return;
@@ -120,7 +120,8 @@ test('native stream patch applies after the complete production patch sequence',
   const patchDir = path.dirname(candidatePatch);
   for (const patchFile of [...productionPatches, candidatePatch,
     path.join(patchDir, 'tqs-card-wire-snapshot-compression.patch'),
-    path.join(patchDir, 'tqs-client-socket-stream.patch')]) {
+    path.join(patchDir, 'tqs-client-socket-stream.patch'),
+    path.join(patchDir, 'tqs-native-socket-lifecycle.patch')]) {
     applyPatch(source, patchFile, true);
     applyPatch(source, patchFile);
   }
@@ -128,4 +129,8 @@ test('native stream patch applies after the complete production patch sequence',
   assert.ok(socket.includes('handled = builder.handled;'));
   assert.ok(socket.includes('cborBuffer.erase(cborBuffer.begin(), cborBuffer.begin() + real_consumed);'));
   assert.ok(!socket.includes('real_consumed < len'));
+  for (const name of ['tqs-client-socket-stream.patch', 'tqs-native-socket-lifecycle.patch']) {
+    execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+      '-i', path.join(patchDir, name)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  }
 });

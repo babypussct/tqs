@@ -87,6 +87,7 @@ const patchInputs = [
   ['TQS_UPSTREAM_PATCH_CARD_WIRE_PATH', 'TQS_UPSTREAM_PATCH_CARD_WIRE_SHA256'],
   ['TQS_UPSTREAM_PATCH_CARD_WIRE_SNAPSHOT_PATH', 'TQS_UPSTREAM_PATCH_CARD_WIRE_SNAPSHOT_SHA256'],
   ['TQS_UPSTREAM_PATCH_CLIENT_SOCKET_STREAM_PATH', 'TQS_UPSTREAM_PATCH_CLIENT_SOCKET_STREAM_SHA256'],
+  ['TQS_UPSTREAM_PATCH_SOCKET_LIFECYCLE_PATH', 'TQS_UPSTREAM_PATCH_SOCKET_LIFECYCLE_SHA256'],
   ['TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_PATH', 'TQS_UPSTREAM_RUNTIME_SOURCE_PATCH_SHA256'],
 ];
 const baselineValues = Object.fromEntries(
@@ -99,4 +100,4 @@ for (const [pathKey, digestKey] of patchInputs) {
   assert.equal(digest, baselineValues[digestKey], `${pathKey} digest drifted`);
 }
 
-console.log(`PASS upstream baseline ${UPSTREAM_BASELINE_ID}: 14/14 package pins, 6/6 native patches and 1/1 native source patch digests are synchronized`);
+console.log(`PASS upstream baseline ${UPSTREAM_BASELINE_ID}: 14/14 package pins, 7/7 native patches and 1/1 native source patch digests are synchronized`);

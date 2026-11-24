@@ -1,0 +1,292 @@
+--- a/src/network/client_socket.cpp
++++ b/src/network/client_socket.cpp
+@@ -19,55 +19,43 @@
+ }
+
+ void ClientSocket::start() {
+-  asio::co_spawn(m_socket.get_executor(), reader(), detached);
++  if (is_closed || is_closing) return;
++  // Keep the read buffer alive until the coroutine and its pending I/O finish.
++  asio::co_spawn(m_socket.get_executor(), reader(),
++    [self = shared_from_this()](std::exception_ptr error) {
++      if (!error) return;
++      spdlog::error("Client packet processing failed");
++      if (!self->is_closing) self->disconnect_reason = "Packet processing failed";
++      self->do_close();
++    });
+ }
+
+ awaitable<void> ClientSocket::reader() {
+-  // 下面那个死循环的持续周期可能比this的生命周期长，所以需要挂个检测
+-  auto weak { weak_from_this() };
+-
+-  // 由于生命周期原因，先把打log所需的信息储存
+-  std::string addr { peerAddress() };
+-
+-  for (;;) {
++  while (!is_closed && !is_closing) {
+     boost::system::error_code ec;
+     auto length = co_await m_socket.async_read_some(
+       asio::buffer(m_data, max_length), redirect_error(use_awaitable, ec));
+
++    if (is_closed) co_return;
+     if (ec) {
+-      std::string reason = "";
+-      if (ec == boost::asio::error::eof) {
+-        reason = "Disconnected";
+-      } else if (ec != boost::asio::error::operation_aborted) {
+-        reason = ec.message();
++      // A peer half-close still permits a queued final response to be sent.
++      if (is_closing && ec == asio::error::eof) co_return;
++      if (!is_closing) {
++        disconnect_reason = ec == asio::error::eof ? "Disconnected" : ec.message();
+       }
+-
+-      auto self = weak.lock();
+-      if (!self) {
+-        spdlog::info("client {} lost connection: {}", addr, reason.empty() ? "empty reason" : reason);
+-      } else {
+-        disconnect_reason = reason;
+-      }
+-      break;
+-    }
+-
+-    auto self = weak.lock();
+-    if (!self) {
+-      break;
+-    }
+-
+-    auto stat = self->handleBuffer(length);
++      do_close();
++      co_return;
++    }
++    if (is_closing) co_return; // Let the queued graceful disconnect drain.
++
++    auto stat = handleBuffer(length);
++    if (is_closing) co_return;
+     if (stat == CBOR_DECODER_ERROR) {
+-      spdlog::warn("Malformed data from client {}", self->peerAddress());
+-      break;
+-    }
+-  }
+-
+-  if (auto self = weak.lock(); self) {
+-    self->disconnected_callback();
+-
+-    self->set_message_got_callback([](Packet &){});
+-    self->set_disconnected_callback([]{});
++      spdlog::warn("Malformed data from client {}", peerAddress());
++      disconnect_reason = "Malformed packet";
++      do_close();
++      co_return;
++    }
+   }
+ }
+
+@@ -80,6 +68,7 @@
+ }
+
+ void ClientSocket::disconnectFromHost(const std::string &reason) {
++  if (is_closed || is_closing) return;
+   disconnect_reason = reason;
+   is_closing = true;
+
+@@ -90,20 +79,30 @@
+ }
+
+ void ClientSocket::do_close() {
++  if (is_closed) return;
++  // The disconnect callback can release the caller's last shared owner.
++  auto keepAlive = weak_from_this().lock();
++  is_closed = true;
++  is_closing = true;
++  boost::system::error_code ignored;
++  m_socket.shutdown(tcp::socket::shutdown_both, ignored);
++  m_socket.close(ignored);
++  if (timerSignup) timerSignup->cancel(ignored);
++
++  // A callback can close the same socket or replace itself through the router.
++  // Keep its captures alive for the invocation and break self-ownership first.
++  auto callback = std::move(disconnected_callback);
++  message_got_callback = nullptr;
++  disconnected_callback = nullptr;
+   try {
+-    m_socket.shutdown(tcp::socket::shutdown_both);
+-    m_socket.close();
+-  } catch (std::exception &) {
+-    // ignore
+-  }
+-  disconnected_callback();
+-
+-  // 连接建立阶段绑的callback中可能拷贝了自身的shared
+-  set_message_got_callback([](Packet &){});
+-  set_disconnected_callback([]{});
++    if (callback) callback();
++  } catch (...) {
++    spdlog::error("Client disconnect callback failed");
++  }
+ }
+
+ void ClientSocket::send(const std::shared_ptr<std::string> msg) {
++  if (is_closing) return;
+   send_queue.push_back(msg);
+   if (send_queue.size() == 1) send_loop();
+ }
+@@ -121,11 +120,16 @@
+     m_socket,
+     asio::const_buffer { msg->data(), msg->size() },
+     [this, self = shared_from_this(), msg] (std::error_code ec, size_t) {
+-      if (ec) {
+-        spdlog::critical("send error, msg = {}, error = {}", msg->c_str(), ec.message());
++      send_queue.pop_front();
++      if (ec || is_closed) {
++        send_queue.clear();
++        if (ec && !is_closed) {
++          spdlog::warn("Client send error: {}", ec.message());
++          if (!is_closing) disconnect_reason = ec.message();
++          do_close();
++        }
++        return;
+       }
+-
+-      send_queue.pop_front();
+       send_loop();
+     }
+   );
+@@ -136,11 +140,11 @@
+ }
+
+ void ClientSocket::set_disconnected_callback(std::function<void()> f) {
+-  disconnected_callback = f;
++  if (!is_closed) disconnected_callback = std::move(f);
+ }
+
+ void ClientSocket::set_message_got_callback(std::function<void(Packet &)> f) {
+-  message_got_callback = f;
++  if (!is_closed) message_got_callback = std::move(f);
+ }
+
+ // private methods
+@@ -276,7 +280,13 @@
+
+   struct cbor_decoder_result decode_result;
+   Packet pkt;
+-  PacketBuilder builder { pkt, message_got_callback };
++  std::function<void(Packet &)> dispatch = [this](Packet &packet) {
++    if (is_closing) return;
++    // Authentication and reconnect can replace the callback while it runs.
++    auto callback = message_got_callback;
++    if (callback) callback(packet);
++  };
++  PacketBuilder builder { pkt, dispatch };
+   int handled = 0;
+
+   cbor_decoder_status lastStat;
+@@ -286,6 +296,7 @@
+     // 下面这个函数一次只读一个item
+     decode_result = cbor_stream_decode(cbuf, len, &callbacks, &builder);
+     lastStat = decode_result.status;
++    if (is_closing) return lastStat;
+     if (decode_result.status == CBOR_DECODER_ERROR) {
+       return lastStat;
+     } else if (decode_result.status == CBOR_DECODER_NEDATA) {
+--- a/src/network/client_socket.h
++++ b/src/network/client_socket.h
+@@ -67,6 +67,7 @@
+   void send_loop();
+   // 因为有发送队列了，需要等待发送都完成后再关闭
+   bool is_closing = false;
++  bool is_closed = false;
+   void do_close();
+
+   std::vector<unsigned char> cborBuffer;
+--- a/src/network/server_socket.cpp
++++ b/src/network/server_socket.cpp
+@@ -33,18 +33,26 @@
+     auto socket = co_await m_acceptor.async_accept(redirect_error(use_awaitable, ec));
+
+     if (!ec) {
++      std::shared_ptr<ClientSocket> conn;
+       try {
+-        auto conn = std::make_shared<ClientSocket>(std::move(socket));
++        conn = std::make_shared<ClientSocket>(std::move(socket));
+
+         if (new_connection_callback) {
+           new_connection_callback(conn);
+           conn->start();
+         }
+-      } catch (std::system_error &e) {
+-        spdlog::error("ClientSocket creation error: {}", e.what());
++      } catch (...) {
++        spdlog::error("Client connection setup failed");
++        if (conn) conn->disconnectFromHost("Connection setup failed");
+       }
+     } else {
++      if (ec == asio::error::operation_aborted || !m_acceptor.is_open()) co_return;
+       spdlog::error("Accept error: {}", ec.message());
++      // Avoid a busy loop on a persistent resource or accept error.
++      asio::steady_timer retry(m_acceptor.get_executor());
++      retry.expires_after(std::chrono::milliseconds(100));
++      co_await retry.async_wait(redirect_error(use_awaitable, ec));
++      if (ec) co_return;
+     }
+   }
+ }
+@@ -56,28 +64,37 @@
+     auto len = co_await m_udp_socket.async_receive_from(
+       buffer, udp_remote_end, redirect_error(use_awaitable, ec));
+
++    if (ec) {
++      if (ec == asio::error::operation_aborted || !m_udp_socket.is_open()) co_return;
++      spdlog::warn("UDP receive error: {}", ec.message());
++      continue;
++    }
++
+     auto sv = std::string_view { udp_recv_buffer.data(), len };
+-    // spdlog::debug("RX (udp [{}]:{}): {}", udp_remote_end.address().to_string(), udp_remote_end.port(), sv);
+-    if (sv == "fkDetectServer") {
+-      m_udp_socket.async_send_to(
+-        asio::const_buffer("me", 2), udp_remote_end, detached);
+-    } else if (sv.starts_with("fkGetDetail,")) {
+-      auto &conf = Server::instance().config();
+-      auto &um = Server::instance().user_manager();
++    try {
++      if (sv == "fkDetectServer") {
++        co_await m_udp_socket.async_send_to(
++          asio::const_buffer("me", 2), udp_remote_end, redirect_error(use_awaitable, ec));
++      } else if (sv.starts_with("fkGetDetail,")) {
++        auto &conf = Server::instance().config();
++        auto &um = Server::instance().user_manager();
++        auto response = json {
++          "0.5.22+",
++          conf.iconUrl,
++          conf.description,
++          conf.capacity,
++          um.getPlayers().size(),
++          std::string(sv).substr(12)
++        }.dump();
+
+-      auto json = nlohmann::json {
+-        "0.5.22+",
+-        conf.iconUrl,
+-        conf.description,
+-        conf.capacity,
+-        um.getPlayers().size(),
+-        std::string(sv).substr(12)
+-      }.dump();
+-
+-      m_udp_socket.async_send_to(
+-        asio::const_buffer(json.data(), json.size()), udp_remote_end, detached);
+-
+-      // spdlog::debug("TX (udp [{}]:{}): {}", udp_remote_end.address().to_string(), udp_remote_end.port(), json);
++        // The response buffer must remain alive until the asynchronous send finishes.
++        co_await m_udp_socket.async_send_to(
++          asio::buffer(response), udp_remote_end, redirect_error(use_awaitable, ec));
++      }
++      if (ec) spdlog::warn("UDP send error: {}", ec.message());
++    } catch (...) {
++      // A malformed discovery request or response must not stop the listener.
++      spdlog::warn("UDP discovery response failed");
+     }
+   }
+ }
