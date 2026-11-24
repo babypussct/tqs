@@ -1,5 +1,14 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Router và RPC C++/Lua
+
+- [x] Tích hợp router/compression patch, kiểm pin và source, macOS router 14/14, Linux CMake build 100%.
+- [x] Cold boot Linux cô lập TCP/UDP 12/12, gameplay hai người và active-request takeover/reconnect v1, cleanup PASS (23254, 88372).
+- [x] Full Linux regression session 64190 exit 0, binary SHA khớp stage.
+- [ ] Phát hành và xác minh production.
+- [x] Tái hiện ghi đè method/tham số RPC khi hai packet cùng buffer bằng parser C++ thực; đối chứng sửa thứ tự xử lý PASS trên fixture scratch.
+- [ ] Sửa RPC thật, kiểm fragment/coalesce, ghi đủ pipe, ID concurrent và lifetime error payload; native QA/gameplay trước phát hành.
+
 ## 25/11/2026 — Kiểm tra packet và router native
 
 - [x] Candidate PacketBuilder strict framing/integer/metadata/bound, đối chiếu patch source byte-for-byte; test riêng và stream/lifecycle PASS.

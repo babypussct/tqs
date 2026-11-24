@@ -16,3 +16,15 @@ done
 "${CXX:-g++}" "${CXX_FLAGS[@]}" "$WORK/client.o" "$SOURCE/network/server_socket.cpp" \
   "$HERE/server-socket-lifecycle.cpp" -o "$WORK/server-socket-lifecycle" "${LIBS[@]}"
 "$WORK/server-socket-lifecycle"
+
+# The router harness supplies transport stubs and exercises real router/util code.
+# Discard unrelated utility functions that depend on the package manager.
+ROUTER_FLAGS=(-ffunction-sections -fdata-sections)
+ROUTER_LIBS=(-Wl,--gc-sections -lcrypto -lz)
+"${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" -c "$SOURCE/core/util.cpp" -o "$WORK/util.o"
+"${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" "$SOURCE/network/router.cpp" \
+  "$WORK/util.o" "$HERE/router-contract.cpp" -o "$WORK/router-contract" "${LIBS[@]}" "${ROUTER_LIBS[@]}"
+"$WORK/router-contract"
+"${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" "$WORK/util.o" \
+  "$HERE/compression-limit.cpp" -o "$WORK/compression-limit" "${LIBS[@]}" "${ROUTER_LIBS[@]}"
+"$WORK/compression-limit"

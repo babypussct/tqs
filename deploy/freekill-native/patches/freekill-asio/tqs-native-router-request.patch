@@ -1,0 +1,194 @@
+--- a/src/network/router.cpp
++++ b/src/network/router.cpp
+@@ -90,20 +90,24 @@
+
+ void Router::request(int type, const std::string_view &command,
+                      const std::string_view &cborData, int timeout, int64_t timestamp) {
+-  static int requestId = 0;
+-  requestId++;
+-  if (requestId > 10000000) requestId = 1;
+-
+-  expectedReplyIds.push_back(requestId);
+-  replyTimeout = timeout;
++  static std::atomic<int> lastRequestId {0};
++  int previous = lastRequestId.load(std::memory_order_relaxed);
++  int requestId;
++  do {
++    requestId = previous >= 10000000 ? 1 : previous + 1;
++  } while (!lastRequestId.compare_exchange_weak(previous, requestId,
++      std::memory_order_relaxed));
+
+   using namespace std::chrono;
+-  requestStartTime =
+-    duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+-
+-  replyMutex.lock();
+-  m_reply = "__notready";
+-  replyMutex.unlock();
++  const auto wireTimestamp = duration_cast<milliseconds>(
++      system_clock::now().time_since_epoch()).count();
++  {
++    std::lock_guard<std::mutex> lock(replyMutex);
++    expectedReplyId = requestId;
++    replyTimeout = timeout;
++    requestStartTime = steady_clock::now();
++    m_reply = "__notready";
++  }
+
+   sendMessage(Cbor::encodeArray({
+     requestId,
+@@ -111,7 +115,7 @@
+     command,
+     cborData,
+     timeout,
+-    (timestamp <= 0 ? requestStartTime : timestamp)
++    (timestamp <= 0 ? wireTimestamp : timestamp)
+   }));
+ }
+
+@@ -141,43 +145,60 @@
+
+ void Router::abortRequest() {
+   std::lock_guard<std::mutex> lock(replyMutex);
++  expectedReplyId = 0;
+   m_reply = "";
+   // TODO wake up room?
+ }
+
+ void Router::handlePacket(const Packet &packet) {
+-  int requestId = packet.requestId;
+-  int type = packet.type;
+-  auto cborData = packet.cborData;
+-
+-  std::string unCompressed;
+-
+-  if (type & COMPRESSED) {
+-    unCompressed = qUncompress_std(cborData);
+-    cborData = unCompressed;
+-  }
++  const int type = packet.type;
++  const bool compressed = type & COMPRESSED;
+
+   if (type & TYPE_NOTIFICATION) {
+-    notification_got_callback(packet);
++    if (!compressed) {
++      notification_got_callback(packet);
++      return;
++    }
++    std::string payload;
++    try {
++      payload = qUncompress_std(packet.cborData);
++    } catch (const std::runtime_error &) {
++      return;
++    }
++    Packet decoded;
++    decoded.requestId = packet.requestId;
++    decoded.type = type & ~COMPRESSED;
++    decoded.timeout = packet.timeout;
++    decoded._len = packet._len;
++    decoded.timestamp = packet.timestamp;
++    decoded.command = packet.command;
++    decoded.cborData = payload;
++    notification_got_callback(decoded);
+   } else if (type & TYPE_REPLY) {
+     using namespace std::chrono;
+-    std::lock_guard<std::mutex> lock(replyMutex);
+-
+-    auto it = std::find(expectedReplyIds.begin(), expectedReplyIds.end(), requestId);
+-    if (it == expectedReplyIds.end())
+-      return;
+-
+-    expectedReplyIds.erase(it);
+-
+-    auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+-    if (replyTimeout >= 0 &&
+-      replyTimeout * 1000 < now - requestStartTime)
+-
+-      return;
+-
+-    m_reply = cborData;
+-    // TODO: callback?
+-
++    {
++      std::lock_guard<std::mutex> lock(replyMutex);
++      if (expectedReplyId == 0 || packet.requestId != expectedReplyId)
++        return;
++      if (replyTimeout >= 0 &&
++          steady_clock::now() - requestStartTime > seconds(replyTimeout)) {
++        expectedReplyId = 0;
++        return;
++      }
++
++      // Decode only replies for the outstanding request. A malformed reply
++      // must neither escape the socket's read loop nor consume the request.
++      if (compressed) {
++        try {
++          m_reply = qUncompress_std(packet.cborData);
++        } catch (const std::runtime_error &) {
++          return;
++        }
++      } else {
++        m_reply = packet.cborData;
++      }
++      expectedReplyId = 0;
++    }
+     reply_ready_callback();
+   }
+ }
+--- a/src/network/router.h
++++ b/src/network/router.h
+@@ -56,10 +56,10 @@
+
+   std::mutex replyMutex;
+
+-  int64_t requestStartTime;
++  std::chrono::steady_clock::time_point requestStartTime;
+   std::string m_reply;    // should be json string
+-  std::vector<int> expectedReplyIds;
+-  int replyTimeout;
++  int expectedReplyId = 0;
++  int replyTimeout = -1;
+
+   void sendMessage(const std::string &msg);
+
+--- a/src/core/util.cpp
++++ b/src/core/util.cpp
+@@ -250,24 +250,31 @@
+
+ std::string qUncompress_std(const std::string_view &data) {
+   if (data.size() < 4)
++    throw std::runtime_error("qUncompress_std: truncated header");
++
++  constexpr uint32_t maxDecompressedBytes = 8 * 1024 * 1024;
++  uint32_t expectedSize = read_be32(data.data());
++  if (expectedSize > maxDecompressedBytes)
++    throw std::runtime_error("qUncompress_std: decompressed size exceeds limit");
++  if (expectedSize == 0) {
++    if (data.size() != 4)
++      throw std::runtime_error("qUncompress_std: invalid empty payload");
+     return {};
+-
+-  uint32_t expectedSize = read_be32(data.data());
+-  if (expectedSize == 0)
+-    return {};
++  }
+
+   std::string out;
+   out.resize(expectedSize);
+
+   uLongf destLen = expectedSize;
+-  int ret = uncompress(
++  uLong sourceLen = data.size() - 4;
++  int ret = uncompress2(
+     reinterpret_cast<Bytef*>(&out[0]),
+     &destLen,
+     reinterpret_cast<const Bytef*>(data.data() + 4),
+-    data.size() - 4
++    &sourceLen
+   );
+
+-  if (ret != Z_OK || destLen != expectedSize)
++  if (ret != Z_OK || destLen != expectedSize || sourceLen != data.size() - 4)
+     throw std::runtime_error("qUncompress_std: uncompress failed");
+
+   return out;

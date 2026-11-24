@@ -142,4 +142,14 @@ test('native socket patches apply after the complete production patch sequence',
   assert.doesNotMatch(hardened, /cbor_describe/u);
   execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
     '-i', validation], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const routerPatch = path.join(patchDir, 'tqs-native-router-request.patch');
+  applyPatch(source, routerPatch, true);
+  applyPatch(source, routerPatch);
+  const router = readFileSync(path.join(source, 'src/network/router.cpp'), 'utf8');
+  const util = readFileSync(path.join(source, 'src/core/util.cpp'), 'utf8');
+  assert.match(router, /expectedReplyId == 0/u);
+  assert.match(router, /steady_clock::now/u);
+  assert.match(util, /maxDecompressedBytes = 8 \* 1024 \* 1024/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', routerPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 });
