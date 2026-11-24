@@ -1,5 +1,14 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 25/11/2026 — Phát hành kiểm tra packet native và khảo sát router
+
+- Commit `5b6ec225` đã push `main`. Patch `tqs-native-packet-validation.patch` SHA-256 `80077df726bdaf9e8aa3ba1f0f30cdbb678589727a654c47491ce92feafe8749` giới hạn packet 4 MiB/command 256 byte, kiểm kiểu CBOR và miền integer, reset metadata, log chỉ metadata. Đối chiếu forward/reverse source khớp byte, staged diff check PASS. Báo cáo trước: source 3/3, 14/14 package + 8/8 native + 1/1 runtime pin, pipeline 14/14, QA contract 68/68 (Lua 5.4.9). Full regression session 98660 exit 0, lifecycle 9/9, stream, packet validation và listener 3/3 PASS.
+- Linux build session 81043 exit 127 vì bước hậu kiểm `file` thiếu trong container sau khi CMake đã link và báo Built target 100%. Binary ELF x86-64 được kiểm bằng `file` local và SHA-256 `42d9af6650ee6e066ad27553283c852e011fe5bf3be44f59e934a27c58d28731`; dependency check và cold boot Linux thật PASS. Đối chứng macOS trước đó không biên dịch do Boost mới khác API timer, không tính FAIL chức năng.
+- Cold boot session 99809 exit 0, TCP/UDP 12/12, byte parity package/config/flist, private namespace, DB mới, Lua 5.4, cleanup PASS. Gameplay session 35183 exit 0, hai client fragmented Setup, StartGame/PrepareDrawPile/reconnect v1 PASS; 100 outer packets, reconnect 212 ms, 3238 byte, cleanup PASS. Đây là smoke đầu trận, chưa chứng minh full-match luật.
+- Cutover session 46026 exit 0: `ACTIVATED tqsvn-native-packet-42d9af66`, 50.284 ms toàn script (không phải downtime); 0 active match qua hai lần kiểm và 0 TCP established, DB copy/so byte sau stop, gateway/tunnel giữ InvocationID. Rollback `tqsvn-native-lifecycle-3493e019`. Kiểm độc lập session 26371 exit 0: current/executable PID 1807367, SHA đúng, native/gateway/tunnel/watchdog active, TCP 9527 Recv-Q=0, staging QA đã dọn. Public health/manifest PASS, canonical Origin WSS challenge 454 byte PASS. Runtime MD5 `f52cdb15a6bb8eb7314a3b5e0fd27cbe`, bundle `1abde5498cc637d0`, 5339 tệp, không có runtime diff web/gateway từ `f5322586` hay Shop từ `b1f3c0dd`. Evidence `scratch/evidence/native-packet-20261125/{regression-retry,linux-build,cold-boot,gameplay-smoke,production-cutover,production-verify}.log`.
+- Router/giải nén candidate còn scratch. Baseline vượt giới hạn 8 MiB (FAIL) và router 3/6 FAIL (superseded/abort/compressed notification); candidate mở rộng session 63864 exit 0, 11/11 router PASS gồm timeout hết hạn/âm, resend old/new ID, concurrent 4x1000 IDs, compression bound/round-trip/empty/truncated input PASS. Test C++ trên source thật với transport stub; chưa chứng minh lỗi lịch sử production hay gameplay đầy đủ. Evidence `scratch/evidence/native-router-20261125/{baseline,candidate,router-baseline,router-candidate-extended,compression-candidate-extended}.log`. Candidate dùng một ID hiện hành, atomic counter, mutex state/timing, steady-clock timeout và invalidate khi abort, decoded notification, giữ timestamp wire.
+- Bước tiếp: rà edge case router/compression và tích hợp patch/pin/harness, build Linux, QA request/reconnect và release. Tiếp tục luật Quốc Chiến: Anh Vũ Bôi vật lý, observer/rematch/reconnect trong request, grace expiration/voluntary exit, ván 7 ghế 02–10, skill schema/privacy. Goal vẫn mở, OAuth thật và Quick Tunnel acceptance24h còn thiếu bằng chứng.
+
 ## 25/11/2026 — Phát hành sửa vòng đời socket native
 
 - Commit `9ad5fb98` đã push `main`. Cutover production session 4524 exit 0, `ACTIVATED tqsvn-native-lifecycle-3493e019`, elapsed 47.907 ms (toàn bộ script, không phải downtime). Hai lần kiểm không có GameStart thiếu GameOver; 0 TCP established trước restart. Native challenge và manifest local/public PASS; gateway/tunnel giữ InvocationID. Rollback giữ bản `tqsvn-native-stream-004aaaab`, DB được copy sau stop và so byte trước đổi symlink.
@@ -2522,20 +2531,21 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-21T18:04:09.563Z (UTC).
-- Nhánh: `main` · HEAD: `35dac5266825`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-24T19:07:23.196Z (UTC).
+- Nhánh: `main` · HEAD: `5b6ec225f8b1`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M AGENTS.md
  M docs/CODEX_PLAN.md
 ```
 
 Ba commit gần nhất:
 
 ```text
-35dac526 Keep Hegemony rooms recoverable after the last client disconnects
-10d7a623 Record Hegemony v1 stability release
-6522b82e Fix Hegemony v1 Cup preview and reference lifecycle
+5b6ec225 Validate native packet framing and CBOR fields
+958b7ac8 Record native socket lifecycle production rollout
+9ad5fb98 Harden native socket lifecycle and listener recovery
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

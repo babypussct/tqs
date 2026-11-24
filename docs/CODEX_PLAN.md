@@ -1,5 +1,15 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Kiểm tra packet và router native
+
+- [x] Candidate PacketBuilder strict framing/integer/metadata/bound, đối chiếu patch source byte-for-byte; test riêng và stream/lifecycle PASS.
+- [x] Full native regression session 98660 exit 0, listener 3/3 PASS.
+- [x] Linux binary build, cold boot/gameplay/reconnect cô lập, commit/push `5b6ec225`, deploy và kiểm độc lập production `tqsvn-native-packet-42d9af66` PASS.
+- [x] Tái hiện baseline giải nén vượt 8 MiB trên source native, candidate bound PASS với round-trip biên và empty.
+- [x] Router contract trên source C++ thật, transport stub: baseline 3/6 FAIL, candidate scratch 6/6 PASS (superseded, abort, compressed notification, current/duplicate/compressed reply).
+- [x] Router mở rộng 11/11 và compression bound/round-trip/truncated input PASS trên candidate scratch.
+- [ ] Rà edge case, tích hợp patch router/giải nén, Linux regression, QA request/reconnect và release; tiếp tục ma trận luật Quốc Chiến và 7 ghế.
+
 ## 25/11/2026 — Hồi quy vòng đời kết nối native
 
 - [x] Tái hiện callback packet ném exception làm bỏ qua cleanup và setup exception làm dừng TCP listener trên bản stream; candidate PASS.
