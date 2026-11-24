@@ -1,0 +1,31 @@
+--- a/src/network/client_socket.cpp
++++ b/src/network/client_socket.cpp
+@@ -303,20 +303,12 @@
+     if (builder.handled != handled) {
+       real_consumed = total_consumed;
+-    }
+-  }
+-
+-  if (builder.handled == 0 && !builder.valid_packet) {
+-    return lastStat;
+-  }
+-
+-  // 对剩余的不全数据深拷贝 重新造bytes
+-  if (real_consumed < len) {
+-    std::vector<unsigned char> remaining_buffer;
+-    remaining_buffer.assign(cborBuffer.begin() + real_consumed, cborBuffer.end());
+-    cborBuffer = remaining_buffer;
+-  } else {
+-    cborBuffer.clear();
+-  }
++      handled = builder.handled;
++    }
++  }
++
++  // Only discard bytes through the last completed packet. A trailing
++  // partial packet must be decoded again when the next TCP read arrives.
++  cborBuffer.erase(cborBuffer.begin(), cborBuffer.begin() + real_consumed);
+-
++
+   return lastStat;
+ }

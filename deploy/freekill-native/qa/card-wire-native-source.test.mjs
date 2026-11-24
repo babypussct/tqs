@@ -31,7 +31,7 @@ function applyPatch(source, patchFile, dryRun = false) {
 function extractPinnedNativeSource(destination) {
   // QA users may have local patches in scratch/upstream. Verify the pinned
   // committed source rather than copying their modified working tree.
-  const archive = execFileSync('git', ['-C', upstream, 'archive', 'HEAD'], {
+  const archive = execFileSync('git', ['-C', upstream, 'archive', 'b8a2ad48305aea7b55ccca325fcbeb100cb8a01a'], {
     maxBuffer: 64 * 1024 * 1024,
   });
   mkdirSync(destination, { recursive: true });
@@ -105,4 +105,27 @@ test('QA native boundary patch parses semantic CBOR with bounded metadata only',
   }
   assert.doesNotThrow(() => applyPatch(source, nativeBoundaryPatch, true),
     'QA native boundary patch must apply cleanly to the prepared upstream source');
+});
+
+
+test('native stream patch applies after the complete production patch sequence', (t) => {
+  if (!existsSync(path.join(upstream, '.git'))) {
+    t.skip('pinned native source checkout is not prepared');
+    return;
+  }
+  const root = mkdtempSync(path.join(os.tmpdir(), 'tqs-native-stream-source-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const source = path.join(root, 'freekill-asio');
+  extractPinnedNativeSource(source);
+  const patchDir = path.dirname(candidatePatch);
+  for (const patchFile of [...productionPatches, candidatePatch,
+    path.join(patchDir, 'tqs-card-wire-snapshot-compression.patch'),
+    path.join(patchDir, 'tqs-client-socket-stream.patch')]) {
+    applyPatch(source, patchFile, true);
+    applyPatch(source, patchFile);
+  }
+  const socket = readFileSync(path.join(source, 'src/network/client_socket.cpp'), 'utf8');
+  assert.ok(socket.includes('handled = builder.handled;'));
+  assert.ok(socket.includes('cborBuffer.erase(cborBuffer.begin(), cborBuffer.begin() + real_consumed);'));
+  assert.ok(!socket.includes('real_consumed < len'));
 });

@@ -1,5 +1,13 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Hồi quy phân mảnh TCP native
+
+- [x] Tái hiện mất packet bằng decoder C++ pin thực trên Linux, tạo patch và kiểm tra áp dụng đủ chuỗi native patch, QA contract và pipeline.
+- [x] Harness candidate PASS, build Linux và cold boot cô lập, 12/12 TCP challenge, cleanup QA.
+- [x] Gameplay smoke native cô lập: Setup phân mảnh, 2 người, StartGame, v1, PrepareDrawPile, reconnect.
+- [ ] Commit/push/deploy, kiểm binary/manifest và dịch vụ production.
+- [ ] Kiểm exception accept/read callback, nguyên nhân listener từng treo, đăng nhập Google thực và ma trận luật Quốc Chiến.
+
 ## 25/11/2026 — Watchdog native và hồi quy đăng nhập
 
 - [x] Tái hiện native TCP không gửi challenge khi HTTP còn khỏe bằng socket thật trong test; triển khai watchdog `8747c355`, kiểm hash, trạng thái và public WSS canonical.
