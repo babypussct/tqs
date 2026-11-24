@@ -5,7 +5,7 @@
 - [x] Tái hiện mất packet bằng decoder C++ pin thực trên Linux, tạo patch và kiểm tra áp dụng đủ chuỗi native patch, QA contract và pipeline.
 - [x] Harness candidate PASS, build Linux và cold boot cô lập, 12/12 TCP challenge, cleanup QA.
 - [x] Gameplay smoke native cô lập: Setup phân mảnh, 2 người, StartGame, v1, PrepareDrawPile, reconnect.
-- [ ] Commit/push/deploy, kiểm binary/manifest và dịch vụ production.
+- [x] Commit/push `f74f8170`, deploy `tqsvn-native-stream-004aaaab`, kiểm hash executable, DB trước swap, manifest/ZIP local-public, TCP/WSS và watchdog production.
 - [ ] Kiểm exception accept/read callback, nguyên nhân listener từng treo, đăng nhập Google thực và ma trận luật Quốc Chiến.
 
 ## 25/11/2026 — Watchdog native và hồi quy đăng nhập
