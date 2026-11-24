@@ -1,0 +1,1902 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -29,6 +29,7 @@
+
+   "server/rpc-lua/jsonrpc.cpp"
+   "server/rpc-lua/rpc-lua.cpp"
++  "server/rpc-lua/rpc-wire.cpp"
+
+   "server/gamelogic/roomthread.cpp"
+   "server/gamelogic/rpc-dispatchers.cpp"
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -9,6 +9,7 @@
+ #include <spdlog/sinks/callback_sink.h>
+
+ #include <getopt.h>
++#include <signal.h>
+
+ namespace asio = boost::asio;
+ using asio::ip::tcp;
+@@ -166,6 +167,10 @@
+
+   pthread_setname_np(pthread_self(), "MainThread");
+
++  // A worker may exit between checking its PID and writing its pipe.
++  // Let the descriptor return EPIPE instead of terminating the server.
++  ::signal(SIGPIPE, SIG_IGN);
++
+   initLogger();
+   spdlog::info("server is starting");
+
+--- a/src/server/admin/shell.cpp
++++ b/src/server/admin/shell.cpp
+@@ -716,6 +716,7 @@
+   // spdlog::info("Rooms: {}", server.room_manager().getRooms().size());
+
+   auto &threads = server.getThreads();
++  std::vector<int> expiredThreads;
+   for (auto &[id, thr] : threads) {
+     auto roomsCount = thr->getRefCount();
+     auto &L = thr->getLua();
+@@ -723,12 +724,14 @@
+     auto stat_str = L.getConnectionInfo();
+     auto outdated = thr->isOutdated();
+     if (roomsCount == 0 && outdated) {
+-      server.removeThread(thr->id());
++      expiredThreads.push_back(id);
+     } else {
+       spdlog::info("RoomThread {} | {} | {} room(s) {}", id, stat_str, roomsCount,
+             outdated ? "| Outdated" : "");
+     }
+   }
++
++  for (int id : expiredThreads) server.removeThread(id);
+
+   spdlog::info("Database memory usage: {:.2f} MiB",
+         ((double)server.database().getMemUsage()) / 1048576);
+--- a/src/server/gamelogic/roomthread.cpp
++++ b/src/server/gamelogic/roomthread.cpp
+@@ -11,6 +11,7 @@
+ #include "server/room/room_manager.h"
+ #include "server/room/room.h"
+ #include "server/rpc-lua/rpc-lua.h"
++#include "server/task/task_manager.h"
+
+ #include <spdlog/spdlog.h>
+ #include <thread>
+@@ -45,8 +46,9 @@
+     timer->async_wait([weak = weak_from_this(), roomId, timer](const std::error_code& ec){
+       if (!ec) {
+         auto t = weak.lock();
+-        if (!t) return;
++        if (!t || t->shutdownScheduled.load()) return;
+         t->L->call("ResumeRoom", roomId, "delay_done"sv);
++        if (!t->L->alive()) t->scheduleShutdown();
+       } else {
+         spdlog::error("error in delay(): {}", ec.message());
+       }
+@@ -87,7 +89,7 @@
+
+ RoomThread::~RoomThread() {
+   io_ctx.stop();
+-  m_thread.join();
++  if (m_thread.joinable()) m_thread.join();
+
+   auto &rm = Server::instance().room_manager();
+   for (auto roomId : m_rooms) {
+@@ -117,31 +119,53 @@
+   });
+ }
+
++void RoomThread::scheduleShutdown() {
++  if (shutdownScheduled.exchange(true)) return;
++  // Finish any in-flight RPC dispatcher before the main context joins us.
++  // Dispatchers can synchronously wait for work on the main context.
++  asio::post(io_ctx, [this, weak = weak_from_this()] {
++    io_ctx.stop();
++    asio::post(Server::instance().context(), [weak] {
++      if (auto thread = weak.lock()) thread->shutdown();
++    });
++  });
++}
++
+ void RoomThread::shutdown() {
+-  md5 = ""; // outdated = true;
++  // Room registry, room destruction and lobby notifications belong to the
++  // main context. Stop the failed worker's callbacks before destroying timers.
++  md5 = "";
++  io_ctx.stop();
++  if (m_thread.joinable()) m_thread.join();
+
+   auto &rm = Server::instance().room_manager();
+-  for (auto roomId : m_rooms) {
++  const auto rooms = m_rooms;
++  for (auto roomId : rooms) {
+     auto room = rm.findRoom(roomId).lock();
+     if (!room) continue;
+
+-    // 无论如何都减一下 因为Lua肯定不存在了
+-    room->decreaseRefCount();
+-
+     room->setOutdated();
++    room->destroyRequestTimer();
++    room->clearFailedWorkerRefs();
+     room->broadcast("ErrorDlg", "Server Internal Error");
+     rm.removeRoom(roomId);
+   }
++  Server::instance().task_manager().removeTasksForThread(*this);
++  shutdownComplete = true;
++  if (m_ref_count == 0) Server::instance().removeThread(m_id);
+ }
+
+ void RoomThread::emit_signal(std::function<void()> f) {
++  if (shutdownScheduled.load()) return;
+   if (!L->alive()) {
+-    spdlog::error("Lua is not working ({}). Shutting down thread {}.", L->getConnectionInfo(), m_id);
+-    shutdown();
++    scheduleShutdown();
+     return;
+   }
+-
+-  asio::dispatch(io_ctx, f);
++  asio::dispatch(io_ctx, [this, f = std::move(f)] {
++    if (shutdownScheduled.load()) return;
++    f();
++    if (!L->alive()) scheduleShutdown();
++  });
+ }
+
+ void RoomThread::pushRequest(const std::string &req) {
+@@ -185,6 +209,11 @@
+ std::string RoomThread::getMd5() const { return md5; }
+
+ bool RoomThread::isOutdated() {
++  if (!L->alive()) {
++    scheduleShutdown();
++    return true;
++  }
++  if (shutdownScheduled.load()) return true;
+   bool ret = md5 != Server::instance().getMd5();
+   if (ret) {
+     // 让以后每次都outdate
+@@ -194,6 +223,10 @@
+   return ret;
+ }
+
++bool RoomThread::isShutdownPending() const {
++  return shutdownScheduled.load() && !shutdownComplete;
++}
++
+ int RoomThread::getRefCount() const {
+   return m_ref_count;
+ }
+@@ -207,8 +240,11 @@
+   if (m_ref_count > 0) return;
+
+   if (isOutdated()) {
+-    asio::post(Server::instance().context(), [this] {
+-      Server::instance().removeThread(m_id);
++    asio::post(Server::instance().context(), [id = m_id] {
++      auto &server = Server::instance();
++      if (auto thread = server.getThread(id).lock();
++          thread && thread->getRefCount() == 0 && thread->isOutdated())
++        server.removeThread(id);
+     });
+   }
+ }
+--- a/src/server/gamelogic/roomthread.h
++++ b/src/server/gamelogic/roomthread.h
+@@ -35,6 +35,7 @@
+   std::string getMd5() const;
+
+   bool isOutdated();
++  bool isShutdownPending() const;
+
+   int getRefCount() const;
+   void increaseRefCount();
+@@ -55,6 +56,9 @@
+
+   void start();
+   void shutdown();
++  void scheduleShutdown();
++  std::atomic<bool> shutdownScheduled { false };
++  bool shutdownComplete = false; // main context only
+
+   // signals
+   std::function<void(const std::string req)> push_request_callback = nullptr;
+--- a/src/server/gamelogic/rpc-dispatchers.cpp
++++ b/src/server/gamelogic/rpc-dispatchers.cpp
+@@ -60,7 +60,7 @@
+ }
+
+ static _rpcRet _rpc_print(const JsonRpcPacket &packet) {
+-  for (size_t i = 0; i < packet.param_count; i++) {
++  for (size_t i = 0; i < std::min<size_t>(packet.param_count, 5); i++) {
+     switch (i) {
+       case 0:
+         std::cout << std::get<std::string_view>(packet.param1) << '\t';
+@@ -301,7 +301,8 @@
+     std::holds_alternative<std::string_view>(packet.param2) &&
+     std::holds_alternative<std::string_view>(packet.param3) &&
+     std::holds_alternative<int>(packet.param4) &&
+-    std::holds_alternative<int64_t>(packet.param5)
++    (std::holds_alternative<int64_t>(packet.param5) ||
++      std::holds_alternative<int>(packet.param5))
+   )) {
+     return { false, nullVal };
+   }
+@@ -310,7 +311,8 @@
+   auto command = std::get<std::string_view>(packet.param2);
+   auto jsonData = std::get<std::string_view>(packet.param3);
+   auto timeout = std::get<int>(packet.param4);
+-  int64_t timestamp = std::get<int64_t>(packet.param5);
++  int64_t timestamp = std::holds_alternative<int64_t>(packet.param5)
++    ? std::get<int64_t>(packet.param5) : std::get<int>(packet.param5);
+
+   auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+   if (!player) {
+--- a/src/server/room/lobby.cpp
++++ b/src/server/room/lobby.cpp
+@@ -326,15 +326,19 @@
+   }
+   if (!arr.is_array()) return;
+
+-  if (arr.size() != 2) return;
++  if (arr.size() != 2 || !arr[0].is_string()) return;
+   std::string type = arr[0];
+   auto bindata = json::to_cbor(arr[1]);
+   std::string data { bindata.begin(), bindata.end() };
+
+   auto &tm = Server::instance().task_manager();
+-  auto &task = tm.createTask(type, data);
+-  tm.attachTaskToUser(task.getId(), sender.getConnId());
+-  task.start();
++  try {
++    auto &task = tm.createTask(type, data);
++    tm.attachTaskToUser(task.getId(), sender.getConnId());
++    task.start();
++  } catch (const std::exception &) {
++    sender.doNotify("ErrorDlg", "Server Internal Error");
++  }
+ }
+
+ typedef void (Lobby::*room_cb)(ServerPlayer &, const Packet &);
+--- a/src/server/room/room.cpp
++++ b/src/server/room/room.cpp
+@@ -1157,7 +1157,7 @@
+
+   // 不能让即将运行在thread中的lambda捕获到shared_ptr，否则可能会线程内析构自身导致死锁
+   auto weak_thr = std::weak_ptr(thread);
+-  request_timer->async_wait([this, weak_thr](const std::error_code& ec){
++  request_timer->async_wait([id = this->id, weak_thr](const std::error_code& ec){
+     if (!ec) {
+       auto thread = weak_thr.lock();
+       if (thread) thread->wakeUp(id, "request_timer");
+@@ -1196,6 +1196,26 @@
+   checkAbandoned(NoRefCount);
+ }
+
++void Room::clearFailedWorkerRefs() {
++  {
++    std::lock_guard<std::mutex> locker(lua_ref_mutex);
++    lua_ref_count = 0;
++  }
++  auto &um = Server::instance().user_manager();
++  const auto resetPlayer = [&](int connId) {
++    auto player = um.findPlayerByConnId(connId).lock();
++    if (!player) return;
++    player->getRouter().abortRequest();
++    player->setThinking(false);
++    if (player->isOnline()) {
++      player->setRunned(false);
++      player->setState(Player::Online);
++    }
++  };
++  for (auto connId : players) resetPlayer(connId);
++  for (auto connId : observers) resetPlayer(connId);
++}
++
+ int Room::getSessionId() const {
+   return session_id;
+ }
+--- a/src/server/room/room.h
++++ b/src/server/room/room.h
+@@ -92,6 +92,7 @@
+   int getRefCount();
+   void increaseRefCount();
+   void decreaseRefCount();
++  void clearFailedWorkerRefs();
+
+   int getSessionId() const;
+   std::string_view getSessionData() const;
+--- a/src/server/room/room_manager.cpp
++++ b/src/server/room/room_manager.cpp
+@@ -27,7 +27,13 @@
+     return nullptr;
+   }
+
+-  auto &thread = server.getAvailableThread();
++  RoomThread *thread;
++  try {
++    thread = &server.getAvailableThread();
++  } catch (const std::exception &) {
++    creator.doNotify("ErrorDlg", "Server Internal Error");
++    return nullptr;
++  }
+
+   auto room = std::make_shared<Room>();
+   auto id = room->getId();
+@@ -35,7 +41,7 @@
+   rooms[id] = room;
+   room->setName(name);
+   room->setCapacity(capacity);
+-  room->setThread(thread);
++  room->setThread(*thread);
+   room->setTimeout(timeout);
+   room->setSettings(settings);
+   return room;
+--- a/src/server/rpc-lua/jsonrpc.cpp
++++ b/src/server/rpc-lua/jsonrpc.cpp
+@@ -2,7 +2,7 @@
+
+ #include "server/rpc-lua/jsonrpc.h"
+
+-static int _reqId = 1;
++static std::atomic<int> _reqId { 1 };
+
+ namespace JsonRpc {
+
+@@ -26,6 +26,8 @@
+   param_count = 0;
+   error.code = 0;
+   error.message = "";
++  error.data = nullptr;
++  param1 = param2 = param3 = param4 = param5 = nullptr;
+   result = nullptr;
+   method = "";
+ }
+@@ -76,8 +78,9 @@
+ {
+   JsonRpcPacket obj = notification(method, param1, param2, param3);
+   if (id == -1) {
+-    id = _reqId++;
+-    if (_reqId > 10000000) _reqId = 1;
++    id = _reqId.load(std::memory_order_relaxed);
++    while (!_reqId.compare_exchange_weak(id, id == 10000000 ? 1 : id + 1,
++        std::memory_order_relaxed)) {}
+   }
+   obj.id = id;
+   return obj;
+@@ -141,10 +144,10 @@
+     }
+     return response(req, result);
+   } catch (const std::exception &e) {
+-    return responseError(req, "internal_error", std::string_view { e.what() });
++    return responseError(req, "internal_error", std::string { e.what() });
+   }
+ }
+
+-int getNextFreeId() { return _reqId; }
++int getNextFreeId() { return _reqId.load(std::memory_order_relaxed); }
+
+ } // namespace JsonRpc
+--- a/src/server/rpc-lua/rpc-lua.cpp
++++ b/src/server/rpc-lua/rpc-lua.cpp
+@@ -13,6 +13,10 @@
+ #include <sys/wait.h>
+ #include <cerrno>
+ #include <signal.h>
++#include <fcntl.h>
++#include <spawn.h>
++
++extern char **environ;
+ #include <nlohmann/json.hpp>
+
+ using json = nlohmann::json;
+@@ -20,534 +24,190 @@
+ using namespace JsonRpc;
+ namespace asio = boost::asio;
+
+-// 传过去的算上call和返回值只有int bytes和null... 毁灭吧
+-static void sendParam(asio::posix::stream_descriptor &file, JsonRpcParam &param) {
+-  u_char buf[10]; size_t buflen;
+-  std::visit([&](auto&& arg) {
+-    using T = std::decay_t<decltype(arg)>;
+-    if constexpr (std::is_same_v<T, int>) {
+-      if (arg >= 0) {
+-        buflen = cbor_encode_uint(arg, buf, 10);
+-      } else {
+-        buflen = cbor_encode_negint(-1-arg, buf, 10);
+-      }
+-      file.write_some(asio::const_buffer(buf, buflen));
+-    } else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
+-      buflen = cbor_encode_uint(arg.size(), buf, 10);
+-      buf[0] += 0x40;
+-      file.write_some(asio::const_buffer(buf, buflen));
+-      file.write_some(asio::const_buffer(arg.data(), arg.size()));
+-    } else if constexpr (std::is_same_v<T, bool>) {
+-      // F4: false; F5: true
+-      file.write_some(asio::const_buffer(arg ? "\xF5" : "\xF4", 1));
+-    } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+-      // F6: null (Lua中转为nil)
+-      file.write_some(asio::const_buffer("\xF6", 1));
+-    }
+-  }, param);
+-}
+-
+-// request: { jsonRpc, method, params, id }
+-static void sendRequest(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
+-  u_char buf[10]; size_t buflen;
+-  // { jsonRpc: '2.0', method: '
+-  file.write_some(asio::const_buffer("\xa4\x18\x64\x43" "2.0" "\x18\x65", 9));
+-  buflen = cbor_encode_uint(pkt.method.size(), buf, 10);
+-  buf[0] += 0x40;
+-  // <method>',
+-  file.write_some(asio::const_buffer(buf, buflen));
+-  file.write_some(asio::const_buffer(pkt.method.data(), pkt.method.size()));
+-  // id:
+-  buflen = cbor_encode_uint(pkt.id, buf, 10);
+-  file.write_some(asio::const_buffer("\x18\x68", 2));
+-  file.write_some(asio::const_buffer(buf, buflen));
+-  // params + arr head
+-  size_t i = pkt.param_count;
+-  buflen = cbor_encode_uint(i, buf, 10);
+-  buf[0] += 0x80;
+-  file.write_some(asio::const_buffer("\x18\x66", 2));
+-  file.write_some(asio::const_buffer(buf, buflen));
+-
+-  if (i == 0) return;
+-  sendParam(file, pkt.param1);
+-  i--;
+-
+-  if (i == 0) return;
+-  sendParam(file, pkt.param2);
+-  i--;
+-
+-  if (i == 0) return;
+-  sendParam(file, pkt.param3);
+-}
+-
+-// response: { jsonRpc, result, id }
+-static void sendResponse(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
+-  u_char buf[10]; size_t buflen;
+-  // { jsonRpc: '2.0', id:
+-  file.write_some(asio::const_buffer("\xa3\x18\x64\x43" "2.0" "\x18\x68", 9));
+-
+-  // id
+-  buflen = cbor_encode_uint(pkt.id, buf, 10);
+-  file.write_some(asio::const_buffer(buf, buflen));
+-
+-  // result
+-  file.write_some(asio::const_buffer("\x18\x69", 2));
+-  sendParam(file, pkt.result);
+-}
+-
+-// response: { jsonRpc, error, [id] }
+-static void sendError(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
+-  u_char buf[10]; size_t buflen;
+-
+-  if (pkt.id < 0) {
+-    file.write_some(asio::const_buffer("\xa2", 1));
+-  } else {
+-    file.write_some(asio::const_buffer("\xa3", 1));
+-  }
+-
+-  // { jsonRpc: '2.0',
+-  file.write_some(asio::const_buffer("\x18\x64\x43" "2.0", 6));
+-
+-  // [id]
+-  if (pkt.id >= 0) {
+-    buflen = cbor_encode_uint(pkt.id, buf, 10);
+-    file.write_some(asio::const_buffer("\x18\x68", 2));
+-    file.write_some(asio::const_buffer(buf, buflen));
+-  }
+-
+-  // error: { code:
+-  file.write_some(asio::const_buffer("\x18\x67\xA3\x18\xC8", 5));
+-  buflen = cbor_encode_negint(pkt.error.code, buf, 10);
+-  file.write_some(asio::const_buffer(buf, buflen));
+-
+-  // msg:
+-  file.write_some(asio::const_buffer("\x18\xC9", 2));
+-  buflen = cbor_encode_uint(pkt.error.message.size(), buf, 10);
+-  buf[0] += 0x40;
+-  file.write_some(asio::const_buffer(buf, buflen));
+-  file.write_some(asio::const_buffer(pkt.error.message.data(), pkt.error.message.size()));
+-
+-  // data:
+-  file.write_some(asio::const_buffer("\x18\xCA", 2));
+-  sendParam(file, pkt.error.data);
+-}
+-
+-struct RpcPacketBuilder {
+-  enum State {
+-    NOT_START,
+-    WAIT_KEY,
+-    WAIT_VALUE,
+-    READING_PARAMS,
+-    READING_ERROR_K,
+-    READING_ERROR_V,
+-    FIN,
+-    ERROR,
+-  };
+-
+-  explicit RpcPacketBuilder(JsonRpcPacket &p) : pkt { p } {
+-    reset();
+-  }
+-
+-  void handleInteger(int64_t value) {
+-    if (state == WAIT_KEY) {
+-      current_key = (int)value;
+-      state = WAIT_VALUE;
+-    } else if (state == READING_ERROR_K) {
+-      current_err_key = (int)value;
+-      state = READING_ERROR_V;
+-    } else if (state == WAIT_VALUE) {
+-      switch ((JsonKeys)current_key) {
+-        case Id:
+-          pkt.id = (int)value;
+-          nextKey();
+-          break;
+-        case Result:
+-          nextKey();
+-          break;
+-        default:
+-          checkState(ERROR);
+-          break;
+-      }
+-    } else if (state == READING_ERROR_V) {
+-      if (current_err_key == ErrorCode) {
+-        pkt.error.code = (int)value;
+-      } else if (current_err_key == ErrorData) {
+-        ; // no-op
+-      } else {
+-        checkState(ERROR);
+-        return;
+-      }
+-
+-      error_value_readed++;
+-      if (error_value_readed == error_key_count) {
+-        nextKey();
+-      } else {
+-        state = READING_ERROR_K;
+-      }
+-    } else if (state == READING_PARAMS) {
+-      if (value < 0 || (uint64_t)value < 0xFFFFFFFF) {
+-        readParam((int)value);
+-      } else {
+-        readParam(value);
+-      }
+-    } else {
+-      checkState(ERROR);
+-    }
+-  }
+-
+-  void handleBool(bool value) {
+-    if (state == WAIT_VALUE) {
+-      if (current_key == Result) {
+-        nextKey();
+-      } else {
+-        checkState(ERROR);
+-      }
+-    } else if (state == READING_PARAMS) {
+-      readParam(value);
+-    } else {
+-      checkState(ERROR);
+-    }
+-  }
+-
+-  void handleBytes(const cbor_data data, size_t len) {
+-    if (state == WAIT_VALUE) {
+-      std::string_view sv { (char *)data, len };
+-      switch ((JsonKeys)current_key) {
+-        case JsonRpc::JsonRpc:
+-          if (sv != "2.0") {
+-            checkState(ERROR);
+-            return;
+-          }
+-          nextKey();
+-          break;
+-        case Method:
+-          pkt.method = sv;
+-          nextKey();
+-          break;
+-        case Result:
+-          nextKey();
+-          break;
+-        default:
+-          checkState(ERROR);
+-          break;
+-      }
+-    } else if (state == READING_PARAMS) {
+-      readParam(std::string_view { (char *)data, len });
+-    } else if (state == READING_ERROR_V) {
+-      if (current_err_key == ErrorMessage) {
+-        pkt.error.message = std::string_view { (char *)data, len };
+-      } else if (current_err_key == ErrorData) {
+-        ; // no-op
+-      } else {
+-        checkState(ERROR);
+-        return;
+-      }
+-
+-      error_value_readed++;
+-      if (error_value_readed == error_key_count) {
+-        nextKey();
+-      } else {
+-        state = READING_ERROR_K;
+-      }
+-    } else {
+-      checkState(ERROR);
+-    }
+-  }
+-
+-  void startArray(size_t size) {
+-    if (!checkState(WAIT_VALUE)) return;
+-    if (current_key != Params) {
+-      checkState(ERROR);
+-      return;
+-    }
+-
+-    param_count = size;
+-    pkt.param_count = size;
+-    if (size > 0) {
+-      state = READING_PARAMS;
+-    } else {
+-      nextKey();
+-    }
+-  }
+-
+-  void startMap(size_t size) {
+-    if (state == NOT_START) {
+-      key_count = size;
+-      valid = true;
+-      state = WAIT_KEY;
+-    } else if (state == WAIT_VALUE && current_key == Error) {
+-      error_key_count = size;
+-      state = READING_ERROR_K;
+-    } else {
+-      checkState(ERROR);
+-    }
+-  }
+-
+-  void reset() {
+-    pkt.reset();
+-    state = NOT_START;
+-    key_count = 0;
+-    param_count = 0;
+-    current_param_idx = 0;
+-    value_readed = 0;
+-    error_value_readed = 0;
+-  }
+-
+-  void nextKey() {
+-    value_readed++;
+-    if (value_readed == key_count) {
+-      state = FIN;
+-    } else {
+-      state = WAIT_KEY;
+-    }
+-  }
+-
+-  void readParam(JsonRpcParam v) {
+-    switch (current_param_idx) {
+-      case 0:
+-        pkt.param1 = v;
+-        break;
+-      case 1:
+-        pkt.param2 = v;
+-        break;
+-      case 2:
+-        pkt.param3 = v;
+-        break;
+-      case 3:
+-        pkt.param4 = v;
+-        break;
+-      case 4:
+-        pkt.param5 = v;
+-        break;
+-      default:
+-        checkState(ERROR);
+-        return;
+-    }
+-    current_param_idx++;
+-    if (current_param_idx == param_count) {
+-      nextKey();
+-    }
+-  }
+-
+-  bool checkState(State st) {
+-    if (state != st) {
+-      state = ERROR;
+-      valid = false;
+-      return false;
+-    }
+-    return true;
+-  }
+-
+-  State state = NOT_START;
+-  size_t key_count = 0;
+-  size_t param_count = 0;
+-  bool valid = false;
+-  int current_key;
+-  size_t value_readed = 0;
+-  size_t current_param_idx = 0;
+-  size_t error_key_count = 0;
+-  int current_err_key;
+-  size_t error_value_readed = 0;
+-  JsonRpcPacket &pkt;
+-};
+-
+-static struct cbor_callbacks callbacks = cbor_empty_callbacks;
+-static std::once_flag callbacks_flag;
+-
+-static void init_callbacks() {
+-  callbacks.uint8 = [](void* self, uint8_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
+-  };
+-  callbacks.uint16 = [](void* self, uint16_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
+-  };
+-  callbacks.uint32 = [](void* self, uint32_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
+-  };
+-  callbacks.uint64 = [](void* self, uint64_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
+-  };
+-  callbacks.negint8 = [](void* self, uint8_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - value);
+-  };
+-  callbacks.negint16 = [](void* self, uint16_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - value);
+-  };
+-  callbacks.negint32 = [](void* self, uint32_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - value);
+-  };
+-  callbacks.negint64 = [](void* self, uint64_t value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - static_cast<int64_t>(value));
+-  };
+-  callbacks.byte_string = [](void* self, const cbor_data data, uint64_t len) {
+-    static_cast<RpcPacketBuilder*>(self)->handleBytes(data, len);
+-  };
+-  callbacks.array_start = [](void* self, uint64_t size) {
+-    static_cast<RpcPacketBuilder*>(self)->startArray(size);
+-  };
+-  callbacks.map_start = [](void* self, uint64_t size) {
+-    static_cast<RpcPacketBuilder*>(self)->startMap(size);
+-  };
+-  callbacks.boolean = [](void* self, bool value) {
+-    static_cast<RpcPacketBuilder*>(self)->handleBool(value);
+-  };
+-}
+-
+-static cbor_decoder_status readJsonRpcPacket(cbor_data &cbuf, size_t &len, JsonRpcPacket &packet) {
+-  std::call_once(callbacks_flag, init_callbacks);
+-  RpcPacketBuilder builder { packet };
+-  auto cbufsave = cbuf;
+-  auto lensave = len;
+-
+-  while (true) {
+-    // 基于callbacks，边读缓冲区边构造packet并进一步调用回调处理packet
+-    // 下面这个函数一次只读一个item
+-    auto decode_result = cbor_stream_decode(cbuf, len, &callbacks, &builder);
+-
+-    if (decode_result.read != 0) {
+-      cbuf += decode_result.read;
+-      len -= decode_result.read;
+-    } else {
+-      // NEDATA or ERROR
+-      cbuf = cbufsave;
+-      len = lensave;
+-      return decode_result.status;
+-    }
+-
+-    if (builder.state == RpcPacketBuilder::FIN) return CBOR_DECODER_FINISHED;
+-  }
+-}
++#include "server/rpc-lua/rpc-wire.h"
++
++using namespace RpcWire;
+
+ RpcLua::RpcLua(asio::io_context &ctx) : io_ctx { ctx },
+   child_stdin { ctx }, child_stdout { ctx }
+ {
+-  using namespace std::chrono;
+-
+-  int stdin_pipe[2];  // [0]=read, [1]=write
+-  int stdout_pipe[2]; // [0]=read, [1]=write
+-  if (::pipe(stdin_pipe) == -1 || pipe(stdout_pipe) == -1) {
+-    throw std::runtime_error("Failed to create pipes");
+-  }
+-
+-  pid_t pid = fork();
+-  if (pid == 0) { // child
+-    sigset_t newmask, oldmask;
+-    sigemptyset(&newmask);
+-    sigaddset(&newmask, SIGINT); // 阻塞 SIGINT
+-    sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+-
+-    if (int err = ::chdir("packages/freekill-core"); err != 0) {
+-      std::cout << "!" << std::endl;
+-      throw std::runtime_error(fmt::format("Cannot chdir into packages/freekill-core: {}\n\tYou must install freekill-core before starting the server.", strerror(errno)));
+-      // ::_exit(err);
+-    }
+-
+-    auto disabled_packs = PackMan::instance().getDisabledPacks();
+-    auto json_string = json(disabled_packs).dump();
+-    ::setenv("FK_DISABLED_PACKS", json_string.c_str(), 1);
+-    auto tqs_locked_packs = json(Server::instance().config().tqsLockedPacks).dump();
+-    ::setenv("FK_TQS_LOCKED_PACKS", tqs_locked_packs.c_str(), 1);
+-
+-    ::setenv("FK_RPC_MODE", "cbor", 1);
+-
+-    // 关闭父进程用的 pipe 端
+-    ::close(stdin_pipe[1]);  // 关闭父进程的写入端（子进程只读 stdin）
+-    ::close(stdout_pipe[0]); // 关闭父进程的读取端（子进程只写 stdout）
+-
+-    // 重定向 stdin/stdout
+-    ::dup2(stdin_pipe[0], STDIN_FILENO);   // 子进程的 stdin ← 父进程的写入端
+-    ::dup2(stdout_pipe[1], STDOUT_FILENO); // 子进程的 stdout → 父进程的读取端
++  // Build the environment in the parent. Forking a multithreaded server and
++  // running C++ allocation, logging or setenv in its child can deadlock.
++  std::vector<std::string> environment;
++  for (auto entry = environ; *entry; ++entry) {
++    std::string_view value(*entry);
++    if (value.starts_with("FK_DISABLED_PACKS=") ||
++        value.starts_with("FK_TQS_LOCKED_PACKS=") || value.starts_with("FK_RPC_MODE=")) continue;
++    environment.emplace_back(value);
++  }
++  environment.emplace_back("FK_DISABLED_PACKS=" + json(PackMan::instance().getDisabledPacks()).dump());
++  environment.emplace_back("FK_TQS_LOCKED_PACKS=" + json(Server::instance().config().tqsLockedPacks).dump());
++  environment.emplace_back("FK_RPC_MODE=cbor");
++  std::vector<char *> envp;
++  for (auto &entry : environment) envp.push_back(entry.data());
++  envp.push_back(nullptr);
++
++  // Ensure all pipe endpoints are separate from stdio and are closed on exec.
++  auto makePipe = [](int (&fds)[2]) {
++#if defined(__linux__)
++    if (::pipe2(fds, O_CLOEXEC) != 0) return false;
++#else
++    if (::pipe(fds) != 0) return false;
++    if (::fcntl(fds[0], F_SETFD, FD_CLOEXEC) != 0 ||
++        ::fcntl(fds[1], F_SETFD, FD_CLOEXEC) != 0) {
++      ::close(fds[0]);
++      ::close(fds[1]);
++      return false;
++    }
++#endif
++    for (auto &fd : fds) {
++      if (fd > STDERR_FILENO) continue;
++      int replacement = ::fcntl(fd, F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
++      if (replacement < 0) {
++        ::close(fds[0]);
++        ::close(fds[1]);
++        return false;
++      }
++      ::close(fd);
++      fd = replacement;
++    }
++    return true;
++  };
++  int stdin_pipe[2];
++  int stdout_pipe[2];
++  if (!makePipe(stdin_pipe)) {
++    spdlog::error("Failed to create Lua stdin pipe");
++    failed = true;
++    return;
++  }
++  if (!makePipe(stdout_pipe)) {
+     ::close(stdin_pipe[0]);
+-    ::close(stdout_pipe[1]);
+-
+-    ::execlp("lua5.4", "lua5.4", "lua/server/rpc/entry.lua", nullptr);
+-
+-    ::_exit(EXIT_FAILURE);
+-  } else if (pid > 0) { // 父进程
+-    child_pid = pid;
+-    // 转下文
+-  } else {
+-    throw std::runtime_error("Failed to fork process");
+-  }
+-
+-  // 关闭子进程用的 pipe 端
+-  close(stdin_pipe[0]);   // 关闭子进程的读取端（父进程只写 stdin）
+-  close(stdout_pipe[1]);  // 关闭子进程的写入端（父进程只读 stdout）
+-
+-  child_stdin = { io_ctx, stdin_pipe[1] };
+-  child_stdout = { io_ctx, stdout_pipe[0] };
+-
+-  wait(WaitForNotification, "hello", 0);
++    ::close(stdin_pipe[1]);
++    spdlog::error("Failed to create Lua stdout pipe");
++    failed = true;
++    return;
++  }
++
++  posix_spawn_file_actions_t actions;
++  posix_spawnattr_t attributes;
++  int error = ::posix_spawn_file_actions_init(&actions);
++  const bool actionsReady = error == 0;
++  if (!error) error = ::posix_spawnattr_init(&attributes);
++  const bool attributesReady = error == 0;
++  if (!error) error = ::posix_spawn_file_actions_addchdir_np(&actions, "packages/freekill-core");
++  if (!error) error = ::posix_spawn_file_actions_adddup2(&actions, stdin_pipe[0], STDIN_FILENO);
++  if (!error) error = ::posix_spawn_file_actions_adddup2(&actions, stdout_pipe[1], STDOUT_FILENO);
++  for (int fd : {stdin_pipe[0], stdin_pipe[1], stdout_pipe[0], stdout_pipe[1]}) {
++    if (!error) error = ::posix_spawn_file_actions_addclose(&actions, fd);
++  }
++  sigset_t blocked, defaults;
++  if (!error) error = ::pthread_sigmask(SIG_SETMASK, nullptr, &blocked);
++  if (!error) {
++    sigaddset(&blocked, SIGINT);
++    sigemptyset(&defaults);
++    sigaddset(&defaults, SIGPIPE);
++    error = ::posix_spawnattr_setsigmask(&attributes, &blocked);
++  }
++  if (!error) error = ::posix_spawnattr_setsigdefault(&attributes, &defaults);
++  if (!error) error = ::posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF);
++  char executable[] = "lua5.4";
++  char entrypoint[] = "lua/server/rpc/entry.lua";
++  char *argv[] = {executable, entrypoint, nullptr};
++  pid_t pid = -1;
++  if (!error) error = ::posix_spawnp(&pid, executable, &actions, &attributes, argv, envp.data());
++  if (attributesReady) ::posix_spawnattr_destroy(&attributes);
++  if (actionsReady) ::posix_spawn_file_actions_destroy(&actions);
++  ::close(stdin_pipe[0]);
++  ::close(stdout_pipe[1]);
++  if (error) {
++    ::close(stdin_pipe[1]);
++    ::close(stdout_pipe[0]);
++    spdlog::error("Failed to spawn Lua worker: {}", std::generic_category().message(error));
++    failed = true;
++    return;
++  }
++  child_pid = pid;
++
++  boost::system::error_code ec;
++  child_stdin.assign(stdin_pipe[1], ec);
++  if (ec) {
++    ::close(stdin_pipe[1]);
++    ::close(stdout_pipe[0]);
++    failTransport();
++    return;
++  }
++  child_stdout.assign(stdout_pipe[0], ec);
++  if (ec) {
++    ::close(stdout_pipe[0]);
++    failTransport();
++    return;
++  }
++
++  try {
++    wait(WaitForNotification, "hello", 0);
++  } catch (const boost::system::system_error &e) {
++    spdlog::error("Lua initialization transport failed: {}", e.code().message());
++    failTransport();
++  }
++}
++
++void RpcLua::closeTransport() noexcept {
++  boost::system::error_code ec;
++  child_stdin.close(ec);
++  child_stdout.close(ec);
++}
++
++void RpcLua::failTransport() noexcept {
++  failed.store(true);
++  closeTransport();
+ }
+
+ RpcLua::~RpcLua() {
+-  if (!alive()) {
+-    // 回收僵尸进程
+-    int wstatus;
+-    pid_t w = waitpid(child_pid, &wstatus, WNOHANG);
+-    if (w == -1) {
+-      spdlog::error("waitpid() error when reaping zombie: {}", strerror(errno));
+-    }
+-    return;
+-  }
+-
+-  call("bye");
+-
+-  int wstatus;
+-  int w = waitpid(child_pid, &wstatus, WUNTRACED);
+-  if (w == -1) {
+-    spdlog::error("waitpid() error: {}", strerror(errno));
+-    return;
+-  }
+-
+-  if (WIFEXITED(wstatus)) {
+-    spdlog::info("child process exited, status={}", WEXITSTATUS(wstatus));
+-  } else if (WIFSIGNALED(wstatus)) {
+-    spdlog::info("killed by signal {}", WTERMSIG(wstatus));
+-  } else if (WIFSTOPPED(wstatus)) {
+-    spdlog::info("stopped by signal {}", WSTOPSIG(wstatus));
+-  }
++  // EOF terminates the Lua RPC loop. A crashed/stuck worker must never hold
++  // the server shutdown indefinitely. Only the parent reaps this PID.
++  closeTransport();
++  if (child_pid <= 0) return;
++  int status;
++  for (int attempt = 0; attempt < 100; ++attempt) {
++    auto result = ::waitpid(child_pid, &status, WNOHANG);
++    if (result == child_pid || (result < 0 && errno == ECHILD)) return;
++    if (result < 0 && errno != EINTR) return;
++    std::this_thread::sleep_for(std::chrono::milliseconds(10));
++  }
++  ::kill(child_pid, SIGKILL);
++  while (::waitpid(child_pid, &status, 0) < 0 && errno == EINTR) {}
+ }
+
+ void RpcLua::wait(WaitType waitType, const char *method, int id) {
+-  JsonRpcPacket received_pkt;
+-
+-  while (child_stdout.is_open() && alive()) {
+-    received_pkt.reset();
+-    boost::system::error_code ec;
+-    auto read_sz = child_stdout.read_some(asio::buffer(buffer, max_length), ec);
+-    if (ec) {
+-      spdlog::error("Error occured when reading child stdin: {}", ec.message());
+-      break;
+-    }
+-
+-    cborBuffer.insert(cborBuffer.end(), buffer, buffer + read_sz);
+-    cbor_data cbuf = (cbor_data)cborBuffer.data(); size_t len = cborBuffer.size();
+-
+-    auto stat = readJsonRpcPacket(cbuf, len, received_pkt);
+-
++  while (child_stdout.is_open()) {
++    JsonRpcPacket received_pkt;
++    std::vector<unsigned char> packetStorage;
++    auto stat = takeRpcPacket(cborBuffer, packetStorage, received_pkt);
+     if (stat == CBOR_DECODER_ERROR) {
+-      cborBuffer.clear();
+-      break;
+-    } else {
+-      cborBuffer.clear();
+-      cborBuffer.insert(cborBuffer.end(), cbuf, cbuf + len);
+-      if (stat == CBOR_DECODER_NEDATA) continue;
++      spdlog::error("Invalid CBOR RPC packet from Lua worker");
++      failTransport();
++      return;
++    }
++    if (stat == CBOR_DECODER_NEDATA) {
++      auto read_sz = readRpcBytes(child_stdout, asio::buffer(buffer, max_length));
++      cborBuffer.insert(cborBuffer.end(), buffer, buffer + read_sz);
++      continue;
+     }
+
+     if ((waitType == WaitForResponse && received_pkt.id == id && received_pkt.method == "" && received_pkt.error.code == 0) ||
+       (waitType == WaitForNotification && received_pkt.id == -1 && received_pkt.method == method)) {
+ #ifdef RPC_DEBUG
+-      spdlog::debug("Me <-- returned {}", toHex({ buffer, read_sz }));
++      spdlog::debug("Me <-- returned id={}", received_pkt.id);
+ #endif
+       // 并不关心lua返回了啥；那为什么还要去读取
+       return;
+     } else if (received_pkt.error.code != 0) {
+-      spdlog::warn("RPC call failed! id={} method={} ec={} msg={}", id, method, received_pkt.error.code, received_pkt.error.message);
++      if (waitType != WaitForResponse || (received_pkt.id != -1 && received_pkt.id != id)) continue;
++      spdlog::warn("RPC call failed! id={} method={} ec={}", id, method, received_pkt.error.code);
+       return;
+-    } else {
+-#ifdef RPC_DEBUG
+-      spdlog::debug("  Me <-- {} {}", received_pkt.method, toHex({ buffer, read_sz }));
++    } else if (!received_pkt.method.empty()) {
++#ifdef RPC_DEBUG
++      spdlog::debug("  Me <-- {}", received_pkt.method);
+ #endif
+       auto res = JsonRpc::handleRequest(RpcDispatchers::ServerRpcMethods, received_pkt);
+       if (res) {
+@@ -562,8 +222,8 @@
+           spdlog::debug("  Me --> returned some value");
+ #endif
+         } else {
+-          // 爆炸罢
+-          throw "unknown res type";
++          failTransport();
++          return;
+         }
+       }
+     }
+@@ -588,9 +248,13 @@
+
+   auto req = JsonRpc::request(func_name, param1, param2, param3);
+   auto id = req.id;
+-  sendRequest(child_stdin, req);
+-
+-  wait(WaitForResponse, func_name, id);
++  try {
++    sendRequest(child_stdin, req);
++    wait(WaitForResponse, func_name, id);
++  } catch (const boost::system::system_error &e) {
++    spdlog::error("Lua RPC transport failed: {}", e.code().message());
++    failTransport();
++  }
+ }
+
+ std::string RpcLua::getConnectionInfo() const {
+@@ -603,9 +267,9 @@
+
+       std::istringstream iss(line);
+       // 取splited[1]
+-      long rss_pages;
+-      iss >> rss_pages;
+-      iss >> rss_pages;
++      long total_pages = 0;
++      long rss_pages = 0;
++      if (!(iss >> total_pages >> rss_pages)) return ret + " (unknown)";
+
+       long pageSize = sysconf(_SC_PAGESIZE);
+       double mem_mib = (rss_pages * pageSize) / (1024.0 * 1024.0);
+@@ -622,9 +286,11 @@
+ }
+
+ bool RpcLua::alive() const {
++  if (failed.load() || child_pid <= 0) return false;
+ #if defined(__linux__)
+   auto procDir = fmt::format("/proc/{}/exe", child_pid);
+-  return std::filesystem::exists(procDir);
++  std::error_code ec;
++  return std::filesystem::exists(procDir, ec);
+ #else
+   if (child_pid <= 0) return false;
+   return ::kill(child_pid, 0) == 0 || errno == EPERM;
+--- a/src/server/rpc-lua/rpc-lua.h
++++ b/src/server/rpc-lua/rpc-lua.h
+@@ -27,7 +27,10 @@
+ private:
+   io_context &io_ctx;
+
+-  pid_t child_pid;
++  pid_t child_pid = -1;
++  std::atomic<bool> failed { false };
++  void closeTransport() noexcept;
++  void failTransport() noexcept;
+   stream_descriptor child_stdin;   // 父进程写入子进程 stdin
+   stream_descriptor child_stdout;  // 父进程读取子进程 stdout
+
+--- /dev/null
++++ b/src/server/rpc-lua/rpc-wire.cpp
+@@ -0,0 +1,585 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#include "server/rpc-lua/rpc-wire.h"
++#include <poll.h>
++#include <cerrno>
++#include <climits>
++
++namespace RpcWire {
++using namespace JsonRpc;
++namespace asio = boost::asio;
++
++static void waitForPipe(asio::posix::stream_descriptor &file, short events,
++    std::chrono::steady_clock::time_point deadline) {
++  using namespace std::chrono;
++  pollfd descriptor {file.native_handle(), events, 0};
++  while (true) {
++    auto remaining = ceil<milliseconds>(deadline - steady_clock::now());
++    if (remaining <= milliseconds::zero()) throw boost::system::system_error(asio::error::timed_out);
++    int result = ::poll(&descriptor, 1, static_cast<int>(std::min<int64_t>(remaining.count(), INT_MAX)));
++    if (result > 0) return; // read/write reports EOF or other descriptor errors
++    if (result == 0) throw boost::system::system_error(asio::error::timed_out);
++    if (errno != EINTR) throw boost::system::system_error(errno, boost::system::generic_category());
++  }
++}
++
++size_t readRpcBytes(asio::posix::stream_descriptor &file, asio::mutable_buffer buffer,
++    std::chrono::milliseconds timeout) {
++  if (!file.non_blocking()) file.non_blocking(true);
++  const auto deadline = std::chrono::steady_clock::now() + timeout;
++  for (;;) {
++    waitForPipe(file, POLLIN, deadline);
++    boost::system::error_code ec;
++    auto size = file.read_some(buffer, ec);
++    if (!ec) return size;
++    if (ec != asio::error::would_block && ec != asio::error::try_again && ec != asio::error::interrupted)
++      throw boost::system::system_error(ec);
++  }
++}
++
++void writeRpcBytes(asio::posix::stream_descriptor &file, asio::const_buffer buffer,
++    std::chrono::milliseconds timeout) {
++  if (!file.non_blocking()) file.non_blocking(true);
++  auto deadline = std::chrono::steady_clock::now() + timeout;
++  while (buffer.size() > 0) {
++    waitForPipe(file, POLLOUT, deadline);
++    boost::system::error_code ec;
++    auto size = file.write_some(buffer, ec);
++    if (ec == asio::error::would_block || ec == asio::error::try_again || ec == asio::error::interrupted) continue;
++    if (ec) throw boost::system::system_error(ec);
++    if (size == 0) throw boost::system::system_error(asio::error::broken_pipe);
++    buffer += size;
++    deadline = std::chrono::steady_clock::now() + timeout;
++  }
++}
++
++// 传过去的算上call和返回值只有int bytes和null... 毁灭吧
++static void sendParam(asio::posix::stream_descriptor &file, JsonRpcParam &param) {
++  u_char buf[10]; size_t buflen;
++  std::visit([&](auto&& arg) {
++    using T = std::decay_t<decltype(arg)>;
++    if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int64_t>) {
++      if (arg >= 0) {
++        buflen = cbor_encode_uint(arg, buf, 10);
++      } else {
++        buflen = cbor_encode_negint(-1-arg, buf, 10);
++      }
++      writeRpcBytes(file, asio::const_buffer(buf, buflen));
++    } else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
++      buflen = cbor_encode_uint(arg.size(), buf, 10);
++      buf[0] += 0x40;
++      writeRpcBytes(file, asio::const_buffer(buf, buflen));
++      writeRpcBytes(file, asio::const_buffer(arg.data(), arg.size()));
++    } else if constexpr (std::is_same_v<T, bool>) {
++      // F4: false; F5: true
++      writeRpcBytes(file, asio::const_buffer(arg ? "\xF5" : "\xF4", 1));
++    } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
++      // F6: null (Lua中转为nil)
++      writeRpcBytes(file, asio::const_buffer("\xF6", 1));
++    }
++  }, param);
++}
++
++// request: { jsonRpc, method, params, id }
++void sendRequest(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
++  u_char buf[10]; size_t buflen;
++  if (pkt.param_count > 5) throw std::invalid_argument("Too many RPC parameters");
++  // { jsonRpc: '2.0', method: '
++  writeRpcBytes(file, asio::const_buffer("\xa4\x18\x64\x43" "2.0" "\x18\x65", 9));
++  buflen = cbor_encode_uint(pkt.method.size(), buf, 10);
++  buf[0] += 0x40;
++  // <method>',
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++  writeRpcBytes(file, asio::const_buffer(pkt.method.data(), pkt.method.size()));
++  // id:
++  buflen = cbor_encode_uint(pkt.id, buf, 10);
++  writeRpcBytes(file, asio::const_buffer("\x18\x68", 2));
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++  // params + arr head
++  size_t i = pkt.param_count;
++  buflen = cbor_encode_uint(i, buf, 10);
++  buf[0] += 0x80;
++  writeRpcBytes(file, asio::const_buffer("\x18\x66", 2));
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++
++  if (i == 0) return;
++  sendParam(file, pkt.param1);
++  i--;
++
++  if (i == 0) return;
++  sendParam(file, pkt.param2);
++  i--;
++
++  if (i == 0) return;
++  sendParam(file, pkt.param3);
++  if (--i == 0) return;
++  sendParam(file, pkt.param4);
++  if (--i == 0) return;
++  sendParam(file, pkt.param5);
++}
++
++// response: { jsonRpc, result, id }
++void sendResponse(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
++  u_char buf[10]; size_t buflen;
++  // { jsonRpc: '2.0', id:
++  writeRpcBytes(file, asio::const_buffer("\xa3\x18\x64\x43" "2.0" "\x18\x68", 9));
++
++  // id
++  buflen = cbor_encode_uint(pkt.id, buf, 10);
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++
++  // result
++  writeRpcBytes(file, asio::const_buffer("\x18\x69", 2));
++  sendParam(file, pkt.result);
++}
++
++// response: { jsonRpc, error, [id] }
++void sendError(asio::posix::stream_descriptor &file, JsonRpcPacket &pkt) {
++  u_char buf[10]; size_t buflen;
++
++  if (pkt.id < 0) {
++    writeRpcBytes(file, asio::const_buffer("\xa2", 1));
++  } else {
++    writeRpcBytes(file, asio::const_buffer("\xa3", 1));
++  }
++
++  // { jsonRpc: '2.0',
++  writeRpcBytes(file, asio::const_buffer("\x18\x64\x43" "2.0", 6));
++
++  // [id]
++  if (pkt.id >= 0) {
++    buflen = cbor_encode_uint(pkt.id, buf, 10);
++    writeRpcBytes(file, asio::const_buffer("\x18\x68", 2));
++    writeRpcBytes(file, asio::const_buffer(buf, buflen));
++  }
++
++  // error: { code:
++  writeRpcBytes(file, asio::const_buffer("\x18\x67\xA3\x18\xC8", 5));
++  buflen = cbor_encode_negint(-1 - static_cast<int64_t>(pkt.error.code), buf, 10);
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++
++  // msg:
++  writeRpcBytes(file, asio::const_buffer("\x18\xC9", 2));
++  buflen = cbor_encode_uint(pkt.error.message.size(), buf, 10);
++  buf[0] += 0x40;
++  writeRpcBytes(file, asio::const_buffer(buf, buflen));
++  writeRpcBytes(file, asio::const_buffer(pkt.error.message.data(), pkt.error.message.size()));
++
++  // data:
++  writeRpcBytes(file, asio::const_buffer("\x18\xCA", 2));
++  sendParam(file, pkt.error.data);
++}
++
++// The largest client payload after native decompression is 8 MiB. Allow
++// additional RPC envelope/metadata while bounding malformed worker frames.
++constexpr size_t maxRpcPacketBytes = 16 * 1024 * 1024;
++
++struct RpcPacketBuilder {
++  enum State {
++    NOT_START,
++    WAIT_KEY,
++    WAIT_VALUE,
++    READING_PARAMS,
++    READING_ERROR_K,
++    READING_ERROR_V,
++    FIN,
++    ERROR,
++  };
++
++  explicit RpcPacketBuilder(JsonRpcPacket &p) : pkt { p } {
++    reset();
++  }
++
++  // C++ only needs the response status. Consume complete result/error-data
++  // values, including the empty arrays Lua emits for void returns.
++  bool skipValue(size_t children = 0) {
++    const bool result = state == WAIT_VALUE && current_key == Result;
++    const bool errorData = state == READING_ERROR_V && current_err_key == ErrorData;
++    if (!result && !errorData) return false;
++    if (ignoredItems == 0) ignoredItems = 1;
++    --ignoredItems;
++    if (children > maxRpcPacketBytes - ignoredItems) {
++      fail();
++      return true;
++    }
++    ignoredItems += children;
++    if (ignoredItems == 0) {
++      if (result) nextKey();
++      else finishErrorValue();
++    }
++    return true;
++  }
++
++  void handleInteger(int64_t value) {
++    if (skipValue()) return;
++    if (state == WAIT_KEY) {
++      if (value < JsonRpc::JsonRpc || value > Result || (seen_keys & (1u << (value - JsonRpc::JsonRpc)))) {
++        fail();
++        return;
++      }
++      seen_keys |= 1u << (value - JsonRpc::JsonRpc);
++      current_key = static_cast<int>(value);
++      state = WAIT_VALUE;
++    } else if (state == READING_ERROR_K) {
++      if (value < ErrorCode || value > ErrorData || (seen_error_keys & (1u << (value - ErrorCode)))) {
++        fail();
++        return;
++      }
++      seen_error_keys |= 1u << (value - ErrorCode);
++      current_err_key = static_cast<int>(value);
++      state = READING_ERROR_V;
++    } else if (state == WAIT_VALUE) {
++      switch ((JsonKeys)current_key) {
++        case Id:
++          if (value <= 0 || value > 10000000) {
++            fail();
++            return;
++          }
++          pkt.id = static_cast<int>(value);
++          nextKey();
++          break;
++        default:
++          fail();
++          break;
++      }
++    } else if (state == READING_ERROR_V) {
++      if (current_err_key == ErrorCode) {
++        if (value >= 0 || value < std::numeric_limits<int>::min()) {
++          fail();
++          return;
++        }
++        pkt.error.code = static_cast<int>(value);
++      } else {
++        fail();
++        return;
++      }
++
++      finishErrorValue();
++    } else if (state == READING_PARAMS) {
++      if (value >= std::numeric_limits<int>::min() && value <= std::numeric_limits<int>::max()) {
++        readParam((int)value);
++      } else {
++        readParam(value);
++      }
++    } else {
++      fail();
++    }
++  }
++
++  void handleBool(bool value) {
++    if (skipValue()) return;
++    if (state == READING_PARAMS) readParam(value);
++    else fail();
++  }
++
++  void handleNull() {
++    if (skipValue()) return;
++    if (state == READING_PARAMS) readParam(nullptr);
++    else fail();
++  }
++
++  void finishErrorValue() {
++    if (++error_value_readed == error_key_count) {
++      if ((seen_error_keys & 3u) != 3u) {
++        fail();
++        return;
++      }
++      nextKey();
++    } else {
++      state = READING_ERROR_K;
++    }
++  }
++
++  void handleBytes(const cbor_data data, size_t len) {
++    if (skipValue()) return;
++    if (state == WAIT_VALUE) {
++      std::string_view sv { (char *)data, len };
++      switch ((JsonKeys)current_key) {
++        case JsonRpc::JsonRpc:
++          if (sv != "2.0") {
++            fail();
++            return;
++          }
++          nextKey();
++          break;
++        case Method:
++          if (sv.empty()) {
++            fail();
++            return;
++          }
++          pkt.method = sv;
++          nextKey();
++          break;
++        default:
++          fail();
++          break;
++      }
++    } else if (state == READING_PARAMS) {
++      readParam(std::string_view { (char *)data, len });
++    } else if (state == READING_ERROR_V) {
++      if (current_err_key == ErrorMessage) {
++        pkt.error.message = std::string_view { (char *)data, len };
++      } else {
++        fail();
++        return;
++      }
++
++      finishErrorValue();
++    } else {
++      fail();
++    }
++  }
++
++  void startArray(size_t size) {
++    if (skipValue(size)) return;
++    if (!checkState(WAIT_VALUE)) return;
++    if (current_key != Params) {
++      fail();
++      return;
++    }
++
++    if (size > maxRpcPacketBytes) {
++      fail();
++      return;
++    }
++    param_count = size;
++    pkt.param_count = size;
++    if (size > 0) {
++      state = READING_PARAMS;
++    } else {
++      nextKey();
++    }
++  }
++
++  void startMap(size_t size) {
++    if (size > maxRpcPacketBytes / 2) {
++      fail();
++      return;
++    }
++    if (skipValue(size * 2)) return;
++    if (state == NOT_START) {
++      if (size < 2 || size > 4) {
++        fail();
++        return;
++      }
++      key_count = size;
++      state = WAIT_KEY;
++    } else if (state == WAIT_VALUE && current_key == Error) {
++      if (size < 2 || size > 3) {
++        fail();
++        return;
++      }
++      error_key_count = size;
++      state = READING_ERROR_K;
++    } else {
++      fail();
++    }
++  }
++
++  void reset() {
++    pkt.reset();
++    state = NOT_START;
++    key_count = 0;
++    param_count = 0;
++    current_param_idx = 0;
++    value_readed = 0;
++    error_value_readed = 0;
++  }
++
++  void nextKey() {
++    value_readed++;
++    if (value_readed == key_count) {
++      const auto has = [this](JsonKeys key) {
++        return (seen_keys & (1u << (key - JsonRpc::JsonRpc))) != 0;
++      };
++      if (!has(JsonRpc::JsonRpc) ||
++          (has(Method) && (has(Result) || has(Error))) ||
++          (!has(Method) && (has(Params) || (has(Result) && has(Error)) ||
++            (!has(Id) && !has(Error))))) {
++        fail();
++        return;
++      }
++      state = FIN;
++    } else {
++      state = WAIT_KEY;
++    }
++  }
++
++  void readParam(JsonRpcParam v) {
++    switch (current_param_idx) {
++      case 0:
++        pkt.param1 = v;
++        break;
++      case 1:
++        pkt.param2 = v;
++        break;
++      case 2:
++        pkt.param3 = v;
++        break;
++      case 3:
++        pkt.param4 = v;
++        break;
++      case 4:
++        pkt.param5 = v;
++        break;
++      default:
++        // Preserve the original parameter count for dispatcher validation.
++        // The print method intentionally consumes only the first five.
++        break;
++    }
++    current_param_idx++;
++    if (current_param_idx == param_count) {
++      nextKey();
++    }
++  }
++
++  void fail() { state = ERROR; }
++
++  bool checkState(State st) {
++    if (state == st) return true;
++    fail();
++    return false;
++  }
++
++  State state = NOT_START;
++  unsigned seen_keys = 0;
++  unsigned seen_error_keys = 0;
++  size_t key_count = 0;
++  size_t param_count = 0;
++  size_t ignoredItems = 0;
++  int current_key = 0;
++  size_t value_readed = 0;
++  size_t current_param_idx = 0;
++  size_t error_key_count = 0;
++  int current_err_key = 0;
++  size_t error_value_readed = 0;
++  JsonRpcPacket &pkt;
++};
++
++static struct cbor_callbacks callbacks = cbor_empty_callbacks;
++static std::once_flag callbacks_flag;
++
++static void init_callbacks() {
++  callbacks.uint8 = [](void* self, uint8_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
++  };
++  callbacks.uint16 = [](void* self, uint16_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
++  };
++  callbacks.uint32 = [](void* self, uint32_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(value);
++  };
++  callbacks.uint64 = [](void* self, uint64_t value) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (builder->skipValue()) return;
++    if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) builder->fail();
++    else builder->handleInteger(static_cast<int64_t>(value));
++  };
++  callbacks.negint8 = [](void* self, uint8_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - static_cast<int64_t>(value));
++  };
++  callbacks.negint16 = [](void* self, uint16_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - static_cast<int64_t>(value));
++  };
++  callbacks.negint32 = [](void* self, uint32_t value) {
++    static_cast<RpcPacketBuilder*>(self)->handleInteger(-1 - static_cast<int64_t>(value));
++  };
++  callbacks.negint64 = [](void* self, uint64_t value) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (builder->skipValue()) return;
++    if (value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) builder->fail();
++    else builder->handleInteger(-1 - static_cast<int64_t>(value));
++  };
++  callbacks.byte_string = [](void* self, const cbor_data data, uint64_t len) {
++    static_cast<RpcPacketBuilder*>(self)->handleBytes(data, len);
++  };
++  callbacks.array_start = [](void* self, uint64_t size) {
++    static_cast<RpcPacketBuilder*>(self)->startArray(size);
++  };
++  callbacks.map_start = [](void* self, uint64_t size) {
++    static_cast<RpcPacketBuilder*>(self)->startMap(size);
++  };
++  callbacks.null = [](void* self) { static_cast<RpcPacketBuilder*>(self)->handleNull(); };
++  const auto reject = [](void* self) { static_cast<RpcPacketBuilder*>(self)->fail(); };
++  callbacks.byte_string_start = reject;
++  callbacks.string_start = reject;
++  callbacks.indef_array_start = reject;
++  callbacks.indef_map_start = reject;
++  callbacks.indef_break = reject;
++  callbacks.undefined = reject;
++  callbacks.string = [](void* self, cbor_data, uint64_t) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (!builder->skipValue()) builder->fail();
++  };
++  callbacks.tag = [](void* self, uint64_t) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (!builder->skipValue(1)) builder->fail();
++  };
++  callbacks.float2 = callbacks.float4 = [](void* self, float) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (!builder->skipValue()) builder->fail();
++  };
++  callbacks.float8 = [](void* self, double) {
++    auto *builder = static_cast<RpcPacketBuilder*>(self);
++    if (!builder->skipValue()) builder->fail();
++  };
++  callbacks.boolean = [](void* self, bool value) {
++    static_cast<RpcPacketBuilder*>(self)->handleBool(value);
++  };
++}
++
++static cbor_decoder_status readJsonRpcPacket(cbor_data &cbuf, size_t &len, JsonRpcPacket &packet) {
++  std::call_once(callbacks_flag, init_callbacks);
++  RpcPacketBuilder builder { packet };
++  auto cbufsave = cbuf;
++  auto lensave = len;
++
++  while (true) {
++    // 基于callbacks，边读缓冲区边构造packet并进一步调用回调处理packet
++    // 下面这个函数一次只读一个item
++    auto decode_result = cbor_stream_decode(cbuf, len, &callbacks, &builder);
++
++    if (decode_result.read != 0) {
++      cbuf += decode_result.read;
++      len -= decode_result.read;
++    } else {
++      // NEDATA or ERROR
++      const size_t consumed = lensave - len;
++      cbuf = cbufsave;
++      len = lensave;
++      if (decode_result.required > maxRpcPacketBytes ||
++          consumed > maxRpcPacketBytes - decode_result.required)
++        return CBOR_DECODER_ERROR;
++      return decode_result.status;
++    }
++
++    if (lensave - len > maxRpcPacketBytes) {
++      cbuf = cbufsave;
++      len = lensave;
++      return CBOR_DECODER_ERROR;
++    }
++    if (builder.state == RpcPacketBuilder::FIN) return CBOR_DECODER_FINISHED;
++    if (builder.state == RpcPacketBuilder::ERROR) {
++      cbuf = cbufsave;
++      len = lensave;
++      return CBOR_DECODER_ERROR;
++    }
++  }
++}
++
++// Keep decoded string views alive throughout dispatch, including nested waits.
++// An incomplete packet leaves the input buffer untouched.
++cbor_decoder_status takeRpcPacket(std::vector<unsigned char> &input,
++    std::vector<unsigned char> &packetStorage, JsonRpcPacket &packet) {
++  if (input.empty()) return CBOR_DECODER_NEDATA;
++  auto cursor = static_cast<cbor_data>(input.data());
++  size_t remaining = input.size();
++  auto status = readJsonRpcPacket(cursor, remaining, packet);
++  if (status == CBOR_DECODER_FINISHED) {
++    std::vector<unsigned char> tail(cursor, cursor + remaining);
++    packetStorage.swap(input);
++    input.swap(tail);
++  }
++  return status;
++}
++
++} // namespace RpcWire
+--- /dev/null
++++ b/src/server/rpc-lua/rpc-wire.h
+@@ -0,0 +1,22 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#pragma once
++
++#include "server/rpc-lua/jsonrpc.h"
++
++namespace RpcWire {
++// Bound periods with no pipe progress while allowing legitimate large frames.
++inline constexpr auto rpcIdleTimeout = std::chrono::seconds(120);
++size_t readRpcBytes(boost::asio::posix::stream_descriptor &file, boost::asio::mutable_buffer buffer,
++    std::chrono::milliseconds timeout = rpcIdleTimeout);
++void writeRpcBytes(boost::asio::posix::stream_descriptor &file, boost::asio::const_buffer buffer,
++    std::chrono::milliseconds timeout = rpcIdleTimeout);
++
++void sendRequest(boost::asio::posix::stream_descriptor &file, JsonRpc::JsonRpcPacket &packet);
++void sendResponse(boost::asio::posix::stream_descriptor &file, JsonRpc::JsonRpcPacket &packet);
++void sendError(boost::asio::posix::stream_descriptor &file, JsonRpc::JsonRpcPacket &packet);
++
++// On success, packetStorage owns the bytes referenced by packet. On incomplete
++// or malformed input, leave input intact; the caller must not dispatch packet.
++cbor_decoder_status takeRpcPacket(std::vector<unsigned char> &input,
++    std::vector<unsigned char> &packetStorage, JsonRpc::JsonRpcPacket &packet);
++} // namespace RpcWire
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -12,6 +12,7 @@
+ #include "network/router.h"
+ #include "network/http_listener.h"
+ #include "server/gamelogic/roomthread.h"
++#include "server/rpc-lua/rpc-lua.h"
+ #include "server/task/task_manager.h"
+ #include "server/task/task.h"
+
+@@ -182,6 +183,7 @@
+
+ RoomThread &Server::createThread() {
+   auto thr = std::make_unique<RoomThread>(*main_io_ctx);
++  if (!thr->getLua().alive()) throw std::runtime_error("Lua worker startup failed");
+   auto id = thr->id();
+   m_threads[id] = std::move(thr);
+   return *m_threads[id];
+@@ -189,7 +191,7 @@
+
+ void Server::removeThread(int threadId) {
+   auto it = m_threads.find(threadId);
+-  if (it != m_threads.end()) {
++  if (it != m_threads.end() && !it->second->isShutdownPending()) {
+     m_threads.erase(threadId);
+   }
+ }
+--- a/src/server/task/task.cpp
++++ b/src/server/task/task.cpp
+@@ -14,13 +14,15 @@
+     nextId = -1000;
+
+   auto &thread = Server::instance().getAvailableThread();
+-  m_thread = &thread;
+-  m_thread->increaseRefCount();
++  m_thread = thread.weak_from_this();
++  thread.increaseRefCount();
+ }
+
+ Task::~Task() {
+-  abort();
+-  m_thread->decreaseRefCount();
++  if (auto thread = m_thread.lock()) {
++    thread->wakeUp(id, "abort");
++    thread->decreaseRefCount();
++  }
+   // spdlog::debug("[MEMORY] Task {} destruct", id);
+ }
+
+@@ -53,24 +55,26 @@
+ }
+
+ RoomThread *Task::thread() const {
+-  return m_thread;
++  return m_thread.lock().get();
+ }
+
+ void Task::start() {
+-  m_thread->pushRequest(fmt::format("-1,{},newtask", id));
+-  increaseRefCount();
++  if (auto thread = m_thread.lock()) {
++    thread->pushRequest(fmt::format("-1,{},newtask", id));
++    increaseRefCount();
++  }
+ }
+
+ void Task::resume(const std::string &reason) {
+-  m_thread->wakeUp(id, reason.c_str());
++  if (auto thread = m_thread.lock()) thread->wakeUp(id, reason.c_str());
+ }
+
+ void Task::abort() {
+-  m_thread->wakeUp(id, "abort");
++  if (auto thread = m_thread.lock()) thread->wakeUp(id, "abort");
+ }
+
+ void Task::delay(int ms) {
+-  m_thread->delay(id, ms);
++  if (auto thread = m_thread.lock()) thread->delay(id, ms);
+ }
+
+ int Task::getRefCount() {
+--- a/src/server/task/task.h
++++ b/src/server/task/task.h
+@@ -42,7 +42,7 @@
+   std::string data = "\xF6"; // 必须是CBOR，默认null
+
+   // 很遗憾，负责执行Lua代码的那个类命名成这样了 导致在这里有点违和
+-  RoomThread *m_thread = nullptr;
++  std::weak_ptr<RoomThread> m_thread;
+
+   int lua_ref_count = 0;
+   std::mutex lua_ref_mutex;
+--- a/src/server/task/task_manager.cpp
++++ b/src/server/task/task_manager.cpp
+@@ -64,6 +64,14 @@
+   for (int taskId : tasks) removeTask(taskId);
+ }
+
++void TaskManager::removeTasksForThread(const RoomThread &thread) {
++  std::vector<int> tasks;
++  for (const auto &[id, task] : task_map) {
++    if (task->thread() == &thread) tasks.push_back(id);
++  }
++  for (int id : tasks) removeTask(id);
++}
++
+ void TaskManager::attachTaskToUser(int taskId, int connId) {
+   if (connId <= 0) return;
+   Task* task = getTask(taskId);
+--- a/src/server/task/task_manager.h
++++ b/src/server/task/task_manager.h
+@@ -1,6 +1,7 @@
+ #pragma once
+
+ class Task;
++class RoomThread;
+
+ class TaskManager {
+ public:
+@@ -14,6 +15,7 @@
+   Task *getTaskByRequestId(int reqId) const;
+   std::vector<int> getTaskIdsByUser(int connId) const;
+   void removeAllTasksByUser(int connId);
++  void removeTasksForThread(const RoomThread &thread);
+
+   void attachTaskToUser(int taskId, int connId);
+   void setTaskExpectedReplyId(int taskId, int reqId);

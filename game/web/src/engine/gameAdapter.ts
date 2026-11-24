@@ -1,4 +1,4 @@
-import { SessionRecovery } from './recovery';
+import { isSessionRejection, SessionRecovery } from './recovery';
 import { loadGatewayBundle, type LoadedBundle } from './bundle';
 import { GameConnection, webSocketOpener } from './connection';
 import { useGameStore } from '../store/gameStore';
@@ -101,7 +101,7 @@ export class GameAdapter {
       })(), () => this.gameSession?.gatewayAdmission),
       onUi: (command, data) => {
         if (generation !== this.generation) return;
-        if (command === 'ErrorDlg' || command === 'ErrorMsg') { serverRejected = true; recovery.stop(); }
+        if (isSessionRejection(connection.getStatus(), command, data)) { serverRejected = true; recovery.stop(); }
         const ownId = useGameStore.getState().ownId;
         useGameStore.getState().dispatch(command,
           localPlayerDisplayEvent(command, data, ownId, localNameOverride));

@@ -28,3 +28,14 @@ ROUTER_LIBS=(-Wl,--gc-sections -lcrypto -lz)
 "${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" "$WORK/util.o" \
   "$HERE/compression-limit.cpp" -o "$WORK/compression-limit" "${LIBS[@]}" "${ROUTER_LIBS[@]}"
 "$WORK/compression-limit"
+
+"${CXX:-g++}" "${CXX_FLAGS[@]}" "$SOURCE/server/rpc-lua/rpc-wire.cpp" \
+  "$SOURCE/server/rpc-lua/jsonrpc.cpp" "$HERE/rpc-wire-contract.cpp" \
+  -o "$WORK/rpc-wire-contract" "${LIBS[@]}"
+# Optional pinned runtime source gives coverage of the actual Lua CBOR encoder.
+if [[ -n "${2:-}" ]]; then
+  (cd "$2" && FK_RPC_MODE=cbor lua5.4 "$HERE/rpc-wire-fixture.lua") > "$WORK/rpc-wire-fixture.cbor"
+  "$WORK/rpc-wire-contract" "$WORK/rpc-wire-fixture.cbor"
+else
+  "$WORK/rpc-wire-contract"
+fi

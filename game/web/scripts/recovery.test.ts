@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SessionRecovery } from '../src/engine/recovery';
+import { isSessionRejection, SessionRecovery } from '../src/engine/recovery';
 function harness() {
   let next = 0; const jobs = new Map<number, { run(): void; delay: number }>();
   const calls: string[] = [];
@@ -22,4 +22,18 @@ test('restored session cancels the watchdog and a new loss starts at attempt one
 test('stop invalidates callbacks already queued by the browser event loop', () => {
   const h=harness();h.recovery.lost();const old=h.jobs.values().next().value!.run;
   h.recovery.stop();old();assert.deepEqual(h.calls,['wait:1']);assert.equal(h.jobs.size,0);
+});
+test('room failures preserve transport recovery while admission and account takeover stop it', () => {
+  for (const [command, message] of [
+    ['ErrorDlg', 'Server Internal Error'],
+    ['ErrorMsg', 'room password error'],
+    ['ErrorMsg', 'Room is full or already started!'],
+  ]) {
+    assert.equal(isSessionRejection({ kind: 'online' }, command, message), false);
+  }
+  assert.equal(isSessionRejection({ kind: 'online' }, 'ErrorDlg', 'others logged in again with this name'), true);
+  assert.equal(isSessionRejection({ kind: 'authenticating' }, 'ErrorDlg', 'you have been temporarily banned!'), true);
+  assert.equal(isSessionRejection({ kind: 'authenticating' }, 'ErrorMsg', 'MD5 check failed!'), true);
+  assert.equal(isSessionRejection({ kind: 'connecting' }, 'ErrorDlg', 'server is full!'), true);
+  assert.equal(isSessionRejection({ kind: 'online' }, 'EnterLobby', null), false);
 });

@@ -152,4 +152,14 @@ test('native socket patches apply after the complete production patch sequence',
   assert.match(util, /maxDecompressedBytes = 8 \* 1024 \* 1024/u);
   execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
     '-i', routerPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const rpcPatch = path.join(patchDir, 'tqs-native-rpc-wire.patch');
+  applyPatch(source, rpcPatch, true);
+  applyPatch(source, rpcPatch);
+  const rpc = readFileSync(path.join(source, 'src/server/rpc-lua/rpc-lua.cpp'), 'utf8');
+  const wire = readFileSync(path.join(source, 'src/server/rpc-lua/rpc-wire.cpp'), 'utf8');
+  assert.match(rpc, /takeRpcPacket\(cborBuffer, packetStorage, received_pkt\)/u);
+  assert.match(wire, /maxRpcPacketBytes = 16 \* 1024 \* 1024/u);
+  assert.match(rpc, /failTransport\(\)/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', rpcPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 });

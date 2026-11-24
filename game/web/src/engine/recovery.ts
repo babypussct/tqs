@@ -1,5 +1,14 @@
 /** Bounded recovery for an existing authenticated session. Credentials remain
  * in GameConnection; every retry uses the normal server login handshake. */
+import type { ConnectionStatus } from './connection';
+
+export function isSessionRejection(status: ConnectionStatus, command: string, data: unknown): boolean {
+  if (command !== 'ErrorDlg' && command !== 'ErrorMsg') return false;
+  // Native admission failures and explicit account takeover terminate the
+  // session. Room errors can arrive on an otherwise usable connection.
+  return status.kind !== 'online' || data === 'others logged in again with this name';
+}
+
 export interface RecoveryClock {
   set(callback: () => void, delay: number): unknown;
   clear(handle: unknown): void;
