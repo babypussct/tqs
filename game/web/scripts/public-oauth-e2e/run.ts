@@ -26,7 +26,8 @@ const websocket = { opened: 0, sent: 0, received: 0, closed: 0, errors: 0 };
 const socketTraffic = new Map<number, { sent: boolean; received: boolean }>();
 const googlePopup = { opened: 0, googleOrigin: 0, approvedAccountClicked: 0,
   signInRequired: false, challenge: false, browserRejected: false, chooserVisible: false, approvedAccountVisible: false,
-  consentVisible: false, closed: 0 };
+  consentVisible: false, closed: 0, returnedToFirebase: 0, googleErrorPage: false, interruptedReads: 0, googleRoute: null as string | null,
+  documentLoaded: false, bodyHasText: false, googleSignInError: false };
 let stage: PublicStage = 'preflight';
 let pageErrors = 0;
 let verifiedSessions = 0;
@@ -35,6 +36,7 @@ let context: BrowserContext | null = null;
 let page: Page | null = null;
 let matchStarted = false;
 let finished = false;
+let closingContext = false;
 
 function fail(reason: string): never { throw new PublicProbeError(stage, reason); }
 async function step<T>(name: PublicStage, callback: () => Promise<T>): Promise<T> {
@@ -101,39 +103,71 @@ function attachSocketProbe(target: Page, origin: URL): void {
 function chooseApprovedGoogleAccount(target: Page, qaEmail: string, uiTimeout: number): void {
   target.on('popup', (popup) => {
     googlePopup.opened++;
-    popup.once('close', () => { googlePopup.closed++; });
+    let reachedGoogle = false;
+    let returnedToFirebase = false;
+    popup.on('framenavigated', (frame) => {
+      if (frame !== popup.mainFrame()) return;
+      const url = new URL(frame.url());
+      if (url.origin === 'https://accounts.google.com') {
+        reachedGoogle = true;
+        googlePopup.googleErrorPage ||= /\/(?:rejected|oautherror)(?:\/|$)/i.test(url.pathname);
+      } else if (reachedGoogle && !returnedToFirebase && url.pathname === '/__/auth/handler' &&
+          (url.hostname.endsWith('.firebaseapp.com') || url.origin === new URL(target.url()).origin)) {
+        googlePopup.returnedToFirebase++;
+        returnedToFirebase = true;
+      }
+    });
+    popup.once('close', () => { if (!closingContext) googlePopup.closed++; });
     void (async () => {
       await popup.waitForURL((url) => url.origin === 'https://accounts.google.com', { timeout: uiTimeout });
+      reachedGoogle = true;
       googlePopup.googleOrigin++;
       const deadline = Date.now() + uiTimeout;
       while (!popup.isClosed() && Date.now() < deadline) {
-        const url = new URL(popup.url());
-        if (url.origin !== 'https://accounts.google.com') break;
-        const visible = (selector: string) => popup.locator(selector).first().isVisible();
-        const [signIn, rejected, chooser, consent] = await Promise.all([
-          visible('input[type=email]:visible, input[type=password]:visible'),
-          popup.getByText(/this browser or app may not be secure|trình duyệt hoặc ứng dụng này có thể không an toàn/i).first().isVisible(),
-          popup.getByText(/choose an account|chọn tài khoản/i).first().isVisible(),
-          popup.getByText(/wants to access your Google Account|muốn truy cập vào Tài khoản Google/i).first().isVisible(),
-        ]);
-        googlePopup.signInRequired ||= signIn;
-        const challenge = /\/challenge(?:\/|$)/.test(url.pathname);
-        googlePopup.challenge ||= challenge;
-        googlePopup.browserRejected ||= rejected;
-        googlePopup.chooserVisible ||= chooser;
-        googlePopup.consentVisible ||= consent;
-        const email = popup.getByText(qaEmail, { exact: true }).filter({ visible: true });
-        // Google renders the email inside the account link on the Chrome chooser.
-        const link = popup.getByRole('link').filter({ has: email, visible: true });
-        const account = await link.count() ? link : email;
-        if (await account.count() === 1 && !signIn && !challenge && !rejected && !consent &&
-            new URL(popup.url()).origin === 'https://accounts.google.com') {
-          googlePopup.approvedAccountVisible = true;
-          const clicked = await account.click({ timeout: 1000 }).then(() => true, () => false);
-          if (clicked) {
-            googlePopup.approvedAccountClicked++;
-            break;
+        try {
+          const url = new URL(popup.url());
+          if (url.origin !== 'https://accounts.google.com') break;
+          const route = url.pathname.match(/\/(accountchooser|identifier|challenge|rejected|oautherror|consent)(?:\/|$)/i);
+          googlePopup.googleRoute = route?.[1].toLowerCase() ?? 'other';
+          const documentState = await popup.evaluate(() => ({
+            loaded: document.readyState !== 'loading',
+            bodyHasText: Boolean(document.body?.innerText.trim()),
+          }));
+          googlePopup.documentLoaded ||= documentState.loaded;
+          googlePopup.bodyHasText ||= documentState.bodyHasText;
+          const visible = (selector: string) => popup.locator(selector).first().isVisible();
+          const [signIn, rejected, chooser, consent, signInError] = await Promise.all([
+            visible('input[type=email]:visible, input[type=password]:visible'),
+            popup.getByText(/this browser or app may not be secure|trình duyệt hoặc ứng dụng này có thể không an toàn/i).first().isVisible(),
+            popup.getByText(/choose an account|chọn tài khoản/i).first().isVisible(),
+            popup.getByText(/wants to access your Google Account|muốn truy cập vào Tài khoản Google/i).first().isVisible(),
+            popup.getByText(/couldn.t sign you in|không thể đăng nhập cho bạn/i).first().isVisible(),
+          ]);
+          googlePopup.googleErrorPage ||= /\/(?:rejected|oautherror)(?:\/|$)/i.test(url.pathname);
+          googlePopup.signInRequired ||= signIn;
+          googlePopup.googleSignInError ||= signInError;
+          const challenge = /\/challenge(?:\/|$)/.test(url.pathname);
+          googlePopup.challenge ||= challenge;
+          googlePopup.browserRejected ||= rejected;
+          googlePopup.chooserVisible ||= chooser;
+          googlePopup.consentVisible ||= consent;
+          const email = popup.getByText(qaEmail, { exact: true }).filter({ visible: true });
+          // Google renders the email inside the account link on the Chrome chooser.
+          const link = popup.getByRole('link').filter({ has: email, visible: true });
+          const account = await link.count() ? link : email;
+          if (await account.count() === 1 && !signIn && !challenge && !rejected && !consent &&
+              new URL(popup.url()).origin === 'https://accounts.google.com') {
+            googlePopup.approvedAccountVisible = true;
+            const clicked = await account.click({ timeout: 1000 }).then(() => true, () => false);
+            if (clicked) {
+              googlePopup.approvedAccountClicked++;
+              break;
+            }
           }
+        } catch {
+          // Google can replace the document during a selector read. Recheck the
+          // origin and visible chooser on the next iteration.
+          googlePopup.interruptedReads++;
         }
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
@@ -364,6 +398,7 @@ finally {
     // If the match times out, request native Trust before browser shutdown.
     await enableTrust(session.page, 2000).catch(() => undefined);
   }
+  closingContext = true;
   try { await session.context?.close(); }
   catch { if (!failure) failure = { stage: 'cleanup', reason: 'browser_close_failed' }; }
   if (!failure && (pageErrors || websocket.errors)) failure = { stage, reason: 'browser_or_socket_error' };
