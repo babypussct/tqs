@@ -2,7 +2,7 @@
 
 ## 25/11/2026 — Production native + web phát hành PASS, milestone ACTIVE
 
-- Source commit `3bd6afe51007db8b1df37071e04f26804154998b` tạo local thành công. Push đầu bị remote từ chối `fatal error in commit_refs_rules` (675b9a), GitHub Status ghi Git Operations degraded/Actions partial outage. Git connectivity check PASS. Direct Upload được thực hiện theo yêu cầu phát hành đầy đủ trong lúc sự cố GitHub. Sau deploy, push cả source và checkpoint `cde8e704da3ebcd37769f31398680c34439a12a1` PASS (3b9c17); HEAD/origin/main/remote ref khớp. [Hosted CI 45653874615](https://github.com/babypussct/tqs/actions/runs/45653874615): detect affected applications PASS, Shop và TQSVN checks in progress tại lần đọc (67df69); chưa ghi hosted CI PASS.
+- Source commit `3bd6afe51007db8b1df37071e04f26804154998b` tạo local thành công. Push đầu bị remote từ chối `fatal error in commit_refs_rules` (675b9a), GitHub Status ghi Git Operations degraded/Actions partial outage. Git connectivity check PASS. Direct Upload được thực hiện theo yêu cầu phát hành đầy đủ trong lúc sự cố GitHub. Sau deploy, push cả source và checkpoint `cde8e704da3ebcd37769f31398680c34439a12a1` PASS (3b9c17); HEAD/origin/main/remote ref khớp. [Hosted CI 45653874615](https://github.com/babypussct/tqs/actions/runs/45653874615): kết thúc cancelled, detect PASS, Shop và TQSVN cancelled, pipeline gate failure. [Run 45654024318](https://github.com/babypussct/tqs/actions/runs/45654024318) trên checkpoint `98e638c9` success nhưng cả hai application checks skipped. API xác nhận lại (5ba8c2, c5fc1b); chưa có full hosted CI PASS cho source mới. Workflow hỗ trợ `workflow_dispatch` trên main để kiểm cả hai ứng dụng; cần chạy bằng GitHub Actions đã xác thực và tránh push checkpoint khi run đang hoạt động.
 - Native cutover `tqsvn-native-milestone-08dd1794`, exit 0 (chunk 668da3), 37.204 giây toàn script, hai drain checks 0 trận và 0 TCP established, stopped DB + sidecars parity, TCP native challenge PASS, local/public manifest PASS; Gateway và Quick Tunnel InvocationID liên tục. Native rollback giữ tại `tqsvn-native-registry-03e95c94`, binary SHA-256 `03e95c94f895ac71c1d7e77d736276995b53735fc0b8e07d76870952a3b2f567` ở cả hai. Listener PID 1871082 đúng executable; current manifest `08dd179491c35c733c6437f32b5a3c61`, 5589 entries, 5 changed Lua files, QA excluded. Remote staging tmp cleanup PASS (bf559b); native/gateway/tunnel và hai timers active, 2.2 GB free, 0 TCP established tại verify. Không xóa rollback release.
 - Cloudflare Pages Direct Upload `df5369ef-e787-4e24-aecd-0b71ef647cfc`, production/main source `3bd6afe`, [immutable deployment](https://df5369ef.tqsvn.pages.dev), [production](https://tqsvn.pages.dev). 2311 static files (4 mới), Functions bundle upload PASS (0fb04f). Smoke ở cả immutable URL và production alias exit 0 (a8f0f8); index/version/JS/CSS/SW byte match build `e09126d80b274c875cbd9642125d61615852beb4b6d69f288cabe6cbd79fa451`, JS `index-Dbkh0r_K.js`, CSS `index-CRuFpxov.css`. Public gateway health, manifest v1/5339 files, bundle `86180a4f1d69787e` SHA-256 `be80dbee1dc99a3ae33854ef5707a761fdbdbca7a1d18064d0b18b1be7c1c217` khớp ZIP dựng độc lập từ staged server bytes. OAuth helper 200/no-store, session unauthenticated 401, WSS 101/NetworkDelayTest/close 1000 (ccd044), Chrome mobile 390x844 version dialog PASS, 0 page errors. Rollback Pages trước: `6beccf18-b3b5-42b5-bfe1-541a59844f33`.
 - Shop Vercel production Ready `dpl_8dDJP4wy196VLuBMXNwTBGeFTAZ9`, alias `https://tqsshop.vercel.app` giữ JS `index-CuBslPWB.js` SHA-256 `eccda8d00d5e9e7e0131d15891fce28e5f3c2a0f4433b63fa8cd71706dd85c32`; không có thay đổi Shop trong milestone, không redeploy. Gateway source/config parity đã kiểm.
@@ -2777,8 +2777,8 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-25T16:26:53.521Z (UTC).
-- Nhánh: `main` · HEAD: `cde8e704da3e`.
+- Ghi lúc: 2026-11-25T16:30:45.989Z (UTC).
+- Nhánh: `main` · HEAD: `98e638c9438f`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -2788,9 +2788,9 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 Ba commit gần nhất:
 
 ```text
+98e638c9 Confirm milestone source push and hosted CI status
 cde8e704 Record milestone production deployment and remaining gates
 3bd6afe5 Fix native Hegemony projection, reconnect timing and RPC EOF
-40482c35 Fix native task and registry ownership lifecycles
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
