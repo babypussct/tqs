@@ -7,18 +7,19 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { chromium, type BrowserContext, type Page } from 'playwright-core';
+import { chromium, type Browser, type BrowserContext, type Page, type Route } from 'playwright-core';
 import { isGameSocket, matchesQaBearer, publicProbeUrl, PublicProbeError,
   safeFailure, type PublicStage } from './contract';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const args = process.argv.slice(2);
 if (args.includes('--help')) {
-  console.log('Usage: TQS_PUBLIC_QA_EMAIL=<approved-email> npm run test:e2e:public [-- --enroll | --headed [--auth-only]]');
+  console.log('Usage: TQS_PUBLIC_QA_EMAIL=<approved-email> npm run test:e2e:public [-- --enroll | --headed [--auth-only] | --existing-chrome [--auth-only]]');
   process.exit(0);
 }
 const enroll = args.length === 1 && args[0] === '--enroll';
 const headed = args.includes('--headed');
+const existingChrome = args.includes('--existing-chrome');
 const authOnly = args.includes('--auth-only');
 const mode = enroll ? 'enroll' : authOnly ? 'auth-only' : 'postdeploy';
 const steps: Partial<Record<PublicStage, boolean>> = {};
@@ -33,6 +34,9 @@ let pageErrors = 0;
 let verifiedSessions = 0;
 let wrongQaIdentity = false;
 let context: BrowserContext | null = null;
+let attachedBrowser: Browser | null = null;
+let sessionRoute: ((route: Route) => Promise<void>) | null = null;
+const sessionRoutePattern = '**/api/game/session';
 let page: Page | null = null;
 let matchStarted = false;
 let finished = false;
@@ -271,35 +275,53 @@ async function enableTrust(target: Page, uiTimeout: number): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  if (!enroll && (args.some((arg) => arg !== '--headed' && arg !== '--auth-only') ||
-    new Set(args).size !== args.length || (authOnly && !headed))) fail('invalid_arguments');
+  if (!enroll && (args.some((arg) => arg !== '--headed' && arg !== '--auth-only' && arg !== '--existing-chrome') ||
+    new Set(args).size !== args.length || (authOnly && !headed && !existingChrome) || (headed && existingChrome))) fail('invalid_arguments');
   const site = publicProbeUrl(process.env.TQS_PUBLIC_URL || 'https://tqsvn.pages.dev/');
   const qaEmail = process.env.TQS_PUBLIC_QA_EMAIL?.trim();
   if (!qaEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(qaEmail)) fail('qa_email_required');
   const uiTimeout = timeoutEnv('TQS_PUBLIC_UI_TIMEOUT_MS', enroll ? 240_000 : 75_000,
     10_000, 300_000);
   const matchTimeout = timeoutEnv('TQS_PUBLIC_MATCH_TIMEOUT_MS', 900_000, 60_000, 1_800_000);
-  const profile = profileLocation();
-  if (!enroll && !existsSync(profile)) fail('qa_profile_missing_run_enroll');
-  mkdirSync(profile, { recursive: true, mode: 0o700 });
-  chmodSync(profile, 0o700);
-  const realProfile = realpathSync(profile);
-  const realRepo = realpathSync(root);
-  if (realProfile === realRepo || realProfile.startsWith(realRepo + path.sep)) fail('unsafe_profile_path');
-  const chrome = chromePath();
-  context = await chromium.launchPersistentContext(profile, {
-    executablePath: chrome, headless: !(enroll || headed), viewport: { width: 1280, height: 900 },
-    // The QA browser targets the public network path; a cached PWA worker
-    // could swallow the session request before the identity gate sees it.
-    acceptDownloads: false, serviceWorkers: 'block',
-  });
-  page = context.pages()[0] || await context.newPage();
+  if (existingChrome) {
+    const port = process.env.TQS_PUBLIC_CHROME_CDP_PORT;
+    if (!port || !/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
+      fail('invalid_local_cdp_port');
+    }
+    attachedBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${Number(port)}`, {
+      timeout: 10_000,
+    }).catch(() => fail('existing_chrome_unreachable'));
+    const pages = attachedBrowser.contexts().flatMap((browserContext) => browserContext.pages())
+      .filter((candidate) => candidate.url() === site.href);
+    if (pages.length !== 1) fail('existing_game_tab_not_unique');
+    page = pages[0];
+    if (await page.locator('.game-board').isVisible() ||
+        !(await page.getByRole('heading', { name: /^(Cổng Doanh Trại|Danh sách phòng)$/ }).isVisible())) {
+      fail('existing_game_tab_not_idle');
+    }
+  } else {
+    const profile = profileLocation();
+    if (!enroll && !existsSync(profile)) fail('qa_profile_missing_run_enroll');
+    mkdirSync(profile, { recursive: true, mode: 0o700 });
+    chmodSync(profile, 0o700);
+    const realProfile = realpathSync(profile);
+    const realRepo = realpathSync(root);
+    if (realProfile === realRepo || realProfile.startsWith(realRepo + path.sep)) fail('unsafe_profile_path');
+    const chrome = chromePath();
+    context = await chromium.launchPersistentContext(profile, {
+      executablePath: chrome, headless: !(enroll || headed), viewport: { width: 1280, height: 900 },
+      // The QA browser targets the public network path; a cached PWA worker
+      // could swallow the session request before the identity gate sees it.
+      acceptDownloads: false, serviceWorkers: 'block',
+    });
+    page = context.pages()[0] || await context.newPage();
+  }
   const target = page;
   attachSocketProbe(target, site);
   if (!enroll) chooseApprovedGoogleAccount(target, qaEmail, uiTimeout);
   // Verify account from Firebase ID token claim only in memory; actual approval
   // is established by the server admitting the player to the native lobby.
-  await target.route('**/api/game/session', async (route) => {
+  sessionRoute = async (route) => {
     if (!matchesQaBearer(route.request().headers()['authorization'], qaEmail)) {
       wrongQaIdentity = true;
       await route.abort('blockedbyclient').catch(() => undefined);
@@ -307,7 +329,8 @@ async function run(): Promise<void> {
     }
     verifiedSessions++;
     await route.continue().catch(() => undefined);
-  });
+  };
+  await target.route(sessionRoutePattern, sessionRoute);
   await step('preflight', async () => {
     const response = await target.goto(site.href, { waitUntil: 'domcontentloaded', timeout: uiTimeout });
     if (!response || response.status() !== 200) fail('public_page_unavailable');
@@ -388,7 +411,12 @@ async function run(): Promise<void> {
 }
 
 // TypeScript does not track assignment to these session refs inside run().
-const getSession = (): { page: Page | null; context: BrowserContext | null } => ({ page, context });
+const getSession = (): {
+  page: Page | null;
+  context: BrowserContext | null;
+  attachedBrowser: Browser | null;
+  sessionRoute: ((route: Route) => Promise<void>) | null;
+} => ({ page, context, attachedBrowser, sessionRoute });
 let failure: { stage: PublicStage; reason: string } | null = null;
 try { await run(); }
 catch (error) { failure = safeFailure(error, stage); }
@@ -399,12 +427,24 @@ finally {
     await enableTrust(session.page, 2000).catch(() => undefined);
   }
   closingContext = true;
-  try { await session.context?.close(); }
+  try {
+    if (session.attachedBrowser) {
+      try {
+        if (session.page && session.sessionRoute && !session.page.isClosed()) {
+          await session.page.unroute(sessionRoutePattern, session.sessionRoute);
+        }
+      } finally {
+        await session.attachedBrowser.close();
+      }
+    } else {
+      await session.context?.close();
+    }
+  }
   catch { if (!failure) failure = { stage: 'cleanup', reason: 'browser_close_failed' }; }
   if (!failure && (pageErrors || websocket.errors)) failure = { stage, reason: 'browser_or_socket_error' };
   const evidence = {
     schemaVersion: 1, kind: 'public-google-oauth-e2e',
-    at: new Date().toISOString(), mode, headed: enroll || headed,
+    at: new Date().toISOString(), mode, headed: enroll || headed || existingChrome, existingChrome,
     passed: failure === null, completed: steps,
     websocket, googlePopup, pageErrors, verifiedSessionCount: verifiedSessions,
     failure,

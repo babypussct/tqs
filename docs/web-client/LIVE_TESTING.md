@@ -104,6 +104,14 @@ chạy vào sảnh, đăng xuất Firebase, đăng nhập lại và kiểm tra W
 không tạo phòng. `-- --headed` chạy toàn bộ gate với Chrome có giao diện.
 Chỉ dùng `--enroll` khi cần cập nhật phiên qua luồng đăng nhập Google chuẩn.
 
+Nếu Chrome đang mở đã cấp kết nối DevTools cục bộ cho QA, CLI có thể dùng
+chính tab game đang ở sảnh hoặc cổng đăng nhập. Chỉ định cổng bằng
+`TQS_PUBLIC_CHROME_CDP_PORT` và thêm `-- --existing-chrome` vào lệnh hậu
+deploy. Cần đúng một tab tại URL đích. Runner điều khiển tab đó, chạy đủ gate
+và gỡ bộ quan sát khi xong, giữ cửa sổ Chrome mở. Có thể thêm `--auth-only`
+để chẩn đoán. Runner chỉ thử kết nối `127.0.0.1` và không tự bật DevTools
+remote debugging.
+
 Mặc định chờ 75 giây cho từng giai đoạn UI (240 giây khi enroll), tối đa 15 phút
 cho ván; tùy chỉnh `TQS_PUBLIC_UI_TIMEOUT_MS` và `TQS_PUBLIC_MATCH_TIMEOUT_MS`
 (milliseconds) nếu máy chủ chạy chậm. Ván chạy trên production thật, có thể tạo
