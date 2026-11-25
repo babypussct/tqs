@@ -94,10 +94,15 @@ vào sảnh, WebSocket WSS cùng origin có gửi/nhận, tạo phòng `new_heg_
 thêm bot, bắt đầu, chọn cặp chủ/phó tướng hợp lệ, bật BOT chơi hộ (native Trust),
 chờ GameOver, trở về sảnh, ngắt socket, đăng xuất Firebase bằng **Đổi tài khoản
 khác**, đăng nhập Google lần nữa và vào sảnh qua một WebSocket mới. Popup Google
-có bộ chọn tài khoản chỉ click email QA khớp tuyệt đối. Nếu Google yêu cầu lại
-mật khẩu/2FA, hết phiên hoặc chặn Chrome automation, lệnh **FAIL** với mã giai
-đoạn an toàn; mở lại `--enroll` bằng tay để làm mới profile, rồi chạy lệnh hậu
-deploy. Không có cơ chế né Google challenge hoặc ngụy tạo OAuth trong production.
+có bộ chọn tài khoản chỉ click khi đúng một phần tử hiển thị email QA khớp
+tuyệt đối. Evidence ghi các trạng thái đã quan sát được. Mã
+`oauth_lobby_timeout` chỉ cho biết runner chưa vào được sảnh đúng hạn.
+
+Khi cần kiểm tra popup, chạy cùng lệnh với `-- --headed --auth-only` trên hồ
+sơ Chrome QA đang có, sau khi đóng cửa sổ khác dùng cùng hồ sơ. Chế độ này
+chạy vào sảnh, đăng xuất Firebase, đăng nhập lại và kiểm tra WSS mới mà
+không tạo phòng. `-- --headed` chạy toàn bộ gate với Chrome có giao diện.
+Chỉ dùng `--enroll` khi cần cập nhật phiên qua luồng đăng nhập Google chuẩn.
 
 Mặc định chờ 75 giây cho từng giai đoạn UI (240 giây khi enroll), tối đa 15 phút
 cho ván; tùy chỉnh `TQS_PUBLIC_UI_TIMEOUT_MS` và `TQS_PUBLIC_MATCH_TIMEOUT_MS`

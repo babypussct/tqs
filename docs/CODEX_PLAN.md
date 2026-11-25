@@ -1,13 +1,16 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
-## 25/11/2026 — Phát hành milestone production (ACTIVE)
 
+- 26/11/2026: relogin qua Chrome đang mở PASS khi kiểm tra trực tiếp. OAuth CLI headed auth-only vẫn FAIL ở OAuth đầu. Ưu tiên phiên Chrome hiện có theo AGENTS.md. Gate tự động cần evidence riêng.
+## 25/11/2026 — Phát hành milestone production (chờ OAuth QA)
+
+- Retry OAuth CLI 26/11 lúc 01:06:47 (GMT+7) FAIL ngay tại OAuth ban đầu, `google_session_required`, 0 verified sessions. Giữ gate OAuth mở, cần xác thực lại trên Chrome QA và chạy full postdeploy.
 - [x] Production web build pin-correct PASS, baseline 78 missing ID giữ nguyên; 175 tests, typecheck và baseline PASS.
 - [x] Native production candidate 5 Lua deltas, manifest `08dd179491c35c733c6437f32b5a3c61`, isolated boot TCP/UDP 12/12; gateway source parity.
 - [x] Commit local `3bd6afe5`; cutover native drain/rollback, web production `df5369ef`, public identity/gateway bundle/WSS/mobile smoke PASS.
 - [x] Push main `cde8e704` PASS, remote ref khớp; lỗi `commit_refs_rules` lần đầu đã qua.
-- [ ] Hosted CI: run 45653874615 cancelled (Shop/TQSVN cancelled, pipeline gate failure); docs-only 45654024318 success với cả hai app checks skipped. Cần workflow_dispatch trên main và xác nhận cả hai app checks PASS.
-- [ ] OAuth CLI full flow bằng QA account/profile đã enroll; Firebase token/session API/WSS counters. Manual OAuth PASS riêng. Chưa đóng milestone.
+- [x] Hosted CI toàn trình: workflow_dispatch [45655671600 (#65)](https://github.com/babypussct/tqs/actions/runs/45655671600) trên main `5b7650e1` kết thúc success lúc 23:44 (GMT+7), cả Detect, TQSShop checks, TQSVN checks và Pipeline gate PASS; e2e, real Lua e2e, PWA e2e và dist isolation PASS. Các run 45653874615, 45654024318 và 45654781055 là lịch sử cancelled/skipped.
+- [ ] OAuth CLI (26/11, 00:38 GMT+7): enrollment PASS hai lần; full postdeploy 00:15 PASS đến logout, gồm verified Firebase session, WSS, phòng, trận, GameOver và cleanup; relogin FAIL `google_session_required`. Hai retry headless 00:35/00:38 FAIL OAuth ban đầu; lần mới nhất popup tới Google nhưng không click được email QA, 0 verified sessions/WSS, chưa xác định nguyên nhân cụ thể. Typecheck tools và contract 5/5 PASS với runner đã chỉnh UI và diagnostic an toàn. Dùng cùng profile QA đã được chỉ định, làm mới enrollment nếu cần, chạy lại full postdeploy và chỉ đóng khi relogin cùng socket mới PASS. Evidence chi tiết ở CODEX_STATE. Headed enrollment retry (session 3171) cũng FAIL OAuth, runner đã dừng. Milestone BLOCKED.
 
 ## 25/11/2026 — Router binding và registry ownership
 

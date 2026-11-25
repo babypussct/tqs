@@ -22,6 +22,12 @@
 - Bảo toàn toàn bộ thay đổi chưa commit do người dùng hay phiên trước tạo; tuyệt đối không tự ý `reset`, `clean`, `checkout` ghi đè hoặc commit các file đó. Không ghi token, mật khẩu, nội dung `.env`, hoặc dữ liệu nhạy cảm vào tài liệu.
 - TQSShop (`src/`, `api/`) và FreeKill web game (`game/`) là hai phạm vi riêng; không đụng tới production/deploy khi nhiệm vụ chỉ liên quan client hoặc checkpoint.
 
+## Chrome QA TQS/TQSVN — chốt ngày 26/11/2026
+
+- Khi kiểm tra OAuth trực tiếp, ưu tiên tab TQSVN đang mở trong Chrome của người dùng với tài khoản QA đã đăng nhập. Nếu tab game đã đóng, chỉ mở tab game trong cùng cửa sổ và hồ sơ Chrome đang dùng. Không tạo hồ sơ mới, mở Chrome riêng hoặc chạy enrollment chỉ để kiểm tra phiên đang có.
+- Dùng CLI khi cần bằng chứng riêng cho gate tự động và theo phạm vi người dùng yêu cầu. Nếu CLI cần trình duyệt riêng và không thể dùng phiên Chrome hiện tại, ghi rõ giới hạn đó. Kết quả kiểm tra bằng tab Chrome được ghi riêng và không đóng gate CLI.
+- Chỉ yêu cầu thao tác của người dùng khi giao diện Google thực sự yêu cầu mật khẩu, xác minh hai bước hoặc xác nhận bảo mật.
+
 ## Lệnh nhanh
 
 ```bash

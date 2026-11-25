@@ -14,12 +14,19 @@ import { isGameSocket, matchesQaBearer, publicProbeUrl, PublicProbeError,
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const args = process.argv.slice(2);
 if (args.includes('--help')) {
-  console.log('Usage: TQS_PUBLIC_QA_EMAIL=<approved-email> npm run test:e2e:public [-- --enroll]');
+  console.log('Usage: TQS_PUBLIC_QA_EMAIL=<approved-email> npm run test:e2e:public [-- --enroll | --headed [--auth-only]]');
   process.exit(0);
 }
 const enroll = args.length === 1 && args[0] === '--enroll';
+const headed = args.includes('--headed');
+const authOnly = args.includes('--auth-only');
+const mode = enroll ? 'enroll' : authOnly ? 'auth-only' : 'postdeploy';
 const steps: Partial<Record<PublicStage, boolean>> = {};
 const websocket = { opened: 0, sent: 0, received: 0, closed: 0, errors: 0 };
+const socketTraffic = new Map<number, { sent: boolean; received: boolean }>();
+const googlePopup = { opened: 0, googleOrigin: 0, approvedAccountClicked: 0,
+  signInRequired: false, challenge: false, browserRejected: false, chooserVisible: false, approvedAccountVisible: false,
+  consentVisible: false, closed: 0 };
 let stage: PublicStage = 'preflight';
 let pageErrors = 0;
 let verifiedSessions = 0;
@@ -76,24 +83,61 @@ function attachSocketProbe(target: Page, origin: URL): void {
   target.on('websocket', (socket) => {
     if (!isGameSocket(socket.url(), origin)) return;
     websocket.opened++;
-    socket.on('framesent', () => { websocket.sent++; });
-    socket.on('framereceived', () => { websocket.received++; });
+    const traffic = { sent: false, received: false };
+    socketTraffic.set(websocket.opened, traffic);
+    socket.on('framesent', () => {
+      websocket.sent++;
+      traffic.sent = true;
+    });
+    socket.on('framereceived', () => {
+      websocket.received++;
+      traffic.received = true;
+    });
     socket.on('close', () => { websocket.closed++; });
     socket.on('socketerror', () => { websocket.errors++; });
   });
 }
 
-function chooseApprovedGoogleAccount(target: Page, qaEmail: string): void {
-  // Firebase Google popup may show the account chooser after Firebase signOut.
-  // Only an exact email match is clicked; no passwords, recovery or 2FA bypass.
-  target.context().on('page', (popup) => {
-    if (popup === target) return;
+function chooseApprovedGoogleAccount(target: Page, qaEmail: string, uiTimeout: number): void {
+  target.on('popup', (popup) => {
+    googlePopup.opened++;
+    popup.once('close', () => { googlePopup.closed++; });
     void (async () => {
-      try {
-        await popup.waitForURL((url) => url.origin === 'https://accounts.google.com', { timeout: 25_000 });
-        await popup.getByText(qaEmail, { exact: true }).first().click({ timeout: 25_000 });
-      } catch { /* User interaction may be required; login stage will report a safe failure. */ }
-    })();
+      await popup.waitForURL((url) => url.origin === 'https://accounts.google.com', { timeout: uiTimeout });
+      googlePopup.googleOrigin++;
+      const deadline = Date.now() + uiTimeout;
+      while (!popup.isClosed() && Date.now() < deadline) {
+        const url = new URL(popup.url());
+        if (url.origin !== 'https://accounts.google.com') break;
+        const visible = (selector: string) => popup.locator(selector).first().isVisible();
+        const [signIn, rejected, chooser, consent] = await Promise.all([
+          visible('input[type=email]:visible, input[type=password]:visible'),
+          popup.getByText(/this browser or app may not be secure|trình duyệt hoặc ứng dụng này có thể không an toàn/i).first().isVisible(),
+          popup.getByText(/choose an account|chọn tài khoản/i).first().isVisible(),
+          popup.getByText(/wants to access your Google Account|muốn truy cập vào Tài khoản Google/i).first().isVisible(),
+        ]);
+        googlePopup.signInRequired ||= signIn;
+        const challenge = /\/challenge(?:\/|$)/.test(url.pathname);
+        googlePopup.challenge ||= challenge;
+        googlePopup.browserRejected ||= rejected;
+        googlePopup.chooserVisible ||= chooser;
+        googlePopup.consentVisible ||= consent;
+        const email = popup.getByText(qaEmail, { exact: true }).filter({ visible: true });
+        // Google renders the email inside the account link on the Chrome chooser.
+        const link = popup.getByRole('link').filter({ has: email, visible: true });
+        const account = await link.count() ? link : email;
+        if (await account.count() === 1 && !signIn && !challenge && !rejected && !consent &&
+            new URL(popup.url()).origin === 'https://accounts.google.com') {
+          googlePopup.approvedAccountVisible = true;
+          const clicked = await account.click({ timeout: 1000 }).then(() => true, () => false);
+          if (clicked) {
+            googlePopup.approvedAccountClicked++;
+            break;
+          }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    })().catch(() => { /* Only sanitized observations are included in evidence. */ });
   });
 }
 
@@ -129,10 +173,18 @@ async function login(target: Page, uiTimeout: number, before: number): Promise<v
     if (await target.getByText('Chiến Thư Đang Chờ Phê Chuẩn').isVisible().catch(() => false)) {
       fail('qa_account_not_approved');
     }
-    fail('google_session_required');
+    if (googlePopup.browserRejected) fail('google_browser_rejected');
+    if (googlePopup.challenge) fail('google_challenge_observed');
+    fail('oauth_lobby_timeout');
   }
   checkIdentity();
   if (verifiedSessions <= before) fail('verified_firebase_session_missing');
+}
+
+async function disconnectLobby(target: Page, uiTimeout: number): Promise<void> {
+  await target.getByRole('button', { name: 'Chi tiết kết nối', exact: true }).click({ timeout: uiTimeout });
+  await target.getByRole('button', { name: 'Ngắt kết nối', exact: true }).click({ timeout: uiTimeout });
+  await target.getByRole('button', { name: 'Vào Chiến Trường', exact: true }).waitFor({ timeout: uiTimeout });
 }
 
 async function selectGenerals(target: Page, uiTimeout: number): Promise<void> {
@@ -146,10 +198,14 @@ async function selectGenerals(target: Page, uiTimeout: number): Promise<void> {
     for (let b = 0; b < count; b++) {
       if (a === b) continue;
       if (await reset.isEnabled().catch(() => false)) await reset.click();
-      await options.nth(a).click();
-      await options.nth(b).click();
-      const kingdom = target.locator('.kingdom-picker input[type=radio]');
-      if (await kingdom.count()) await kingdom.first().check();
+      await options.nth(a).click({ timeout: uiTimeout });
+      await target.waitForFunction(() => Array.from(document.querySelectorAll('.sg-general-choice-entry'))
+        .every((entry) => entry.getAttribute('data-general-status') !== 'busy'), undefined,
+      { timeout: uiTimeout });
+      if (!await options.nth(b).isEnabled()) continue;
+      await options.nth(b).click({ timeout: uiTimeout });
+      const kingdom = target.locator('.kingdom-picker button.sg-kingdom-option');
+      if (await kingdom.count()) await kingdom.first().click({ timeout: uiTimeout });
       if (await confirm.isEnabled()) {
         await confirm.click();
         await confirm.waitFor({ state: 'hidden', timeout: uiTimeout });
@@ -160,8 +216,20 @@ async function selectGenerals(target: Page, uiTimeout: number): Promise<void> {
   fail('no_compatible_general_pair');
 }
 
+async function enableTrust(target: Page, uiTimeout: number): Promise<void> {
+  const status = target.locator('.board-trust-status');
+  if (await status.isVisible()) return;
+  const trust = target.getByRole('button', { name: 'BOT chơi hộ', exact: true });
+  if (!(await trust.isVisible())) {
+    await target.getByRole('button', { name: 'Tùy chọn trận đấu', exact: true }).click({ timeout: uiTimeout });
+  }
+  await trust.click({ timeout: uiTimeout });
+  await status.waitFor({ state: 'visible', timeout: uiTimeout });
+}
+
 async function run(): Promise<void> {
-  if (args.length > 1 || (args.length === 1 && !enroll)) fail('invalid_arguments');
+  if (!enroll && (args.some((arg) => arg !== '--headed' && arg !== '--auth-only') ||
+    new Set(args).size !== args.length || (authOnly && !headed))) fail('invalid_arguments');
   const site = publicProbeUrl(process.env.TQS_PUBLIC_URL || 'https://tqsvn.pages.dev/');
   const qaEmail = process.env.TQS_PUBLIC_QA_EMAIL?.trim();
   if (!qaEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(qaEmail)) fail('qa_email_required');
@@ -177,7 +245,7 @@ async function run(): Promise<void> {
   if (realProfile === realRepo || realProfile.startsWith(realRepo + path.sep)) fail('unsafe_profile_path');
   const chrome = chromePath();
   context = await chromium.launchPersistentContext(profile, {
-    executablePath: chrome, headless: !enroll, viewport: { width: 1280, height: 900 },
+    executablePath: chrome, headless: !(enroll || headed), viewport: { width: 1280, height: 900 },
     // The QA browser targets the public network path; a cached PWA worker
     // could swallow the session request before the identity gate sees it.
     acceptDownloads: false, serviceWorkers: 'block',
@@ -185,7 +253,7 @@ async function run(): Promise<void> {
   page = context.pages()[0] || await context.newPage();
   const target = page;
   attachSocketProbe(target, site);
-  if (!enroll) chooseApprovedGoogleAccount(target, qaEmail);
+  if (!enroll) chooseApprovedGoogleAccount(target, qaEmail, uiTimeout);
   // Verify account from Firebase ID token claim only in memory; actual approval
   // is established by the server admitting the player to the native lobby.
   await target.route('**/api/game/session', async (route) => {
@@ -215,51 +283,50 @@ async function run(): Promise<void> {
   });
   if (enroll) {
     await step('cleanup', async () => {
-      await target.getByRole('button', { name: 'Ngắt kết nối' }).click({ timeout: uiTimeout });
-      await target.getByRole('button', { name: 'Vào Chiến Trường' }).waitFor({ timeout: uiTimeout });
+      await disconnectLobby(target, uiTimeout);
     });
     return;
   }
-  const roomName = `TQS-PUBLIC-QA-${Date.now()}`;
-  const beforeRoom = { sent: websocket.sent, received: websocket.received };
-  await step('room', async () => {
-    await target.locator('#room-name').fill(roomName);
-    await target.locator('#capacity').selectOption('2');
-    await target.locator('#timeout').selectOption('10');
-    await target.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click({ timeout: uiTimeout });
-    await target.getByRole('heading', { name: roomName, exact: true }).waitFor({ timeout: uiTimeout });
-    if (!(await target.locator('.sg-room-badge-mode').getByText('Quốc Chiến').count())) {
-      fail('new_heg_mode_missing');
-    }
-    // This panel is rendered only for the actual new_heg_mode returned by server.
-    await target.locator('.waiting-pools').waitFor({ state: 'attached', timeout: uiTimeout });
-    await target.getByRole('button', { name: '+ Thêm bot' }).click({ timeout: uiTimeout });
-    await target.getByText('2/2 tướng lĩnh').waitFor({ timeout: uiTimeout });
-    if (websocket.sent <= beforeRoom.sent || websocket.received <= beforeRoom.received) {
-      fail('room_socket_traffic_missing');
-    }
-  });
-  await step('match', async () => {
-    const start = target.getByRole('button', { name: 'Bắt đầu', exact: true });
-    await start.waitFor({ state: 'visible', timeout: uiTimeout });
-    await start.click({ timeout: uiTimeout });
-    matchStarted = true;
-    await target.locator('.game-board').waitFor({ timeout: uiTimeout });
-    await selectGenerals(target, uiTimeout);
-    const trust = target.getByRole('button', { name: 'BOT chơi hộ' }).first();
-    await trust.click({ timeout: uiTimeout });
-    await target.getByText('Máy chủ đã bật BOT chơi hộ.', { exact: false }).waitFor({ timeout: uiTimeout });
-  });
-  await step('gameover', async () => {
-    await target.locator('section[role="status"] #result-title').waitFor({ timeout: matchTimeout });
-  });
-  finished = true;
-  await step('cleanup', async () => {
-    await target.getByRole('button', { name: 'Về sảnh' }).click({ timeout: uiTimeout });
-    await target.getByRole('heading', { name: 'Danh sách phòng' }).waitFor({ timeout: uiTimeout });
-  });
+  if (!authOnly) {
+    const roomName = `TQS-PUBLIC-QA-${Date.now()}`;
+    const beforeRoom = { sent: websocket.sent, received: websocket.received };
+    await step('room', async () => {
+      await target.locator('#room-name').fill(roomName);
+      await target.locator('#capacity').selectOption('2');
+      await target.locator('#timeout').selectOption('60');
+      await target.getByRole('button', { name: 'Tạo phòng Quốc Chiến' }).click({ timeout: uiTimeout });
+      await target.getByRole('heading', { name: roomName, exact: true }).waitFor({ timeout: uiTimeout });
+      if (!(await target.locator('.sg-room-badge-mode').getByText('Quốc Chiến').count())) {
+        fail('new_heg_mode_missing');
+      }
+      // This panel is rendered only for the actual new_heg_mode returned by server.
+      await target.locator('.waiting-pools').waitFor({ state: 'attached', timeout: uiTimeout });
+      await target.getByRole('button', { name: '+ Thêm bot' }).click({ timeout: uiTimeout });
+      await target.getByText('2/2 tướng lĩnh').waitFor({ timeout: uiTimeout });
+      if (websocket.sent <= beforeRoom.sent || websocket.received <= beforeRoom.received) {
+        fail('room_socket_traffic_missing');
+      }
+    });
+    await step('match', async () => {
+      const start = target.getByRole('button', { name: 'Bắt đầu', exact: true });
+      await start.waitFor({ state: 'visible', timeout: uiTimeout });
+      await start.click({ timeout: uiTimeout });
+      matchStarted = true;
+      await target.locator('.game-board').waitFor({ timeout: uiTimeout });
+      await selectGenerals(target, uiTimeout);
+      await enableTrust(target, uiTimeout);
+    });
+    await step('gameover', async () => {
+      await target.locator('section[role="status"] #result-title').waitFor({ timeout: matchTimeout });
+    });
+    finished = true;
+    await step('cleanup', async () => {
+      await target.getByRole('button', { name: 'Về sảnh' }).click({ timeout: uiTimeout });
+      await target.getByRole('heading', { name: 'Danh sách phòng' }).waitFor({ timeout: uiTimeout });
+    });
+  }
   await step('logout', async () => {
-    await target.getByRole('button', { name: 'Ngắt kết nối' }).click({ timeout: uiTimeout });
+    await disconnectLobby(target, uiTimeout);
     await target.getByRole('button', { name: 'Đổi tài khoản khác' }).click({ timeout: uiTimeout });
     await target.getByRole('button', { name: 'Tiếp tục với Google' }).waitFor({ timeout: uiTimeout });
   });
@@ -268,10 +335,12 @@ async function run(): Promise<void> {
     const previousSockets = websocket.opened;
     await login(target, uiTimeout, previous);
     if (websocket.opened <= previousSockets) fail('relogin_socket_missing');
+    if (![...socketTraffic].some(([id, traffic]) =>
+      id > previousSockets && traffic.sent && traffic.received)) fail('relogin_frames_missing');
     if (websocket.errors) fail('socket_error');
     if (pageErrors) fail('browser_page_error');
     // Leave a clean native lobby session before closing the browser.
-    await target.getByRole('button', { name: 'Ngắt kết nối' }).click({ timeout: uiTimeout });
+    await disconnectLobby(target, uiTimeout);
   });
 }
 
@@ -284,17 +353,16 @@ finally {
   const session = getSession();
   if (matchStarted && !finished && session.page && !session.page.isClosed()) {
     // If the match times out, request native Trust before browser shutdown.
-    await session.page.getByRole('button', { name: 'BOT chơi hộ' }).first()
-      .click({ timeout: 2000 }).catch(() => undefined);
+    await enableTrust(session.page, 2000).catch(() => undefined);
   }
   try { await session.context?.close(); }
   catch { if (!failure) failure = { stage: 'cleanup', reason: 'browser_close_failed' }; }
   if (!failure && (pageErrors || websocket.errors)) failure = { stage, reason: 'browser_or_socket_error' };
   const evidence = {
     schemaVersion: 1, kind: 'public-google-oauth-e2e',
-    at: new Date().toISOString(), mode: enroll ? 'enroll' : 'postdeploy',
+    at: new Date().toISOString(), mode, headed: enroll || headed,
     passed: failure === null, completed: steps,
-    websocket, pageErrors, verifiedSessionCount: verifiedSessions,
+    websocket, googlePopup, pageErrors, verifiedSessionCount: verifiedSessions,
     failure,
   };
   try {
@@ -309,5 +377,5 @@ if (failure) {
   console.error(`PUBLIC_OAUTH_E2E FAIL stage=${failure.stage} reason=${failure.reason}`);
   process.exitCode = 1;
 } else {
-  console.log(`PUBLIC_OAUTH_E2E PASS mode=${enroll ? 'enroll' : 'postdeploy'} stages=${Object.keys(steps).join(',')} websocket_opened=${websocket.opened}`);
+  console.log(`PUBLIC_OAUTH_E2E PASS mode=${mode} stages=${Object.keys(steps).join(',')} websocket_opened=${websocket.opened}`);
 }
