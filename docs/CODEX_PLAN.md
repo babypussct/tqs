@@ -5,7 +5,8 @@
 - [x] Production web build pin-correct PASS, baseline 78 missing ID giữ nguyên; 175 tests, typecheck và baseline PASS.
 - [x] Native production candidate 5 Lua deltas, manifest `08dd179491c35c733c6437f32b5a3c61`, isolated boot TCP/UDP 12/12; gateway source parity.
 - [x] Commit local `3bd6afe5`; cutover native drain/rollback, web production `df5369ef`, public identity/gateway bundle/WSS/mobile smoke PASS.
-- [ ] Push main và hosted CI: remote `commit_refs_rules` trong GitHub incident; cần xác minh remote ref và CI sau push.
+- [x] Push main `cde8e704` PASS, remote ref khớp; lỗi `commit_refs_rules` lần đầu đã qua.
+- [ ] Hosted CI run 45653874615: detect PASS, Shop/TQSVN đang chạy tại lần kiểm tra.
 - [ ] OAuth CLI full flow bằng QA account/profile đã enroll; Firebase token/session API/WSS counters. Manual OAuth PASS riêng. Chưa đóng milestone.
 
 ## 25/11/2026 — Router binding và registry ownership
