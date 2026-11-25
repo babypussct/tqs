@@ -1,6 +1,8 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
 
+- 26/11/2026: source QA `b5bd03cc` đã push và Pages production `bed2cbec` đã qua smoke ở deployment và alias. OAuth CLI postdeploy vẫn FAIL tại OAuth đầu. Giữ milestone mở đến khi CLI xác minh đăng nhập lại và lưu lượng hai chiều trên socket mới.
+
 - 26/11/2026: relogin qua Chrome đang mở PASS khi kiểm tra trực tiếp. OAuth CLI headed auth-only vẫn FAIL ở OAuth đầu. Ưu tiên phiên Chrome hiện có theo AGENTS.md. Gate tự động cần evidence riêng.
 ## 25/11/2026 — Phát hành milestone production (chờ OAuth QA)
 

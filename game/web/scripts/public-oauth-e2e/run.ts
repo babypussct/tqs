@@ -175,6 +175,15 @@ async function login(target: Page, uiTimeout: number, before: number): Promise<v
     }
     if (googlePopup.browserRejected) fail('google_browser_rejected');
     if (googlePopup.challenge) fail('google_challenge_observed');
+    // Only report fixed application error categories. Alert contents may contain private data.
+    const alert = target.locator('.sg-error-notice[role=alert]');
+    if (await alert.getByText(/cửa sổ Google đã đóng trước khi đăng nhập hoàn tất/i).isVisible()) {
+      fail('firebase_popup_closed');
+    }
+    if (await alert.getByText(/không kết nối được với dịch vụ đăng nhập Google/i).isVisible()) {
+      fail('firebase_google_network_error');
+    }
+    if (await alert.isVisible()) fail('oauth_application_error');
     fail('oauth_lobby_timeout');
   }
   checkIdentity();

@@ -1,6 +1,13 @@
 # CODEX_STATE — bàn giao công việc TQS
 
 
+## 26/11/2026 — Phát hành production trên source b5bd03cc
+
+- Source QA `b5bd03cc9d6774bb6867cd025558dee51bcd072e` đã commit, push và đối chiếu remote main. So với source runtime `3bd6afe5`, thay đổi chỉ gồm QA CLI và tài liệu. Local typecheck tools, OAuth contract 5/5, diff-check PASS.
+- Cloudflare Pages production/main [bed2cbec](https://bed2cbec.tqsvn.pages.dev), deployment `bed2cbec-42df-455c-978b-37fcdbe26836`, source `b5bd03c` đã upload và xác nhận từ Wrangler. Smoke alias và deployment PASS: HTML/version/JS/CSS/SW byte match, web 0.5.25 build `e09126d80b274c875cbd9642125d61615852beb4b6d69f288cabe6cbd79fa451`, gateway health OK, manifest MD5 `08dd179491c35c733c6437f32b5a3c61`, bundle `86180a4f1d69787e` 5339 files và SHA-256 khớp bản đã triển khai. Chrome mobile 390×844 hiện đúng build/bundle, 0 page errors. OAuth helper 200/no-store, session unauthenticated 401. WSS transport HTTP 101 và native NetworkDelayTest PASS. Shop giữ JS `index-CuBslPWB.js` SHA-256 `eccda8d00d5e9e7e0131d15891fce28e5f3c2a0f4433b63fa8cd71706dd85c32`; không có source Shop, gateway hoặc native cần phát hành thêm.
+- OAuth CLI postdeploy 01:23:13 UTC+7 vẫn FAIL ở OAuth đầu, `oauth_lobby_timeout`, popup tới Google nhưng không thấy tài khoản/challenge, verified sessions 0 và WSS 0. Evidence `scratch/evidence/public-oauth-e2e/public-qa-1795630993504-89a8ad1c-8b4d-43d0-9b06-c0c43f522f2c.json`. Auth-only headed retry sau đó cùng mã lỗi ngay cả với chẩn đoán cảnh báo Firebase; evidence `scratch/evidence/public-oauth-e2e/public-qa-1795631049558-2927e309-1315-426e-aff8-11f5fdecf758.json`. Milestone chưa đóng.
+- Hosted CI trên source đã phát hành [45674157307](https://github.com/babypussct/tqs/actions/runs/45674157307). TQSShop skipped theo phạm vi diff, TQSVN đang chạy tại thời điểm ghi nhận.
+
 - 26/11/2026, kiểm tra trên tab Chrome đang mở: ngắt kết nối sảnh, đăng xuất Firebase, chọn đúng liên kết tài khoản QA trên màn hình Google “Chọn tài khoản”, vào lại sảnh production. Chi tiết kết nối báo máy chủ Quốc Chiến “Đã xác thực” và đo được độ trễ. DevTools chưa xác nhận handshake HTTP 101. Runner cập nhật bộ chọn để click liên kết chứa email hiển thị khớp tuyệt đối khi bộ chọn dùng liên kết. Gate CLI vẫn BLOCKED vì chưa có kết quả hậu deploy chạy bằng phiên Chrome hiện tại.
 
 - 26/11/2026: hai lần chạy headed OAuth-only trên hồ sơ CLI cũ FAIL ở OAuth đầu, 0 verified sessions và WSS. Lần sau ghi `oauth_lobby_timeout`, popup đến Google, không thấy bộ chọn, nhập thông tin hay challenge. Evidence tại `scratch/evidence/public-oauth-e2e/public-qa-1795630424911-21ce53fc-2bea-4bdf-baae-95418bd0b9ee.json`. Chrome hiện tại của người dùng PASS kiểm tra trực tiếp: đã có phiên Firebase QA, bấm Đổi tài khoản khác, Tiếp tục với Google và vào lại sảnh production tự động. Milestone CLI vẫn BLOCKED. Người dùng chốt ưu tiên dùng chính tab/cửa sổ Chrome đang mở cho QA trực tiếp, xem AGENTS.md.
@@ -2789,23 +2796,21 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-25T18:17:47.009Z (UTC).
-- Nhánh: `main` · HEAD: `5b7650e1510f`.
-- File thay đổi hiển thị: 4 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-25T18:24:43.422Z (UTC).
+- Nhánh: `main` · HEAD: `b5bd03cc9d67`.
+- File thay đổi hiển thị: 2 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M AGENTS.md
  M docs/CODEX_PLAN.md
- M docs/web-client/LIVE_TESTING.md
  M game/web/scripts/public-oauth-e2e/run.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+b5bd03cc Harden public OAuth QA and verify relogin socket traffic
 5b7650e1 Record cancelled milestone CI and outstanding verification
 98e638c9 Confirm milestone source push and hosted CI status
-cde8e704 Record milestone production deployment and remaining gates
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
