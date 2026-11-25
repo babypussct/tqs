@@ -1,0 +1,1476 @@
+--- a/src/core/player.h
++++ b/src/core/player.h
+@@ -2,6 +2,8 @@
+ 
+ #pragma once
+ 
++#include <atomic>
++
+ // Common part of ServerPlayer and ClientPlayer
+ // dont initialize it directly
+ class Player {
+@@ -50,9 +52,9 @@
+ private:
+   int id = 0;
+   int totalGameTime = 0;
+-  State state = Invalid;
++  std::atomic<State> state = Invalid;
+   bool ready = false;
+-  bool died = false;
++  std::atomic<bool> died = false;
+ 
+   std::string lastGameMode;
+   int totalGames = 0;
+--- a/src/server/admin/admin_service.cpp
++++ b/src/server/admin/admin_service.cpp
+@@ -2,6 +2,7 @@
+ 
+ #include "server/admin/admin_service.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "server/room/room_manager.h"
+ #include "server/room/room.h"
+ #include "server/room/lobby.h"
+@@ -88,7 +89,7 @@
+   };
+ }
+ 
+-AdminResult AdminService::lsRoomInfo(int roomId) {
++static AdminResult lsRoomInfoOnMain(int roomId) {
+   auto &user_manager = Server::instance().user_manager();
+   auto &room_manager = Server::instance().room_manager();
+ 
+@@ -109,6 +110,7 @@
+ 
+   if (roomId == 0) {
+     auto lobby = room_manager.lobby().lock();
++    if (!lobby) return AdminResult::error("Lobby unavailable.");
+     LobbyInfo info;
+     for (auto &[pid, _] : lobby->getPlayers()) {
+       auto p = user_manager.findPlayerByConnId(pid).lock();
+@@ -124,3 +126,11 @@
+   }
+   return AdminResult::success(result);
+ }
++
++AdminResult AdminService::lsRoomInfo(int roomId) {
++  auto result = AdminResult::error("Main context stopped.");
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    result = lsRoomInfoOnMain(roomId);
++  });
++  return result;
++}
+--- a/src/server/admin/shell.cpp
++++ b/src/server/admin/shell.cpp
+@@ -5,6 +5,7 @@
+ #include "core/packman.h"
+ // #include "server/rpc-lua/rpc-lua.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "server/user/serverplayer.h"
+ #include "server/user/user_manager.h"
+ #include "server/room/room_manager.h"
+@@ -103,7 +104,7 @@
+ 
+ void Shell::lspCommand(StringList &) {
+   auto &user_manager = Server::instance().user_manager();
+-  auto &players = user_manager.getPlayers();
++  auto players = user_manager.getPlayers();
+   if (players.size() == 0) {
+     spdlog::info("No online player.");
+     return;
+@@ -715,7 +716,7 @@
+   spdlog::info("Player(s) logged in: {}", players.size());
+   // spdlog::info("Rooms: {}", server.room_manager().getRooms().size());
+ 
+-  auto &threads = server.getThreads();
++  auto threads = server.getThreads();
+   std::vector<int> expiredThreads;
+   for (auto &[id, thr] : threads) {
+     auto roomsCount = thr->getRefCount();
+@@ -766,7 +767,7 @@
+ void Shell::checkLobbyCommand(StringList &) {
+   auto &server = Server::instance();
+   auto lobby = server.room_manager().lobby().lock();
+-  asio::post(Server::instance().context(), [&] { lobby->checkAbandoned(); });
++  if (lobby) lobby->checkAbandoned();
+ }
+ 
+ static void sigintHandler(int) {
+@@ -868,7 +869,18 @@
+     spdlog::warn("Unknown command '{}'. Type 'help' for hints.", bytes);
+   } else {
+     command_list.erase(command_list.begin());
+-    (this->*it->second)(command_list);
++    auto handler = it->second;
++    // Room membership and worker lifecycle belong to the main context.
++    if (handler == &Shell::lspCommand || handler == &Shell::kickCommand ||
++        handler == &Shell::msgRoomCommand ||
++        handler == &Shell::statCommand || handler == &Shell::killRoomCommand ||
++        handler == &Shell::checkLobbyCommand) {
++      dispatchMainAndWait(Server::instance().context(), [this, handler, &command_list] {
++        (this->*handler)(command_list);
++      });
++    } else {
++      (this->*handler)(command_list);
++    }
+   }
+ 
+   free(bytes);
+--- a/src/server/gamelogic/roomthread.cpp
++++ b/src/server/gamelogic/roomthread.cpp
+@@ -40,20 +40,6 @@
+     // spdlog::debug("--> PushRequest {}" , msg);
+     L->call("HandleRequest", msg);
+   };
+-  delay_callback = [&](int roomId, int ms) {
+-    // spdlog::debug("--> Delay {} {}", roomId, ms);
+-    auto timer = std::make_shared<asio::steady_timer>(io_ctx, std::chrono::milliseconds(ms));
+-    timer->async_wait([weak = weak_from_this(), roomId, timer](const std::error_code& ec){
+-      if (!ec) {
+-        auto t = weak.lock();
+-        if (!t || t->shutdownScheduled.load()) return;
+-        t->L->call("ResumeRoom", roomId, "delay_done"sv);
+-        if (!t->L->alive()) t->scheduleShutdown();
+-      } else {
+-        spdlog::error("error in delay(): {}", ec.message());
+-      }
+-    });
+-  };
+   wake_up_callback = [&](int roomId, const std::string reason) {
+     // spdlog::debug("--> ResumeRoom {} {}", roomId, reason);
+     L->call("ResumeRoom", roomId, std::string_view { reason });
+@@ -70,15 +56,6 @@
+     // spdlog::debug("--> SetPlayerState {}, {}, {}, {}", roomId, connId, p->getId(), p->getStateString());
+     L->call("SetPlayerState", roomId, p->getId(), p->getState());
+   };
+-  add_observer_callback = [&](int connId, int roomId) {
+-    auto &um = Server::instance().user_manager();
+-    auto p = um.findPlayerByConnId(connId).lock();
+-    if (!p) return;
+-
+-    // spdlog::debug("--> AddObserver {}, {}, {}", roomId, connId, p->getId());
+-    auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(*p));
+-    L->call("AddObserver", roomId, std::string(bin.begin(), bin.end()));
+-  };
+   remove_observer_callback = [&](int pid, int roomId) {
+     // spdlog::debug("--> RemoveObserver {}, {}", roomId, pid);
+     L->call("RemoveObserver", roomId, pid);
+@@ -89,17 +66,6 @@
+ 
+ RoomThread::~RoomThread() {
+   stopAndJoin();
+-
+-  auto &rm = Server::instance().room_manager();
+-  for (auto roomId : m_rooms) {
+-    auto room = rm.findRoom(roomId).lock();
+-    if (!room) continue;
+-
+-    // 神秘
+-    room->destroyRequestTimer();
+-  }
+-
+-  // spdlog::debug("[MEMORY] RoomThread {} destructed", m_id);
+ }
+ 
+ void RoomThread::stopAndJoin() {
+@@ -177,7 +143,29 @@
+ }
+ 
+ void RoomThread::delay(int roomId, int ms) {
+-  emit_signal([=, this] { delay_callback(roomId, ms); });
++  auto &server = Server::instance();
++  auto room = server.room_manager().findRoom(roomId).lock();
++  auto task = server.task_manager().getTask(roomId);
++  if (!room && !task) return;
++  const auto session = room ? room->getSessionId() : 0;
++  emit_signal([this, roomId, ms, session, room = std::weak_ptr<Room>(room),
++               task = std::weak_ptr<Task>(task)] {
++    auto timer = std::make_shared<asio::steady_timer>(io_ctx, std::chrono::milliseconds(ms));
++    timer->async_wait([weak = weak_from_this(), roomId, session, room, task, timer](const std::error_code &ec) {
++      if (ec) return;
++      auto thread = weak.lock();
++      if (!thread || thread->shutdownScheduled.load()) return;
++      if (roomId > 0) {
++        auto current = room.lock();
++        if (!current || current->isRetired() || current->getSessionId() != session || !current->isStarted()) return;
++      } else {
++        auto current = task.lock();
++        if (!current || Server::instance().task_manager().getTask(roomId) != current) return;
++      }
++      thread->L->call("ResumeRoom", roomId, "delay_done"sv);
++      if (!thread->L->alive()) thread->scheduleShutdown();
++    });
++  });
+ }
+ 
+ void RoomThread::wakeUp(int roomId, std::string &reason) {
+@@ -185,7 +173,7 @@
+ }
+ 
+ void RoomThread::wakeUp(int roomId, const char *reason) {
+-  emit_signal([=, this] { wake_up_callback(roomId, reason); });
++  emit_signal([this, roomId, reason = std::string(reason)] { wake_up_callback(roomId, reason); });
+ }
+ 
+ void RoomThread::setPlayerState(int connId, int pid, int roomId) {
+@@ -193,7 +181,12 @@
+ }
+ 
+ void RoomThread::addObserver(int connId, int roomId) {
+-  emit_signal([=, this] { add_observer_callback(connId, roomId); });
++  auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++  if (!player) return;
++  auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(*player));
++  emit_signal([this, roomId, data = std::string(bin.begin(), bin.end())] {
++    L->call("AddObserver", roomId, data);
++  });
+ }
+ 
+ void RoomThread::removeObserver(int pid, int roomId) {
+@@ -240,6 +233,7 @@
+ }
+ 
+ void RoomThread::decreaseRefCount() {
++  if (m_ref_count == 0) return;
+   m_ref_count--;
+   if (m_ref_count > 0) return;
+ 
+--- a/src/server/gamelogic/roomthread.h
++++ b/src/server/gamelogic/roomthread.h
+@@ -38,6 +38,8 @@
+ 
+   bool isOutdated();
+   bool isShutdownPending() const;
++  bool isShutdownComplete() const { return shutdownComplete; }
++  void requestShutdown() { scheduleShutdown(); }
+ 
+   int getRefCount() const;
+   void increaseRefCount();
+@@ -64,10 +66,8 @@
+ 
+   // signals
+   std::function<void(const std::string req)> push_request_callback = nullptr;
+-  std::function<void(int roomId, int ms)> delay_callback = nullptr;
+   std::function<void(int roomId, const std::string reason)> wake_up_callback = nullptr;
+   std::function<void(int connId, int pid, int roomId)> set_player_state_callback = nullptr;
+-  std::function<void(int connId, int roomId)> add_observer_callback = nullptr;
+   std::function<void(int pid, int roomId)> remove_observer_callback = nullptr;
+ 
+   bool emit_signal(std::function<void()> f);
+--- a/src/server/gamelogic/rpc-dispatchers.cpp
++++ b/src/server/gamelogic/rpc-dispatchers.cpp
+@@ -3,6 +3,7 @@
+ #include "server/gamelogic/roomthread.h"
+ #include "server/gamelogic/rpc-dispatchers.h"
+ #include "server/server.h"
++#include "server/main-context-call.h"
+ #include "server/user/user_manager.h"
+ #include "server/user/serverplayer.h"
+ #include "server/room/room_manager.h"
+@@ -243,18 +244,24 @@
+   }
+ 
+   int id = std::get<int>(packet.param1);
+-  auto task = Server::instance().task_manager().getTask(id);
+-  if (!task) {
+-    return { false, "Task not found"sv };
+-  }
+-
+-  auto owner = Server::instance().user_manager().findPlayerByConnId(task->getUserConnId()).lock();
+-  if (!owner) {
+-    return { true, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto task = Server::instance().task_manager().getTask(id);
++      if (!task) {
++        return { false, "Task not found"sv };
++      }
+ 
+-  auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(*owner));
+-  return { true, std::string(bin.begin(), bin.end()) };
++      auto owner = Server::instance().user_manager().findPlayerByConnId(task->getUserConnId()).lock();
++      if (!owner) {
++        return { true, nullVal };
++      }
++
++      auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(*owner));
++      return { true, std::string(bin.begin(), bin.end()) };
++    }();
++  });
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Server_getTask(const JsonRpcPacket &packet) {
+@@ -440,19 +447,27 @@
+   auto connId = std::get<int>(packet.param1);
+   auto jsonData = std::get<std::string_view>(packet.param2);
+ 
+-  auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+-  if (!player) {
+-    return { false, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++      if (!player) {
++        return { false, nullVal };
++      }
+ 
+-  auto room_base = player->getRoom().lock();
+-  auto room = dynamic_pointer_cast<Room>(room_base);
+-  player->saveState(jsonData, [room] {
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), "query_done");
++      auto room_base = player->getRoom().lock();
++      auto room = dynamic_pointer_cast<Room>(room_base);
++      if (!room || room->isRetired()) return { false, nullVal };
++      player->saveState(jsonData, [weak = std::weak_ptr<Room>(room), session = room->getSessionId()] {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), "query_done");
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Player_getSaveState(const JsonRpcPacket &packet) {
+@@ -464,19 +479,27 @@
+ 
+   auto connId = std::get<int>(packet.param1);
+ 
+-  auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+-  if (!player) {
+-    return { false, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++      if (!player) {
++        return { false, nullVal };
++      }
+ 
+-  auto room_base = player->getRoom().lock();
+-  auto room = dynamic_pointer_cast<Room>(room_base);
+-  player->getSaveState([room](std::string result) {;
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), result);
++      auto room_base = player->getRoom().lock();
++      auto room = dynamic_pointer_cast<Room>(room_base);
++      if (!room || room->isRetired()) return { false, nullVal };
++      player->getSaveState([weak = std::weak_ptr<Room>(room), session = room->getSessionId()](std::string result) {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), result);
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Player_saveGlobalState(const JsonRpcPacket &packet) {
+@@ -492,19 +515,27 @@
+   auto key = std::get<std::string_view>(packet.param2);
+   auto jsonData = std::get<std::string_view>(packet.param3);
+ 
+-  auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+-  if (!player) {
+-    return { false, nullVal };
+-  }
+-
+-  auto room_base = player->getRoom().lock();
+-  auto room = dynamic_pointer_cast<Room>(room_base);
+-  player->saveGlobalState(key, jsonData, [room] {
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), "query_done");
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++      if (!player) {
++        return { false, nullVal };
++      }
++
++      auto room_base = player->getRoom().lock();
++      auto room = dynamic_pointer_cast<Room>(room_base);
++      if (!room || room->isRetired()) return { false, nullVal };
++      player->saveGlobalState(key, jsonData, [weak = std::weak_ptr<Room>(room), session = room->getSessionId()] {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), "query_done");
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Player_getGlobalSaveState(const JsonRpcPacket &packet) {
+@@ -518,19 +549,27 @@
+   auto connId = std::get<int>(packet.param1);
+   auto key = std::get<std::string_view>(packet.param2);
+ 
+-  auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+-  if (!player) {
+-    return { false, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto player = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++      if (!player) {
++        return { false, nullVal };
++      }
+ 
+-  auto room_base = player->getRoom().lock();
+-  auto room = dynamic_pointer_cast<Room>(room_base);
+-  player->getGlobalSaveState(key, [room](std::string result) {
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), result);
++      auto room_base = player->getRoom().lock();
++      auto room = dynamic_pointer_cast<Room>(room_base);
++      if (!room || room->isRetired()) return { false, nullVal };
++      player->getGlobalSaveState(key, [weak = std::weak_ptr<Room>(room), session = room->getSessionId()](std::string result) {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), result);
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ 
+@@ -575,14 +614,20 @@
+   auto role = std::get<std::string_view>(packet.param4);
+   int result = std::get<int>(packet.param5);
+ 
+-  auto room = Server::instance().room_manager().findRoom(roomId).lock();
+-  if (!room) {
+-    return { false, "Room not found"sv };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(roomId).lock();
++      if (!room) {
++        return { false, "Room not found"sv };
++      }
+ 
+-  room->updatePlayerWinRate(playerId, mode, role, result);
++      room->updatePlayerWinRate(playerId, mode, role, result);
+ 
+-  return { true, nullVal };
++      return { true, nullVal };
++    }();
++  });
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Room_updateGeneralWinRate(const JsonRpcPacket &packet) {
+@@ -602,14 +647,20 @@
+   auto role = std::get<std::string_view>(packet.param4);
+   int result = std::get<int>(packet.param5);
+ 
+-  auto room = Server::instance().room_manager().findRoom(roomId).lock();
+-  if (!room) {
+-    return { false, "Room not found"sv };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(roomId).lock();
++      if (!room) {
++        return { false, "Room not found"sv };
++      }
+ 
+-  room->updateGeneralWinRate(general, mode, role, result);
++      room->updateGeneralWinRate(general, mode, role, result);
+ 
+-  return { true, nullVal };
++      return { true, nullVal };
++    }();
++  });
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Room_gameOver(const JsonRpcPacket &packet) {
+@@ -721,7 +772,7 @@
+     return { false, "Room not found"sv };
+   }
+ 
+-  auto s = room->getSessionData();
++  auto s = std::string(room->getSessionData());
+ 
+   return { true, s };
+ }
+@@ -754,16 +805,22 @@
+   }
+ 
+   int roomId = std::get<int>(packet.param1);
+-  auto room = Server::instance().room_manager().findRoom(roomId).lock();
+-  if (!room) {
+-    return { false, "Room not found"sv };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(roomId).lock();
++      if (!room) {
++        return { false, "Room not found"sv };
++      }
+ 
+-  auto &bot = room->addNpc();
++      auto &bot = room->addNpc();
+ 
+-  auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(bot));
++      auto bin = json::to_cbor(RpcDispatchers::getPlayerObject(bot));
+ 
+-  return { true, std::string(bin.begin(), bin.end()) };
++      return { true, std::string(bin.begin(), bin.end()) };
++    }();
++  });
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Room_removeNpc(const JsonRpcPacket &packet) {
+@@ -777,19 +834,26 @@
+   int id = std::get<int>(packet.param1);
+   int pid = std::get<int>(packet.param2);
+ 
+-  auto room = Server::instance().room_manager().findRoom(id).lock();
+-  if (!room) {
+-    return { false, "Room not found"sv };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(id).lock();
++      if (!room) {
++        return { false, "Room not found"sv };
++      }
+ 
+-  auto player = Server::instance().user_manager().findPlayerByConnId(pid).lock();
+-  if (!player) {
+-    return { false, "Player not found"sv };
+-  }
++      auto player = Server::instance().user_manager().findPlayerByConnId(pid).lock();
++      if (!player || player->getId() >= 0 ||
++          std::ranges::find(room->getPlayers(), pid) == room->getPlayers().end()) {
++        return { false, "NPC not found"sv };
++      }
+ 
+-  room->removeNpc(*player);
++      room->removeNpc(*player);
+ 
+-  return { true, nullVal };
++      return { true, nullVal };
++    }();
++  });
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Room_saveGlobalState(const JsonRpcPacket &packet) {
+@@ -805,17 +869,24 @@
+   auto key = std::get<std::string_view>(packet.param2);
+   auto jsonData = std::get<std::string_view>(packet.param3);
+ 
+-  auto room = Server::instance().room_manager().findRoom(roomId).lock();
+-  if (!room) {
+-    return { false, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(roomId).lock();
++      if (!room) {
++        return { false, nullVal };
++      }
+ 
+-  room->saveGlobalState(key, jsonData, [room] {
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), "query_done");
++      room->saveGlobalState(key, jsonData, [weak = std::weak_ptr<Room>(room), session = room->getSessionId()] {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), "query_done");
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ static _rpcRet _rpc_Room_getGlobalSaveState(const JsonRpcPacket &packet) {
+@@ -829,17 +900,24 @@
+   auto roomId = std::get<int>(packet.param1);
+   auto key = std::get<std::string_view>(packet.param2);
+ 
+-  auto room = Server::instance().room_manager().findRoom(roomId).lock();
+-  if (!room) {
+-    return { false, nullVal };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(roomId).lock();
++      if (!room) {
++        return { false, nullVal };
++      }
+ 
+-  room->getGlobalSaveState(key, [room](std::string result) {
+-    if (!room) return;
+-    auto thread = room->thread().lock();
+-    if (thread) thread->wakeUp(room->getId(), result);
++      room->getGlobalSaveState(key, [weak = std::weak_ptr<Room>(room), session = room->getSessionId()](std::string result) {
++        auto room = weak.lock();
++        if (!room || room->isRetired() || room->getSessionId() != session) return;
++        auto thread = room->thread().lock();
++        if (thread) thread->wakeUp(room->getId(), result);
++      });
++      return { true, true };
++    }();
+   });
+-  return { true, true };
++  return response;
+ }
+ 
+ 
+@@ -868,38 +946,44 @@
+     return { false, nullVal };
+   }
+ 
+-  auto room = Server::instance().room_manager().findRoom(id).lock();
+-  if (!room) {
+-    return { false, "Room not found"sv };
+-  }
++  _rpcRet response { false, "Main context stopped"sv };
++  dispatchMainAndWait(Server::instance().context(), [&] {
++    response = [&]() -> _rpcRet {
++      auto room = Server::instance().room_manager().findRoom(id).lock();
++      if (!room) {
++        return { false, "Room not found"sv };
++      }
+ 
+-  const auto &pids = room->getPlayers();
++      const auto &pids = room->getPlayers();
+ 
+-  auto owner = room->getOwner().lock();
+-  json j {
+-    { "id", room->getId() },
+-    { "ownerId", owner ? owner->getId() : 0 },
+-    { "timeout", room->getTimeout() },
+-    { "settings", room->getSettings() },
+-  };
++      auto owner = room->getOwner().lock();
++      json j {
++        { "id", room->getId() },
++        { "ownerId", owner ? owner->getId() : 0 },
++        { "timeout", room->getTimeout() },
++        { "settings", room->getSettings() },
++      };
+ 
+-  auto players = json::array();
+-  auto &um = Server::instance().user_manager();
+-  for (auto pid : pids) {
+-    auto p = um.findPlayerByConnId(pid).lock();
+-    if (p) players.push_back( RpcDispatchers::getPlayerObject(*p) );
+-  }
+-  j["players"] = players;
++      auto players = json::array();
++      auto &um = Server::instance().user_manager();
++      for (auto pid : pids) {
++        auto p = um.findPlayerByConnId(pid).lock();
++        if (p) players.push_back( RpcDispatchers::getPlayerObject(*p) );
++      }
++      j["players"] = players;
+ 
+-  auto observers = json::array();
+-  for (auto pid : room->getObservers()) {
+-    auto p = um.findPlayerByConnId(pid).lock();
+-    if (p) observers.push_back( RpcDispatchers::getPlayerObject(*p) );
+-  }
+-  j["observers"] = observers;
++      auto observers = json::array();
++      for (auto pid : room->getObservers()) {
++        auto p = um.findPlayerByConnId(pid).lock();
++        if (p) observers.push_back( RpcDispatchers::getPlayerObject(*p) );
++      }
++      j["observers"] = observers;
+ 
+-  auto bin = json::to_cbor(j);
+-  return { true, std::string(bin.begin(), bin.end()) };
++      auto bin = json::to_cbor(j);
++      return { true, std::string(bin.begin(), bin.end()) };
++    }();
++  });
++  return response;
+ }
+ 
+ const JsonRpc::RpcMethodMap RpcDispatchers::ServerRpcMethods {
+--- a/src/server/room/lobby.cpp
++++ b/src/server/room/lobby.cpp
+@@ -278,7 +278,7 @@
+ void Lobby::refreshRoomList(ServerPlayer &sender, const Packet &) {
+   auto &rm = Server::instance().room_manager();
+ 
+-  auto &rooms = rm.getRooms();
++  auto rooms = rm.getRooms();
+ 
+   // 拼好cbor 首先拼一个头
+   std::ostringstream oss;
+--- a/src/server/room/room.cpp
++++ b/src/server/room/room.cpp
+@@ -11,6 +11,7 @@
+ #include "server/user/serverplayer.h"
+ #include "server/user/user_manager.h"
+ #include "core/c-wrapper.h"
++#include <limits>
+ 
+ namespace asio = boost::asio;
+ 
+@@ -18,54 +19,68 @@
+ 
+ Room::Room() {
+   static int nextRoomId = 1;
++  if (nextRoomId >= 0x7FFFFFFF) throw std::overflow_error("Room ID exhausted");
+   id = nextRoomId++;
+ 
+-  m_thread_id = 1000;
+-
+   timeout = 15;
+ }
+ 
+-Room::~Room() {
+-  // 标记为过期 避免封人
+-  md5 = "";
++Room::~Room() = default;
+ 
++void Room::retire() noexcept {
++  if (retired.exchange(true)) return;
++  if (m_thread_id == 0) return;
++  {
++    std::lock_guard lock(lua_ref_mutex);
++    lua_ref_count = 0;
++  }
++  try {
++    destroyRequestTimer();
++  } catch (...) {
++    spdlog::warn("Room request timer cleanup failed");
++  }
++  md5.clear();
++
+   auto &um = Server::instance().user_manager();
+   auto &rm = Server::instance().room_manager();
+-
+-  auto pClone = players;
+-  auto obClone = observers;
+-  for (auto pConnId : pClone) {
+-    auto p = um.findPlayerByConnId(pConnId).lock();
+-    if (!p) continue;
+-
+-    if (p->isOnline()) {
+-      removePlayer(*p);
+-      rm.lobby().lock()->addPlayer(*p);
+-    } else {
+-      um.deletePlayer(*p);
+-    }
+-  }
+-  for (auto pConnId : obClone) {
+-    auto p = um.findPlayerByConnId(pConnId).lock();
+-    if (p) {
+-      if (p->isOnline()) {
+-        removeObserver(*p);
+-        rm.lobby().lock()->addPlayer(*p);
+-      } else {
+-        um.deletePlayer(*p);
++  auto lobby = rm.lobby().lock();
++  const auto releaseMembers = [&](std::vector<int> &members, bool observing) {
++    while (!members.empty()) {
++      const auto connId = members.back();
++      auto player = um.findPlayerByConnId(connId).lock();
++      if (player) {
++        if (player->isOnline()) {
++          try {
++            if (observing) removeObserver(*player);
++            else removePlayer(*player);
++          } catch (...) {
++            spdlog::warn("Room membership notification failed");
++          }
++          try {
++            if (lobby) lobby->addPlayer(*player);
++          } catch (...) {
++            spdlog::warn("Room lobby transfer failed");
++            try { um.deletePlayer(*player); }
++            catch (...) { spdlog::warn("Room player cleanup failed"); }
++          }
++        } else {
++          try { um.deletePlayer(*player); }
++          catch (...) { spdlog::warn("Room player cleanup failed"); }
++        }
+       }
++      std::erase(members, connId);
+     }
+-  }
+-
+-  auto thr = Server::instance().getThread(m_thread_id).lock();
+-  if (thr) {
++  };
++  releaseMembers(players, false);
++  releaseMembers(observers, true);
++
++  if (auto thr = Server::instance().getThread(m_thread_id).lock()) {
+     thr->removeRoom(id);
+-    thr->decreaseRefCount();
++    try { thr->decreaseRefCount(); }
++    catch (...) { spdlog::warn("Room worker refcount cleanup failed"); }
+   }
+-
+-  rm.lobby().lock()->updateOnlineInfo();
+-
+-  // spdlog::debug("[MEMORY] Room {} destructed", id);
++  try { if (lobby) lobby->updateOnlineInfo(); }
++  catch (...) { spdlog::warn("Room lobby notification failed"); }
+ }
+ 
+ std::string &Room::getName() { return name; }
+@@ -521,20 +536,24 @@
+ bool Room::isStarted() { return getRefCount() > 0; }
+ 
+ std::weak_ptr<RoomThread> Room::thread() const {
++  if (isRetired()) return {};
+   return Server::instance().getThread(m_thread_id);
+ }
+ 
+ void Room::setThread(RoomThread &t) {
+-  m_thread_id = t.id();
++  if (m_thread_id != 0) throw std::logic_error("Room already bound");
+   md5 = t.getMd5();
+   t.addRoom(id);
+   t.increaseRefCount();
++  m_thread_id = t.id();
+ }
+ 
+ void Room::checkAbandoned(CheckAbandonReason reason) {
+-  asio::post(Server::instance().context(), [reason, weak = weak_from_this()] {
++  asio::post(Server::instance().context(), [reason, weak = weak_from_this(), session = getSessionId()] {
+     auto ptr = weak.lock();
+-    if (ptr) ptr->_checkAbandoned(reason);
++    if (!ptr || ptr->isRetired() || ptr->getSessionId() != session) return;
++    if (reason == NoRefCount && ptr->getRefCount() != 0) return;
++    ptr->_checkAbandoned(reason);
+   });
+ }
+ 
+@@ -728,7 +747,7 @@
+   auto &main_ctx = Server::instance().context();
+   dispatchMainAndWait(main_ctx, [weak = weak_from_this()] {
+     auto c = weak.lock();
+-    if (c) c->_gameOver();
++    if (c && !c->isRetired()) c->_gameOver();
+   });
+ }
+ 
+@@ -811,10 +830,6 @@
+   for (auto pConnId : players) {
+     auto p = um.findPlayerByConnId(pConnId).lock();
+     if (!p) continue;
+-    p->setReady(false);
+-    p->setDied(false);
+-    p->startGameTimer();
+-
+     auto socket = p->getRouter().getSocket();
+     if (!socket) continue;
+     auto uuid = std::string(p->getUuid());
+@@ -858,6 +873,11 @@
+   auto thr = thread().lock();
+   if (!thr) return;
+ 
++  if (getSessionId() == std::numeric_limits<int>::max()) {
++    spdlog::warn("Room session ID exhausted");
++    return;
++  }
++  auto request = fmt::format("-1,{},newroom", id);
+   spdlog::info("[GameStart] Room {} started", getId());
+ 
+   auto &um = Server::instance().user_manager();
+@@ -871,12 +891,18 @@
+ 
+   detectSameIpAndDevice();
+ 
+-  thr->pushRequest(fmt::format("-1,{},newroom", id));
+-
+-  // 立刻加，但又要保证reconnect请求在newroom后面
+-  increaseRefCount();
+-
+-  session_id++;
++  {
++    std::lock_guard lock(lua_ref_mutex);
++    if (retired.load()) return;
++    session_id++;
++    lua_ref_count++;
++  }
++  try {
++    if (!thr->pushRequest(request)) decreaseRefCount();
++  } catch (...) {
++    decreaseRefCount();
++    spdlog::warn("Room start dispatch failed");
++  }
+ }
+ 
+ void Room::pushRequest(const std::string &req) {
+@@ -1149,6 +1175,8 @@
+ 
+ // Lua用：request之前设置计时器防止等到死。
+ void Room::setRequestTimer(int ms) {
++  std::lock_guard lock(requestTimerMutex);
++  if (isRetired()) return;
+   auto thread = this->thread().lock();
+   if (!thread) return;
+   auto &ctx = thread->context();
+@@ -1158,8 +1186,10 @@
+ 
+   // 不能让即将运行在thread中的lambda捕获到shared_ptr，否则可能会线程内析构自身导致死锁
+   auto weak_thr = std::weak_ptr(thread);
+-  request_timer->async_wait([id = this->id, weak_thr](const std::error_code& ec){
++  request_timer->async_wait([id = this->id, weak_thr, weak = weak_from_this(), session = getSessionId()](const std::error_code& ec){
+     if (!ec) {
++      auto room = weak.lock();
++      if (!room || room->isRetired() || room->getSessionId() != session || !room->isStarted()) return;
+       auto thread = weak_thr.lock();
+       if (thread) thread->wakeUp(id, "request_timer");
+     } else {
+@@ -1173,6 +1203,7 @@
+ 
+ // Lua用：当request完成后手动销毁计时器。
+ void Room::destroyRequestTimer() {
++  std::lock_guard lock(requestTimerMutex);
+   if (!request_timer) return;
+   request_timer->cancel();
+   request_timer = nullptr;
+@@ -1185,16 +1216,17 @@
+ 
+ void Room::increaseRefCount() {
+   std::lock_guard<std::mutex> locker(lua_ref_mutex);
+-  lua_ref_count++;
++  if (!retired.load()) lua_ref_count++;
+ }
+ 
+ void Room::decreaseRefCount() {
+   {
+     std::lock_guard<std::mutex> locker(lua_ref_mutex);
++    if (lua_ref_count == 0) return;
+     lua_ref_count--;
+     if (lua_ref_count > 0) return;
++    checkAbandoned(NoRefCount);
+   }
+-  checkAbandoned(NoRefCount);
+ }
+ 
+ void Room::clearFailedWorkerRefs() {
+@@ -1240,6 +1272,7 @@
+ }
+ 
+ void Room::removeNpc(ServerPlayer &player) {
++  if (player.getId() >= 0) return;
+   auto &um = Server::instance().user_manager();
+ 
+   auto it = find(players, player.getConnId());
+--- a/src/server/room/room.h
++++ b/src/server/room/room.h
+@@ -16,6 +16,8 @@
+   Room(Room &) = delete;
+   Room(Room &&) = delete;
+   ~Room();
++  void retire() noexcept;
++  bool isRetired() const { return retired.load(); }
+ 
+   void addPlayer(ServerPlayer &player);
+   void removePlayer(ServerPlayer &player);
+@@ -107,6 +109,7 @@
+ 
+ private:
+   int m_thread_id = 0;
++  std::atomic<bool> retired { false };
+ 
+   // connId[]
+   std::vector<int> players;
+@@ -132,10 +135,11 @@
+   std::mutex lua_ref_mutex;
+ 
+   // 表示此房正在运行第几局游戏
+-  int session_id = 0;
++  std::atomic<int> session_id { 0 };
+   // 以及某个供Lua往里面放点数据的东西
+   std::string session_data = "{}";
+ 
++  std::mutex requestTimerMutex;
+   std::unique_ptr<boost::asio::steady_timer> request_timer = nullptr;
+ 
+   void createRunnedPlayer(ServerPlayer &player, std::shared_ptr<ClientSocket> socket);
+--- a/src/server/room/room_manager.cpp
++++ b/src/server/room/room_manager.cpp
+@@ -15,7 +15,12 @@
+ 
+ // 避免Room在析构时复活Server
+ void RoomManager::destroy() {
+-  rooms.clear();
++  decltype(rooms) removed;
++  {
++    std::lock_guard lock(registryMutex);
++    removed.swap(rooms);
++  }
++  for (auto &[_, room] : removed) room->retire();
+ }
+ 
+ std::shared_ptr<Room> RoomManager::createRoom(ServerPlayer &creator, const std::string &name, int capacity,
+@@ -38,33 +43,46 @@
+   auto room = std::make_shared<Room>();
+   auto id = room->getId();
+ 
+-  rooms[id] = room;
+-  room->setName(name);
+-  room->setCapacity(capacity);
+-  room->setThread(*thread);
+-  room->setTimeout(timeout);
+-  room->setSettings(settings);
++  try {
++    room->setName(name);
++    room->setCapacity(capacity);
++    room->setTimeout(timeout);
++    room->setSettings(settings);
++    room->setThread(*thread);
++    std::lock_guard lock(registryMutex);
++    if (!rooms.emplace(id, room).second)
++      throw std::logic_error("Duplicate room ID");
++  } catch (...) {
++    room->retire();
++    creator.doNotify("ErrorDlg", "Server Internal Error");
++    return nullptr;
++  }
+   return room;
+ }
+ 
+ void RoomManager::removeRoom(int id) {
+-  if (rooms.contains(id)) {
+-    rooms.erase(id);
++  std::shared_ptr<Room> removed;
++  {
++    std::lock_guard lock(registryMutex);
++    auto it = rooms.find(id);
++    if (it == rooms.end()) return;
++    removed = std::move(it->second);
++    rooms.erase(it);
+   }
++  removed->retire();
+ }
+ 
+ std::weak_ptr<Room> RoomManager::findRoom(int id) const {
+-  try {
+-    return rooms.at(id);
+-  } catch (const std::out_of_range &) {
+-    return {};
+-  }
++  std::lock_guard lock(registryMutex);
++  auto it = rooms.find(id);
++  return it == rooms.end() ? std::weak_ptr<Room>{} : it->second;
+ }
+ 
+ std::weak_ptr<Lobby> RoomManager::lobby() const {
+   return m_lobby;
+ }
+ 
+-auto RoomManager::getRooms() const -> const decltype(rooms) & {
++auto RoomManager::getRooms() const -> decltype(rooms) {
++  std::lock_guard lock(registryMutex);
+   return rooms;
+ }
+--- a/src/server/room/room_manager.h
++++ b/src/server/room/room_manager.h
+@@ -11,6 +11,7 @@
+ private:
+   // 用有序map吧，有个按id自动排序的小功能
+   std::map<int, std::shared_ptr<Room>> rooms;
++  mutable std::mutex registryMutex;
+ 
+ public:
+   explicit RoomManager();
+@@ -26,7 +27,7 @@
+ 
+   std::weak_ptr<Room> findRoom(int id) const;
+   std::weak_ptr<Lobby> lobby() const;
+-  auto getRooms() const -> const decltype(rooms) &;
++  auto getRooms() const -> decltype(rooms);
+ 
+ private:
+   // what can i say? ServerPlayer::getRoom需要
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -123,13 +123,12 @@
+ 
+ // 提前析构掉Player啥的，防止instance复活
+ void Server::_clear() {
++  m_admin_http.reset();
+   // Keep the registry's ownership until every worker has exited. Otherwise
+   // the last shared reference can be released by a worker on its own thread.
+-  for (auto &[_, thread] : m_threads) {
+-    thread->stopAndJoin();
+-  }
++  auto threads = getThreads();
++  for (auto &[_, thread] : threads) thread->stopAndJoin();
+   m_task_manager->clear();
+-  m_threads.clear();
+ 
+   std::vector<std::shared_ptr<ServerPlayer>> players;
+   for (auto &[_, p] : m_user_manager->getPlayers()) {
+@@ -143,6 +142,11 @@
+   }
+ 
+   m_room_manager->destroy();
++  m_user_manager->clear();
++  {
++    std::lock_guard lock(threadRegistryMutex);
++    m_threads.clear();
++  }
+ }
+ 
+ void Server::destroy() {
+@@ -193,24 +197,30 @@
+   auto thr = std::make_unique<RoomThread>(*main_io_ctx);
+   if (!thr->getLua().alive()) throw std::runtime_error("Lua worker startup failed");
+   auto id = thr->id();
++  std::lock_guard lock(threadRegistryMutex);
+   m_threads[id] = std::move(thr);
+   return *m_threads[id];
+ }
+ 
+ void Server::removeThread(int threadId) {
+-  auto it = m_threads.find(threadId);
+-  if (it != m_threads.end() && !it->second->isShutdownPending()) {
+-    m_threads.erase(threadId);
++  auto thread = getThread(threadId).lock();
++  if (!thread || thread->isShutdownPending()) return;
++  if (!thread->isShutdownComplete()) {
++    thread->requestShutdown();
++    return;
+   }
++  std::lock_guard lock(threadRegistryMutex);
++  m_threads.erase(threadId);
+ }
+ 
+ std::weak_ptr<RoomThread> Server::getThread(int threadId) {
+-  if (!m_threads.contains(threadId)) return {};
+-  return m_threads[threadId];
++  std::lock_guard lock(threadRegistryMutex);
++  auto it = m_threads.find(threadId);
++  return it == m_threads.end() ? std::weak_ptr<RoomThread>{} : it->second;
+ }
+ 
+ RoomThread &Server::getAvailableThread() {
+-  for (const auto &it : m_threads) {
++  for (const auto &it : getThreads()) {
+     auto &thr = it.second;
+     if (thr->isOutdated()) continue;
+     if (thr->isFull()) continue;
+@@ -220,9 +230,10 @@
+   return createThread();
+ }
+ 
+-const std::unordered_map<int, std::shared_ptr<RoomThread>> &
++std::unordered_map<int, std::shared_ptr<RoomThread>>
+   Server::getThreads() const
+ {
++  std::lock_guard lock(threadRegistryMutex);
+   return m_threads;
+ }
+ 
+@@ -401,7 +412,7 @@
+   }
+ 
+   std::vector<int> to_rm;
+-  for (auto &[id, thread] : m_threads) {
++  for (auto &[id, thread] : getThreads()) {
+     if (thread->isOutdated() && thread->getRefCount() == 0)
+       to_rm.push_back(id);
+   }
+--- a/src/server/server.h
++++ b/src/server/server.h
+@@ -71,7 +71,7 @@
+   void removeThread(int threadId);
+   std::weak_ptr<RoomThread> getThread(int threadId);
+   RoomThread &getAvailableThread();
+-  const std::unordered_map<int, std::shared_ptr<RoomThread>> &getThreads() const;
++  std::unordered_map<int, std::shared_ptr<RoomThread>> getThreads() const;
+ 
+   void broadcast(const std::string_view &command, const std::string_view &jsonData);
+ 
+@@ -103,6 +103,7 @@
+   std::mutex transaction_mutex;
+ 
+   std::unordered_map<int, std::shared_ptr<RoomThread>> m_threads;
++  mutable std::mutex threadRegistryMutex;
+ 
+   std::unique_ptr<UserManager> m_user_manager;
+   std::unique_ptr<RoomManager> m_room_manager;
+--- a/src/server/user/serverplayer.cpp
++++ b/src/server/user/serverplayer.cpp
+@@ -30,8 +30,8 @@
+ 
+   roomId = 0;
+ 
++  if (nextConnId >= 0x7FFFFF00) throw std::overflow_error("Connection ID exhausted");
+   connId = nextConnId++;
+-  if (nextConnId >= 0x7FFFFF00) nextConnId = 1000;
+ 
+   ttl = max_ttl;
+   m_thinking = false;
+@@ -41,13 +41,7 @@
+   gameTimerStartTimestamp = duration_cast<seconds>(now.time_since_epoch()).count();
+ }
+ 
+-ServerPlayer::~ServerPlayer() {
+-  // spdlog::debug("[MEMORY] ServerPlayer {} (connId={} state={}) destructed", id, connId, getStateString());
+-  auto room = getRoom().lock();
+-  if (room) {
+-    room->removePlayer(*this);
+-  }
+-}
++ServerPlayer::~ServerPlayer() = default;
+ 
+ std::string ServerPlayer::getScreenName() const { return screenName; }
+ 
+@@ -97,10 +91,11 @@
+ 
+ std::weak_ptr<RoomBase> ServerPlayer::getRoom() const {
+   auto &room_manager = Server::instance().room_manager();
+-  if (roomId == 0) {
++  const auto currentRoom = roomId.load();
++  if (currentRoom == 0) {
+     return room_manager.lobby();
+   }
+-  return room_manager.findRoom(roomId);
++  return room_manager.findRoom(currentRoom);
+ }
+ 
+ void ServerPlayer::setRoom(RoomBase &room) {
+--- a/src/server/user/serverplayer.h
++++ b/src/server/user/serverplayer.h
+@@ -90,7 +90,7 @@
+   int connId;
+   std::string uuid_str;
+ 
+-  int roomId;       // Room that player is in, maybe lobby
++  std::atomic<int> roomId;       // Room that player is in, maybe lobby
+ 
+   std::unique_ptr<Router> m_router;
+ 
+--- a/src/server/user/user_manager.cpp
++++ b/src/server/user/user_manager.cpp
+@@ -23,7 +23,12 @@
+   if (id < 0) return findRobot(id);
+   if (preferInGame) {
+     std::shared_ptr<ServerPlayer> offlinePlayer;
+-    for (const auto &entry : players_map) {
++    decltype(players_map) snapshot;
++    {
++      std::lock_guard lock(registryMutex);
++      snapshot = players_map;
++    }
++    for (const auto &entry : snapshot) {
+       const auto &player = entry.second;
+       if (!player || player->getId() != id || !player->insideGame()) continue;
+       // A stale Run player must win over an Offline duplicate so an old
+@@ -37,69 +42,84 @@
+     if (offlinePlayer)
+       return offlinePlayer;
+   }
+-  try {
+-    return online_players_map.at(id);
+-  } catch (const std::out_of_range &) {
+-    return {};
+-  }
++  std::lock_guard lock(registryMutex);
++  auto it = online_players_map.find(id);
++  return it == online_players_map.end() ? std::weak_ptr<ServerPlayer>{} : it->second;
+ }
+ 
+ std::weak_ptr<ServerPlayer> UserManager::findRobot(int id) const {
+-  try {
+-    return robots_map.at(id);
+-  } catch (const std::out_of_range &) {
+-    return {};
+-  }
++  std::lock_guard lock(registryMutex);
++  auto it = robots_map.find(id);
++  return it == robots_map.end() ? std::weak_ptr<ServerPlayer>{} : it->second;
+ }
+ 
+ std::weak_ptr<ServerPlayer> UserManager::findPlayerByConnId(int connId) const {
+-  try {
+-    return players_map.at(connId);
+-  } catch (const std::out_of_range &) {
+-    return {};
+-  }
++  std::lock_guard lock(registryMutex);
++  auto it = players_map.find(connId);
++  return it == players_map.end() ? std::weak_ptr<ServerPlayer>{} : it->second;
+ }
+ 
+ void UserManager::addPlayer(std::shared_ptr<ServerPlayer> player) {
+-  int id = player->getId();
+-  if (id > 0) {
+-    if (online_players_map[id])
+-      online_players_map.erase(id);
+-
+-    online_players_map[id] = player;
+-  } else {
+-    if (robots_map[id]) [[unlikely]]
+-      robots_map.erase(id);
+-
+-    robots_map[id] = player;
++  const auto id = player->getId();
++  const auto connId = player->getConnId();
++  std::shared_ptr<ServerPlayer> previous;
++  {
++    std::lock_guard lock(registryMutex);
++    auto &byId = id > 0 ? online_players_map : robots_map;
++    auto [conn, inserted] = players_map.try_emplace(connId, player);
++    if (!inserted && conn->second != player)
++      throw std::logic_error("Duplicate player connection ID");
++    try {
++      auto [entry, newId] = byId.try_emplace(id, player);
++      if (!newId) previous = std::exchange(entry->second, player);
++    } catch (...) {
++      if (inserted) players_map.erase(conn);
++      throw;
++    }
+   }
+-
+-  players_map[player->getConnId()] = player;
+ }
+ 
+ void UserManager::deletePlayer(ServerPlayer &p) {
+-  removePlayer(p, p.getId());
+-  removePlayerByConnId(p.getConnId());
+-}
+-
+-void UserManager::removePlayer(ServerPlayer &p, int id) {
+-  if (online_players_map.find(id) != online_players_map.end() &&
+-    online_players_map[id].get() == &p) {
+-    online_players_map.erase(id);
++  // Registry mutation and membership cleanup run on the main context.
++  // A worker may still own a lookup snapshot after both indexes are erased.
++  std::shared_ptr<ServerPlayer> removed;
++  {
++    std::lock_guard lock(registryMutex);
++    auto conn = players_map.find(p.getConnId());
++    if (conn == players_map.end() || conn->second.get() != &p) return;
++    removed = std::move(conn->second);
++    players_map.erase(conn);
++    auto &byId = p.getId() > 0 ? online_players_map : robots_map;
++    auto entry = byId.find(p.getId());
++    if (entry != byId.end() && entry->second == removed) byId.erase(entry);
+   }
+-  if (robots_map.find(id) != robots_map.end()) {
+-    robots_map.erase(id);
++  try {
++    if (auto room = removed->getRoom().lock()) room->removePlayer(*removed);
++  } catch (...) {
++    spdlog::warn("Player membership cleanup failed");
+   }
++  try { removed->getRouter().setSocket(nullptr); }
++  catch (...) { spdlog::warn("Player socket cleanup failed"); }
++  try { removed->getRouter().abortRequest(); }
++  catch (...) { spdlog::warn("Player request cleanup failed"); }
+ }
+ 
+-void UserManager::removePlayerByConnId(int connId) {
+-  if (players_map.find(connId) != players_map.end()) {
+-    players_map.erase(connId);
++void UserManager::clear() {
++  decltype(players_map) removed;
++  {
++    std::lock_guard lock(registryMutex);
++    removed.swap(players_map);
++    online_players_map.clear();
++    robots_map.clear();
+   }
++  for (auto &[_, player] : removed) {
++    player->getRouter().setSocket(nullptr);
++    player->getRouter().abortRequest();
++  }
+ }
+ 
+-
+-const std::unordered_map<int, std::shared_ptr<ServerPlayer>> &UserManager::getPlayers() const {
++std::unordered_map<int, std::shared_ptr<ServerPlayer>> UserManager::getPlayers() const {
++  std::lock_guard lock(registryMutex);
+   return online_players_map;
+ }
+ 
+@@ -160,7 +180,7 @@
+                player->getScreenName(), client->peerAddress(), id, player->getConnId());
+ 
+   auto &server = Server::instance();
+-  if (online_players_map.size() <= 10) {
++  if (getPlayers().size() <= 10) {
+     server.broadcast("ServerMessage", fmt::format("{} logged in", player->getScreenName()));
+   }
+ 
+@@ -184,8 +204,8 @@
+ 
+   auto robot = std::make_shared<ServerPlayer>();
+   robot->setState(Player::Robot);
++  if (nextRobotId <= -2147483393) throw std::overflow_error("Robot ID exhausted");
+   robot->setId(nextRobotId--);
+-  if (nextRobotId < (int)0x800000FF) nextRobotId = -2;
+   robot->setAvatar("guanyu");
+   robot->setScreenName(fmt::format("COMP-{}", robot->getId()));
+   robot->setReady(true);
+--- a/src/server/user/user_manager.h
++++ b/src/server/user/user_manager.h
+@@ -15,10 +15,9 @@
+   std::weak_ptr<ServerPlayer> findPlayerByConnId(int connId) const;
+   void addPlayer(std::shared_ptr<ServerPlayer> player);
+   void deletePlayer(ServerPlayer &p);
+-  void removePlayer(ServerPlayer &p, int id);
+-  void removePlayerByConnId(int connid);
++  void clear();
+ 
+-  const std::unordered_map<int, std::shared_ptr<ServerPlayer>> &getPlayers() const;
++  std::unordered_map<int, std::shared_ptr<ServerPlayer>> getPlayers() const;
+ 
+   void processNewConnection(std::shared_ptr<ClientSocket> client);
+ 
+@@ -30,6 +29,8 @@
+ private:
+   std::unique_ptr<AuthManager> m_auth;
+ 
++  mutable std::mutex registryMutex;
++
+   // connId -> ServerPlayer
+   std::unordered_map<int, std::shared_ptr<ServerPlayer>> players_map;
+   // Id -> ServerPlayer

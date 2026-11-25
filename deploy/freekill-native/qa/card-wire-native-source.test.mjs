@@ -186,4 +186,32 @@ test('native socket patches apply after the complete production patch sequence',
   assert.match(boundRouter, /if \(!binding->active\) return/u);
   execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
     '-i', bindingPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const taskPatch = path.join(patchDir, 'tqs-native-task-ownership.patch');
+  applyPatch(source, taskPatch, true);
+  applyPatch(source, taskPatch);
+  const taskManager = readFileSync(path.join(source, 'src/server/task/task_manager.cpp'), 'utf8');
+  const task = readFileSync(path.join(source, 'src/server/task/task.cpp'), 'utf8');
+  const taskServer = readFileSync(path.join(source, 'src/server/server.cpp'), 'utf8');
+  assert.match(taskManager, /std::shared_ptr<Task> TaskManager::getTask/u);
+  assert.match(taskManager, /tasks.swap\(task_map\)/u);
+  assert.match(task, /retired.exchange\(true\)/u);
+  assert.match(taskServer, /thread->stopAndJoin\(\);\s*\}\s*m_task_manager->clear\(\);\s*m_threads.clear\(\)/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', taskPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const registryPatch = path.join(patchDir, 'tqs-native-registry-ownership.patch');
+  applyPatch(source, registryPatch, true);
+  applyPatch(source, registryPatch);
+  const users = readFileSync(path.join(source, 'src/server/user/user_manager.cpp'), 'utf8');
+  const rooms = readFileSync(path.join(source, 'src/server/room/room_manager.cpp'), 'utf8');
+  const room = readFileSync(path.join(source, 'src/server/room/room.cpp'), 'utf8');
+  const registryServer = readFileSync(path.join(source, 'src/server/server.cpp'), 'utf8');
+  assert.match(users, /entry->second == removed/u);
+  assert.match(users, /removed.swap\(players_map\)/u);
+  assert.match(rooms, /removed.swap\(rooms\)/u);
+  assert.match(room, /retired.exchange\(true\)/u);
+  assert.match(registryServer, /thread->stopAndJoin\(\);\s*m_task_manager->clear\(\);/u);
+  assert.match(registryServer, /m_room_manager->destroy\(\);\s*m_user_manager->clear\(\);/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', registryPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+
 });

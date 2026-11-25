@@ -1,0 +1,549 @@
+--- a/src/server/gamelogic/roomthread.cpp
++++ b/src/server/gamelogic/roomthread.cpp
+@@ -158,21 +158,22 @@
+   if (m_ref_count == 0) Server::instance().removeThread(m_id);
+ }
+ 
+-void RoomThread::emit_signal(std::function<void()> f) {
+-  if (shutdownScheduled.load()) return;
++bool RoomThread::emit_signal(std::function<void()> f) {
++  if (shutdownScheduled.load() || io_ctx.stopped()) return false;
+   if (!L->alive()) {
+     scheduleShutdown();
+-    return;
++    return false;
+   }
+   asio::dispatch(io_ctx, [this, f = std::move(f)] {
+     if (shutdownScheduled.load()) return;
+     f();
+     if (!L->alive()) scheduleShutdown();
+   });
++  return true;
+ }
+ 
+-void RoomThread::pushRequest(const std::string &req) {
+-  emit_signal([=, this] { push_request_callback(req); });
++bool RoomThread::pushRequest(const std::string &req) {
++  return emit_signal([=, this] { push_request_callback(req); });
+ }
+ 
+ void RoomThread::delay(int roomId, int ms) {
+--- a/src/server/gamelogic/roomthread.h
++++ b/src/server/gamelogic/roomthread.h
+@@ -20,7 +20,7 @@
+   io_context &context();
+ 
+   // signal emitters
+-  void pushRequest(const std::string &req);
++  bool pushRequest(const std::string &req);
+   void delay(int roomId, int ms);
+   void wakeUp(int roomId, std::string &reason);
+   void wakeUp(int roomId, const char *reason);
+@@ -70,7 +70,7 @@
+   std::function<void(int connId, int roomId)> add_observer_callback = nullptr;
+   std::function<void(int pid, int roomId)> remove_observer_callback = nullptr;
+ 
+-  void emit_signal(std::function<void()> f);
++  bool emit_signal(std::function<void()> f);
+ 
+   int m_capacity;
+   // 为什么不直接用智能指针呢，算了，这个值表示当前引用它的房间数量+Task数量
+--- a/src/server/gamelogic/rpc-dispatchers.cpp
++++ b/src/server/gamelogic/rpc-dispatchers.cpp
+@@ -146,11 +146,8 @@
+     return { false, nullVal };
+   }
+ 
+-  lobby->saveGlobalState(key, jsonData, [id] {
+-    auto task = Server::instance().task_manager().getTask(id);
+-    if (!task) return;
+-    auto thread = task->thread();
+-    if (thread) thread->wakeUp(task->getId(), "query_done");
++  lobby->saveGlobalState(key, jsonData, [weak = std::weak_ptr<Task>(task)] {
++    if (auto task = weak.lock()) task->resume("query_done");
+   });
+   return { true, true };
+ }
+@@ -176,11 +173,8 @@
+     return { false, nullVal };
+   }
+ 
+-  lobby->getGlobalSaveState(key, [id](std::string result) {
+-    auto task = Server::instance().task_manager().getTask(id);
+-    if (!task) return;
+-    auto thread = task->thread();
+-    if (thread) thread->wakeUp(task->getId(), result);
++  lobby->getGlobalSaveState(key, [weak = std::weak_ptr<Task>(task)](std::string result) {
++    if (auto task = weak.lock()) task->resume(result);
+   });
+   return { true, true };
+ }
+@@ -208,11 +202,8 @@
+     return { true, nullVal };
+   }
+ 
+-  owner->saveGlobalState(key, jsonData, [id] {
+-    auto task = Server::instance().task_manager().getTask(id);
+-    if (!task) return;
+-    auto thread = task->thread();
+-    if (thread) thread->wakeUp(task->getId(), "query_done");
++  owner->saveGlobalState(key, jsonData, [weak = std::weak_ptr<Task>(task)] {
++    if (auto task = weak.lock()) task->resume("query_done");
+   });
+   return { true, true };
+ }
+@@ -238,11 +229,8 @@
+     return { true, nullVal };
+   }
+ 
+-  owner->getGlobalSaveState(key, [id](std::string result) {
+-    auto task = Server::instance().task_manager().getTask(id);
+-    if (!task) return;
+-    auto thread = task->thread();
+-    if (thread) thread->wakeUp(task->getId(), result);
++  owner->getGlobalSaveState(key, [weak = std::weak_ptr<Task>(task)](std::string result) {
++    if (auto task = weak.lock()) task->resume(result);
+   });
+   return { true, true };
+ }
+--- a/src/server/room/lobby.cpp
++++ b/src/server/room/lobby.cpp
+@@ -332,11 +332,13 @@
+   std::string data { bindata.begin(), bindata.end() };
+ 
+   auto &tm = Server::instance().task_manager();
++  std::shared_ptr<Task> task;
+   try {
+-    auto &task = tm.createTask(type, data);
+-    tm.attachTaskToUser(task.getId(), sender.getConnId());
+-    task.start();
++    task = tm.createTask(type, data);
++    tm.attachTaskToUser(task->getId(), sender.getConnId());
++    task->start();
+   } catch (const std::exception &) {
++    if (task) tm.removeTask(task->getId());
+     sender.doNotify("ErrorDlg", "Server Internal Error");
+   }
+ }
+--- a/src/server/server.cpp
++++ b/src/server/server.cpp
+@@ -128,6 +128,7 @@
+   for (auto &[_, thread] : m_threads) {
+     thread->stopAndJoin();
+   }
++  m_task_manager->clear();
+   m_threads.clear();
+ 
+   std::vector<std::shared_ptr<ServerPlayer>> players;
+--- a/src/server/task/task.cpp
++++ b/src/server/task/task.cpp
+@@ -3,15 +3,20 @@
+ #include "server/server.h"
+ #include "server/gamelogic/roomthread.h"
+ 
++#include <limits>
++#include <stdexcept>
++
+ namespace asio = boost::asio;
+ 
+ Task::Task(const std::string &type, const std::string &data)
+     : taskType { type }, data { data }
+ {
+   static int nextId = -1000;
++  // Task IDs are visible to asynchronous Lua RPCs. Never reuse one while
++  // a stale RPC could still identify it. Creation belongs to the main context.
++  if (nextId == std::numeric_limits<int>::min())
++    throw std::overflow_error("Task ID space exhausted");
+   id = nextId--;
+-  if (nextId < -10000000)
+-    nextId = -1000;
+ 
+   auto &thread = Server::instance().getAvailableThread();
+   m_thread = thread.weak_from_this();
+@@ -19,9 +24,28 @@
+ }
+ 
+ Task::~Task() {
++  retire();
++}
++
++// The manager retires registered tasks on the main context before releasing
++// its ownership. Remaining RPC snapshots can then be destroyed on any thread.
++void Task::retire() noexcept {
++  if (retired.exchange(true)) return;
++  {
++    std::lock_guard lock(lua_ref_mutex);
++    lua_ref_count = 0;
++  }
+   if (auto thread = m_thread.lock()) {
+-    thread->wakeUp(id, "abort");
+-    thread->decreaseRefCount();
++    try {
++      thread->wakeUp(id, "abort");
++    } catch (...) {
++      spdlog::warn("Task abort dispatch failed");
++    }
++    try {
++      thread->decreaseRefCount();
++    } catch (...) {
++      spdlog::warn("Task worker refcount cleanup failed");
++    }
+   }
+   // spdlog::debug("[MEMORY] Task {} destruct", id);
+ }
+@@ -54,27 +78,48 @@
+   return data;
+ }
+ 
+-RoomThread *Task::thread() const {
+-  return m_thread.lock().get();
++bool Task::belongsToThread(const RoomThread &thread) const {
++  return m_thread.lock().get() == &thread;
+ }
+ 
+ void Task::start() {
+-  if (auto thread = m_thread.lock()) {
+-    thread->pushRequest(fmt::format("-1,{},newtask", id));
+-    increaseRefCount();
++  if (retired.load() || started) return;
++  auto thread = m_thread.lock();
++  if (!thread) throw std::runtime_error("Task worker unavailable");
++  auto request = fmt::format("-1,{},newtask", id);
++  started = true;
++  increaseRefCount();
++  try {
++    if (!thread->pushRequest(request))
++      throw std::runtime_error("Task worker rejected request");
++  } catch (...) {
++    std::lock_guard lock(lua_ref_mutex);
++    lua_ref_count = 0;
++    throw;
+   }
+ }
+ 
+-void Task::resume(const std::string &reason) {
+-  if (auto thread = m_thread.lock()) thread->wakeUp(id, reason.c_str());
++void Task::resume(std::string reason) {
++  if (retired.load()) return;
++  asio::dispatch(Server::instance().context(),
++    [weak = weak_from_this(), reason = std::move(reason)]() mutable {
++      auto task = weak.lock();
++      if (!task || task->retired.load()) return;
++      if (auto thread = task->m_thread.lock()) thread->wakeUp(task->id, reason);
++    });
+ }
+ 
+ void Task::abort() {
+-  if (auto thread = m_thread.lock()) thread->wakeUp(id, "abort");
++  resume("abort");
+ }
+ 
+ void Task::delay(int ms) {
+-  if (auto thread = m_thread.lock()) thread->delay(id, ms);
++  if (retired.load()) return;
++  asio::dispatch(Server::instance().context(), [weak = weak_from_this(), ms] {
++    auto task = weak.lock();
++    if (!task || task->retired.load()) return;
++    if (auto thread = task->m_thread.lock()) thread->delay(task->id, ms);
++  });
+ }
+ 
+ int Task::getRefCount() {
+@@ -88,16 +133,17 @@
+ }
+ 
+ void Task::decreaseRefCount() {
++  if (retired.load()) return;
+   {
+     std::lock_guard<std::mutex> locker(lua_ref_mutex);
+-    lua_ref_count--;
++    if (lua_ref_count == 0 || --lua_ref_count != 0) return;
+   }
+ 
+-  if (lua_ref_count == 0) {
+-    // 主线程执行
+-    asio::dispatch(Server::instance().context(), [id = this->id] {
+-      auto &tm = Server::instance().task_manager();
+-      tm.removeTask(id);
+-    });
+-  }
++  asio::dispatch(Server::instance().context(), [weak = weak_from_this()] {
++    auto task = weak.lock();
++    if (!task || task->retired.load()) return;
++    auto &tm = Server::instance().task_manager();
++    if (tm.getTask(task->id) == task && task->getRefCount() == 0)
++      tm.removeTask(task->id);
++  });
+ }
+--- a/src/server/task/task.h
++++ b/src/server/task/task.h
+@@ -2,7 +2,7 @@
+ 
+ class RoomThread;
+ 
+-class Task {
++class Task : public std::enable_shared_from_this<Task> {
+ public:
+   Task(const std::string &type, const std::string &data);
+   Task(const Task&) = delete;
+@@ -18,12 +18,11 @@
+   std::string getTaskType() const;
+   std::string getData() const;
+ 
+-  RoomThread *thread() const;
+ 
+   // 启动并执行
+   void start();
+   // 继续执行 对应coro.resume
+-  void resume(const std::string &reason);
++  void resume(std::string reason);
+   // 中途关闭，对应coro.close
+   void abort();
+ 
+@@ -34,9 +33,13 @@
+   void decreaseRefCount();
+ 
+ private:
++  friend class TaskManager;
++  void retire() noexcept;
++  bool belongsToThread(const RoomThread &thread) const;
++
+   int id; // 负数
+-  int userConnId = 0; // 关联的用户，0表示无
+-  int expectedReplyId = 0; // 正在等待的requestId
++  std::atomic<int> userConnId { 0 }; // 关联的用户，0表示无
++  std::atomic<int> expectedReplyId { 0 }; // 正在等待的requestId
+ 
+   std::string taskType;
+   std::string data = "\xF6"; // 必须是CBOR，默认null
+@@ -44,6 +47,8 @@
+   // 很遗憾，负责执行Lua代码的那个类命名成这样了 导致在这里有点违和
+   std::weak_ptr<RoomThread> m_thread;
+ 
++  std::atomic<bool> retired { false };
++  bool started = false; // main context only
+   int lua_ref_count = 0;
+   std::mutex lua_ref_mutex;
+ };
+--- a/src/server/task/task_manager.cpp
++++ b/src/server/task/task_manager.cpp
+@@ -1,116 +1,115 @@
+ #include "server/task/task_manager.h"
+ #include "server/task/task.h"
+-// #include "server/server.h"
+-// #include "server/gamelogic/roomthread.h"
+ 
+ TaskManager::TaskManager() {}
+ 
+-Task &TaskManager::createTask(const std::string &type, const std::string &data) {
+-  auto task = std::make_unique<Task>(type, data);
+-  auto id = task->getId();
+-  task_map[id] = std::move(task);
+-  return *task_map[id];
++std::shared_ptr<Task> TaskManager::createTask(const std::string &type, const std::string &data) {
++  auto task = std::make_shared<Task>(type, data);
++  std::lock_guard lock(mutex);
++  task_map[task->getId()] = task;
++  return task;
+ }
+ 
+ void TaskManager::removeTask(int id) {
+-  auto it = task_map.find(id);
+-  if (it == task_map.end())
+-    return;
+-
+-  auto &task = it->second;
+-
+-  if (task->getExpectedReplyId() > 0)
+-    task_request_id_map.erase(task->getExpectedReplyId());
+-
+-  if (task->getUserConnId() > 0) {
+-    auto &vec = task_conn_id_map[task->getUserConnId()];
+-    vec.erase(std::remove(vec.begin(), vec.end(), id), vec.end());
+-    if (vec.empty())
+-      task_conn_id_map.erase(task->getUserConnId());
++  std::shared_ptr<Task> task;
++  {
++    std::lock_guard lock(mutex);
++    auto it = task_map.find(id);
++    if (it == task_map.end()) return;
++    task = std::move(it->second);
++    auto requestId = task->getExpectedReplyId();
++    auto connId = task->getUserConnId();
++    if (requestId > 0) {
++      auto request = task_request_id_map.find(requestId);
++      if (request != task_request_id_map.end() && request->second == id)
++        task_request_id_map.erase(request);
++    }
++    if (connId > 0) {
++      auto user = task_conn_id_map.find(connId);
++      if (user != task_conn_id_map.end()) {
++        auto &tasks = user->second;
++        tasks.erase(std::remove(tasks.begin(), tasks.end(), id), tasks.end());
++        if (tasks.empty()) task_conn_id_map.erase(user);
++      }
++    }
++    task_map.erase(it);
+   }
++  // Retire on the main context outside the registry lock: worker callbacks
++  // may look up tasks when wakeUp or refcount cleanup runs.
++  task->retire();
++}
+ 
+-  task_map.erase(it);
++void TaskManager::clear() {
++  decltype(task_map) tasks;
++  {
++    std::lock_guard lock(mutex);
++    tasks.swap(task_map);
++    task_request_id_map.clear();
++    task_conn_id_map.clear();
++  }
++  for (auto &[_, task] : tasks) task->retire();
+ }
+ 
+-Task *TaskManager::getTask(int id) const {
++std::shared_ptr<Task> TaskManager::getTask(int id) const {
++  std::lock_guard lock(mutex);
+   auto it = task_map.find(id);
+-  return it == task_map.end() ? nullptr : it->second.get();
++  return it == task_map.end() ? nullptr : it->second;
+ }
+ 
+-Task *TaskManager::getTaskByRequestId(int reqId) const {
+-  auto it = task_request_id_map.find(reqId);
+-  if (it == task_request_id_map.end())
+-    return nullptr;
+-
+-  return getTask(it->second);
++std::shared_ptr<Task> TaskManager::getTaskByRequestId(int reqId) const {
++  std::lock_guard lock(mutex);
++  auto request = task_request_id_map.find(reqId);
++  if (request == task_request_id_map.end()) return nullptr;
++  auto task = task_map.find(request->second);
++  return task == task_map.end() ? nullptr : task->second;
+ }
+ 
+ std::vector<int> TaskManager::getTaskIdsByUser(int connId) const {
++  std::lock_guard lock(mutex);
+   auto it = task_conn_id_map.find(connId);
+-  if (it == task_conn_id_map.end())
+-    return {};
+-
+-  return it->second;
++  return it == task_conn_id_map.end() ? std::vector<int>{} : it->second;
+ }
+ 
+ void TaskManager::removeAllTasksByUser(int connId) {
+-  auto it = task_conn_id_map.find(connId);
+-  if (it == task_conn_id_map.end())
+-    return;
+-
+-  // 拷贝一份，因为 removeTask() 会修改 task_conn_id_map
+-  std::vector<int> tasks = it->second;
+-
+-  for (int taskId : tasks) removeTask(taskId);
++  for (int id : getTaskIdsByUser(connId)) removeTask(id);
+ }
+ 
+ void TaskManager::removeTasksForThread(const RoomThread &thread) {
+   std::vector<int> tasks;
+-  for (const auto &[id, task] : task_map) {
+-    if (task->thread() == &thread) tasks.push_back(id);
++  {
++    std::lock_guard lock(mutex);
++    for (const auto &[id, task] : task_map) {
++      if (task->belongsToThread(thread)) tasks.push_back(id);
++    }
+   }
+   for (int id : tasks) removeTask(id);
+ }
+ 
+ void TaskManager::attachTaskToUser(int taskId, int connId) {
+   if (connId <= 0) return;
+-  Task* task = getTask(taskId);
+-  if (!task)
+-    return;
+-
+-  int oldConn = task->getUserConnId();
+-
+-  if (oldConn > 0) {
++  std::lock_guard lock(mutex);
++  auto it = task_map.find(taskId);
++  if (it == task_map.end()) return;
++  auto &task = it->second;
++  if (task->getUserConnId() > 0) {
+     spdlog::warn("cannot attach task to different user");
+     return;
+   }
+-
++  task_conn_id_map[connId].push_back(taskId);
+   task->setUserConnId(connId);
+-
+-  auto& vec = task_conn_id_map[connId];
+-  if (std::find(vec.begin(), vec.end(), taskId) == vec.end())
+-    vec.push_back(taskId);
+ }
+ 
+ void TaskManager::setTaskExpectedReplyId(int taskId, int reqId) {
+-  Task* task = getTask(taskId);
+-  if (!task)
+-    return;
+-
+-  int oldReq = task->getExpectedReplyId();
+-
+-  if (oldReq > 0)
+-    task_request_id_map.erase(oldReq);
+-
++  std::lock_guard lock(mutex);
++  auto it = task_map.find(taskId);
++  if (it == task_map.end()) return;
++  auto &task = it->second;
++  auto oldReq = task->getExpectedReplyId();
++  if (reqId > 0) task_request_id_map[reqId] = taskId;
++  if (oldReq > 0 && oldReq != reqId) {
++    auto request = task_request_id_map.find(oldReq);
++    if (request != task_request_id_map.end() && request->second == taskId)
++      task_request_id_map.erase(request);
++  }
+   task->setExpectedReplyId(reqId);
+-
+-  if (reqId == 0)
+-    return;
+-
+-  task_request_id_map[reqId] = taskId;
+ }
+-
+-// void TaskManager::trigger(const char *event) {
+-//   auto thread = ServerInstance->getAvailableThread();
+-//   emit thread->triggerTask(event);
+-// }
+--- a/src/server/task/task_manager.h
++++ b/src/server/task/task_manager.h
+@@ -9,10 +9,11 @@
+   TaskManager(TaskManager &) = delete;
+   TaskManager(TaskManager &&) = delete;
+ 
+-  Task &createTask(const std::string &type, const std::string &data);
++  std::shared_ptr<Task> createTask(const std::string &type, const std::string &data);
+   void removeTask(int id);
+-  Task *getTask(int id) const;
+-  Task *getTaskByRequestId(int reqId) const;
++  void clear();
++  std::shared_ptr<Task> getTask(int id) const;
++  std::shared_ptr<Task> getTaskByRequestId(int reqId) const;
+   std::vector<int> getTaskIdsByUser(int connId) const;
+   void removeAllTasksByUser(int connId);
+   void removeTasksForThread(const RoomThread &thread);
+@@ -23,9 +24,10 @@
+   // void trigger(const char *event);
+ 
+ private:
++  mutable std::mutex mutex;
+ 
+   // id --> task
+-  std::unordered_map<int, std::unique_ptr<Task>> task_map;
++  std::unordered_map<int, std::shared_ptr<Task>> task_map;
+ 
+   // reqId --> taskId
+   std::unordered_map<int, int> task_request_id_map;

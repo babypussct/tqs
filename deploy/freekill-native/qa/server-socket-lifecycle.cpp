@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 Server &Server::instance() { throw std::runtime_error("synthetic discovery failure"); }
 const ServerConfig &Server::config() const { throw std::logic_error("unreachable stub"); }
 UserManager &Server::user_manager() const { throw std::logic_error("unreachable stub"); }
-const std::unordered_map<int, std::shared_ptr<ServerPlayer>> &UserManager::getPlayers() const {
+std::unordered_map<int, std::shared_ptr<ServerPlayer>> UserManager::getPlayers() const {
   throw std::logic_error("unreachable stub");
 }
 

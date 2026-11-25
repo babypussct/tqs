@@ -48,3 +48,9 @@ fi
 "${CXX:-g++}" -std=c++23 -O1 -I"$SOURCE" "$HERE/main-context-call.cpp" \
   -o "$WORK/main-context-call" -lboost_system -pthread
 "$WORK/main-context-call"
+
+# Task registry and callbacks use the real Task/TaskManager with a deterministic worker.
+"${CXX:-g++}" -I"$HERE/task-ownership-stubs" "${CXX_FLAGS[@]}" \
+  "$SOURCE/server/task/task.cpp" "$SOURCE/server/task/task_manager.cpp" \
+  "$HERE/task-ownership-contract.cpp" -o "$WORK/task-ownership-contract" "${LIBS[@]}"
+"$WORK/task-ownership-contract"
