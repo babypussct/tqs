@@ -1,5 +1,13 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 25/11/2026 — Production native + web phát hành PASS, milestone ACTIVE
+
+- Source commit `3bd6afe51007db8b1df37071e04f26804154998b` tạo local thành công. Push main bị remote từ chối `fatal error in commit_refs_rules` (chunk 675b9a); `origin/main` vẫn `40482c35ea5ee7d8e075145aef65f6f827a39203`, GitHub Status ghi Git Operations degraded/Actions partial outage. Git connectivity check PASS. Direct Upload được thực hiện theo yêu cầu phát hành đầy đủ trong khi GitHub gặp sự cố; cần xác minh push/hosted CI sau khi remote phục hồi.
+- Native cutover `tqsvn-native-milestone-08dd1794`, exit 0 (chunk 668da3), 37.204 giây toàn script, hai drain checks 0 trận và 0 TCP established, stopped DB + sidecars parity, TCP native challenge PASS, local/public manifest PASS; Gateway và Quick Tunnel InvocationID liên tục. Native rollback giữ tại `tqsvn-native-registry-03e95c94`, binary SHA-256 `03e95c94f895ac71c1d7e77d736276995b53735fc0b8e07d76870952a3b2f567` ở cả hai. Listener PID 1871082 đúng executable; current manifest `08dd179491c35c733c6437f32b5a3c61`, 5589 entries, 5 changed Lua files, QA excluded. Remote staging tmp cleanup PASS (bf559b); native/gateway/tunnel và hai timers active, 2.2 GB free, 0 TCP established tại verify. Không xóa rollback release.
+- Cloudflare Pages Direct Upload `df5369ef-e787-4e24-aecd-0b71ef647cfc`, production/main source `3bd6afe`, [immutable deployment](https://df5369ef.tqsvn.pages.dev), [production](https://tqsvn.pages.dev). 2311 static files (4 mới), Functions bundle upload PASS (0fb04f). Smoke ở cả immutable URL và production alias exit 0 (a8f0f8); index/version/JS/CSS/SW byte match build `e09126d80b274c875cbd9642125d61615852beb4b6d69f288cabe6cbd79fa451`, JS `index-Dbkh0r_K.js`, CSS `index-CRuFpxov.css`. Public gateway health, manifest v1/5339 files, bundle `86180a4f1d69787e` SHA-256 `be80dbee1dc99a3ae33854ef5707a761fdbdbca7a1d18064d0b18b1be7c1c217` khớp ZIP dựng độc lập từ staged server bytes. OAuth helper 200/no-store, session unauthenticated 401, WSS 101/NetworkDelayTest/close 1000 (ccd044), Chrome mobile 390x844 version dialog PASS, 0 page errors. Rollback Pages trước: `6beccf18-b3b5-42b5-bfe1-541a59844f33`.
+- Shop Vercel production Ready `dpl_8dDJP4wy196VLuBMXNwTBGeFTAZ9`, alias `https://tqsshop.vercel.app` giữ JS `index-CuBslPWB.js` SHA-256 `eccda8d00d5e9e7e0131d15891fce28e5f3c2a0f4433b63fa8cd71706dd85c32`; không có thay đổi Shop trong milestone, không redeploy. Gateway source/config parity đã kiểm.
+- CLI OAuth postdeploy chưa chạy: QA email/profile unset, default profile absent, preflight `qa_email_required`; cần approved QA account idle và enrollment Google/2FA bằng tay trong runner riêng. Public WSS challenge PASS chỉ là transport smoke; Firebase ID token/session API authenticated/WSS gameplay counters vẫn OPEN. Manual OAuth trước release PASS riêng. GOAL API đọc lại status `active`, chưa COMPLETE. Evidence `scratch/evidence/milestone-release-20261125/`.
+
 ## 25/11/2026 — Milestone production candidate (ACTIVE)
 
 - Build production PASS bằng upstream 14 package đã kiểm pin tại `scratch/evidence/commit-release-20261121/upstream`; default scratch dùng sai revision core/hegemony. Giữ nguyên pin và audit, baseline 504 ID/78 thiếu đúng kỳ vọng, dependency 504/0, visible unresolved 0. Web 0.5.25, build `e09126d80b274c875cbd9642125d61615852beb4b6d69f288cabe6cbd79fa451`, JS `index-Dbkh0r_K.js`, CSS `index-CRuFpxov.css`, SW 532 tệp.
@@ -2769,38 +2777,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-25T16:19:25.245Z (UTC).
-- Nhánh: `main` · HEAD: `40482c35ea5e`.
-- File thay đổi hiển thị: 19 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-25T16:26:03.255Z (UTC).
+- Nhánh: `main` · HEAD: `3bd6afe51007`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M AGENTS.md
- M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
- M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
- M deploy/freekill-native/qa/card-wire-projection.lua
- M deploy/freekill-native/qa/card-wire-request-projector-source-probe.lua
- M deploy/freekill-native/qa/card-wire-request.lua
- M deploy/freekill-native/qa/hegemony-public-general-source-probe.lua
- M deploy/freekill-native/qa/hegemony-reconnect-grace-probe.lua
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M scripts/upstream-first-card-wire-projection-guard.mjs
-?? deploy/freekill-native/qa/native-concealed-extra-turn/init.lua
-?? deploy/freekill-native/qa/native-threaten-emperor/init.lua
-?? deploy/freekill-native/qa/rpc-cbor-stream-source-probe.lua
-?? deploy/freekill-native/scripts/native-runtime-source.mjs
-?? docs/web-client/PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-25.json
-?? game/web/scripts/native-threaten-emperor.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+3bd6afe5 Fix native Hegemony projection, reconnect timing and RPC EOF
 40482c35 Fix native task and registry ownership lifecycles
 d41193c6 Fix native router socket binding ownership
-583b7278 Fix native shutdown with active room workers
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
