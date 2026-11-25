@@ -46,6 +46,7 @@ PACKET_VALIDATION_PATCH_FILE="$DEPLOY_DIR/$TQS_UPSTREAM_PATCH_PACKET_VALIDATION_
 ROUTER_REQUEST_PATCH_FILE="$DEPLOY_DIR/$TQS_UPSTREAM_PATCH_ROUTER_REQUEST_PATH"
 RPC_WIRE_PATCH_FILE="$DEPLOY_DIR/$TQS_UPSTREAM_PATCH_RPC_WIRE_PATH"
 MAIN_SHUTDOWN_PATCH_FILE="$DEPLOY_DIR/$TQS_UPSTREAM_PATCH_MAIN_SHUTDOWN_PATH"
+ROUTER_BINDING_PATCH_FILE="$DEPLOY_DIR/$TQS_UPSTREAM_PATCH_ROUTER_BINDING_PATH"
 TOOL_ROOT="${FREEKILL_TOOL_ROOT:-/opt/tqs-toolchain}"
 CMAKE_VERSION="4.1.1"
 CMAKE_ARCHIVE="$TOOL_ROOT/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz"
@@ -64,6 +65,7 @@ CMAKE_SHA256="5a6c61cb62b38e153148a2c8d4af7b3d387f0c8c32b6dbceb5eb4af113efd65a"
 [[ -f "$ROUTER_REQUEST_PATCH_FILE" ]] || die "Missing native router request patch: $ROUTER_REQUEST_PATCH_FILE"
 [[ -f "$RPC_WIRE_PATCH_FILE" ]] || die "Missing native RPC wire patch: $RPC_WIRE_PATCH_FILE"
 [[ -f "$MAIN_SHUTDOWN_PATCH_FILE" ]] || die "Missing native main shutdown patch: $MAIN_SHUTDOWN_PATCH_FILE"
+[[ -f "$ROUTER_BINDING_PATCH_FILE" ]] || die "Missing native router binding patch: $ROUTER_BINDING_PATCH_FILE"
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_CARD_WIRE_SNAPSHOT_SHA256" "$CARD_WIRE_SNAPSHOT_PATCH_FILE" | sha256sum -c --status || die "Card-wire snapshot compression patch digest mismatch"
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_CLIENT_SOCKET_STREAM_SHA256" "$CLIENT_SOCKET_STREAM_PATCH_FILE" | sha256sum -c --status || die "Client socket stream patch digest mismatch"
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_SOCKET_LIFECYCLE_SHA256" "$SOCKET_LIFECYCLE_PATCH_FILE" | sha256sum -c --status || die "Native socket lifecycle patch digest mismatch"
@@ -71,6 +73,7 @@ printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_PACKET_VALIDATION_SHA256" "$PACKET_VALIDA
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_ROUTER_REQUEST_SHA256" "$ROUTER_REQUEST_PATCH_FILE" | sha256sum -c --status || die "Native router request patch digest mismatch"
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_RPC_WIRE_SHA256" "$RPC_WIRE_PATCH_FILE" | sha256sum -c --status || die "Native RPC wire patch digest mismatch"
 printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_MAIN_SHUTDOWN_SHA256" "$MAIN_SHUTDOWN_PATCH_FILE" | sha256sum -c --status || die "Native main shutdown patch digest mismatch"
+printf '%s  %s\n' "$TQS_UPSTREAM_PATCH_ROUTER_BINDING_SHA256" "$ROUTER_BINDING_PATCH_FILE" | sha256sum -c --status || die "Native router binding patch digest mismatch"
 
 install -d -m 0755 "$TOOL_ROOT"
 if [[ ! -x "$CMAKE_DIR/bin/cmake" ]]; then
@@ -217,26 +220,33 @@ if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$PACKET_VALIDATIO
 fi
 printf 'Native packet validation patch: %s\n' "$(basename "$PACKET_VALIDATION_PATCH_FILE")"
 
-if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null; then
-  patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null ||
-    die "Native router request patch does not apply cleanly to $actual_source"
-  patch --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null
-fi
-printf 'Native router request patch: %s\n' "$(basename "$ROUTER_REQUEST_PATCH_FILE")"
-
-# The shutdown patch overlaps RPC worker lifecycle hunks.
-if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null; then
-  if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null; then
-    patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null ||
-      die "Native RPC wire patch does not apply cleanly to $actual_source"
-    patch --batch --forward -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null
+# The binding patch supersedes overlapping Router and shutdown hunks.
+if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$ROUTER_BINDING_PATCH_FILE" >/dev/null; then
+  if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null; then
+    patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null ||
+      die "Native router request patch does not apply cleanly to $actual_source"
+    patch --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_REQUEST_PATCH_FILE" >/dev/null
   fi
-  patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null ||
-    die "Native main shutdown patch does not apply cleanly to $actual_source"
-  patch --batch --forward -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null
+  printf 'Native router request patch: %s\n' "$(basename "$ROUTER_REQUEST_PATCH_FILE")"
+
+  # The shutdown patch overlaps RPC worker lifecycle hunks.
+  if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null; then
+    if ! patch --dry-run --force --reverse -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null; then
+      patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null ||
+        die "Native RPC wire patch does not apply cleanly to $actual_source"
+      patch --batch --forward -p1 -d "$SOURCE_DIR" < "$RPC_WIRE_PATCH_FILE" >/dev/null
+    fi
+    patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null ||
+      die "Native main shutdown patch does not apply cleanly to $actual_source"
+    patch --batch --forward -p1 -d "$SOURCE_DIR" < "$MAIN_SHUTDOWN_PATCH_FILE" >/dev/null
+  fi
+  printf 'Native RPC wire patch: %s\n' "$(basename "$RPC_WIRE_PATCH_FILE")"
+  printf 'Native main shutdown patch: %s\n' "$(basename "$MAIN_SHUTDOWN_PATCH_FILE")"
+  patch --dry-run --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_BINDING_PATCH_FILE" >/dev/null ||
+    die "Native router binding patch does not apply cleanly to $actual_source"
+  patch --batch --forward -p1 -d "$SOURCE_DIR" < "$ROUTER_BINDING_PATCH_FILE" >/dev/null
 fi
-printf 'Native RPC wire patch: %s\n' "$(basename "$RPC_WIRE_PATCH_FILE")"
-printf 'Native main shutdown patch: %s\n' "$(basename "$MAIN_SHUTDOWN_PATCH_FILE")"
+printf 'Native router binding patch: %s\n' "$(basename "$ROUTER_BINDING_PATCH_FILE")"
 
 export CC="${CC:-gcc-14}"
 export CXX="${CXX:-g++-14}"

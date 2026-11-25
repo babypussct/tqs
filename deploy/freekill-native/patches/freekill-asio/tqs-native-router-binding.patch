@@ -1,0 +1,212 @@
+--- a/src/network/router.h
++++ b/src/network/router.h
+@@ -49,7 +49,17 @@
+   void handlePacket(const Packet &packet);
+ 
+ private:
+-  std::shared_ptr<ClientSocket> socket;
++  struct SocketBinding {
++    explicit SocketBinding(std::shared_ptr<ClientSocket> value) : socket(std::move(value)) {}
++
++    const std::shared_ptr<ClientSocket> socket;
++    std::mutex mutex;
++    bool active = true;
++  };
++
++  mutable std::mutex socketMutex;
++  std::shared_ptr<SocketBinding> socketBinding;
++  std::shared_ptr<SocketBinding> getSocketBinding() const;
+   ServerPlayer *player = nullptr;
+ 
+   RouterType type;
+@@ -61,7 +71,7 @@
+   int expectedReplyId = 0;
+   int replyTimeout = -1;
+ 
+-  void sendMessage(const std::string &msg);
++  void sendMessage(const std::shared_ptr<SocketBinding> &binding, const std::string &msg);
+ 
+   // signals
+   std::function<void()> reply_ready_callback;
+--- a/src/network/router.cpp
++++ b/src/network/router.cpp
+@@ -50,8 +50,7 @@
+ Router::Router(ServerPlayer *player, std::shared_ptr<ClientSocket> socket, RouterType type) {
+   this->type = type;
+   this->player = player;
+-  this->socket = nullptr;
+-  setSocket(socket);
++  setSocket(std::move(socket));
+ }
+ 
+ Router::~Router() {
+@@ -59,26 +58,57 @@
+   abortRequest();
+ }
+ 
+-std::shared_ptr<ClientSocket> Router::getSocket() const { return socket; }
++std::shared_ptr<Router::SocketBinding> Router::getSocketBinding() const {
++  std::lock_guard lock(socketMutex);
++  return socketBinding;
++}
++
++std::shared_ptr<ClientSocket> Router::getSocket() const {
++  auto binding = getSocketBinding();
++  return binding ? binding->socket : nullptr;
++}
+ 
+ void Router::setSocket(std::shared_ptr<ClientSocket> socket) {
+-  if (this->socket != nullptr) {
+-    this->socket->set_message_got_callback([](Packet&){});
+-    this->socket->set_disconnected_callback([name = player->getScreenName(), reason = this->socket->getDisconnectReason()]{
+-      spdlog::info("{} lost connection: {} (useless socket)", name, reason);
+-    });
+-  }
+-
+-  this->socket = nullptr;
+-  if (socket != nullptr) {
+-    socket->set_message_got_callback([this](Packet &p) { handlePacket(p); });
+-    socket->set_disconnected_callback([connId = player->getConnId(), name = player->getScreenName(), socket] {
+-      spdlog::info("{} lost connection: {}", name, socket->getDisconnectReason());
+-      auto p = Server::instance().user_manager().findPlayerByConnId(connId).lock();
+-      if (p && p->router().getSocket().get() == socket.get()) p->onDisconnected();
+-    });
+-    this->socket = socket;
+-  }
++  auto next = socket ? std::make_shared<SocketBinding>(socket) : nullptr;
++  std::shared_ptr<SocketBinding> previous;
++  {
++    std::lock_guard lock(socketMutex);
++    if (socketBinding) {
++      // Invalidate sends already queued by a room worker before transferring
++      // ownership of the physical socket to a different player or room.
++      std::lock_guard bindingLock(socketBinding->mutex);
++      socketBinding->active = false;
++    }
++    previous = std::exchange(socketBinding, next);
++    {
++      std::lock_guard replyLock(replyMutex);
++      expectedReplyId = 0;
++    }
++    if (next) {
++      // Socket callbacks run on the main context. Resolve the owning player
++      // and the exact binding on each invocation, including copied callbacks.
++      auto resolve = [connId = player->getConnId(), weak = std::weak_ptr<SocketBinding>(next)] {
++        auto binding = weak.lock();
++        if (!binding) return std::shared_ptr<ServerPlayer>{};
++        auto p = Server::instance().user_manager().findPlayerByConnId(connId).lock();
++        if (!p || p->router().getSocketBinding() != binding) return std::shared_ptr<ServerPlayer>{};
++        return p;
++      };
++      socket->set_message_got_callback([resolve](Packet &packet) {
++        if (auto p = resolve()) p->router().handlePacket(packet);
++      });
++      socket->set_disconnected_callback([resolve, weak = std::weak_ptr<SocketBinding>(next), name = player->getScreenName()] {
++        if (auto p = resolve()) {
++          if (auto binding = weak.lock()) {
++            spdlog::info("{} lost connection: {}", name, binding->socket->getDisconnectReason());
++            p->onDisconnected();
++          }
++        }
++      });
++    }
++  }
++  // Release the detached transport outside the router locks. Its callbacks
++  // retain only weak bindings and cannot act on a later attachment.
+ }
+ 
+ void Router::set_reply_ready_callback(std::function<void()> callback) {
+@@ -91,6 +121,7 @@
+ 
+ void Router::request(int type, const std::string_view &command,
+                      const std::string_view &cborData, int timeout, int64_t timestamp) {
++  std::shared_ptr<SocketBinding> binding;
+   static std::atomic<int> lastRequestId {0};
+   int previous = lastRequestId.load(std::memory_order_relaxed);
+   int requestId;
+@@ -103,14 +134,16 @@
+   const auto wireTimestamp = duration_cast<milliseconds>(
+       system_clock::now().time_since_epoch()).count();
+   {
+-    std::lock_guard<std::mutex> lock(replyMutex);
++    std::lock_guard socketLock(socketMutex);
++    std::lock_guard replyLock(replyMutex);
++    binding = socketBinding;
+     expectedReplyId = requestId;
+     replyTimeout = timeout;
+     requestStartTime = steady_clock::now();
+     m_reply = "__notready";
+   }
+ 
+-  sendMessage(Cbor::encodeArray({
++  sendMessage(binding, Cbor::encodeArray({
+     requestId,
+     type,
+     command,
+@@ -121,7 +154,8 @@
+ }
+ 
+ void Router::notify(int type, const std::string_view &command, const std::string_view &data) {
+-  if (!socket) return;
++  auto binding = getSocketBinding();
++  if (!binding) return;
+   const bool snapshotCommand = command == "Reconnect" || command == "Observe";
+   int flags = Router::TYPE_NOTIFICATION | Router::SRC_SERVER | Router::DEST_CLIENT;
+   std::string compressed;
+@@ -135,7 +169,7 @@
+     }
+   }
+   auto buf = Cbor::encodeArray({-2, flags, command, payload});
+-  sendMessage(buf);
++  sendMessage(binding, buf);
+ }
+ 
+ // timeout永远是0
+@@ -204,11 +238,13 @@
+   }
+ }
+ 
+-void Router::sendMessage(const std::string &msg) {
+-  if (!socket) return;
++void Router::sendMessage(const std::shared_ptr<SocketBinding> &binding, const std::string &msg) {
++  if (!binding) return;
+   auto &main_ctx = Server::instance().context();
+-  dispatchMainAndWait(main_ctx, [weak = socket->weak_from_this(), msg] {
+-    auto c = weak.lock();
+-    if (c) c->send(std::make_shared<std::string>(msg));
++  dispatchMainAndWait(main_ctx, [binding, weak = binding->socket->weak_from_this(), msg] {
++    std::lock_guard lock(binding->mutex);
++    if (!binding->active) return;
++    auto socket = weak.lock();
++    if (socket) socket->send(std::make_shared<std::string>(msg));
+   });
+ }
+--- a/src/server/user/serverplayer.cpp
++++ b/src/server/user/serverplayer.cpp
+@@ -209,9 +209,8 @@
+ Router &ServerPlayer::getRouter() { return *m_router; }
+ 
+ void ServerPlayer::kick() {
+-  auto weak = weak_from_this();
+-  if (m_router->getSocket() != nullptr) {
+-    m_router->getSocket()->disconnectFromHost("kicked by server");
++  if (auto socket = m_router->getSocket()) {
++    socket->disconnectFromHost("kicked by server");
+   }
+ }
+ 
+--- a/src/server/room/room.cpp
++++ b/src/server/room/room.cpp
+@@ -815,9 +815,10 @@
+     p->setDied(false);
+     p->startGameTimer();
+ 
+-    if (!p->isOnline()) continue;
++    auto socket = p->getRouter().getSocket();
++    if (!socket) continue;
+     auto uuid = std::string(p->getUuid());
+-    auto ip = std::string(p->getRouter().getSocket()->peerAddress());
++    auto ip = std::string(socket->peerAddress());
+     auto pname = std::string(p->getScreenName());
+     if (!uuid.empty()) {
+       uuidList[uuid].push_back(pname);

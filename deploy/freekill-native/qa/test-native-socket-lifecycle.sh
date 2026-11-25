@@ -25,6 +25,11 @@ ROUTER_LIBS=(-Wl,--gc-sections -lcrypto -lz)
 "${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" "$SOURCE/network/router.cpp" \
   "$WORK/util.o" "$HERE/router-contract.cpp" -o "$WORK/router-contract" "${LIBS[@]}" "${ROUTER_LIBS[@]}"
 "$WORK/router-contract"
+# Deterministically pause the real Router at encoding and send boundaries.
+"${CXX:-g++}" -I"$HERE/router-binding-stubs" "${CXX_FLAGS[@]}" \
+  "$SOURCE/network/router.cpp" "$HERE/router-binding-contract.cpp" \
+  -o "$WORK/router-binding-contract" "${LIBS[@]}"
+"$WORK/router-binding-contract"
 "${CXX:-g++}" "${CXX_FLAGS[@]}" "${ROUTER_FLAGS[@]}" "$WORK/util.o" \
   "$HERE/compression-limit.cpp" -o "$WORK/compression-limit" "${LIBS[@]}" "${ROUTER_LIBS[@]}"
 "$WORK/compression-limit"

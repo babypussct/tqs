@@ -177,4 +177,13 @@ test('native socket patches apply after the complete production patch sequence',
     execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
       '-i', path.join(patchDir, name)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   }
+  const bindingPatch = path.join(patchDir, 'tqs-native-router-binding.patch');
+  applyPatch(source, bindingPatch, true);
+  applyPatch(source, bindingPatch);
+  const boundRouter = readFileSync(path.join(source, 'src/network/router.cpp'), 'utf8');
+  assert.match(boundRouter, /socketBinding->active = false/u);
+  assert.match(boundRouter, /getSocketBinding\(\) != binding/u);
+  assert.match(boundRouter, /if \(!binding->active\) return/u);
+  execFileSync('patch', ['--dry-run', '--force', '--reverse', '-p1', '-d', source,
+    '-i', bindingPatch], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 });
