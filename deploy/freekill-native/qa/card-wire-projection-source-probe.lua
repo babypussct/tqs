@@ -462,6 +462,32 @@ check("public marks fail closed on nested physical card identities", function()
   fails(seat, spectator, "SetPlayerMark", {11, "mark", 0, "junk"}, "expects [player,mark,value]")
 end)
 
+check("extra-turn reason stacks preserve rules and conceal private reasons", function()
+  local reasons = {"threaten_emperor_skill", "hidden_skill", "game_rule"}
+  local own = emit(seat, owner, "SetPlayerMark", {11, "_extra_turn_count", reasons})[3]
+  assert(own ~= reasons and table.concat(own, ",") == table.concat(reasons, ","))
+  for _, audience in ipairs({{seat, spectator}, {otherSeat, opponent}, {seat, controller}}) do
+    local out = emit(audience[1], audience[2], "SetPlayerMark", {11, "_extra_turn_count", reasons})[3]
+    assert(table.concat(out, ",") == "threaten_emperor_skill,_tqs_extra_turn,game_rule")
+    assert(reasons[2] == "hidden_skill")
+    assert(#emit(audience[1], audience[2], "SetPlayerMark", {11, "_extra_turn_count", {}})[3] == 0)
+    assert(emit(audience[1], audience[2], "SetPlayerMark", {11, "_extra_turn_count", 0})[3] == 0)
+  end
+  for _, bad in ipairs({1, "hidden_skill", {100}, {""}, {{id = 100}}, {[2] = "hidden_skill"}, {skill = "hidden_skill"}}) do
+    fails(seat, owner, "SetPlayerMark", {11, "_extra_turn_count", bad}, "_extra_turn_count")
+    fails(seat, spectator, "SetPlayerMark", {11, "_extra_turn_count", bad}, "_extra_turn_count")
+  end
+  for _, kind in ipairs({"$ExtraTurnStart", "$ExtraTurnEnd"}) do
+    local log = {type = kind, from = 11, arg = "hidden_skill"}
+    assert(emit(seat, owner, "GameLog", log).payload.arg == "hidden_skill")
+    assert(emit(seat, spectator, "GameLog", log).payload.arg == "")
+    assert(emit(otherSeat, opponent, "GameLog", log).payload.arg == "")
+    assert(log.arg == "hidden_skill")
+    log.arg = "threaten_emperor_skill"
+    assert(emit(seat, spectator, "GameLog", log).payload.arg == log.arg)
+  end
+end)
+
 check("invalid-skill maps keep concealed skill names owner-only", function()
   local invalid = { hs__secret = { "hs__controller" } }
   local ownerOut = emit(seat, owner, "SetPlayerMark", {11, "InvalidSkills", invalid})
@@ -748,13 +774,16 @@ check("Reconnect and Observe snapshots use count-only deck and physical refs", f
     players = {
       [11] = { player_cards = {
         [Card.PlayerHand] = {100}, [Card.PlayerEquip] = {103}, [Card.PlayerJudge] = {},
-      }, special_cards = { ["$concealed"] = {101}, public = {102} }, virtual_equips = {} },
+      }, special_cards = { ["$concealed"] = {101}, public = {102} }, virtual_equips = {},
+        mark = cbor.encode({_extra_turn_count = {"hidden_skill", "threaten_emperor_skill"}, unrelated = 2}) },
     },
     you = 11,
   }
   local ownerOut = emit(seat, owner, "Reconnect", snapshot)
   assert(ownerOut.cardWireVersion == 1 and type(ownerOut.payload) == "table")
   local ownerPayload = ownerOut.payload
+  local ownerTurnMarks = cbor.decode(ownerPayload.players[11].mark)
+  assert(ownerTurnMarks._extra_turn_count[1] == "hidden_skill" and ownerTurnMarks.unrelated == 2)
   assert(ownerPayload.card_manager.draw_pile.count == 1 and
     ownerPayload.card_manager.draw_pile[1] == nil)
   local ownerHand = ownerPayload.players[11].player_cards[Card.PlayerHand][1]
@@ -768,6 +797,11 @@ check("Reconnect and Observe snapshots use count-only deck and physical refs", f
 
   local observerOut = emit(seat, spectator, "Observe", snapshot)
   local observerPayload = observerOut.payload
+  local observerTurnMarks = cbor.decode(observerPayload.players[11].mark)
+  assert(table.concat(observerTurnMarks._extra_turn_count, ",") == "_tqs_extra_turn,threaten_emperor_skill")
+  assert(observerTurnMarks.unrelated == 2 and cbor.decode(snapshot.players[11].mark)._extra_turn_count[1] == "hidden_skill")
+  local opponentPayload = emit(otherSeat, opponent, "Reconnect", snapshot).payload
+  assert(cbor.decode(opponentPayload.players[11].mark)._extra_turn_count[1] == "_tqs_extra_turn")
   local observerHand = observerPayload.players[11].player_cards[Card.PlayerHand][1]
   assert(type(observerHand) == "string" and observerHand ~= ownerHand and
     observerPayload.card_manager.draw_pile.count == 1)

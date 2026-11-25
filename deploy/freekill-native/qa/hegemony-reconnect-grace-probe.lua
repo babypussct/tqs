@@ -9,7 +9,8 @@ Util = { TrueFunc = function() return true end }
 fk = { Player_Online = 1, Player_Trust = 2, Player_Run = 4, Player_Robot = 5, Player_Offline = 6 }
 fk.qCritical = function(message) error(message) end
 local now = 0
-os.getms = function() return now end
+-- The pinned native fk.GetMicroSecond supplies microseconds despite the name os.getms.
+os.getms = function() return now * 1000 end
 for _, method in ipairs({ "resume", "checkNoHuman", "delay", "playerReconnect" }) do
   assert(load(assert(source:match("(function ServerRoomBase:" .. method .. ".-\nend)"))))()
 end
@@ -60,6 +61,8 @@ setState(fk.Player_Offline)
 assert(game:resume("player_disconnect") == false)
 assert(game:checkNoHuman() == false)
 assert(#events == 1 and timers[1] == 30000)
+now = 30
+assert(game:resume("request_timer") == false and #timers == 1 and #events == 1)
 now = 29999
 assert(game:resume("request_timer") == false and #timers == 1 and #events == 1)
 setState(fk.Player_Online)
@@ -98,6 +101,8 @@ setState(fk.Player_Online)
 game:playerReconnect(1)
 assert(events[2] == "snapshot" and #events == 2)
 assert(game:resume("delay_done") == false and timers[#timers] == 300 and #events == 2)
+now = 499.5
+assert(game:resume("delay_done") == false and timers[#timers] == 1 and #events == 2)
 now = 500
 assert(game:resume("delay_done") == false and events[3] == "delay ended")
 

@@ -115,9 +115,41 @@ local function snapshotList(room, seat, physical, batch, audience, ids, visible,
   end)
 end
 
+-- The same reason-stack schema applies to live notifications and snapshots.
+local function projectExtraTurnReasons(value, owner)
+  if value == 0 then return 0 end
+  local n = denseCount(value, "_extra_turn_count")
+  local result = {}
+  for i = 1, n do
+    local reason = value[i]
+    assert(type(reason) == "string" and reason ~= "",
+      "_extra_turn_count must contain nonempty reason names")
+    -- Preserve insideExtraTurn() and stack depth for outsiders without
+    -- exposing the name of a potentially concealed skill. The card effect
+    -- of Threaten Emperor is public, as is the normal-turn sentinel.
+    if owner or reason == "game_rule" or reason == "threaten_emperor_skill" or
+        reason == "#threaten_emperor_extra" then
+      result[i] = reason
+    else
+      result[i] = "_tqs_extra_turn"
+    end
+  end
+  return result
+end
+
 local function snapshotPlayer(room, seat, physical, batch, audience, id, record)
   assert(type(record) == "table", "snapshot player record must be a table")
   local result = copy(record)
+  if record.mark ~= nil then
+    assert(type(record.mark) == "string", "snapshot player marks must be CBOR")
+    local marks = cbor.decode(record.mark)
+    assert(type(marks) == "table", "snapshot player marks must decode to a table")
+    if marks._extra_turn_count ~= nil then
+      marks._extra_turn_count = projectExtraTurnReasons(marks._extra_turn_count,
+        isOwnerId(room, seat, physical, id))
+      result.mark = cbor.encode(marks)
+    end
+  end
   assert(type(record.player_cards) == "table", "snapshot player cards missing")
   result.player_cards = {}
   for area, ids in pairs(record.player_cards) do
@@ -669,6 +701,8 @@ local function projectPlayerMark(room, seat, physical, data)
   elseif isInvalidSkillMark(mark) then
     value = projectInvalidSkillMark(room, seat, physical, id,
       room:getPlayerById(id), value)
+  elseif mark == "_extra_turn_count" then
+    value = projectExtraTurnReasons(value, isOwner(seat, physical, id))
   elseif type(value) == "table" then
     value = projectNamedTableMark(room, mark, value)
   else
@@ -882,6 +916,14 @@ local function projectGameLog(room, seat, physical, data, batch, audience)
       result[key] = projectLogValue(data[key], room, seat, physical, batch,
         audience, "GameLog " .. key)
     end
+  end
+  if data.type == "$ExtraTurnStart" or data.type == "$ExtraTurnEnd" then
+    assert(result.from and room:getPlayerById(result.from) and type(data.arg) == "string",
+      "extra-turn log requires a player and reason")
+    local reason = projectExtraTurnReasons({data.arg}, isOwner(seat, physical, result.from))[1]
+    -- The public log still announces the turn, without printing a hidden
+    -- skill name or the internal placeholder used by the mark stack.
+    result.arg = reason == "_tqs_extra_turn" and "" or reason
   end
   return result
 end

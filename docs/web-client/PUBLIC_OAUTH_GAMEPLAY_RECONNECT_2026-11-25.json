@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "manifestKind": "public-oauth-gameplay-reconnect",
+  "observedAt": "2026-11-25T17:50:00+07:00",
+  "site": "https://tqsvn.pages.dev/",
+  "scope": "Manual public acceptance using the user-authorized existing Chrome profile; no CLI runner instrumentation",
+  "verification": {
+    "initialAdmission": "PASS: existing authenticated session entered Quốc Chiến lobby",
+    "room": "PASS: TQS-PUBLIC-QA-20261125, two seats, one native bot, started match",
+    "generalSelection": "PASS: Trương Liêu and Biện Phu Nhân selected and subsequently observed in live gameplay",
+    "gameplay": "PASS: BOT đang chơi hộ observed; game advanced naturally to round 5",
+    "gameOver": "PASS: Bạn đã thua result panel; winner COMP--26; round 5 recorded",
+    "lobbyReturn": "PASS: Về sảnh returned to SẢNH QUỐC CHIẾN",
+    "disconnect": "PASS: Ngắt kết nối returned to Cổng Doanh Trại",
+    "logout": "PASS: Đổi tài khoản khác returned to Tiếp tục với Google",
+    "googleRelogin": "PASS: actual Google account chooser opened; selected the user-authorized account; returned to authenticated Quốc Chiến lobby",
+    "postReloginConnection": "PASS: Máy chủ Quốc Chiến: Đã xác thực; gateway latency displayed 345 ms; 5339 verified files; runtime MD5 f52cdb15a6bb8eb7314a3b5e0fd27cbe",
+    "finalCleanup": "PASS: explicit disconnect returned to Cổng Doanh Trại; authenticated account remains available in Chrome profile"
+  },
+  "limitations": [
+    "Manual browser UI observations only; Firebase ID token claims, session API responses, exact WSS endpoint and frame counts not independently captured.",
+    "CLI public runner not executed in this run.",
+    "Public deployment identity differs from local native QA runtime; no inference of candidate deployment or release approval."
+  ],
+  "credentialsIncluded": false,
+  "rawFramesIncluded": false,
+  "decision": "PASS_MANUAL_PUBLIC_OAUTH_GAMEPLAY_RECONNECT"
+}

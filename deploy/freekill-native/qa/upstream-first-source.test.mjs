@@ -5,9 +5,11 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import { updateRpcStreamSource } from '../scripts/native-runtime-source.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../../..');
@@ -36,6 +38,28 @@ function runLua(script, args) {
     encoding: 'utf8', timeout: 30_000, maxBuffer: 1024 * 1024,
   });
 }
+
+test('native promotion handles clean RPC EOF and rejects truncated CBOR streams', () => {
+  const candidate = fs.mkdtempSync(path.join(os.tmpdir(), 'tqs-rpc-stream-'));
+  const relatives = ['lua/server/rpc/cbor.lua', 'lua/server/rpc/stdio.lua'];
+  try {
+    for (const relative of relatives) {
+      const target = path.join(candidate, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(path.join(coreRoot, relative), target);
+    }
+    updateRpcStreamSource(candidate);
+    const first = relatives.map(relative => fs.readFileSync(path.join(candidate, relative)));
+    const output = runLua('rpc-cbor-stream-source-probe.lua', [candidate]);
+    assert.match(output, /PASS RPC CBOR clean EOF, sequential objects, six truncated inputs, read failure and finished stdio/u);
+    updateRpcStreamSource(candidate);
+    for (const [index, relative] of relatives.entries()) {
+      assert.deepEqual(fs.readFileSync(path.join(candidate, relative)), first[index], relative);
+    }
+  } finally {
+    fs.rmSync(candidate, { recursive: true, force: true });
+  }
+});
 
 test('candidate skill bytes match the frozen Hegemony e8d93acd target', () => {
   for (const [relative, expected] of selectedSkills) {
@@ -326,7 +350,7 @@ test('human Request packets and replies use physical, request-scoped card refere
 test('candidate Request projector removes card IDs before transport and resolves opaque replies', () => {
   const output = runLua('card-wire-request-projector-source-probe.lua',
     [coreRoot, path.join(here, 'card-wire-request.lua'), path.join(here, 'card-handle-protocol.lua')]);
-  assert.match(output, /PASS candidate physical request projector: card-chosen opaque scope, Poxi\/AG\/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed\/unaudited fail-close; 21 cases; synthetic-only; native\/browser NOT RUN/u);
+  assert.match(output, /PASS candidate physical request projector: card-chosen opaque scope, Poxi\/AG\/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed\/unaudited fail-close; 22 cases; synthetic-only; native\/browser NOT RUN/u);
   const repoRoot = path.resolve(here, '../../..');
   const guard = execFileSync(process.execPath,
     [path.join(repoRoot, 'scripts/upstream-first-card-wire-request-projector-guard.mjs'),
@@ -340,7 +364,7 @@ test('candidate projector redacts upstream Card objects and rekeys hidden deck f
     fs.readFileSync(path.join(here, 'card-wire-projection.lua'), 'utf8'));
   const output = runLua('card-wire-projection-source-probe.lua',
     [installed, path.join(here, 'card-handle-protocol.lua')]);
-  assert.match(output, /PASS audited card-wire projection: 36 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
+  assert.match(output, /PASS audited card-wire projection: 37 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
   const repoRoot = path.resolve(here, '../../..');
   const guard = execFileSync(process.execPath,
     [path.join(repoRoot, 'scripts/upstream-first-card-wire-projection-guard.mjs'),

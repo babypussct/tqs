@@ -17,7 +17,17 @@ local roomSource = read("freekill-core/lua/server/roombase.lua")
 local heroSource = read("freekill-core/ltk/server/events/misc.lua")
 local playerSource = read("freekill-core/ltk/server/serverplayer.lua")
 local ruleSource = read("hegemony/pkg/gamemodes/skills/hegemony_rule.lua")
-local projection = assert(load(read("freekill-core/lua/server/card_wire_projection.lua")))()
+local emptyMarkCbor = "fixture:empty-marks"
+local function encode(value)
+  if type(value) == "table" and next(value) == nil then return emptyMarkCbor end
+  return value
+end
+local function decode(value)
+  if value == emptyMarkCbor then return {} end
+  return value
+end
+local projection = assert(load(read("freekill-core/lua/server/card_wire_projection.lua"),
+  "projection", "t", setmetatable({cbor = {encode = encode, decode = decode}}, {__index = _G})))()
 local empty = function() return {} end
 local function contains(list, wanted)
   for _, value in ipairs(list) do if value == wanted then return true end end
@@ -46,7 +56,7 @@ local function reproduce(version, firstDeputy)
   local env = setmetatable({
     ServerRoomBase = room, ServerPlayer = owner, MiscEventWrappers = room,
     fk = { Player_Robot = "robot", GeneralShown = "shown" },
-    General = {Agender = 4}, cbor = {encode = function(v) return v end},
+    General = {Agender = 4}, cbor = {encode = encode, decode = decode},
     PropertyChangeData = {new = function(_, data) data.results = {}; return data end},
     Util = {DummyTable = {}}, resetPlayerHp = empty,
     require = function(name)
@@ -76,14 +86,13 @@ local function reproduce(version, firstDeputy)
     return {
       properties = {general = player.general, deputyGeneral = player.deputyGeneral,
         role_shown = player.role_shown, role = player.role, kingdom = player.kingdom, gender = player.gender},
-      player_cards = {}, special_cards = {}, mark = {},
+      player_cards = {}, special_cards = {}, mark = emptyMarkCbor,
     }
   end
   room.class = {super = {serialize = function()
     return {players = {record(owner), record(opponent)},
       card_manager = {draw_pile = {}, discard_pile = {}, processing_area = {}, void = {}}}
   end}}
-  env.cbor.decode = function(value) return value end
   room.players, room.alive_players = {owner, opponent}, {owner, opponent}
   room.getSettings = function() return "new_heg_mode" end
   room.isGameMode = function() return false end

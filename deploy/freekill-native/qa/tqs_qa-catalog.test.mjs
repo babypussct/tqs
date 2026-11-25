@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import os from 'node:os';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -2183,6 +2183,41 @@ test('native supplemental audit follows the upstream Player semantic-tag contrac
   assert.match(auditor, /mark == "ld__yigui_extra_data"/u);
   assert.match(auditor, /local function yiguiExtraData\(value\)/u);
   assert.doesNotMatch(auditor, /fields\(item\[i\], \{ id = true, player = true, serverplayer = true, class = true \}\)/u);
+});
+
+test('native supplemental audit validates new public mark schemas on raw CBOR packets', () => {
+  const core = path.resolve(here, '../../../runtime/packages/freekill-core');
+  const auditor = path.join(here, 'card-wire-native-supplemental-audit.lua');
+  const cases = [
+    ['_extra_turn_count', '{"game_rule", "_tqs_extra_turn", "threaten_emperor_skill"}', true],
+    ['_extra_turn_count', '{}', true],
+    ['_extra_turn_count', '0', true],
+    ['_extra_turn_count', '{"concealed_fixture_skill"}', false],
+    ['_extra_turn_count', '{123}', false],
+    ['_extra_turn_count', '"concealed_fixture_skill"', false],
+    ['naxiang', '{-2, 17}', true],
+    ['naxiang', '{"not_a_player"}', false],
+    ['naxiang', '{0}', false],
+    ['ld__zhidao-phase', 'cbor.tagged(33001, -2)', true],
+    ['ld__zhidao-phase', '{id = -2}', false],
+    ['InvalidSkills-round', '{fixture_skill = {"fixture_source"}}', true],
+    ['InvalidSkills-round', '{}', true],
+    ['InvalidSkills-round', '0', true],
+    ['InvalidSkills-round', '{fixture_skill = {123}}', false],
+    ['InvalidSkills-round', '{"fixture_skill"}', false],
+    ['RevealProhibited-turn', '{"fixture_source"}', true],
+    ['unknown_fixture_mark', '{123}', false],
+  ];
+  for (const [mark, value, accepted] of cases) {
+    const script = `local cbor = dofile(${JSON.stringify(path.join(core, 'lua/server/rpc/cbor.lua'))})
+      local packet = cbor.encode({0, 0, "SetPlayerMark", cbor.encode({17, ${JSON.stringify(mark)}, ${value}})})
+      io.write((packet:gsub(".", function(byte) return string.format("%02x", byte:byte()) end)))`;
+    const packet = execFileSync(luaExecutable, ['-e', script], { encoding: 'utf8' });
+    const result = spawnSync(luaExecutable, [auditor, core, '--raw-packet', 'observer', '', 'incoming'],
+      { input: packet, encoding: 'utf8' });
+    assert.equal(result.status, accepted ? 0 : 2, `${mark} ${value}: ${result.stderr}`);
+    if (accepted) assert.match(result.stdout, /^PASS;channel=metadata;observed=1/u);
+  }
 });
 
 test('native launcher preserves the native MD5 and makes QA overlay optional', () => {

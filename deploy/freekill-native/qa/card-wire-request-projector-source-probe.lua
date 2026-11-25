@@ -475,4 +475,24 @@ rejects(function()
     generalOptionsKey, generalOptions)
 end, "unoffered card")
 
+-- Custom card groups are valid upstream without an explicit prompt. Preserve
+-- the skill name, produce a dense wire payload, and retain opaque choices.
+local customChoice = { target, { card_data = { { "$Hand", { 101 } } } }, nil, "probe" }
+local customChosen = project(owner, "AskForCardChosen", customChoice)
+assert(customChosen.payload[3] == "" and customChosen.payload[4] == "probe")
+assert(#customChosen.payload == 4 and #customChosen.choices == 1)
+assert(customChosen.payload[2].card_data[1][2][1] == customChosen.choices[1].token)
+assert(customChoice[3] == nil)
+assert(Projection.resolve(room, owner, physical, "AskForCardChosen",
+  customChosen.choices[1].token, "req/" .. cases, customChoice) == 101)
+rejects(function()
+  project(owner, "AskForCardChosen", { target, customChoice[2], nil, "probe", [5] = 101 })
+end, "unaudited")
+rejects(function()
+  project(owner, "AskForCardChosen", { target, customChoice[2], nil, [5] = "probe" })
+end, "unaudited")
+rejects(function()
+  project(owner, "AskForCardChosen", { target, "h", nil, "probe" })
+end, "dense array")
+
 print(string.format("PASS candidate physical request projector: card-chosen opaque scope, Poxi/AG/PlayCard projection, active-skill reply resolution, CustomDialog exact schemas, scalar choices, malformed/unaudited fail-close; %d cases; synthetic-only; native/browser NOT RUN", cases))

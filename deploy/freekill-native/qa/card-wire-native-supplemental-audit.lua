@@ -241,11 +241,38 @@ local function metadata(command, value)
         yiguiExtraData(item)
         goto set_player_mark_done
       end
+      if mark == "_extra_turn_count" then
+        stringArray(item)
+        for _, reason in ipairs(item) do
+          assert(reason ~= "")
+          if audience == "observer" then
+            assert(reason == "game_rule" or reason == "threaten_emperor_skill" or
+              reason == "#threaten_emperor_extra" or reason == "_tqs_extra_turn")
+          end
+        end
+        goto set_player_mark_done
+      end
+      if mark == "naxiang" then
+        numberArray(item)
+        for _, id in ipairs(item) do assert(id ~= 0) end
+        goto set_player_mark_done
+      end
+      if mark == "ld__zhidao-phase" then
+        playerReference(item)
+        goto set_player_mark_done
+      end
+      if mark == "InvalidSkills" or mark:sub(1, #"InvalidSkills-") == "InvalidSkills-" then
+        for skillName, sources in pairs(item) do
+          assert(type(skillName) == "string" and skillName ~= "")
+          stringArray(sources)
+        end
+        goto set_player_mark_done
+      end
       assert(mark == "InitialGeneral" or mark == "ExtraAttachedSkills" or
         mark == "@hs__luanji-turn" or mark == "xiongsuan-turn" or
         mark == "@jilei-turn" or
-        mark:sub(1, 13) == "InvalidSkills" or mark:sub(1, 2) == "@&" or
-        mark == "RevealProhibited" or mark:sub(1, 16) == "RevealProhibited-" or
+        mark:sub(1, 2) == "@&" or
+        mark == "RevealProhibited" or mark:sub(1, #"RevealProhibited-") == "RevealProhibited-" or
         mark == "reveal_intention-turn" or mark == "gouni" or
         mark == "@@heg__fengguo" or mark == "@@ld__congcha" or
         mark == "ld__jinxian_targets-turn" or mark == "ofl_heg__xionghuo-turn" or
@@ -259,6 +286,9 @@ local function metadata(command, value)
           playerReference(item[i])
         end
       end
+    elseif value[2] == "_extra_turn_count" or value[2] == "InvalidSkills" or
+        value[2]:sub(1, #"InvalidSkills-") == "InvalidSkills-" then
+      assert(item == 0)
     else scalar(item) end
     ::set_player_mark_done::
   elseif command == "SetCardMark" then

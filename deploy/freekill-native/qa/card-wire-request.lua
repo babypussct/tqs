@@ -713,7 +713,16 @@ local function prepare(room, seat, physical, command, data, batch, requestKey)
   local payload, kind
 
   if command == "AskForCardChosen" then
+    assert(type(data) == "table", command .. " must be a table")
+    -- Upstream custom card groups may omit the display prompt while keeping
+    -- the fourth field (skill name). Normalize only this documented hole.
+    if type(data[2]) == "table" and data[3] == nil then
+      fields(data, { [1] = true, [2] = true, [4] = true }, command)
+      data = { data[1], data[2], "", data[4] }
+    end
     assert(dense(data, command) == 4, command .. " expects four fields")
+    assert(type(data[3]) == "string" and type(data[4]) == "string",
+      command .. " prompt and skill must be strings")
     local target = playerObject(room, data[1], "card-choice target")
     local flag = data[2]
     if type(flag) == "string" then

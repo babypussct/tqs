@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { updatePublicGeneralSource } from './hegemony-public-general.mjs';
 import { updateRequestVisibility } from './card-wire-request-runtime.mjs';
+import { editOnce, updateRpcStreamSource } from './native-runtime-source.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((arg) => {
   const separator = arg.indexOf('=');
@@ -38,14 +39,7 @@ assert.equal(fs.existsSync(path.join(packages, 'tqs_qa')), false,
 assert.equal(fs.existsSync(path.join(core, 'qa_packages')), false,
   'QA-only qa_packages tree cannot enter the production release');
 
-function editOnce(file, before, after, label) {
-  const source = fs.readFileSync(file, 'utf8');
-  if (source.includes(after)) return source;
-  assert.equal(source.split(before).length, 2, `${label}: source anchor drifted`);
-  const next = source.replace(before, after);
-  fs.writeFileSync(file, next);
-  return next;
-}
+updateRpcStreamSource(core);
 
 const roomFile = path.join(core, 'lua/server/roombase.lua');
 const qaOnlyGate = [
@@ -93,7 +87,7 @@ editOnce(roomFile, [
   '  if noHuman then goto GAME_OVER end',
 ].join('\n'), 'pause an offline Hegemony room');
 
-editOnce(roomFile, [
+const offlineGraceBefore = [
   '  for _, p in ipairs(self.players) do',
   '    local state = p.serverplayer:getState()',
   '    if state == fk.Player_Online or state == fk.Player_Trust then',
@@ -102,7 +96,8 @@ editOnce(roomFile, [
   '  end',
   '',
   '  if not chkOnly then',
-].join('\n'), [
+].join('\n');
+const offlineGracePrevious = [
   '  local hasOfflinePlayer = false',
   '  for _, p in ipairs(self.players) do',
   '    local state = p.serverplayer:getState()',
@@ -125,13 +120,18 @@ editOnce(roomFile, [
   '  end',
   '',
   '  if not chkOnly then',
-].join('\n'), 'bounded reconnect for offline seats');
+].join('\n');
+// The pinned runtime exposes microseconds through os.getms; native delay takes milliseconds.
+const offlineGrace = offlineGracePrevious.replace('local now = os.getms()', 'local now = os.getms() / 1000');
+editOnce(roomFile, offlineGraceBefore, offlineGrace,
+  'bounded reconnect for offline seats', offlineGracePrevious);
 
-editOnce(roomFile, [
+const roomDelayBefore = [
   '  self.room:delay(math.ceil(ms))',
   '  if self._test_disable_delay then return end',
   '  self:yield(function(r) return r == "delay_done" end, ms)',
-].join('\n'), [
+].join('\n');
+const roomDelayPrevious = [
   '  local duration = math.ceil(ms)',
   '  local untilMs = os.getms() + duration',
   '  self.room:delay(duration)',
@@ -148,7 +148,13 @@ editOnce(roomFile, [
   '    if reason == "delay_done" then self.room:delay(remaining) end',
   '    return false',
   '  end, ms)',
-].join('\n'), 'preserve the game delay when a reconnect timer fires');
+].join('\n');
+const roomDelay = roomDelayPrevious
+  .replace('os.getms() + duration', 'os.getms() / 1000 + duration')
+  .replace('untilMs - os.getms()', 'untilMs - os.getms() / 1000')
+  .replace('self.room:delay(remaining)', 'self.room:delay(math.ceil(remaining))');
+editOnce(roomFile, roomDelayBefore, roomDelay,
+  'preserve the game delay when a reconnect timer fires', roomDelayPrevious);
 
 editOnce(roomFile, [
   'function ServerRoomBase:playerReconnect(id)',
@@ -221,9 +227,11 @@ const wireModules = [
   ['ltk/client/card_wire_snapshots.lua', 'card-wire-client-snapshots.lua',
     '9b57de0578abb488b892355c0fd33fa8b9acfd11986a248bfd31827961a1db71'],
   ['lua/server/card_wire_projection.lua', 'card-wire-projection.lua',
-    'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe'],
+    ['ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe',
+      'ef6873c75de2aa8fad321187f400fa8b7cbde1d0d632069429f49a25138d627e']],
   ['lua/server/card_wire_request.lua', 'card-wire-request.lua',
-    '779b3bc22a99e737005a89170bca3d7bb2f7acbc9828b34258edf6bce4e931e1'],
+    ['779b3bc22a99e737005a89170bca3d7bb2f7acbc9828b34258edf6bce4e931e1',
+      'b514217268a97b37d7aada86fca9c171f94f6b45039b47c8faedfa89c61c732e']],
   ['ltk/client/card_wire_requests.lua', 'card-wire-client-requests.lua',
     '63c412fefb35eb3d3c344543dd787375e406bc782d69da322379faab3fa04e71'],
 ];
@@ -233,7 +241,7 @@ for (const [relative, reviewedFile, previousHash] of wireModules) {
   const installed = fs.readFileSync(target);
   const reviewed = fs.readFileSync(path.join(repositoryRoot, 'deploy/freekill-native/qa', reviewedFile));
   if (!installed.equals(reviewed)) {
-    assert.equal(createHash('sha256').update(installed).digest('hex'), previousHash,
+    assert.ok([previousHash].flat().includes(createHash('sha256').update(installed).digest('hex')),
       `Previous production module bytes drifted: ${relative}`);
     fs.writeFileSync(target, reviewed);
   }
@@ -254,6 +262,8 @@ console.log(JSON.stringify({
   root,
   production: { cardWireVersion: 1, admission: 'v1' },
   changed: [
+    'packages/freekill-core/lua/server/rpc/cbor.lua',
+    'packages/freekill-core/lua/server/rpc/stdio.lua',
     'packages/freekill-core/lua/server/roombase.lua',
     ...wireModules.map(([relative]) => `packages/freekill-core/${relative}`),
     'packages/freekill-core/ltk/core/card_wire_request_visibility.lua',

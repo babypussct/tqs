@@ -1,5 +1,77 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 25/11/2026 — Phát hành milestone production (ACTIVE)
+
+- [x] Production web build pin-correct PASS, baseline 78 missing ID giữ nguyên; 175 tests, typecheck và baseline PASS.
+- [x] Native production candidate 5 Lua deltas, manifest `08dd179491c35c733c6437f32b5a3c61`, isolated boot TCP/UDP 12/12; gateway source parity.
+- [ ] Commit/push và cutover native có drain/rollback; deploy web và kiểm public identity, gateway bundle, WSS, mobile smoke.
+- [ ] OAuth CLI full flow bằng QA account/profile đã enroll; Firebase token/session API/WSS counters. Manual OAuth PASS riêng. Chưa đóng milestone.
+
+## 25/11/2026 — Router binding và registry ownership
+
+- [x] Tái hiện stale send sau transfer, tích hợp binding patch + QA; báo cáo trước 21/21 contract stub, pin/source/pipeline PASS.
+- [x] Đối chiếu đủ 12 patch từ source pin; bootstrap patch section idempotent trên 3 trạng thái (báo cáo trước).
+- [x] Chuẩn bị QA/cutover scripts, syntax PASS; xác nhận production đang chạy đúng binary cũ và web/manifest/Shop identity.
+- [x] Linux binary SHA `f48fc43e…`, log cold boot TCP/UDP 12/12 và Lua encoder RPC 10/10, ldd PASS; QA 79662 exit 0 draw/reconnect, active takeover và active shutdown, cleanup. Matrix transfer/stale send contract 21/21.
+- [x] Commit/push `d41193c6`, cutover 13273 exit 0 sau drain 0, candidate/rollback hash, public web/Shop/manifest/WSS, service và cleanup xác minh PASS.
+- [x] Lane voluntary abandon/transfer trên candidate registry v2: ban 5 phút và QA ban 0 phút, identity/lifecycle PASS; xem evidence bên dưới.
+- [ ] Hosted CI chưa xác nhận kết quả cuối.
+- [x] TaskManager baseline tái hiện heap-use-after-free (ASan exit 134) với source registry thật và Task stub; candidate scratch Task/TaskManager ASan+UBSan 5 nhóm PASS với Server/RoomThread stub, session 20202 exit 0.
+- [x] Hoàn thiện Task candidate và tích hợp patch/pin/QA: báo cáo trước ASan/UBSan 8 nhóm PASS, build task-only Linux exit 0.
+- [x] Tích hợp registry v2 UserManager/RoomManager/RoomThread, main-owned RPC/admin/shell, explicit retirement; báo cáo trước patch forward/reverse, bootstrap 4 trạng thái x2, source 3/3, baseline 14/14 native, pipeline 14/14 PASS.
+- [x] Linux build registry v2 (39187 exit 0 theo báo cáo trước), archive SHA `03e95c94…` đối chiếu lại, ldd PASS theo báo cáo trước.
+- [x] Full contract với Lua encoder: 25/11, log 4732 PASS đến nhóm TaskManager cuối (8/8); session cũ `Unknown process id`, đã khôi phục mã thoát container 0 từ Docker `die` event lúc 08:48:08 +07:00, cùng ID `destroy`, khớp log cuối 08:47:47. Evidence `scratch/evidence/native-ownership-20261125/registry-v2-linux-contract-terminal-recovered.log`.
+- [x] V2 cold QA (báo cáo trước): TCP/UDP trong namespace/host theo log, admin 12/12, shutdown 1098 ms, cleanup.
+- [x] Native runtime cô lập đúng SHA: Router control PASS, v2 draw/reconnect, takeover, active shutdown PASS; registry fixture sửa kỳ vọng kick/ban, 11707 exit 0 (5 phút + QA 0 phút, room retire và account identity).
+- [x] Regression runtime tracked `game/web/scripts/native-registry-lifecycle.ts`: typecheck tools PASS, esbuild PASS; rerun 68420 terminal exit 0, cả hai lane ban 5 phút/QA 0 phút PASS, native exit 0 và cleanup PASS.
+- [x] Commit/push `40482c35`, stage/cold boot TCP/UDP 12/12, cutover 48476 exit 0, candidate/rollback hash, native TCP/public WSS, web/Shop/manifest, gateway/tunnel continuity và cleanup PASS. Release production `tqsvn-native-registry-03e95c94`.
+- [x] Hosted CI v2 run 45542929936 terminal success, đúng commit `40482c35`; Detect, TQSVN, Pipeline gate PASS, Shop skipped.
+- [x] Đo A/B CreateRoom→EnterRoom trên host production, QA network namespace/fresh DB: 3 cold + 9 warm mỗi binary, PID worker mới/tái sử dụng xác minh, 6/6 native exit 0 và cleanup/prod TCP PASS. Rollback/v2 cold median 3721,826/3489,087 ms; warm median 0,322/0,297 ms.
+- [x] Native Observer v1 snapshot/rejoin/capability rejection trên đúng Registry v2: session 16120 exit 0, 8 opaque hand refs, deck count only, hidden skills absent, 4/4 rejection, native shutdown/cleanup PASS.
+- [x] Native Anh Vũ Bôi v1: hai client, physical top resolution/consumption, drank +1, actual dying self-rescue HP=1 và drank không tăng thêm; 10/10 assertion PASS, bounded GameOver 2 client, exit 0/cleanup (36864). Scratch director, chưa kiểm installer tracked.
+- [x] Native bounded Tửu → Sát và reset drank: 16/16, AI PlayCard thực chọn Tửu/Sát vật lý với target hợp lệ, 1→2→1 HP sát thương, không uống khi thiếu Sát, TurnEnd thật reset buff; session 48257 exit 0, 2 client bounded GameOver, cleanup PASS.
+- [x] Sửa Card Wire v1 `_extra_turn_count` candidate: schema riêng, owner/outsider projection cho mark/snapshot/log; 37/37 source probe, 42/42 exact source, 68/68 QA contract. Native 81894 exit 0, 29/29 bounded server assertions, hai client GameOver và privacy live owner/outsider PASS, shutdown/cleanup PASS.
+- [x] Native Hiệp Thiên Tử vật lý + discard end-to-end qua Request v1: 31022 exit 0, 20/20 assertions, hai PlayCard, hai prompt (decline/accept), một lượt trì hoãn do Round thật, hai client bounded GameOver, shutdown/cleanup PASS. Scratch fixture, đại thế lực do Ngọc Tỷ.
+- [x] Native Observer/reconnect trong lượt Hiệp Thiên Tử thực: 47737 exit 0, 20/20 server assertions, 3 opaque refs mỗi snapshot, deck count-only, public reason, reconnect 238 ms, ExtraTurnEnd và bounded GameOver cả 3 audiences, shutdown/cleanup PASS.
+- [x] Tích hợp và chạy lại hai fixture regression trong repository: session 24955 terminal exit 0, 20/20 assertions native, Observer/reconnect 244 ms, 3 opaque refs mỗi snapshot, bounded GameOver ba audiences, shutdown 1325 ms exit 0 và cleanup PASS; typecheck tools PASS. Fixture chưa commit, harness scratch.
+- [x] Native Observer/reconnect với concealed reason: 76388 terminal exit 0, 9/9 assertions, owner nhận reason thật, outsider/Observer/reconnect không lộ reason trong packet payload; snapshot sentinel, deck count-only, 2/1 opaque refs, reconnect 211 ms, bounded GameOver ba audiences, shutdown/cleanup PASS. Public control 15129 exit 0, 20/20 assertions và reconnect 238 ms PASS. Reason QA giả lập, owner reconnect/controller live chưa kiểm, fixture chưa commit và harness scratch; candidate chưa phát hành.
+- [x] SmartAI Request loop native bước đầu: Registry v2 + Card Wire v1 candidate, 4 ghế/2 bot/2 client Trust, 82 quyết định, 55 accepted, 27 fallback, 0 invalid/AI exception/stack traceback/Broken pipe, bounded GameOver cả hai client, cleanup PASS; harness FAIL ngưỡng 100 và callback vòng đếm trùng. Evidence `scratch/evidence/native-ownership-20261125/smartai-long-native.log`.
+- [x] SmartAI trận dài: lượt 3715 exit 0, 105 quyết định (54 accepted, 51 fallback), 0 invalid/errors, 4 vòng/13 lượt, hai client GameOver bounded, native exit 0 và cleanup PASS. Xác minh 2 Trust/2 robot; deadline 900/960/1050s, quota=0. Evidence `smartai-long-native-retry3.log`; fixture/harness scratch, chưa CI. Không suy ra GameOver tự nhiên.
+- [ ] Observer privacy ongoing: 83247/14826 exit 1, snapshot PASS cả hai, lần đầu GameOver 3 audiences nhưng thiếu coverage hidden move/SyncDrawPile và một traceback mark chưa rõ tên; lần sau 14 MoveCards nhưng timeout GameOver, không traceback/Broken pipe. Cleanup PASS; chuyển sang lane deterministic real draw/move/sync sau admission, giữ audit fail-closed. Ba lượt controlled 46409/63638/35698 exit 1, cleanup PASS; lần cuối lỗi assertion fixture extra-turn lặp, chưa tới Observer. Chuyển sang held AskForSkillInvoke trực tiếp, không gắn extra-turn.
+- [x] Observer live private draw + SyncDrawPile controlled: 79840 exit 0, snapshot 2 opaque refs, 2 hidden move refs/1 sync count-only, auditor 0 rejects/requests, bounded GameOver 3 audiences, shutdown/cleanup PASS. Privacy toàn trận tự nhiên vẫn OPEN.
+- [x] Rematch native bounded cùng room/socket: 79840 exit 0, hai StartGame/CardWireNegotiated/PrepareDrawPile/GameOver mỗi client, room idle cùng ID, 0 worker errors, shutdown 1350 ms/cleanup PASS; scratch fixture, chưa CI.
+- [ ] 7 ghế GameOver tự nhiên: session 17680 exit 1, 1 vòng/4 TurnEnd/50 decisions, 2 Trust/5 robot, Observer snapshot PASS và 15 hidden move refs/49 MoveCards, không GameOver. Watchdog Lua `Execution time exceed.` (15s, clearHistory/broadcast), đứng 293s trước quit QA, cleanup PASS. Giữ nguyên gate; cần xác định chi phí RPC/QA load và chạy lại. Evidence `seven-natural-native.log`.
+- [ ] 7 ghế natural retry1 21401 FAIL watchdog, profile 6806 FAIL stall (46 decisions/6 turns, cleanup PASS, graceful shutdown chưa chứng minh). Timer unit bug tái hiện trên bản cũ, sửa promotion microsecond→ms và ceil delay còn lại, deterministic probe PASS, promote idempotent, source QA 42/42 PASS trên đúng root riêng. Native timer-fix 16219 exit 1: 5 vòng/22 turns/237 decisions, invalid 0/errors 1, GameFinished 1 winner valid, observer nhận GameOver (1.366 audited packets, 89 hidden move refs), 1 traceback request projection, client fixture fail decoder CBOR, native exit 0/cleanup PASS. Sửa scratch decoder 12/12 PASS; diagnostic lane 97723 đang chạy, manifest parity/fresh DB, vẫn giữ natural/0 error/observer/end-to-end gate. Evidence `seven-natural-native-timer-fix.log`, `seven-natural-native-diagnostic.log`.
+- [ ] 7 ghế diagnostic 97723 exit 1: 5 vòng/27 TurnEnd/216 decisions, 0 invalid/1 AI error, `AskForUseCard` watchdog tại `handler:setup()` → `updateUnselectedCards` → `getCardById` (source fingerprint đã đối chiếu); watchdog tiếp theo tại ClearEvent, 1 traceback, 0 Broken pipe, no GameOver. Native exit 0/shutdown 1315ms/cleanup PASS, container absent. Chưa chứng minh nguyên nhân tiêu hết 15s; đối chứng chi phí coroutine/RPC hoặc kiến trúc native, giữ watchdog/gate. Evidence `seven-natural-native-diagnostic.log`.
+- [ ] 7 ghế timed profile 37695 exit 1: 169 decisions/0 invalid/1 PlayCard watchdog, 3 vòng/12 TurnEnd/61 SkillEffect, 2 winners valid và natural GameOver cả 3 audiences; 846 audit PASS/20 SetPlayerMark reject, native exit 0/1420ms/cleanup PASS. Watchdog wall ~20s, CPU 3–59ms, RPC 0–5ms; root cause chưa xác định. Sửa auditor schema cụ thể, raw CBOR 18 cases/full catalog 64/64 PASS, chưa rerun natural. Evidence `seven-natural-native-timed-profile.log`, `supplemental-audit-regression.log`. Đối chứng ARM64 native, giữ 0 errors/privacy gate.
+- [ ] 7 ghế natural ARM64 đối chứng: 15938/19114 exit 1 theo báo cáo trước, natural GameOver cả 3 audiences và Observer ongoing PASS, 187/206 quyết định, 0 invalid/AI errors, nhưng RPC shutdown traceback ở cả hai và request projection traceback lượt 2. Watchdog không tái hiện. Sửa grouped AskForCardChosen thiếu prompt, RPC CBOR EOF/truncated/stdio; 22/22 projector, 42/42 source, stream probe và promotion idempotent PASS (51779). Cần native rerun exact patched bytes/manifest và 0 worker errors sau shutdown, Linux tương ứng; chưa đóng gate.
+- [x] Native 7-seat natural ARM64 after patch: 14468 exit 0, 289 decisions (151 accepted/138 fallback), 0 invalid/errors, 5 rounds/25 TurnEnd/95 SkillEffect, 2 valid winners, GameOver all 3 audiences parity, Observer ongoing 1436 coverage/90 hidden move refs/337 marks, fixture exit 0, native shutdown 82ms/zero tracebacks before and after, independent cleanup PASS; manifest byte parity/fresh DB. Scratch harness; Linux/production and unobserved privacy channels remain separate gates.
+- [ ] Linux native 7-seat natural after exact request/RPC patch: 28797 exit 1, 85 decisions/0 invalid/errors tại marker, 2 rounds/7 turns, watchdog 15s (notify RPC max 20131ms, wall 20182ms/CPU 32ms), 1 traceback, no GameOver; native exit 0/1309ms, independent cleanup PASS. Evidence `seven-natural-native-linux-amd64-rpc-eof-retry.log`. Đối chứng Linux AMD64 không emulation, giữ gate; chưa chứng minh nguyên nhân.
+- [x] RPC EOF regression tích hợp source suite: 43/43 PASS (55335), promotion helper dùng chung, hai lần apply hash parity với native candidate.
+- [ ] Linux guest-log control 17338 exit 1: 66 decisions/0 invalid/errors marker, 2 rounds/7 turns, watchdog tái hiện dù log guest-only/host mount read-only (notify RPC max 20131ms), 1 traceback, no GameOver, native exit 0/1182ms/cleanup PASS. Evidence `seven-natural-native-linux-amd64-guest-log.log`; tiếp tục clock/dispatcher diagnostic, không đổi 15s. KVM AMD64 QA preflight tài nguyên thấp (RAM avail 389MB, disk 94%), chưa chạy trận dài trên host.
+- [x] Clock diagnostic Linux: 710 samples, 7 cặp realtime step khoảng ±20.13s với monotonic ổn định; guestagent/NTP và host SNTP offset tương ứng. 78211 fixture FAIL watchdog, 35 decisions/0 invalid/errors tại marker, native shutdown/cleanup PASS. Evidence `seven-natural-native-linux-amd64-clock.log`, `seven-natural-linux-amd64-clock-samples.log`.
+- [x] Đối chứng clock ổn định trong Colima QA, giữ watchdog 15s: 35734 exit 0 theo báo cáo trước, log `seven-natural-native-linux-amd64-clock-stable-settle.log` đối chiếu lại PASS; 343 preflight/4592 match samples không time step, guest NTP restored. Native exact binary/promoted modules/manifest parity/fresh DB, 431 decisions/0 invalid/errors, 12 vòng/57 TurnEnd/160 SkillEffect, 1 valid winner, natural GameOver cả 3 audiences, native exit 0/1219ms, 0 tracebacks/Broken pipe, independent cleanup PASS. Linux AMD64 QEMU trên ARM64, harness scratch; không phải production/bare-metal proof.
+- [x] Observer privacy ongoing trận tự nhiên: Linux log trên 2515 coverage/471 MoveCards/180 opaque hidden move refs/543 marks/1 ShuffleDrawPile/7 opaque hand refs/count-only deck/0 rejects. Controlled draw/sync và snapshot/reconnect evidence riêng; special/reconnect không quan sát trong trận tự nhiên. Các lần FAIL phía trên giữ làm lịch sử.
+- [x] Goal native 7 ghế natural GameOver đạt trên QA ARM64 và Linux AMD64 Colima; các lần FAIL phía trên giữ làm lịch sử. SmartAI dài và rematch bounded PASS theo evidence riêng. Không đồng nghĩa production release.
+- [x] OAuth thật (manual public acceptance 25/11): Chrome profile do người dùng chỉ định, authenticated lobby, phòng 2 ghế + bot, chọn tướng, BOT/Trust, natural GameOver vòng 5, về sảnh, disconnect, Đổi tài khoản khác, Google account chooser thật, relogin vào sảnh, máy chủ báo Đã xác thực, final disconnect PASS. Evidence [PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-25.json](web-client/PUBLIC_OAUTH_GAMEPLAY_RECONNECT_2026-11-25.json). CLI runner/instrumented token/API/WSS assertions chưa chạy; không dùng manual PASS để thay thế kết quả CLI hoặc production release. Bốn gate native đã PASS trên QA.
+- [ ] Đo startup trực tiếp trên tiến trình production live (chưa có telemetry spawn→hello); mẫu QA nhỏ chưa đủ kết luận non-regression. Tiếp tục luật Quốc Chiến.
+
+## 25/11/2026 — Native main context shutdown
+
+- [x] Tái hiện pending callback sau stop bằng Boost.Asio, helper 11/11 theo báo cáo trước; tích hợp patch, pin và QA runner.
+- [x] Candidate v1 cold boot PASS; active shutdown FAIL sau 45s, diagnostic xác nhận RoomThread/Lua child đã thoát nhưng main còn treo.
+- [x] Candidate v2 sửa synchronous Router send khi main stop, capture message by value; source 3/3, baseline và pipeline 14/14 PASS; fix trap QA, dọn orphan đã xác minh, production listener còn.
+- [x] Linux v1 full regression session 25608 terminal exit 0, gồm RPC 10/10 và helper 11/11.
+- [x] V2 CMake build 100%, SHA-256 `075de871bd1563fe2702e96caa11fb9061d813deb078742ee04072f07804fd39` khớp staging.
+- [x] V2 Linux full regression session 96820 terminal exit 0; lifecycle/stream/packet/listener/Router 14/14/compression/RPC 10/10/shutdown helper 11/11 PASS.
+- [x] QA native cô lập v2: TCP/UDP 12/12, quit khi hai người đang chọn tướng (native exit 0, hai client disconnect, một worker reap, cleanup PASS).
+- [x] Draw/reconnect và active takeover cùng binary v2, cả hai cleanup PASS, session 88635 terminal exit 0 theo báo cáo trước.
+- [x] Commit/push `583b7278`, cutover 75522 exit 0; kiểm current/executable/rollback, service/timer, web/Shop asset hash, WSS/native challenge và cleanup PASS (41776, 31549, 37367).
+- [ ] Rà normal removeThread ownership/join, router socket và các race còn lại; tiếp tục đối chứng luật Quốc Chiến.
+- [ ] Router/UserManager: baseline stale send=1 theo log, scratch candidate=0 và matrix 20/20 PASS theo báo cáo trước; review transport/lifetime/request bookkeeping, tích hợp regression, đồng bộ registry, kiểm null và runtime trước release kế tiếp.
+
+- [ ] RoomManager/TaskManager: đồng bộ registry và snapshot ownership, audit raw Task/RoomThread lifetime và callback/destructor reentrancy; kiểm runtime cô lập trước phát hành.
+
 ## 25/11/2026 — Router và RPC C++/Lua
 
 - [x] Tích hợp router/compression patch, kiểm pin và source, macOS router 14/14, Linux CMake build 100%.
@@ -7,7 +79,11 @@
 - [x] Full Linux regression session 64190 exit 0, binary SHA khớp stage.
 - [x] Commit/push `e3adaee3`, cutover và kiểm độc lập production `tqsvn-native-router-734a49c3` PASS.
 - [x] Tái hiện ghi đè method/tham số RPC khi hai packet cùng buffer bằng parser C++ thực; đối chứng sửa thứ tự xử lý PASS trên fixture scratch.
-- [ ] Sửa RPC thật, kiểm fragment/coalesce, ghi đủ pipe, ID concurrent và lifetime error payload; native QA/gameplay trước phát hành.
+- [x] Tích hợp RPC patch, macOS contract 10/10, source/pin/pipeline PASS theo báo cáo trước; Linux CMake 100% đã quan sát.
+- [x] Sửa web reconnect sau lỗi phòng/worker, recovery/messages/connection/typecheck PASS theo báo cáo trước; build production đủ 14 pin sạch, audit và SW PASS.
+- [x] Linux regression các nhóm PASS qua 46890 và 49033 (fixture Lua CBOR sửa riêng; chưa có một full run exit 0), cold boot, draw/reconnect, active-request takeover, worker-failure cô lập hai phòng PASS.
+- [x] Commit/push `5b0aae41`, deploy native/web và verify production theo evidence; dọn staging 57481, listener 9527 vẫn hoạt động.
+- [ ] Kiểm shutdown trong khi worker chờ main và các race/trường hợp luật Quốc Chiến còn thiếu evidence.
 
 ## 25/11/2026 — Kiểm tra packet và router native
 
@@ -27,7 +103,6 @@
 - [x] Commit/push `9ad5fb98`, cutover và kiểm độc lập production release `tqsvn-native-lifecycle-3493e019` PASS.
 - [ ] Kiểm PacketBuilder và tiếp tục khảo sát nguyên nhân sự cố listener lịch sử, luật Quốc Chiến và full-match 7 ghế; không đóng gate bằng transport smoke.
 
-
 ## 25/11/2026 — Hồi quy phân mảnh TCP native
 
 - [x] Tái hiện mất packet bằng decoder C++ pin thực trên Linux, tạo patch và kiểm tra áp dụng đủ chuỗi native patch, QA contract và pipeline.
@@ -40,6 +115,16 @@
 
 - [x] Tái hiện native TCP không gửi challenge khi HTTP còn khỏe bằng socket thật trong test; triển khai watchdog `8747c355`, kiểm hash, trạng thái và public WSS canonical.
 - [ ] Tái hiện nguyên nhân accept loop ngừng xử lý; kiểm native exception/cleanup trong runtime cô lập, chạy đăng nhập Google thực và tiếp tục ma trận gameplay Quốc Chiến.
+
+## 25/11/2026 — Sự cố native login production
+
+- [x] Xác minh native 9527 không gửi challenge dù gateway HTTP còn hoạt động; kiểm 0 phòng/0 người sảnh, restart cùng release, xác minh native challenge và public WSS.
+- [ ] Tái hiện nguyên nhân accept loop ngừng xử lý và bổ sung kiểm challenge vào watchdog; xác minh đăng nhập Google thật sau phục hồi và kiểm hồi quy trước khi phát hành thay đổi chống tái diễn.
+
+## 22/11/2026 — Dung lượng máy native production
+
+- [x] Thu hồi dung lượng từ staging QA, cache APT và media lịch sử trùng byte. Filesystem gốc còn 6,1 GiB, mức sử dụng 87%. Xác nhận native/gateway/tunnel, gói public và hash current/rollback.
+- [x] Ghi quy tắc preflight dung lượng và cleanup cold boot để tránh lặp lại tiến trình QA bị sót.
 
 ## 22/11/2026 — Khảo sát Quốc Chiến 7 ghế production
 
