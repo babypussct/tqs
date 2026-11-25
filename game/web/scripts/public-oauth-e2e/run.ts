@@ -288,8 +288,15 @@ async function run(): Promise<void> {
     if (!port || !/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
       fail('invalid_local_cdp_port');
     }
-    attachedBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${Number(port)}`, {
-      timeout: 10_000,
+    const browserPath = process.env.TQS_PUBLIC_CHROME_CDP_BROWSER_PATH;
+    if (browserPath && !/^\/devtools\/browser\/[a-f0-9-]+$/i.test(browserPath)) {
+      fail('invalid_local_cdp_browser_path');
+    }
+    const endpoint = browserPath
+      ? `ws://127.0.0.1:${Number(port)}${browserPath}`
+      : `http://127.0.0.1:${Number(port)}`;
+    attachedBrowser = await chromium.connectOverCDP(endpoint, {
+      timeout: 30_000,
     }).catch(() => fail('existing_chrome_unreachable'));
     const pages = attachedBrowser.contexts().flatMap((browserContext) => browserContext.pages())
       .filter((candidate) => candidate.url() === site.href);

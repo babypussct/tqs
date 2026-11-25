@@ -1,6 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
 
+## 26/11/2026 — Milestone production PASS
+
+- 01:54:15 UTC+7: OAuth CLI hậu deploy `--existing-chrome` exit 0 trên chính tab Chrome đã mở. PASS cả 10 bước preflight, OAuth, lobby, WSS, room, match, GameOver, cleanup, logout và relogin. 3 lượt yêu cầu session khớp danh tính Firebase QA; 2 WSS mở, 13 gửi, 976 nhận, 0 lỗi socket và 0 page errors. Gate relogin xác minh cả gửi và nhận trên cùng một socket mới. Google popup chọn đúng tài khoản một lần, callback Firebase thành công.
+- Chrome yêu cầu kết nối WebSocket loopback trực tiếp thay vì ngõ HTTP discovery, vốn trả 404. Runner nhận đường dẫn DevTools được Chrome cấp qua biến môi trường có kiểm tra và không ghi đường dẫn vào evidence. Chỉ cấp quyền sau khi người dùng xác nhận. Đã tắt DevTools, xác nhận không còn listener 9222 và giữ tab game ở cổng vào chiến trường.
+- Evidence an toàn `scratch/evidence/public-oauth-e2e/public-qa-1795632855072-c2e00c42-6664-4b61-a821-e8abbc81af01.json`. Release runtime production đã xác minh tại `bed2cbec`; thay đổi cuối chỉ thuộc runner QA và tài liệu.
+
 ## 26/11/2026 — Phát hành production trên source b5bd03cc
 
 - QA trực tiếp trên tab Chrome đang mở theo yêu cầu người dùng: sau luồng ngắt kết nối và đăng nhập lại, sảnh hiển thị và DevTools Network ghi một socket mới `wss://tqsvn.pages.dev/gateway/ws`, HTTP 101. Bảng Messages của cùng socket ghi nhận 4 dòng Send và 6 dòng Receive tại hai thời điểm quan sát. Chỉ lưu số đếm, không lưu frame, header hoặc token. Bằng chứng này đóng phần WSS của QA trực tiếp; chưa có PASS OAuth CLI.
@@ -2798,20 +2804,22 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-25T18:47:45.487Z (UTC).
-- Nhánh: `main` · HEAD: `61e9944ec760`.
-- File thay đổi hiển thị: 0 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-25T18:55:07.158Z (UTC).
+- Nhánh: `main` · HEAD: `20c7fc03869b`.
+- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
-(không có thay đổi ngoài CODEX_STATE.md)
+ M docs/CODEX_PLAN.md
+ M docs/web-client/LIVE_TESTING.md
+ M game/web/scripts/public-oauth-e2e/run.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+20c7fc03 Allow OAuth QA to attach to an existing local Chrome tab
+49426326 Record live Chrome relogin WebSocket evidence
 61e9944e Trace Google OAuth popup stages without storing sensitive data
-4e1db2c4 Record production verification and classify OAuth alerts
-b5bd03cc Harden public OAuth QA and verify relogin socket traffic
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
