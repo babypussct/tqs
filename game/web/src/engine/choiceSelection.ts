@@ -29,7 +29,7 @@ export function parseChoicePrompt(data: unknown): ChoicePrompt | null {
 
 export function validChoiceReply(prompt: ChoicePrompt, selected: unknown): selected is string[] {
   return Array.isArray(selected) && selected.length <= prompt.max &&
-    (selected.length >= prompt.min || (selected.length === 0 && prompt.cancelable)) &&
+    (selected.length >= prompt.min || (selected.length === 0 && prompt.cancelable && !prompt.single)) &&
     selected.every((s) => typeof s === 'string' && prompt.choices.includes(s)) &&
     new Set(selected).size === selected.length;
 }

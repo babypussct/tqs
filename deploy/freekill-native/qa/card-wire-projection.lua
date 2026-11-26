@@ -796,7 +796,7 @@ end
 -- lookup lexical so a concealed log card cannot fall back to a public ID.
 local physicalCardVisibility
 
-local function projectCardWireCard(card, batch, audience, label)
+local function projectCardWireCard(card, batch, audience, label, announced)
   assert(isCardObject(card), label .. " must be a Card object")
   assert(type(card.isVirtual) == "function", label .. " virtual-card check is missing")
   if not card:isVirtual() then
@@ -804,7 +804,7 @@ local function projectCardWireCard(card, batch, audience, label)
     return {
       cardWireCard = 1,
       kind = "real",
-      ref = batch:standing(audience, card.id, true),
+      ref = announced and card.id or batch:standing(audience, card.id, true),
     }
   end
 
@@ -856,37 +856,41 @@ local function logCardIsVisible(room, seat, physical, id, label)
   return physicalCardVisibility(room, seat, physical, id, label)
 end
 
-local function projectLogCardValue(value, room, seat, physical, batch, audience, label)
+local function projectLogCardValue(value, room, seat, physical, batch, audience, label, announced)
   if isCardObject(value) then
-    if not value:isVirtual() and not logCardIsVisible(room, seat, physical,
+    if not announced and not value:isVirtual() and not logCardIsVisible(room, seat, physical,
         value.id, label .. " ID") then
       return -1
     end
-    return projectCardWireCard(value, batch, audience, label)
+    return projectCardWireCard(value, batch, audience, label, announced)
   end
   assert(type(value) == "number", label .. " must be a card ID or Card")
   if value == -1 then return value end
+  if announced then
+    cardId(value)
+    return value
+  end
   if not logCardIsVisible(room, seat, physical, value, label) then return -1 end
   return batch:standing(audience, value, true)
 end
 
-local function projectLogCards(value, room, seat, physical, batch, audience, label)
+local function projectLogCards(value, room, seat, physical, batch, audience, label, announced)
   local count = denseCount(value, label)
   local result = {}
   for i = 1, count do
     result[i] = projectLogCardValue(value[i], room, seat, physical, batch, audience,
-      label .. " entry")
+      label .. " entry", announced)
   end
   return result
 end
 
-local function projectLogValue(value, room, seat, physical, batch, audience, label)
+local function projectLogValue(value, room, seat, physical, batch, audience, label, announced)
   if isCardObject(value) then
-    if not value:isVirtual() and not logCardIsVisible(room, seat, physical,
+    if not announced and not value:isVirtual() and not logCardIsVisible(room, seat, physical,
         value.id, label .. " ID") then
       return -1
     end
-    return projectCardWireCard(value, batch, audience, label)
+    return projectCardWireCard(value, batch, audience, label, announced)
   end
   assert(type(value) ~= "table", label .. " contains an unaudited table")
   return scalar(value, label)
@@ -898,10 +902,26 @@ local logKeys = {
   arg6 = true, arg7 = true, arg8 = true, arg9 = true,
 }
 
+-- These upstream log fields explicitly announce a card, sometimes before
+-- MoveCards or ShowCard. Reveal the face without changing standing handles.
+local announcedLogFields = {
+  ["#ShowCard"] = { card = true },
+  ["#UseCard"] = { card = true },
+  ["#UseCardToTargets"] = { card = true },
+  ["#UseCardToCard"] = { card = true, arg = true },
+  ["#ResponsePlayCard"] = { card = true },
+  ["#CardUseCollaborator"] = { arg = true },
+  ["#InitialJudge"] = { arg = true },
+  ["#JudgeResult"] = { arg = true },
+  ["#ChangedJudge"] = { arg2 = true },
+  ["#ShowPindianCard"] = { arg = true },
+}
+
 local function projectGameLog(room, seat, physical, data, batch, audience)
   fields(data, logKeys, "GameLog")
   assert(type(data.type) == "string" and data.type ~= "", "GameLog type required")
   local result = { type = data.type }
+  local announced = announcedLogFields[data.type] or {}
   if data.from ~= nil then
     result.from = integerValue(data.from, "GameLog from")
   end
@@ -914,7 +934,7 @@ local function projectGameLog(room, seat, physical, data, batch, audience)
   end
   if data.card ~= nil then
     result.card = projectLogCards(data.card, room, seat, physical, batch,
-      audience, "GameLog cards")
+      audience, "GameLog cards", announced.card)
   end
   if data.toast ~= nil then
     assert(type(data.toast) == "boolean", "GameLog toast must be boolean")
@@ -923,7 +943,7 @@ local function projectGameLog(room, seat, physical, data, batch, audience)
   for _, key in ipairs({ "arg", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8", "arg9" }) do
     if data[key] ~= nil then
       result[key] = projectLogValue(data[key], room, seat, physical, batch,
-        audience, "GameLog " .. key)
+        audience, "GameLog " .. key, announced[key])
     end
   end
   if data.type == "$ExtraTurnStart" or data.type == "$ExtraTurnEnd" then

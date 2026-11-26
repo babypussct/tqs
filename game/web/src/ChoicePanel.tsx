@@ -20,7 +20,7 @@ export default function ChoicePanel({ request, prompt, busy, respond }: {
   const expired = request.expiresAt !== null && now >= request.expiresAt;
   const disabled = busy || expired;
   return <RequestDialog className="panel request-panel" label="Lựa chọn trong trận"
-    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !disabled}
+    focusKey={`${request.requestId}:${request.receivedAt}`} canCancel={prompt.cancelable && !prompt.single && !disabled}
     request={request}
     onCancel={() => respond([])}>
     <span className="section-label">Yêu cầu trong trận</span>
@@ -40,7 +40,7 @@ export default function ChoicePanel({ request, prompt, busy, respond }: {
       {!prompt.single && <button type="button" className="button primary"
         disabled={disabled || selected.length < prompt.min || !validChoiceReply(prompt, selected)}
         onClick={() => respond(selected)}>Xác nhận lựa chọn</button>}
-      {prompt.cancelable && <button type="button" className="button secondary"
+      {prompt.cancelable && !prompt.single && <button type="button" className="button secondary"
         disabled={disabled} onClick={() => respond([])}>Bỏ qua lựa chọn</button>}
     </div>
     {expired && <p role="status">Yêu cầu đã hết thời gian.</p>}

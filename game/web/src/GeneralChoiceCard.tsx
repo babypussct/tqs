@@ -74,7 +74,7 @@ export default function GeneralChoiceCard({
           <span className={`sg-kingdom-label sg-kingdom-${safeClassPart(metadata.kingdom)}`}>{text(metadata.kingdom)}</span>
           {metadata.subkingdom && <span>{text(metadata.subkingdom)}</span>}
           {hpAdjustments.map((value) => <span key={value}>{value} HP</span>)}
-          {metadata.companionWithOffer && <span className="sg-companion-badge" title="Có quan hệ Châu liên bích trong danh sách này">珠联</span>}
+          {metadata.companionWithOffer && <span className="sg-companion-badge" title="Có tướng Châu liên hợp bích trong danh sách này"><span aria-hidden="true">◆◇</span> Châu liên hợp bích</span>}
         </span>}
         {position && <span className="general-position">{position === 'main' ? 'Chủ tướng' : 'Phó tướng'}</span>}
         {statusLabel && !position && <span className="sg-general-choice-reason">{statusLabel}</span>}

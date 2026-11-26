@@ -890,14 +890,15 @@ local function resolveUse(protocol, audience, requestKey, reply)
   return result
 end
 
-local function allowedStringReply(data, reply, choicesIndex, limitsIndex)
+local function allowedStringReply(data, reply, choicesIndex, limitsIndex, cancelable)
   if reply == "" then return reply end
   assert(type(reply) == "table", "choice reply must be an array")
   local count = dense(reply, "choice reply")
   local choices = data[choicesIndex]
   assert(type(choices) == "table", "choice allowlist missing")
   local minimum, maximum = data[limitsIndex][1], data[limitsIndex][2]
-  assert(count >= minimum and count <= maximum, "choice reply cardinality invalid")
+  assert((count >= minimum or (count == 0 and cancelable)) and count <= maximum,
+    "choice reply cardinality invalid")
   local seen = {}
   for i = 1, count do
     assert(type(reply[i]) == "string" and table.contains(choices, reply[i]),
@@ -988,9 +989,9 @@ function RequestWire.resolve(room, seat, physical, command, reply, requestKey, o
       command == "AskForResponseCard" then
     return resolveUse(protocol, audience, requestKey, reply)
   elseif command == "AskForChoices" then
-    return allowedStringReply(originalData, reply, 1, 3)
+    return allowedStringReply(originalData, reply, 1, 3, originalData[4] == true)
   elseif command == "AskForOptions" then
-    return allowedStringReply(originalData, reply, 1, 3)
+    return allowedStringReply(originalData, reply, 1, 3, originalData[4] == true)
   elseif command == "AskForSkillInvoke" then
     assert(reply == "1" or reply == "__cancel", "skill invoke reply is invalid")
     return reply

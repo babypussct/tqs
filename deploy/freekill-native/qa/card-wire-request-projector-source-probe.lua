@@ -216,6 +216,16 @@ rejects(function()
     "req/5b", { { "A" }, { "A", "B" }, { 1, 1 }, false, "probe", "", false, true })
 end, "unaudited")
 
+for _, command in ipairs({"AskForChoices", "AskForOptions"}) do
+  local optional = {{"A", "Cancel"}, {"A", "Cancel"}, {1, 1}, true, "probe", "", false, true}
+  local mandatory = {{"A", "B"}, {"A", "B"}, {1, 1}, false, "probe", "", false, true}
+  assert(#Projection.resolve(room, owner, physical, command, {}, "req/optional", optional) == 0)
+  assert(Projection.resolve(room, owner, physical, command, {"Cancel"}, "req/cancel", optional)[1] == "Cancel")
+  rejects(function()
+    Projection.resolve(room, owner, physical, command, {}, "req/mandatory", mandatory)
+  end, "cardinality")
+end
+
 local play = project(owner, "PlayCard", nil)
 assert(next(play.payload) == nil and #play.choices >= 3)
 local playResolved = Projection.resolve(room, owner, physical, "PlayCard", {

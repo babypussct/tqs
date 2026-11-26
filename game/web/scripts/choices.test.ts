@@ -13,6 +13,10 @@ test('native choice limits reject disabled, duplicate, missing and excess select
   for (const invalid of [[], ['disabled'], ['main', 'main'], ['main', 'deputy', 'disabled'], 'main'])
     assert.equal(validChoiceReply(prompt, invalid), false);
   assert.equal(validChoiceReply({ ...prompt, cancelable: true }, []), true);
+  const single = parseChoicePrompt([['transformDeputy', 'Cancel'], ['transformDeputy', 'Cancel'], [1, 1], true, 'overbearing_skill', '', false, true])!;
+  assert.equal(validChoiceReply(single, []), false);
+  assert.equal(validChoiceReply(single, ['Cancel']), true);
+  assert.equal(validChoiceReply(single, ['transformDeputy']), true);
   assert.equal(parseChoicePrompt([['a'], ['a'], [2, 1], false, '', '', false, false]), null);
   assert.equal(parseChoicePrompt([['a', 'a'], ['a'], [1, 2], false, '', '', false, false]), null);
   assert.equal(parseChoicePrompt([['a'], ['b'], [1, 1], false, '', '', false, true]), null);

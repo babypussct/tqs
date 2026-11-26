@@ -765,10 +765,10 @@ check("GameLog preserves concealed mappings and projects only visible cards", fu
   local spectatorState = handles.audiences[spectator.key]
   local concealedBefore = spectatorState and spectatorState.byId[100]
   local result = emit(seat, spectator, "GameLog", {
-    type = "#ResponsePlayCard", from = 11, to = {12},
+    type = "#PrivateProbe", from = 11, to = {12},
     card = {100, real, -1}, arg = "probe", arg2 = real, toast = true,
   })
-  assert(result.cardWireVersion == 1 and result.payload.type == "#ResponsePlayCard")
+  assert(result.cardWireVersion == 1 and result.payload.type == "#PrivateProbe")
   assert(result.payload.card[1] == -1 and result.payload.card[2].kind == "real" and
     result.payload.card[2].ref == 103 and result.payload.card[3] == -1 and
     result.payload.arg == "probe" and result.payload.arg2.kind == "real" and
@@ -776,12 +776,27 @@ check("GameLog preserves concealed mappings and projects only visible cards", fu
   assert(handles.audiences[spectator.key].byId[100] == concealedBefore,
     "concealed GameLog card must not republish or mutate its standing handle")
   local ownerResult = emit(seat, owner, "GameLog", {
-    type = "#ResponsePlayCard", card = {100}, arg2 = real,
+    type = "#PrivateProbe", card = {100}, arg2 = real,
   })
   assert(ownerResult.payload.card[1] == 100 and ownerResult.payload.arg2.ref == 103)
   fails(seat, spectator, "GameLog", {
     type = "#Bad", arg = { nested = { cardId = 100 } },
   }, "unaudited table")
+end)
+
+check("explicit public GameLog announces a concealed card before movement", function()
+  local before = handles.audiences[spectator.key].byId[100]
+  local shown = emit(seat, spectator, "GameLog", {type = "#ShowCard", card = {100}})
+  assert(shown.payload.card[1] == 100)
+  local used = emit(seat, spectator, "GameLog", {type = "#ResponsePlayCard",
+    card = {cardObject({id = 100})}})
+  assert(used.payload.card[1].ref == 100)
+  local judged = emit(seat, spectator, "GameLog", {type = "#InitialJudge",
+    arg = cardObject({id = 100})})
+  assert(judged.payload.arg.ref == 100)
+  assert(handles.audiences[spectator.key].byId[100] == before)
+  local hidden = emit(seat, spectator, "GameLog", {type = "#PrivateProbe", card = {100}})
+  assert(hidden.payload.card[1] == -1)
 end)
 
 check("Reconnect and Observe snapshots use count-only deck and physical refs", function()
