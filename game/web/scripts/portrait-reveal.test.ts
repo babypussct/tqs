@@ -1,10 +1,35 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import PlayerPhotoPanel, { getMagatamaState } from '../src/PlayerPhotoPanel';
+import { GeneralPortrait } from '../src/GeneralChoiceCard';
+import { generalArtCandidates } from '../src/generalArt';
 import { initialSnapshot, reduceUiEvent, type GameSnapshot } from '../src/store/gameStore';
+
+test('public portrait inventory matches the shipped JPEG files', () => {
+  const directory = new URL('../public/photo-assets/generals/', import.meta.url);
+  const inventory: string[] = JSON.parse(readFileSync(new URL('../src/generalArtList.json', import.meta.url), 'utf8'));
+  const files = readdirSync(directory).filter(file => file.endsWith('.jpg')).map(file => file.slice(0, -4)).sort();
+  assert.deepEqual([...inventory].sort(), files);
+});
+
+test('Hegemony lord and Jin portraits resolve their exact shipped artwork', () => {
+  for (const name of ['ld__lordcaocao', 'ld__lordliubei', 'ld__lordsunquan', 'ld__lordzhangjiao',
+    'm_heg__lordcaopi', 'm_heg__lorddongzhuo', 'm_heg__lordliushan', 'm_heg__lordsunce',
+    'heg__lordsimayi', 'heg__simayij', 'heg__jiananfeng', 'heg__simazhao', 'heg__zhanghuyuechen',
+    'hs__simayi', 'ol_heg__simayi', 'nos_heg__yanbaihu']) {
+    const expected = `/photo-assets/generals/${name}.jpg`;
+    assert.equal(generalArtCandidates({ name, extension: 'hegemony' })[0], expected);
+    const bytes = readFileSync(new URL(`../public${expected}`, import.meta.url));
+    assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
+    const markup = renderToStaticMarkup(createElement(GeneralPortrait, { name, label: name }));
+    assert.ok(markup.includes(`src="${expected}"`), name);
+  }
+  assert.equal(generalArtCandidates({ name: 'm_heg__jiangwei' })[0], '/photo-assets/generals/jiangwei.jpg');
+  assert.deepEqual(generalArtCandidates({ name: '../heg__lordsimayi' }), []);
+});
 
 function assertPortraitHalves(markup: string, mainVisible: boolean, deputyVisible: boolean) {
   assert.match(markup, /sg-portrait-frame native-portrait-canvas has-deputy/);

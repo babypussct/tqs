@@ -1,13 +1,10 @@
 /**
  * Browser-side equivalent of FreeKill's SkinBank.getGeneralPicture().
  *
- * The native client resolves a general through its owning extension and then
- * asks for an exact `<general>.jpg`. The web release intentionally ships only
- * the small public fixture pack; the runtime package snapshot contains Lua/
- * JSON/QML/JS, but not the native image tree. Do not probe speculative
- * `/assets`, `/packages`, or `/photo-assets` URLs for every native variant:
- * those requests only produce avoidable 404s before the safe CSS sigil is
- * rendered. No fuzzy variant aliasing is performed.
+ * The runtime bundle contains Lua/JSON/QML/JS, but not the native image tree.
+ * Ship the pinned Hegemony portraits alongside the existing public art pack
+ * and resolve exact IDs before using the legacy base-name fallback. The
+ * inventory prevents speculative requests for unshipped variant portraits.
  */
 
 import generalList from './generalArtList.json';

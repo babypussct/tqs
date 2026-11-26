@@ -1,5 +1,11 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 27/11/2026 — Hình tướng Quốc Chiến
+
+- [x] Bổ sung 339 ảnh từ đúng pin Hegemony, kiểm coverage 346 ID (7 fallback), inventory 1915 ảnh và regression 23+4+3 PASS.
+- [x] Build web release và byte parity ảnh public/dist PASS.
+- [ ] Push source, Pages Direct Upload, smoke và xác minh ảnh trên production.
+
 ## 27/11/2026 — Châu liên hợp bích, lựa chọn và log bài
 
 - [x] Source, native cô lập và Chrome Quan Tinh PASS trên runtime phát hành; xác minh Đốt Đốt Bức Nhân gửi Cancel và HP 10→9 ở hai client.
