@@ -66,6 +66,8 @@ if (fs.existsSync(target)) {
       'ec4410704892385bb151bfc5781ea0f24a798c00f606ea0e2a3890ece1392dfe',
       // Production projector before the extra-turn reason stack schema.
       'ef6873c75de2aa8fad321187f400fa8b7cbde1d0d632069429f49a25138d627e',
+      // Milestone projector before the Suchao target-list schema.
+      'c14c658c2afa2db6212dec1158b4663d7d4541b15415e8b6d1dbbb7eaa573771',
     ]);
     assert.ok(reviewedPriorRevisions.has(createHash('sha256').update(installed).digest('hex')),
       'candidate projector differs from reviewed previous revisions');

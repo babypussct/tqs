@@ -1,6 +1,14 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
 
+## 26/11/2026 — Túc Triều (Tôn Tuấn)
+
+- [x] Bản sửa Card Wire v1 target-list mark local; đọc lại source regression 43/43 và QA catalog 64/64 từ log trước.
+- [x] Native macOS cô lập, 1 mục tiêu: reply hợp lệ, HP 10→9→10 trên cả 2 client, prompt Sát (hủy), reset mark, 2 GameOver, exit 0 và cleanup PASS. Evidence tại CODEX_STATE.
+- [ ] Native 2–3 mục tiêu và thực sự sử dụng Sát phản công chưa được kiểm (có kiểm mô phỏng); chưa xác minh browser/production.
+- [ ] Phát hành production đã được yêu cầu ngày 26/11; đang chuẩn bị candidate native và xác minh sau triển khai.
+
+
 ## 26/11/2026 — Milestone production PASS
 
 - [x] Pages production `bed2cbec` đã qua smoke ở deployment và alias. OAuth CLI hậu deploy PASS trên tab Chrome đang mở lúc 01:54:15 UTC+7.

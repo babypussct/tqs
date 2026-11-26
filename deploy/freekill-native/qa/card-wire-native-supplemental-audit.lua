@@ -257,6 +257,11 @@ local function metadata(command, value)
         for _, id in ipairs(item) do assert(id ~= 0) end
         goto set_player_mark_done
       end
+      if mark == "ol_heg__suchao-phase" then
+        local count = dense(item)
+        for i = 1, count do playerReference(item[i]) end
+        goto set_player_mark_done
+      end
       if mark == "ld__zhidao-phase" then
         playerReference(item)
         goto set_player_mark_done
@@ -286,7 +291,7 @@ local function metadata(command, value)
           playerReference(item[i])
         end
       end
-    elseif value[2] == "_extra_turn_count" or value[2] == "InvalidSkills" or
+    elseif value[2] == "ol_heg__suchao-phase" or value[2] == "_extra_turn_count" or value[2] == "InvalidSkills" or
         value[2]:sub(1, #"InvalidSkills-") == "InvalidSkills-" then
       assert(item == 0)
     else scalar(item) end

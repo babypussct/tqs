@@ -363,8 +363,9 @@ test('candidate projector redacts upstream Card objects and rekeys hidden deck f
   assert.equal(fs.readFileSync(installed, 'utf8'),
     fs.readFileSync(path.join(here, 'card-wire-projection.lua'), 'utf8'));
   const output = runLua('card-wire-projection-source-probe.lua',
-    [installed, path.join(here, 'card-handle-protocol.lua')]);
-  assert.match(output, /PASS audited card-wire projection: 37 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
+    [installed, path.join(here, 'card-handle-protocol.lua'),
+      path.join(mergedHegemonyRoot ?? path.dirname(pkgRoot), 'pkg/online_heg/skills/suchao.lua')]);
+  assert.match(output, /PASS audited card-wire projection: 38 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
   const repoRoot = path.resolve(here, '../../..');
   const guard = execFileSync(process.execPath,
     [path.join(repoRoot, 'scripts/upstream-first-card-wire-projection-guard.mjs'),

@@ -568,6 +568,7 @@ local playerObjectMarks = {
   ["ofl_heg__xionghuo_prohibit-turn"] = true,
   ["@@nos_heg__zhidao-turn"] = true,
   ["m_heg__fenxun-turn"] = true,
+  ["ol_heg__suchao-phase"] = true,
 }
 local playerIdMarks = {
   ["fenxun-turn"] = true,
@@ -703,6 +704,8 @@ local function projectPlayerMark(room, seat, physical, data)
       room:getPlayerById(id), value)
   elseif mark == "_extra_turn_count" then
     value = projectExtraTurnReasons(value, isOwner(seat, physical, id))
+  elseif mark == "ol_heg__suchao-phase" and type(value) ~= "table" then
+    assert(value == 0, mark .. " scalar must be zero")
   elseif type(value) == "table" then
     value = projectNamedTableMark(room, mark, value)
   else

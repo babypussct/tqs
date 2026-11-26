@@ -854,4 +854,73 @@ check("unknown notifications, bad version and wrong mode fail closed", function(
   room.getSettings = original
 end)
 
+check("Tuc Trieu target mark allows the actual skill to complete", function()
+  local effects = {}
+  fk = { EventPhaseEnd = "phase_end", CreateSkill = function(skill)
+    function skill:addEffect(event, effect) effects[event] = effect end
+    return skill
+  end }
+  Fk = { loadTranslationTable = function() end }
+  Util = { FalseFunc = function() return false end }
+  function table.insertTable(self, list)
+    for _, item in ipairs(list) do table.insert(self, item) end
+  end
+  local skill = dofile(assert(arg[3], "Suchao skill path required"))
+  local markName = skill.name .. "-phase"
+  local third = { id = 13 }
+  local fourth = { id = 14 }
+  seats[13], seats[14] = third, fourth
+  local targets = {otherSeat, third, fourth}
+  local mark, damage, recovery, slash = 0, {}, {}, {}
+  seat.room = room
+  function seat:getTableMark() return type(mark) == "table" and mark or {} end
+  function room:setPlayerMark(player, name, value)
+    assert(player == seat and name == markName)
+    mark = value -- Matches ServerRoomBase:setPlayerMark: store before broadcasting.
+    for _, audience in ipairs({{seat, owner}, {otherSeat, opponent}, {seat, spectator}}) do
+      local out = emit(audience[1], audience[2], "SetPlayerMark", {player.id, name, value})[3]
+      assert(out ~= value and #out == #value)
+      for i, target in ipairs(value) do assert(out[i] == target) end
+    end
+  end
+  function room:sortByAction() end
+  function room:damage(data)
+    assert(data.from == seat and data.damage == 1 and data.skillName == skill.name)
+    damage[#damage + 1] = data.to
+  end
+  function room:recover(data)
+    assert(data.num == 1 and data.who == data.recoverBy and data.skillName == skill.name)
+    recovery[#recovery + 1] = data.who
+  end
+  function room:askToUseCard(player, data)
+    assert(data.pattern == "slash" and data.extra_data.exclusive_targets[1] == seat.id)
+    slash[#slash + 1] = player
+    return {from = player}
+  end
+  function room:useCard(use) assert(use.extraUse == true) end
+  for n = 1, 3 do
+    mark, damage, recovery, slash = 0, {}, {}, {}
+    local chosen = {table.unpack(targets, 1, n)}
+    local ok, problem = pcall(effects.active.on_use, nil, room, {from = seat, tos = chosen})
+    if not ok then
+      assert(#mark == n and #damage == 0)
+      error("Suchao mark stored but no damage executed: " .. tostring(problem))
+    end
+    assert(#damage == n and #recovery == 0 and #slash == 0)
+    effects.phase_end.on_use(nil, nil, seat, seat)
+    assert(#recovery == n and #slash == n)
+    for i = 1, n do
+      assert(damage[i] == chosen[i] and recovery[i] == chosen[i] and slash[i] == chosen[i])
+    end
+  end
+  for _, audience in ipairs({{seat, owner}, {otherSeat, opponent}, {seat, spectator}}) do
+    assert(emit(audience[1], audience[2], "SetPlayerMark", {11, markName, 0})[3] == 0)
+    for _, bad in ipairs({{100}, {{id = 12}}, {"12"}, {[2] = otherSeat}}) do
+      fails(audience[1], audience[2], "SetPlayerMark", {11, markName, bad}, markName)
+    end
+    fails(audience[1], audience[2], "SetPlayerMark", {11, markName, 100}, markName)
+  end
+  seats[13], seats[14] = nil, nil
+end)
+
 print(string.format("PASS audited card-wire projection: %d synthetic physical/privacy/schema cases; native/browser NOT RUN", count))

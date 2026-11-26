@@ -1,6 +1,16 @@
 # CODEX_STATE — bàn giao công việc TQS
 
 
+## 26/11/2026 — Túc Triều (Tôn Tuấn) native QA local PASS
+
+- Release được người dùng yêu cầu ngày 26/11. Rerun source + QA catalog/installer/native contract 112/112 PASS với Lua 5.4 và candidate runtime chính xác; log `scratch/evidence/suchao-20261126/release-tests.log`. Production trước phát hành manifest `08dd179491c35c733c6437f32b5a3c61`, projector SHA `c14c658c2afa2db6212dec1158b4663d7d4541b15415e8b6d1dbbb7eaa573771`, Card Wire v1.
+
+- Bản sửa local Card Wire v1 cho `ol_heg__suchao-phase` giữ danh sách tham chiếu người chơi và chấp nhận reset 0; không thay Lua kỹ năng Quốc Chiến OL. Candidate projector SHA-256 `1cbed8139427cfa9af7065a890155971d4e07afd496051249c6df469d1172269` khớp source. Manifest QA `647fc7e2398dedcfee0676ad3f48b4fd` khớp runtime khởi động.
+- Native rerun 11:17:36 UTC+7: server SUMMARY PASS sau khi fixture truyền PhaseData; client FAIL vì recorder đối chiếu khóa CBOR byte string với JS string. Lượt diagnostic 11:18:27 xác nhận recorder không thu HP và có 2 Broken pipe trong log; không dùng hai lượt này để đóng gate. Đã sửa recorder scratch để giải mã khóa byte string.
+- Native rerun 11:19:05 UTC+7 exit 0: 2 client thật qua socket native macOS, Card Wire v1, 1 mục tiêu hợp lệ, đúng 1 sát thương (10→9), đúng 1 hồi máu cuối giai đoạn (9→10), 1 prompt dùng Sát (client hủy), mark reset 0, cả 2 nhận GameOver. Cả 2 nhận chuỗi HP 4,10,9,10; 0 traceback, 0 Broken pipe, 0 lỗi Lua init; native exit 0 và cleanup ports PASS. Evidence `scratch/evidence/suchao-20261126/native-qa-final.log`; lệnh `python3 scratch/evidence/suchao-20261126/suchao-runtime-qa.py`.
+- Đọc lại log trước: source regression 43/43, QA catalog 64/64; 2–3 mục tiêu và thực thi Sát phản công được kiểm trong mô phỏng source theo báo cáo trước. Native mới kiểm 1 mục tiêu và prompt Sát; chưa kiểm Sát thực sự gây sát thương hoặc 2–3 mục tiêu trên native, chưa browser/production. Chưa commit/push/deploy. Bước tiếp nếu có yêu cầu phát hành: chuẩn bị release theo quy trình native và xác minh production.
+
+
 ## 26/11/2026 — Milestone production PASS
 
 - 01:54:15 UTC+7: OAuth CLI hậu deploy `--existing-chrome` exit 0 trên chính tab Chrome đã mở. PASS cả 10 bước preflight, OAuth, lobby, WSS, room, match, GameOver, cleanup, logout và relogin. 3 lượt yêu cầu session khớp danh tính Firebase QA; 2 WSS mở, 13 gửi, 976 nhận, 0 lỗi socket và 0 page errors. Gate relogin xác minh cả gửi và nhận trên cùng một socket mới. Google popup chọn đúng tài khoản một lần, callback Firebase thành công.
@@ -2804,22 +2814,27 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-25T18:55:07.158Z (UTC).
-- Nhánh: `main` · HEAD: `20c7fc03869b`.
-- File thay đổi hiển thị: 3 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-26T04:29:27.333Z (UTC).
+- Nhánh: `main` · HEAD: `67ec416fe039`.
+- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
+ M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-projection.lua
+ M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
+ M deploy/freekill-native/qa/upstream-first-source.test.mjs
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M docs/web-client/LIVE_TESTING.md
- M game/web/scripts/public-oauth-e2e/run.ts
+ M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+67ec416f Close production OAuth gate using the existing Chrome session
 20c7fc03 Allow OAuth QA to attach to an existing local Chrome tab
 49426326 Record live Chrome relogin WebSocket evidence
-61e9944e Trace Google OAuth popup stages without storing sensitive data
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
