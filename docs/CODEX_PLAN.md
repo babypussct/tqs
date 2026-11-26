@@ -4,7 +4,8 @@
 
 - [x] Bổ sung 339 ảnh từ đúng pin Hegemony, kiểm coverage 346 ID (7 fallback), inventory 1915 ảnh và regression 23+4+3 PASS.
 - [x] Build web release và byte parity ảnh public/dist PASS.
-- [ ] Push source, Pages Direct Upload, smoke và xác minh ảnh trên production.
+- [x] Push source `9f6a4677`, Pages Direct Upload `889213d8`, production smoke và 346/346 ảnh HTTP/MIME/hash/Chrome decode PASS ở cả alias và immutable; native/gateway/Shop parity PASS.
+- [ ] Quan sát trong ván OAuth production và thiết bị thật nếu cần nghiệm thu gameplay riêng.
 
 ## 27/11/2026 — Châu liên hợp bích, lựa chọn và log bài
 

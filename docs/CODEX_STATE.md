@@ -4,7 +4,9 @@
 
 - Nguyên nhân: web thiếu ảnh JPEG theo ID chính xác của Hegemony; URL thiếu có thể trả HTML SPA. Bổ sung 339 JPEG nguyên byte từ pin `e8d93acd34a357f96b0105aef7d661708c211626`, inventory 1915 ảnh. Đối chiếu 346 ID trong ZIP native production: 339 ảnh chính xác, 7 dùng ảnh gốc hiện có vì pin không chứa biến thể (`m_heg__caohong`, `m_heg__dingfeng`, `m_heg__ganning`, `m_heg__jiangwanfeiyi`, `m_heg__jiangwei`, `m_heg__xushu`, `m_heg__zhangren`). Giữ logic che tướng và ưu tiên exact ID.
 - Regression `test:card-display` 23/23, `test:initial-general` 4/4, `test:choices` 3/3 PASS. Build release PASS với pinned upstream 14/14, cấu hình Google same-origin và gateway cùng origin, runtime source mặc định như release trước. Hai lượt build trước FAIL do checkout upstream cũ và assertion legacy AddSkill khi trỏ runtime production Card Wire; không thay luật/contract để lấy PASS. Public và dist đều byte match 339 JPEG từ pin; inventory khớp toàn bộ 1915 JPEG; diff check PASS. Web build `9e4450815b9197325fcd1956185afd23eb81291e2f034af24f941d1cbdc620bf`, SW 532 files. Evidence `scratch/evidence/general-art-release/`.
-- Chỉ web thay đổi. Bước tiếp: push source, Pages Direct Upload, smoke production và kiểm HTTP/MIME/hash/decode toàn bộ ảnh mới. Native/gateway/Shop giữ nguyên nếu parity xác minh.
+- Source `9f6a4677` commit/push main PASS. Cloudflare Pages Direct Upload [889213d8](https://889213d8.tqsvn.pages.dev) exit 0, Worker/Functions upload thành công; alias production và URL immutable đều khớp SHA-256 HTML/version/JS/CSS/SW với dist, build `9e4450815b9197325fcd1956185afd23eb81291e2f034af24f941d1cbdc620bf`. Chrome 390×844 trên alias hiển thị đúng build/bundle, 0 page errors.
+- Chrome kiểm trực tiếp cả hai URL: 346/346 PASS mỗi URL (339 exact + 7 fallback), HTTP 200, MIME image/jpeg, SHA-256 khớp dist, decode và naturalWidth/Height dương. Tào Tháo/Lưu Bị quân chủ và Tư Mã Ý quân chủ đều 250×292; Tư Mã Chiêu và Giả Nam Phong 250×290. Gateway health OK, OAuth helper 200, unauth session 401. Native runtime manifest `2c4e29161bc0b2d37fdc3c0e67486745`, bundle `d7492c8447d46062` (5339 files), SHA-256 `96b3025a12448c71718ed11b9bee9803cce7ac0063d9e4417fd248d7faa424bd` khớp production trước. Shop JS `index-CuBslPWB.js` SHA-256 `eccda8d00d5e9e7e0131d15891fce28e5f3c2a0f4433b63fa8cd71706dd85c32` giữ nguyên. Không redeploy native/gateway/Shop vì không có delta source riêng.
+- Evidence `scratch/evidence/general-art-release/{deploy.log,production-smoke-alias.log,production-smoke-immutable.log,portrait-smoke-alias.log,portrait-smoke-immutable.log}`. Hình tướng production PASS theo coverage inventory/resolver và decode ảnh thật. Chưa chạy ván OAuth production để quan sát từng tướng trong trận, chưa test thiết bị thật. Nếu cần nghiệm thu gameplay trực tiếp, dùng Chrome QA hiện có.
 
 ## 27/11/2026 — Châu liên hợp bích, lựa chọn và log bài production
 
@@ -2844,90 +2846,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-26T18:50:33.641Z (UTC).
-- Nhánh: `main` · HEAD: `58f8cb5de5a6`.
-- File thay đổi hiển thị: 343 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-26T18:52:38.284Z (UTC).
+- Nhánh: `main` · HEAD: `9f6a46776a2f`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
- M game/web/scripts/portrait-reveal.test.ts
- M game/web/src/generalArt.ts
- M game/web/src/generalArtList.json
-?? game/web/public/photo-assets/generals/heg__bailingyun.jpg
-?? game/web/public/photo-assets/generals/heg__duyu.jpg
-?? game/web/public/photo-assets/generals/heg__guohuaij.jpg
-?? game/web/public/photo-assets/generals/heg__jiachong.jpg
-?? game/web/public/photo-assets/generals/heg__jiananfeng.jpg
-?? game/web/public/photo-assets/generals/heg__lordsimayi.jpg
-?? game/web/public/photo-assets/generals/heg__malong.jpg
-?? game/web/public/photo-assets/generals/heg__shibao.jpg
-?? game/web/public/photo-assets/generals/heg__simajiong.jpg
-?? game/web/public/photo-assets/generals/heg__simaliang.jpg
-?? game/web/public/photo-assets/generals/heg__simalun.jpg
-?? game/web/public/photo-assets/generals/heg__simashi.jpg
-?? game/web/public/photo-assets/generals/heg__simawei.jpg
-?? game/web/public/photo-assets/generals/heg__simayi.jpg
-?? game/web/public/photo-assets/generals/heg__simayij.jpg
-?? game/web/public/photo-assets/generals/heg__simaying.jpg
-?? game/web/public/photo-assets/generals/heg__simayong.jpg
-?? game/web/public/photo-assets/generals/heg__simayue.jpg
-?? game/web/public/photo-assets/generals/heg__simazhao.jpg
-?? game/web/public/photo-assets/generals/heg__simazhou.jpg
-?? game/web/public/photo-assets/generals/heg__sunxiuj.jpg
-?? game/web/public/photo-assets/generals/heg__wangjun.jpg
-?? game/web/public/photo-assets/generals/heg__wangxiang.jpg
-?? game/web/public/photo-assets/generals/heg__wangyuanji.jpg
-?? game/web/public/photo-assets/generals/heg__weiguan.jpg
-?? game/web/public/photo-assets/generals/heg__wenyang.jpg
-?? game/web/public/photo-assets/generals/heg__yanghu.jpg
-?? game/web/public/photo-assets/generals/heg__yanghuiyu.jpg
-?? game/web/public/photo-assets/generals/heg__yangjun.jpg
-?? game/web/public/photo-assets/generals/heg__zhangchunhua.jpg
-?? game/web/public/photo-assets/generals/heg__zhanghuyuechen.jpg
-?? game/web/public/photo-assets/generals/hs__caiwenji.jpg
-?? game/web/public/photo-assets/generals/hs__caocao.jpg
-?? game/web/public/photo-assets/generals/hs__caopi.jpg
-?? game/web/public/photo-assets/generals/hs__caoren.jpg
-?? game/web/public/photo-assets/generals/hs__daqiao.jpg
-?? game/web/public/photo-assets/generals/hs__dianwei.jpg
-?? game/web/public/photo-assets/generals/hs__diaochan.jpg
-?? game/web/public/photo-assets/generals/hs__dingfeng.jpg
-?? game/web/public/photo-assets/generals/hs__ganfuren.jpg
-?? game/web/public/photo-assets/generals/hs__ganning.jpg
-?? game/web/public/photo-assets/generals/hs__guanyu.jpg
-?? game/web/public/photo-assets/generals/hs__guojia.jpg
-?? game/web/public/photo-assets/generals/hs__huanggai.jpg
-?? game/web/public/photo-assets/generals/hs__huangyueying.jpg
-?? game/web/public/photo-assets/generals/hs__huangzhong.jpg
-?? game/web/public/photo-assets/generals/hs__huatuo.jpg
-?? game/web/public/photo-assets/generals/hs__jiaxu.jpg
-?? game/web/public/photo-assets/generals/hs__jiling.jpg
-?? game/web/public/photo-assets/generals/hs__kongrong.jpg
-?? game/web/public/photo-assets/generals/hs__liubei.jpg
-?? game/web/public/photo-assets/generals/hs__liushan.jpg
-?? game/web/public/photo-assets/generals/hs__lusu.jpg
-?? game/web/public/photo-assets/generals/hs__luxun.jpg
-?? game/web/public/photo-assets/generals/hs__lvbu.jpg
-?? game/web/public/photo-assets/generals/hs__lvmeng.jpg
-?? game/web/public/photo-assets/generals/hs__machao.jpg
-?? game/web/public/photo-assets/generals/hs__mateng.jpg
-?? game/web/public/photo-assets/generals/hs__menghuo.jpg
-?? game/web/public/photo-assets/generals/hs__panfeng.jpg
-?? game/web/public/photo-assets/generals/hs__pangde.jpg
-?? game/web/public/photo-assets/generals/hs__pangtong.jpg
-?? game/web/public/photo-assets/generals/hs__simayi.jpg
-?? game/web/public/photo-assets/generals/hs__sunjian.jpg
-?? game/web/public/photo-assets/generals/hs__sunquan.jpg
-?? game/web/public/photo-assets/generals/hs__sunshangxiang.jpg
-... và 273 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+9f6a4677 Ship pinned Hegemony general portraits for web
 58f8cb5d Record verified Hegemony production release
 9e264e13 Fix Hegemony choice controls and public card logs
-9a0f0c66 Fix Card Wire v1 Quan Tinh arrange and redraw
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
