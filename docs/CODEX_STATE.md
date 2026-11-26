@@ -1,6 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
 
+## 26/11/2026 — Túc Triều production release PASS
+
+- Source `72e708a3974b7fe2c523e46626617c913cdae0b4` commit/push main PASS. Linux native candidate cold boot isolated TCP/UDP 12/12, 5589 manifest entries, đúng 1 Lua file thay đổi, QA excluded. Cutover exit 0, không có trận hoặc kết nối trước restart; DB parity và gateway/tunnel continuity PASS; 31.784 giây. Rollback giữ `tqsvn-native-milestone-08dd1794`.
+- Native đang chạy `tqsvn-native-suchao-647fc7e2`, manifest MD5 `647fc7e2398dedcfee0676ad3f48b4fd`, Card Wire v1, projector SHA-256 `1cbed8139427cfa9af7065a890155971d4e07afd496051249c6df469d1172269`. Public health OK, bundle `7147b1817e54baff` (5339 files), SHA-256 `a62d3c143e283e2c0163e2a089e973fc119e39f907ee99aea954920a29a90e65`; projector trong public ZIP byte match source. Web 0.5.25 build `e09126d80b274c875cbd9642125d61615852beb4b6d69f288cabe6cbd79fa451` giữ nguyên, HTML/version/SW/JS/CSS public byte match dist; chỉ runtime thay đổi, không redeploy web/Shop. Native/gateway/tunnel active; remote stage cleanup PASS. Evidence `scratch/evidence/suchao-20261126/{release-tests.log,stage-boot.log,production-cutover.log,production-public-verify.json,production-cleanup.log}`.
+- Chưa chạy trực tiếp tình huống Túc Triều trên production hoặc OAuth gameplay hậu hotfix. Native local 1 mục tiêu PASS, 2–3 mục tiêu và thực thi Sát chỉ có source simulation theo báo cáo trước.
+
 ## 26/11/2026 — Túc Triều (Tôn Tuấn) native QA local PASS
 
 - Release được người dùng yêu cầu ngày 26/11. Rerun source + QA catalog/installer/native contract 112/112 PASS với Lua 5.4 và candidate runtime chính xác; log `scratch/evidence/suchao-20261126/release-tests.log`. Production trước phát hành manifest `08dd179491c35c733c6437f32b5a3c61`, projector SHA `c14c658c2afa2db6212dec1158b4663d7d4541b15415e8b6d1dbbb7eaa573771`, Card Wire v1.
@@ -2814,27 +2820,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-26T04:29:27.333Z (UTC).
-- Nhánh: `main` · HEAD: `67ec416fe039`.
-- File thay đổi hiển thị: 8 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-26T04:33:02.048Z (UTC).
+- Nhánh: `main` · HEAD: `72e708a3974b`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-wire-native-supplemental-audit.lua
- M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
- M deploy/freekill-native/qa/card-wire-projection.lua
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+72e708a3 Fix Card Wire v1 projection for Suchao target marks
 67ec416f Close production OAuth gate using the existing Chrome session
 20c7fc03 Allow OAuth QA to attach to an existing local Chrome tab
-49426326 Record live Chrome relogin WebSocket evidence
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

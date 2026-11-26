@@ -6,7 +6,7 @@
 - [x] Bản sửa Card Wire v1 target-list mark local; đọc lại source regression 43/43 và QA catalog 64/64 từ log trước.
 - [x] Native macOS cô lập, 1 mục tiêu: reply hợp lệ, HP 10→9→10 trên cả 2 client, prompt Sát (hủy), reset mark, 2 GameOver, exit 0 và cleanup PASS. Evidence tại CODEX_STATE.
 - [ ] Native 2–3 mục tiêu và thực sự sử dụng Sát phản công chưa được kiểm (có kiểm mô phỏng); chưa xác minh browser/production.
-- [ ] Phát hành production đã được yêu cầu ngày 26/11; đang chuẩn bị candidate native và xác minh sau triển khai.
+- [x] Commit/push source `72e708a3`, phát hành native production `tqsvn-native-suchao-647fc7e2`; public manifest/bundle/projector khớp candidate, web static parity và health PASS. Chưa chạy lại tình huống Túc Triều trên production.
 
 
 ## 26/11/2026 — Milestone production PASS
