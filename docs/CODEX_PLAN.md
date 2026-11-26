@@ -1,5 +1,11 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 27/11/2026 — Châu liên hợp bích, lựa chọn và log bài
+
+- [x] Source, native cô lập và Chrome Quan Tinh PASS trên runtime phát hành; xác minh Đốt Đốt Bức Nhân gửi Cancel và HP 10→9 ở hai client.
+- [x] Push main, Linux cold boot, native cutover, Pages Direct Upload và smoke production PASS; đối chiếu tệp Quan Tinh production với source.
+- [ ] Ván OAuth production hậu phát hành và thiết bị thật chưa có evidence.
+
 ## 26/11/2026 — Quan Tinh (Gia Cát Lượng Trì Mộ / Khương Duy)
 
 - [x] Tái hiện browser baseline 0/6 và hai source lỗi DrawPile; sửa shared client/projector Card Wire v1, guard/promotion nhận đúng SHA production cũ.
@@ -8,7 +14,8 @@
 - [x] Local native/gateway/Chrome tích hợp Gia Cát Lượng chủ/phó tướng, reveal và arrange PASS cả 2 lượt, 0 browser errors, 4 GameOver tổng. Xem CODEX_STATE về Vite reset khi đóng phiên chủ tướng.
 - [x] Full local native/gateway/Chrome Khương Duy qua Di Chí và Gia Cát Lượng, mixed arrange/redraw, 4 GameOver, worker errors 0, cleanup PASS.
 - [x] Dọn cache apt tái tạo được, giữ rollback, staging preflight PASS; xác minh candidate manifest/ZIP từ baseline production.
-- [ ] Commit/push, staging, cutover, production gameplay đúng tướng và nghiệm thu cuối.
+- [x] Commit/push, staging, cutover và đối chiếu production. Regression lại ngày 27/11 trên bundle ứng viên và native cô lập PASS.
+- [ ] Gameplay Quan Tinh có đăng nhập trực tiếp trên production.
 
 
 ## 26/11/2026 — Túc Triều (Tôn Tuấn)

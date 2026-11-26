@@ -1,5 +1,14 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 27/11/2026 — Châu liên hợp bích, lựa chọn và log bài production
+
+- Source `9e264e13` đã push main. Web Việt hóa nhãn Châu liên hợp bích, bỏ nút hủy trùng ở lựa chọn đơn. Lua xử lý lựa chọn rỗng theo cờ cancelable và chỉ công khai mặt bài trong các trường log đã xác định rõ. Build web production với Google same-origin PASS. Choice 3/3, initial general 4/4, native dialogs 8/8, native contract 69/69 và source 43/43 (Lua 5.4) PASS. Cập nhật assertion từ 39 lên 40 ca projector theo probe mới.
+- Native cô lập đúng manifest ứng viên xác minh Đốt Đốt Bức Nhân với lựa chọn `Cancel` gửi qua socket, đúng 1 sát thương (10→9), cả hai client nhận HP và bounded GameOver. Quan Tinh native 6/6 arrange/redraw trên hai kỹ năng và ba cách sắp xếp, Di Chí thực sự cấp kỹ năng cho Khương Duy sau lộ phó tướng. Hai lane native exit 0, không traceback/Broken pipe/Lua init error, ports được dọn. Chrome/Wasmoon dùng chính ZIP ứng viên, Quan Tinh 6/6 PASS.
+- Sửa dữ liệu QA bị lệch bằng manifest lấy từ production. Tệp `packages/freekill-core/ltk/client/card_wire_moves.lua` khớp byte source `9a0f0c66`, native production và public ZIP, SHA-256 `0bb78cb89671a85ea427e0a56b3ac01241ab4b38569d771774a928b1b48e3525`. Không có delta Quan Tinh giữa hai ZIP production. Hai delta Lua là projector và request; 5589 manifest entries được xác minh, Linux isolated cold boot TCP/UDP 12/12, fresh DB.
+- Native production `tqsvn-native-overbearing-2c4e2916`, manifest `2c4e29161bc0b2d37fdc3c0e67486745`, bundle `d7492c8447d46062` (5339 files). Cutover exit 0, 0 trận và 0 kết nối lúc drain, database parity, gateway/tunnel continuity và staging cleanup PASS. Rollback giữ `tqsvn-native-guanxing-d0086dcd`.
+- Cloudflare Pages Direct Upload [2d8d4745](https://2d8d4745.tqsvn.pages.dev), HTML/version/JS/CSS/SW byte parity ở deployment và alias. Gateway health OK, public ZIP khớp ứng viên, WSS 101/native challenge/close 1000, Chrome mobile 390×844 hiển thị đúng build/runtime và 0 page errors. Shop production JS khớp SHA-256 trước đó; các path Shop và gateway source không có delta phát hành riêng.
+- Evidence `scratch/evidence/overbearing-release/` gồm `native-socket.log`, `guanxing-native.log`, `guanxing-chrome.log`, `stage-boot.log`, `cutover.log`, `production-smoke-0.log`, `production-smoke-1.log` và `wss.log`. Chưa chạy ván OAuth production hậu phát hành hoặc xác minh trên thiết bị thật. Bước tiếp nếu cần chứng nhận gameplay live là dùng phiên Chrome QA hiện có chạy lại hai tình huống trên production.
+
 ## 26/11/2026 — Quan Tinh Card Wire v1 local QA PASS
 
 - Tái hiện browser baseline 0/6: Wasmoon/Chrome thật báo `TQS_QA_CARD_WIRE_APPLY_DRAW_POSITION`, kết nối đóng khi mở dialog; source probe cũng tái hiện retired reference không còn tồn tại khi rút lại. Sửa shared Card Wire v1: vị trí nguồn dùng chồng bài hiện tại sau từng entry (shadow và live); token đích DrawPile dùng trong packet rồi bỏ mapping ngay trong transaction, tránh retire token đã bị client bỏ khi rút lại. Không thay luật Lua kỹ năng, pin upstream hoặc chính sách fail-closed.
@@ -2829,30 +2838,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-26T08:27:31.536Z (UTC).
-- Nhánh: `main` · HEAD: `b6f6c716974b`.
-- File thay đổi hiển thị: 11 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-26T18:23:19.264Z (UTC).
+- Nhánh: `main` · HEAD: `9e264e13da2d`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/card-wire-client-moves-probe.lua
- M deploy/freekill-native/qa/card-wire-client-moves.lua
- M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
- M deploy/freekill-native/qa/card-wire-projection.lua
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
- M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M scripts/upstream-first-card-wire-client-moves-guard.mjs
- M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+9e264e13 Fix Hegemony choice controls and public card logs
+9a0f0c66 Fix Card Wire v1 Quan Tinh arrange and redraw
 b6f6c716 Record Suchao native production release verification
-72e708a3 Fix Card Wire v1 projection for Suchao target marks
-67ec416f Close production OAuth gate using the existing Chrome session
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
