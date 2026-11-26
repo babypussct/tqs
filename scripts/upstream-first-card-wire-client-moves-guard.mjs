@@ -24,6 +24,7 @@ if (!fs.existsSync(modulePath)) {
 } else if (fs.readFileSync(modulePath, 'utf8') !== expectedModule) {
   assert.equal(mode, '--apply', 'candidate client MoveCards module drifted');
   const reviewedPriorRevisions = new Set([
+    '44c0e5d4f6643d7b8f02e31bfc8ce9026c252b2951a46da216f5362b70d7846d', // Reviewed baseline before Quan Tinh fixes.
     '87c85425074c010d1bd15c4ab31f55a0f317034e082a9050763a7413e0cdf7d7',
     '729b3f6bdebcbacca84001529bb38836dcfeb3ee5dbaa4cf2e923d73320a82a8',
     '84c89355558b2c8b834696f5d1628f46a122509f78570a888fe803ba9164c08e',

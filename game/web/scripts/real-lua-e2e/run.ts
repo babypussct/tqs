@@ -2228,6 +2228,49 @@ try {
         [[data.cardIds[1], data.cardIds[2]], [data.cardIds[0]]]);
       assert.deepEqual((await snapshot(p)).luaErrors, []);
     }],
+    ...(['hs__guanxing', 'ld__guanxing'] as const).flatMap(skill =>
+      (['top', 'bottom', 'mixed'] as const).map((mode): [string, (page: Page) => Promise<void>] =>
+        [`Quan Tinh ${skill} ${mode} projected arrange and redraw`, async (p) => {
+          const count = mode === 'top' ? 2 : mode === 'bottom' ? 5 : 4;
+          const data = await p.evaluate(({ skill, count }) => window.__tqsRealLuaE2e.beginGuanxing(skill, count), {skill, count});
+          const panel = p.getByRole('region', {name: 'Lựa chọn bài và sắp xếp'});
+          const groups = panel.getByRole('group');
+          await panel.locator('.gameplay-choice').first().waitFor();
+          assert.equal(await panel.locator('.gameplay-choice').count(), count);
+          const before = await p.evaluate(() => window.__tqsRealLuaE2e.guanxingState());
+          assert.equal(before.draw, 0);
+          assert.equal(before.processing, count);
+          const top = data.cards.slice();
+          const bottom: number[] = [];
+          // Reorder the first row, then move cards to the second row.
+          await groups.nth(0).locator('.gameplay-choice').first().click();
+          await panel.getByRole('button', {name: 'Đặt cuối nhóm 1'}).click();
+          top.push(top.shift()!);
+          const moveCount = mode === 'top' ? 0 : mode === 'bottom' ? count : 2;
+          for (let i = 0; i < moveCount; i++) {
+            await groups.nth(0).locator('.gameplay-choice').first().click();
+            await panel.getByRole('button', {name: 'Đặt cuối nhóm 2'}).click();
+            bottom.push(top.shift()!);
+          }
+          await panel.getByRole('button', {name: 'Xác nhận'}).click();
+          const arranged = await reply(p);
+          assert.equal(arranged.replies.at(-1)?.requestId, data.id);
+          const tokenFor = (card: number) => data.tokens[data.cards.indexOf(card)];
+          assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()),
+            [top.map(tokenFor), bottom.map(tokenFor)]);
+          const result = await p.evaluate(({skill,top,bottom}) => window.__tqsRealLuaE2e.finishGuanxing(skill,top,bottom), {skill,top,bottom});
+          assert.equal(result.returned.draw, count);
+          assert.equal(result.returned.processing, 0);
+          assert.equal(result.returned.anonymous, true);
+          assert.equal(result.redrawn.draw, 0);
+          assert.equal(result.redrawn.processing, 0);
+          assert.deepEqual(result.redrawn.hand, [...top, ...bottom]);
+          const snap = await snapshot(p);
+          assert.equal(snap.requestId, result.id);
+          assert.equal(snap.status, 'online');
+          assert.equal(snap.error, null);
+          assert.deepEqual(snap.luaErrors, []);
+        }])),
     ['Private request faces reach the Tuần Tuần dialog', async (p) => {
       const faces = await p.evaluate(() => window.__tqsRealLuaE2e.beginPrivateArrange());
       const panel = p.getByRole('region', { name: 'Lựa chọn bài và sắp xếp' });
@@ -2849,7 +2892,9 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--turban-shell-cup')
+  const testsToRun = process.argv.includes('--guanxing')
+    ? tests.filter(([name]) => name.startsWith('Quan Tinh '))
+    : process.argv.includes('--turban-shell-cup')
     ? tests.filter(([name]) => name.startsWith('Anh Vũ Bôi'))
     : process.argv.includes('--transformation-skills')
     ? tests.filter(([name]) => name.startsWith('Transformation '))
@@ -2864,7 +2909,7 @@ try {
     ? tests.filter(([name]) => name.startsWith('Private request faces'))
     : process.argv.includes('--room-pools')
     ? tests.filter(([name]) => name.startsWith('UI-02'))
-    : tests.filter(([name]) => !name.startsWith('Anh Vũ Bôi'));
+    : tests.filter(([name]) => !name.startsWith('Anh Vũ Bôi') && !name.startsWith('Quan Tinh '));
   let passed = 0;
   const failures: string[] = [];
   for (const [name, test] of testsToRun) {

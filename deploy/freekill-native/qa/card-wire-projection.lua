@@ -357,6 +357,12 @@ local function projectMoves(seat, physical, data, batch, audience)
         (current ~= nil and (type(current) == "number") ~= publicForAudience)
       local retiredRefs = needsRekey and batch:rekey(audience, { info.cardId }) or {}
       outInfo.cardId = batch:reference(audience, info.cardId, publicForAudience)
+      if move.toArea == Card.DrawPile then
+        -- The client discards this destination token and inserts an anonymous
+        -- slot. Keep the token unique for the packet, but do not advertise it
+        -- as a retired standing reference when the card is drawn again.
+        batch:rekey(audience, { info.cardId })
+      end
       if #retiredRefs > 0 then outInfo.cardWireRetiredRefs = retiredRefs end
       out.moveInfo[j] = outInfo
     end

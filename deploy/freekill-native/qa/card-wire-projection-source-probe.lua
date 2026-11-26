@@ -305,6 +305,30 @@ check("explicit face-up movement into draw pile conceals and rekeys", function()
   hidden(emit(seat, owner, "MoveCards", returnToDeck)[1][1].moveInfo[1].cardId)
 end)
 
+check("Quan Tinh deck return leaves no standing destination ref for redraw", function()
+  for _, physical in ipairs({owner, opponent, spectator, controller}) do
+    local card = 104
+    local take = {{{toArea = Card.Processing, moveVisible = false, visiblePlayers = {11},
+      moveInfo = {{cardId = card, fromArea = Card.DrawPile}}}}, 71}
+    local returned = {{{toArea = Card.DrawPile, moveVisible = false, drawPilePosition = -1,
+      moveInfo = {{cardId = card, fromArea = Card.Processing}}}}, 72}
+    local redraw = {{{to = 11, toArea = Card.PlayerHand, moveVisible = false,
+      moveInfo = {{cardId = card, fromArea = Card.DrawPile}}}}, 73}
+    -- Start with no standing reference from other synthetic scenarios.
+    handles:forget(physical.key, card)
+    local seen = emit(seat, physical, "MoveCards", take)[1][1].moveInfo[1]
+    if physical == owner then assert(seen.cardId == card) else hidden(seen.cardId) end
+    local back = emit(seat, physical, "MoveCards", returned)[1][1].moveInfo[1]
+    hidden(back.cardId)
+    assert(back.cardWireRetiredRefs[1] == seen.cardId)
+    local nextCard = emit(seat, physical, "MoveCards", redraw)[1][1].moveInfo[1]
+    assert(nextCard.cardWireRetiredRefs == nil, "redraw must not retire an unseen deck destination token")
+    if physical == owner then assert(nextCard.cardId == card) else hidden(nextCard.cardId) end
+    assert(nextCard.cardId ~= back.cardId)
+    handles:forget(physical.key, card)
+  end
+end)
+
 check("private dollar piles are physical owner-only", function()
   local private = {11, "$secret", {101, 102}}
   local ownerOut = emit(seat, owner, "SetPlayerPile", private)

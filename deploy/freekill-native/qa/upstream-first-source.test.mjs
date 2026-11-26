@@ -184,7 +184,7 @@ test('candidate MoveCards and SetPlayerPile localize projected references before
       '--check', coreRoot], { encoding: 'utf8', timeout: 30_000 });
   assert.match(guard, /PASS isolated Hegemony v1 MoveCards\/SetPlayerPile client bridge --check/u);
   const output = runLua('card-wire-client-moves-probe.lua', [coreRoot]);
-  assert.match(output, /PASS candidate MoveCards\/SetPlayerPile client: local alias transitions, anonymous draw consumption, public reveal\/rehide, private pile trackers, standing-ref\/source-area rekey, schema\/mode\/legacy fail-close; 10 cases; synthetic-only; native\/browser NOT RUN/u);
+  assert.match(output, /PASS candidate MoveCards\/SetPlayerPile client: local alias transitions, anonymous draw consumption, public reveal\/rehide, private pile trackers, standing-ref\/source-area rekey, schema\/mode\/legacy fail-close; 11 cases; synthetic-only; native\/browser NOT RUN/u);
 });
 
 test('candidate client request bridge localizes opaque choices and reverses one-shot replies', () => {
@@ -365,7 +365,7 @@ test('candidate projector redacts upstream Card objects and rekeys hidden deck f
   const output = runLua('card-wire-projection-source-probe.lua',
     [installed, path.join(here, 'card-handle-protocol.lua'),
       path.join(mergedHegemonyRoot ?? path.dirname(pkgRoot), 'pkg/online_heg/skills/suchao.lua')]);
-  assert.match(output, /PASS audited card-wire projection: 38 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
+  assert.match(output, /PASS audited card-wire projection: 39 synthetic physical\/privacy\/schema cases; native\/browser NOT RUN/u);
   const repoRoot = path.resolve(here, '../../..');
   const guard = execFileSync(process.execPath,
     [path.join(repoRoot, 'scripts/upstream-first-card-wire-projection-guard.mjs'),

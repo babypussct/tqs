@@ -24,6 +24,7 @@ if (fs.existsSync(target)) {
   if (installed !== expected) {
     assert.equal(mode, '--apply', 'candidate projector drifted');
     const reviewedPriorRevisions = new Set([
+      '1cbed8139427cfa9af7065a890155971d4e07afd496051249c6df469d1172269', // Reviewed baseline before Quan Tinh fixes.
       // The pinned package installer stages this earlier projector before
       // the reviewed native QA overlay updates are applied.
       '25e37d27d00038cb509ded1125632fee43ca8a21b7526d92f07b3703cfa37118',

@@ -202,6 +202,39 @@ check("hidden draw consumes anonymous deck slot and localizes opaque card", func
   assert(room.players[1].card_tracker.calls == 1 and room.players[2].card_tracker.calls == 1)
 end)
 
+check("multi-draw consumes sequential anonymous positions across groups", function()
+  for _, scenario in ipairs({
+    { count = 2, take = 2, position = 1 },
+    { count = 5, take = 5, position = -1 },
+    { count = 9, take = 4 },
+    { count = 6, take = 4, position = 2 },
+  }) do
+    local room = newRoom(1)
+    local old = seedDraw(room, scenario.count)
+    local expected = { table.unpack(old) }
+    local moves, refs = {}, {}
+    for i = 1, scenario.take do
+      local position = scenario.position or 1
+      if position == -1 then position = #expected end
+      table.remove(expected, position)
+      if i == 1 or i == 3 then
+        moves[#moves + 1] = { toArea = Card.Processing,
+          drawPilePosition = scenario.position, moveInfo = {} }
+      end
+      refs[i] = token(i)
+      table.insert(moves[#moves].moveInfo, {cardId = refs[i], fromArea = Card.DrawPile})
+    end
+    room:moveCards({moves, 31})
+    assert(#room.draw_pile == #expected and #room.processing_area == scenario.take)
+    for i, id in ipairs(expected) do assert(room.draw_pile[i] == id) end
+    for i, ref in ipairs(refs) do
+      local id = room.card_wire_refs.byToken[ref]
+      assert(room.processing_area[i] == id and room.card_place[id] == Card.Processing)
+    end
+    assert(room.players[1].card_tracker.calls == scenario.take)
+  end
+end)
+
 check("public-to-private move replaces canonical source with a fresh local alias", function()
   local room = newRoom(1)
   room.discard_pile = { 101 }

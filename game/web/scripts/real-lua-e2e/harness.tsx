@@ -1040,6 +1040,46 @@ const api = {
     if (kind !== 'options' && !conn['pendingRequest']?.nativeDialogPrompt) throw new Error(`No parsed ${kind} dialog; raw ${JSON.stringify(conn['nativeDialogPayload'])}`);
     return { id, cardIds, tokens: conn['pendingRequest']?.nativeDialogPrompt?.cards.map(card => card.token) };
   },
+  // The socket fixture mirrors Room:askToGuanxing's projected movements and
+  // one-shot arrangement choices. The actual client Lua handles every packet.
+  beginGuanxing: (skill: 'hs__guanxing' | 'ld__guanxing', count: number) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cards = conn.lua.eval<number[]>(`return {table.unpack(ClientInstance.draw_pile, 1, ${count})}`);
+    const tokens = cards.map((_, i) => `h:guanxing_choice_${i}`);
+    serverNotify('CardWireNegotiated', serverCbor("{protocol='TQS_HEG_CARD_WIRE',cardWireVersion=1,mode='new_heg_mode'}"));
+    serverNotify('PrepareDrawPile', serverCbor(`{count=${count}}`));
+    serverNotify('MoveCards', serverCbor(`{{{toArea=Card.Processing,moveReason=fk.ReasonPut,
+      skillName='${skill}',proposer=17,moveVisible=false,visiblePlayers=17,
+      moveInfo={${cards.map(card => `{cardId=${card},fromArea=Card.DrawPile}`).join(',')}}}}, 1}`));
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForArrangeCards', serverCbor(`{cardWireVersion=1,
+      payload={cards={{${tokens.map(token => `'${token}'`).join(',')}},{}},names={'Top','Bottom'},prompt='',
+        capacities={${count},${count}},limits={0,0},is_free=true,pattern='.',poxi_type='',cancelable=false},
+      choices={${cards.map((card, i) => `{token='${tokens[i]}',standing=${card}}`).join(',')}}}`));
+    return { id, cards, tokens };
+  },
+  guanxingState: () => conn.lua.eval<{draw: number; processing: number; hand: number[]; anonymous: boolean}>(`
+    local room = ClientInstance
+    local anonymous = true
+    for _, id in ipairs(room.draw_pile) do
+      if not room.card_wire_refs:isAnonymous(id) then anonymous = false end
+    end
+    return {draw=#room.draw_pile,processing=#room.processing_area,hand=Self:getCardIds('h'),anonymous=anonymous}
+  `),
+  finishGuanxing: (skill: 'hs__guanxing' | 'ld__guanxing', top: number[], bottom: number[]) => {
+    const groups = [top.slice().reverse(), bottom].map((cards, group) => cards.length === 0 ? '' :
+      `{toArea=Card.DrawPile,moveReason=fk.ReasonPut,skillName='${skill}',proposer=17,
+        moveVisible=false,visiblePlayers=17,${group === 1 ? 'drawPilePosition=-1,' : ''}
+        moveInfo={${cards.map((card, i) => `{cardId='h:guanxing_return_${group}_${i}',fromArea=Card.Processing,cardWireRetiredRefs={${card}}}`).join(',')}}}`);
+    serverNotify('MoveCards', serverCbor(`{{${groups.filter(Boolean).join(',')}},2}`));
+    const returned = api.guanxingState();
+    const ordered = [...top, ...bottom];
+    serverNotify('MoveCards', serverCbor(`{{{to=17,toArea=Card.PlayerHand,moveReason=fk.ReasonDraw,
+      moveVisible=false,moveInfo={${ordered.map(card => `{cardId=${card},fromArea=Card.DrawPile}`).join(',')}}}},3}`));
+    const id = ++nextId;
+    fixtureRequest(id, 'PlayCard', serverCbor('{cardWireVersion=1,payload={},choices={}}'));
+    return { returned, redrawn: api.guanxingState(), id };
+  },
   beginPrivateArrange: () => {
     api.beginPlay();
     // Model the localized request state produced by the card-wire Lua decoder.

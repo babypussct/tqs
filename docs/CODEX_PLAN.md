@@ -1,5 +1,15 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 26/11/2026 — Quan Tinh (Gia Cát Lượng Trì Mộ / Khương Duy)
+
+- [x] Tái hiện browser baseline 0/6 và hai source lỗi DrawPile; sửa shared client/projector Card Wire v1, guard/promotion nhận đúng SHA production cũ.
+- [x] Candidate source 43/43, browser real Lua 6/6, web QA 69/69 + coverage 6/6 + dialog 8/8 + connection 34/34, typecheck tools/app, promotion idempotent PASS.
+- [x] Native 2 client, cả hai kỹ năng 3 cách sắp xếp và redraw đúng thứ tự/chủ sở hữu; Khương Duy mở phó tướng thực, Di Chí cấp Quan Tinh; 2 GameOver, 0 worker error, cleanup PASS.
+- [x] Local native/gateway/Chrome tích hợp Gia Cát Lượng chủ/phó tướng, reveal và arrange PASS cả 2 lượt, 0 browser errors, 4 GameOver tổng. Xem CODEX_STATE về Vite reset khi đóng phiên chủ tướng.
+- [x] Full local native/gateway/Chrome Khương Duy qua Di Chí và Gia Cát Lượng, mixed arrange/redraw, 4 GameOver, worker errors 0, cleanup PASS.
+- [x] Dọn cache apt tái tạo được, giữ rollback, staging preflight PASS; xác minh candidate manifest/ZIP từ baseline production.
+- [ ] Commit/push, staging, cutover, production gameplay đúng tướng và nghiệm thu cuối.
+
 
 ## 26/11/2026 — Túc Triều (Tôn Tuấn)
 

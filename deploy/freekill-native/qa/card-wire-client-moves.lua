@@ -164,7 +164,7 @@ local function drawPosition(room, move)
   return position
 end
 
-local function replaceAnonymousDrawSlot(room, move, newId, reservedPositions)
+local function replaceAnonymousDrawSlot(room, move, newId)
   local function drawStage(label, fn)
     local ok, first = pcall(fn)
     if not ok and type(first) == "string" and
@@ -176,14 +176,9 @@ local function replaceAnonymousDrawSlot(room, move, newId, reservedPositions)
   end
 
   local position = drawStage("POSITION", function()
-    local requested = drawPosition(room, move)
-    local step = move.drawPilePosition == -1 and -1 or 1
-    local candidate = requested
-    while reservedPositions[candidate] do candidate = candidate + step end
-    assert(candidate >= 1 and candidate <= #(room.draw_pile or {}),
-      "MoveCards draw source position is out of range")
-    reservedPositions[candidate] = true
-    return candidate
+    -- Each legacy transition removes its card before the next entry runs.
+    -- Positions therefore refer to the current deck, including bottom draws.
+    return drawPosition(room, move)
   end)
   local oldId = room.draw_pile[position]
   drawStage("ANONYMOUS", function()
@@ -389,7 +384,7 @@ local function preflightEntry(room, entry)
   end
 end
 
-local function applyEntry(room, entry, reservedDrawPositions)
+local function applyEntry(room, entry)
   local move, info = entry.move, entry.info
   local refs = room.card_wire_refs
   local function applyStage(label, fn)
@@ -427,7 +422,7 @@ local function applyEntry(room, entry, reservedDrawPositions)
 
   if info.fromArea == Card.DrawPile then
     applyStage("DRAW_SLOT", function()
-      replaceAnonymousDrawSlot(room, move, newId, reservedDrawPositions)
+      replaceAnonymousDrawSlot(room, move, newId)
     end)
     for _, oldId in ipairs(oldIds) do
       applyStage("RETIRE_DRAW", function() retireLocal(room, oldId) end)
@@ -526,23 +521,21 @@ function Moves.receive(room, data)
     "v1 client-local card references are unavailable")
   local moves, eventId = normalize(data)
   local shadow = cloneForPreflight(room)
-  local shadowReservedDrawPositions = {}
   for _, move in ipairs(moves) do
     for _, entry in ipairs(move.entries) do
       preflightEntry(shadow, entry)
-      applyEntry(shadow, entry, shadowReservedDrawPositions)
+      applyEntry(shadow, entry)
       assert(applyLegacyMoveInfo(shadow, move.output, entry.output),
         "MoveCards preflight could not apply projected legacy transition")
     end
   end
-  local reservedDrawPositions = {}
   for _, move in ipairs(moves) do
     for _, entry in ipairs(move.entries) do
       -- The clone above has validated the whole packet.  Keep a per-entry
       -- preflight on the real room as a final invariant check, now that
       -- dependencies from earlier entries are present in the live mapping.
       preflightEntry(room, entry)
-      applyEntry(room, entry, reservedDrawPositions)
+      applyEntry(room, entry)
       room:moveCardsLegacy({ { localizedMove(move, entry) }, eventId })
     end
   end

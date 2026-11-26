@@ -1,5 +1,14 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 26/11/2026 — Quan Tinh Card Wire v1 local QA PASS
+
+- Tái hiện browser baseline 0/6: Wasmoon/Chrome thật báo `TQS_QA_CARD_WIRE_APPLY_DRAW_POSITION`, kết nối đóng khi mở dialog; source probe cũng tái hiện retired reference không còn tồn tại khi rút lại. Sửa shared Card Wire v1: vị trí nguồn dùng chồng bài hiện tại sau từng entry (shadow và live); token đích DrawPile dùng trong packet rồi bỏ mapping ngay trong transaction, tránh retire token đã bị client bỏ khi rút lại. Không thay luật Lua kỹ năng, pin upstream hoặc chính sách fail-closed.
+- Candidate local manifest `d0086dcd33e6507b221e07aadc834430` khớp flist byte-for-byte khi native boot. Source 43/43 (client 11, projector 39 probe), real Lua Chrome 6/6 (2 kỹ năng × top2/bottom5/mixed4, kiểm tra order/anonymous/redraw/next request), web QA contract 69/69, coverage 6/6, dialogs 8/8, connection 34/34 và hai typecheck PASS. Promotion trên bản sao runtime cũ 2 lần PASS và byte parity cả 2 file. Baseline nguyên trạng.
+- Native macOS socket 2 client Card Wire v1: session 57584 exit 0, 6 invoke/arrange, 6 lượt redraw chính xác thứ tự và chủ sở hữu, 12 MoveCards redraw entries mỗi client, 2 GameOver; 0 traceback/Broken pipe/Lua init error, shutdown và cleanup ports PASS. Fixture đặt Khương Duy `ld__jiangwei` ở phó tướng ẩn, gọi revealGeneral thực, Di Chí `yizhi` tự cấp `ld__guanxing` (5 assertion PASS, không gắn trực tiếp Quan Tinh cho Khương Duy). Gia Cát Lượng được gắn kỹ năng trực tiếp trong fixture native này.
+- Full local native → gateway → Chrome: 87650 và 90529 exit 0, verified QA package `b6f6c716974b6a8b98c76197e492748d0a4f72ac`, exact runtime manifest trên, 2 tài khoản test cục bộ, hai browser clients mỗi lượt. Gia Cát Lượng Trì Mộ chủ/phó tướng đều kích hoạt từ trạng thái ẩn, reveal đúng slot, AskForArrangeCards và bounded GameOver cả 2 client. Evidence JSON `scratch/evidence/cp08-hidden-guanxing-multiplayer-live-1795678242650.json` và `scratch/evidence/cp08-hidden-guanxing-deputy-multiplayer-live-1795678262607.json`: result PASS, errors=[], mỗi client 1 CardWireNegotiated/1 PrepareDrawPile/4 MoveCards/1 GameOver, owner 1 AskForArrangeCards. Lượt chủ tướng có Vite `ECONNRESET` sau PASS GameOver khi đóng phiên; runner exit 0, native 0 worker errors, cleanup PASS. Lượt phó tướng không có lỗi này.
+- Full integrated local native/gateway/Chrome bổ sung 14:58:15 và 14:58:36 UTC+7: Khương Duy phó tướng ẩn, Di Chí cấp Quan Tinh thật, và Gia Cát Lượng chủ tướng; cả hai mixed arrange + redraw PASS, 2 GameOver mỗi lượt, browser exit 0, worker errors 0, native exit 0, ports free. Evidence `scratch/evidence/guanxing-client-fix-20261126/{native-chrome-yizhi.log,native-chrome-main-redraw.log}` và `scratch/evidence/{cp08-hidden-guanxing-deputy-multiplayer-live-1795679895952.json,cp08-hidden-guanxing-multiplayer-live-1795679916813.json}`. Local integration PASS, production gameplay pending.
+- Release preflight: source 43/43 và QA contract 69/69 rerun với Lua 5.4 PASS. Dọn hai cache apt có thể tái tạo, thu hồi 118419456 B, đủ staging 1974016856 B (lần kiểm 1992183808 B); bảo toàn rollback và DB. Candidate dựa trên ZIP production thực, tái tạo baseline hash `7147b1817e54baff` đúng byte, chỉ thay hai module đã duyệt, manifest `d0086dcd33e6507b221e07aadc834430`, bundle dự kiến `8e3b7aed9e5f8cdd` SHA-256 `930b9cbc250be2a5025d91f834dd8f30ab6815f93680f77a244aa873f7d84518`. 8 file khác trong ZIP local chỉ khác CRLF/LF; giữ byte production. Chưa cutover hoặc QA production. Evidence trong `scratch/evidence/guanxing-client-fix-20261126/`.
+
 
 ## 26/11/2026 — Túc Triều production release PASS
 
@@ -2820,20 +2829,30 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-26T04:33:02.048Z (UTC).
-- Nhánh: `main` · HEAD: `72e708a3974b`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-26T08:27:31.536Z (UTC).
+- Nhánh: `main` · HEAD: `b6f6c716974b`.
+- File thay đổi hiển thị: 11 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/card-wire-client-moves-probe.lua
+ M deploy/freekill-native/qa/card-wire-client-moves.lua
+ M deploy/freekill-native/qa/card-wire-projection-source-probe.lua
+ M deploy/freekill-native/qa/card-wire-projection.lua
+ M deploy/freekill-native/qa/upstream-first-source.test.mjs
+ M deploy/freekill-native/scripts/promote-card-wire-v1.mjs
  M docs/CODEX_PLAN.md
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M scripts/upstream-first-card-wire-client-moves-guard.mjs
+ M scripts/upstream-first-card-wire-projection-guard.mjs
 ```
 
 Ba commit gần nhất:
 
 ```text
+b6f6c716 Record Suchao native production release verification
 72e708a3 Fix Card Wire v1 projection for Suchao target marks
 67ec416f Close production OAuth gate using the existing Chrome session
-20c7fc03 Allow OAuth QA to attach to an existing local Chrome tab
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
