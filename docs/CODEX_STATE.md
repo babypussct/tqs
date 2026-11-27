@@ -1,5 +1,15 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 27/11/2026 — Liêu Dã của Giả Nam Phong (Dã)
+
+- Đã đối chiếu Lua của production đang chạy với ZIP production và tái hiện lỗi `dat == nil` khi bước chọn nhóm không nhận được reply. Chrome/Wasmoon với Card Wire v1 cũng tái hiện nút chọn cũ không gửi reply sau khi Lua phát lại scene. Log native và console production đã lọc không có trace gắn với lần người chơi bị văng lúc vào trận.
+- Sửa `runtime/packages/hegemony/pkg/jin_zfxp/skills/liaoye.lua`: ghi công khai người chọn và danh sách trước khi hỏi nhóm chịu sát thương, ghi nhóm sau khi xác nhận, chỉ truyền ID ghế vào request. UI chọn nhóm rồi bấm Xác nhận. Theo chốt tiếp theo của người dùng, khi không có lựa chọn hợp lệ, máy chủ chọn ngẫu nhiên một trong hai nhóm, ghi log riêng và kết toán sát thương. Nếu nhóm được chọn rỗng, kết toán 0 sát thương. Cập nhật bản dịch, flist và ngoại lệ hash trong parity gate.
+- Candidate trước khi đổi nhánh hết giờ dùng manifest `12de5667e612f5d27a20ff33e77160e8`. Fixture native cấp tướng tại GameStart và dùng PlayCard thật.
+- Chrome/Wasmoon fixture với cùng Lua candidate PASS cả hai nút, Xác nhận chỉ bật sau khi chọn, một reply mỗi lần, nhật ký tiếng Việt và 0 lỗi Lua. Chạy `TQS_UPSTREAM_ROOT="$PWD/scratch/evidence/liaoye-20261127/browser-packages" npm --prefix game/web run test:e2e:lua -- --liaoye`. Native PlayCard regression Hỏa Công/Thành Lược/Ký Ly PASS trên cùng manifest. Pin 14/14 và Hegemony parity 520 tệp PASS, Việt hóa 4/4, QA contract với Lua 5.4 69/69, typecheck:all và Lua syntax PASS. Evidence `scratch/evidence/liaoye-20261127/`.
+- Candidate hết giờ manifest `3bb3fdc8c212f77bba563a60a12138e0`: native/gateway ba client PASS 4 ca, đối chiếu nhóm tự động công khai với HP, 3 GameOver/EnterLobby, 0 lỗi worker, đã giải phóng cổng. Chrome/Wasmoon PASS log tiếng Việt cho cả hai nhóm tự động. Probe Lua qua hai kết quả lấy mẫu khi danh sách rỗng PASS. Parity gate, Việt hóa, typecheck và cú pháp Lua PASS. Evidence `scratch/evidence/liaoye-timeout-20261127/`. Chạy lại browser bằng `TQS_UPSTREAM_ROOT="$PWD/scratch/evidence/liaoye-timeout-20261127/browser-packages" npm --prefix game/web run test:e2e:lua -- --liaoye`.
+- Thêm nhãn nhóm trên chân dung, viền xem trước theo lựa chọn, dòng báo nhóm rỗng, thông báo bàn chơi khi chốt và đường chỉ ghế sắp chịu sát thương. Chrome/Wasmoon 390×844 PASS hiển thị, gửi reply và thu hồi nhãn khi kết thúc request. Native/gateway ba client PASS cả bốn ca ở manifest `1ca429fa86f33efeb465579440d0a12c`. Candidate bundle `ed06e4be7cab441d` có 5.339 tệp và chỉ đổi nội dung Lua Liêu Dã so production lúc bắt đầu. Evidence `scratch/evidence/liaoye-release-20261127/`.
+- Đang chuẩn bị phát hành native/Lua và web theo yêu cầu. Lần văng khi vừa vào trận vẫn cần mốc giờ hoặc phòng để đối chiếu.
+
 ## 27/11/2026 — Thành Lược và đồng bộ luật Quốc Chiến trong runtime cục bộ
 
 - Đối chiếu đúng pin Hegemony `e8d93acd34a357f96b0105aef7d661708c211626`, ZIP overlay tracked 15/11 và ZIP public production lấy ngày 27/11. Production manifest `2c4e29161bc0b2d37fdc3c0e67486745`, bundle `d7492c8447d46062` (5339 files), SHA-256 ZIP `96b3025a12448c71718ed11b9bee9803cce7ac0063d9e4417fd248d7faa424bd`; prefix SHA-1 khớp. `ld__chenglue.lua` production SHA-256 `b420ad6eaab7d1c6e2edbacd169974f5e9753d6031a429bcbf24ffbf526521eb` khớp pin; Fire Attack production SHA-256 `5c596ef64ce40eebd65cd4677584fe65778a0faea2061ed80a22610b534c126f` có `fire_attack_show`. Đây là xác minh byte nguồn đang phân phối, chưa phải gameplay live.
@@ -2882,20 +2892,38 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-27T06:40:02.558Z (UTC).
-- Nhánh: `main` · HEAD: `bccebd04ba0b`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-27T16:59:43.839Z (UTC).
+- Nhánh: `main` · HEAD: `41d4cf8a7eb2`.
+- File thay đổi hiển thị: 19 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/skill-parity/run.py
+ M deploy/freekill-native/qa/skill-parity/skill-parity-native.mts
+ M deploy/freekill-native/qa/skill-parity/skill-parity-qa-init.lua
  M docs/CODEX_PLAN.md
+ M docs/translations/HEGEMONY_VIETNAMESE_WORK_QUEUE.csv
+ M game/web/scripts/check-upstream-baseline.mjs
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/GameBoardScreen.tsx
+ M game/web/src/GameplayControls.tsx
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/engine/connection.ts
+ M game/web/src/engine/hostLua.ts
+ M game/web/src/engine/vietnameseHegemonyP0Supplement.ts
+ M game/web/src/store/boardState.ts
+ M game/web/src/store/gameStore.ts
+ M game/web/src/styles.css
+ M runtime/flist.txt
+ M runtime/packages/hegemony/pkg/jin_zfxp/skills/liaoye.lua
 ```
 
 Ba commit gần nhất:
 
 ```text
+41d4cf8a Record verified Hegemony parity release
 bccebd04 Synchronize Hegemony runtime and skill parity coverage
 87c5e449 Record verified Hegemony translation production release
-03e92397 Update Vietnamese Hegemony skill descriptions
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

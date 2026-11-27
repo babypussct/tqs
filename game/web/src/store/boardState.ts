@@ -82,6 +82,7 @@ export interface BoardState {
   player: Record<number, BoardPlayer>;
   banners: Record<string, string | number | boolean>;
   logs: string[];
+  notice?: { text: string };
   moments: BoardMoment[];
   drawPileCount: number | null;
   discardPileCount: number | null;
@@ -270,6 +271,9 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     if (typeof data !== 'string' || !data || data.length > 10000) return board;
     return { ...board, logs: [...board.logs, data].slice(-MAX_BOARD_LOGS),
       moments: recordMoment(board, { kind: 'log', text: data }) };
+  }
+  if (command === 'ShowToast' && typeof data === 'string' && data.length > 0 && data.length <= 1024) {
+    return { ...board, notice: { text: data } };
   }
   if (command === 'PilesUpdate') {
     if (!data || typeof data !== 'object' || Array.isArray(data)) return board;

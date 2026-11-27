@@ -241,12 +241,42 @@ director:addEffect(fk.CardEffecting, {
     return false
   end,
 })
+local function runLiaoye(room, owner, chooser, other)
+  room:changeHero(owner, 'heg__jiananfeng', false, false, false, false, false)
+  room:setPlayerMark(owner, '__heg_general', 'heg__jiananfeng')
+  check(owner:hasSkill('heg__liaoye'), 'Liêu Dã acquired from Giả Nam Phong')
+  for _, case in ipairs({
+    {name = 'chosen', chooserHp = 10, otherHp = 9},
+    {name = 'unchosen', chooserHp = 9, otherHp = 10},
+    {name = 'empty', chooserHp = 9, otherHp = 9},
+    {name = 'no-reply'},
+  }) do
+    for _, p in ipairs(room.players) do
+      room:setPlayerProperty(p, 'maxHp', 10)
+      room:setPlayerProperty(p, 'hp', 10)
+      room:setPlayerProperty(p, 'shield', 0)
+    end
+    owner:setSkillUseHistory('heg__liaoye', 0, Player.HistoryPhase)
+    local request = Request:new(owner, 'PlayCard')
+    local reply = request:getResult(owner)
+    check(type(reply) == 'table' and reply.card.skill == 'heg__liaoye'
+      and #reply.targets == 1 and reply.targets[1] == chooser.id, 'Liêu Dã PlayCard ' .. case.name)
+    room:handleUseCardReply(owner, reply)
+    local validHp = chooser.hp == case.chooserHp and other.hp == case.otherHp
+    if case.name == 'no-reply' then
+      validHp = (chooser.hp == 9 and other.hp == 10) or (chooser.hp == 10 and other.hp == 9)
+    end
+    check(owner.hp == 10 and validHp, 'Liêu Dã HP ' .. case.name)
+  end
+end
+
 director:addEffect(fk.GameStart, {
   global = true, priority = 1000,
   can_trigger = function(self, event, target, player, data)
     local room=player.room
     local suffix = room:getSettings('roomName'):match('^TQSQA/skill%-parity/(0x%d+)$')
-    if ran or player ~= room.players[1] or not (suffix == '0x1' or hiddenCases[suffix] or tlCases[suffix]) or #room.players ~= config.maxPlayers then return false end
+    if ran or player ~= room.players[1] or not (suffix == '0x1' or suffix == '0x16'
+      or hiddenCases[suffix] or tlCases[suffix]) or #room.players ~= config.maxPlayers then return false end
     return table.every(room.players,function(p) return table.contains(config.allowedUsers,p._splayer:getScreenName()) end)
   end,
   on_trigger = function(self,event,target,player,data)
@@ -259,14 +289,21 @@ director:addEffect(fk.GameStart, {
     room:setPlayerProperty(enemy,'maxHp',10)
     room:setPlayerProperty(enemy,'hp',10)
     room:setPlayerProperty(enemy,'shield',0)
-    local case = hiddenCases[room:getSettings('roomName'):match('0x%d+$')]
+    local suffix = room:getSettings('roomName'):match('0x%d+$')
+    if suffix == '0x16' then
+      runLiaoye(room, player, enemy, room.players[3])
+      fk.qInfo('[TQS_QA_SKILL_PARITY] SUMMARY PASS')
+      room:gameOver('')
+      return
+    end
+    local case = hiddenCases[suffix]
     if case then
       runHidden(room, player, enemy, case)
       fk.qInfo('[TQS_QA_SKILL_PARITY] SUMMARY PASS')
       room:gameOver('')
       return
     end
-    local tlCase = tlCases[room:getSettings('roomName'):match('0x%d+$')]
+    local tlCase = tlCases[suffix]
     local modes = chainLane and {'chain'} or tlCase and {tlCase} or {'physical','success','cancel','prevent'}
     for _,mode in ipairs(modes) do
       clearHand(room,player); clearHand(room,enemy)

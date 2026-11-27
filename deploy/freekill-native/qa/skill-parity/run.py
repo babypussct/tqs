@@ -7,7 +7,7 @@ parser.add_argument('--runtime', required=True, type=Path)
 parser.add_argument('--source', required=True, type=Path, help='Native source containing SQL bootstrap files')
 parser.add_argument('--binary', required=True, type=Path)
 parser.add_argument('--rocks', required=True, type=Path, help='Lua 5.4 rocks root')
-parser.add_argument('--lane', choices=('playcard', 'chain', 'hidden-main-effect', 'hidden-deputy-remove', 'hidden-black', 'hidden-unlit', 'hidden-trick', 'hidden-delayed', 'hidden-multi', 'hidden-main-remove', 'hidden-deputy-effect', 'hidden-decline', 'tl-physical', 'tl-success', 'tl-cancel', 'tl-prevent'), default='playcard')
+parser.add_argument('--lane', choices=('playcard', 'chain', 'hidden-main-effect', 'hidden-deputy-remove', 'hidden-black', 'hidden-unlit', 'hidden-trick', 'hidden-delayed', 'hidden-multi', 'hidden-main-remove', 'hidden-deputy-effect', 'hidden-decline', 'tl-physical', 'tl-success', 'tl-cancel', 'tl-prevent', 'liaoye'), default='playcard')
 parser.add_argument('--manifest-md5', required=True)
 parser.add_argument('--binary-sha256', required=True)
 parser.add_argument('--gateway', action='store_true', help='Send QA clients through the loopback WebSocket gateway')
@@ -15,7 +15,7 @@ parser.add_argument('--browser-preflight', action='store_true', help='Verify Chr
 args = parser.parse_args()
 if args.browser_preflight and not args.gateway:
     parser.error('--browser-preflight requires --gateway')
-players = 3 if args.lane in ('chain', 'hidden-multi') else 2
+players = 3 if args.lane in ('chain', 'hidden-multi', 'liaoye') else 2
 root = Path(__file__).resolve().parent
 reference = args.runtime.resolve()
 source = args.source.resolve()

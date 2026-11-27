@@ -9578,3 +9578,50 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
      anchor on shallow tables; keep the entire target surface in view. */
   .shell-playing .sg-board-table .board-opponents { inset: 16px 0 0; }
 }
+.sg-liaoye-group {
+  position: absolute;
+  z-index: 12;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #8596a6;
+  background: #172330;
+  color: #f3f7ff;
+  font-size: clamp(9px, 1.5vw, 12px);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sg-liaoye-group[data-liaoye-group="chosen"] {
+  border-color: #d9ba70;
+  background: #46300f;
+  color: #fff0ba;
+}
+
+.sg-portrait-frame:has(> [data-liaoye-preview]) {
+  outline: 2px solid #ffe194;
+  outline-offset: -2px;
+  box-shadow: 0 0 9px #ffc55cbb;
+}
+
+.sg-board-notice {
+  position: absolute;
+  z-index: 90;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(88%, 420px);
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid #9e8051;
+  border-radius: 8px;
+  background: #21190ff5;
+  color: #fff0c9;
+  font-size: clamp(11px, 2.6vw, 14px);
+  text-align: center;
+  pointer-events: none;
+}

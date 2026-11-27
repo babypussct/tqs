@@ -291,6 +291,17 @@ const api = {
     jilixChoice(id);
     return id;
   },
+  beginLiaoyeChoice: (empty: boolean) => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    serverNotify('CardWireNegotiated', serverCbor("{protocol='TQS_HEG_CARD_WIRE',cardWireVersion=1,mode='new_heg_mode'}"));
+    serverNotify('GameLog', serverCbor(`{cardWireVersion=1,payload=${
+      empty ? "{type='#heg__liaoye-selected-none',from=-1}" : "{type='#heg__liaoye-selected',from=-1,to={-1}}"
+    }}`));
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForUseActiveSkill', serverCbor(`{cardWireVersion=1,choices={},
+      payload={'#heg__liaoye_active','#heg__liaoye-choice',false,{targets=${empty ? '{}' : '{-1}'}}}}`));
+    return id;
+  },
   reconnectJilixChoice: (id: number) => {
     const old = currentSocket();
     setUpSocket();

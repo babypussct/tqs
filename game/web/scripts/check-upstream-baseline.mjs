@@ -121,6 +121,7 @@ const legacyExceptions = new Map([
   ['pkg/gamemodes/new_hegemony_mode.lua', 'e06f8c399f684e7d4e0874172ab0445b8fbeaf6f65f919d85d4c87d86a26dabd'],
   ['util.lua', '8ad2ebd74c6e8f1744d12d33f7dd24cc3f0ca56f41e8c607500df7d7007b37eb'],
   ['utilevent/events/remove_general.lua', 'dfd313b468bba92e97b8e2f5a2cb908170c7857e5bc9e3da9e371d04ef89db02'],
+  ['pkg/jin_zfxp/skills/liaoye.lua', 'c461786bf8fb44ed731857bad6010dcff2e0c5778ef7a1ca636f1a0af507aeb0'],
 ]);
 const coreRuleFiles = ['packages/freekill-core/ltk/core/events/usecard.lua'];
 const overlayEntries = unzipSync(overlayArchive, {

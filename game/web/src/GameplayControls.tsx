@@ -103,6 +103,7 @@ function InteractionPicker({ item, dispatch, direct, busy }: {
   const text = useDisplayText();
   const spec = objectValue(item.spec);
   const [single, setSingle] = useState<string>(() => {
+    if (item.skill_name === '#heg__liaoye_active') return '';
     const def = spec?.default;
     return typeof def === 'string' ? def : choices(spec?.choices ?? spec?.options)[0] ?? '';
   });
@@ -336,12 +337,13 @@ function RequestTimer({ request, onExpired, prompt }: {
   );
 }
 
-export function GameplayControls({ scene, request, busy, dispatch, direct, toggleTrust, trusting }: {
+export function GameplayControls({ scene, request, busy, dispatch, direct, toggleTrust, trusting, emptyGroup }: {
   scene: GameplayScene; request: RequestInfo; busy: boolean;
   regularSkills?: RegularSkill[];
   dispatch: GameplayDispatch; direct: GameplayDirect;
   toggleTrust?: () => void;
   trusting?: boolean;
+  emptyGroup?: boolean;
 }) {
   const text = useDisplayText();
   const cards = Object.values(scene.items.CardItem);
@@ -539,6 +541,7 @@ export function GameplayControls({ scene, request, busy, dispatch, direct, toggl
                 <h3>Tương tác kỹ năng{item.skill_name ? `: ${text(item.skill_name)}` : ''}</h3>
                 <InteractionPicker key={`${request.requestId}:${item.skill_name ?? ''}:${item.id}`}
                   item={item} dispatch={dispatch} direct={direct} busy={waiting} />
+                {emptyGroup && item.skill_name === '#heg__liaoye_active' && <p role="status">Không có mục tiêu</p>}
               </div>
             ))}
           </div>

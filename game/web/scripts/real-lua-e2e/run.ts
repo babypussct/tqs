@@ -86,6 +86,46 @@ try {
   assert.equal(bootError, null, `Real Lua WASM boot failed: ${bootError}`);
 
   const tests: [string, (page: Page) => Promise<void>][] = [
+    ['Liêu Dã shows the selected group and sends either damage choice', async (p) => {
+      for (const [empty, label, token] of [
+        [false, 'Đã được chọn', 'heg__liaoye_chosen'],
+        [true, 'Chưa được chọn', 'heg__liaoye_unchosen'],
+      ] as const) {
+        const id = await p.evaluate((isEmpty) => window.__tqsRealLuaE2e.beginLiaoyeChoice(isEmpty), empty);
+        const groupBadge = p.locator('.sg-photo-panel[data-player-id="-1"] .sg-liaoye-group');
+        await groupBadge.getByText(empty ? 'Chưa chọn' : 'Đã chọn', { exact: true }).waitFor();
+        assert.equal(await p.locator('.sg-photo-panel[data-player-id="17"] .sg-liaoye-group').count(), 0);
+        await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
+        const logs = p.getByRole('region', { name: 'Nhật ký trận đấu' });
+        await logs.getByText(empty ? /Liêu Dã: .+ không chọn ai/ : /Liêu Dã: .+ đã chọn .+/).waitFor();
+        await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).click();
+        const confirm = p.getByRole('region', { name: 'Điều khiển lượt chơi' })
+          .getByRole('button', { name: 'Xác nhận', exact: true });
+        assert.equal(await confirm.isDisabled(), true);
+        if (empty) {
+          await p.getByRole('button', { name: 'Đã được chọn', exact: true }).click();
+          await p.getByText('Không có mục tiêu', { exact: true }).waitFor();
+        }
+        await p.getByRole('button', { name: label, exact: true }).click();
+        await groupBadge.and(p.locator('[data-liaoye-preview]')).waitFor();
+        await confirm.click();
+        const result = await reply(p);
+        assert.equal(result.replies.length, 1);
+        assert.equal(result.replies[0].requestId, id);
+        assert.ok(Buffer.from(result.replies[0].hex, 'hex').includes(Buffer.from(token)));
+        assert.deepEqual(result.luaErrors, []);
+        await groupBadge.waitFor({ state: 'detached' });
+        await p.evaluate((choice) => window.__tqsRealLuaE2e.boardNotify('GameLog',
+          `{cardWireVersion=1,payload={type='#heg__liaoye-damage-choice',from=17,arg='${choice}'}}`), token);
+        await p.evaluate((choice) => window.__tqsRealLuaE2e.boardNotify('GameLog',
+          `{cardWireVersion=1,payload={type='#heg__liaoye-damage-auto',from=17,arg='${choice}',toast=true}}`), token);
+        await p.locator('.sg-board-notice').getByText(new RegExp(`Hệ thống chọn ngẫu nhiên nhóm “${label}”`)).waitFor();
+        await p.getByRole('button', { name: 'Lịch sử', exact: true }).click();
+        await logs.getByText(new RegExp(`Liêu Dã: .+ chọn gây sát thương lên nhóm “${label}”`)).waitFor();
+        await logs.getByText(new RegExp(`chưa xác nhận\\. Hệ thống chọn ngẫu nhiên nhóm “${label}”`)).waitFor();
+        await p.getByRole('button', { name: 'Ẩn lịch sử', exact: true }).click();
+      }
+    }],
     ['Transformation Kỳ Sách real Lua card-name interaction', async (p) => {
       const { id } = await p.evaluate(() => window.__tqsRealLuaE2e.beginTransformationSkill('qice'));
       const skill = p.locator('button.sg-skill-button').filter({ hasText: /Kỳ Sách|奇策|qice/i }).first();
@@ -2916,7 +2956,9 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--jilix')
+  const testsToRun = process.argv.includes('--liaoye')
+    ? tests.filter(([name]) => name.startsWith('Liêu Dã '))
+    : process.argv.includes('--jilix')
     ? tests.filter(([name]) => name.startsWith('Ký Ly '))
     : process.argv.includes('--guanxing')
     ? tests.filter(([name]) => name.startsWith('Quan Tinh '))
@@ -2935,7 +2977,8 @@ try {
     ? tests.filter(([name]) => name.startsWith('Private request faces'))
     : process.argv.includes('--room-pools')
     ? tests.filter(([name]) => name.startsWith('UI-02'))
-    : tests.filter(([name]) => !name.startsWith('Anh Vũ Bôi') && !name.startsWith('Quan Tinh '));
+    : tests.filter(([name]) => !name.startsWith('Anh Vũ Bôi') && !name.startsWith('Quan Tinh ')
+      && !name.startsWith('Liêu Dã '));
   let passed = 0;
   const failures: string[] = [];
   for (const [name, test] of testsToRun) {

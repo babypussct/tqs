@@ -202,9 +202,10 @@ function decodeQa(bytes) {
 
 const lane = process.env.TQS_SKILL_PARITY_LANE ?? "playcard";
 const chainLane = lane === "chain";
+const liaoyeLane = lane === "liaoye";
 const tlSuffix = {"tl-physical":"0x12", "tl-success":"0x13", "tl-cancel":"0x14", "tl-prevent":"0x15"}[lane];
 const hiddenSuffix = {"hidden-main-effect":"0x2", "hidden-deputy-remove":"0x3", "hidden-black":"0x4", "hidden-unlit":"0x5", "hidden-trick":"0x6", "hidden-delayed":"0x7", "hidden-multi":"0x8", "hidden-main-remove":"0x9", "hidden-deputy-effect":"0x10", "hidden-decline":"0x11"}[lane];
-const playerCount = chainLane || lane === "hidden-multi" ? 3 : 2;
+const playerCount = chainLane || liaoyeLane || lane === "hidden-multi" ? 3 : 2;
 const hiddenPositive = ["hidden-main-effect", "hidden-deputy-remove", "hidden-trick", "hidden-main-remove", "hidden-deputy-effect"].includes(lane);
 let hiddenGates = 0, hiddenInvokes = 0, hiddenCardChoices = 0;
 let jilixChoices=0, discardPrompts=0, showPrompts=0, playPrompts=0;
@@ -218,6 +219,9 @@ function connectRecorder(socket) {
   const queued = /* @__PURE__ */ new Map();
   let failure = "";
   let seats: number[] = [];
+  const liaoyeLogs = [];
+  let liaoyeSelections = 0;
+  let liaoyeChoices = 0;
   let hiddenPrelightAcks = 0;
   let hiddenPhase = 0;
   const hiddenPrivateMarks = [], hiddenFakeSkills = [], hiddenPublicGenerals = [];
@@ -245,6 +249,14 @@ function connectRecorder(socket) {
           seats = decodeQa(payload);
           assert.equal(seats.length, playerCount);
           assert.ok(seats.every(Number.isSafeInteger));
+        }
+        if (liaoyeLane && packet.command === "GameLog") {
+          const decoded = decodeQa(payload);
+          const log = decoded.cardWireVersion === 1 ? decoded.payload : decoded;
+          if (String(log.type).startsWith("#heg__liaoye-")) {
+            liaoyeLogs.push({ type: String(log.type), from: log.from,
+              to: log.to ?? [], arg: log.arg === undefined ? undefined : String(log.arg) });
+          }
         }
         if (chainLane && (packet.command === "MoveCards" || packet.command === "ShowCard")) {
           const decoded = decodeQa(payload);
@@ -290,7 +302,27 @@ function connectRecorder(socket) {
         }
         if (packet.type === 2 || ["PlayCard", "AskForChoices", "AskForUseActiveSkill", "AskForUseCard", "AskForResponseCard", "AskForSkillInvoke", "AskForCardChosen"].includes(packet.command)) {
           let response;
-          if (hiddenSuffix && packet.command === "AskForSkillInvoke" && payload.includes(Buffer.from("tqs_qa_hidden_jilix_gate"))) {
+          if (liaoyeLane && packet.command === "PlayCard") {
+            assert.equal(decodeQa(payload).cardWireVersion, 1);
+            response = {card: {skill: "heg__liaoye", subcards: []}, targets: [seats[1]]};
+            playPrompts++;
+          } else if (liaoyeLane && packet.command === "AskForUseActiveSkill" && payload.includes(Buffer.from("#heg__liaoye-choose"))) {
+            const env = decodeQa(payload);
+            assert.equal(env.cardWireVersion, 1);
+            assert.deepEqual(env.payload[3].targets, seats);
+            liaoyeSelections++;
+            response = liaoyeSelections === 3 ? "__cancel" :
+              {card: {skill: "choose_players_skill", subcards: []}, targets: [seats[0], seats[2]]};
+          } else if (liaoyeLane && packet.command === "AskForUseActiveSkill" && payload.includes(Buffer.from("#heg__liaoye-choice"))) {
+            const env = decodeQa(payload);
+            assert.equal(env.cardWireVersion, 1);
+            liaoyeChoices++;
+            assert.deepEqual(env.payload[3].targets, liaoyeChoices === 3 ? [] : [seats[0], seats[2]]);
+            if (liaoyeChoices < 4) {
+              response = {card: {skill: "#heg__liaoye_active", subcards: []}, targets: [],
+                interaction_data: liaoyeChoices === 1 ? "heg__liaoye_chosen" : "heg__liaoye_unchosen"};
+            }
+          } else if (hiddenSuffix && packet.command === "AskForSkillInvoke" && payload.includes(Buffer.from("tqs_qa_hidden_jilix_gate"))) {
             hiddenGates++;
             console.log(JSON.stringify({status:"DIAGNOSTIC",stage:"readiness gate received"}));
             if (lane === "hidden-unlit") {
@@ -358,6 +390,9 @@ function connectRecorder(socket) {
   return {
     sizes,
     seen, marks, hpUpdates, chainMoves, chainShows,
+    liaoyeLogs,
+    get liaoyeSelections() { return liaoyeSelections; },
+    get liaoyeChoices() { return liaoyeChoices; },
     get seats() { return seats; },
     get hiddenPrelightAcks() { return hiddenPrelightAcks; },
     get hiddenPhase() { return hiddenPhase; },
@@ -388,7 +423,7 @@ try {
   const [host, guest] = clients;
   const a = host.recorder;
   const b = guest.recorder;
-  const name = "TQSQA/skill-parity/" + (hiddenSuffix ?? tlSuffix ?? "0x1");
+  const name = "TQSQA/skill-parity/" + (liaoyeLane ? "0x16" : hiddenSuffix ?? tlSuffix ?? "0x1");
   const timeout = 12;
   notify(host.socket, "CreateRoom", [name, playerCount, timeout, {
     roomName: name,
@@ -427,7 +462,27 @@ try {
   await Promise.all(clients.map(client => client.recorder.wait("CardWireNegotiated")));
   await Promise.all(clients.map(client => client.recorder.wait("PrepareDrawPile", 4e4)));
   await Promise.all(clients.map(client => client.recorder.wait("GameOver", 45000)));
-  if (hiddenSuffix) {
+  if (liaoyeLane) {
+    assert.equal(playPrompts, 4);
+    const automatic = clients[0].recorder.liaoyeLogs.at(-1)?.arg;
+    assert.ok(automatic === "heg__liaoye_chosen" || automatic === "heg__liaoye_unchosen");
+    for (const {recorder, playerId} of clients) {
+      const [owner, chooser, other] = recorder.seats;
+      const selected = {type: "#heg__liaoye-selected", from: chooser, to: [owner, other], arg: undefined};
+      const none = {type: "#heg__liaoye-selected-none", from: chooser, to: [], arg: undefined};
+      const choice = (arg: string) => ({type: "#heg__liaoye-damage-choice", from: owner, to: [], arg});
+      assert.deepEqual(recorder.liaoyeLogs, [
+        selected, choice("heg__liaoye_chosen"),
+        selected, choice("heg__liaoye_unchosen"),
+        none, choice("heg__liaoye_unchosen"),
+        selected, {type: "#heg__liaoye-damage-auto", from: owner, to: [], arg: automatic},
+      ]);
+      assert.deepEqual(recorder.hpUpdates.at(-1), [automatic === "heg__liaoye_chosen" ? other : chooser, 9]);
+      assert.equal(recorder.liaoyeSelections, playerId === chooser ? 4 : 0);
+      assert.equal(recorder.liaoyeChoices, playerId === owner ? 4 : 0);
+    }
+    console.log(JSON.stringify({status: "PASS", lane, cases: 4, publicLogAudiences: 3, ownerOnlyDamageChoice: true}));
+  } else if (hiddenSuffix) {
     assert.equal(hiddenGates, 1);
     assert.equal(playPrompts, 1);
     assert.equal(hiddenCardChoices, lane === "hidden-trick" ? 2 : 0);

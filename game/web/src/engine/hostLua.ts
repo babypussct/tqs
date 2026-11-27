@@ -636,7 +636,17 @@ function FClient:notifyUI(command, data)
     -- The native request handler already holds extra_data, including CBOR
     -- decoded Player objects (e.g. Dũng Tiến's froms/tos). QML only reads
     -- skill/prompt/cancelable; never serialize Player graphs into the web UI.
-    data = {data[1], data[2], data[3]}
+    local selected = data[1] == '#heg__liaoye_active' and type(data[4]) == 'table' and data[4].targets
+    if type(selected) == 'table' and #selected <= 16 then
+      local ids = {}
+      for i, id in ipairs(selected) do
+        if math.type(id) ~= 'integer' then ids = nil; break end
+        ids[i] = id
+      end
+      data = {data[1], data[2], data[3], ids}
+    else
+      data = {data[1], data[2], data[3]}
+    end
   elseif command == 'SetPlayerMark' then
     data = project_public_mark(data, false)
     if not data then return end

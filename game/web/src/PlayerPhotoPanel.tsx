@@ -41,6 +41,8 @@ export interface PlayerPhotoPanelProps {
   getGeneralSkills?: (name: string) => string[];
   focusState?: BoardFocusState | null;
   skillCallout?: SkillCalloutEvent | null;
+  choiceGroup?: 'chosen' | 'unchosen';
+  previewTarget?: boolean;
 }
 
 type EquipmentSlotKey = 'treasure' | 'weapon' | 'armor' | 'defensive_ride' | 'offensive_ride';
@@ -366,7 +368,7 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
 }
 
 export default function PlayerPhotoPanel({
-  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, damagePop, equipmentPortalTarget, getGeneralSkills, focusState, skillCallout,
+  player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, damagePop, equipmentPortalTarget, getGeneralSkills, focusState, skillCallout, choiceGroup, previewTarget,
 }: PlayerPhotoPanelProps) {
   const text = useDisplayText();
   const isMainRevealed = !!game?.general && game.general !== 'anjiang';
@@ -463,6 +465,8 @@ export default function PlayerPhotoPanel({
     {/* 2. FULL-BLEED DUAL GENERAL PORTRAIT FRAME */}
     <div className={`sg-portrait-frame native-portrait-canvas has-deputy ${game?.faceup === false ? 'is-face-turned' : ''}`}
       aria-label={`${faceLabel}; ${deputyLabel}`}>
+      {choiceGroup && <span className="sg-liaoye-group" data-liaoye-group={choiceGroup}
+        data-liaoye-preview={previewTarget || undefined}>{choiceGroup === 'chosen' ? 'Đã chọn' : 'Chưa chọn'}</span>}
       <PortraitImage name={mainPortrait} extension={mainExtension} text={text} deputy={false} backLabel="Chủ tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : mainUnrevealed} />
       <PortraitImage name={deputyPortrait} extension={deputyExtension} text={text} deputy={true} backLabel="Phó tướng ẩn" kingdom={exposedKingdom ? kingdom : null} unrevealed={bothUnrevealed ? false : deputyUnrevealed} />
       <span className="sg-deputy-split-line native-deputy-split-line" aria-hidden="true" />

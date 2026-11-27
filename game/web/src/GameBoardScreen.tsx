@@ -20,6 +20,16 @@ import CardVfxOverlay from './CardVfxOverlay';
 import BattleMusicControl from './BattleMusicControl';
 import { useCardVfx, type CardAssetHint } from './store/cardVfxState';
 
+function BoardNotice({ notice }: { notice: { text: string } }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), 4500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+  return visible && <p className="sg-board-notice" role="status">{localizedGameLog(notice.text)}</p>;
+}
+
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia(query).matches : false
@@ -207,6 +217,19 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
   const trusting = self?.netState === 'trust';
   const gameplayActive = !trusting && pendingRequest !== null && GAMEPLAY_REQUESTS.has(pendingRequest.command);
   const requestExpired = pendingRequest?.expiresAt != null && Date.now() >= pendingRequest.expiresAt;
+  const liaoyeIds = gameplayActive && !requestExpired ? pendingRequest.liaoyeSelectedIds : undefined;
+  const [preview, setPreview] = useState<{ request: typeof pendingRequest; group: 'chosen' | 'unchosen' } | null>(null);
+  const groupFor = (id: number) => !liaoyeIds || id === ownId || board.player[id]?.died ? undefined
+    : liaoyeIds.includes(id) ? 'chosen' : 'unchosen';
+  const previewGroup = liaoyeIds && preview?.request === pendingRequest ? preview.group : undefined;
+  const emptyGroup = previewGroup !== undefined && !board.seats.some((id) => groupFor(id) === previewGroup);
+  const dispatchGameplay: GameplayDispatch = (kind, id, action, data) => {
+    dispatch(kind, id, action, data);
+    if (liaoyeIds && kind === 'Interaction' && action === 'update') {
+      if (data === 'heg__liaoye_chosen') setPreview({ request: pendingRequest, group: 'chosen' });
+      if (data === 'heg__liaoye_unchosen') setPreview({ request: pendingRequest, group: 'unchosen' });
+    }
+  };
   const targetFor = (id: number) => gameplayActive ? gameplay.items.Photo[String(id)] : undefined;
   const chooseTarget = (id: number) => {
     const item = targetFor(id);
@@ -348,6 +371,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
           </>}
         </section>
         <div className="board-main sg-board-main" ref={boardMainRef} style={{ position: 'relative' }}>
+          {board.notice && <BoardNotice notice={board.notice} />}
           {/* Lớp hiển thị đường mũi tên ngắm mục tiêu (toàn màn hình bàn chơi và bài tay) */}
           <TargetingOverlay
             boardContainerRef={boardMainRef}
@@ -373,6 +397,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
             const player = byId.get(seat.playerId);
             return player && <PlayerPhotoPanel key={seat.playerId} player={player} game={board.player[seat.playerId]}
               seat={seat.serverSeatNumber} self={false} active={seat.isActive} target={targetFor(seat.playerId)}
+              choiceGroup={groupFor(seat.playerId)} previewTarget={previewGroup !== undefined && groupFor(seat.playerId) === previewGroup}
               getGeneralSkills={getGeneralSkills}
               busy={busy || requestExpired} onTarget={() => chooseTarget(seat.playerId)}
               avatarReaction={avatarReactions[seat.playerId]}
@@ -450,7 +475,7 @@ export default function GameBoardScreen({ leave, busy, dispatch, direct, toggleT
         </div>
         {gameplayActive && <GameplayControls key={`${pendingRequest.requestId}-${pendingRequest.receivedAt}`}
           scene={gameplay} request={pendingRequest} regularSkills={regularSkills}
-          dispatch={dispatch} direct={direct} busy={busy} toggleTrust={toggleTrust} trusting={trusting} />}
+          dispatch={dispatchGameplay} direct={direct} busy={busy} toggleTrust={toggleTrust} trusting={trusting} emptyGroup={emptyGroup} />}
         {!gameplayActive && (
           <div className="board-local-idle-area">
             <div className="sg-dashboard-left-tools" aria-label="Công cụ ngoài lượt">

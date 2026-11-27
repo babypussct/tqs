@@ -1,5 +1,14 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 27/11/2026 — Liêu Dã của Giả Nam Phong (Dã)
+
+- [x] Tái hiện thiếu reply trong Lua và nút chọn nhóm trên Chrome/Wasmoon. Thêm log danh sách và nhóm đã xác nhận, bảo toàn cách chia nhóm chịu sát thương.
+- [x] Candidate native/gateway ba client PASS cả bốn ca, Chrome/Wasmoon PASS hai lựa chọn và nhật ký tiếng Việt.
+- [x] Khi hết giờ xác nhận nhóm, chọn ngẫu nhiên, ghi log và kết toán sát thương. Native/gateway và Chrome/Wasmoon PASS trên candidate cập nhật.
+- [x] Hiển thị nhãn nhóm, viền xem trước, nhóm rỗng và thông báo khi đã chốt trên bàn chơi. Chrome/Wasmoon và native/gateway candidate PASS.
+- [ ] Phát hành web/native và đối chiếu artifact đang phục vụ.
+- [ ] Đối chiếu sự cố vừa vào trận với mốc giờ hoặc phòng khi có thêm thông tin.
+
 ## 27/11/2026 — Đồng bộ Thành Lược và kiểm tra lệch luật Quốc Chiến
 
 - [x] Kiểm byte pin/overlay/local/ZIP production; xác minh Thành Lược production đã đúng pin.

@@ -52,6 +52,7 @@ export interface RequestInfo {
   cardSelectionPrompt?: CardSelectionPrompt | null;
   cardsAndChoicePrompt?: CardsAndChoicePrompt | null;
   skillInvokePrompt?: SkillInvokePrompt | null;
+  liaoyeSelectedIds?: number[];
 }
 
 export interface GameConnectionOptions {
@@ -92,6 +93,7 @@ export class GameConnection {
   private socket: SocketLike | null = null;
   private stream = new PacketStream();
   private pendingRequest: RequestInfo | null = null;
+  private liaoyeSelectedIds?: number[];
   private authorizedRequest: RequestInfo | null = null;
   private capturedReply: unknown = null;
   private gameplayScene: GameplayScene = emptyGameplay();
@@ -171,6 +173,7 @@ export class GameConnection {
       this.requestExpiryTimer = null;
     }
     this.pendingRequest = null;
+    this.liaoyeSelectedIds = undefined;
     this.authorizedRequest = null;
     this.capturedReply = null;
     this.initialGeneralPrompt = null;
@@ -720,6 +723,11 @@ export class GameConnection {
     if (command === 'CustomDialog') {
       this.initialGeneralPrompt = parseInitialGeneralPrompt(data);
     }
+    if (command === 'AskForUseActiveSkill' && this.receivingRequestCommand === command &&
+        Array.isArray(data) && data[0] === '#heg__liaoye_active') {
+      const ids: unknown = data[3];
+      if (Array.isArray(ids) && ids.length <= 16 && ids.every(Number.isSafeInteger)) this.liaoyeSelectedIds = ids;
+    }
     if (['AskForChoices', 'AskForOptions'].includes(command) && this.receivingRequestCommand === command)
       this.choicePrompt = parseChoicePrompt(command === 'AskForOptions' && Array.isArray(data)
         ? [...data.slice(0, 6), false, data[6] ?? false] : data);
@@ -931,6 +939,7 @@ export class GameConnection {
         ...(['AskForCardChosen', 'AskForPoxi'].includes(p.command) ?
           { cardSelectionPrompt: this.cardSelection?.publicPrompt ?? null } : {}),
         ...(p.command === 'AskForSkillInvoke' ? { skillInvokePrompt: this.skillInvokePrompt } : {}),
+        ...(this.liaoyeSelectedIds ? { liaoyeSelectedIds: this.liaoyeSelectedIds } : {}),
       };
       this.scheduleRequestExpiry(this.pendingRequest);
       this.opts.onRequest?.(this.pendingRequest);

@@ -375,6 +375,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'MoveFocus':
     case 'SetBanner':
     case 'GameLog':
+    case 'ShowToast':
     case 'PilesUpdate':
     case 'ShowVirtualCard':
     case 'TableCardsFlash':
