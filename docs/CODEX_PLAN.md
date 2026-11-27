@@ -6,7 +6,8 @@
 - [x] Cập nhật 87 mô tả và tên liên quan, ưu tiên overlay cuối, giữ nguyên pin và queue lịch sử.
 - [x] Regression cấu trúc 2/2, Việt hóa 4/4, store 50/50, typecheck và diff check PASS.
 - [x] Build production đúng pin, typecheck:all và regression Việt hóa/store PASS.
-- [ ] Pages Direct Upload và production smoke; kiểm trực tiếp mô tả trong ván và rà mô tả động nếu cần.
+- [x] Push `03e92397`, Pages Direct Upload `9dfad60f`, alias/immutable static parity, gateway/native/Shop identity, Chrome mobile smoke PASS.
+- [ ] Kiểm trực tiếp mô tả trong ván OAuth production và rà mô tả động nếu cần.
 
 ## 27/11/2026 — Hình tướng Quốc Chiến
 
