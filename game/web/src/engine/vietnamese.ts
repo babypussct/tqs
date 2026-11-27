@@ -1,3 +1,4 @@
+import { VI_HEGEMONY_UPDATES } from './vietnameseHegemonyUpdates';
 import { VI_SKILL_TRANSLATIONS } from './vietnameseSkills';
 import { VI_SKILL_REFINEMENTS } from './vietnameseSkillRefinements';
 import { VI_SKILL_REVIEWED } from './vietnameseSkillReviewed';
@@ -674,4 +675,5 @@ export const VI_ADDITIONS: Record<string, string> = {
   '#PreventDamage': 'Do %arg, %arg3 điểm sát thương %arg2 do %to sắp gây ra cho %from đã được ngăn chặn.',
   '#PreventDamageWithNoFrom': 'Do %arg, %arg3 điểm sát thương %arg2 mà %from sắp phải chịu đã được ngăn chặn.',
   '$ShuffleDrawPile': 'Đã xáo lại chồng bài, chồng bài hiện có %arg lá bài.',
+  ...VI_HEGEMONY_UPDATES,
 };

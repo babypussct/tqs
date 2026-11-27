@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { VI_HEGEMONY_UPDATES } from '../src/engine/vietnameseHegemonyUpdates';
 import { VI_ADDITIONS } from '../src/engine/vietnamese';
 import { displayText, plainText } from '../src/engine/displayText';
 import { VI_HEGEMONY_TRANSLATIONS } from '../src/engine/vietnameseHegemony';
@@ -97,5 +98,36 @@ test('Hegemony overlay resolves the accounted queue without changing source shap
       [...(translation.match(tags) ?? [])].map(tagName).sort(),
       `${key} changed rich-text tag shape`,
     );
+  }
+});
+
+test('Hegemony description delta matches the current source shapes and wins runtime precedence', () => {
+  const { descriptions } = JSON.parse(fs.readFileSync(
+    path.join(repositoryRoot, 'docs/translations/HEGEMONY_DESCRIPTION_DELTA_20261127.json'), 'utf8',
+  )) as { descriptions: Record<string, { old: { zh: string } | null; pin: { zh: string } | null; head: { zh: string } }> };
+  const keys = Object.keys(descriptions);
+  assert.equal(keys.length, 87);
+  assert.equal(Object.values(descriptions).filter(row => row.old).length, 41);
+  assert.equal(Object.values(descriptions).filter(row => row.pin && !row.old).length, 42);
+  assert.equal(Object.values(descriptions).filter(row => !row.pin).length, 4);
+  assert.deepEqual(Object.keys(VI_HEGEMONY_UPDATES).filter(key => key.startsWith(':')).sort(), keys.sort());
+  for (const [key, row] of Object.entries(descriptions)) {
+    const translation = VI_HEGEMONY_UPDATES[key];
+    assert.ok(translation, key);
+    assert.equal(VI_ADDITIONS[key], translation, key);
+    assert.doesNotMatch(plainText(translation), /[\u3400-\u9fff]/, key);
+    assert.equal(plainText(displayText(key, VI_ADDITIONS)), plainText(translation), key);
+    const source = row.head.zh;
+    assert.deepEqual((translation.match(placeholders) ?? []).sort(), (source.match(placeholders) ?? []).sort(), key);
+    assert.deepEqual((translation.match(tags) ?? []).map(tagName).sort(), (source.match(tags) ?? []).map(tagName).sort(), key);
+    const name = VI_ADDITIONS[key.slice(1)];
+    assert.ok(name, key);
+    assert.doesNotMatch(name, /[\u3400-\u9fff]/, key);
+  }
+  for (const key of keys.filter(key => key.startsWith(':nos_heg__'))) {
+    const skill = key.slice(':nos_heg__'.length);
+    const modern = VI_ADDITIONS[':ld__' + skill] ?? VI_ADDITIONS[':' + skill];
+    assert.ok(modern, key);
+    assert.notEqual(VI_ADDITIONS[key], modern, key);
   }
 });

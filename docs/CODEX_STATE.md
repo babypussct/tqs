@@ -1,5 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony
+
+- So sánh mô tả tiếng Trung trong snapshot Việt hóa `2a96c067` (24/10/2026), pin native `e8d93acd34a357f96b0105aef7d661708c211626` (26/10) và upstream master `097b6f20c3b78b9d89f708cee3637415c19c33c1` (19/11). Scan literal/concat colon-key Lua: 472 → 514 → 518 mô tả, 41 sửa, 42 thêm ở pin, 4 thêm ở HEAD, 0 xóa. Bản pin của delta đã đối chiếu ZIP production theo báo cáo kiểm tra trước trong phiên. Upstream sau pin chỉ 1 commit, đổi cách diễn đạt Vô Giải Quốc Chiến và thêm 4 kỹ năng OL; không đổi pin.
+- `game/web/src/engine/vietnameseHegemonyUpdates.ts` chứa 87 mô tả và tên liên quan, 2 tên tướng OL, prompt Quyết chiến; spread cuối VI_ADDITIONS. Bốn mô tả OL chỉ chuẩn bị bản dịch, không kích hoạt tướng. Sửa nhãn kỹ năng bảo vật ghi nhầm thành kỹ năng vũ khí trong mô tả Thiên Hình Lục Tích theo loại bài nguồn. Thống nhất Châu liên hợp bích với UI chọn tướng. Giữ dữ liệu queue 24/10 làm lịch sử; provenance từng key ở `docs/translations/HEGEMONY_DESCRIPTION_DELTA_20261127.json`.
+- Kiểm thử phiên này: test:hegemony-translation 2/2 (87 key, tên, placeholder, HTML tag, displayText, precedence và biến thể nos), test:vietnamese 4/4, test:store 50/50, typecheck và git diff --check PASS. Chưa chạy build/release hoặc gameplay browser/native cho delta. Phạm vi scan là Hegemony Lua literal/concat, chưa bao phủ mô tả động/long-bracket và package dependency ngoài Hegemony; kiểm thử cấu trúc không thay thế duyệt ngữ nghĩa trực tiếp từng tình huống.
+- Release preflight 27/11: 14/14 upstream checkout đúng pin, test:hegemony-translation 2/2, test:vietnamese 4/4, test:store 50/50, typecheck:all và build web PASS; SW 532 files, build `976a2b1f16bb0cf8e97bc8db7814b2adb57cbb5f4a9108e3cec72f26a6b2d50f`. Production baseline native manifest `2c4e29161bc0b2d37fdc3c0e67486745`, Shop JS SHA-256 khớp release trước; delta source chỉ web Việt hóa và tài liệu. Evidence `scratch/evidence/hegemony-translation-release-20261127/`. Bước kế tiếp: commit/push và Pages Direct Upload, kiểm production.
+
 ## 27/11/2026 — Hình tướng Quốc Chiến (quân chủ, Tấn)
 
 - Nguyên nhân: web thiếu ảnh JPEG theo ID chính xác của Hegemony; URL thiếu có thể trả HTML SPA. Bổ sung 339 JPEG nguyên byte từ pin `e8d93acd34a357f96b0105aef7d661708c211626`, inventory 1915 ảnh. Đối chiếu 346 ID trong ZIP native production: 339 ảnh chính xác, 7 dùng ảnh gốc hiện có vì pin không chứa biến thể (`m_heg__caohong`, `m_heg__dingfeng`, `m_heg__ganning`, `m_heg__jiangwanfeiyi`, `m_heg__jiangwei`, `m_heg__xushu`, `m_heg__zhangren`). Giữ logic che tướng và ưu tiên exact ID.
@@ -2846,20 +2853,25 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-26T18:52:38.284Z (UTC).
-- Nhánh: `main` · HEAD: `9f6a46776a2f`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-27T03:09:49.510Z (UTC).
+- Nhánh: `main` · HEAD: `8fa048449d20`.
+- File thay đổi hiển thị: 6 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M game/web/scripts/hegemony-translation-overlay.test.ts
+ M game/web/src/engine/vietnamese.ts
+?? docs/translations/HEGEMONY_DESCRIPTION_DELTA_20261127.json
+?? docs/translations/tqsvn-quoc-chien-changelog.png
+?? game/web/src/engine/vietnameseHegemonyUpdates.ts
 ```
 
 Ba commit gần nhất:
 
 ```text
+8fa04844 Record verified production portrait release
 9f6a4677 Ship pinned Hegemony general portraits for web
 58f8cb5d Record verified Hegemony production release
-9e264e13 Fix Hegemony choice controls and public card logs
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

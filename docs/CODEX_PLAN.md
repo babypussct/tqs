@@ -1,5 +1,13 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony
+
+- [x] Đối chiếu snapshot 24/10, pin production và upstream master 19/11; lưu nguồn từng key, 41 sửa + 42 mới ở pin + 4 mới chỉ HEAD.
+- [x] Cập nhật 87 mô tả và tên liên quan, ưu tiên overlay cuối, giữ nguyên pin và queue lịch sử.
+- [x] Regression cấu trúc 2/2, Việt hóa 4/4, store 50/50, typecheck và diff check PASS.
+- [x] Build production đúng pin, typecheck:all và regression Việt hóa/store PASS.
+- [ ] Pages Direct Upload và production smoke; kiểm trực tiếp mô tả trong ván và rà mô tả động nếu cần.
+
 ## 27/11/2026 — Hình tướng Quốc Chiến
 
 - [x] Bổ sung 339 ảnh từ đúng pin Hegemony, kiểm coverage 346 ID (7 fallback), inventory 1915 ảnh và regression 23+4+3 PASS.
