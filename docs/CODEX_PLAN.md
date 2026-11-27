@@ -22,6 +22,7 @@
 - [x] Mở rộng runner Chrome và QA package cho hai nhánh Ký Ly ở cả hai ô. Lượt `--reconnect` ngắt tại choice và yêu cầu request mới sau snapshot. Contract/syntax và fixture PASS.
 - [x] Đóng QA live theo quyết định ngày 27/11/2026. Chuyển ma trận Chrome, reconnect/snapshot/observer, GameOver tự nhiên, OAuth và thiết bị thật sang người chơi thử nghiệm. Các ca live chưa chạy giữ trạng thái chưa xác minh.
 - [x] Rà inventory và source từng delta Core: 27 lịch sử + 5 mới (4 đã khớp production), 28 sửa/14 thêm thực tế so local; xác minh wiring 14 module và quyết định giữ legacy/v1.
+- [x] Commit/push `bccebd04`, phát hành web TQSVN `84ff9dd3` và smoke production PASS. Native/Card Wire v1 và Shop đối chiếu artifact đang phục vụ PASS.
 - [ ] Tiếp nhận phản hồi của người chơi thử nghiệm khi có. [Kế hoạch nghiệm thu](web-client/HEGEMONY_RUNTIME_PARITY_PLAN_20261127.md)
 
 ## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony

@@ -26,6 +26,9 @@
 - Mốc runner Ký Ly: `TQS_LIVE_HIDDEN_JILIX_BRANCH=effect|remove` chọn nhánh trong UI (mặc định remove). Hai bản QA package kiểm damaged count, đúng ô, ô còn lại ẩn và trạng thái kỹ năng, phát xác nhận branch/slot để Chrome đối chiếu trên cả hai socket. `--manual --reconnect` kích hoạt tại prompt Ký Ly, yêu cầu snapshot mới và chỉ dùng choice phát sau snapshot; kiểm DOM đối thủ không lộ card ID. QA contract 69/69, Lua 5.4 loadfile cả hai bản, TypeScript tools và fixture Chrome `--jilix` PASS. Chưa chạy ma trận live với QA package mới.
 - Quyết định 27/11: đóng mục QA live và chuyển kiểm tra trực tiếp cho người chơi thử nghiệm. Bằng chứng hiện có giữ nguyên phạm vi; các lượt live chưa chạy vẫn chưa xác minh. Kiểm tra phiên này PASS: typecheck:all, QA server contract 69/69, Lua 5.4 loadfile hai gói QA, Việt hóa 4/4, recovery 4/4, fixture Chrome Ký Ly 1/1, source probe local Ký Ly 10 ca và Thành Lược 11 ca sát thương cùng contract view-as. Chờ phản hồi để xử lý lỗi cụ thể. Chưa commit/push/deploy. [Kế hoạch](web-client/HEGEMONY_RUNTIME_PARITY_PLAN_20261127.md)
 
+- Phát hành theo yêu cầu 27/11: commit `bccebd04` push main. Build web production `975ce67c9881e73464d0a006e74077b374bbb5a4188e6a558c070f4dc57dfe06` PASS sau khi dùng checkout cô lập đúng 14 pin; lượt đầu dùng checkout mặc định sai pin, audit thiếu skill 203/78. Baseline audit 14 pin/14 native patches/1 source patch và 520 Lua Hegemony PASS.
+- Cloudflare Pages Production [84ff9dd3](https://84ff9dd3.tqsvn.pages.dev), upload Functions và 4 asset mới. Alias và URL deployment khớp byte HTML/version/JS/CSS/SW; gateway health, OAuth helper, API session chưa xác thực 401 và Chrome 390×844 (0 lỗi trang) PASS. Native Card Wire v1 manifest `2c4e29161bc0b2d37fdc3c0e67486745`, ZIP `d7492c8447d46062` (5.339 tệp) khớp SHA-256 trước phát hành. Lua gameplay trong delta local đã có trên production theo so sánh ZIP chuẩn hóa LF; hai ngoại lệ legacy `util.lua` và `remove_general.lua` giữ privacy/QML production riêng, không chép đè. Không có delta sản phẩm Shop hay gateway cần triển khai riêng. JS Shop đang phục vụ khớp SHA-256 baseline. Evidence `scratch/evidence/hegemony-parity-release-20261127/`. Gameplay live chờ người chơi thử nghiệm theo quyết định trên.
+
 ## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony
 
 - So sánh mô tả tiếng Trung trong snapshot Việt hóa `2a96c067` (24/10/2026), pin native `e8d93acd34a357f96b0105aef7d661708c211626` (26/10) và upstream master `097b6f20c3b78b9d89f708cee3637415c19c33c1` (19/11). Scan literal/concat colon-key Lua: 472 → 514 → 518 mô tả, 41 sửa, 42 thêm ở pin, 4 thêm ở HEAD, 0 xóa. Bản pin của delta đã đối chiếu ZIP production theo báo cáo kiểm tra trước trong phiên. Upstream sau pin chỉ 1 commit, đổi cách diễn đạt Vô Giải Quốc Chiến và thêm 4 kỹ năng OL; không đổi pin.
@@ -2879,90 +2882,20 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-27T06:32:34.971Z (UTC).
-- Nhánh: `main` · HEAD: `87c5e449b188`.
-- File thay đổi hiển thị: 129 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-27T06:40:02.558Z (UTC).
+- Nhánh: `main` · HEAD: `bccebd04ba0b`.
+- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
- M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
- M deploy/freekill-native/qa/tqs_qa/init.lua
- M deploy/freekill-native/qa/upstream-first-source.test.mjs
  M docs/CODEX_PLAN.md
- M game/web/scripts/check-upstream-baseline.mjs
- M game/web/scripts/hegemony-translation-overlay.test.ts
- M game/web/scripts/multiplayer-e2e/run.ts
- M game/web/scripts/real-lua-e2e/harness.tsx
- M game/web/scripts/real-lua-e2e/run.ts
- M game/web/src/engine/vietnameseHegemonyUpdates.ts
- M runtime/flist.txt
- M runtime/packages/freekill-core/ltk/core/events/usecard.lua
- M runtime/packages/hegemony/pkg/formation/skills/heyi.lua
- M runtime/packages/hegemony/pkg/formation/skills/tianfu.lua
- M runtime/packages/hegemony/pkg/hegemony_nos/init.lua
- M runtime/packages/hegemony/pkg/hegemony_nos/skills/heyi.lua
- M runtime/packages/hegemony/pkg/jin_jyzs/skills/xiejian.lua
- M runtime/packages/hegemony/pkg/jin_zqdl/skills/chujue.lua
- M runtime/packages/hegemony/pkg/jin_zqdl/skills/ciwei.lua
- M runtime/packages/hegemony/pkg/lord_cards/init.lua
- M runtime/packages/hegemony/pkg/lord_ex/init.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/aocai.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/bushi.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/chenglue.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/diaogui.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/duwu.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/fangyuan.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/fengshih.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/fengyang.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/jilix.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/jinfa.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/jinxian.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/juejue.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/liangfan.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/lianpian.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/midao.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/qiance.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/qingyin.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/qiuan.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/shicai.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/shilus.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/tongdu.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/tongling.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/tunjiang.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/wenji.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/xingzhao.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/xiongnve.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/xishe.lua
- M runtime/packages/hegemony/pkg/lord_ex/skills/zhidao.lua
- M runtime/packages/hegemony/pkg/m_lord_cards/init.lua
- M runtime/packages/hegemony/pkg/mobile_heg/init.lua
- M runtime/packages/hegemony/pkg/mobile_heg/skills/fengshi.lua
- M runtime/packages/hegemony/pkg/mobile_heg/skills/henge.lua
- M runtime/packages/hegemony/pkg/mobile_heg/skills/junwei.lua
- M runtime/packages/hegemony/pkg/momentum/skills/fengshi.lua
- M runtime/packages/hegemony/pkg/nine_variations/init.lua
- M runtime/packages/hegemony/pkg/nine_variations/skills/amiantus_robe.lua
- M runtime/packages/hegemony/pkg/overseas_heg/init.lua
- M runtime/packages/hegemony/pkg/power/skills/fengying.lua
- M runtime/packages/hegemony/pkg/power/skills/jianglue.lua
- M runtime/packages/hegemony/pkg/power/skills/keshou.lua
- M runtime/packages/hegemony/pkg/power/skills/tieqi.lua
- M runtime/packages/hegemony/pkg/standard/skills/jianchu.lua
- M runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua
- M runtime/packages/hegemony/pkg/standard/skills/tieqi.lua
- M runtime/packages/hegemony/pkg/standard_cards/skills/await_exhausted.lua
- M runtime/packages/hegemony/pkg/strategic_advantage/skills/burning_camps.lua
- M runtime/packages/hegemony/pkg/strategic_advantage/skills/halberd.lua
- D runtime/packages/hegemony/pkg/strategic_advantage/skills/halberd_active.lua
- M runtime/packages/hegemony/pkg/tenyear_heg/skills/zhente.lua
-... và 59 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+bccebd04 Synchronize Hegemony runtime and skill parity coverage
 87c5e449 Record verified Hegemony translation production release
 03e92397 Update Vietnamese Hegemony skill descriptions
-8fa04844 Record verified production portrait release
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
