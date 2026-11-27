@@ -9,6 +9,20 @@ export function isSessionRejection(status: ConnectionStatus, command: string, da
   return status.kind !== 'online' || data === 'others logged in again with this name';
 }
 
+export function isRecoverableTransportLoss(reason: string): boolean {
+  return /^closed \(\d+\)$/.test(reason) ||
+    /^backend error: /.test(reason) ||
+    ['backend closed', 'backend connection timeout', 'client transport error',
+      'connect timeout', 'recovery timeout'].includes(reason);
+}
+
+export function isRetryableSessionRefresh(error: unknown): boolean {
+  if (error instanceof TypeError) return true; // fetch rejected before receiving an HTTP response
+  if (!error || typeof error !== 'object') return false;
+  if ('name' in error && error.name === 'TimeoutError') return true;
+  return 'code' in error && ['auth/network-request-failed', 'GAME_AUTH_UNAVAILABLE'].includes(String(error.code));
+}
+
 export interface RecoveryClock {
   set(callback: () => void, delay: number): unknown;
   clear(handle: unknown): void;
@@ -25,7 +39,7 @@ export class SessionRecovery {
   private attempts = 0;
   constructor(private callbacks: {
     waiting(attempt: number): void;
-    connect(): void;
+    connect(isCurrent: () => boolean): void;
     timeout(): void;
     exhausted(): void;
   }, private clock: RecoveryClock = browserClock) {}
@@ -50,7 +64,7 @@ export class SessionRecovery {
         this.timer = undefined;
         if (revision === this.revision) this.callbacks.timeout();
       }, 90000);
-      this.callbacks.connect();
+      this.callbacks.connect(() => revision === this.revision);
     }, delay);
   }
   restored() { this.clear(); this.attempts = 0; }

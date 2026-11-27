@@ -1,4 +1,4 @@
-import { isSessionRejection, SessionRecovery } from './recovery';
+import { isRecoverableTransportLoss, isRetryableSessionRefresh, isSessionRejection, SessionRecovery } from './recovery';
 import { loadGatewayBundle, type LoadedBundle } from './bundle';
 import { GameConnection, webSocketOpener } from './connection';
 import { useGameStore } from '../store/gameStore';
@@ -119,8 +119,7 @@ export class GameAdapter {
           if (useGameStore.getState().phase === 'lobby') this.refreshRooms();
         }
         if (status.kind === 'closed') {
-          const transportLoss = /^(closed \(\d+\)|backend closed|backend error|connect timeout|recovery timeout)/.test(status.reason);
-          if (hadOnline && !serverRejected && transportLoss) recovery.lost();
+          if (hadOnline && !serverRejected && isRecoverableTransportLoss(status.reason)) recovery.lost();
           else endSession(status.reason);
         }
       },
@@ -141,9 +140,12 @@ export class GameAdapter {
         useGameStore.getState().update({ progress: `Mất kết nối. Đang thử khôi phục phiên (${attempt}/5)…`,
           pendingRequest: null, skillInvoke: null, fakeSkills: [], regularSkills: [], initialGeneral: null, gameplay: emptyGameplay(), board: emptyBoard() });
       },
-      connect: () => {
+      connect: (isCurrent) => {
         if (generation !== this.generation) return;
-        void this.refreshSessionBeforeReconnect(connection, generation, endSession);
+        void this.refreshSessionBeforeReconnect(connection, generation, isCurrent, (error) => {
+          if (isRetryableSessionRefresh(error)) recovery.lost();
+          else endSession(error);
+        });
       },
       timeout: () => { if (generation === this.generation) connection.abortTransport('recovery timeout'); },
       exhausted: () => { if (generation === this.generation) endSession('Không thể khôi phục sau 5 lần thử. Hãy kiểm tra mạng và đăng nhập lại.'); },
@@ -160,17 +162,18 @@ export class GameAdapter {
     }
   }
 
-  private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number, endSession: (reason: unknown) => void) {
+  private async refreshSessionBeforeReconnect(connection: GameConnection, generation: number,
+    isCurrent: () => boolean, refreshFailed: (reason: unknown) => void) {
+    const active = () => isCurrent() && generation === this.generation && this.connection === connection;
     try {
       const { createGameSessionForCurrentUser } = await import('../gameAuth');
       const session = await createGameSessionForCurrentUser();
-      if (generation !== this.generation || this.connection !== connection) return;
+      if (!active()) return;
       this.gameSession = session;
       connection.updateCredentials(session.nativeName, session.ticket);
       connection.connect();
     } catch (error) {
-      if (generation !== this.generation || this.connection !== connection) return;
-      endSession(error);
+      if (active()) refreshFailed(error);
     }
   }
 

@@ -1442,7 +1442,7 @@ try {
     }],
     ['Companion virtual Peach remains usable to rescue another player in battle royal', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginRescue('companion'));
-      await p.getByRole('button', { name: 'Châu Liên Bích Hợp', exact: true }).click();
+      await p.getByRole('button', { name: 'Châu liên hợp bích', exact: true }).click();
       assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.rescueTargets()), [-1]);
       await p.getByRole('button', { name: 'Xác nhận', exact: true }).click();
       await reply(p);

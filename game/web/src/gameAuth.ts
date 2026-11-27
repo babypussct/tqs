@@ -151,6 +151,7 @@ async function requestGameSession(user: User): Promise<GameSession> {
     method: 'POST',
     headers: { Authorization: `Bearer ${idToken}`, Accept: 'application/json' },
     cache: 'no-store',
+    signal: AbortSignal.timeout(15000),
   });
   const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok || payload.success !== true) {
