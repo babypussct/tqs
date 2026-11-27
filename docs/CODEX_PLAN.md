@@ -6,7 +6,7 @@
 - [x] Candidate native/gateway ba client PASS cả bốn ca, Chrome/Wasmoon PASS hai lựa chọn và nhật ký tiếng Việt.
 - [x] Khi hết giờ xác nhận nhóm, chọn ngẫu nhiên, ghi log và kết toán sát thương. Native/gateway và Chrome/Wasmoon PASS trên candidate cập nhật.
 - [x] Hiển thị nhãn nhóm, viền xem trước, nhóm rỗng và thông báo khi đã chốt trên bàn chơi. Chrome/Wasmoon và native/gateway candidate PASS.
-- [ ] Phát hành web/native và đối chiếu artifact đang phục vụ.
+- [x] Phát hành web/native và đối chiếu artifact đang phục vụ. Source `43485e68`, Pages `bd8ffaf1`, native `1ca429fa`, production smoke PASS.
 - [ ] Đối chiếu sự cố vừa vào trận với mốc giờ hoặc phòng khi có thêm thông tin.
 
 ## 27/11/2026 — Đồng bộ Thành Lược và kiểm tra lệch luật Quốc Chiến
