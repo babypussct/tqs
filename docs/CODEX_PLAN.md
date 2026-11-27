@@ -1,5 +1,13 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 28/11/2026 — Mất kết nối sau chốt tướng
+
+- [x] Đối chiếu hai lần ngắt production với mốc Card Wire v1, reconnect và GameOver. Xác minh tab Chrome QA vào lại được ván bảy ghế đang chạy.
+- [x] Đối chứng Chrome/Wasmoon → gateway → native macOS cô lập, manifest Lua production, chọn tướng và nhận bài đầu trong ba ván bảy ghế. Hai lượt cuối xác minh v1 và giữ kết nối sau chia bài.
+- [x] Tái hiện đường bị đưa về đăng nhập khi gateway đóng mã 1000 với reason `client transport error`. Hotfix giữ nguyên ván khi lần làm mới vé đầu tiên cũng lỗi. Candidate và control xác minh qua Chrome thật và native cô lập.
+- [x] Phát hành Pages `83d9037b`, kiểm hash artifact production và xác minh Chrome đã đăng nhập tạo phòng, chọn tướng, nhận bài, vào lượt, nhận GameOver và về sảnh trên alias production.
+- [ ] Nếu lỗi tái diễn, đối chiếu mã/lý do đóng WebSocket và tên lệnh cuối qua đường production để xác định nguyên nhân ngắt ban đầu.
+
 ## 27/11/2026 — Liêu Dã của Giả Nam Phong (Dã)
 
 - [x] Tái hiện thiếu reply trong Lua và nút chọn nhóm trên Chrome/Wasmoon. Thêm log danh sách và nhóm đã xác nhận, bảo toàn cách chia nhóm chịu sát thương.

@@ -1,5 +1,19 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 28/11/2026 — Mất kết nối ngay sau chốt tướng Quốc Chiến
+
+- Log native production xác nhận cùng một tài khoản mất kết nối trong hai ván. Theo giờ Việt Nam, bản `2c4e29161bc0b2d37fdc3c0e67486745` ngày 27/11 xác nhận Card Wire v1 lúc 14:13:14.914, ngắt lúc 14:13:15.254, reconnect 14:13:24.555, GameOver 14:20:29.498. Bản `1ca429fa86f33efeb465579440d0a12c` ngày 28/11 xác nhận v1 lúc 00:14:15.021, ngắt lúc 00:14:15.353, reconnect 00:14:21.941, GameOver 00:20:22.360. Native chỉ ghi `Disconnected`, không thấy traceback ở hai mốc, gateway/tunnel journal không có dòng tương ứng và kernel không có OOM/segfault trong lượt kiểm. Mốc trùng nhau xác định cửa sổ cần tái hiện, chưa xác định ai đóng WebSocket hay lệnh client cuối.
+- Chrome trên tab QA đang mở hiển thị yêu cầu cập nhật giao diện từ `975ce67c9881` lên `9ec6226525f2`. Bấm cập nhật rồi dùng phiên đã đăng nhập, vào lại đúng ván bảy ghế đang chạy. Đây là lần kiểm khả năng vào lại. Update coordinator hoãn reload khi đã nhận StartGame và 14/14 test update PASS. Chưa có bằng chứng hộp cập nhật gây lần ngắt.
+- Chrome/Wasmoon qua gateway loopback và native macOS cô lập, DB mới, cùng manifest Lua production `1ca429fa86f33efeb465579440d0a12c`. Ba ván bảy ghế chọn cặp hợp lệ và nhận MoveCards, 0 lỗi Lua/worker; hai lượt sau xác minh Card Wire v1, bốn lá đầu tay và còn online sau 6 giây. Native exit 0 và cleanup PASS. Chạy qua GameConnection với cặp hợp lệ từ offer ngẫu nhiên, dùng gateway local và binary macOS `aa70bc94…`. Evidence đã lọc tại `scratch/evidence/entry-disconnect-20261128/`. Unit connection 34/34, messages 6/6, gameplay 16/16 PASS.
+- Chrome React/Wasmoon trên Lua snapshot phát hành đạt 73/74. Ca thất bại Battle Royal tìm nút theo tên dịch cũ `Châu Liên Bích Hợp`; lúc timeout client vẫn online và 0 lỗi Lua. Chạy lại nhóm Battle Royal với bản sao tạm chỉ đổi selector sang tên hiện tại `Châu liên hợp bích` đạt 4/4. Bước còn mở là tái hiện có quan sát mã đóng WebSocket, giai đoạn vào trận và tên lệnh dispatch thất bại nếu có, qua chính đường production và thiết bị xảy ra lỗi. Evidence chỉ chứa metadata đã lọc. Lượt điều tra chỉ cập nhật tài liệu bàn giao và kế hoạch.
+
+
+- Phát hành hotfix web `e21fe35a` trên `main`: nhận diện đóng socket do gateway báo lỗi vận chuyển, tự thử lại bước lấy vé khi mạng/đầu API lỗi tạm thời, giới hạn thời gian fetch vé 15 giây và loại phản hồi đến sau khi lượt thử đã hết hạn. Native kiểm vé như cũ. Lỗi từ chối tài khoản và lỗi Lua vẫn kết thúc phiên.
+- Đối chứng Chrome 390×844 → loopback gateway → native macOS, cùng Lua manifest production. Khi đóng WebSocket mã 1000 với reason `client transport error` ngay sau xác nhận tướng, build cũ `9ec6226525f2` về đăng nhập, một socket, native ghi 0 reconnect. Build mới chịu thêm một lỗi làm mới vé được mô phỏng, mở đúng một socket mới, native ghi một reconnect trong đúng một GameStart và browser khôi phục bài trên tay, 0 page/worker errors. Tệp `recovery-candidate-compare.log`, `recovery-baseline-final.log` trong `scratch/evidence/entry-recovery-release-20261128/`. Đây là nguyên nhân tái hiện được của đường thoát về đăng nhập. Hai sự cố cũ thiếu mã đóng socket để đối chiếu trực tiếp.
+- `typecheck:all`, recovery 7/7, connection 34/34, messages 6/6, system-updates 14/14, build-safety 8/8, pipelines 14/14 và Chrome/Lua 74/74 PASS. Selector của test Battle Royal dùng tên dịch hiện hành. Phạm vi thay đổi game web.
+- Pages production [83d9037b](https://83d9037b.tqsvn.pages.dev), build `39988cc22971`. Alias production và URL deployment khớp SHA-256 của HTML, version, JS, CSS và service worker. Manifest `1ca429fa86f33efeb465579440d0a12c`, bundle `ed06e4be7cab441d`, 5.339 tệp, SHA-256 ZIP `061072bf22545bac634789afb3fbeda89005f6c258908bd1e6e469edb1dd65cc` khớp lần phát hành trước. Production alias WSS 101 + native challenge, gateway health, OAuth helper và API thiếu xác thực 401 PASS. WSS khi dùng Origin của URL deployment trả 502, smoke trận chỉ tính cho alias production. Shop tiếp tục phục vụ cùng JS SHA-256 `eccda8d00d5e9e7e0131d15891fce28e5f3c2a0f4433b63fa8cd71706dd85c32`.
+- Public OAuth CLI qua hồ sơ riêng dừng trước login game với `oauth_lobby_timeout`, bước Google `identifier`. Chrome tab đã đăng nhập thực tế: cập nhật bản mới, vào sảnh, tạo phòng bốn ghế, thêm ba bot, xác nhận cặp tướng, tay bài 4 lá, xử lý yêu cầu đầu lượt và bật native Trust PASS. Native ghi GameStart lúc 00:43:37, xác nhận Card Wire v1 lúc 00:43:58, GameOver lúc 00:45:39 giờ Việt Nam. Chrome hiển thị kết quả và nút Về sảnh trả về danh sách phòng. Native và gateway vẫn active cùng mốc khởi động như trước deploy, NRestarts=0.
+
 ## 27/11/2026 — Liêu Dã của Giả Nam Phong (Dã)
 
 - Đã đối chiếu Lua của production đang chạy với ZIP production và tái hiện lỗi `dat == nil` khi bước chọn nhóm không nhận được reply. Chrome/Wasmoon với Card Wire v1 cũng tái hiện nút chọn cũ không gửi reply sau khi Lua phát lại scene. Log native và console production đã lọc không có trace gắn với lần người chơi bị văng lúc vào trận.
@@ -2893,8 +2907,8 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-27T17:02:45.314Z (UTC).
-- Nhánh: `main` · HEAD: `43485e68e11e`.
+- Ghi lúc: 2026-11-27T17:46:20.220Z (UTC).
+- Nhánh: `main` · HEAD: `e21fe35a4e1c`.
 - File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
@@ -2904,9 +2918,9 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 Ba commit gần nhất:
 
 ```text
+e21fe35a Resume Hegemony after transient startup disconnects
+e3212d24 Record verified Liaoye production release
 43485e68 Show Liaoye target groups and resolve timeouts
-41d4cf8a Record verified Hegemony parity release
-bccebd04 Synchronize Hegemony runtime and skill parity coverage
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.
