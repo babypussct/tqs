@@ -26,7 +26,6 @@ xiahouyuan:addCompanions{"hs__xiahoudun", "m_heg__xiahoudun"}
 Fk:loadTranslationTable{
   ["m_heg__xiahouyuan"] = "夏侯渊",
   ["#m_heg__xiahouyuan"] = "疾行的猎豹",
-  ["illustrator:m_heg__xiahouyuan"] = "KayaK",
 
   ["~m_heg__xiahouyuan"] = "竟然比我还……快……",
 }
@@ -35,7 +34,7 @@ General:new(extension, "m_heg__dianwei", "wei", 4):addSkills{ "m_heg__qiangxi" }
 Fk:loadTranslationTable{
   ["m_heg__dianwei"] = "典韦",
   ["#m_heg__dianwei"] = "古之恶来",
-  --["illustrator:m_heg__dianwei"] = "",
+  ["illustrator:m_heg__dianwei"] = "凝聚永恒",
 
   ["~m_heg__dianwei"] = "主公，快走！",
 }
@@ -130,7 +129,7 @@ jiangqin:addCompanions("hs__zhoutai")
 Fk:loadTranslationTable{
   ["m_heg__jiangqin"] = "蒋钦",
   ["#m_heg__jiangqin"] = "祁奚之器",
-  ["illustrator:m_heg__jiangqin"] = "天空之城",
+  ["illustrator:m_heg__jiangqin"] = "铁杵文化",
 
   ["~m_heg__jiangqin"] = "竟破我阵法…",
 }
@@ -144,21 +143,27 @@ Fk:loadTranslationTable{
   ["~m_heg__zhangren"] = "本将军败于诸葛，无憾……",
 }
 
---General:new(extension, "m_heg__xushu", "shu", 3):addSkills{ "m_heg__zhuhai", "m_heg__jiancai" }
+local xushu = General:new(extension, "m_heg__xushu", "shu", 4)
+xushu.deputyMaxHpAdjustedValue = -1
+xushu:addCompanions{ "hs__zhaoyun", "hs__wolong" }
+xushu:addSkills{ "m_heg__zhuhai", "m_heg__jiancai" }
 Fk:loadTranslationTable{
   ["m_heg__xushu"] = "徐庶",
   ["#m_heg__xushu"] = "智勇侠义",
   ["illustrator:m_heg__xushu"] = "",
 
-  ["~m_heg__xushu"] = "",
-  ["m_heg__zhuhai"] = "诛害",
-  [":m_heg__zhuhai"] = "其他角色的结束阶段，若该角色于此回合内造成过伤害，你可以对其使用一张无距离限制的【杀】。"..
-  "若其本回合对与你势力相同的角色造成过伤害，则你以此法使用【杀】无视其防具，且其使用【闪】响应此【杀】后，其须弃置一张牌。",
-  ["m_heg__jiancai"] = "荐才",
-  [":m_heg__jiancai"] = "副将技，此武将牌上单独的阴阳鱼个数-1。"..
-  "此武将明置时或每轮游戏开始时，你一共获知X名未登场的同势力武将（X为当前轮数×3，不足则补齐）。"..
-  "与你势力相同的角色受到致命伤害时，你可以防止此伤害，若如此做，你须变更副将；"..
-  "若你所属的势力为小势力或非唯一大势力，则此次变更副将你可优先从你获知的武将中选择。",
+  ["~m_heg__xushu"] = "未尽孝道，抱憾此生。",
+}
+
+local pengyang = General:new(extension, "m_heg__pengyang", "shu", 3)
+pengyang.subkingdom = "qun"
+pengyang:addSkills{ "m_heg__daming", "m_heg__xiaoni" }
+Fk:loadTranslationTable{
+  ["m_heg__pengyang"] = "彭羕",
+  ["#m_heg__pengyang"] = "误身的狂士",
+  ["illustrator:m_heg__pengyang"] = "铁杵文化",
+
+  ["~m_heg__pengyang"] = "招祸自咎，无不自己……",
 }
 
 General:new(extension, "m_heg__duyu", "qun", 4):addSkills{ "m_heg__wuku", "m_heg__miewu" }
@@ -246,7 +251,7 @@ lordcaocao:addCompanionRule(function(self, other)
 end)
 Fk:loadTranslationTable{
   ["m_heg__lordcaocao"] = "君曹操",
-  ["#m_heg__lordcaocao"] = "凤舞九霄",
+  --["#m_heg__lordcaocao"] = "",
   ["illustrator:m_heg__lordcaocao"] = "云涯",
 
   ["$m_heg__junwei_m_heg__lordcaocao1"] = "孤代天子举兵，所伐俱是乱臣！",
@@ -265,7 +270,7 @@ lordliubei:addCompanionRule(function(self, other)
 end)
 Fk:loadTranslationTable{
   ["m_heg__lordliubei"] = "君刘备",
-  ["#m_heg__lordliubei"] = "龙横蜀汉",
+  --["#m_heg__lordliubei"] = "",
   --["illustrator:m_heg__lordliubei"] = "",
 
   ["$m_heg__junwei_m_heg__lordliubei1"] = "登台受禅，恭承天祚；兹是建国，其名为汉！",
@@ -284,7 +289,7 @@ lordsunquan:addCompanionRule(function(self, other)
 end)
 Fk:loadTranslationTable{
   ["m_heg__lordsunquan"] = "君孙权",
-  ["#m_heg__lordsunquan"] = "虎踞江东",
+  --["#m_heg__lordsunquan"] = "",
   --["illustrator:m_heg__lordsunquan"] = "",
 
   ["$m_heg__junwei_m_heg__lordsunquan1"] = "坐断东南地，威名四海扬！",
@@ -303,13 +308,89 @@ lordyuanshao:addCompanionRule(function(self, other)
 end)
 Fk:loadTranslationTable{
   ["m_heg__lordyuanshao"] = "君袁绍",
-  ["#m_heg__lordyuanshao"] = "号令天下",
+  --["#m_heg__lordyuanshao"] = "",
   --["illustrator:m_heg__lordyuanshao"] = "",
 
   ["$m_heg__junwei_m_heg__lordyuanshao1"] = "吾名已满天下，今即试锋之时！",
   ["$m_heg__junwei_m_heg__lordyuanshao2"] = "天下风云之士，何不聚此讨贼？！",
   ["!m_heg__lordyuanshao"] = "汝剑利，吾剑亦未尝不利也！",
   ["~m_heg__lordyuanshao"] = "官渡虽败，我亦不会……输……",
+}
+
+local lordcaopi = General:new(extension, "m_heg__lordcaopi", "wei", 4)
+lordcaopi.heg_lord = "hs__caopi"
+lordcaopi.hidden = true
+lordcaopi:addSkills{ "m_heg__poweic", "m_heg__pinzheng", "m_heg__junwei" }
+lordcaopi:addCompanions{ "wei_generals" }
+lordcaopi:addCompanionRule(function(self, other)
+  return other:hasKingdom("wei")
+end)
+Fk:loadTranslationTable{
+  ["m_heg__lordcaopi"] = "君曹丕",
+  --["#m_heg__lordcaopi"] = "",
+  --["illustrator:m_heg__lordcaopi"] = "",
+
+  ["$m_heg__junwei_m_heg__lordcaopi1"] = "大魏新朝既起，天下当颂朕威！",
+  ["$m_heg__junwei_m_heg__lordcaopi2"] = "朕为天下之尊，四海自当缄口。",
+  ["!m_heg__lordcaopi"] = "天命加之在魏，朕为大魏始皇！",
+  ["~m_heg__lordcaopi"] = "生已尽时，死当尽哀。",
+}
+
+local lordliushan = General:new(extension, "m_heg__lordliushan", "shu", 4)
+lordliushan.heg_lord = "hs__liushan"
+lordliushan.hidden = true
+lordliushan:addSkills{ "m_heg__huihong", "m_heg__xingshi", "m_heg__junwei" }
+lordliushan:addCompanions{ "shu_generals" }
+lordliushan:addCompanionRule(function(self, other)
+  return other:hasKingdom("shu")
+end)
+Fk:loadTranslationTable{
+  ["m_heg__lordliushan"] = "君刘禅",
+  --["#m_heg__lordliushan"] = "",
+  --["illustrator:m_heg__lordliushan"] = "",
+
+  ["$m_heg__junwei_m_heg__lordliushan1"] = "即刻出兵，兴复汉室！",
+  ["$m_heg__junwei_m_heg__lordliushan2"] = "亲贤臣，远小人，此先汉所以兴隆也。",
+  ["!m_heg__lordliushan"] = "汉道持恒不改，朕亦为中兴之主。",
+  ["~m_heg__lordliushan"] = "大争之世，不容仁主啊！",
+}
+
+local lordsunce = General:new(extension, "m_heg__lordsunce", "wu", 4)
+lordsunce.heg_lord = "ld__sunce"
+lordsunce.hidden = true
+lordsunce:addSkills{ "m_heg__saokou", "m_heg__bawei", "m_heg__junwei" }
+lordsunce:addCompanions{ "wu_generals" }
+lordsunce:addCompanionRule(function(self, other)
+  return other:hasKingdom("wu")
+end)
+Fk:loadTranslationTable{
+  ["m_heg__lordsunce"] = "君孙策",
+  --["#m_heg__lordsunce"] = "",
+  --["illustrator:m_heg__lordsunce"] = "",
+
+  ["$m_heg__junwei_m_heg__lordsunce1"] = "江东儿郎，且随我闯出一片天地！",
+  ["$m_heg__junwei_m_heg__lordsunce2"] = "威震三江，我武为极！",
+  ["!m_heg__lordsunce"] = "一统何须经略，以武亦能定国！",
+  ["~m_heg__lordsunce"] = "天下英雄从无对手，奈何今日死于小人……",
+}
+
+local lorddongzhuo = General:new(extension, "m_heg__lorddongzhuo", "qun", 4)
+lorddongzhuo.heg_lord = "ld__dongzhuo"
+lorddongzhuo.hidden = true
+lorddongzhuo:addSkills{ "m_heg__baowei", "m_heg__siling", "m_heg__junwei" }
+lorddongzhuo:addCompanions{ "qun_generals" }
+lorddongzhuo:addCompanionRule(function(self, other)
+  return other:hasKingdom("qun")
+end)
+Fk:loadTranslationTable{
+  ["m_heg__lorddongzhuo"] = "君董卓",
+  --["#m_heg__lorddongzhuo"] = "",
+  --["illustrator:m_heg__lorddongzhuo"] = "",
+
+  ["$m_heg__junwei_m_heg__lorddongzhuo1"] = "进京讨贼？老夫必大有可为，哈哈哈哈！",
+  ["$m_heg__junwei_m_heg__lorddongzhuo2"] = "非霸王不能配此刀，非老夫不能镇天下！",
+  ["!m_heg__lorddongzhuo"] = "天下尽在老夫之手，远胜尔等诸侯腐儒！",
+  ["~m_heg__lorddongzhuo"] = "尔等畏我，尔等恨我，尔等同我！",
 }
 
 return extension

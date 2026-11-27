@@ -70,11 +70,76 @@ Fk:loadTranslationTable{
   ["#grand_ensign-invoke"] = "盟军大纛：你可以弃置两张牌，防止你受到的伤害",
 }
 
+local zhenchaoyazi = fk.CreateCard{
+  name = "&zhenchaoyazi",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#zhenchaoyazi_skill",
+}
+extension:addCardSpec("zhenchaoyazi", Card.Diamond, 13)
+Fk:loadTranslationTable{
+  ["zhenchaoyazi"] = "镇朝睚眦",
+  [":zhenchaoyazi"] = "装备牌·宝物<br/>"..
+  "<b>宝物技能</b>：锁定技，你成为【杀】的目标后，若使用者的武将牌状态与你不同，其弃置一张牌。",
+  ["#zhenchaoyazi_skill"] = "镇朝睚眦",
+}
+
+local chushibiao = fk.CreateCard{
+  name = "&chushibiao",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#chushibiao_skill",
+}
+extension:addCardSpec("chushibiao", Card.Heart, 2)
+Fk:loadTranslationTable{
+  ["chushibiao"] = "出师表",
+  [":chushibiao"] = "装备牌·宝物<br/>"..
+  "<b>宝物技能</b>：准备阶段，你获得一张残留的锦囊牌。",
+  ["#chushibiao_skill"] = "出师表",
+}
+
+local dragon_nunchaku = fk.CreateCard{
+  name = "&dragon_nunchaku",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 2,
+  equip_skill = "#dragon_nunchaku_skill",
+}
+extension:addCardSpec("dragon_nunchaku", Card.Club, 6)
+Fk:loadTranslationTable{
+  ["dragon_nunchaku"] = "盘龙双震",
+  [":dragon_nunchaku"] = "装备牌·武器<br/>"..
+  "<b>攻击范围</b>：2<br/>"..
+  "<b>武器技能</b>：锁定技，你使用的【杀】结算后，若此【杀】的最后一个目标响应过此【杀】，则你对此【杀】的第一个目标造成1点伤害。",
+  ["#dragon_nunchaku_skill"] = "盘龙双震",
+}
+
+local bawang_blade = fk.CreateCard{
+  name = "&bawang_blade",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 2,
+  equip_skill = "#bawang_blade_skill",
+}
+extension:addCardSpec("bawang_blade", Card.Diamond, 1)
+Fk:loadTranslationTable{
+  ["bawang_blade"] = "霸王凶刃",
+  [":bawang_blade"] = "装备牌·武器<br/>"..
+  "<b>攻击范围</b>：2<br/>"..
+  "<b>武器技能</b>：锁定技，你对其他角色造成伤害后，废除其一个装备栏直到其下个回合开始。",
+  ["#bawang_blade_skill"] = "霸王凶刃",
+  ["#bawang_blade-abort"] = "霸王凶刃：废除 %dest 一个装备栏",
+}
+
 extension:loadCardSkels{
   liulongcanjia,
   dragon_phoenix,
   luminous_pearl,
   grand_ensign,
+  zhenchaoyazi,
+  chushibiao,
+  dragon_nunchaku,
+  bawang_blade,
 }
 
 return extension

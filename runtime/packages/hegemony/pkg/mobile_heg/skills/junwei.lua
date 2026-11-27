@@ -8,9 +8,6 @@ Fk:loadTranslationTable{
   [":m_heg__junwei"] = "出牌阶段，若场上没有你的专属装备，你可以弃置一张牌，从场外使用你的专属装备。你死亡时，同势力角色各失去1点体力。",
 
   ["#m_heg__junwei"] = "君威：弃置一张牌，使用【%arg】",
-
-  ["$m_heg__junwei1"] = "",
-  ["$m_heg__junwei2"] = "",
 }
 
 local H = require "packages.hegemony.util"
@@ -20,6 +17,10 @@ local mapper = {
   m_heg__lordliubei = { "mobile__dragon_phoenix", Card.Spade, 2 },
   m_heg__lordsunquan = { "mobile__luminous_pearl", Card.Diamond, 6 },
   m_heg__lordyuanshao = { "grand_ensign", Card.Heart, 3 },
+  m_heg__lordcaopi = { "zhenchaoyazi", Card.Diamond, 13 },
+  m_heg__lordliushan = { "chushibiao", Card.Heart, 2 },
+  m_heg__lordsunce = { "dragon_nunchaku", Card.Club, 6 },
+  m_heg__lorddongzhuo = { "bawang_blade", Card.Diamond, 1 },
 }
 
 junwei:addEffect("active", {

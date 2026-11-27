@@ -60,7 +60,7 @@ xishe:addEffect(fk.Death, {
   end,
 })
 
-xishe:addEffect(fk.TargetSpecified, {
+xishe:addEffect(fk.CardUsing, {
   anim_type = "offensive",
   mute = true,
   is_delay_effect = true,
@@ -69,9 +69,11 @@ xishe:addEffect(fk.TargetSpecified, {
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local targets = table.filter(data:getAllTargets(), function(p) return p.hp < player.hp end)
-    data.use.disresponsiveList = data.use.disresponsiveList or {}
-    table.insertTable(data.use.disresponsiveList, targets)
+    for _, p in ipairs(data.tos) do
+      if p.hp < player.hp then
+        data:setDisresponsive(p)
+      end
+    end
   end,
 })
 

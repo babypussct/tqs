@@ -107,6 +107,26 @@ function RespondCardData:setNullified()
   }
 end
 
+--- 令角色不可响应此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可响应此牌的角色（表），不填则所有角色不可响应
+function UseCardData:setDisresponsive(target)
+  target = target or Fk:currentRoom().players
+  if (not target[1]) and target.class then target = { target } end
+  if #target == 0 then return end
+  self.disresponsiveList = self.disresponsiveList or {}
+  table.insertTableIfNeed(self.disresponsiveList, target)
+end
+
+--- 令角色不可抵消此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可抵消此牌的角色（表），不填则所有角色不可抵消
+function UseCardData:setUnoffsetable(target)
+  target = target or Fk:currentRoom().players
+  if (not target[1]) and target.class then target = { target } end
+  if #target == 0 then return end
+  self.unoffsetableList = self.unoffsetableList or {}
+  table.insertTableIfNeed(self.unoffsetableList, target)
+end
+
 ---@return ServerPlayer[]
 function UseCardData:getAllTargets()
   return table.simpleClone(self.tos)
@@ -610,27 +630,27 @@ function AimData:isNullified()
   return self.nullified or (self.to and table.contains((self.use.nullifiedTargets or Util.DummyTable), self.to))
 end
 
---- 令一名角色不可响应此牌
----@param target? ServerPlayer|ServerPlayer[]
+--- 令角色不可响应此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可响应此牌的角色（表），不填则所有角色不可响应
 function AimData:setDisresponsive(target)
-  target = target or { self.to }
+  target = target or Fk:currentRoom().players
   if (not target[1]) and target.class then target = { target } end
   if #target == 0 then return end
   self.use.disresponsiveList = self.use.disresponsiveList or {}
   table.insertTableIfNeed(self.use.disresponsiveList, target)
 end
 
---- 令一名角色不可抵消此牌
----@param target? ServerPlayer|ServerPlayer[]
+--- 令角色不可抵消此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可抵消此牌的角色（表），不填则所有角色不可抵消
 function AimData:setUnoffsetable(target)
-  target = target or { self.to }
+  target = target or Fk:currentRoom().players
   if (not target[1]) and target.class then target = { target } end
   if #target == 0 then return end
   self.use.unoffsetableList = self.use.unoffsetableList or {}
   table.insertTableIfNeed(self.use.unoffsetableList, target)
 end
 
---- 令此牌对一名角色无效
+--- 令此牌对角色无效
 ---@param target? ServerPlayer|ServerPlayer[]
 function AimData:setNullified(target)
   target = target or { self.to }
@@ -778,10 +798,10 @@ function CardEffectData:isNullified()
   return self.nullified or (self.to and self.use ~= nil and table.contains((self.use.nullifiedTargets or Util.DummyTable), self.to))
 end
 
---- 令一名角色不可响应此牌
----@param target? ServerPlayer|ServerPlayer[]
+--- 令角色不可响应此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可响应此牌的角色（表），不填则所有角色不可响应
 function CardEffectData:setDisresponsive(target)
-  target = target or { self.to }
+  target = target or Fk:currentRoom().players
   if (not target[1]) and target.class then target = { target } end
   if #target == 0 then return end
   if self.use ~= nil then
@@ -793,10 +813,10 @@ function CardEffectData:setDisresponsive(target)
   end
 end
 
---- 令一名角色不可抵消此牌
----@param target? ServerPlayer|ServerPlayer[]
+--- 令角色不可抵消此牌
+---@param target? ServerPlayer|ServerPlayer[] 不可抵消此牌的角色（表），不填则所有角色不可抵消
 function CardEffectData:setUnoffsetable(target)
-  target = target or { self.to }
+  target = target or Fk:currentRoom().players
   if (not target[1]) and target.class then target = { target } end
   if #target == 0 then return end
   if self.use ~= nil then

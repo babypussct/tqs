@@ -25,12 +25,11 @@ chujue:addEffect(fk.PreCardUse, {
   end,
   on_use = function(self, event, target, player, data)
     data.extraUse = true
-    data.disresponsiveList = data.disresponsiveList or {}
     for _, p in ipairs(player.room.alive_players) do
       if table.find(player.room.players, function (q)
           return q.dead and H.compareKingdomWith(p, q, false)
         end) then
-        table.insertIfNeed(data.disresponsiveList, p)
+        data:setDisresponsive(p)
       end
     end
   end,

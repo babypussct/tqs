@@ -83,8 +83,7 @@ Fk:loadTranslationTable{
   ["ld__yanbaihu"] = "严白虎",
   ["yanbaihu"] = "严白虎",
   ["#ld__yanbaihu"] = "豺牙落涧",
-  ["designer:ld__yanbaihu"] = "逍遥鱼叔",
-  ["illustrator:ld__yanbaihu"] = "",
+  ["illustrator:ld__yanbaihu"] = "YanBai",
 
   ["~ld__yanbaihu"] = "江东，有我…一半…",
 }
@@ -107,7 +106,6 @@ Fk:loadTranslationTable{
   ["ld__mengda"] = "孟达",
   ["mengda"] = "孟达",
   ["#ld__mengda"] = "怠军反复",
-  ["designer:ld__mengda"] = "韩旭",
   ["illustrator:ld__mengda"] = "张帅",
 
   ["~ld__mengda"] = "吾一生寡信，今报应果然来矣…",
@@ -125,9 +123,9 @@ Fk:loadTranslationTable{
   ["~ld__zhanglu"] = "唉，义不敌武，道难御兵……",
 }
 
-local qtc = General:new(extension, "ld__mifangfushiren", "shu", 4)
-qtc.subkingdom = "wu"
-qtc:addSkills{ "ld__fengshih" }
+local mifangfushiren = General:new(extension, "ld__mifangfushiren", "shu", 4)
+mifangfushiren.subkingdom = "wu"
+mifangfushiren:addSkills{ "ld__fengshih" }
 Fk:loadTranslationTable{
   ["ld__mifangfushiren"] = "糜芳傅士仁",
   ["mifangfushiren"] = "糜芳傅士仁",
@@ -158,7 +156,6 @@ Fk:loadTranslationTable{
   ["ld__liuqi"] = "刘琦",
   ["liuqi"] = "刘琦",
   ["#ld__liuqi"] = "居外而安",
-  ["designer:ld__liuqi"] = "荼蘼（韩旭）",
   ["illustrator:ld__liuqi"] = "绘聚艺堂",
 
   ["~ld__liuqi"] = "父亲，孩儿来，见你了。",
@@ -171,7 +168,6 @@ Fk:loadTranslationTable{
   ["ld__tangzi"] = "唐咨",
   ["tangzi"] = "唐咨",
   ["#ld__tangzi"] = "得时识风",
-  ["designer:ld__tangzi"] = "荼蘼（韩旭）",
   ["illustrator:ld__tangzi"] = "凝聚永恒",
 
   ["~ld__tangzi"] = "偷工减料，要不得啊…",
@@ -212,12 +208,11 @@ Fk:loadTranslationTable{
   ["wenqin"] = "文钦",
   ["#ld__wenqin"] = "勇而无算",
   ["illustrator:ld__wenqin"] = "匠人绘-零二",
-  ["designer:ld__wenqin"] = "逍遥鱼叔",
 
   ["~ld__wenqin"] = "公休，汝这是何意，呃……",
 }
 
-local sufei = General:new(extension, "ld__sufei", "qun", 4) 
+local sufei = General:new(extension, "ld__sufei", "qun", 4)
 sufei.subkingdom = "wu"
 sufei:addCompanions("hs__ganning")
 sufei:addSkills{ "ld__lianpian" }
@@ -225,7 +220,6 @@ Fk:loadTranslationTable{
   ["ld__sufei"] = "苏飞",
   ["sufei"] = "苏飞",
   ["#ld__sufei"] = "诤友投明",
-  ["designer:ld__sufei"] = "逍遥鱼叔",
   ["illustrator:ld__sufei"] = "Domi",
 
   ["~ld__sufei"] = "恐不能再与兴霸兄，并肩作战了……",
@@ -238,7 +232,6 @@ Fk:loadTranslationTable{
   ["ld__xuyou"] = "许攸",
   ["xuyou"] = "许攸",
   ["#ld__xuyou"] = "毕方矫翼",
-  ["designer:ld__xuyou"] = "逍遥鱼叔",
   ["illustrator:ld__xuyou"] = "猎枭",
 
   ["~ld__xuyou"] = "阿瞒，你竟忘恩负义！！",
@@ -252,7 +245,6 @@ Fk:loadTranslationTable{
   ["pengyang"] = "彭羕",
   ["#ld__pengyang"] = "误身的狂士",
   ["illustrator:ld__pengyang"] = "匠人绘-零一",
-  ["designer:ld__pengyang"] = "韩旭",
 
   ["~ld__pengyang"] = "人言我心大志寡，难可保安，果然如此，唉……",
 }
@@ -288,7 +280,6 @@ Fk:loadTranslationTable{
   ["ld__sunchen"] = "孙綝",
   ["sunchen"] = "孙綝",
   ["#ld__sunchen"] = "食髓的朝堂客",
-  ["designer:ld__sunchen"] = "逍遥鱼叔",
   ["illustrator:ld__sunchen"] = "depp",
 
   ["~ld__sunchen"] = "愿陛下念臣昔日之功，陛下？陛下！！",

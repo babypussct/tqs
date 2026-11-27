@@ -9,7 +9,7 @@ Fk:loadTranslationTable {
   ["@[private]&ld__hun"] = "魂",
   ["#ld__yigui-use"] = "%from 移去“魂”  %arg ，视为使用 %arg2",
   ["#ld__yigui-show"] = "役鬼",
-  ["ld__yigui-chooce"] = "请选择",
+  ["ld__yigui-choice"] = "役鬼：选择一张“魂”移去，视为使用一张基本牌或普通锦囊牌",
   ["@$ld__yigui-turn"] = "役鬼",
 
   ["$ld__yigui1"] = "百鬼众魅，自缚见形。",
@@ -45,7 +45,7 @@ local function canbeTargetedbySoul(to, name)
     end
   end
   local tokingdom = to.kingdom
-  if tokingdom == "wild" and to:getMark("hasShownMainGeneral") == 0 then   --如果野人没亮过主将,按照原势力
+  if tokingdom == "wild" and (to:getMark("hasShownMainGeneral") == 0 or to:getMark("__heg_wild") == 0) then   --按照武将牌势力
     tokingdom = to:getMark("__heg_init_kingdom")
   end
   return tokingdom == "unknown" or table.contains(kingdoms, tokingdom)
@@ -131,11 +131,18 @@ yigui:addEffect("viewas", {
   expand_pile = function(self, player)
     return player:getTableMark("ld__yigui_cards")
   end,
+  visible_pile = function(self, player)
+    return player:getTableMark("ld__yigui_cards")
+  end,
   interaction = function(self, player)
     local souls = U.getPrivateMark(player, "&ld__hun")
     local availables = getAvailableSoul(player)
     if #availables == 0 then return end
-    return H.GeneralCardNameBox { choices = availables, all_choices = souls, default_choice = "ld__yigui-chooce" }
+    return H.GeneralCardNameBox{
+      choices = availables,
+      all_choices = souls,
+      default_choice = "ld__yigui-choice",
+    }
   end,
   card_filter = function(self, player, to_select, selected)
     if not self.interaction.data or self.interaction.data == "ld__yigui-chooce" then return false end
@@ -146,9 +153,7 @@ yigui:addEffect("viewas", {
   end,
   before_use = function(self, player, use)
     local room = player.room
-    local marke = {}
-    table.insert(marke, use.card.trueName)
-    room:addTableMark(player, "@$ld__yigui-turn", marke)
+    room:addTableMark(player, "@$ld__yigui-turn", use.card.trueName)
   end,
   view_as = function(self, player, cards)
     if #cards == 0 or not self.interaction.data or self.interaction.data == "ld__yigui-chooce" then return end

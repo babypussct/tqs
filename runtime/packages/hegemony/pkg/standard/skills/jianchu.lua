@@ -38,7 +38,7 @@ jianchu:addEffect(fk.TargetSpecified, {
     room:throwCard(id, jianchu.name, data.to, player)
     local card = Fk:getCardById(id)
     if card.type == Card.TypeEquip then
-      data.disresponsive = true
+      data:setDisresponsive(data.to)
     else
       if not data.to.dead and room:getCardArea(data.card) == Card.Processing then
         room:moveCardTo(data.card, Card.PlayerHand, data.to, fk.ReasonJustMove, jianchu.name, nil, true, data.to)

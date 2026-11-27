@@ -11,6 +11,7 @@ Fk:loadTranslationTable{
 
 local generals = {}  --绕过变量上限的东西
 
+--[[
 generals.os_heg__zhugejin = General:new(extension, "os_heg__zhugejin", "wu", 3)
 generals.os_heg__zhugejin:addCompanions("hs__sunquan")
 generals.os_heg__zhugejin:addSkills{ "huanshi", "hongyuan", "mingzhe" }
@@ -20,7 +21,7 @@ Fk:loadTranslationTable{
   ["illustrator:os_heg__zhugejin"] = "G.G.G.",
 
   ["~os_heg__zhugejin"] = "君臣不相负，来世复君臣。",
-}
+}]]
 
 General:new(extension, "os_heg__yangxiu", "wei", 3):addSkills{ "danlao", "jilei" }
 Fk:loadTranslationTable{
@@ -43,6 +44,7 @@ Fk:loadTranslationTable{
   ["~os_heg__chendao"] = "我的白毦兵，再也不能为先帝出力了。",
 }
 
+--[[
 General:new(extension, "os_heg__zumao", "wu", 4):addSkills{ "yinbing", "juedi" }
 Fk:loadTranslationTable{
   ["os_heg__zumao"] = "祖茂",
@@ -51,7 +53,7 @@ Fk:loadTranslationTable{
   ["illustrator:os_heg__zumao"] = "DH",
 
   ["~os_heg__zumao"] = "孙将军，已经，安全了吧……",
-}
+}]]
 
 General:new(extension, "os_heg__fuwan", "qun", 4):addSkills{ "os__moukui" }
 Fk:loadTranslationTable{
@@ -62,6 +64,7 @@ Fk:loadTranslationTable{
   ["~os_heg__fuwan"] = "后会有期……",
 }
 
+--[[
 generals.os_heg__liaohua = General:new(extension, "os_heg__liaohua", "shu", 4)
 generals.os_heg__liaohua:addCompanions("hs__guanyu")
 generals.os_heg__liaohua:addSkills { "dangxian", "os_heg__fuli" }
@@ -71,7 +74,7 @@ Fk:loadTranslationTable{
   ["illustrator:os_heg__liaohua"] = "天空之城",
 
   ["~os_heg__liaohua"] = "今后，就靠你们啦……",
-}
+}]]
 
 General:new(extension, "os_heg__tianyu", "wei", 4):addSkills { "os__zhenxi", "os__yangshi" }
 Fk:loadTranslationTable{
@@ -83,6 +86,7 @@ Fk:loadTranslationTable{
   ["~os_heg__tianyu"] = "钟鸣漏尽，夜行不休……",
 }
 
+--[[
 General:new(extension, "os_heg__liufuren", "qun", 3, 3, General.Female):addSkills { "os__zhuidu", "os__shigong" }
 Fk:loadTranslationTable{
   ["os_heg__liufuren"] = "刘夫人",
@@ -91,7 +95,7 @@ Fk:loadTranslationTable{
   ["designer:os_heg__liufuren"] = "梦魇狂朝",
 
   ["~os_heg__liufuren"] = "害人终害己，最毒妇人心……",
-}
+}]]
 
 General:new(extension, "os_heg__huaxiong", "qun", 4):addSkills{ "nos__yaowu" }
 Fk:loadTranslationTable{
@@ -102,6 +106,7 @@ Fk:loadTranslationTable{
   ["~os_heg__huaxiong"] = "皮厚不挡刀啊……",
 }
 
+--[[
 generals.os_heg__xiahoushang = General:new(extension, "os_heg__xiahoushang", "wei", 4)
 generals.os_heg__xiahoushang:addCompanions("hs__caopi")
 generals.os_heg__xiahoushang:addSkill("os__tanfeng")
@@ -678,6 +683,9 @@ Fk:loadTranslationTable{
   ["~os_heg__gongsunfan"] = "公孙氏之业，终付之一炬……",
 }
 
+-- Keep the dormant declaration aligned with the owned Tenyear skill. The
+-- upstream target already keeps the overseas package's five active generals
+-- and comments the dormant block; do not re-enable the whole block here.
 General:new(extension, "os_heg__duanwei", "qun", 4):addSkills { "ty__langmie" }
 Fk:loadTranslationTable{
   ["os_heg__duanwei"] = "段煨",
@@ -747,6 +755,6 @@ Fk:loadTranslationTable{
   ["illustrator:os_heg__guanping"] = "樱花闪乱",
 
   ["~os_heg__guanping"] = "父亲快走，孩儿断后……",
-}
+}]]
 
 return extension

@@ -29,7 +29,7 @@ Fk:loadTranslationTable{
   ["burning_camps"] = "火烧连营",
   [":burning_camps"] = "锦囊牌<br/>"..
   "<b>时机</b>：出牌阶段<br/>"..
-  "<b>目标</b>：你的下家和除其外与其处于同一<a href='heg_formation_href'>队列</a>的所有角色<br/>"..
+  "<b>目标</b>：你的下家和除其外与其处于同一队列的所有角色<br/>"..
   "<b>效果</b>：目标角色受到你造成的1点火焰伤害。",
 
   ["#burning_camps_skill"] = "对你的下家和其同队列的所有角色各造成1点火焰伤害",

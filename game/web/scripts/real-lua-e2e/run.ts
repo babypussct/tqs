@@ -946,6 +946,30 @@ try {
       assert.deepEqual(canceled.replies.map(({ requestId, hex }) => ({ requestId, hex })),
         [{ requestId: canceledId, hex: '80' }]);
     }],
+    ['Ký Ly choices reply only on the current socket after reconnect', async (p) => {
+      for (const [label, choice] of [
+        ['Giải quyết thêm một lần', 'ld__jilix_effect'],
+        ['Loại bỏ tướng này', 'ld__jilix_remove'],
+      ]) {
+        const id = await p.evaluate(() => window.__tqsRealLuaE2e.beginJilixChoice());
+        const option = p.getByRole('button', { name: label, exact: true });
+        await option.waitFor();
+        await p.evaluate(() => window.__tqsRealLuaE2e.disconnect());
+        const disconnected = await snapshot(p);
+        assert.equal(disconnected.status, 'closed');
+        assert.equal(disconnected.requestId, null);
+        assert.equal(disconnected.replies.length, 0);
+        const oldSocket = await p.evaluate((requestId) =>
+          window.__tqsRealLuaE2e.reconnectJilixChoice(requestId), id);
+        assert.equal((await snapshot(p)).requestId, id);
+        await option.click();
+        const result = await reply(p);
+        assert.deepEqual(result.replies.map(({ requestId, socket }) => ({ requestId, socket })),
+          [{ requestId: id, socket: oldSocket + 1 }]);
+        assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), [choice]);
+        assert.deepEqual(result.luaErrors, []);
+      }
+    }],
     ['ChoicePanel resets selections on a replacement request and disables expired controls', async (p) => {
       await p.evaluate(() => window.__tqsRealLuaE2e.beginChoices());
       await p.getByRole('button', { name: 'main', exact: true }).click();
@@ -2892,7 +2916,9 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--guanxing')
+  const testsToRun = process.argv.includes('--jilix')
+    ? tests.filter(([name]) => name.startsWith('Ký Ly '))
+    : process.argv.includes('--guanxing')
     ? tests.filter(([name]) => name.startsWith('Quan Tinh '))
     : process.argv.includes('--turban-shell-cup')
     ? tests.filter(([name]) => name.startsWith('Anh Vũ Bôi'))

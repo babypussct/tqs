@@ -59,32 +59,27 @@ keshou:addEffect(fk.AfterCardsMove, {
 
 keshou:addEffect(fk.TurnStart, {
   can_refresh = function(self, event, target, player, data)
-    return target == player and player:getMark("@ld__keshou") > 0
+    return table.find(player.room.alive_players, function (p) return p:getMark("@ld__keshou") > 0 end)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
-    room:setPlayerMark(player, "@ld__keshou-turn", player:getMark("@ld__keshou"))
-    room:setPlayerMark(player, "@ld__keshou", 0)
+    for _, p in ipairs(room.alive_players) do
+      if p:getMark("@keshou") > 0 then
+        room:setPlayerMark(p, "@ld__keshou-turn", p:getMark("@ld__keshou"))
+        room:setPlayerMark(p, "@ld__keshou", 0)
+      end
+    end
   end,
 })
 
 keshou:addEffect(fk.DamageInflicted, {
   is_delay_effect = true,
+  anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:getMark("@ld__keshou-turn") > 0 and data.damage > 0
+    return target == player and target:getMark("@ld__keshou-turn") > 0
   end,
   on_use = function(self, event, target, player, data)
     data:changeDamage(- player:getMark("@ld__keshou-turn"))
-  end,
-})
-
-keshou:addEffect(fk.Deathed, {
-  can_refresh = function(self, event, target, player, data)
-    return target == player and (player:getMark("@ld__keshou") > 0 or player:getMark("@ld__keshou-turn") > 0)
-  end,
-  on_refresh = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@ld__keshou", 0)
-    player.room:setPlayerMark(player, "@ld__keshou-turn", 0)
   end,
 })
 

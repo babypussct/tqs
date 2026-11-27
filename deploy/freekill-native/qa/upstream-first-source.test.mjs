@@ -124,6 +124,19 @@ test('real upstream Xishe equipment, response and deputy callbacks pass 15 sourc
   assert.match(output, /PASS xishe real upstream callbacks and core helper: 15 cases; native\/browser NOT RUN/u);
 });
 
+test('real Thành Lược and Fire Attack callbacks preserve the exact shown-card contract', () => {
+  const output = runLua('chenglue-source-probe.lua', [
+    path.join(pkgRoot, 'lord_ex/skills/chenglue.lua'),
+    path.join(coreRoot, 'maneuvering/pkg/skills/fire_attack.lua'),
+  ]);
+  assert.match(output, /PASS Thành Lược source probe: 11 damage scenarios and view-as contract/u);
+});
+
+test('real Ký Ly callbacks enforce the two exclusive choices and owning slot', () => {
+  const output = runLua('jilix-source-probe.lua', [path.join(pkgRoot, 'lord_ex/skills/jilix.lua')]);
+  assert.match(output, /PASS Ký Ly source probe: 10 cases/u);
+});
+
 test('merged Hegemony utility preserves hidden-slot ownership and event-based removal', {
   skip: !mergedHegemonyRoot && 'Set TQS_UPSTREAM_HEGEMONY_RUNTIME_ROOT for isolated merged-runtime coverage',
 }, () => {

@@ -180,12 +180,77 @@ Fk:loadTranslationTable{
   ["#luanwu_chaos_skill"] = "所有角色展示手牌并令其弃置牌",
 }]]
 
+local blood_seal = fk.CreateCard{
+  name = "blood_seal",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#blood_seal_skill",
+}
+extension:addCardSpec("blood_seal", Card.Spade, 12)
+Fk:loadTranslationTable{
+  ["blood_seal"] = "血色之玺",
+  [":blood_seal"] = "装备牌·宝物<br/>"..
+  "<b>宝物技能</b>：摸牌阶段，你多摸两张牌；未确定势力的其他角色出牌阶段开始时，其可以视为对你使用一张【知己知彼】。",
+  ["#blood_seal_skill"] = "血色之玺",
+  ["#blood_seal-invoke"] = "血色之玺：你可以视为对 %src 使用【知己知彼】",
+}
+
+local yan_blood_armor = fk.CreateCard{
+  name = "yan_blood_armor",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+  equip_skill = "#yan_blood_armor_skill",
+}
+extension:addCardSpec("yan_blood_armor", Card.Heart, 2)
+Fk:loadTranslationTable{
+  ["yan_blood_armor"] = "燕王血胄",
+  [":yan_blood_armor"] = "装备牌·防具<br/>"..
+  "<b>防具技能</b>：锁定技，当你受到【杀】造成的伤害时，若你有手牌，你须弃置一张手牌防止此伤害；若你没有手牌，此伤害+1。",
+  ["#yan_blood_armor_skill"] = "燕王血胄",
+  ["#yan_blood_armor-discard"] = "燕王血胄：弃置一张手牌，防止此伤害",
+}
+
+local siming_brush = fk.CreateCard{
+  name = "siming_brush",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+  equip_skill = "#siming_brush_skill",
+}
+extension:addCardSpec("siming_brush", Card.Diamond, 2)
+Fk:loadTranslationTable{
+  ["siming_brush"] = "司命",
+  [":siming_brush"] = "装备牌·宝物<br/>"..
+  "<b>宝物技能</b>：锁定技，你使用此牌时，回复所有体力并将手牌摸至五张；你失去装备区内的此牌时，失去所有体力。",
+  ["#siming_brush_skill"] = "司命",
+}
+
+local nemesis_slayer = fk.CreateCard{
+  name = "nemesis_slayer",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+  attack_range = 3,
+  equip_skill = "#nemesis_slayer_skill",
+}
+extension:addCardSpec("nemesis_slayer", Card.Club, 12)
+Fk:loadTranslationTable{
+  ["nemesis_slayer"] = "天刑戮脊",
+  [":nemesis_slayer"] = "装备牌·武器<br/>"..
+  "<b>攻击范围</b>：3 <br/>"..
+  "<b>宝物技能</b>：锁定技，你使用的【杀】对唯一目标造成的伤害+1；结算后，若此【杀】未造成伤害，唯一目标获得此装备牌。",
+  ["#nemesis_slayer_skill"] = "天刑戮脊",
+}
+
 extension:loadCardSkels{
   dragon_phoenix,
   peace_spell,
   luminous_pearl,
   liulongcanjia,
   scaly_wings,
+
+  blood_seal,
+  yan_blood_armor,
+  siming_brush,
+  nemesis_slayer,
 }
 
 return extension

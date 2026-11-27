@@ -44,7 +44,7 @@ zhente:addEffect(fk.TargetConfirmed, {
       skill_name = zhente.name,
     })
     if choice:startsWith("ty_heg__zhente_negate") then
-      data.nullified = true
+      data:setNullified(player)
     else
       local colorsRecorded = type(to:getMark("@ty_heg__zhente-turn")) == "table" and to:getMark("@ty_heg__zhente-turn") or {}
       table.insertIfNeed(colorsRecorded, color)
@@ -55,8 +55,7 @@ zhente:addEffect(fk.TargetConfirmed, {
 
 zhente:addEffect("prohibit", {
   prohibit_use = function(self, player, card)
-    local mark = player:getMark("@ty_heg__zhente-turn")
-    return type(mark) == "table" and table.contains(mark, card:getColorString())
+    return card and table.contains(player:getTableMark("@ty_heg__zhente-turn"), card:getColorString())
   end,
 })
 

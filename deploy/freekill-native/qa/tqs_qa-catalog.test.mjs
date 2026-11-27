@@ -1907,7 +1907,7 @@ test('hidden-zhiman locks DamageCaused prevention, equipment obtain and reveal-b
   assert.match(qaInit, /hidden-zhiman[\s\S]*fk\.DamageCaused[\s\S]*hiddenZhimanDamageCaused/u);
 });
 
-test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted removal for both slots', () => {
+test('hidden-jilix locks red TargetConfirmed branches and owning-slot outcomes for both slots', () => {
   const expected = {
     'hidden-jilix': {
       seed: 0x5d6e7fca,
@@ -1943,10 +1943,13 @@ test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted r
   assert.match(jilix, /jilix:addEffect\(fk\.TargetConfirmed/u);
   assert.match(jilix, /data\.card\.color == Card\.Red/u);
   assert.match(jilix, /data\.use\.additionalEffect/u);
-  assert.match(jilix, /jilix:addEffect\(fk\.DamageInflicted/u);
-  assert.match(jilix, /getActualDamageEvents\(2/u);
-  assert.match(jilix, /data:preventDamage\(\)/u);
-  assert.match(jilix, /H\.removeGeneral\(player, isDeputy == "d"\)/u);
+  assert.match(jilix, /data\.card\.type == Card\.TypeBasic or data\.card:isCommonTrick\(\)/u);
+  assert.match(jilix, /data:isOnlyTarget\(player\)/u);
+  assert.match(jilix, /choices = \{ "ld__jilix_effect", "ld__jilix_remove" \}/u);
+  assert.match(jilix, /if choice == "ld__jilix_effect" then[\s\S]*data\.use\.additionalEffect[\s\S]*else/u);
+  assert.doesNotMatch(jilix, /jilix:addEffect\(fk\.DamageInflicted|data:preventDamage\(\)/u);
+  assert.match(jilix, /H\.inGeneralSkills\(player, jilix\.name\) == "m" then\s*H\.removeGeneral\(player, false\)/u);
+  assert.match(jilix, /H\.inGeneralSkills\(player, jilix\.name\) == "d" then\s*H\.removeGeneral\(player, true\)/u);
   assert.match(hegemonyUtil, /local main = HegUtil\.getActualGeneral\(player, false\)/u,
     'hidden Jilix ownership must resolve the private main-general mark while the slot is anjiang');
   assert.match(hegemonyUtil, /local deputy = HegUtil\.getActualGeneral\(player, true\)/u,
@@ -1961,6 +1964,9 @@ test('hidden-jilix locks red TargetConfirmed repeat and second DamageInflicted r
   assert.match(qaInit, /local gate = askQaSkillInvoke\(room, state\.actor, \{[\s\S]*tqs_qa_hidden_jilix_gate/u);
   assert.match(qaInit, /hidden-jilix[\s\S]*fk\.TargetConfirmed[\s\S]*hiddenJilixTargetConfirmed/u);
   assert.match(qaInit, /hidden-jilix[\s\S]*fk\.DamageInflicted[\s\S]*hiddenJilixDamageInflicted/u);
+  assert.match(qaInit, /local removed = installed == "blank_shibing"\s+local retained = installed == "ld__yanbaihu"/u);
+  assert.match(qaInit, /local expectedDamage = removed and 1 or 2/u);
+  assert.match(qaInit, /room:sendLog\{\s*type = "\[TQS QA\] Ký Ly PASS %arg, ô %arg2, sát thương %arg3"/u);
 });
 
 test('server prelight projection is idempotent, ownership-safe and stale-cleanup-safe', () => {

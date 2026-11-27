@@ -1,5 +1,31 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 27/11/2026 — Thành Lược và đồng bộ luật Quốc Chiến trong runtime cục bộ
+
+- Đối chiếu đúng pin Hegemony `e8d93acd34a357f96b0105aef7d661708c211626`, ZIP overlay tracked 15/11 và ZIP public production lấy ngày 27/11. Production manifest `2c4e29161bc0b2d37fdc3c0e67486745`, bundle `d7492c8447d46062` (5339 files), SHA-256 ZIP `96b3025a12448c71718ed11b9bee9803cce7ac0063d9e4417fd248d7faa424bd`; prefix SHA-1 khớp. `ld__chenglue.lua` production SHA-256 `b420ad6eaab7d1c6e2edbacd169974f5e9753d6031a429bcbf24ffbf526521eb` khớp pin; Fire Attack production SHA-256 `5c596ef64ce40eebd65cd4677584fe65778a0faea2061ed80a22610b534c126f` có `fire_attack_show`. Đây là xác minh byte nguồn đang phân phối, chưa phải gameplay live.
+- Runtime Hegemony trước sửa 477 Lua, thiếu 44, thừa 1, 65 khác nội dung trong các file chung so với overlay. Đã đồng bộ 520 Lua (44 thêm, 63 sửa, bỏ `halberd_active.lua` cũ), cập nhật MD5 flist. 517/520 khớp overlay theo LF; giữ 3 ngoại lệ được kiểm tra bằng hash: `new_hegemony_mode.lua` (legacy không có Card Wire), `util.lua` (mark mô tả cập nhật, giữ projection và QML contract), `utilevent/events/remove_general.lua` (merge guard upstream, giữ projection cũ). So với ZIP production mới: 516/520 giống, thêm delta `turban_shell_cup.lua` Card Wire. Production 520/520 inventory với pin, 15 file delta overlay. Không đổi pin.
+- Lỗi tương tự: core local thiếu `UseCardData:setDisresponsive/setUnoffsetable`; mặc định AimData/CardEffectData cũ chỉ áp dụng `self.to`. Ba nhóm probe local ban đầu FAIL vì thiếu helper. Đồng bộ riêng `ltk/core/events/usecard.lua` đúng byte overlay (nội dung LF khớp pin và production, SHA-256 `4a4c31616317815949654968ef7bb1ca7b8c6ae4be9052997194b5818cd9e271`), cập nhật flist. Các probe Thiết Kỵ/Trinh Liệt, Bawei/Fengshi và Xishe chạy lại PASS. 12 package extension khác đều khớp inventory/nội dung Lua overlay. Core còn 13 module Card Wire thiếu và 27 file khác nội dung, gồm cả AI Tửu/Sát local, UI, role-change và transport; giữ legacy architecture, không chép tràn core. Chưa chứng nhận toàn bộ core/gameplay.
+- Ký Ly `ld__jilix` đã chuyển sang lựa chọn tại TargetConfirmed: thêm một lần kết toán hoặc loại bỏ tướng sở hữu. Hai QA package và runner cũ vẫn đòi ngăn sát thương lần hai; đã sửa fixture/assertion/log/evidence choice, giữ `nos_heg__jilix` riêng. Thêm prompt/choice tiếng Việt Thành Lược (3 key), Ký Ly (3 key); regression overlay 4/4. `chenglue-source-probe.lua` 11 tình huống sát thương + view-as trên local/pin/ZIP production, `jilix-source-probe.lua` 10 tình huống trên cả ba nguồn PASS. Probe thực thi callback với room/event giả lập, không chứng minh native dispatcher.
+- CI `check:upstream-baseline` giờ kiểm inventory/hash normalized của 520 Lua Hegemony + 1 core rule file, flist MD5 thật, ngoại lệ hash rõ ràng. 14 pins/14 patches + 1 source patch PASS. Lua syntax Hegemony 520/520 PASS; native caller audit 17 families PASS; source selected pin 7/7, local 6/6 (78 tình huống gồm 11 Thành Lược, 10 Ký Ly, 57 probe liên quan), hidden-rule 8/8, Vietnamese 4/4, SmartAI 14/14, QA server 69/69, typecheck:all PASS. Hidden-effect audit PASS về inventory; 28/454 cặp skill/event có map evidence lịch sử, không coi đó là gameplay mới. Upstream checkout mặc định cũ; dùng archive pin cô lập, không sửa checkout nguồn. Evidence `scratch/evidence/hegemony-runtime-parity-20261127/` gồm manifest/ZIP và log source/local/QA/caller.
+- Xác minh lại `check:upstream-baseline`, source probes Thành Lược 11/Ký Ly 10 trên mỗi nguồn local/pin/ZIP, `test:qa-server-contract` 69/69 và `test:hegemony-translation` 4/4 PASS. Staging so với ZIP production có 5.331 file khớp byte, 8 file chỉ khác CRLF/LF và 0 delta nội dung; MD5 manifest `2c4e29161bc0b2d37fdc3c0e67486745`. Core local so với overlay 15/11 có 13 module chỉ ở overlay và 27 file Lua chung khác nội dung.
+- Đã tìm được kết quả cuối của phiên 53293. Native boot/v1 và dựng view-as PASS; client exit 1 sau assertion HP đầu tiên. Chẩn đoán xác nhận runner encode token `Buffer` thành map khiến reply chọn lá bị từ chối trước `ShowCard` và prompt chi phí. Bản sao QA gửi token dạng chuỗi đã qua nhánh thành công/hủy; thêm `DamageData:preventDamage()` vào hook chặn đã đưa cả 3 nhánh Thành Lược và 2 choice × 2 slot Ký Ly qua native. Hai client nhận `GameOver` chủ động của fixture, client/native exit 0, 0 lỗi worker, cổng 19681/9000 đã giải phóng. Evidence `scratch/evidence/hegemony-runtime-parity-20261127/skill-parity-diagnostics-sanitized.log`.
+- Mốc triển khai 10:46: đưa harness vào `deploy/freekill-native/qa/skill-parity/` gồm `run.py`, `skill-parity-native.mts` (dùng PacketStream thật của web) và `skill-parity-qa-init.lua`. Sửa token sang chuỗi và `DamageData:preventDamage()`. Runner yêu cầu runtime/source/binary/rocks và hash đầu vào, staging DB mới, không dùng production. Native chạy lại PASS 3 nhánh Thành Lược + 4 tổ hợp Ký Ly, 2 GameOver, client/native exit 0, 0 worker errors, port cleanup PASS. Binary `aa70bc94ac1691ad55f7dfed876b33cf24b81375752d222217eef65ed71190b7`, manifest `2c4e29161bc0b2d37fdc3c0e67486745`. Evidence `scratch/evidence/hegemony-runtime-parity-20261127/skill-parity-tracked-baseline.log`. Vẫn là dispatcher trực tiếp, chưa đóng PlayCard.
+- Mốc 10:47: native Card Wire v1 nhận bốn `PlayCard` thực (Hỏa Công vật lý và Thành Lược thành công/hủy/chặn), reply được resolve đúng lá và mục tiêu, xử lý qua `Room:handleUseCardReply` và `room:useCard` như Core. Đối chứng vật lý HP -1, lá lộ vẫn trong tay; Thành Lược thành công HP -1 và bỏ đúng lá lộ, hủy/chặn HP không đổi, chi phí/lá lộ đúng vùng. Bốn prompt lộ và bốn prompt chi phí, 4 choice Ký Ly, 2 GameOver, exit 0, 0 worker errors, cleanup PASS. Evidence `scratch/evidence/hegemony-runtime-parity-20261127/skill-parity-playcard.log`. Fixture tạo request và dispatch đúng API, chưa đi hết vòng Phase:main hay Chrome UI, chưa trace đầy đủ event/visibility, seed cố định và lượt độc lập vẫn cần bổ sung.
+- Mốc 10:51: TL-04 native ba client, lần đầu FAIL tại đếm Damage vì observer QA dùng `on_use` đi qua cost mặc định (log `skill-parity-chain.log`, client exit 1, cleanup PASS). Đổi thành `on_trigger` trả false, không sửa luật Core. Rerun `skill-parity-chain-rerun.log` session 94304 exit 0: 1 Damage trực tiếp + 1 Damage chain, mỗi lần 1 hỏa, HP hai đích 10→9, tháo xích, đúng lá lộ bị bỏ, lá ghế thứ ba còn tay, ba GameOver, native/client exit 0, 0 worker errors, cleanup PASS. Lane playcard regression `skill-parity-playcard-regression.log` session 22766 exit 0: physical/success 1 damage, cancel/prevent 0, bốn choice Ký Ly, hai GameOver, cleanup PASS. Cùng binary/manifest ở trên. TL-04 đạt gameplay bounded; chưa kiểm riêng packet privacy của ghế thứ ba.
+- Mốc 10:55: TL-04 kiểm packet thực trên cả ba socket. Lần đầu `skill-parity-chain-privacy.log` FAIL vì giả định thứ tự socket là thứ tự ghế; sửa dựa trên ID `Setup` và `ArrangeSeats` (chỉ so trong bộ nhớ). Lần `skill-parity-chain-privacy-rerun.log` đạt assertion privacy nhưng 4 Broken pipe khi đóng, nên exit 1; lượt `skill-parity-chain-privacy-clean.log` đạt gameplay/privacy và trở về sảnh nhưng client timeout chờ remote FIN. Runner hiện gửi QuitRoom sau GameOver, chờ EnterLobby và hoàn thành ghi socket trước destroy. `skill-parity-chain-privacy-final.log` session 54603 exit 0: đúng chủ nhận ref số, hai outsider nhận alias khác nhau; cả 3 ShowCard đúng lá trực tiếp và MoveCards bỏ đúng lá với retired ref ở outsider, lá ghế 3 không xuất hiện trong ShowCard hay di chuyển sau cấp riêng. 3 GameOver, 3 EnterLobby, 3 writeEnds, native/client exit 0, 0 worker errors và cleanup PASS. `skill-parity-playcard-privacy-regression.log` session 61408 exit 0, lane 2 ghế regression PASS. Privacy chỉ bao phủ MoveCards/ShowCard và grant trong ca này; chưa bao phủ mọi kênh, reconnect/observer. Cùng hash binary/manifest như trên.
+- Mốc 11:16: KL-05 chủ tướng ẩn + kết toán thêm, native Card Wire v1 hai socket thực PASS (`kl05-hidden-main-effect-invoke.log`, session 35734). Hai lượt FAIL trước đó (`kl05-hidden-main-effect.log`, `kl05-hidden-main-effect-cbor.log`) do harness gửi raw UTF-8 thay CBOR cho gate và hủy lời mời invoke khi kỹ năng còn ẩn. Sửa harness gửi CBOR và xác nhận invoke thực, không sửa Core. Prelight owner-only 1 ack, TargetConfirmed khi hai ô ẩn, reveal đúng ô trước SkillEffect, một invoke và một choice, 2 CardEffecting/2 damage, ô kia còn ẩn, 2 GameOver/EnterLobby, client/native exit 0, 0 worker errors, ports free. Fixture gọi room:useCard với bài vật lý, chưa qua PlayCard, chưa kiểm mọi packet tướng ẩn hay Chrome.
+- Mốc 11:19: KL-05 qua PlayCard vật lý, seed hành động 20261127:5 sau chia bài, mỗi lane khởi động native/DB độc lập. Sáu lane main-effect, deputy-remove, main-remove, deputy-effect, black, unlit PASS cả native/client, đúng số invoke/choice/kết toán/sát thương và ô lộ, owner-only prelight, GameOver/lobby, 0 worker errors, cleanup. Log `scratch/evidence/hegemony-runtime-parity-20261127/kl05-hidden-*-seeded-playcard.log`. Lane trick native SUMMARY PASS (2 obtain, 2 resolution, 0 damage) nhưng client exit 1 tại assertion số AskForCardChosen; timeout chọn bài có fallback, chưa đóng gate. Đã sửa responder theo command trong lane trick, chạy lại riêng. Lua 5.4 loadfile PASS; seed chưa bao phủ chia bài đầu.
+- Mốc 11:21: ba lane còn lại trick/delayed/multi PASS native và client sau sửa responder theo command. Cẩm nang thường: 2 lựa chọn lá qua token thật, 2 obtain, 1 invoke/choice; trì hoãn vào vùng phán định, nhiều mục tiêu có 2 đích, cả hai không invoke/choice. Lane multi 3 socket; hai lane kia 2. Tất cả exit 0, 0 worker errors, GameOver/lobby và cleanup. Log `kl05-{hidden-trick,hidden-delayed,hidden-multi}-choice-rerun.log`. Ma trận 9/9 native bounded PASS; tiếp tục kiểm privacy packet tướng ẩn, biến thể nos, regression và trace Thành Lược, rồi Chrome/reconnect.
+- Mốc 11:23: session 51052 exit 0, ba lane main-effect, deputy-remove, multi PASS trên Card Wire v1 với kiểm tra packet theo phase: prelight, mark tướng thật và AddSkill fake chỉ tới owner, PropertyUpdate chỉ lộ đúng ô hoặc không lộ khi nhiều mục tiêu; ô kia vẫn ẩn. Trace CardEffecting/Damaged lần lượt 2/2, 1/1, 1/1 ở chủ kỹ năng. 2/2/3 GameOver, lobby, writeEnds; client/native exit 0, 0 worker errors, cleanup PASS. Log `scratch/evidence/hegemony-runtime-parity-20261127/kl05-hidden-*-identity-privacy.log`. Regression playcard và chain session 88452 PASS theo log `kl05-{playcard,chain}-choice-rerun.log`. Phạm vi privacy là các packet thực đã quan sát, chưa có reconnect/observer.
+- Mốc 11:24: lane `hidden-decline` native/session 97263 PASS, có prelight và 1 invoke bị hủy, 0 choice/SkillEffect, 1 kết toán/1 sát thương, hai ô vẫn ẩn, owner-only mark/fake/prelight, 2 GameOver/lobby/writeEnds, native/client exit 0, 0 worker errors, cleanup PASS. Tổng 10/10 lane Ký Ly hiện hành. Log `kl05-hidden-decline-identity-privacy.log`. Thêm `deploy/freekill-native/qa/jilix-nos-source-probe.lua`, Lua 5.4 PASS 10/10 mỗi nguồn local/pin/staging production: phó tướng, tự thêm kết toán, ngăn sát thương lần hai trong phase rồi loại phó; không hỏi choice kiểu ld. Log `kl05-nos-source-probe.log`. Nos mới có probe callback, chưa có native riêng.
+- Mốc 11:27: session 52977 PASS cả 5 lane native độc lập (`tl-physical`, `tl-success`, `tl-cancel`, `tl-prevent`, `chain`), session 80633 PASS regression `playcard` gồm 4 lượt Thành Lược/Hỏa Công và 4 choice Ký Ly. Seed hành động 20261127:4 sau chia bài; bốn lane hai ghế có mặt bài cố định theo tên/chất/số, chain chọn lá grant theo tên/chất từ draw pile, chưa cố định số. Mỗi case 1 TargetConfirmed/1 CardEffecting; DamageInflicted lần lượt 1/1/0/1/2, Damage thành công 1/1/0/0/2. Assert event cha CardEffect, đúng lá lộ/chi phí, HP/vùng bài, chain tháo xích và privacy 3 audience, 2 alias outsider. Mỗi lane 2 hoặc 3 GameOver/lobby/writeEnds; tất cả client/native exit 0, 0 worker errors, cleanup ports PASS. Log `scratch/evidence/hegemony-runtime-parity-20261127/tl-seeded-*.log`. Binary/manifest như trên; TS SHA-256 `336693ac8791296361f678b9a3e1cf932b90196b1aab2650086064d069388d9e`, Lua `99fd0af5d8bf87f72a58d3ce0df41dff5043192459956cb7f762321ecda9e5b`. TL-01–04 bounded trace/seed đạt; TL-05 source probe đã đạt, chưa native riêng. Không thay Core trong mốc này.
+- Mốc 11:28: rà Core theo hash LF trực tiếp local/overlay/ZIP production/staging: 309/322/323/323 Lua, local→overlay 27 sửa/13 thêm, local→production 28 sửa/14 thêm, 4 delta cũ đã khớp, 5 delta chung mới, 1 module shared mới; staging 323/323 khớp ZIP. Ma trận từng file, đường nạp 14 module, quyết định giữ legacy/v1, coverage và nhánh mở ghi ở mục 4 kế hoạch nghiệm thu. Không đổi pin/Core; source audit hoàn tất, behavioral gate còn mở (Lua client, reconnect/observer, response filter, role/GameOver tự nhiên).
+- Mốc Chrome/Wasmoon: thêm fixture `--jilix` cho cả hai nút tiếng Việt. Đóng socket khi chờ lựa chọn, assert request mất hiệu lực, mở socket mới với cùng request ID, gửi packet đến muộn từ socket cũ rồi kiểm đúng một reply CBOR trên socket mới. Native `hidden-main-effect` chạy riêng với binary và manifest trên, exit 0/0, 0 lỗi worker, giải phóng cổng. Gateway 9/9 PASS. Bộ Chrome fixture đầy đủ 70/74, bốn lỗi ở Companion Peach, UI-02 stale policy và hai QA pool. Evidence `scratch/evidence/hegemony-runtime-parity-20261127/chrome-*.log`.
+- Mốc gateway/Chrome: harness `skill-parity/run.py --gateway` chạy Card Wire v1 qua WebSocket loopback. Bốn tổ hợp Ký Ly, Hỏa Công đối chứng và Thành Lược thành công/hủy/chặn PASS trên manifest `2c4e29161bc0b2d37fdc3c0e67486745`. `--browser-preflight` chạy Chrome tải ZIP staging 5.339 tệp (bundle `9ea23e67fda74a99`), kiểm hash, boot Wasmoon và nhận EnterLobby qua gateway/native thật, 0 lỗi Lua; lượt `hidden-main-effect` gameplay qua client packet chạy sau preflight và PASS. Chrome dùng trang được phục vụ qua HTTP loopback sau khi trang fixture dựng bằng Playwright bị Chrome chặn Local Network Access. Evidence `gateway-parity-*.log` và `browser-gateway-parity-hidden-main-effect.log`.
+- TL-04 qua gateway: lần đầu packet gameplay và ba audience PASS, native báo 2 Broken pipe khi đóng kết nối đồng thời. Runner đóng từng WebSocket sau khi cả ba client trở về sảnh. Rerun `gateway-parity-chain.log` PASS, hai alias outsider riêng, đúng lá công khai bị bỏ, lá ghế ba giữ riêng, ba lượt GameOver/về sảnh, exit 0/0, 0 lỗi worker và giải phóng cổng.
+- Mốc runner Ký Ly: `TQS_LIVE_HIDDEN_JILIX_BRANCH=effect|remove` chọn nhánh trong UI (mặc định remove). Hai bản QA package kiểm damaged count, đúng ô, ô còn lại ẩn và trạng thái kỹ năng, phát xác nhận branch/slot để Chrome đối chiếu trên cả hai socket. `--manual --reconnect` kích hoạt tại prompt Ký Ly, yêu cầu snapshot mới và chỉ dùng choice phát sau snapshot; kiểm DOM đối thủ không lộ card ID. QA contract 69/69, Lua 5.4 loadfile cả hai bản, TypeScript tools và fixture Chrome `--jilix` PASS. Chưa chạy ma trận live với QA package mới.
+- Quyết định 27/11: đóng mục QA live và chuyển kiểm tra trực tiếp cho người chơi thử nghiệm. Bằng chứng hiện có giữ nguyên phạm vi; các lượt live chưa chạy vẫn chưa xác minh. Kiểm tra phiên này PASS: typecheck:all, QA server contract 69/69, Lua 5.4 loadfile hai gói QA, Việt hóa 4/4, recovery 4/4, fixture Chrome Ký Ly 1/1, source probe local Ký Ly 10 ca và Thành Lược 11 ca sát thương cùng contract view-as. Chờ phản hồi để xử lý lỗi cụ thể. Chưa commit/push/deploy. [Kế hoạch](web-client/HEGEMONY_RUNTIME_PARITY_PLAN_20261127.md)
+
 ## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony
 
 - So sánh mô tả tiếng Trung trong snapshot Việt hóa `2a96c067` (24/10/2026), pin native `e8d93acd34a357f96b0105aef7d661708c211626` (26/10) và upstream master `097b6f20c3b78b9d89f708cee3637415c19c33c1` (19/11). Scan literal/concat colon-key Lua: 472 → 514 → 518 mô tả, 41 sửa, 42 thêm ở pin, 4 thêm ở HEAD, 0 xóa. Bản pin của delta đã đối chiếu ZIP production theo báo cáo kiểm tra trước trong phiên. Upstream sau pin chỉ 1 commit, đổi cách diễn đạt Vô Giải Quốc Chiến và thêm 4 kỹ năng OL; không đổi pin.
@@ -2853,20 +2879,90 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-27T03:11:43.229Z (UTC).
-- Nhánh: `main` · HEAD: `03e923975d76`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-27T06:32:34.971Z (UTC).
+- Nhánh: `main` · HEAD: `87c5e449b188`.
+- File thay đổi hiển thị: 129 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
+ M deploy/freekill-native/qa/tqs_qa-catalog.test.mjs
+ M deploy/freekill-native/qa/tqs_qa/init.lua
+ M deploy/freekill-native/qa/upstream-first-source.test.mjs
  M docs/CODEX_PLAN.md
+ M game/web/scripts/check-upstream-baseline.mjs
+ M game/web/scripts/hegemony-translation-overlay.test.ts
+ M game/web/scripts/multiplayer-e2e/run.ts
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/src/engine/vietnameseHegemonyUpdates.ts
+ M runtime/flist.txt
+ M runtime/packages/freekill-core/ltk/core/events/usecard.lua
+ M runtime/packages/hegemony/pkg/formation/skills/heyi.lua
+ M runtime/packages/hegemony/pkg/formation/skills/tianfu.lua
+ M runtime/packages/hegemony/pkg/hegemony_nos/init.lua
+ M runtime/packages/hegemony/pkg/hegemony_nos/skills/heyi.lua
+ M runtime/packages/hegemony/pkg/jin_jyzs/skills/xiejian.lua
+ M runtime/packages/hegemony/pkg/jin_zqdl/skills/chujue.lua
+ M runtime/packages/hegemony/pkg/jin_zqdl/skills/ciwei.lua
+ M runtime/packages/hegemony/pkg/lord_cards/init.lua
+ M runtime/packages/hegemony/pkg/lord_ex/init.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/aocai.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/bushi.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/chenglue.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/diaogui.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/duwu.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/fangyuan.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/fengshih.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/fengyang.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/jilix.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/jinfa.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/jinxian.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/juejue.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/liangfan.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/lianpian.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/midao.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/qiance.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/qingyin.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/qiuan.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/shicai.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/shilus.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/tongdu.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/tongling.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/tunjiang.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/wenji.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/xingzhao.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/xiongnve.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/xishe.lua
+ M runtime/packages/hegemony/pkg/lord_ex/skills/zhidao.lua
+ M runtime/packages/hegemony/pkg/m_lord_cards/init.lua
+ M runtime/packages/hegemony/pkg/mobile_heg/init.lua
+ M runtime/packages/hegemony/pkg/mobile_heg/skills/fengshi.lua
+ M runtime/packages/hegemony/pkg/mobile_heg/skills/henge.lua
+ M runtime/packages/hegemony/pkg/mobile_heg/skills/junwei.lua
+ M runtime/packages/hegemony/pkg/momentum/skills/fengshi.lua
+ M runtime/packages/hegemony/pkg/nine_variations/init.lua
+ M runtime/packages/hegemony/pkg/nine_variations/skills/amiantus_robe.lua
+ M runtime/packages/hegemony/pkg/overseas_heg/init.lua
+ M runtime/packages/hegemony/pkg/power/skills/fengying.lua
+ M runtime/packages/hegemony/pkg/power/skills/jianglue.lua
+ M runtime/packages/hegemony/pkg/power/skills/keshou.lua
+ M runtime/packages/hegemony/pkg/power/skills/tieqi.lua
+ M runtime/packages/hegemony/pkg/standard/skills/jianchu.lua
+ M runtime/packages/hegemony/pkg/standard/skills/tianxiang.lua
+ M runtime/packages/hegemony/pkg/standard/skills/tieqi.lua
+ M runtime/packages/hegemony/pkg/standard_cards/skills/await_exhausted.lua
+ M runtime/packages/hegemony/pkg/strategic_advantage/skills/burning_camps.lua
+ M runtime/packages/hegemony/pkg/strategic_advantage/skills/halberd.lua
+ D runtime/packages/hegemony/pkg/strategic_advantage/skills/halberd_active.lua
+ M runtime/packages/hegemony/pkg/tenyear_heg/skills/zhente.lua
+... và 59 mục nữa; xem git status trực tiếp.
 ```
 
 Ba commit gần nhất:
 
 ```text
+87c5e449 Record verified Hegemony translation production release
 03e92397 Update Vietnamese Hegemony skill descriptions
 8fa04844 Record verified production portrait release
-9f6a4677 Ship pinned Hegemony general portraits for web
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

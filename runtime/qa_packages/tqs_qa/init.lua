@@ -4580,9 +4580,6 @@ local function triggerHiddenZhiman(room, state)
 end
 
 local function triggerHiddenJilix(room, state)
-  -- 寄篱 has two linked source effects. A red Slash is repeated at
-  -- TargetConfirmed, then the second DamageInflicted in the phase is
-  -- prevented and removes the general that owns the hidden skill.
   state.target:revealGenerals()
   if state.actor.general ~= "anjiang" or state.actor.deputyGeneral ~= "anjiang" then
     fail("hidden-jilix actor must start with both generals hidden")
@@ -4610,7 +4607,6 @@ local function triggerHiddenJilix(room, state)
     fail("hidden-jilix must put the reserved red Slash in the native source hand")
   end
 
-  local actorHpBefore = state.actor.hp
   state.currentDamageStep = 1
   local use = room:askToUseRealCard(state.target, {
     pattern = { cardId },
@@ -4638,42 +4634,36 @@ local function triggerHiddenJilix(room, state)
     end
   end
   local jilixIsDeputy = state.scenario == "hidden-jilix-deputy"
-  local removedCorrectSlot = jilixIsDeputy
-    and state.actor.general == "anjiang" and state.actor.deputyGeneral == "blank_shibing" and
-      state.actor:getMark("__heg_general") == "ld__huangzu" and
-      state.actor:getMark("__heg_deputy") == "blank_shibing"
-    or not jilixIsDeputy and state.actor.general == "blank_shibing" and state.actor.deputyGeneral == "anjiang" and
-      state.actor:getMark("__heg_general") == "blank_shibing" and
-      state.actor:getMark("__heg_deputy") == "ld__huangzu"
+  local slot = jilixIsDeputy and "deputyGeneral" or "general"
+  local otherSlot = jilixIsDeputy and "general" or "deputyGeneral"
+  local mark = jilixIsDeputy and "__heg_deputy" or "__heg_general"
+  local otherMark = jilixIsDeputy and "__heg_general" or "__heg_deputy"
+  local installed = state.actor[slot]
+  local removed = installed == "blank_shibing"
+  local retained = installed == "ld__yanbaihu"
+  local correctSlot = (removed or retained) and state.actor:getMark(mark) == installed and
+    state.actor[otherSlot] == "anjiang" and state.actor:getMark(otherMark) == "ld__huangzu" and
+    state.actor:hasSkill("ld__jilix") == retained
   local damage = 0
   for _, entry in ipairs(state.damageEvents) do
     if entry.step == 1 and entry.to == state.actor.id then damage = damage + entry.amount end
   end
-  local hpLoss = actorHpBefore - state.actor.hp
-  -- DamageInflicted is a nested engine event and may be observed more than
-  -- once for each actual damage resolution. The authoritative assertions are
-  -- the source effect count, one actual damage, one HP loss, and removal of
-  -- the owning slot; require at least two callbacks only as a lower bound.
-  if not state.hiddenJilixTargetConfirmed or state.hiddenJilixDamageInflicted < 2 or
-      effectCount < 2 or damage ~= 1 or hpLoss ~= 1 or not removedCorrectSlot then
-    fail(string.format("prelighted hidden Jilix must repeat the red Slash, prevent the second damage and remove the owning slot; " ..
-      "target_confirmed=%s damage_inflicted=%d effects=%d damage=%d hp_loss=%d removed_slot=%s general=%s deputy=%s",
-      tostring(state.hiddenJilixTargetConfirmed), state.hiddenJilixDamageInflicted, effectCount, damage, hpLoss,
-      tostring(removedCorrectSlot), state.actor.general, state.actor.deputyGeneral))
+  local expectedDamage = removed and 1 or 2
+  if not state.hiddenJilixTargetConfirmed or state.hiddenJilixDamageInflicted ~= expectedDamage or
+      effectCount ~= 1 or damage ~= expectedDamage or not correctSlot then
+    fail("hidden-jilix must resolve the selected branch and change only the owning slot")
   end
 
+  local choice = removed and "remove" or "effect"
   room:sendLog{
-    type = "[TQS QA] Hidden Ký Ly: TargetConfirmed=%arg; DamageInflicted lần hai=%arg2; sát thương thực=%arg3; xoá đúng ô=%arg4; vị trí=%arg5",
+    type = "[TQS QA] Ký Ly PASS %arg, ô %arg2, sát thương %arg3",
     from = state.actor.id,
-    arg = tostring(state.hiddenJilixTargetConfirmed),
-    arg2 = tostring(state.hiddenJilixDamageInflicted >= 2),
+    arg = choice,
+    arg2 = jilixIsDeputy and "phó tướng" or "chủ tướng",
     arg3 = tostring(damage),
-    arg4 = tostring(removedCorrectSlot),
-    arg5 = jilixIsDeputy and "phó tướng" or "chủ tướng",
   }
-  fk.qInfo(string.format("[tqs_qa] hidden-jilix target_confirmed=true damage_inflicted=2 repeated=true prevented_second=true damage=%d removed_slot=%s slot=%s main=%s deputy=%s revision=%s",
-    damage, tostring(removedCorrectSlot), jilixIsDeputy and "deputy" or "main", state.actor.general,
-    state.actor.deputyGeneral, manifest.sourceRevision))
+  fk.qInfo(string.format("[tqs_qa] hidden-jilix target_confirmed=true choice=%s damage=%d slot=%s revision=%s",
+    choice, damage, jilixIsDeputy and "deputy" or "main", manifest.sourceRevision))
   state.gameOverRequested = true
   room:gameOver("")
 end

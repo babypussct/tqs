@@ -1,10 +1,24 @@
 local jianglue = fk.CreateSkill{
   name = "jianglue",
-  tags = {Skill.Limited},
+  tags = { Skill.Limited },
 }
+
+Fk:loadTranslationTable{
+  ["jianglue"] = "将略",
+  [":jianglue"] = "限定技，出牌阶段，你可以选择一个“军令”，然后发动势力召唤。你对所有与你势力相同的角色发起此“军令”。"..
+  "你和所有执行“军令”的角色各加1点体力上限，回复1点体力。然后你摸X张牌（X为以此法回复体力的角色数）。",
+
+  ["#jianglue"] = "将略：发动势力召唤，令所有同势力角色执行你选择的军令！",
+
+  ["$jianglue1"] = "奇谋为短，将略为要。",
+  ["$jianglue2"] = "为将者，需有谋略。",
+}
+
 local H = require "packages.hegemony.util"
+
 jianglue:addEffect("active", {
   anim_type = "support",
+  prompt = "#jianglue",
   can_use = function(self, player)
     return player:usedSkillTimes(jianglue.name, Player.HistoryGame) == 0
   end,
@@ -15,7 +29,12 @@ jianglue:addEffect("active", {
     local kingdom = H.getKingdom(player)
     for _, p in ipairs(room:getAlivePlayers()) do
       if p.kingdom == "unknown" and p:isAlive() then
-        if H.getKingdomPlayersNum(room)[kingdom] >= #room.players // 2 and not table.find(room.alive_players, function(_p) return _p.general == "ld__lordliubei" end) then break end
+        if H.getKingdomPlayersNum(room)[kingdom] >= #room.players // 2 and
+          not table.find(room.alive_players, function(_p)
+            return _p.general == "ld__lordliubei"
+          end) then
+          break
+        end
         local main, deputy = false, false
         if H.compareExpectedKingdomWith(p, player) then
           local general = Fk.generals[p:getMark("__heg_general")]
@@ -33,7 +52,9 @@ jianglue:addEffect("active", {
         })
       end
     end
-    local targets = table.filter(room.alive_players, function(p) return H.compareKingdomWith(p, player) and p ~= player end)
+    local targets = table.filter(room.alive_players, function(p)
+      return H.compareKingdomWith(p, player) and p ~= player
+    end)
     local tos = {} ---@type ServerPlayer[]
     if #targets > 0 then
       local dat = {
@@ -66,13 +87,5 @@ jianglue:addEffect("active", {
     if num > 0 then player:drawCards(num, jianglue.name) end
   end
 })
-
-Fk:loadTranslationTable{
-  ["jianglue"] = "将略",
-  [":jianglue"] = "限定技，出牌阶段，你可选择一个“军令”，然后发动势力召唤。你对所有与你势力相同的角色发起此“军令”。你和所有执行“军令”的角色各加1点体力上限，回复1点体力。然后你摸X张牌（X为以此法回复体力的角色数）。",
-
-  ["$jianglue1"] = "奇谋为短，将略为要。",
-  ["$jianglue2"] = "为将者，需有谋略。",
-}
 
 return jianglue

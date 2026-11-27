@@ -1,15 +1,15 @@
+
 local juejue = fk.CreateSkill {
   name = "ld__juejue",
 }
 
 Fk:loadTranslationTable {
   ["ld__juejue"] = "决绝",
-  [":ld__juejue"] = "你杀死与你势力相同的角色不执行奖惩。<br>"..
-  "弃牌阶段开始时，你可以失去1点体力，若如此做，此阶段结束时，若你于此阶段内弃置过手牌，你令所有其他角色依次选择一项："..
-  "1.将X张手牌置入弃牌堆；2.受到你造成的1点伤害（X为你于此阶段内弃置的牌数）。",
+  [":ld__juejue"] = "你杀死势力与你相同的角色不执行奖惩。<br>"..
+  "弃牌阶段开始时，你可以失去1点体力，令你此阶段结束时，可以对所有体力值小于你此阶段弃牌数的其他角色各造成1点伤害。",
 
-  ["#ld__juejue-invoke"] = "决绝：你可以失去1点体力，根据弃牌数令所有其他角色执行效果",
-  ["#ld__juejue-ask"] = "决绝：将%arg张手牌置入弃牌堆，否则 %src 对你造成1点伤害",
+  ["#ld__juejue-invoke"] = "决绝：你可以失去1点体力，此阶段结束时可以对体力值小于弃牌数的其他角色造成伤害",
+  ["#ld__juejue-damage"] = "决绝：是否对体力值小于%arg的其他角色各造成1点伤害？",
 }
 
 local H = require "packages.hegemony.util"
@@ -31,8 +31,7 @@ juejue:addEffect(fk.EventPhaseStart, {
 })
 
 juejue:addEffect(fk.EventPhaseEnd, {
-  mute = true,
-  is_delay_effect = true,
+  anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     if target == player and player.phase == Player.Discard and player:isAlive() and
       player:usedSkillTimes(juejue.name, Player.HistoryPhase) > 0 then
@@ -44,42 +43,44 @@ juejue:addEffect(fk.EventPhaseEnd, {
             for _, info in ipairs(move.moveInfo) do
               if info.fromArea == Card.PlayerHand then
                 n = n + 1
-                if n > 1 then
-                  return true
-                end
               end
             end
           end
         end
       end, Player.HistoryTurn)
-      event:setCostData(self, { num = n })
-      return n > 0
+      if table.find(player.room:getOtherPlayers(player, false), function (p)
+        return p.hp < n
+      end) then
+        event:setCostData(self, { num = n })
+        return true
+      end
+    end
+  end,
+  on_cost = function (self, event, target, player, data)
+    local room = player.room
+    local n = event:getCostData(self).num
+    local targets = table.filter(room:getOtherPlayers(player), function (p)
+      return p.hp < n
+    end)
+    if room:askToSkillInvoke(player, {
+      skill_name = juejue.name,
+      prompt = "#ld__juejue-damage:::"..n,
+    }) then
+      event:setCostData(self, { tos = targets })
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local n = event:getCostData(self).num
-    for _, p in ipairs(room:getOtherPlayers(player)) do
+    local targets = event:getCostData(self).tos or {}
+    for _, p in ipairs(targets) do
       if not p.dead then
-        local cards = room:askToCards(p, {
-          min_num = n,
-          max_num = n,
-          include_equip = false,
-          skill_name = juejue.name,
-          pattern = ".|.|.|hand",
-          prompt = "#ld__juejue-ask:"..player.id.."::"..n,
-          cancelable = true,
-        })
-        if #cards == n then
-          room:moveCardTo(cards, Card.DiscardPile, nil, fk.ReasonPutIntoDiscardPile, juejue.name)
-        else
-          room:damage {
-            from = player,
-            to = p,
-            damage = 1,
-            skillName = juejue.name,
-          }
-        end
+        room:damage {
+          from = player,
+          to = p,
+          damage = 1,
+          skillName = juejue.name,
+        }
       end
     end
   end,

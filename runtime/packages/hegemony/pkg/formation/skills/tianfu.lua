@@ -7,7 +7,7 @@ local tianfu = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["tianfu"] = "天覆",
-  [":tianfu"] = "主将技，阵法技，若当前回合角色与你处于同一<a href='heg_formation_href'>队列</a>，你拥有技能〖看破〗。",
+  [":tianfu"] = "主将技，阵法技，若当前回合角色与你处于同一队列，你拥有技能〖看破〗。",
 }
 
 local H = require "packages.hegemony.util"

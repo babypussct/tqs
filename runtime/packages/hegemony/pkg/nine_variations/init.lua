@@ -141,7 +141,6 @@ local tricky_heist = fk.CreateCard{
 extension:addCardSpec("tricky_heist", Card.Heart, 1)
 extension:addCardSpec("tricky_heist", Card.Heart, 3)
 extension:addCardSpec("tricky_heist", Card.Diamond, 10)
-extension:addCardSpec("tricky_heist", Card.Spade, 10)
 Fk:loadTranslationTable{
   ["tricky_heist"] = "巧取豪夺",
   [":tricky_heist"] = "锦囊牌<br/>"..
@@ -173,10 +172,9 @@ Fk:loadTranslationTable{
   ["#unworthy_continuation-ask"] = "请使用其中一张奇珍牌",
 }
 
-extension:addCardSpec("nullification", Card.Club, 12)
-extension:addCardSpec("nullification", Card.Club, 13)
-extension:addCardSpec("nullification", Card.Diamond, 13)
-extension:addCardSpec("heg__nullification", Card.Club, 13)
+extension:addCardSpec("nullification", Card.Spade, 12)
+extension:addCardSpec("nullification", Card.Spade, 13)
+extension:addCardSpec("heg__nullification", Card.Diamond, 13)
 
 local serpent_slayer_sword = fk.CreateCard{
   name = "serpent_slayer_sword",

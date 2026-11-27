@@ -1,10 +1,11 @@
+
 local tongdu = fk.CreateSkill {
   name = "ld__tongdu",
 }
 
 Fk:loadTranslationTable {
   ["ld__tongdu"] = "统度",
-  [":ld__tongdu"] = "与你势力相同的角色的结束阶段，其可以摸X张牌（X为其本回合弃牌阶段弃置的牌数且至多为3）。",
+  [":ld__tongdu"] = "与你势力相同的角色的结束阶段，其可以摸X张牌（X为其本回合弃牌阶段弃置的牌数且至多为2）。",
 
   ["#ld__tongdu-ask"] = "统度：你可以发动%src的“统度”，摸%arg张牌",
 
@@ -53,14 +54,16 @@ tongdu:addEffect(fk.EventPhaseStart, {
         return false
       end, Player.HistoryTurn)
       if num > 0 then
-        event:setCostData(self, { n = math.min(3, num) })
+        event:setCostData(self, { n = math.min(2, num) })
         return true
       end
     end
   end,
   on_cost = function(self, event, target, player, data)
-    return target.room:askToSkillInvoke(target,
-      { skill_name = tongdu.name, prompt = "#ld__tongdu-ask:" .. player.id .. "::" .. event:getCostData(self).n })
+    return player.room:askToSkillInvoke(target, {
+      skill_name = tongdu.name,
+      prompt = "#ld__tongdu-ask:" .. player.id .. "::" .. event:getCostData(self).n,
+    })
   end,
   on_use = function(self, event, target, player, data)
     target:drawCards(event:getCostData(self).n, tongdu.name)

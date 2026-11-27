@@ -79,7 +79,7 @@ tieqi:addEffect(fk.TargetSpecified, {
         prompt = "#hs__tieqi-discard:::" .. judge.card:getSuitString(),
         cancelable = true,
       }) == 0 then
-        data.disresponsive = true
+        data:setDisresponsive(data.to)
       end
     end
   end,

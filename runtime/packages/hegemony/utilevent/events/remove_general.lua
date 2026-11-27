@@ -35,17 +35,16 @@ function RemoveGeneral:main()
 
   orig = isDeputy and (player.deputyGeneral or "") or player.general
   if orig:startsWith("blank_") then return false end
-  local orig_general = Fk.generals[orig]
-
-  local orig_skills = orig_general and orig_general:getSkillNameList() or {}
-
-  local new_general = orig_general.gender == General.Male and "blank_shibing" or "blank_nvshibing"
-
-  orig_skills = table.map(orig_skills, function(e)
-    return "-" .. e
-  end)
-
-  room:handleAddLoseSkills(player, table.concat(orig_skills, "|"), nil, false)
+  local new_general = player.gender == General.Male and "blank_shibing" or "blank_nvshibing"
+  if orig ~= "" then
+    local orig_general = Fk.generals[orig]
+    new_general = orig_general.gender == General.Male and "blank_shibing" or "blank_nvshibing"
+    local orig_skills = orig_general and orig_general:getSkillNameList() or {}
+    orig_skills = table.map(orig_skills, function(e)
+      return "-" .. e
+    end)
+    room:handleAddLoseSkills(player, table.concat(orig_skills, "|"), nil, false)
+  end
 
   if isDeputy then
     room:setPlayerProperty(player, "deputyGeneral", new_general)

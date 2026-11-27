@@ -8,7 +8,7 @@ local heyi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["heyi"] = "鹤翼",
-  [":heyi"] = "阵法技，与你处于同一<a href='heg_formation_href'>队列</a>的角色拥有〖慷慨〗。",
+  [":heyi"] = "阵法技，与你处于同一队列的角色拥有〖慷慨〗。",
 }
 
 heyi:addEffect("arraysummon", {

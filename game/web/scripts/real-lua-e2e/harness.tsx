@@ -97,6 +97,14 @@ function request(id: number, timeout = 30, timestamp = Date.now(), socket = curr
     timeout, timestamp, socket);
 }
 
+function jilixChoice(id: number, socket = currentSocket()) {
+  fixtureRequest(id, 'AskForChoices', serverCbor(`{
+    {'ld__jilix_effect', 'ld__jilix_remove'},
+    {'ld__jilix_effect', 'ld__jilix_remove'},
+    {1, 1}, true, 'ld__jilix', '#ld__jilix-choice:::slash', false, true
+  }`), 30, Date.now(), socket);
+}
+
 function begin(expired = false) {
   if (!ready) throw new Error(`Lua WASM chưa sẵn sàng: ${bootError ?? 'đang khởi tạo'}`);
   scenarioSocketStart = sockets.length;
@@ -278,6 +286,18 @@ const api = {
   transformationChoice: () => conn.lua.eval<string | null>(
     'return Fk.skills.ld__qice.interaction.data'),
   begin,
+  beginJilixChoice: () => {
+    const id = begin();
+    jilixChoice(id);
+    return id;
+  },
+  reconnectJilixChoice: (id: number) => {
+    const old = currentSocket();
+    setUpSocket();
+    jilixChoice(id);
+    jilixChoice(++nextId, old);
+    return sockets.indexOf(old);
+  },
   netState: (state: 'trust' | 'online') => {
     serverNotify('NetStateChanged', serverCbor(`{17, '${state}'}`));
     return conn.lua.eval<number>('return Self.player:getState()');

@@ -6,7 +6,7 @@ local henge = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["m_heg__henge"] = "衡轭",
-  [":m_heg__henge"] = "<a href='m_heg_summon'>阵法技</a>，锁定技，与你处于同一<a href='heg_formation_href'>队列</a>的其他角色"..
+  [":m_heg__henge"] = "<a href='m_heg_summon'>阵法技</a>，锁定技，与你处于同一队列的其他角色"..
   "获得你“义从”距离修正的相同效果（每项至多为2）。",
 
   ["m_heg_summon"] = "手杀阵法技移除了“阵法召唤”效果",

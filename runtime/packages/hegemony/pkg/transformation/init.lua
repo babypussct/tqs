@@ -76,7 +76,6 @@ Fk:loadTranslationTable{
 local zuoci = General:new(extension, "ld__zuoci", "qun", 3)
 zuoci:addCompanions("ld__yuji")
 zuoci:addSkills{"ld__yigui", "ld__jihun"}
-zuoci.hidden = true -- FIXME
 Fk:loadTranslationTable{
   ["ld__zuoci"] = "左慈",
   ["#ld__zuoci"] = "鬼影神道",

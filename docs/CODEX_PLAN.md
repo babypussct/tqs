@@ -1,5 +1,29 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 27/11/2026 — Đồng bộ Thành Lược và kiểm tra lệch luật Quốc Chiến
+
+- [x] Kiểm byte pin/overlay/local/ZIP production; xác minh Thành Lược production đã đúng pin.
+- [x] Đồng bộ 520 Lua Hegemony local, flist, giữ 3 ngoại lệ legacy có hash; sửa core response API thiếu; thêm gate CI chống drift.
+- [x] Sửa QA Ký Ly theo luật mới, 6 prompt/choice Việt hóa, source probe Thành Lược/Ký Ly trên 3 nguồn; regression pin/local, QA server, typecheck và audit PASS (xem CODEX_STATE).
+- [x] Đọc kết quả phiên native 53293, tái hiện lỗi kiểu token và hook chặn sát thương của harness. Bản sao QA đã PASS giới hạn 3 nhánh Thành Lược và 2 lựa chọn × 2 ô Ký Ly, hai client `GameOver`, cleanup PASS.
+- [x] Đưa hai sửa harness vào runner QA tái lập; native rerun PASS giới hạn (3 nhánh Thành Lược, 4 tổ hợp Ký Ly, 2 GameOver, cleanup).
+- [x] Native `PlayCard` đối chứng Hỏa Công vật lý và 3 nhánh Thành Lược PASS giới hạn (request/resolve/dispatch thật, vùng bài và HP).
+- [x] TL-04 native gameplay bounded ba ghế: Damage trực tiếp/lan, HP, tháo xích, đúng lá lộ bị bỏ, lá đối chứng còn tay, 3 GameOver và cleanup PASS; lane playcard regression PASS.
+- [x] TL-04 đối chiếu MoveCards/ShowCard ở cả ba socket, owner/outsider aliases và exact discard, 3 GameOver/EnterLobby và cleanup PASS; playcard regression PASS.
+- [x] KL-05 chủ tướng ẩn, prelight/confirm invoke thực và nhánh kết toán thêm native hai socket PASS giới hạn (2 kết toán/2 sát thương, đúng reveal, owner-only ack, cleanup).
+- [x] KL-05 sáu lane native PlayCard độc lập có seed hành động: 4 tổ hợp ô/choice Sát đỏ, Sát đen và không prelight PASS; trick native PASS nhưng client choice chưa đạt, tiếp tục rerun.
+- [x] KL-05 ba lane trick/delayed/multi native PlayCard độc lập PASS, gồm 2 token chọn bài thật, 0 invoke/choice ở trì hoãn và nhiều mục tiêu; tổng 9/9 lane native bounded.
+- [x] KL-05 privacy tướng ẩn native: main-effect, deputy-remove và multi PASS owner-only prelight/mark/fake skill, public reveal đúng ô; regression PlayCard/chain PASS.
+- [x] KL-05 từ chối invoke sau prelight native PASS, tổng 10/10 lane ld; nos source probe 10/10 trên từng nguồn local/pin/staging, chưa native nos.
+- [x] Trace/seed hành động và ca độc lập TL-01–04 + Hỏa Công đối chứng, 5/5 native lane và regression kết hợp PASS; KL-05 10/10 lane ld và nos source probe như trên.
+- [x] Fixture Chrome/Wasmoon cho hai nút Ký Ly sau reconnect: hủy request khi socket đóng, bỏ packet đến muộn từ socket cũ và chỉ gửi một reply trên socket mới cho mỗi lựa chọn.
+- [x] Native → Gateway WebSocket cô lập: Ký Ly 2 lựa chọn × 2 ô, đối chứng Hỏa Công và Thành Lược thành công/hủy/chặn/lan PASS. TL-04 xác minh ba audience và thoát sạch sau khi đóng từng socket. Manifest gateway khớp native, quảng bá Card Wire v1 và không liệt kê gói QA server.
+- [x] Chrome/Wasmoon preflight cùng runtime: loader xác minh ZIP staging 5.339 tệp, Lua boot và tài khoản QA vào sảnh qua WebSocket thật, 0 lỗi Lua.
+- [x] Mở rộng runner Chrome và QA package cho hai nhánh Ký Ly ở cả hai ô. Lượt `--reconnect` ngắt tại choice và yêu cầu request mới sau snapshot. Contract/syntax và fixture PASS.
+- [x] Đóng QA live theo quyết định ngày 27/11/2026. Chuyển ma trận Chrome, reconnect/snapshot/observer, GameOver tự nhiên, OAuth và thiết bị thật sang người chơi thử nghiệm. Các ca live chưa chạy giữ trạng thái chưa xác minh.
+- [x] Rà inventory và source từng delta Core: 27 lịch sử + 5 mới (4 đã khớp production), 28 sửa/14 thêm thực tế so local; xác minh wiring 14 module và quyết định giữ legacy/v1.
+- [ ] Tiếp nhận phản hồi của người chơi thử nghiệm khi có. [Kế hoạch nghiệm thu](web-client/HEGEMONY_RUNTIME_PARITY_PLAN_20261127.md)
+
 ## 27/11/2026 — Cập nhật mô tả Việt hóa Hegemony
 
 - [x] Đối chiếu snapshot 24/10, pin production và upstream master 19/11; lưu nguồn từng key, 41 sửa + 42 mới ở pin + 4 mới chỉ HEAD.

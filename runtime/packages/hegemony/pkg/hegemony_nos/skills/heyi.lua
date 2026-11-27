@@ -7,7 +7,7 @@ local heyi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["nos_heg__heyi"] = "鹤翼",
-  [":nos_heg__heyi"] = "阵法技，与你处于同一<a href='heg_formation_href'>队列</a>的其他角色视为拥有〖飞影〗。",
+  [":nos_heg__heyi"] = "阵法技，与你处于同一队列的其他角色视为拥有〖飞影〗。",
 }
 
 local H = require "packages.hegemony.util"

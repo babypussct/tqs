@@ -26,7 +26,7 @@ xiongsuan:addEffect("active", {
   card_num = 1,
   target_num = 1,
   card_filter = function(self, player, to_select, selected)
-    return #selected == 1 and table.contains(player:getCardIds("h"), to_select) and not player:prohibitDiscard(to_select)
+    return #selected == 0 and table.contains(player:getCardIds("h"), to_select) and not player:prohibitDiscard(to_select)
   end,
   target_filter = function(self, player, to_select, selected)
     return #selected == 0 and H.compareKingdomWith(to_select, player)
@@ -71,8 +71,9 @@ xiongsuan:addEffect(fk.TurnEnd, {
     return target == player and player:getMark("xiongsuan-turn") ~= 0
   end,
   on_use = function(self, event, target, player, data)
-    local skill = player:getMark("_xiongsuan-turn")[1]
-    target = player:getMark("_xiongsuan-turn")[2]
+    local mark = player:getTableMark("xiongsuan-turn")
+    local skill = mark[1]
+    target = mark[2]
     target:addSkillUseHistory(skill, -1)
   end,
 })

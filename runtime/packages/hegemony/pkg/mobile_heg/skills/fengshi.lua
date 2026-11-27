@@ -29,7 +29,7 @@ fengshi:addEffect(fk.CardUsing, {
     end
   end,
   on_use = function(self, event, target, player, data)
-    data.disresponsiveList = table.simpleClone(player.room.players)
+    data:setDisresponsive()
   end
 })
 

@@ -5,7 +5,7 @@ local fengyang = fk.CreateSkill {
 
 Fk:loadTranslationTable {
   ["ld__fengyang"] = "风扬",
-  [":ld__fengyang"] = "阵法技，势力与你不同的角色不能弃置或获得与你处于同一<a href='heg_formation_href'>队列</a>角色装备区里的牌。",
+  [":ld__fengyang"] = "阵法技，势力与你不同的角色不能弃置或获得与你处于同一队列角色装备区里的牌。",
 
   ["$ld__fengyang1"] = "谁也休想染指江东寸土。",
   ["$ld__fengyang2"] = "如此咽喉要地，吾当倾力守之。",

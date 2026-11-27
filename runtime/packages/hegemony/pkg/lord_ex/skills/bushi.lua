@@ -1,12 +1,14 @@
+
 local bushi = fk.CreateSkill {
   name = "ld__bushi",
 }
 
 Fk:loadTranslationTable {
   ["ld__bushi"] = "布施",
-  [":ld__bushi"] = "当你受到1点伤害后，你可以令势力与你相同的一名角色摸一张牌；当你对其他角色造成伤害后，你令势力与其相同的一名角色摸一张牌。",
+  [":ld__bushi"] = "出牌阶段限一次，你可以获得一个势力所有角色各一张牌，然后将这些牌任意分配给该势力的角色。",
 
-  ["#ld__bushi-invoke"] = "布施：令一名角色摸一张牌",
+  ["#ld__bushi"] = "布施：选择一名角色，获得所有其势力角色各一张牌，然后将这些牌分配给该势力角色",
+  ["#ld__bushi-give"] = "布施：请分配这些牌",
 
   ["$ld__bushi1"] = "争斗，永远没有赢家。",
   ["$ld__bushi2"] = "和平，永远没有输家。",
@@ -14,57 +16,52 @@ Fk:loadTranslationTable {
 
 local H = require "packages.hegemony.util"
 
-bushi:addEffect(fk.Damaged, {
-  anim_type = "masochism",
-  trigger_times = function(self, event, target, player, data)
-    return data.damage
+bushi:addEffect("active", {
+  anim_type = "control",
+  prompt = "#ld__bushi",
+  card_num = 0,
+  target_num = 1,
+  can_use = function (self, player)
+    return player:usedSkillTimes(bushi.name, Player.HistoryPhase) == 0
   end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local targets = table.filter(room.alive_players, function (p)
-      return H.compareExpectedKingdomWith(player, p)
-    end)
-    local to = room:askToChoosePlayers(player, {
-      min_num = 1,
-      max_num = 1,
-      targets = targets,
-      skill_name = bushi.name,
-      prompt = "#ld__bushi-choose",
-      cancelable = true,
-    })
-    if #to > 0 then
-      event:setCostData(self, {tos = to})
-      return true
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, player, to_select, selected)
+    return #selected == 0 and to_select.kingdom ~= "none"
+  end,
+  on_use = function(self, room, effect)
+    local player = effect.from
+    local kingdom = H.getKingdom(effect.tos[1])
+    local cards = {}
+    for _, p in ipairs(room:getAlivePlayers()) do
+      if H.getKingdom(p) == kingdom and not p:isNude() then
+        local card = room:askToChooseCard(player, {
+          target = p,
+          flag = p == player and "e" or "he",
+          skill_name = bushi.name,
+        })
+        if card then
+          table.insert(cards, card)
+          room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, bushi.name, nil, false, player)
+          if player.dead then return end
+        end
+      end
     end
-  end,
-  on_use = function(self, event, target, player, data)
-    event:getCostData(self).tos[1]:drawCards(1, bushi.name)
-  end,
-})
-
-bushi:addEffect(fk.Damage, {
-  anim_type = "support",
-  can_trigger = function (self, event, target, player, data)
-    return target == player and player:hasSkill(bushi.name) and data.to ~= player and
-      table.find(player.room.alive_players, function (p)
-        return H.compareKingdomWith(data.to, p)
-      end)
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local targets = table.filter(room.alive_players, function (p)
-      return H.compareKingdomWith(data.to, p)
+    cards = table.filter(cards, function (id)
+      return table.contains(player:getCardIds("h"), id)
     end)
-    local to = room:askToChoosePlayers(player, {
-      min_num = 1,
-      max_num = 1,
+    if #cards == 0 then return end
+    local targets = table.filter(room:getAlivePlayers(false), function (p)
+      return H.getKingdom(p) == kingdom
+    end)
+    if #targets == 0 then return end
+    room:askToYiji(player, {
       targets = targets,
+      cards = cards,
       skill_name = bushi.name,
-      prompt = "#ld__bushi-choose",
-      cancelable = false,
-    })[1]
-    to:drawCards(1, bushi.name)
+      min_num = #cards,
+      max_num = #cards,
+      prompt = "#ld__bushi-give",
+    })
   end,
 })
 

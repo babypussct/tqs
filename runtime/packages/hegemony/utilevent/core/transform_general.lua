@@ -37,7 +37,8 @@ HegUtil.GeneralTransformed = HegUtil.GeneralTransformedEvent:subclass("HegUtil.G
 ---@param isMain boolean? @ 是否为主将，默认副将
 ---@param isHidden boolean? @ 是否暗置变更
 ---@param num? integer @ 选将数量，26规则默认为1，18规则默认为3（TODO?）
-function HegUtil.transformGeneral(room, player, isMain, isHidden, num)
+---@param generals? string[] @ 固定变更将池
+function HegUtil.transformGeneral(room, player, isMain, isHidden, num, generals)
   local data = HegUtil.GeneralTransformedData:new{
     isMain = isMain,
     isHidden = isHidden,
@@ -64,9 +65,18 @@ function HegUtil.transformGeneral(room, player, isMain, isHidden, num)
       kingdom = player:getMark("__heg_init_kingdom")
     end
   end
-  local generals = room:findGenerals(function(g)
-    return Fk.generals[g]:hasKingdom(kingdom)
-  end, num)
+  generals = generals or {}
+  if #generals == 0 then
+    generals = room:findGenerals(function(g)
+      return Fk.generals[g]:hasKingdom(kingdom)
+    end, num)
+  else
+    generals = room:tableRandomPick(generals, num)
+    room:findGenerals(function(g)
+      return table.contains(generals, g)
+    end, num)
+  end
+  if #generals == 0 then return end
   local general = num == 1 and generals[1] or
     room:askToChooseGeneral(player, {
       generals = generals,

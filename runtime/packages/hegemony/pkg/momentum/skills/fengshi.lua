@@ -5,7 +5,7 @@ local fengshi = fk.CreateSkill{
 
 Fk:loadTranslationTable{
   ["fengshi"] = "锋矢",
-  [":fengshi"] = "阵法技，若你是围攻角色且处于<a href='heg_formation_href'>队列</a>，你对被围攻角色使用的【杀】伤害+X（X为你队列的角色数）。",
+  [":fengshi"] = "阵法技，若你是围攻角色且处于队列，你对被围攻角色使用的【杀】伤害+X（X为你队列的角色数）。",
 
   ["#fengshi-discard"] = "锋矢：弃置装备区里的一张牌",
 
@@ -22,12 +22,22 @@ fengshi:addEffect("arraysummon", {
 fengshi:addEffect(fk.DamageCaused, {
   anim_type = "control",
   can_trigger = function(self, event, target, player, data)
-    return player:hasShownSkill(fengshi.name) and
-      data.card and data.card.trueName == "slash" and
-      H.inSiegeRelation(target, player, data.to) and #H.getFormationRelation(player) > 0
+    return player:hasShownSkill(fengshi.name) and data.card and data.card.trueName == "slash"
+    and H.inSiegeRelation(target, player, data.to)
+    and (H.inFormationRelation(player, player:getLastAlive()) or H.inFormationRelation(player, player:getNextAlive()))
+    and data.from and data.from == player
   end,
   on_use = function(self, event, target, player, data)
-      data:changeDamage(1 + #H.getFormationRelation(player))
+    local room = player.room
+    local inFormation = {}
+    for _, p in ipairs(room.alive_players) do
+      if H.inFormationRelation(player, p) then
+        table.insertIfNeed(inFormation, p)
+      end
+    end
+    if #inFormation > 0 then
+      data:changeDamage(#inFormation)
+    end
   end,
 })
 

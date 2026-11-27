@@ -51,9 +51,8 @@ ciwei:addEffect(fk.CardUsing, {
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    data.toCard = nil
-    data:removeAllTargets()
     room:throwCard(event:getCostData(self).cards, ciwei.name, player, player)
+    data:setNullified()
   end,
 })
 

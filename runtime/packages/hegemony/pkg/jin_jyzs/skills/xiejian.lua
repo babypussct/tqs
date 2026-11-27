@@ -1,12 +1,13 @@
 local xiejian = fk.CreateSkill {
-    name = "heg__xiejian",
+  name = "heg__xiejian",
 }
 
 Fk:loadTranslationTable {
-    ["heg__xiejian"] = "挟奸",
-    [":heg__xiejian"] = "出牌阶段限一次，你可以对一名其他角色发起“军令”，且你以此法抽取的备选“军令”对其他角色不可见，若其不执行，其强制执行你抽取的备选“军令”。",
+  ["heg__xiejian"] = "挟奸",
+  [":heg__xiejian"] = "出牌阶段限一次，你可以对一名其他角色发起“军令”，且你以此法抽取的备选“军令”对其他角色不可见，"..
+  "若其不执行，其强制执行你抽取的备选“军令”。",
 
-    ["#heg__xiejian"] = "挟奸：选择一名其他角色发起“军令”",
+  ["#heg__xiejian"] = "挟奸：选择一名其他角色发起“军令”",
 }
 
 local H = require "packages.hegemony.util"

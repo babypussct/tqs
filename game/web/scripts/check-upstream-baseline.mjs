@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import { unzipSync } from 'fflate';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -108,3 +109,34 @@ for (const [pathKey, digestKey] of patchInputs) {
 }
 
 console.log(`PASS upstream baseline ${UPSTREAM_BASELINE_ID}: 14/14 package pins, ${patchInputs.length - 1}/${patchInputs.length - 1} native patches and 1/1 native source patch digests are synchronized`);
+
+// The checked-in legacy runtime is also used by source/browser fixtures.
+// Guard its Hegemony inventory against stale rules while preserving its
+// explicitly reviewed compatibility files until the legacy core is retired.
+const hegemonyPrefix = 'packages/hegemony/';
+const legacyRuntime = path.join(repo, 'runtime');
+const normalizedDigest = (bytes) => createHash('sha256')
+  .update(Buffer.from(bytes).toString('utf8').replace(/\r\n/g, '\n')).digest('hex');
+const legacyExceptions = new Map([
+  ['pkg/gamemodes/new_hegemony_mode.lua', 'e06f8c399f684e7d4e0874172ab0445b8fbeaf6f65f919d85d4c87d86a26dabd'],
+  ['util.lua', '8ad2ebd74c6e8f1744d12d33f7dd24cc3f0ca56f41e8c607500df7d7007b37eb'],
+  ['utilevent/events/remove_general.lua', 'dfd313b468bba92e97b8e2f5a2cb908170c7857e5bc9e3da9e371d04ef89db02'],
+]);
+const coreRuleFiles = ['packages/freekill-core/ltk/core/events/usecard.lua'];
+const overlayEntries = unzipSync(overlayArchive, {
+  filter: ({ name }) => (name.startsWith(hegemonyPrefix) && name.endsWith('.lua')) || coreRuleFiles.includes(name),
+});
+const legacyEntries = fs.readdirSync(path.join(legacyRuntime, hegemonyPrefix), { recursive: true })
+  .filter((name) => name.endsWith('.lua')).map((name) => hegemonyPrefix + name.split(path.sep).join('/'));
+assert.deepEqual(legacyEntries.sort(), Object.keys(overlayEntries).filter((name) => name.startsWith(hegemonyPrefix)).sort(), 'legacy Hegemony Lua inventory drifted');
+const legacyManifest = new Map(fs.readFileSync(path.join(legacyRuntime, 'flist.txt'), 'utf8')
+  .trim().split(';').filter(Boolean).map((entry) => entry.split('=')));
+assert.deepEqual([...legacyManifest.keys()].filter((name) => name.startsWith(hegemonyPrefix) && name.endsWith('.lua')).sort(),
+  legacyEntries, 'legacy Hegemony manifest inventory drifted');
+for (const name of [...legacyEntries, ...coreRuleFiles]) {
+  const bytes = fs.readFileSync(path.join(legacyRuntime, name));
+  const expected = legacyExceptions.get(name.slice(hegemonyPrefix.length)) ?? normalizedDigest(overlayEntries[name]);
+  assert.equal(normalizedDigest(bytes), expected, `legacy Hegemony source drift: ${name}`);
+  assert.equal(createHash('md5').update(bytes).digest('hex'), legacyManifest.get(name), `legacy manifest drift: ${name}`);
+}
+console.log(`Legacy Hegemony parity PASS: ${legacyEntries.length} Lua files, ${legacyExceptions.size} reviewed compatibility exceptions; ${coreRuleFiles.length} shared core rule file.`);

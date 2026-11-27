@@ -1,14 +1,13 @@
-local jinfa = fk.CreateSkill {
+
+local jinfa = fk.CreateSkill{
   name = "ld__jinfa",
 }
 
-Fk:loadTranslationTable {
+Fk:loadTranslationTable{
   ["ld__jinfa"] = "矜伐",
-  [":ld__jinfa"] = "出牌阶段限一次，你可以弃置一张牌并选择一名其他角色，令其选择一项："..
-  "1.令你获得其一张牌；2.交给你一张装备牌，若此装备牌为♠，其视为对你使用一张【杀】。",
+  [":ld__jinfa"] = "出牌阶段限一次，你可以拼点，若你赢，你获得其一张牌；若拼点牌中包含♠牌，则没赢的角色对赢的角色造成1点伤害。",
 
-  ["#ld__jinfa"] = "矜伐：弃置一张牌，令一名其他角色选择你获得其一张牌或其交给你一张牌",
-  ["#ld__jinfa_give"] = "矜伐：交给 %src 一张装备牌，否则其获得你的一张牌",
+  ["#ld__jinfa"] = "矜伐：与一名角色拼点，若赢则获得其一张牌，若有♠拼点牌则赢的角色受到1点伤害",
 
   ["$ld__jinfa1"] = "居功者，当自矜，为将者，当善伐。",
   ["$ld__jinfa2"] = "此战伐敌所获，皆我之功。",
@@ -17,45 +16,44 @@ Fk:loadTranslationTable {
 jinfa:addEffect("active", {
   anim_type = "offensive",
   prompt = "#ld__jinfa",
-  card_num = 1,
+  card_num = 0,
   target_num = 1,
   can_use = function(self, player)
     return player:usedSkillTimes(jinfa.name, Player.HistoryPhase) == 0
   end,
-  card_filter = function(self, player, to_select, selected)
-    return #selected == 0 and not player:prohibitDiscard(to_select)
-  end,
-  target_filter = function(self, player, to_select, selected, selected_cards)
-    return #selected == 0 and not to_select:isNude() and to_select ~= player
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, player, to_select, selected)
+    return #selected == 0 and to_select ~= player and player:canPindian(to_select)
   end,
   on_use = function(self, room, effect)
     local player = effect.from
     local target = effect.tos[1]
-    room:throwCard(effect.cards, jinfa.name, player, player)
-    if player.dead or target:isNude() then return end
-    local card = room:askToCards(target, {
-      min_num = 1,
-      max_num = 1,
-      include_equip = true,
-      skill_name = jinfa.name,
-      prompt = "#ld__jinfa_give:" .. player.id,
-      pattern = ".|.|.|.|.|equip",
-      cancelable = true,
-    })
-    if #card == 1 then
-      local yes = Fk:getCardById(card[1]).suit == Card.Spade
-      room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonGive, jinfa.name, nil, true, target)
-      if yes and not player.dead then
-        room:useVirtualCard("slash", nil, target, player, jinfa.name, true)
-      end
-    else
-      if target:isNude() then return end
-      card = room:askToChooseCard(player, {
+    local pindian = player:pindian({ target }, jinfa.name)
+    local winner = pindian.results[target].winner
+    if winner == player and not player.dead and not target:isNude() then
+      local card = room:askToChooseCard(player, {
         target = target,
         flag = "he",
         skill_name = jinfa.name,
       })
-      room:obtainCard(player, card, false, fk.ReasonPrey, player, jinfa.name)
+      room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonJustMove, jinfa.name, nil, false, player)
+    end
+    if (pindian.fromCard and pindian.fromCard.suit == Card.Spade) or
+      (pindian.results[target].toCard and pindian.results[target].toCard.suit == Card.Spade) then
+      local from, to
+      if winner == player then
+        from, to = target, player
+      elseif winner == target then
+        from, to = player, target
+      end
+      if to and not to.dead then
+        room:damage{
+          from = from,
+          to = to,
+          damage = 1,
+          skillName = jinfa.name,
+        }
+      end
     end
   end,
 })

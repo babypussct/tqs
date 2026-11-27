@@ -15,8 +15,13 @@ awaitExhaustedSkill:addEffect("cardskill", {
     if target.dead then return end
     target:drawCards(2, awaitExhaustedSkill.name)
     if target.dead then return end
-    room:askToDiscard(target, {min_num = 2, max_num = 2, include_equip = true,
-      skill_name = awaitExhaustedSkill.name, cancelable = false})
+    room:askToDiscard(target, {
+      min_num = 2,
+      max_num = 2,
+      include_equip = true,
+      skill_name = awaitExhaustedSkill.name,
+      cancelable = false,
+    })
   end,
 })
 

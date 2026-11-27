@@ -131,3 +131,22 @@ test('Hegemony description delta matches the current source shapes and wins runt
     assert.notEqual(VI_ADDITIONS[key], modern, key);
   }
 });
+
+
+test('modern and historical Thành Lược resolve their own prompts', () => {
+  assert.match(VI_ADDITIONS['#ld__chenglue'], /Hỏa Công/);
+  assert.match(VI_ADDITIONS['#nos_heg__chenglue-draw'], /%dest/);
+  assert.match(VI_ADDITIONS['#nos_heg__chenglue-mark'], /Âm Dương Ngư/);
+  for (const key of ['#ld__chenglue', '#nos_heg__chenglue-draw', '#nos_heg__chenglue-mark']) {
+    assert.equal(VI_ADDITIONS[key], VI_HEGEMONY_UPDATES[key]);
+  }
+});
+
+test('modern Ký Ly presents both choices with the card placeholder', () => {
+  assert.match(VI_ADDITIONS['#ld__jilix-choice'], /%arg/);
+  assert.match(VI_ADDITIONS.ld__jilix_effect, /thêm một lần/);
+  assert.match(VI_ADDITIONS.ld__jilix_remove, /Loại bỏ tướng/);
+  for (const key of ['#ld__jilix-choice', 'ld__jilix_effect', 'ld__jilix_remove']) {
+    assert.equal(VI_ADDITIONS[key], VI_HEGEMONY_UPDATES[key]);
+  }
+});

@@ -27,11 +27,11 @@ skill:addEffect(fk.TargetConfirmed, {
       include_equip = false,
       skill_name = skill.name,
       cancelable = true,
-      prompt = "#amiantus_robe-invoke::" .. data.to.id,
+      prompt = "#amiantus_robe-invoke::" .. data.from.id,
       skip = true,
     })
     if #card > 0 then
-      event:setCostData(self, { tos = { data.to }, cards = card })
+      event:setCostData(self, { tos = { data.from }, cards = card })
       return true
     end
   end,
