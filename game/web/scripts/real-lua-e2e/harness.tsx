@@ -192,6 +192,35 @@ const api = {
     return id;
   },
   boardNotify: (command: string, source: string) => serverNotify(command, serverCbor(source)),
+  beginPlayerPiles: () => {
+    api.beginPlay(false, { initialCards: [], playCardRequest: false });
+    const cards = conn.lua.eval<number[]>('return {table.unpack(ClientInstance.draw_pile, 1, 4)}');
+    serverNotify('CardWireNegotiated', serverCbor("{protocol='TQS_HEG_CARD_WIRE',cardWireVersion=1,mode='new_heg_mode'}"));
+    serverNotify('PrepareDrawPile', serverCbor('{count=4}'));
+    serverNotify('SetPlayerMark', serverCbor("{17, '@hs__luanji-turn', {'log_spade','log_heart'}}"));
+    serverNotify('SetPlayerMark', serverCbor("{17, '@[private]&ld__hun', {value={'hs__caocao'}}}"));
+    serverNotify('MoveCards', serverCbor(`{{{to=-1,toArea=Card.PlayerSpecial,specialName='ld__dengai_field',
+      moveReason=fk.ReasonPut,moveVisible=true,moveInfo={{cardId=${cards[0]},fromArea=Card.DrawPile}}},
+      {to=17,toArea=Card.PlayerSpecial,specialName='yuji_sorcery',moveReason=fk.ReasonPut,moveVisible=true,
+      moveInfo={{cardId=${cards[1]},fromArea=Card.DrawPile}}},
+      {to=-1,toArea=Card.PlayerSpecial,specialName='$m_heg__qianxun',moveReason=fk.ReasonPut,moveVisible=false,
+      moveInfo={{cardId='h:fixture_hidden_pile',fromArea=Card.DrawPile}}}},1}`));
+    return cards;
+  },
+  chooseSorcery: () => {
+    const id = ++nextId;
+    fixtureRequest(id, 'AskForUseActiveSkill', serverCbor("{'choose_cards_skill', '#qianhuan-def', true, {num=1,min_num=1,include_equip=false,skillName='qianhuan',pattern='.|.|.|yuji_sorcery',expand_pile='yuji_sorcery'}}"));
+    return id;
+  },
+  replacePlayerPile: (card: number) => {
+    serverNotify('SetPlayerPile', serverCbor(`{-1,'ld__dengai_field',{${card},'h:fixture_field_opaque'}}`));
+  },
+  clearPlayerPiles: (card: number) => {
+    serverNotify('SetPlayerPile', serverCbor("{-1,'ld__dengai_field',{}}"));
+    serverNotify('MoveCards', serverCbor(`{{{from=17,toArea=Card.DiscardPile,moveReason=fk.ReasonDiscard,
+      moveInfo={{cardId=${card},fromArea=Card.PlayerSpecial,fromSpecialName='yuji_sorcery'}},moveVisible=true}},2}`));
+    serverNotify('SetPlayerMark', serverCbor("{17,'@hs__luanji-turn',0}"));
+  },
   beginTablePile: (count = 3) => {
     api.beginPlay(false, { initialCards: [], playCardRequest: false });
     const cards = conn.lua.eval<{ id: number; name: string }[]>(`return table.map({table.unpack(ClientInstance.draw_pile, 1, ${count})}, function(id)
@@ -1022,6 +1051,10 @@ const api = {
   },
   reconnectSummary: () => {
     api.beginPlay();
+    const pileCard = conn.lua.eval<number>('return ClientInstance.draw_pile[1]');
+    serverNotify('MoveCards', serverCbor(`{{{to=-1,toArea=Card.PlayerSpecial,specialName='ld__dengai_field',
+      moveReason=fk.ReasonPut,moveVisible=true,moveInfo={{cardId=${pileCard},fromArea=Card.DrawPile}}}},1}`));
+    serverNotify('SetPlayerMark', serverCbor("{-1,'@hs__luanji-turn',{'log_club'}}"));
     serverNotify('SetPlayerMark', serverCbor("{17, '__heg_general', 'ld__bianfuren'}"));
     serverNotify('SetPlayerMark', serverCbor("{17, '__heg_deputy', 'm_heg__dianwei'}"));
     serverNotify('PropertyUpdate', serverCbor("{17, 'general', 'anjiang'}"));

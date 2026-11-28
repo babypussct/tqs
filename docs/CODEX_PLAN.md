@@ -1,5 +1,13 @@
 # CODEX_PLAN — đường đi đến Tam Quốc Sát mobile chơi được
 
+## 28/11/2026 — Dấu hiệu và bài đặt trên tướng Quốc Chiến
+
+- [x] Đối chiếu cơ chế mark danh sách và special pile với Lua pin và QML gốc.
+- [x] Chiếu dữ liệu công khai, badge và sheet xem lá; giữ chọn lá theo request native, đồng bộ reconnect/ChangeSelf.
+- [x] Store 51/51, Chrome/Wasmoon 75/75, kiểm privacy và reply chọn Ảo trên fixture; kiểm ảnh 390×844.
+- [ ] Build đúng snapshot, phát hành web và đối chiếu production.
+- [ ] Quan sát trực tiếp các kỹ năng trong ván production và trên thiết bị thật khi có điều kiện.
+
 ## 28/11/2026 — Mất kết nối sau chốt tướng
 
 - [x] Đối chiếu hai lần ngắt production với mốc Card Wire v1, reconnect và GameOver. Xác minh tab Chrome QA vào lại được ván bảy ghế đang chạy.

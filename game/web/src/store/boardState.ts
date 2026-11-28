@@ -35,6 +35,8 @@ type MomentInput =
   | { kind: 'hp'; playerId: number; before: number; after: number }
   | { kind: 'chain'; playerId: number; chained: boolean };
 export type BoardMoment = MomentInput & { id: number };
+export type BoardMark = string | number | boolean | string[];
+export interface BoardPlayerPile { name: string; cards: BoardEquipment[] }
 export interface BoardPlayer {
   hp: number | null;
   maxHp: number | null;
@@ -59,7 +61,8 @@ export interface BoardPlayer {
   faceup: boolean | null;
   equipment: BoardEquipment[];
   delayedTricks: BoardEquipment[];
-  marks: Record<string, string | number | boolean>;
+  marks: Record<string, BoardMark>;
+  specialPiles: BoardPlayerPile[];
   maxCards?: number | null;
   sealedSlots?: string[];
 }
@@ -152,7 +155,7 @@ function newPlayer(): BoardPlayer {
     general: null, deputyGeneral: null, generalExtension: null, deputyGeneralExtension: null,
     kingdom: null, visibleKingdom: null, roleShown: false, selfGeneral: null, selfDeputyGeneral: null,
     selfGeneralExtension: null, selfDeputyGeneralExtension: null,
-    chained: null, faceup: null, equipment: [], delayedTricks: [], marks: {},
+    chained: null, faceup: null, equipment: [], delayedTricks: [], marks: {}, specialPiles: [],
   };
 }
 
@@ -173,6 +176,18 @@ function publicMark(value: unknown): string | number | boolean | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'boolean') return value;
   return typeof value === 'string' && value.length <= 160 ? value : null;
+}
+
+const LIST_MARKS = new Set(['@hs__luanji-turn', '@hs__tieqi-turn', '@hs__duanchang',
+  '@jianan_skills', '@ld__xuanhuo_skills-turn', '@ol_heg__chenglue-turn', '@ty_heg__zhente-turn',
+  '@xiongnve-turn', '@nos_heg__xiongnve_kingdom-phase', '@&ld__xing', '@&massacre', '@$ld__yigui-turn']);
+const SUIT_MARK_VALUES = new Set(['log_spade', 'log_club', 'log_heart', 'log_diamond']);
+function playerMark(name: string, value: unknown): BoardMark | null {
+  if (!Array.isArray(value)) return publicMark(value);
+  if (!LIST_MARKS.has(name) || value.length > 32 || !value.every((item) =>
+    typeof item === 'string' && /^[A-Za-z0-9_]+$/.test(item) && item.length <= 120 &&
+    (!['@hs__luanji-turn', '@ol_heg__chenglue-turn'].includes(name) || SUIT_MARK_VALUES.has(item)))) return null;
+  return value.length ? [...value] : 0;
 }
 
 const BOARD_CARD_SUBTYPES = new Set<BoardCardSubtype>([
@@ -350,6 +365,19 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
     if (id !== ownId && !prior.roleShown && name !== '') return board;
     return { ...board, player: { ...board.player, [id]: { ...prior, visibleKingdom: name || null } } };
   }
+  if (command === 'PlayerPilesUpdate') {
+    const [id, piles] = data;
+    if (!validId(id) || (!knownIds.includes(id) && id !== ownId) || !Array.isArray(piles)) return board;
+    const specialPiles: BoardPlayerPile[] = [];
+    for (const pile of piles) {
+      if (!Array.isArray(pile) || typeof pile[0] !== 'string' || pile[0].startsWith('#') ||
+          !pile[0] || pile[0].length > 120 || !Array.isArray(pile[1])) continue;
+      const cards = pile[1].map(publicCard).filter((card: BoardEquipment | null): card is BoardEquipment =>
+        card !== null && card.known !== false && card.name !== '');
+      if (cards.length) specialPiles.push({ name: pile[0], cards });
+    }
+    return { ...board, player: { ...board.player, [id]: { ...(board.player[id] ?? newPlayer()), specialPiles } } };
+  }
   if (command === 'EquipmentUpdate') {
     const [id, cards, delayedTricks] = data;
     // Reconnect can deliver the private self equipment snapshot before the
@@ -374,7 +402,7 @@ export function updateBoard(board: BoardState, command: string, data: unknown, k
   if (!validId(id) || !knownIds.includes(id) || typeof name !== 'string') return board;
   const prior = board.player[id] ?? newPlayer();
   if (command === 'SetPlayerMark') {
-    const mark = publicMark(value);
+    const mark = playerMark(name, value);
     if (!name.startsWith('@') || name.length > 120 || mark === null) return board;
     return { ...board, player: { ...board.player, [id]: {
       ...prior, marks: { ...prior.marks, [name]: mark },

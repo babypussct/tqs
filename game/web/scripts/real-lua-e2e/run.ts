@@ -190,6 +190,55 @@ try {
       assert.equal(boardReply.replies.at(-1)?.requestId, board.id);
       assert.deepEqual(boardReply.luaErrors, []);
     }],
+    ['Native player piles and list marks are inspectable and follow visible card-wire state', async (p) => {
+      const cards = await p.evaluate(() => window.__tqsRealLuaE2e.beginPlayerPiles());
+      const own = p.getByRole('article', { name: 'browser-test (bạn)' });
+      const opponent = p.getByRole('article', { name: 'Bot fixture' });
+      await own.getByText('Ảo: 1', { exact: true }).waitFor();
+      await own.getByText('Loạn Kích:', { exact: false }).waitFor();
+      await opponent.getByText('Điền: 1', { exact: true }).waitFor();
+      await own.getByRole('button', { name: 'Xem dấu và bài đặt của browser-test' }).click();
+      const dialog = p.getByRole('dialog', { name: 'Dấu và bài đặt của browser-test' });
+      await dialog.getByRole('heading', { name: 'Ảo (1)' }).waitFor();
+      assert.equal(await dialog.locator('[aria-label="Bích"]').count(), 1);
+      assert.equal(await dialog.locator('[aria-label="Cơ"]').count(), 1);
+      await dialog.locator('summary').click();
+      assert.equal(await dialog.locator('details[open]').count(), 1);
+      await p.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      await opponent.getByRole('button', { name: 'Xem dấu và bài đặt của Bot fixture' }).click();
+      const opponentDialog = p.getByRole('dialog', { name: 'Dấu và bài đặt của Bot fixture' });
+      await opponentDialog.getByRole('heading', { name: 'Điền (1)' }).waitFor();
+      assert.equal(await opponentDialog.locator('summary').count(), 1);
+      const before = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
+      assert.deepEqual(before.player[-1].specialPiles.map(pile => pile.name), ['ld__dengai_field']);
+      assert.equal('id' in before.player[-1].specialPiles[0].cards[0], false);
+      assert.equal(before.player[17].marks['@[private]&ld__hun'], undefined);
+      await p.evaluate((card) => window.__tqsRealLuaE2e.replacePlayerPile(card), cards[3]);
+      const replacement = await p.evaluate(() => window.__tqsRealLuaE2e.boardState());
+      assert.equal(replacement.player[-1].specialPiles[0].cards.length, 1);
+      assert.equal(await opponentDialog.locator('summary').count(), 1);
+      if (process.env.TQS_PLAYER_PILE_EVIDENCE_DIR) {
+        await p.screenshot({ path: path.join(process.env.TQS_PLAYER_PILE_EVIDENCE_DIR, 'player-pile-390x844.png') });
+      }
+      await p.keyboard.press('Escape');
+      assert.equal((await snapshot(p)).replies.length, 0);
+      const requestId = await p.evaluate(() => window.__tqsRealLuaE2e.chooseSorcery());
+      const controls = p.getByRole('region', { name: 'Điều khiển lượt chơi' });
+      await controls.locator(`button[data-card-id="${cards[1]}"]:enabled`).click();
+      await controls.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+      const chosen = await reply(p);
+      assert.equal(chosen.replies[0].requestId, requestId);
+      assert.deepEqual(await p.evaluate(() => window.__tqsRealLuaE2e.decodedReply()), {
+        card: { skill: 'choose_cards_skill', subcards: [cards[1]] }, targets: [],
+      });
+      await p.evaluate((card) => window.__tqsRealLuaE2e.clearPlayerPiles(card), cards[1]);
+      await opponentDialog.waitFor({ state: 'hidden' });
+      assert.deepEqual((await p.evaluate(() => window.__tqsRealLuaE2e.boardState())).player[-1].specialPiles, []);
+      assert.equal(await own.locator('.sg-photo-status-trigger').count(), 0);
+      assert.equal((await snapshot(p)).replies.length, 1);
+      assert.deepEqual((await snapshot(p)).luaErrors, []);
+    }],
     ['Native Lua MoveCards keeps draw/discard counts, concealed processing faces and concurrent reveals in the center', async (p) => {
       const pileEvidenceDir = process.env.TQS_EVIDENCE_DIR ? path.resolve(process.env.TQS_EVIDENCE_DIR) : null;
       if (pileEvidenceDir) mkdirSync(pileEvidenceDir, { recursive: true });
@@ -2387,6 +2436,10 @@ try {
       assert.equal(result.players[-1].selfGeneral, null);
       assert.equal(result.players[-1].general, null);
       assert.equal(result.players[17].handcardNum, 1);
+      assert.deepEqual(result.players[-1].marks['@hs__luanji-turn'], ['log_club']);
+      assert.equal(result.players[-1].specialPiles[0]?.name, 'ld__dengai_field');
+      assert.equal(result.players[-1].specialPiles[0]?.cards.length, 1);
+      assert.equal('id' in result.players[-1].specialPiles[0].cards[0], false);
       assert.deepEqual(result.fakeSkills, [{ name: 'hs__yiji', prelighted: true, enabled: true }]);
       assert.deepEqual(result.regularSkills, [{ name: 'hs__zhiheng' }]);
       assert.ok(result.reconnectUiPayloadBytes <= 64,
@@ -2956,7 +3009,9 @@ try {
       assert.deepEqual(chosen.luaErrors, []);
     }],
   );
-  const testsToRun = process.argv.includes('--liaoye')
+  const testsToRun = process.argv.includes('--player-piles')
+    ? tests.filter(([name]) => name.startsWith('Native player piles'))
+    : process.argv.includes('--liaoye')
     ? tests.filter(([name]) => name.startsWith('Liêu Dã '))
     : process.argv.includes('--jilix')
     ? tests.filter(([name]) => name.startsWith('Ký Ly '))

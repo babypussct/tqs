@@ -998,3 +998,31 @@ test('UI-P1/P2 native parity: expanded pile footnotes, maxCards, sealedSlots, Se
   });
   assert.equal((state.gameplay.items.CardItem['88']?.card as Record<string, unknown>)?.footnote, 'wooden_ox');
 });
+
+test('player status projects audited mark lists and replaces visible special piles without card IDs', () => {
+  let state: GameSnapshot = { ...initialSnapshot, ownId: 17 };
+  for (const id of [17, -1]) state = reduceUiEvent(state, 'AddPlayer', [id, 'Player', '', false, 0]);
+  state = reduceUiEvent(state, 'StartGame', null);
+  state = reduceUiEvent(state, 'SetPlayerMark', [17, '@hs__luanji-turn', ['log_spade', 'log_heart']]);
+  assert.deepEqual(state.board.player[17].marks['@hs__luanji-turn'], ['log_spade', 'log_heart']);
+  for (const [name, value] of [['@unknown', ['private']], ['@[private]&ld__hun', ['hidden_general']],
+    ['@hs__luanji-turn', [42]], ['@hs__luanji-turn', ['hidden_general']]]) {
+    assert.equal(reduceUiEvent(state, 'SetPlayerMark', [17, name, value]).board, state.board);
+  }
+  state = reduceUiEvent(state, 'SetPlayerMark', [17, '@hs__luanji-turn', 0]);
+  assert.equal(state.board.player[17].marks['@hs__luanji-turn'], 0);
+  const face = { name: 'slash', suit: 1, number: 7, id: 42, wireId: 'hidden-ref' };
+  state = reduceUiEvent(state, 'PlayerPilesUpdate', [-1, [
+    ['ld__dengai_field', [face, { ...face, known: false }]],
+    ['#internal', [face]], ['$private', [{ ...face, known: false }]],
+  ]]);
+  assert.deepEqual(state.board.player[-1].specialPiles, [{ name: 'ld__dengai_field', cards: [{ name: 'slash', suit: 1, number: 7 }] }]);
+  assert.equal(reduceUiEvent(state, 'PlayerPilesUpdate', [99, []]).board, state.board);
+  state = reduceUiEvent(state, 'PlayerPilesUpdate', [-1, []]);
+  assert.deepEqual(state.board.player[-1].specialPiles, []);
+  state = reduceUiEvent(state, 'PlayerPilesUpdate', [17, [['$m_heg__qianxun', [face]]]]);
+  const switched = reduceUiEvent(state, 'SelfIdentity', 21);
+  assert.deepEqual(switched.board.player[17].specialPiles, []);
+  state = reduceUiEvent(state, 'ChangeSelf', 21);
+  assert.deepEqual(state.board.player[17].specialPiles, []);
+});

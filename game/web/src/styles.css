@@ -3320,31 +3320,53 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   text-shadow: none;
 }
 
-/* MARKS */
+/* Native player marks and visible special piles share a compact inspection trigger. */
 .sg-photo-marks {
   position: absolute;
   top: 17px;
   right: 2px;
+  z-index: 26;
+  max-width: 74%;
+}
+.sg-photo-status-trigger {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1px;
-  z-index: 5;
-  pointer-events: none;
-  max-width: 48px;
+  gap: 2px;
+  max-width: 100%;
+  max-height: 48px;
+  overflow: hidden;
+  padding: 2px;
+  border: 1px solid #b69a64;
+  border-radius: 4px;
+  background: rgba(20, 24, 17, .94);
+  color: #fdf2d7;
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 24px;
 }
 .sg-photo-marks .board-mark {
-  font-size: 6px;
-  padding: 1px 2px;
-  background: rgba(14, 25, 18, 0.85);
-  border: 1px solid rgba(212, 155, 56, 0.6);
-  border-radius: 2px;
-  color: #fdf2d7;
+  font-size: 9px;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.sg-photo-marks .sg-pile-mark { color: #ffe0a0; }
+.sg-photo-status-trigger:focus-visible { outline: 2px solid #fff0ad; }
+.sg-player-status-mark { margin: 6px 0; }
+.sg-player-status-mark strong { color: #f8d28a; margin-right: 8px; }
+.sg-player-status-sheet .suit-red, .sg-photo-status-trigger .suit-red { color: #ff8f88; }
+.sg-player-status-sheet .suit-black, .sg-photo-status-trigger .suit-black { color: #fdf2d7; }
+.sg-player-pile-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.sg-player-pile-card { min-width: 0; background: #3b2c20; border: 1px solid #957b55; border-radius: 5px; }
+.sg-player-pile-card summary { display: flex; flex-direction: column; gap: 4px; padding: 6px; cursor: pointer; list-style: none; }
+.sg-player-pile-card summary::-webkit-details-marker { display: none; }
+.sg-player-pile-art { position: relative; display: block; aspect-ratio: 3/4; overflow: hidden; background: #20180f; }
+.sg-player-pile-art .sg-card-native-art { width: 100%; height: 100%; object-fit: contain; }
+.sg-player-pile-card strong { font-size: 12px; overflow-wrap: anywhere; }
+.sg-player-pile-card p { padding: 0 6px; font-size: 12px; line-height: 1.45; }
 .board-local-dashboard {
   position: relative;
   z-index: 20;
@@ -4863,7 +4885,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-local-seat .sg-photo-panel-compact .sg-photo-marks {
     top: 18px;
     right: 2px;
-    max-width: 48px;
+    max-width: 74%;
   }
 
   /* Option 1: 5 equipment slots placed in Tier 2 (bottom) on the right of the avatar,
@@ -5377,7 +5399,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-local-seat .sg-photo-panel-compact .sg-photo-marks {
     top: 15px;
     right: 1px;
-    max-width: 40px;
+    max-width: 74%;
   }
 
   /* Option 1: 5 equipment slots placed in Tier 2 (bottom) on the right of the avatar,
@@ -7020,7 +7042,7 @@ h2 { font-size: clamp(1.25rem, 5vw, 1.65rem); margin: 8px 0 16px; line-height: 1
   .board-local-seat .sg-photo-panel-compact .sg-photo-marks {
     top: 17px !important;
     right: 2px !important;
-    max-width: 44px !important;
+    max-width: 74% !important;
   }
 
   .board-local-seat .sg-photo-panel-compact .sg-hand-count-badge {

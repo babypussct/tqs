@@ -1,5 +1,12 @@
 # CODEX_STATE — bàn giao công việc TQS
 
+## 28/11/2026 — Dấu hiệu và bài đặt trên tướng Quốc Chiến
+
+- Đối chiếu Lua pin production và QML gốc: `luanji.lua` ghi danh sách chất `@hs__luanji-turn`, `tuntian.lua` dùng `ld__dengai_field`, `qianhuan.lua` dùng `yuji_sorcery` và request `choose_cards_skill` với `expand_pile`. `Photo.qml`/`LtkLuaUtil.qml` hiển thị pile theo `Self.cardVisible`, bỏ pile `#` và pile không có lá nhìn thấy.
+- Web chiếu danh sách mark công khai đã audit (12 key), ký hiệu chất, các pile nhìn thấy theo người quan sát; loại alias ẩn, ID lá, pile nội bộ và danh sách chưa được xác nhận công khai. Đồng bộ thay thế khi MoveCards, SetPlayerPile, Reconnect, ChangeSelf và các callback ảnh hưởng visibility. Badge trên chân dung mở sheet xem ảnh lá, chất, số, mô tả; chọn lá để dùng kỹ năng vẫn qua request native hiện có.
+- Store 51/51, cards-and-choice 4/4, choices 3/3, card-wire-coverage 6/6, Chrome/Wasmoon 75/75 PASS trên snapshot Lua phát hành. Fixture mới kiểm mark chất, Điền/Ảo, pile ẩn, thay thế/xóa, reconnect và reply CBOR của choose_cards_skill. Ảnh 390×844 tại `scratch/evidence/player-piles-20261128/player-pile-390x844.png`. Fixture dùng client Lua thật với packet mô phỏng, chưa chứng minh ván production chạy đủ ba kỹ năng hoặc thiết bị thật. Typecheck:all không có lỗi. Build mặc định gặp drift inventory 203/78 do root upstream khác; chạy lại đúng root snapshot production, không đổi pin.
+- Bước tiếp theo: hoàn tất build, commit/push và Direct Upload web, kiểm hash alias/immutable, manifest native/gateway, Shop và smoke production.
+
 ## 28/11/2026 — Mất kết nối ngay sau chốt tướng Quốc Chiến
 
 - Log native production xác nhận cùng một tài khoản mất kết nối trong hai ván. Theo giờ Việt Nam, bản `2c4e29161bc0b2d37fdc3c0e67486745` ngày 27/11 xác nhận Card Wire v1 lúc 14:13:14.914, ngắt lúc 14:13:15.254, reconnect 14:13:24.555, GameOver 14:20:29.498. Bản `1ca429fa86f33efeb465579440d0a12c` ngày 28/11 xác nhận v1 lúc 00:14:15.021, ngắt lúc 00:14:15.353, reconnect 00:14:21.941, GameOver 00:20:22.360. Native chỉ ghi `Disconnected`, không thấy traceback ở hai mốc, gateway/tunnel journal không có dòng tương ứng và kernel không có OOM/segfault trong lượt kiểm. Mốc trùng nhau xác định cửa sổ cần tái hiện, chưa xác định ai đóng WebSocket hay lệnh client cuối.
@@ -2907,20 +2914,28 @@ CP33 Pages candidate đã LIVE bounded: `https://tqsvn.pages.dev` phát hành so
 ## Ảnh chụp Git (tự động)
 
 <!-- CODEX_SNAPSHOT_START -->
-- Ghi lúc: 2026-11-27T17:46:20.220Z (UTC).
-- Nhánh: `main` · HEAD: `e21fe35a4e1c`.
-- File thay đổi hiển thị: 1 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
+- Ghi lúc: 2026-11-28T06:04:56.971Z (UTC).
+- Nhánh: `main` · HEAD: `5621905a7492`.
+- File thay đổi hiển thị: 9 (đã ẩn tên file có thể nhạy cảm và không tính chính tài liệu này).
 
 ```text
  M docs/CODEX_PLAN.md
+ M game/web/scripts/real-lua-e2e/harness.tsx
+ M game/web/scripts/real-lua-e2e/run.ts
+ M game/web/scripts/store.test.ts
+ M game/web/src/PlayerPhotoPanel.tsx
+ M game/web/src/engine/hostLua.ts
+ M game/web/src/store/boardState.ts
+ M game/web/src/store/gameStore.ts
+ M game/web/src/styles.css
 ```
 
 Ba commit gần nhất:
 
 ```text
+5621905a Record startup recovery production verification
 e21fe35a Resume Hegemony after transient startup disconnects
 e3212d24 Record verified Liaoye production release
-43485e68 Show Liaoye target groups and resolve timeouts
 ```
 
 > Ảnh chụp này chỉ phản ánh metadata Git lúc chạy lệnh. Để biết trạng thái **ngay bây giờ**, chạy `git status --short`; không suy diễn PASS từ danh sách file.

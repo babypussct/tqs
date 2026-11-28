@@ -165,6 +165,11 @@ function validSkillName(value: unknown): value is string {
     !/[\u0000-\u001F\u007F]/.test(value);
 }
 
+function clearPlayerPiles(board: BoardState): BoardState {
+  return { ...board, player: Object.fromEntries(Object.entries(board.player).map(([id, player]) =>
+    [id, { ...player, specialPiles: [] }])) };
+}
+
 function clearSkillState(state: GameSnapshot): GameSnapshot {
   return state.fakeSkills.length || state.regularSkills.length
     ? { ...state, fakeSkills: [], regularSkills: [] } : state;
@@ -182,7 +187,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       nativeVfxSequence: state.nativeVfxSequence + events.length };
   }
   if (command === 'SelfIdentity') return typeof data === 'number' && Number.isSafeInteger(data) && data > 0
-    ? { ...state, ownId: data, ...(state.ownId === data ? {} : { fakeSkills: [], regularSkills: [] }) } : state;
+    ? { ...state, ownId: data, ...(state.ownId === data ? {} : { fakeSkills: [], regularSkills: [], board: clearPlayerPiles(state.board) }) } : state;
   const arr = entries(data);
   switch (command) {
     case 'DisplayTranslations':
@@ -316,7 +321,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
       // that case the snapshot already belongs to the current Self and must
       // remain visible.
       if (typeof data !== 'number' || !Number.isSafeInteger(data) || data <= 0) return state;
-      return state.ownId === data ? state : clearSkillState({ ...state, ownId: data });
+      return state.ownId === data ? state : clearSkillState({ ...state, ownId: data, board: clearPlayerPiles(state.board) });
     case 'AddSkill': {
       const [id, skillName, prelight] = arr;
       if (id !== state.ownId || !Number.isSafeInteger(id) || !validSkillName(skillName))
@@ -371,6 +376,7 @@ export function reduceUiEvent(state: GameSnapshot, command: string, data: unknow
     case 'GeneralArtUpdate':
     case 'VisibleKingdom':
     case 'EquipmentUpdate':
+    case 'PlayerPilesUpdate':
     case 'SetPlayerMark':
     case 'MoveFocus':
     case 'SetBanner':

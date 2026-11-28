@@ -279,6 +279,44 @@ local function project_property(data)
   return {id, name, value}
 end
 
+-- Only audited public string-list marks. Numeric card/general references and
+-- custom/private mark renderers require their own visibility contract.
+local public_list_marks = {
+  ['@hs__luanji-turn'] = 'suit',
+  ['@hs__tieqi-turn'] = 'general',
+  ['@hs__duanchang'] = 'general',
+  ['@jianan_skills'] = 'skill',
+  ['@ld__xuanhuo_skills-turn'] = 'skill',
+  ['@ol_heg__chenglue-turn'] = 'suit',
+  ['@ty_heg__zhente-turn'] = 'color',
+  ['@xiongnve-turn'] = 'kingdom',
+  ['@nos_heg__xiongnve_kingdom-phase'] = 'kingdom',
+  ['@&ld__xing'] = 'general',
+  ['@&massacre'] = 'general',
+  ['@$ld__yigui-turn'] = 'card',
+}
+local public_suits = {log_spade = true, log_club = true, log_heart = true, log_diamond = true}
+local function project_list_mark(name, value)
+  local kind = public_list_marks[name]
+  if not kind or #value > 32 then return nil end
+  local result = {}
+  for i, item in ipairs(value) do
+    if type(item) ~= 'string' or #item > 120 then return nil end
+    if kind == 'suit' and not public_suits[item] then return nil end
+    if kind == 'general' and not (item == 'mainGeneral' or item == 'deputyGeneral' or
+        (item ~= 'anjiang' and Fk.generals[item])) then return nil end
+    if kind == 'skill' and not Fk.skills[item] then return nil end
+    if kind == 'card' and not Fk.all_card_types[item] then return nil end
+    if kind == 'color' and item ~= 'red' and item ~= 'black' and item ~= 'nocolor' then return nil end
+    if kind == 'kingdom' and not ({wei=true, shu=true, wu=true, qun=true, jin=true, god=true, wild=true})[item] then return nil end
+    result[i] = item
+  end
+  for k in pairs(value) do
+    if math.type(k) ~= 'integer' or k < 1 or k > #result then return nil end
+  end
+  return #result > 0 and result or 0
+end
+
 local function project_public_mark(data, banner)
   if type(data) ~= 'table' then return nil end
   local name, value = data[1], data[2]
@@ -286,7 +324,11 @@ local function project_public_mark(data, banner)
   if not banner then id, name, value = data[1], data[2], data[3] end
   if (not banner and math.type(id) ~= 'integer') or type(name) ~= 'string' or
       #name > 120 or not name:startsWith('@') then return nil end
-  value = public_scalar(value)
+  if not banner and type(value) == 'table' then
+    value = project_list_mark(name, value)
+  else
+    value = public_scalar(value)
+  end
   if value == nil then return nil end
   return banner and {name, value} or {id, name, value}
 end
@@ -460,6 +502,34 @@ local function project_public_card(card, owner)
     if range_ok and finite_number(range) then result.range = range end
   end
   return result
+end
+
+-- Match Photo.qml/LtkLuaUtil: a special pile exists on the portrait only
+-- when Self can see at least one of its cards. Never publish opaque aliases,
+-- physical IDs, hidden pile names/counts or unfiltered special_cards tables.
+local function emit_player_piles()
+  if not Self or not ClientInstance or not table.contains(ClientInstance.players, Self) then return end
+  local refs = ClientInstance.card_wire_refs
+  for _, player in ipairs(ClientInstance.players) do
+    local piles = {}
+    for name, ids in pairs(player.special_cards or {}) do
+      if type(name) == 'string' and #name <= 120 and not name:startsWith('#') then
+        local cards = {}
+        for _, id in ipairs(ids) do
+          if not (refs and (refs:isHiddenLocal(id) or refs:isAnonymous(id))) then
+            local ok, visible = pcall(Self.cardVisible, Self, id)
+            if ok and visible then
+              local card = project_public_card(Fk:getCardById(id), player)
+              if card then cards[#cards + 1] = card end
+            end
+          end
+        end
+        if #cards > 0 then piles[#piles + 1] = {name, cards} end
+      end
+    end
+    table.sort(piles, function(a, b) return a[1] < b[1] end)
+    J.ui('PlayerPilesUpdate', to_json({player.id, piles}))
+  end
 end
 
 local web_table_notes = {}
@@ -803,6 +873,12 @@ function __host_recv(command, hex, is_request)
   elseif command == 'SyncDrawPile' or command == 'ShuffleDrawPile' or command == 'ChangeCardArea' then
     -- These native callbacks can change both piles without a MoveCards.
     emit_web_piles()
+  end
+  if command == 'MoveCards' or command == 'Reconnect' or command == 'SetPlayerPile' or
+      command == 'ChangeSelf' or command == 'ShowCard' or command == 'FilterCard' or
+      command == 'ChangeCardArea' or command == 'SetPlayerMark' or command == 'SetCardMark' or command == 'PropertyUpdate' or
+      command == 'AddSkill' or command == 'LoseSkill' or command == 'AddStatusSkill' then
+    emit_player_piles()
   end
   -- Hegemony uses anjiang publicly and private marks for the actual pair.
   -- Read only Self's two marks, never enumerate another player's marks.

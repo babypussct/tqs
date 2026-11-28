@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BASELINE_NAMES, formatRank, getSuitInfo } from './HandCardItem';
+import { BASELINE_NAMES, CardArt, formatRank, getSuitInfo, resolveCardText } from './HandCardItem';
 import { useDisplayText } from './engine/displayText';
 import type { GameplayItem } from './store/gameplayState';
-import { isBoardFocusActive, type BoardEquipment, type BoardFocusState, type BoardPlayer } from './store/boardState';
+import { isBoardFocusActive, type BoardEquipment, type BoardFocusState, type BoardMark, type BoardPlayer } from './store/boardState';
 import { generalArtCandidates } from './generalArt';
 import type { RoomPlayer } from './store/gameStore';
 import { EquipIcon, TargetCrosshairIcon } from './EquipIcons';
@@ -367,6 +367,76 @@ function PortraitOverlays({ game, self }: { game: BoardPlayer | undefined; self:
   </>;
 }
 
+function MarkValue({ value, text }: { value: BoardMark; text: (key: string) => string }) {
+  if (!Array.isArray(value)) return <>{typeof value === 'string' ? text(value) : String(value)}</>;
+  return <>{value.map((item, index) => {
+    const suit = getSuitInfo(item.replace(/^log_/, ''));
+    return <span key={index}>{index > 0 && ' · '}{item.startsWith('log_') && suit.symbol !== '◇'
+      ? <span className={suit.colorClass} aria-label={suit.name} title={suit.name}>{suit.symbol}</span>
+      : text(item)}</span>;
+  })}</>;
+}
+
+function PlayerStatus({ game, playerName, text }: {
+  game: BoardPlayer | undefined; playerName: string; text: (key: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const marks = Object.entries(game?.marks ?? {}).filter(([, value]) => value !== 0 && value !== false && value !== '');
+  const piles = game?.specialPiles ?? [];
+  const total = marks.length + piles.length;
+  useEffect(() => { if (!total) setOpen(false); }, [total]);
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.stopPropagation(); setOpen(false); } };
+    window.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape, true);
+      trigger.current?.focus();
+    };
+  }, [open]);
+  if (!total) return null;
+  return <>
+    <div className="sg-photo-marks" aria-label="Dấu hiệu và bài đặt trên tướng">
+      <button type="button" className="sg-photo-status-trigger" ref={trigger} aria-label={`Xem dấu và bài đặt của ${playerName}`}
+        aria-expanded={open} onClick={(event) => { event.stopPropagation(); setOpen(true); }}>
+        {[...piles.map((pile) => <span className="board-mark sg-pile-mark" key={pile.name}>{text(pile.name)}: {pile.cards.length}</span>),
+          ...marks.map(([name, value]) => <span className="board-mark" key={name}>{text(name)}: <MarkValue value={value} text={text} /></span>)].slice(0, 2)}
+        {total > 2 && <span className="board-mark">+{total - 2}</span>}
+      </button>
+    </div>
+    {open && createPortal(<div className="sg-skill-info-backdrop" onClick={() => setOpen(false)}>
+      <section className="sg-skill-info-sheet sg-player-status-sheet" role="dialog" aria-modal="true"
+        aria-label={`Dấu và bài đặt của ${playerName}`} onClick={(event) => event.stopPropagation()}>
+        <div className="sg-skill-info-heading"><h2>{playerName} · Dấu và bài đặt</h2>
+          <button type="button" className="sg-sheet-close-button" autoFocus onClick={() => setOpen(false)} aria-label="Đóng">×</button>
+        </div>
+        <div className="sg-skill-info-content">
+          {marks.length > 0 && <div className="sg-skill-info-group"><h3>Dấu hiệu</h3>
+            {marks.map(([name, value]) => <p className="sg-player-status-mark" key={name}><strong>{text(name)}</strong> <MarkValue value={value} text={text} /></p>)}
+          </div>}
+          {piles.map((pile) => <div className="sg-skill-info-group" key={pile.name}><h3>{text(pile.name)} ({pile.cards.length})</h3>
+            <div className="sg-player-pile-cards">
+              {pile.cards.map((card, index) => {
+                const { displayName, description } = resolveCardText(card, text);
+                const suit = getSuitInfo(card.suit);
+                return <details className="sg-player-pile-card" key={index}>
+                  <summary aria-label={`${displayName} · ${suit.name} ${formatRank(card.number)}`}>
+                    <span className="sg-player-pile-art"><CardArt card={card} /></span>
+                    <span className={`sg-player-pile-rank ${suit.colorClass}`}>{suit.symbol} {formatRank(card.number)}</span>
+                    <strong>{displayName}</strong>
+                  </summary>
+                  <p>{description}</p>
+                </details>;
+              })}
+            </div>
+          </div>)}
+        </div>
+      </section>
+    </div>, document.body)}
+  </>;
+}
+
 export default function PlayerPhotoPanel({
   player, game, self, seat, active, target, busy, onTarget, compact = false, style, isShaking = false, avatarReaction, damagePop, equipmentPortalTarget, getGeneralSkills, focusState, skillCallout, choiceGroup, previewTarget,
 }: PlayerPhotoPanelProps) {
@@ -384,7 +454,6 @@ export default function PlayerPhotoPanel({
   const kingdom = game?.visibleKingdom || game?.kingdom;
   const exposedKingdom = (self || game?.roleShown) ? kingdom : null;
   const faction = factionClass(exposedKingdom);
-  const marks = Object.entries(game?.marks ?? {}).filter(([, value]) => value !== 0 && value !== false && value !== '');
   const slotCards = new Map<EquipmentSlotKey, BoardEquipment>();
   for (const card of game?.equipment ?? []) {
     const slot = cardSlot(card);
@@ -502,11 +571,7 @@ export default function PlayerPhotoPanel({
       : <EquipmentPlate slotCards={slotCards} text={text} count={game?.equipment.length ?? 0} self={self} compact={compact} sealedSlots={game?.sealedSlots} />}
 
     {/* 6. MARKS AND DOM COMPATIBILITY HOOKS */}
-    {marks.length > 0 && <div className="sg-photo-marks" aria-label="Dấu hiệu công khai">
-      {marks.map(([name, value]) => <span className="board-mark" key={name} title={`${text(name)}: ${typeof value === 'string' ? text(value) : String(value)}`}>
-        {text(name)}: {typeof value === 'string' ? text(value) : String(value)}
-      </span>)}
-    </div>}
+    <PlayerStatus game={game} playerName={playerName} text={text} />
     {game?.chained && <span className="board-mark sg-mark-chained sg-visually-hidden">Đang bị xích</span>}
     {game?.faceup === false && <span className="board-mark sg-mark-faceup sg-visually-hidden">Úp mặt</span>}
     <div className="sg-photo-faction-line sg-visually-hidden">
